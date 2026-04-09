@@ -1,0 +1,88 @@
+'use client';
+
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy, limit } from 'firebase/firestore';
+import { Megaphone, ChevronRight } from 'lucide-react';
+import Link from 'next/link';
+import { useMemo } from 'react';
+
+interface NewsItem {
+    id: string;
+    title: string;
+    category: string;
+    isPinned?: boolean;
+    isMarquee?: boolean;
+}
+
+export function NewsMarquee() {
+    const firestore = useFirestore();
+
+    // 抓取最近的消息，前端過濾
+    const newsQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(
+            collection(firestore, 'news'),
+            orderBy('createdAt', 'desc'),
+            limit(30)
+        );
+    }, [firestore]);
+
+    const { data: newsItems, isLoading } = useCollection<NewsItem>(newsQuery);
+
+    // 取得最新一則標記為跑馬燈的消息
+    const latestMarqueeItem = useMemo(() => {
+        if (!newsItems) return null;
+        return newsItems.find(n => n.isMarquee === true);
+    }, [newsItems]);
+
+    if (isLoading || !latestMarqueeItem) {
+        return null;
+    }
+
+    return (
+        <div className="bg-background/40 backdrop-blur-md border-b border-white/5 h-7 md:h-9 overflow-hidden relative flex items-center">
+            {/* 側邊品牌標籤 - 銳利化與精緻化 */}
+            <div className="absolute left-0 top-0 bottom-0 px-3 md:px-5 bg-background/90 backdrop-blur-xl z-20 flex items-center border-r border-primary/20">
+                <span className="text-[8px] md:text-[10px] font-black text-primary uppercase tracking-[0.2em] italic whitespace-nowrap drop-shadow-[0_0_8px_rgba(6,182,212,0.4)]">
+                    最新消息
+                </span>
+            </div>
+
+            {/* 固定內容區塊 */}
+            <Link 
+                href={`/news?id=${latestMarqueeItem.id}`} 
+                className="flex-1 flex items-center pl-24 md:pl-32 pr-4 text-[10px] md:text-sm text-muted-foreground hover:text-primary transition-all group overflow-hidden h-full"
+            >
+                <div className="flex items-center gap-3 w-full">
+                    {/* 置頂消息動態脈衝燈 */}
+                    {latestMarqueeItem.isPinned ? (
+                        <div className="flex items-center justify-center shrink-0">
+                            <span className="flex h-2 w-2 relative">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                            </span>
+                        </div>
+                    ) : (
+                        <Megaphone className="w-3 h-3 md:w-3.5 md:h-3.5 opacity-30 shrink-0 group-hover:opacity-60 transition-opacity" />
+                    )}
+                    
+                    {/* 分類標籤：玻璃擬態風格 */}
+                    <span className="bg-white/5 border border-white/10 text-[7px] md:text-[9px] font-bold px-1.5 md:px-2 py-0.5 rounded text-white/50 uppercase tracking-tighter shrink-0 group-hover:border-primary/30 group-hover:text-primary/80 transition-all">
+                        {latestMarqueeItem.category}
+                    </span>
+                    
+                    {/* 消息標題 */}
+                    <span className="font-bold text-foreground/80 group-hover:text-white transition-colors truncate tracking-wide">
+                        {latestMarqueeItem.title}
+                    </span>
+                    
+                    {/* 引導圖示：點擊提示 */}
+                    <div className="ml-auto flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                        <span className="text-[8px] font-black uppercase tracking-widest text-primary/60 hidden md:inline">Detail</span>
+                        <ChevronRight className="w-3 h-3 text-primary group-hover:translate-x-1 transition-transform" />
+                    </div>
+                </div>
+            </Link>
+        </div>
+    );
+}

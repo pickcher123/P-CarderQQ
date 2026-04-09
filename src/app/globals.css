@@ -1,0 +1,115 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 215 41% 9%; /* Darker Shade */
+    --foreground: 210 40% 98%; /* slate-50 */
+    
+    --card: 215 28% 17%; /* slate-800 */
+    --card-foreground: 210 40% 98%; /* slate-50 */
+    
+    --popover: 222 84% 5%; /* slate-950 */
+    --popover-foreground: 210 40% 98%; /* slate-50 */
+    
+    --primary: 190 95% 43%; /* #06B6D4 */
+    --primary-foreground: 210 40% 9.8%; /* slate-900 */
+    
+    --secondary: 217 33% 17%; /* slate-800 */
+    --secondary-foreground: 210 40% 98%; /* slate-50 */
+    
+    --muted: 217 33% 17%; /* slate-800 */
+    --muted-foreground: 215 20% 65%; /* slate-400 */
+    
+    --accent: 45 93% 47%; /* #EAB308 */
+    --accent-foreground: 222 47% 11%; /* slate-900 */
+    
+    --destructive: 327 72% 52%; /* #DB2777 */
+    --destructive-foreground: 210 40% 98%; /* slate-50 */
+    
+    --border: 217 33% 27%; /* slate-700 */
+    --input: 217 33% 27%; /* slate-700 */
+    --ring: 190 95% 43%; /* primary color */
+    
+    --radius: 0.5rem;
+
+    --chart-1: 190 95% 43%;
+    --chart-2: 45 93% 47%;
+    --chart-3: 327 72% 52%;
+    --chart-4: 217 91% 60%;
+    --chart-5: 12 76% 61%;
+  }
+
+  .light {
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 190 90% 35%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 94%;
+    --muted-foreground: 215 25% 35%;
+
+    --accent: 40 90% 45%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 85%;
+    --input: 214.3 31.8% 85%;
+    --ring: 190 90% 35%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground overflow-x-hidden;
+  }
+}
+
+@layer utilities {
+  .animation-delay-2000 {
+    animation-delay: 2s;
+  }
+  .animation-delay-4000 {
+    animation-delay: 4s;
+  }
+  .animate-shimmer {
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.1) 50%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+  }
+
+  .clip-path-reveal-bottom {
+    clip-path: inset(0 0 var(--reveal-percent, 0%) 0);
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes move-twink-back {
+    from {background-position:0 0;}
+    to {background-position:-10000px 5000px;}
+}

@@ -1,0 +1,56 @@
+
+{
+  "entities": {
+    "UserProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserProfile",
+      "type": "object",
+      "description": "Represents a user profile in the system.",
+      "properties": {
+        "id": { "type": "string" },
+        "username": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["admin", "user"] },
+        "points": { "type": "number" },
+        "userLevel": { "type": "string" }
+      },
+      "required": ["id", "username", "email", "role"]
+    },
+    "Announcement": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Announcement",
+      "type": "object",
+      "description": "Global notification for big prizes.",
+      "properties": {
+        "username": { "type": "string" },
+        "action": { "type": "string" },
+        "prize": { "type": "string" },
+        "prizeImageUrl": { "type": "string" },
+        "rarity": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "section": { "type": "string" }
+      }
+    }
+  },
+  "auth": {
+    "providers": ["google.com", "password"]
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/backend/entities/UserProfile" },
+      "description": "Stores user profile data."
+    },
+    "/announcements/{annId}": {
+      "schema": { "$ref": "#/backend/entities/Announcement" },
+      "description": "Global hall of fame data."
+    },
+    "/systemConfig/{configId}": {
+      "schema": "object",
+      "description": "System wide configurations."
+    },
+    "/news/{newsId}": {
+      "schema": "object",
+      "description": "Latest news and updates."
+    }
+  }
+}
