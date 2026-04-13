@@ -21,7 +21,7 @@ import { Label } from '@/components/ui/label';
 import { Card as UICard, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, Image as ImageIcon, Upload, ArrowLeft, Check, Settings, Gem, Package, Users, Trophy, Eye, EyeOff, Search, Loader2, Sparkles, Copy, ListChecks, UserCheck, Archive } from 'lucide-react';
+import { PlusCircle, Trash2, Image as ImageIcon, Upload, ArrowLeft, Check, Settings, Gem, Package, Users, Trophy, Eye, EyeOff, Search, Loader2, Sparkles, Copy, ListChecks, UserCheck, Archive, Play } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -515,7 +515,7 @@ export default function LuckBagDetailPage() {
     ]);
 
     return allCards.filter(c => 
-        !c.isSold || 
+        (!c.isSold && !globallyAssignedCardIds.has(c.id)) || 
         currentBagCardIds.has(c.id)
     );
   }, [allCards, globallyAssignedCardIds, luckBag]);
@@ -565,6 +565,15 @@ export default function LuckBagDetailPage() {
                         }
                     </Label>
                 </div>
+                {bagDetails.status === 'published' && !bagDetails.revealLottery && (
+                    <Button 
+                        variant="default" 
+                        className="bg-primary hover:bg-primary/90 text-white font-bold ml-4"
+                        onClick={() => handleUpdateBagDetails('revealLottery', true)}
+                    >
+                        <Play className="mr-2 h-4 w-4" /> 啟動開獎模式
+                    </Button>
+                )}
             </div>
         </div>
 

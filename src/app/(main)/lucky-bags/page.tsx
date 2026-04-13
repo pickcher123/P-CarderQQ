@@ -103,8 +103,8 @@ const LuckBagCard = ({ bag, priority = false, index }: { bag: LuckBagWithCount, 
                                 {bag.name}
                             </h3>
                             <div className="flex flex-wrap items-center gap-2">
-                                <Badge variant={isDone ? "secondary" : "default"} className="font-black text-[9px] md:text-[10px] uppercase h-5 px-2 border-none">
-                                    {isDone ? '已開獎' : '募集進行中'}
+                                <Badge variant={isDone ? "secondary" : bag.revealLottery ? "destructive" : "default"} className="font-black text-[9px] md:text-[10px] uppercase h-5 px-2 border-none">
+                                    {isDone ? '已開獎' : bag.revealLottery ? '開獎中' : '募集進行中'}
                                 </Badge>
                                 {isDone && bag.winners?.first && (
                                     <span className="text-[10px] font-black text-primary italic uppercase tracking-widest">

@@ -41,6 +41,7 @@ import { useRouter } from 'next/navigation';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { PPlusIcon } from '@/components/icons';
 
 type LuckBagStatus = 'draft' | 'published';
 
@@ -276,7 +277,10 @@ export default function LuckyBagsAdminPage() {
                         </button>
                     </TableCell>
                     <TableCell className="font-code font-bold text-accent">
-                        {bag.price.toLocaleString()} P
+                        <div className="flex items-center gap-1">
+                            {bag.price.toLocaleString()}
+                            {bag.currency === 'diamond' ? <Gem className="w-4 h-4 text-primary" /> : <PPlusIcon className="w-4 h-4" />}
+                        </div>
                     </TableCell>
                     <TableCell className="font-code text-sm">
                         <div className="flex items-center gap-2">

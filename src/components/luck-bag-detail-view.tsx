@@ -282,18 +282,30 @@ export function LuckBagDetailView({ luckBag }: { luckBag: LuckBagWithCount }) {
                             </div>
                         </ScrollArea>
 
-                        <div className="mt-6 md:mt-8 pt-6 md:pt-8 border-t border-slate-400 flex flex-col sm:flex-row justify-between items-center sm:items-end gap-4 md:gap-0">
-                            <div className="w-full sm:w-auto text-center sm:text-left">
-                                <p className="text-[8px] md:text-[9px] font-black text-slate-500 uppercase">預計支付金額</p>
-                                <div className="flex items-center justify-center sm:justify-start gap-1.5 md:gap-2 text-3xl md:text-4xl font-black font-code text-accent">
-                                    {(selectedSpots.size * luckBag.price).toLocaleString()}
-                                    {currency === 'diamond' ? <Gem className="w-6 h-6 md:w-8 md:h-8 text-primary" /> : <PPlusIcon className="w-6 h-6 md:w-8 md:h-8" />}
-                                </div>
+                        {luckBag.revealLottery ? (
+                            <div className="mt-6 md:mt-8 pt-6 md:pt-8 border-t border-slate-400 flex flex-col items-center justify-center text-center">
+                                <p className="text-lg md:text-xl font-black text-accent uppercase tracking-widest animate-pulse">直播開獎中</p>
+                                <p className="text-xs md:text-sm font-bold text-slate-500 mt-2">管理員正在進行開獎作業，請稍候...</p>
                             </div>
-                            <Button className="w-full sm:w-auto h-14 md:h-16 rounded-2xl px-8 md:px-10 font-black bg-slate-800 text-white hover:bg-slate-950 shadow-xl transition-all active:scale-95 text-base md:text-lg" disabled={selectedSpots.size === 0 || isSubmitting} onClick={() => setIsConfirming(true)}>
-                                {isSubmitting ? <Loader2 className="animate-spin" /> : '確認購買並鎖定'}
-                            </Button>
-                        </div>
+                        ) : participantCount >= (luckBag.totalParticipants || 1) ? (
+                            <div className="mt-6 md:mt-8 pt-6 md:pt-8 border-t border-slate-400 flex flex-col items-center justify-center text-center">
+                                <p className="text-lg md:text-xl font-black text-slate-800 uppercase tracking-widest">已滿編，等待直播開獎</p>
+                                <p className="text-xs md:text-sm font-bold text-slate-500 mt-2">請留意官方直播時間，系統將於直播後派發獎項。</p>
+                            </div>
+                        ) : (
+                            <div className="mt-6 md:mt-8 pt-6 md:pt-8 border-t border-slate-400 flex flex-col sm:flex-row justify-between items-center sm:items-end gap-4 md:gap-0">
+                                <div className="w-full sm:w-auto text-center sm:text-left">
+                                    <p className="text-[8px] md:text-[9px] font-black text-slate-500 uppercase">預計支付金額</p>
+                                    <div className="flex items-center justify-center sm:justify-start gap-1.5 md:gap-2 text-3xl md:text-4xl font-black font-code text-accent">
+                                        {(selectedSpots.size * luckBag.price).toLocaleString()}
+                                        {currency === 'diamond' ? <Gem className="w-6 h-6 md:w-8 md:h-8 text-primary" /> : <PPlusIcon className="w-6 h-6 md:w-8 md:h-8" />}
+                                    </div>
+                                </div>
+                                <Button className="w-full sm:w-auto h-14 md:h-16 rounded-2xl px-8 md:px-10 font-black bg-slate-800 text-white hover:bg-slate-950 shadow-xl transition-all active:scale-95 text-base md:text-lg" disabled={selectedSpots.size === 0 || isSubmitting} onClick={() => setIsConfirming(true)}>
+                                    {isSubmitting ? <Loader2 className="animate-spin" /> : '確認購買並鎖定'}
+                                </Button>
+                            </div>
+                        )}
                     </>
                 ) : (
                     <div className="flex flex-col items-center justify-center h-full text-center space-y-6 md:space-y-10">
