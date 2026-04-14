@@ -1144,18 +1144,6 @@ export default function CardPoolDetailPage() {
                                     <span className="font-black text-slate-500 uppercase text-[10px] tracking-widest">目前卡池收入</span>
                                     <span className="font-code font-black text-slate-900">{salesStats.totalRevenue.toLocaleString()}</span>
                                 </div>
-                                <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-100">
-                                    <span className="font-black text-slate-500 uppercase text-[10px] tracking-widest">卡池總價值</span>
-                                    <span className="font-code font-black text-slate-900">{salesStats.totalPoolValue.toLocaleString()}</span>
-                                </div>
-                                <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-100">
-                                    <span className="font-black text-slate-500 uppercase text-[10px] tracking-widest">已抽出卡片價值</span>
-                                    <span className="font-code font-black text-slate-900">{salesStats.totalDrawnValue.toLocaleString()}</span>
-                                </div>
-                                <div className="flex justify-between items-center p-3 bg-rose-50 rounded-xl border border-rose-100">
-                                    <span className="font-black text-rose-600 uppercase text-[10px] tracking-widest">目前帳面虧損</span>
-                                    <span className="font-code font-black text-rose-600">{salesStats.loss.toLocaleString()}</span>
-                                </div>
                             </>
                         )}
                     </CardContent>
