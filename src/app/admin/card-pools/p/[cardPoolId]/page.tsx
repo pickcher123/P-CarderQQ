@@ -247,7 +247,9 @@ export default function CardPoolDetailPage() {
         });
         cardPool?.pointPrizes?.forEach(pp => {
             // P-point prizes divided by 10
-            totalPoolValue += (pp.points / 10) * pp.quantity;
+            if (pp && typeof pp.points === 'number') {
+                totalPoolValue += (pp.points / 10) * (pp.quantity || 0);
+            }
         });
         if (cardPool?.lastPrizeCardId) {
             totalPoolValue += cardMap.get(cardPool.lastPrizeCardId) || 0;
@@ -292,6 +294,7 @@ export default function CardPoolDetailPage() {
     
     // Cards in all pools (except current pool if we're just editing)
     allCardPools?.forEach(p => {
+        if (p.id === cardPoolId) return; // Skip current pool
         p.cards?.forEach(c => ids.add(c.cardId));
         if (p.lastPrizeCardId) ids.add(p.lastPrizeCardId);
     });
@@ -306,6 +309,7 @@ export default function CardPoolDetailPage() {
         if (bag.prizes?.first) ids.add(bag.prizes.first);
         if (bag.prizes?.second) ids.add(bag.prizes.second);
         if (bag.prizes?.third) ids.add(bag.prizes.third);
+        // Also ensure cards in "otherPrizes" are excluded
         bag.otherPrizes?.forEach((p: any) => ids.add(p.cardId));
     });
 
@@ -564,7 +568,12 @@ export default function CardPoolDetailPage() {
         setIsAddCardDialogOpen(false);
     } catch (error) {
         console.error("Error adding cards to pool:", error);
-        toast({ variant: "destructive", title: "錯誤", description: "加入卡片時發生錯誤。" });
+        console.log("Full error object:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
+        toast({ 
+            variant: "destructive", 
+            title: "錯誤", 
+            description: `加入卡片時發生錯誤: ${error instanceof Error ? error.message : JSON.stringify(error)}` 
+        });
     }
   }
 
@@ -616,7 +625,12 @@ export default function CardPoolDetailPage() {
         toast({ variant: 'destructive', title: '錯誤', description: '點數和數量必須大於 0。' });
         return;
     }
-    const prizeToAdd: PointPrize = { ...newPointPrize, prizeId: uuidv4() };
+    const prizeToAdd: PointPrize = { 
+        ...newPointPrize, 
+        prizeId: uuidv4(),
+        points: Number(newPointPrize.points),
+        quantity: Number(newPointPrize.quantity)
+    };
 
     try {
         await runTransaction(firestore, async (transaction) => {
@@ -624,7 +638,9 @@ export default function CardPoolDetailPage() {
             if (!poolDoc.exists()) throw "Pool not found";
 
             const currentPool = poolDoc.data() as CardPool;
-            const newPointPrizes = [...(currentPool.pointPrizes || []), prizeToAdd];
+            const existingPrizes = (currentPool.pointPrizes || []).filter(p => p && typeof p === 'object' && 'points' in p);
+            const newPointPrizes = [...existingPrizes, prizeToAdd]
+                .sort((a, b) => (b.points || 0) - (a.points || 0));
             const newRemainingPacks = (currentPool.remainingPacks || 0) + prizeToAdd.quantity;
             
             transaction.update(cardPoolRef, {
@@ -644,7 +660,7 @@ export default function CardPoolDetailPage() {
     const handlePointPrizeRarityChange = async (prizeId: string, newRarity: Rarity) => {
         if (!cardPoolRef || !poolDetails.pointPrizes) return;
 
-        const updatedPrizes = poolDetails.pointPrizes.map(p =>
+        const updatedPrizes = (poolDetails.pointPrizes || []).filter(p => p).map(p =>
             p.prizeId === prizeId ? { ...p, rarity: newRarity } : p
         );
 
@@ -664,7 +680,7 @@ export default function CardPoolDetailPage() {
   const handleRemovePointPrize = async (prizeId: string) => {
       if (!cardPoolRef || !cardPool?.pointPrizes) return;
 
-      const prizeToRemove = cardPool.pointPrizes.find(p => p.prizeId === prizeId);
+      const prizeToRemove = (cardPool.pointPrizes || []).filter(p => p).find(p => p.prizeId === prizeId);
       if (!prizeToRemove) return;
 
       try {
@@ -673,7 +689,7 @@ export default function CardPoolDetailPage() {
               if (!poolDoc.exists()) throw "Pool not found";
 
               const currentPool = poolDoc.data() as CardPool;
-              const newPointPrizes = (currentPool.pointPrizes || []).filter(p => p.prizeId !== prizeId);
+              const newPointPrizes = (currentPool.pointPrizes || []).filter(p => p && p.prizeId !== prizeId);
               const newRemainingPacks = Math.max(0, (currentPool.remainingPacks || 0) - prizeToRemove.quantity);
 
               transaction.update(cardPoolRef, {

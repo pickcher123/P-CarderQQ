@@ -21,7 +21,7 @@ import { Label } from '@/components/ui/label';
 import { Card as UICard, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, Image as ImageIcon, Upload, ArrowLeft, Check, Settings, Gem, Package, Users, Trophy, Eye, EyeOff, Search, Loader2, Sparkles, Copy, ListChecks, UserCheck, Archive, Play } from 'lucide-react';
+import { PlusCircle, Trash2, Image as ImageIcon, Upload, ArrowLeft, Check, Settings, Gem, Package, Users, Trophy, Eye, EyeOff, Search, Loader2, Sparkles, Copy, ListChecks, UserCheck, Archive, Play, ChevronUp, ChevronDown } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -140,13 +140,16 @@ export default function LuckBagDetailPage() {
         item.allCardIds?.forEach((id: string) => ids.add(id));
     });
     allLuckBags?.forEach(bag => {
+        if (bag.id === luckBagId) return; // Skip current bag
         if (bag.prizes?.first) ids.add(bag.prizes.first);
         if (bag.prizes?.second) ids.add(bag.prizes.second);
         if (bag.prizes?.third) ids.add(bag.prizes.third);
-        bag.otherPrizes?.forEach((p: any) => ids.add(p.cardId));
+        bag.otherPrizes?.forEach((p: any) => {
+            if (p.type === 'card' && p.cardId) ids.add(p.cardId);
+        });
     });
     return ids;
-  }, [allCardPools, bettingItems, allLuckBags]);
+  }, [allCardPools, bettingItems, allLuckBags, luckBagId]);
 
   // Fetch ALL cards for the "Select Prize" dialog
   const allCardsCollectionRef = useMemoFirebase(() => {
@@ -185,19 +188,19 @@ export default function LuckBagDetailPage() {
     return { prizeCards: prizes, otherPrizesList: otherPrizesData, otherPointsList: otherPointsData };
   }, [luckBag, allCards]);
 
-  const handleAddOtherPrizes = useCallback(async (type: 'card' | 'points', data: { cardId?: string, points?: number }) => {
+  const handleAddOtherPrizes = useCallback(async (type: 'card' | 'points', data: { cardIds?: string[], points?: number }) => {
     if (!luckBagRef) return;
     try {
-        const newPrize: OtherPrize = { 
-            prizeId: uuidv4(), 
-            type,
-            ...(type === 'card' ? { cardId: data.cardId } : { points: data.points })
-        };
+        const newPrizes: OtherPrize[] = type === 'card' 
+            ? (data.cardIds || []).map(cardId => ({ prizeId: uuidv4(), type, cardId }))
+            : [{ prizeId: uuidv4(), type, points: data.points }];
+            
         await updateDoc(luckBagRef, {
-            otherPrizes: arrayUnion(newPrize)
+            otherPrizes: arrayUnion(...newPrizes)
         });
         toast({ title: '成功', description: `獎項已加入其他獎項。` });
         setIsPrizeDialogOpen(false);
+        setSelectedCardsToAdd([]);
     } catch (error) {
         console.error("Error adding other prizes:", error);
         toast({ variant: "destructive", title: "錯誤", description: "加入其他獎項時發生錯誤。" });
@@ -318,13 +321,37 @@ export default function LuckBagDetailPage() {
             await updateDoc(luckBagRef, {
                 otherPrizes: arrayRemove(prizeToRemove)
             });
-            toast({ title: '成功', description: '卡片已從其他獎項中移除。' });
+            toast({ title: '成功', description: '獎項已移除。' });
         }
     } catch (error) {
         console.error("Error removing other prize:", error);
-        toast({ variant: "destructive", title: "錯誤", description: "移除其他獎項時發生錯誤。" });
+        toast({ variant: "destructive", title: "錯誤", description: "移除獎項時發生錯誤。" });
     }
   }
+
+  const handleReorderOtherPrize = async (prizeId: string, direction: 'up' | 'down') => {
+    if (!luckBagRef || !bagDetails.otherPrizes) return;
+    const prizes = [...bagDetails.otherPrizes];
+    const index = prizes.findIndex(p => p.prizeId === prizeId);
+    if (index === -1) return;
+    
+    if (direction === 'up' && index > 0) {
+        [prizes[index], prizes[index - 1]] = [prizes[index - 1], prizes[index]];
+    } else if (direction === 'down' && index < prizes.length - 1) {
+        [prizes[index], prizes[index + 1]] = [prizes[index + 1], prizes[index]];
+    } else {
+        return;
+    }
+    
+    try {
+        await updateDoc(luckBagRef, { otherPrizes: prizes });
+        toast({ title: '成功', description: '排序已更新。' });
+    } catch (error) {
+        console.error("Error reordering prize:", error);
+        toast({ variant: "destructive", title: "錯誤", description: "更新排序時發生錯誤。" });
+    }
+  }
+
 
  const handleDistributePrizes = async () => {
     if (!firestore || !luckBagRef || !luckBag) {
@@ -862,7 +889,13 @@ export default function LuckBagDetailPage() {
                                                             <Image src={card.imageUrl} alt={card.name} width={32} height={45} className="rounded-sm" />
                                                         </TableCell>
                                                         <TableCell className="font-medium text-sm">{card.name}</TableCell>
-                                                        <TableCell className="text-right">
+                                                        <TableCell className="text-right flex items-center justify-end gap-2">
+                                                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleReorderOtherPrize(card.prizeId, 'up')}>
+                                                                <ChevronUp className="h-4 w-4" />
+                                                            </Button>
+                                                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleReorderOtherPrize(card.prizeId, 'down')}>
+                                                                <ChevronDown className="h-4 w-4" />
+                                                            </Button>
                                                             <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleRemoveOtherPrize(card.prizeId)}>
                                                                 <Trash2 className="h-4 w-4" />
                                                             </Button>
@@ -877,7 +910,13 @@ export default function LuckBagDetailPage() {
                                                             </div>
                                                         </TableCell>
                                                         <TableCell className="font-medium text-sm">{points.points} 點數</TableCell>
-                                                        <TableCell className="text-right">
+                                                        <TableCell className="text-right flex items-center justify-end gap-2">
+                                                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleReorderOtherPrize(points.prizeId, 'up')}>
+                                                                <ChevronUp className="h-4 w-4" />
+                                                            </Button>
+                                                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleReorderOtherPrize(points.prizeId, 'down')}>
+                                                                <ChevronDown className="h-4 w-4" />
+                                                            </Button>
                                                             <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleRemoveOtherPrize(points.prizeId)}>
                                                                 <Trash2 className="h-4 w-4" />
                                                             </Button>
@@ -964,7 +1003,7 @@ export default function LuckBagDetailPage() {
             {selectedPrizeLevel === 'other' && (
                 <DialogFooter>
                     <Button variant="outline" onClick={() => setIsPrizeDialogOpen(false)} className="font-bold">取消</Button>
-                    <Button onClick={handleAddOtherPrizes} disabled={selectedCardsToAdd.length === 0} className="bg-slate-900 text-white font-bold">
+                    <Button onClick={() => handleAddOtherPrizes('card', { cardIds: selectedCardsToAdd })} disabled={selectedCardsToAdd.length === 0} className="bg-slate-900 text-white font-bold">
                         新增 {selectedCardsToAdd.length} 個獎項
                     </Button>
                 </DialogFooter>

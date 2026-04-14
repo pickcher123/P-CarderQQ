@@ -48,7 +48,7 @@ export interface LuckBag {
         second?: string;
         third?: string;
     };
-    otherPrizes?: { cardId: string; prizeId: string; }[];
+    otherPrizes?: { cardId: string; prizeId: string; type?: 'card' | 'points'; points?: number }[];
     winners?: {
       [key: string]: number;
     }
@@ -62,6 +62,7 @@ export interface LuckBagWithCount extends LuckBag {
         third?: CardData;
     };
     otherPrizesList: (CardData & { prizeId: string }) [];
+    otherPointsList: { prizeId: string; points: number }[];
 }
 
 const LuckBagCard = ({ bag, priority = false, index }: { bag: LuckBagWithCount, priority?: boolean, index: number }) => {
@@ -206,17 +207,23 @@ export default function LuckyBagsPage() {
                     };
                     
                     const otherPrizesList = (bag.otherPrizes || [])
+                        .filter(p => p.type !== 'points')
                         .map(p => {
                             const card = cardMap.get(p.cardId);
                             return card ? { ...card, prizeId: p.prizeId } : null;
                         })
                         .filter((c): c is CardData & { prizeId: string } => !!c);
+                    
+                    const otherPointsList = (bag.otherPrizes || [])
+                        .filter(p => p.type === 'points')
+                        .map(p => ({ prizeId: p.prizeId, points: p.points || 0 }));
 
                     return {
                         ...bag,
                         participantCount,
                         prizeCards,
                         otherPrizesList,
+                        otherPointsList,
                     };
                 })
             );
