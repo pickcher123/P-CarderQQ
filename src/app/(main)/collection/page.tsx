@@ -183,7 +183,7 @@ export default function CollectionPage() {
 
       for (const card of cardsToSell) {
         batch.delete(doc(firestore, 'users', user.uid, 'userCards', card.id));
-        batch.update(doc(firestore, 'allCards', card.cardId), { isSold: false });
+        batch.update(doc(firestore, 'allCards', card.cardId), { isSold: true });
       }
 
       batch.set(doc(collection(firestore, 'transactions')), {

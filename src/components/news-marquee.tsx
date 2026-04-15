@@ -41,19 +41,19 @@ export function NewsMarquee() {
 
     return (
         <div className="bg-background/40 backdrop-blur-md border-b border-white/5 h-7 md:h-9 overflow-hidden relative flex items-center">
-            {/* 側邊品牌標籤 - 銳利化與精緻化 */}
-            <div className="absolute left-0 top-0 bottom-0 px-3 md:px-5 bg-background/90 backdrop-blur-xl z-20 flex items-center border-r border-primary/20">
+            {/* 品牌標籤 - 移至左側，增加左邊距以對齊 Logo */}
+            <div className="px-3 md:px-5 z-20 flex items-center ml-2 md:ml-4">
                 <span className="text-[8px] md:text-[10px] font-black text-primary uppercase tracking-[0.2em] italic whitespace-nowrap drop-shadow-[0_0_8px_rgba(6,182,212,0.4)]">
-                    最新消息
+                    NEWS
                 </span>
             </div>
 
             {/* 固定內容區塊 */}
             <Link 
                 href={`/news?id=${latestMarqueeItem.id}`} 
-                className="flex-1 flex items-center pl-24 md:pl-32 pr-4 text-[10px] md:text-sm text-muted-foreground hover:text-primary transition-all group overflow-hidden h-full"
+                className="flex items-center gap-3 text-[10px] md:text-sm text-muted-foreground hover:text-primary transition-all group overflow-hidden h-full px-4"
             >
-                <div className="flex items-center gap-3 w-full">
+                <div className="flex items-center gap-3">
                     {/* 置頂消息動態脈衝燈 */}
                     {latestMarqueeItem.isPinned ? (
                         <div className="flex items-center justify-center shrink-0">
@@ -77,7 +77,7 @@ export function NewsMarquee() {
                     </span>
                     
                     {/* 引導圖示：點擊提示 */}
-                    <div className="ml-auto flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
                         <span className="text-[8px] font-black uppercase tracking-widest text-primary/60 hidden md:inline">Detail</span>
                         <ChevronRight className="w-3 h-3 text-primary group-hover:translate-x-1 transition-transform" />
                     </div>

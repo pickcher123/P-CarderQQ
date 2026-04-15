@@ -46,17 +46,23 @@ export default function LuckyBagPage() {
                 };
                 
                 const otherPrizesList = (rawLuckBag.otherPrizes || [])
+                    .filter(p => p.type !== 'points')
                     .map(p => {
                         const card = cardMap.get(p.cardId);
                         return card ? { ...card, prizeId: p.prizeId } : null;
                     })
                     .filter((c): c is CardData & { prizeId: string } => !!c);
+                
+                const otherPointsList = (rawLuckBag.otherPrizes || [])
+                    .filter(p => p.type === 'points')
+                    .map(p => ({ prizeId: p.prizeId, points: p.points || 0 }));
 
                 setLuckBagWithData({
                     ...rawLuckBag,
                     participantCount,
                     prizeCards,
                     otherPrizesList,
+                    otherPointsList,
                 });
             } catch (error) {
                 console.error("Error fetching luck bag data:", error);

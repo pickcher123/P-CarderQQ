@@ -62,7 +62,7 @@ export default function Home() {
       <section className="relative min-h-[85vh] md:min-h-[95vh] flex items-center justify-center overflow-hidden py-4 md:py-8">
         <div className="absolute inset-0 z-0 overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-b from-primary/20 via-background to-background" />
-            <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-primary/10 rounded-full blur-[80px] md:blur-[120px] animate-pulse-slow" />
+            <div className="absolute top-1/6 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-primary/10 rounded-full blur-[80px] md:blur-[120px] animate-pulse-slow" />
             <div className="absolute bottom-1/4 left-1/3 w-[200px] md:w-[400px] h-[200px] md:h-[400px] bg-accent/5 rounded-full blur-[60px] md:blur-[100px] animate-blob" />
             <div className="absolute top-1/2 right-1/4 w-[250px] md:w-[500px] h-[250px] md:h-[500px] bg-primary/5 rounded-full blur-[80px] md:blur-[120px] animate-blob animation-delay-2000" />
         </div>
@@ -79,9 +79,8 @@ export default function Home() {
                 </span>
                 <span className="absolute inset-0 text-white blur-[15px] md:blur-[20px] opacity-20 pointer-events-none select-none">P+CARDER</span>
             </h1>
-            <p className="text-lg md:text-3xl text-muted-foreground max-w-2xl mx-auto font-body font-bold tracking-widest leading-relaxed opacity-80">
-                一抽入魂・滿團福袋<br className="sm:hidden" />
-                <span className="hidden sm:inline">・</span>刺激團拆<br />
+            <p className="text-lg md:text-3xl text-muted-foreground max-w-2xl mx-auto font-body font-bold tracking-widest leading-relaxed opacity-80 [image-rendering:pixelated] font-mono">
+                一站式球員卡遊玩平台<br />
                 <span className="text-primary/80">打造屬於你的玩卡體驗</span>
             </p>
           </div>
@@ -206,8 +205,8 @@ export default function Home() {
                         bg: 'bg-destructive/10'
                     },
                     { 
-                        title: '專業直播體驗', 
-                        desc: '業界領先的直播團拆系統，讓您在遠端也能同步感受現場開箱的狂熱心跳。', 
+                        title: '一站式遊玩平台', 
+                        desc: '整合抽卡、競技、福袋與團拆的多功能娛樂中心，提供流暢、公平且刺激的數位收藏體驗，滿足您對開箱的所有渴望。', 
                         icon: Zap, 
                         color: 'text-green-400',
                         bg: 'bg-green-400/10'
@@ -329,7 +328,36 @@ export default function Home() {
       <section className="container pb-20 md:pb-40 px-4 text-white">
         <Separator className="mb-20 md:mb-32 opacity-5" />
         
-        {/* 合作夥伴 Section */}
+        <div className="relative px-6 py-8 md:p-12 rounded-[32px] bg-gradient-to-br from-primary/10 via-card/60 to-accent/5 border border-white/5 overflow-hidden group shadow-lg backdrop-blur-xl animate-fade-in-up">
+          <div className="relative z-10 grid lg:grid-cols-2 gap-8 md:gap-12 items-center">
+            <div className="space-y-4 md:space-y-6 text-center lg:text-left">
+              <div className="inline-flex items-center gap-2 text-accent font-black font-headline tracking-[0.2em] text-[10px] md:text-xs">
+                <Sparkles className="w-4 h-4 fill-accent animate-pulse" /> 榮耀之路
+              </div>
+              <h2 className="text-2xl md:text-5xl font-black font-headline leading-[1.1] tracking-tight">榮耀皇冠<br className="hidden sm:block" />地位象徵</h2>
+              <p className="text-sm md:text-base text-muted-foreground leading-relaxed max-w-lg mx-auto lg:mx-0 font-body font-medium opacity-80">
+                解鎖專屬頭像框與進階稱號。從「新手收藏家」邁向傳說中的「P+卡神」，在排行榜上刻下您的不朽紀錄。
+              </p>
+              <div className="flex flex-col sm:flex-row flex-wrap gap-3 justify-center lg:justify-start">
+                <Button size="sm" asChild className="h-10 px-6 text-sm font-black rounded-xl shadow-lg bg-accent text-accent-foreground hover:bg-accent/90 transition-all hover:scale-105 active:scale-95 border-none">
+                    <Link href="/profile">查看我的身分階級</Link>
+                </Button>
+                <Button variant="ghost" size="sm" asChild className="h-10 px-6 text-sm font-bold text-white hover:bg-white/5 transition-all">
+                    <Link href="/vip">了解等級特權</Link>
+                </Button>
+              </div>
+            </div>
+            <div className="flex justify-center lg:justify-end">
+              <div className="relative w-32 h-32 md:w-48 md:h-48 animate-float">
+                <Trophy className="w-full h-full text-accent drop-shadow-[0_0_20px_rgba(234,179,8,0.4)]" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 合作夥伴 Section */}
+      <section className="container pb-20 md:pb-40 px-4 text-white">
         <div className="mb-20 md:mb-32">
             <div className="text-center mb-12 space-y-4">
                 <div className="inline-flex items-center gap-2 text-primary font-bold font-headline tracking-[0.4em] text-[10px] md:text-xs uppercase">
@@ -350,39 +378,6 @@ export default function Home() {
                 )}
             </div>
         </div>
-
-        <div className="relative px-6 py-16 md:p-24 rounded-[48px] md:rounded-[64px] bg-gradient-to-br from-primary/20 via-card/80 to-accent/10 border border-white/10 overflow-hidden group shadow-[0_0_80px_rgba(0,0,0,0.4)] backdrop-blur-2xl animate-fade-in-up">
-          <div className="absolute top-0 right-0 w-[400px] md:w-[600px] h-[400px] md:h-[600px] bg-primary/10 rounded-full blur-[100px] md:blur-[120px] -mr-40 md:-mr-64 -mt-40 md:-mt-64 transition-all duration-1000 group-hover:scale-125" />
-          <div className="absolute bottom-0 left-0 w-[250px] md:w-[400px] h-[250px] md:h-[400px] bg-accent/5 rounded-full blur-[80px] md:blur-[100px] -ml-20 md:-ml-40 -mb-20 md:-mb-40" />
-          
-          <div className="relative z-10 grid lg:grid-cols-2 gap-12 md:gap-16 items-center">
-            <div className="space-y-6 md:space-y-8 text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 text-accent font-black font-headline tracking-[0.4em] text-[10px] md:text-xs">
-                <Sparkles className="w-4 h-4 md:w-5 md:h-5 fill-accent animate-pulse" /> 榮耀之路
-              </div>
-              <h2 className="text-3xl md:text-7xl font-black font-headline leading-[1.1] tracking-tight">榮耀皇冠<br className="hidden sm:block" />地位象徵</h2>
-              <p className="text-base md:text-2xl text-muted-foreground leading-relaxed max-w-xl mx-auto lg:mx-0 font-body font-medium opacity-80">
-                解鎖專屬頭像框與進階稱號。從「新手收藏家」邁向傳說中的「P+卡神」，在排行榜上刻下您的不朽紀錄。
-              </p>
-              <div className="flex flex-col sm:flex-row flex-wrap gap-4 md:gap-6 justify-center lg:justify-start">
-                <Button size="lg" asChild className="h-14 md:h-16 px-8 md:px-10 text-base md:text-lg font-black rounded-2xl shadow-[0_0_20px_rgba(234,179,8,0.3)] bg-accent text-accent-foreground hover:bg-accent/90 transition-all hover:scale-105 active:scale-95 border-none">
-                    <Link href="/profile">查看我的身分階級</Link>
-                </Button>
-                <Button variant="ghost" asChild className="h-14 md:h-16 px-8 md:px-10 text-base md:text-lg font-bold text-white hover:bg-white/5 transition-all">
-                    <Link href="/vip">了解等級特權</Link>
-                </Button>
-              </div>
-            </div>
-            <div className="flex justify-center lg:justify-end">
-              <div className="relative w-48 h-48 md:w-[450px] md:h-[450px] animate-float">
-                <div className="absolute inset-0 bg-accent/20 rounded-full blur-[60px] md:blur-[100px] animate-pulse" />
-                <Trophy className="w-full h-full text-accent drop-shadow-[0_0_30px_rgba(234,179,8,0.6)] md:drop-shadow-[0_0_50px_rgba(234,179,8,0.6)]" />
-                <Sparkles className="absolute top-0 right-0 w-10 h-10 md:w-16 md:h-16 text-white animate-pulse" />
-                <Sparkles className="absolute bottom-6 left-0 md:bottom-10 md:left-0 w-6 h-6 md:w-10 md:h-10 text-accent fill-accent animate-bounce" />
-              </div>
-            </div>
-          </div>
-        </div>
       </section>
 
       {/* News Details Dialog (Fallback for cards if URL change isn't needed) */}
@@ -392,7 +387,7 @@ export default function Home() {
             selectedNews?.type === 'image' ? "max-w-4xl" : "max-w-2xl"
         )}>
           <DialogHeader className="sr-only">
-            <DialogTitle>{selectedNews?.title}</DialogTitle>
+            <DialogTitle>{selectedNews?.title || '最新消息'}</DialogTitle>
             <DialogDescription>最新消息詳情</DialogDescription>
           </DialogHeader>
           

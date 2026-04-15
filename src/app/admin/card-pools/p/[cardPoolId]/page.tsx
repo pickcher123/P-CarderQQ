@@ -181,7 +181,7 @@ export default function CardPoolDetailPage() {
   const [startTimeValue, setStartTimeValue] = useState("00:00");
   
   const [newPointPrize, setNewPointPrize] = useState({ points: 100, quantity: 10, rarity: 'common' as Rarity });
-  const [salesStats, setSalesStats] = useState({ totalPoolValue: 0, totalDrawnValue: 0, loss: 0 });
+  const [salesStats, setSalesStats] = useState({ totalPoolValue: 0, totalDrawnValue: 0, loss: 0, totalRevenue: 0 });
   const [isLoadingStats, setIsLoadingStats] = useState(true);
 
   // Fetch Card Pool details
@@ -206,7 +206,18 @@ export default function CardPoolDetailPage() {
       try {
         console.log('DEBUG: Current user:', auth ? (auth.currentUser?.uid || 'no user') : 'no auth object', auth?.currentUser?.email);
         console.log('DEBUG: Firestore instance:', firestore);
-        console.log('DEBUG: Transactions collection path:', collection(firestore, 'transactions').path);
+        
+        // Test access to each collection individually
+        const collectionsToTest = ['transactions', 'allCards', 'drawnCardLogs'];
+        for (const colName of collectionsToTest) {
+            try {
+                await getDocs(collection(firestore, colName));
+                console.log(`DEBUG: Successfully accessed collection: ${colName}`);
+            } catch (colErr) {
+                console.error(`DEBUG: Failed to access collection: ${colName}`, colErr);
+            }
+        }
+
         console.log('DEBUG: Querying transactions...');
         const txQuery = query(collection(firestore, 'transactions'), where('targetId', '==', cardPoolId));
         const txSnapshot = await getDocs(txQuery);
@@ -236,14 +247,18 @@ export default function CardPoolDetailPage() {
         });
         cardPool?.pointPrizes?.forEach(pp => {
             // P-point prizes divided by 10
-            totalPoolValue += (pp.points / 10) * pp.quantity;
+            if (pp && typeof pp.points === 'number') {
+                totalPoolValue += (pp.points / 10) * (pp.quantity || 0);
+            }
         });
         if (cardPool?.lastPrizeCardId) {
             totalPoolValue += cardMap.get(cardPool.lastPrizeCardId) || 0;
         }
         
+        console.log('DEBUG: Querying drawnCardLogs...');
         const drawnLogsQuery = query(collection(firestore, 'drawnCardLogs'), where('poolId', '==', cardPoolId));
         const drawnLogsSnapshot = await getDocs(drawnLogsQuery);
+        console.log('DEBUG: drawnCardLogs queried successfully.');
         
         let totalDrawnValue = 0;
         drawnLogsSnapshot.forEach(doc => {
@@ -254,7 +269,8 @@ export default function CardPoolDetailPage() {
         setSalesStats({
             totalPoolValue,
             totalDrawnValue: totalDrawnValue,
-            loss: totalSales - totalDrawnValue
+            loss: totalSales - totalDrawnValue,
+            totalRevenue: totalSales
         });
       } catch (e) {
         console.error('DEBUG: fetchSalesStats error:', e);
@@ -278,6 +294,7 @@ export default function CardPoolDetailPage() {
     
     // Cards in all pools (except current pool if we're just editing)
     allCardPools?.forEach(p => {
+        if (p.id === cardPoolId) return; // Skip current pool
         p.cards?.forEach(c => ids.add(c.cardId));
         if (p.lastPrizeCardId) ids.add(p.lastPrizeCardId);
     });
@@ -292,6 +309,7 @@ export default function CardPoolDetailPage() {
         if (bag.prizes?.first) ids.add(bag.prizes.first);
         if (bag.prizes?.second) ids.add(bag.prizes.second);
         if (bag.prizes?.third) ids.add(bag.prizes.third);
+        // Also ensure cards in "otherPrizes" are excluded
         bag.otherPrizes?.forEach((p: any) => ids.add(p.cardId));
     });
 
@@ -550,7 +568,12 @@ export default function CardPoolDetailPage() {
         setIsAddCardDialogOpen(false);
     } catch (error) {
         console.error("Error adding cards to pool:", error);
-        toast({ variant: "destructive", title: "錯誤", description: "加入卡片時發生錯誤。" });
+        console.log("Full error object:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
+        toast({ 
+            variant: "destructive", 
+            title: "錯誤", 
+            description: `加入卡片時發生錯誤: ${error instanceof Error ? error.message : JSON.stringify(error)}` 
+        });
     }
   }
 
@@ -602,7 +625,12 @@ export default function CardPoolDetailPage() {
         toast({ variant: 'destructive', title: '錯誤', description: '點數和數量必須大於 0。' });
         return;
     }
-    const prizeToAdd: PointPrize = { ...newPointPrize, prizeId: uuidv4() };
+    const prizeToAdd: PointPrize = { 
+        ...newPointPrize, 
+        prizeId: uuidv4(),
+        points: Number(newPointPrize.points),
+        quantity: Number(newPointPrize.quantity)
+    };
 
     try {
         await runTransaction(firestore, async (transaction) => {
@@ -610,7 +638,9 @@ export default function CardPoolDetailPage() {
             if (!poolDoc.exists()) throw "Pool not found";
 
             const currentPool = poolDoc.data() as CardPool;
-            const newPointPrizes = [...(currentPool.pointPrizes || []), prizeToAdd];
+            const existingPrizes = (currentPool.pointPrizes || []).filter(p => p && typeof p === 'object' && 'points' in p);
+            const newPointPrizes = [...existingPrizes, prizeToAdd]
+                .sort((a, b) => (b.points || 0) - (a.points || 0));
             const newRemainingPacks = (currentPool.remainingPacks || 0) + prizeToAdd.quantity;
             
             transaction.update(cardPoolRef, {
@@ -630,7 +660,7 @@ export default function CardPoolDetailPage() {
     const handlePointPrizeRarityChange = async (prizeId: string, newRarity: Rarity) => {
         if (!cardPoolRef || !poolDetails.pointPrizes) return;
 
-        const updatedPrizes = poolDetails.pointPrizes.map(p =>
+        const updatedPrizes = (poolDetails.pointPrizes || []).filter(p => p).map(p =>
             p.prizeId === prizeId ? { ...p, rarity: newRarity } : p
         );
 
@@ -650,7 +680,7 @@ export default function CardPoolDetailPage() {
   const handleRemovePointPrize = async (prizeId: string) => {
       if (!cardPoolRef || !cardPool?.pointPrizes) return;
 
-      const prizeToRemove = cardPool.pointPrizes.find(p => p.prizeId === prizeId);
+      const prizeToRemove = (cardPool.pointPrizes || []).filter(p => p).find(p => p.prizeId === prizeId);
       if (!prizeToRemove) return;
 
       try {
@@ -659,7 +689,7 @@ export default function CardPoolDetailPage() {
               if (!poolDoc.exists()) throw "Pool not found";
 
               const currentPool = poolDoc.data() as CardPool;
-              const newPointPrizes = (currentPool.pointPrizes || []).filter(p => p.prizeId !== prizeId);
+              const newPointPrizes = (currentPool.pointPrizes || []).filter(p => p && p.prizeId !== prizeId);
               const newRemainingPacks = Math.max(0, (currentPool.remainingPacks || 0) - prizeToRemove.quantity);
 
               transaction.update(cardPoolRef, {
@@ -1119,38 +1149,12 @@ export default function CardPoolDetailPage() {
                     </CardContent>
                 </UICard>
                 {poolDetails && <RarityProbabilities pool={poolDetails} allCards={allCards} />}
-                <UICard className="border-slate-200 bg-white shadow-sm overflow-hidden">
-                    <CardHeader className="bg-slate-50/50 border-b">
-                        <CardTitle className="flex items-center text-slate-900 font-black uppercase tracking-widest text-sm"><BarChart3 className="mr-3 text-primary h-4 w-4" />銷售統計對帳</CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-6 space-y-4">
-                        {isLoadingStats ? <Skeleton className="h-32 w-full rounded-xl" /> : (
-                            <>
-                                <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-100">
-                                    <span className="font-black text-slate-500 uppercase text-[10px] tracking-widest">卡池總價值</span>
-                                    <span className="font-code font-black text-slate-900">{salesStats.totalPoolValue.toLocaleString()}</span>
-                                </div>
-                                <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-100">
-                                    <span className="font-black text-slate-500 uppercase text-[10px] tracking-widest">已抽出卡片價值</span>
-                                    <span className="font-code font-black text-slate-900">{salesStats.totalDrawnValue.toLocaleString()}</span>
-                                </div>
-                                <div className="flex justify-between items-center p-3 bg-rose-50 rounded-xl border border-rose-100">
-                                    <span className="font-black text-rose-600 uppercase text-[10px] tracking-widest">目前帳面虧損</span>
-                                    <span className="font-code font-black text-rose-600">{salesStats.loss.toLocaleString()}</span>
-                                </div>
-                            </>
-                        )}
-                    </CardContent>
-                </UICard>
             </div>
         </div>
       </div>
 
       <Dialog open={isAddCardDialogOpen} onOpenChange={setIsAddCardDialogOpen}>
             <DialogContent className="light max-w-4xl h-[85vh] flex flex-col p-8 rounded-[2.5rem] bg-white text-slate-900">
-            <VisuallyHidden>
-                <DialogTitle>配置卡片</DialogTitle>
-            </VisuallyHidden>
             <DialogHeader className="mb-6">
                 <DialogTitle className="text-2xl font-black tracking-tight text-slate-900 italic uppercase"> {targetPrizeType === 'last' ? '設定最後賞指定資產' : `配置卡片至「${cardPool?.name}」`} </DialogTitle>
                 <DialogDescription className="font-bold text-slate-500">
