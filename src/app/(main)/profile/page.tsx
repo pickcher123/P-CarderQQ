@@ -325,26 +325,24 @@ export default function ProfilePage() {
 
                     <div className="grid grid-cols-1 gap-4">
                         <Card className="bg-card/30 backdrop-blur-xl border-white/5 rounded-[2rem] overflow-hidden">
-                            <CardHeader className="pb-2 pt-6 px-6"><CardTitle className="text-[10px] uppercase font-black tracking-[0.2em] text-muted-foreground">資產概覽 (鑽石)</CardTitle></CardHeader>
-                            <CardContent className="px-6 pb-6">
+                            <CardContent className="p-6">
                                 <div className="flex justify-between items-center">
                                     <div className="flex items-center gap-3">
                                         <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20"><Gem className="h-5 w-5 text-primary drop-shadow-[0_0_8px_rgba(6,182,212,0.6)]"/></div>
-                                        <span className="font-black font-code text-2xl text-white">{userProfile.points?.toLocaleString() || 0}</span>
+                                        <span className="text-[10px] uppercase font-black tracking-[0.2em] text-muted-foreground">鑽石餘額</span>
                                     </div>
-                                    <Badge className="bg-primary text-primary-foreground font-black text-[9px] uppercase">鑽石餘額</Badge>
+                                    <span className="font-black font-code text-2xl text-white">{userProfile.points?.toLocaleString() || 0}</span>
                                 </div>
                             </CardContent>
                         </Card>
                         <Card className="bg-card/30 backdrop-blur-xl border-white/5 rounded-[2rem] overflow-hidden">
-                            <CardHeader className="pb-2 pt-6 px-6"><CardTitle className="text-[10px] uppercase font-black tracking-[0.2em] text-muted-foreground">紅利獎勵 (P+)</CardTitle></CardHeader>
-                            <CardContent className="px-6 pb-6">
+                            <CardContent className="p-6">
                                 <div className="flex justify-between items-center">
                                     <div className="flex items-center gap-3">
                                         <div className="p-2.5 rounded-xl bg-accent/10 border border-accent/20"><PPlusIcon className="h-5 w-5" /></div>
-                                        <span className="font-black font-code text-2xl text-accent">{userProfile.bonusPoints?.toLocaleString() || 0}</span>
+                                        <span className="text-[10px] uppercase font-black tracking-[0.2em] text-muted-foreground">紅利 P+</span>
                                     </div>
-                                    <Badge className="bg-accent text-accent-foreground font-black text-[9px] uppercase">紅利 P+</Badge>
+                                    <span className="font-black font-code text-2xl text-accent">{userProfile.bonusPoints?.toLocaleString() || 0}</span>
                                 </div>
                             </CardContent>
                         </Card>

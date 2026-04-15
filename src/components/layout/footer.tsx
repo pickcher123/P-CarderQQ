@@ -21,7 +21,8 @@ export function Footer() {
         <div className="text-center text-xs leading-loose text-muted-foreground sm:text-sm">
           <p>© {new Date().getFullYear()} P+Carder. All rights reserved.</p>
           <p>云希國際股份有限公司 統一編號: 90301251</p>
-          <p>Email: pickcher1234@gmail.com | Line@: @288qqsyq</p>
+          <p>Email: pickcher1234@gmail.com</p>
+          <p>Line@: @288qqsyq</p>
         </div>
         
         {/* 版本標籤強化 - 置中顯示於底部 */}
