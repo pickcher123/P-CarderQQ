@@ -245,16 +245,24 @@ export default function BetCategoryPage() {
                             <span className="text-xs uppercase tracking-widest hidden md:inline">遊戲規則</span>
                         </Button>
                     </DialogTrigger>
-                    <DialogContent className="rounded-[2.5rem] bg-background/95 backdrop-blur-2xl border-destructive/20 shadow-2xl">
+                    <DialogContent className="rounded-[2.5rem] bg-background/95 backdrop-blur-2xl border-destructive/20 shadow-2xl max-w-6xl">
                         <DialogHeader>
                             <DialogTitle className="text-2xl font-black font-headline text-destructive italic tracking-tighter">CASINO RULES</DialogTitle>
                         </DialogHeader>
                         <div className="space-y-5 text-sm text-white/80 leading-relaxed py-2">
-                            <div className="p-5 rounded-3xl bg-white/5 border border-white/10 space-y-4">
-                                <p className="flex items-start gap-4"><span className="text-destructive font-black font-code text-lg">01.</span> 「拼卡」是一種 1/10 中獎機率的遊戲。</p>
-                                <p className="flex items-start gap-4"><span className="text-destructive font-black font-code text-lg">02.</span> 玩家可以選擇使用「鑽石」或「紅利 P+ 點」支付。</p>
-                                <p className="flex items-start gap-4"><span className="text-destructive font-black font-code text-lg">03.</span> <span className="text-accent font-bold underline underline-offset-4 mr-1">鑽石與 P+ 點比例為 1:10</span>。</p>
-                                <p className="flex items-start gap-4"><span className="text-destructive font-black font-code text-lg">04.</span> 確認下注後，系統將隨機抽出一個幸運號碼。若匹配，您就贏得了該張卡片！</p>
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <div className="p-3 rounded-3xl bg-white/5 border border-white/10 space-y-2">
+                                    <p className="flex items-start gap-2 text-xs"><span className="text-destructive font-black font-code text-sm">01.</span> 「拼卡」是一種 1/10 中獎機率的遊戲。</p>
+                                </div>
+                                <div className="p-3 rounded-3xl bg-white/5 border border-white/10 space-y-2">
+                                    <p className="flex items-start gap-2 text-xs"><span className="text-destructive font-black font-code text-sm">02.</span> 玩家可以選擇使用「鑽石」或「紅利 P+ 點」支付。</p>
+                                </div>
+                                <div className="p-3 rounded-3xl bg-white/5 border border-white/10 space-y-2">
+                                    <p className="flex items-start gap-2 text-xs"><span className="text-destructive font-black font-code text-sm">03.</span> <span className="text-accent font-bold underline underline-offset-4 mr-1">鑽石與 P+ 點比例為 1:10</span>。</p>
+                                </div>
+                                <div className="p-3 rounded-3xl bg-white/5 border border-white/10 space-y-2">
+                                    <p className="flex items-start gap-2 text-xs"><span className="text-destructive font-black font-code text-sm">04.</span> 確認下注後，系統將隨機抽出一個幸運號碼。若匹配，您就贏得了該張卡片！</p>
+                                </div>
                             </div>
                         </div>
                     </DialogContent>

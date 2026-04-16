@@ -155,7 +155,7 @@ export default function BetLandingPage() {
 
             {/* 直觀遊戲規則區塊 - 手機版四宮格美化版 */}
             <div className="max-w-6xl mx-auto mb-12 md:mb-16 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
-                <div className="grid grid-cols-2 gap-3 md:gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
                     {[
                         { title: '1/10 命中率', desc: '每注固定 10% 機率直接帶走卡片', icon: Target, color: 'text-primary', bg: 'bg-primary/10' },
                         { title: '雙幣別支付', desc: '支援使用鑽石或紅利 P+ 參與', icon: RefreshCw, color: 'text-accent', bg: 'bg-accent/10' },

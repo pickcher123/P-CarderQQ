@@ -436,29 +436,36 @@ export default function VIPZonePage() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-3 mb-16 relative z-10">
-                <Card className="bg-card/40 border-primary/30 rounded-2xl backdrop-blur-xl text-white overflow-hidden group p-4">
-                    <div className="flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-2 shrink-0">
-                            <CalendarCheck className="w-4 h-4 text-primary" />
-                            <span className="text-xs font-black font-headline uppercase tracking-widest text-primary">簽到</span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16 relative z-10">
+                <Card className="bg-card/40 border-primary/30 rounded-3xl backdrop-blur-xl text-white overflow-hidden group p-6 flex flex-col gap-4">
+                    <div className="flex items-center gap-3">
+                        <div className="p-3 rounded-2xl bg-primary/10 text-primary">
+                            <CalendarCheck className="w-6 h-6" />
                         </div>
-                        <div className="flex-1 min-w-0">
-                            <CompactDailyCheckIn />
+                        <div>
+                            <h3 className="text-lg font-black font-headline uppercase tracking-widest text-white">每日簽到</h3>
+                            <p className="text-xs text-muted-foreground font-medium">每日登入領取紅利點數，累積您的專屬財富。</p>
                         </div>
                     </div>
+                    <CompactDailyCheckIn />
                 </Card>
-                <Card className="bg-card/40 border-accent/30 rounded-2xl backdrop-blur-xl text-white overflow-hidden group p-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <PPlusIcon className="w-4 h-4 text-accent" />
-                            <span className="text-xs font-black font-headline uppercase tracking-widest text-accent">紅利 P+</span>
+                <Card className="bg-card/40 border-accent/30 rounded-3xl backdrop-blur-xl text-white overflow-hidden group p-6 flex flex-col gap-4">
+                    <div className="flex items-center gap-3">
+                        <div className="p-3 rounded-2xl bg-accent/10 text-accent">
+                            <PPlusIcon className="w-6 h-6" />
                         </div>
+                        <div>
+                            <h3 className="text-lg font-black font-headline uppercase tracking-widest text-white">紅利 P+ 兌換</h3>
+                            <p className="text-xs text-muted-foreground font-medium">使用累積的紅利點數，兌換各式精選實體獎品。</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center justify-between bg-black/20 p-4 rounded-2xl border border-white/5">
+                        <span className="text-sm font-bold text-white/70">目前餘額</span>
                         <div className="flex items-center gap-3">
-                            <p className="text-lg font-black font-code text-accent">{(userProfile?.bonusPoints ?? 0).toLocaleString()}</p>
+                            <p className="text-2xl font-black font-code text-accent">{(userProfile?.bonusPoints ?? 0).toLocaleString()}</p>
                             <RedeemPrizesDialog>
-                                <Button className="bg-accent text-accent-foreground font-black px-4 h-8 rounded-xl text-xs shadow-[0_0_10px_rgba(234,179,8,0.2)] hover:scale-105 transition-all">
-                                    兌換
+                                <Button className="bg-accent text-accent-foreground font-black px-6 h-10 rounded-xl text-sm shadow-[0_0_15px_rgba(234,179,8,0.3)] hover:scale-105 transition-all">
+                                    前往兌換
                                 </Button>
                             </RedeemPrizesDialog>
                         </div>

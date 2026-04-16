@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { CardItem } from '@/components/card-item';
 import { cn } from '@/lib/utils';
@@ -182,6 +183,14 @@ export default function OpenPackPage() {
     const [revealPercent, setRevealPercent] = useState(0);
     const [isSqueezing, setIsSqueezing] = useState(false);
     const [isChanging, setIsChanging] = useState(false); 
+    const [landingVFX, setLandingVFX] = useState<'none' | 'rare' | 'legendary'>('none');
+
+    const topRarityCelebration = useMemo(() => {
+        if (drawnPrizes.length === 0) return 'none';
+        const hasLegendary = drawnPrizes.some(p => p.rarity === 'legendary');
+        const hasRare = drawnPrizes.some(p => p.rarity === 'rare');
+        return hasLegendary ? 'legendary' : (hasRare ? 'rare' : 'none');
+    }, [drawnPrizes]);
     
     // Reset timer on draw
     useEffect(() => {
@@ -652,7 +661,7 @@ export default function OpenPackPage() {
              }}
         >
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-            <CelebrationVFX type={showCelebration} />
+            <CelebrationVFX type={landingVFX !== 'none' ? landingVFX : showCelebration} />
             <Button variant="ghost" onClick={() => router.back()} className="absolute top-2 left-2 font-bold text-white/40 z-50 text-xs"><ArrowLeft className="mr-1 h-3 w-3" /> 返回</Button>
             
             <div className="w-full flex flex-col items-center justify-end pb-1 min-h-[40px] z-10 select-none mt-10 md:mt-0">
@@ -689,7 +698,24 @@ export default function OpenPackPage() {
 
             {step !== 'done' ? (
                 <div className="flex flex-col items-center justify-center pt-2 w-full relative transition-all duration-500 select-none">
-                    <div className="flex flex-col items-center w-full max-w-[170px] md:max-w-[220px] relative">
+                    <motion.div 
+                        initial={{ y: -800, opacity: 0, scale: 0.2, rotate: -45, filter: 'blur(50px)' }}
+                        animate={{ y: 0, opacity: 1, scale: 1, rotate: 0, filter: 'blur(0px)' }}
+                        onAnimationComplete={() => {
+                            if (topRarityCelebration !== 'none' && landingVFX === 'none') {
+                                setLandingVFX(topRarityCelebration);
+                                setTimeout(() => setLandingVFX('none'), 2000);
+                            }
+                        }}
+                        transition={{ 
+                            type: 'spring', 
+                            stiffness: 120, 
+                            damping: 10,
+                            mass: 1.5,
+                            duration: 1.2
+                        }}
+                        className="flex flex-col items-center w-full max-w-[170px] md:max-w-[220px] relative"
+                    >
                         <div className={cn("relative p-1 bg-slate-900 border-[5px] border-slate-950 rounded-[2.2rem] shadow-2xl overflow-hidden w-full transition-all duration-700", step === 'revealing' && revealPercent === 100 && visual.glow)}>
                             <div 
                                 ref={squeezeRef} 
@@ -759,7 +785,7 @@ export default function OpenPackPage() {
                                 <FastForward className="w-3 h-3 mr-1.5 animate-pulse" /> 快速開獎 SKIP
                             </Button>
                         )}
-                    </div>
+                    </motion.div>
                 </div>
             ) : (
                 <div className="w-full max-w-6xl px-4 z-20 overflow-y-auto custom-scrollbar select-none flex-grow mt-0">

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Package, Users2, ChevronRight, Trophy, Sparkles, Newspaper, Calendar, ShieldCheck, Zap, Target, Crown } from 'lucide-react';
+import { Package, Users2, ChevronRight, Trophy, Sparkles, Newspaper, Calendar, ShieldCheck, Zap, Target, Crown, Gem } from 'lucide-react';
 import { Logo, CrossedCardsIcon, LuckyBagIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
@@ -73,11 +73,11 @@ export default function Home() {
           </div>
           
           <div className="space-y-3 md:space-y-4 animate-fade-in-up">
-            <h1 className="font-headline text-4xl sm:text-5xl md:text-[10rem] font-black tracking-tighter leading-none relative">
-                <span className="bg-clip-text text-transparent bg-gradient-to-b from-white via-white/90 to-primary/40 drop-shadow-[0_0_15px_rgba(6,182,212,0.3)]">
+            <h1 className="font-headline text-5xl sm:text-7xl md:text-[12rem] font-black tracking-tighter leading-none relative">
+                <span className="bg-clip-text text-transparent bg-gradient-to-b from-white via-white/90 to-primary/40 drop-shadow-[0_0_25px_rgba(6,182,212,0.5)]">
                     P+CARDER
                 </span>
-                <span className="absolute inset-0 text-white blur-[15px] md:blur-[20px] opacity-20 pointer-events-none select-none">P+CARDER</span>
+                <span className="absolute inset-0 text-white blur-[20px] md:blur-[30px] opacity-30 pointer-events-none select-none">P+CARDER</span>
             </h1>
             <p className="text-lg md:text-3xl text-muted-foreground max-w-2xl mx-auto font-body font-bold tracking-widest leading-relaxed opacity-80 [image-rendering:pixelated] font-mono">
                 一站式球員卡遊玩平台<br />
@@ -188,46 +188,46 @@ export default function Home() {
                 <div className="w-16 h-1 bg-primary mx-auto rounded-full shadow-[0_0_15px_rgba(6,182,212,0.6)]" />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 animate-fade-in-up text-white">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 px-4">
                 {[
                     { 
-                        title: '絕對公平透明', 
-                        desc: '即時機率披露與數位存證，每一抽都經得起驗證，杜絕任何暗改可能。', 
+                        title: '公開透明存證', 
+                        desc: '每一張核心卡片皆經數位存證，確保來源真實、所有權明確，打造最讓人放心的收藏環境。', 
                         icon: ShieldCheck, 
                         color: 'text-primary',
                         bg: 'bg-primary/10'
                     },
                     { 
-                        title: '資產數位守護', 
-                        desc: '您的每一份戰利品都是受保護的數位資產，隨時可申請出貨或快速轉點。', 
+                        title: '公平機率披露', 
+                        desc: '絕不隱藏真實資訊，所有卡池機率完全公開披露，讓每一次抽卡都憑實力與運氣，回歸遊玩初衷。', 
                         icon: Target, 
-                        color: 'text-destructive',
-                        bg: 'bg-destructive/10'
+                        color: 'text-yellow-400',
+                        bg: 'bg-yellow-400/10'
                     },
                     { 
-                        title: '一站式遊玩平台', 
-                        desc: '整合抽卡、競技、福袋與團拆的多功能娛樂中心，提供流暢、公平且刺激的數位收藏體驗，滿足您對開箱的所有渴望。', 
+                        title: '即時互動體驗', 
+                        desc: '打破實體卡片的侷限，隨時隨地享受極具張力的數位開包效果，將收藏熱忱轉化為指尖的極致快感。', 
                         icon: Zap, 
+                        color: 'text-pink-400',
+                        bg: 'bg-pink-400/10'
+                    },
+                    { 
+                        title: '專屬藏友社群', 
+                        desc: '透過團拆與互動競技，與志同道合的藏友並肩遊玩，交流珍稀卡片，建立屬於你的球員卡核心交友圈。', 
+                        icon: Users2, 
                         color: 'text-green-400',
                         bg: 'bg-green-400/10'
-                    },
-                    { 
-                        title: '完善 VIP 特權', 
-                        desc: '專屬等級福利、免運特權與高額紅利 P 點回饋，讓收藏之旅更具價值。', 
-                        icon: Trophy, 
-                        color: 'text-accent',
-                        bg: 'bg-accent/10'
                     },
                 ].map((item, i) => (
                     <div 
                         key={i} 
-                        className="p-8 rounded-[2rem] bg-card/30 backdrop-blur-xl border border-white/5 hover:border-primary/30 transition-all duration-500 shadow-xl group"
+                        className="p-8 rounded-3xl bg-card/40 border border-white/5 flex flex-col items-center text-center hover:border-primary/50 transition-all duration-300 hover:shadow-2xl hover:bg-card/60 hover:-translate-y-2"
                     >
-                        <div className={cn("p-4 rounded-2xl w-fit mb-6 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3 shadow-inner", item.bg, item.color)}>
+                        <div className={cn("p-4 rounded-full mb-6", item.bg, item.color)}>
                             <item.icon className="w-8 h-8" />
                         </div>
-                        <h3 className="text-xl font-black mb-3 font-headline tracking-wide text-white group-hover:text-primary transition-colors">{item.title}</h3>
-                        <p className="text-sm text-muted-foreground leading-relaxed font-medium opacity-80">{item.desc}</p>
+                        <h3 className="text-xl font-black mb-3">{item.title}</h3>
+                        <p className="text-sm text-muted-foreground font-medium leading-relaxed">{item.desc}</p>
                     </div>
                 ))}
             </div>
