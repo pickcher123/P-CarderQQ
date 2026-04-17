@@ -290,11 +290,14 @@ function CompactDailyCheckIn() {
 
   if (!loginMission) return null;
   return (
-    <Button variant="outline" className={cn("h-14 w-full px-6 rounded-2xl border-primary/30 transition-all", hasClaimedToday ? "bg-white/5 opacity-60 text-white/40" : "bg-primary/10 hover:bg-primary/20 shadow-[0_0_20px_rgba(6,182,212,0.2)] text-white")} disabled={hasClaimedToday || !loginMission.isActive || !!claimingId} onClick={handleCheckIn}>
-        <div className="flex items-center gap-3 w-full">
-            {claimingId === loginMission.id ? <Loader2 className="animate-spin h-5 w-5 text-primary" /> : hasClaimedToday ? <CheckCircle2 className="h-5 w-5 text-green-500" /> : <CalendarCheck className="h-5 w-5 text-primary animate-bounce" />}
-            <div className="text-left flex-1"><p className="text-xs font-black uppercase tracking-widest">{hasClaimedToday ? '今日已領取' : '立即領取獎勵'}</p><p className="text-[10px] font-bold text-white/40 flex items-center gap-1">簽到獎勵: <PPlusIcon className="w-2.5 h-2.5" /><span className="text-accent">+{loginMission.rewardPoints}</span></p></div>
-            {!hasClaimedToday && <ChevronRight className="w-4 h-4 text-primary animate-pulse" />}
+    <Button variant="outline" className={cn("h-10 w-full px-3 rounded-xl border-primary/30 transition-all text-xs", hasClaimedToday ? "bg-white/5 opacity-60 text-white/40" : "bg-primary/10 hover:bg-primary/20 shadow-[0_0_10px_rgba(6,182,212,0.1)] text-white")} disabled={hasClaimedToday || !loginMission.isActive || !!claimingId} onClick={handleCheckIn}>
+        <div className="flex items-center gap-2 w-full">
+            {claimingId === loginMission.id ? <Loader2 className="animate-spin h-4 w-4 text-primary" /> : hasClaimedToday ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <CalendarCheck className="h-4 w-4 text-primary" />}
+            <div className="text-left flex-1 truncate">
+                <p className="text-[10px] font-black uppercase tracking-widest">{hasClaimedToday ? '今日已領取' : '每日簽到領取'}</p>
+                {!hasClaimedToday && <p className="text-[9px] text-accent/80 font-bold">+ {loginMission.rewardPoints} P點</p>}
+            </div>
+            {!hasClaimedToday && <PPlusIcon className="w-3 h-3 text-accent" />}
         </div>
     </Button>
   );
@@ -437,35 +440,39 @@ export default function VIPZonePage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16 relative z-10">
-                <Card className="bg-card/40 border-primary/30 rounded-[2.5rem] backdrop-blur-xl text-white overflow-hidden group">
-                    <CardHeader>
-                        <CardTitle className="text-primary font-headline italic tracking-widest uppercase flex items-center gap-2">
-                            <CalendarCheck className="w-5 h-5" /> 每日簽到領取
-                        </CardTitle>
-                        <CardDescription className="text-white/60 font-medium">天天登入領取免費紅利 P+ 點數。</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <CompactDailyCheckIn />
-                    </CardContent>
-                </Card>
-                <Card className="bg-card/40 border-accent/30 rounded-[2.5rem] backdrop-blur-xl text-white overflow-hidden group">
-                    <CardHeader>
-                        <CardTitle className="text-accent font-headline italic tracking-widest uppercase flex items-center gap-2">
-                            <PPlusIcon className="w-5 h-5" /> 紅利 P+ 點數
-                        </CardTitle>
-                        <CardDescription className="text-white/60 font-medium">透過抽卡或參與活動獲得。</CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex flex-col sm:flex-row items-center justify-between gap-4 md:gap-6">
-                        <div className="flex items-center gap-3 w-full sm:w-auto justify-center sm:justify-start">
-                            <PPlusIcon className="w-8 h-8 md:w-10 md:h-10 shrink-0" />
-                            <p className="text-3xl md:text-4xl font-black font-code text-accent truncate">{(userProfile?.bonusPoints ?? 0).toLocaleString()}</p>
+                <Card className="bg-card/40 border-primary/30 rounded-3xl backdrop-blur-xl text-white overflow-hidden group p-6 flex flex-col gap-4">
+                    <div className="flex items-center gap-3">
+                        <div className="p-3 rounded-2xl bg-primary/10 text-primary">
+                            <CalendarCheck className="w-6 h-6" />
                         </div>
-                        <RedeemPrizesDialog>
-                            <Button className="w-full sm:w-auto bg-accent text-accent-foreground font-black px-8 h-12 rounded-2xl shadow-[0_0_20px_rgba(234,179,8,0.3)] hover:scale-105 transition-all">
-                                前往兌換
-                            </Button>
-                        </RedeemPrizesDialog>
-                    </CardContent>
+                        <div>
+                            <h3 className="text-lg font-black font-headline uppercase tracking-widest text-white">每日簽到</h3>
+                            <p className="text-xs text-muted-foreground font-medium">每日登入領取紅利點數，累積您的專屬財富。</p>
+                        </div>
+                    </div>
+                    <CompactDailyCheckIn />
+                </Card>
+                <Card className="bg-card/40 border-accent/30 rounded-3xl backdrop-blur-xl text-white overflow-hidden group p-6 flex flex-col gap-4">
+                    <div className="flex items-center gap-3">
+                        <div className="p-3 rounded-2xl bg-accent/10 text-accent">
+                            <PPlusIcon className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-black font-headline uppercase tracking-widest text-white">紅利 P+ 兌換</h3>
+                            <p className="text-xs text-muted-foreground font-medium">使用累積的紅利點數，兌換各式精選實體獎品。</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center justify-between bg-black/20 p-4 rounded-2xl border border-white/5">
+                        <span className="text-sm font-bold text-white/70">目前餘額</span>
+                        <div className="flex items-center gap-3">
+                            <p className="text-2xl font-black font-code text-accent">{(userProfile?.bonusPoints ?? 0).toLocaleString()}</p>
+                            <RedeemPrizesDialog>
+                                <Button className="bg-accent text-accent-foreground font-black px-6 h-10 rounded-xl text-sm shadow-[0_0_15px_rgba(234,179,8,0.3)] hover:scale-105 transition-all">
+                                    前往兌換
+                                </Button>
+                            </RedeemPrizesDialog>
+                        </div>
+                    </div>
                 </Card>
             </div>
 
@@ -481,7 +488,7 @@ export default function VIPZonePage() {
                     <div className="h-px flex-1 bg-gradient-to-r from-amber-500/30 to-transparent ml-4 hidden sm:block" />
                 </div>
 
-                <div className="grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-1">
                     {userLevels.map((lvl, index) => {
                         const isCurrent = userProfile.userLevel === lvl.level;
                         const userSpend = userProfile.totalSpent || 0;
@@ -492,32 +499,31 @@ export default function VIPZonePage() {
                             <div 
                                 key={lvl.level} 
                                 className={cn(
-                                    "flex flex-col md:flex-row items-center justify-between p-6 rounded-[2rem] border transition-all duration-500 group",
+                                    "flex flex-row items-center justify-between p-4 md:p-6 rounded-2xl md:rounded-[2rem] border transition-all duration-500 group",
                                     isCurrent ? "bg-primary/20 border-primary shadow-[0_0_30px_rgba(6,182,212,0.3)]" : 
                                     isUnlocked ? "bg-white/10 border-white/20" : "bg-black/80 border-white/10"
                                 )}
                                 style={!isUnlocked ? { opacity: 0.85 } : {}}
                             >
-                                <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-left flex-1">
-                                    <div className="relative">
-                                        <MemberLevelCrown level={lvl.level} size="sm" />
-                                        {isUnlocked && !isCurrent && <CheckCircle2 className="absolute -top-1 -right-1 w-4 h-4 text-green-500 bg-background rounded-full" />}
+                                <div className="flex items-center gap-3 md:gap-6 text-left flex-1">
+                                    <div className="relative shrink-0">
+                                        <MemberLevelCrown level={lvl.level} size="xs" />
+                                        {isUnlocked && !isCurrent && <CheckCircle2 className="absolute -top-1 -right-1 w-3 h-3 text-green-500 bg-background rounded-full" />}
                                     </div>
-                                    <div>
-                                        <h3 className={cn("text-xl font-black font-headline tracking-wide", lvl.color, !isUnlocked && "opacity-60")}>{lvl.level}</h3>
-                                        <p className="text-xs text-slate-300 font-bold font-code mt-1 flex items-center gap-2">
-                                            解鎖門檻: <span className="text-white">{(lvl.threshold).toLocaleString()}</span> 💎
+                                    <div className="min-w-0">
+                                        <h3 className={cn("text-sm md:text-xl font-black font-headline tracking-wide truncate", lvl.color, !isUnlocked && "opacity-60")}>{lvl.level}</h3>
+                                        <p className="text-[9px] md:text-xs text-slate-300 font-bold font-code mt-0.5 flex items-center gap-1">
+                                            門檻: <span className="text-white">{(lvl.threshold).toLocaleString()}</span> 💎
                                         </p>
                                     </div>
                                 </div>
 
-                                <div className="flex flex-wrap items-center justify-center md:justify-end gap-3 mt-6 md:mt-0">
-                                    {b.free && <Badge variant="outline" className="border-green-500/50 text-green-400 bg-green-500/10 px-3 py-1 font-black"><Truck className="w-3 h-3 mr-1.5"/> 免運費</Badge>}
-                                    {b.rate > 0 && <Badge variant="outline" className="border-primary/50 text-primary bg-primary/10 px-3 py-1 font-black"><PPlusIcon className="w-3 h-3 mr-1.5"/> 回饋率 {b.rate}%</Badge>}
-                                    {!b.free && b.rate === 0 && <span className="text-[10px] text-white/40 font-black uppercase tracking-widest italic">Standard Benefits</span>}
+                                <div className="flex items-center justify-end gap-2 shrink-0">
+                                    {b.free && <Badge variant="outline" className="border-green-500/50 text-green-400 bg-green-500/10 px-2 py-0.5 text-[9px] md:text-xs font-black"><Truck className="w-2.5 h-2.5 md:w-3 md:h-3 mr-1"/> 免運</Badge>}
+                                    {b.rate > 0 && <Badge variant="outline" className="border-primary/50 text-primary bg-primary/10 px-2 py-0.5 text-[9px] md:text-xs font-black"><PPlusIcon className="w-2.5 h-2.5 md:w-3 md:h-3 mr-1"/> {b.rate}%</Badge>}
                                     
-                                    {isCurrent && <Badge className="bg-primary text-primary-foreground font-black px-4 py-1 shadow-[0_0_15px_rgba(6,182,212,0.5)]">目前等級</Badge>}
-                                    {!isUnlocked && <Lock className="w-5 h-5 text-white/40" />}
+                                    {isCurrent && <Badge className="bg-primary text-primary-foreground font-black px-2 py-0.5 text-[9px] md:text-xs shadow-[0_0_15px_rgba(6,182,212,0.5)]">目前</Badge>}
+                                    {!isUnlocked && <Lock className="w-4 h-4 text-white/40" />}
                                 </div>
                             </div>
                         )

@@ -100,32 +100,46 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                     <div className="flex items-center font-code text-[10px] sm:text-xs font-semibold bg-secondary/50 rounded-xl dark:bg-card/50 overflow-hidden border border-white/5 backdrop-blur-md shadow-lg">
                         <Popover>
                             <PopoverTrigger asChild>
-                                <div className="flex items-center px-3 sm:px-4 py-1.5 cursor-pointer hover:bg-white/5 transition-all group">
-                                    <Gem className="mr-1.5 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:w-4 text-primary drop-shadow-[0_0_8px_rgba(6,182,212,0.6)]" />
-                                    <span className="text-foreground dark:text-white drop-shadow-md truncate min-w-[40px] max-w-[90px] sm:max-w-none text-center">
-                                        {isProfileLoading ? '...' : (userProfile?.points ?? 0).toLocaleString()}
-                                    </span>
-                                    <ChevronDown className="ml-1 sm:ml-1.5 h-2.5 w-2.5 opacity-30 group-hover:opacity-100 group-hover:translate-y-0.5 transition-all" />
+                                <div className="flex items-center cursor-pointer hover:bg-white/5 transition-all group">
+                                    <div className="flex items-center px-3 sm:px-4 py-1.5">
+                                        <Gem className="mr-1.5 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:w-4 text-primary drop-shadow-[0_0_8px_rgba(6,182,212,0.6)]" />
+                                        <span className="text-foreground dark:text-white drop-shadow-md truncate min-w-[40px] max-w-[90px] sm:max-w-none text-center">
+                                            {isProfileLoading ? '...' : (userProfile?.points ?? 0).toLocaleString()}
+                                        </span>
+                                        <ChevronDown className="ml-1 sm:ml-1.5 h-2.5 w-2.5 opacity-30 group-hover:opacity-100 group-hover:translate-y-0.5 transition-all" />
+                                    </div>
+                                    <div className="border-l border-white/10 h-full flex items-center">
+                                        <div className="h-8 w-8 sm:h-9 sm:w-9 flex items-center justify-center hover:bg-primary/20 text-muted-foreground hover:text-primary transition-all group">
+                                            <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4 group-hover:scale-125 transition-transform" />
+                                        </div>
+                                    </div>
                                 </div>
                             </PopoverTrigger>
                             <PopoverContent className="w-64 p-5 bg-card/95 backdrop-blur-3xl border-primary/20 rounded-[2.5rem] shadow-2xl animate-in zoom-in-95 duration-200" align="end" sideOffset={12}>
                                 <div className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-black">資產概覽</p>
+                                        <PurchasePointsDialog>
+                                            <Button variant="outline" size="sm" className="h-7 text-[10px] rounded-lg border-primary/30 text-primary hover:bg-primary/10">
+                                                <Plus className="w-3 h-3 mr-1" /> 加值
+                                            </Button>
+                                        </PurchasePointsDialog>
+                                    </div>
                                     <div className="space-y-2">
-                                        <p className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-black">資產概覽概況</p>
                                         <div className="flex justify-between items-center pt-1">
                                             <span className="text-sm flex items-center gap-2 text-foreground/90 font-medium">
                                                 <Gem className="w-4 h-4 text-primary"/> 鑽石餘額
                                             </span>
                                             <span className="font-black font-code text-lg text-foreground dark:text-white">{(userProfile?.points ?? 0).toLocaleString()}</span>
                                         </div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-sm flex items-center gap-2 text-accent font-bold">
+                                                <PPlusIcon className="w-4 h-4 animate-pulse"/> 紅利 P+ 點
+                                            </span>
+                                            <span className="font-black font-code text-lg text-accent">{(userProfile?.bonusPoints ?? 0).toLocaleString()}</span>
+                                        </div>
                                     </div>
                                     <Separator className="bg-white/5" />
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm flex items-center gap-2 text-accent font-bold">
-                                            <PPlusIcon className="w-4 h-4 animate-pulse"/> 紅利 P+ 點
-                                        </span>
-                                        <span className="font-black font-code text-lg text-accent">{(userProfile?.bonusPoints ?? 0).toLocaleString()}</span>
-                                    </div>
                                     <div className="pt-2">
                                         <Button variant="link" asChild className="w-full h-auto p-0 text-[10px] text-primary hover:text-white transition-colors">
                                             <Link href="/vip" className="flex items-center justify-center gap-1.5 font-bold uppercase tracking-widest">
@@ -136,13 +150,6 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                                 </div>
                             </PopoverContent>
                         </Popover>
-                        <div className="border-l border-white/10">
-                            <PurchasePointsDialog>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9 rounded-none hover:bg-primary/20 text-muted-foreground hover:text-primary transition-all group">
-                                    <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4 group-hover:scale-125 transition-transform" />
-                                </Button>
-                            </PurchasePointsDialog>
-                        </div>
                     </div>
                 </div>
             )}

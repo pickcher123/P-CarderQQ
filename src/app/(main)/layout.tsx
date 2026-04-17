@@ -7,6 +7,7 @@ import { doc } from "firebase/firestore";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { NewsMarquee } from "@/components/news-marquee";
 import { FloatingLineButton } from "@/components/floating-line-button";
+import { InstallPWAButton } from "@/components/install-pwa-button";
 import type { SystemConfig } from "@/types/system";
 import { usePathname } from "next/navigation";
 
@@ -26,6 +27,7 @@ export default function MainLayout({
       <Header systemConfig={systemConfig} />
       {systemConfig?.featureFlags?.isMarqueeEnabled !== false && <NewsMarquee />}
       <main className="flex-1 pb-20 md:pb-0">{children}</main>
+      <InstallPWAButton />
       <FloatingLineButton systemConfig={systemConfig} />
       {pathname === '/' && <Footer />}
       <MobileBottomNav systemConfig={systemConfig} />

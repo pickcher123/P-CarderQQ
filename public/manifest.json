@@ -1,0 +1,16 @@
+{
+  "name": "P+CARDER - 球員卡遊玩平台",
+  "short_name": "P+CARDER",
+  "description": "一站式球員卡遊玩平台，打造屬於你的玩卡體驗。",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#06B6D4",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ]
+}

@@ -102,11 +102,26 @@
   .clip-path-reveal-bottom {
     clip-path: inset(0 0 var(--reveal-percent, 0%) 0);
   }
+  .animate-bounce-right {
+    animation: bounce-right 1s infinite;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }
 
 @keyframes shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
+}
+
+@keyframes bounce-right {
+  0%, 100% { transform: translateX(-25%); }
+  50% { transform: translateX(0); }
 }
 
 @keyframes move-twink-back {

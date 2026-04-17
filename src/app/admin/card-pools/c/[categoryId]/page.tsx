@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Gem, Package, Trash2, Edit, ArrowLeft } from 'lucide-react';
+import { PlusCircle, Ticket, Package, Trash2, Edit, ArrowLeft } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRouter, useParams } from 'next/navigation';
 import { cn } from "@/lib/utils";
@@ -166,7 +166,7 @@ export default function CardPoolsAdminPage() {
                 <TableCell>
                     <div className="flex flex-col gap-1">
                         <div className="flex items-center text-sm font-bold">
-                            <Gem className="mr-1.5 h-3.5 w-3.5 text-primary" />
+                            <Ticket className="mr-1.5 h-3.5 w-3.5 text-primary" />
                             {pool.price}
                         </div>
                         {pool.price3Draws && (

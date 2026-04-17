@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Package, Users2, ChevronRight, Trophy, Sparkles, Newspaper, Calendar, ShieldCheck, Zap, Target, Crown } from 'lucide-react';
+import { Package, Users2, ChevronRight, Trophy, Sparkles, Newspaper, Calendar, ShieldCheck, Zap, Target, Crown, Gem } from 'lucide-react';
 import { Logo, CrossedCardsIcon, LuckyBagIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
@@ -62,7 +62,7 @@ export default function Home() {
       <section className="relative min-h-[85vh] md:min-h-[95vh] flex items-center justify-center overflow-hidden py-4 md:py-8">
         <div className="absolute inset-0 z-0 overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-b from-primary/20 via-background to-background" />
-            <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-primary/10 rounded-full blur-[80px] md:blur-[120px] animate-pulse-slow" />
+            <div className="absolute top-1/6 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-primary/10 rounded-full blur-[80px] md:blur-[120px] animate-pulse-slow" />
             <div className="absolute bottom-1/4 left-1/3 w-[200px] md:w-[400px] h-[200px] md:h-[400px] bg-accent/5 rounded-full blur-[60px] md:blur-[100px] animate-blob" />
             <div className="absolute top-1/2 right-1/4 w-[250px] md:w-[500px] h-[250px] md:h-[500px] bg-primary/5 rounded-full blur-[80px] md:blur-[120px] animate-blob animation-delay-2000" />
         </div>
@@ -73,15 +73,14 @@ export default function Home() {
           </div>
           
           <div className="space-y-3 md:space-y-4 animate-fade-in-up">
-            <h1 className="font-headline text-4xl sm:text-5xl md:text-[10rem] font-black tracking-tighter leading-none relative">
-                <span className="bg-clip-text text-transparent bg-gradient-to-b from-white via-white/90 to-primary/40 drop-shadow-[0_0_15px_rgba(6,182,212,0.3)]">
+            <h1 className="font-headline text-5xl sm:text-7xl md:text-[12rem] font-black tracking-tighter leading-none relative">
+                <span className="bg-clip-text text-transparent bg-gradient-to-b from-white via-white/90 to-primary/40 drop-shadow-[0_0_25px_rgba(6,182,212,0.5)]">
                     P+CARDER
                 </span>
-                <span className="absolute inset-0 text-white blur-[15px] md:blur-[20px] opacity-20 pointer-events-none select-none">P+CARDER</span>
+                <span className="absolute inset-0 text-white blur-[20px] md:blur-[30px] opacity-30 pointer-events-none select-none">P+CARDER</span>
             </h1>
-            <p className="text-lg md:text-3xl text-muted-foreground max-w-2xl mx-auto font-body font-bold tracking-widest leading-relaxed opacity-80">
-                一抽入魂・滿團福袋<br className="sm:hidden" />
-                <span className="hidden sm:inline">・</span>刺激團拆<br />
+            <p className="text-lg md:text-3xl text-muted-foreground max-w-2xl mx-auto font-body font-bold tracking-widest leading-relaxed opacity-80 [image-rendering:pixelated] font-mono">
+                一站式球員卡遊玩平台<br />
                 <span className="text-primary/80">打造屬於你的玩卡體驗</span>
             </p>
           </div>
@@ -189,139 +188,49 @@ export default function Home() {
                 <div className="w-16 h-1 bg-primary mx-auto rounded-full shadow-[0_0_15px_rgba(6,182,212,0.6)]" />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 animate-fade-in-up text-white">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 px-4">
                 {[
                     { 
-                        title: '絕對公平透明', 
-                        desc: '即時機率披露與數位存證，每一抽都經得起驗證，杜絕任何暗改可能。', 
+                        title: '公開透明存證', 
+                        desc: '每一張核心卡片皆經數位存證，確保來源真實、所有權明確，打造最讓人放心的收藏環境。', 
                         icon: ShieldCheck, 
                         color: 'text-primary',
                         bg: 'bg-primary/10'
                     },
                     { 
-                        title: '資產數位守護', 
-                        desc: '您的每一份戰利品都是受保護的數位資產，隨時可申請出貨或快速轉點。', 
+                        title: '公平機率披露', 
+                        desc: '絕不隱藏真實資訊，所有卡池機率完全公開披露，讓每一次抽卡都憑實力與運氣，回歸遊玩初衷。', 
                         icon: Target, 
-                        color: 'text-destructive',
-                        bg: 'bg-destructive/10'
+                        color: 'text-yellow-400',
+                        bg: 'bg-yellow-400/10'
                     },
                     { 
-                        title: '專業直播體驗', 
-                        desc: '業界領先的直播團拆系統，讓您在遠端也能同步感受現場開箱的狂熱心跳。', 
+                        title: '即時互動體驗', 
+                        desc: '打破實體卡片的侷限，隨時隨地享受極具張力的數位開包效果，將收藏熱忱轉化為指尖的極致快感。', 
                         icon: Zap, 
+                        color: 'text-pink-400',
+                        bg: 'bg-pink-400/10'
+                    },
+                    { 
+                        title: '專屬藏友社群', 
+                        desc: '透過團拆與互動競技，與志同道合的藏友並肩遊玩，交流珍稀卡片，建立屬於你的球員卡核心交友圈。', 
+                        icon: Users2, 
                         color: 'text-green-400',
                         bg: 'bg-green-400/10'
-                    },
-                    { 
-                        title: '完善 VIP 特權', 
-                        desc: '專屬等級福利、免運特權與高額紅利 P 點回饋，讓收藏之旅更具價值。', 
-                        icon: Trophy, 
-                        color: 'text-accent',
-                        bg: 'bg-accent/10'
                     },
                 ].map((item, i) => (
                     <div 
                         key={i} 
-                        className="p-8 rounded-[2rem] bg-card/30 backdrop-blur-xl border border-white/5 hover:border-primary/30 transition-all duration-500 shadow-xl group"
+                        className="p-8 rounded-3xl bg-card/40 border border-white/5 flex flex-col items-center text-center hover:border-primary/50 transition-all duration-300 hover:shadow-2xl hover:bg-card/60 hover:-translate-y-2"
                     >
-                        <div className={cn("p-4 rounded-2xl w-fit mb-6 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3 shadow-inner", item.bg, item.color)}>
+                        <div className={cn("p-4 rounded-full mb-6", item.bg, item.color)}>
                             <item.icon className="w-8 h-8" />
                         </div>
-                        <h3 className="text-xl font-black mb-3 font-headline tracking-wide text-white group-hover:text-primary transition-colors">{item.title}</h3>
-                        <p className="text-sm text-muted-foreground leading-relaxed font-medium opacity-80">{item.desc}</p>
+                        <h3 className="text-xl font-black mb-3">{item.title}</h3>
+                        <p className="text-sm text-muted-foreground font-medium leading-relaxed">{item.desc}</p>
                     </div>
                 ))}
             </div>
-        </div>
-      </section>
-
-      {/* 多元遊戲專區 */}
-      <section className="container py-20 md:py-32 relative text-white">
-        <div className="text-center mb-16 md:mb-24 space-y-4 md:space-y-6">
-            <div className="inline-flex items-center gap-2 text-primary font-bold font-headline tracking-[0.4em] text-[10px] md:text-xs mb-2 uppercase">
-                核心遊戲生態系統
-            </div>
-            <h2 className="text-3xl md:text-6xl font-black font-headline tracking-tight">多元遊戲專區</h2>
-            <div className="w-16 md:w-24 h-1 md:h-1.5 bg-primary mx-auto rounded-full shadow-[0_0_15px_rgba(6,182,212,0.6)]" />
-            <p className="text-muted-foreground max-w-2xl mx-auto text-base md:text-lg font-medium opacity-70">選擇您喜愛的遊戲模式，享受最極致的球員卡數位互動</p>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 max-w-6xl mx-auto">
-          {[
-            { 
-                title: '抽卡專區', 
-                desc: '數十款主題卡池，獨家傳奇巨星與限時最後賞等你入袋。體驗真實撕開卡包的悸動感。', 
-                icon: Package, 
-                href: '/draw', 
-                color: 'text-amber-400',
-                bg: 'bg-slate-950',
-                border: 'border-amber-400/30',
-                hoverGlow: 'hover:shadow-[0_0_40px_rgba(251,191,36,0.4)] hover:border-amber-400/80',
-                iconBg: 'bg-amber-400/10'
-            },
-            { 
-                title: '拼卡競技', 
-                desc: '高風險高回報的幸運輪盤。自由挑選幸運號碼，1/10 中獎機率挑戰您的命運極限。', 
-                icon: CrossedCardsIcon, 
-                href: '/bet', 
-                color: 'text-cyan-400',
-                bg: 'bg-zinc-950',
-                border: 'border-cyan-500/30',
-                hoverGlow: 'hover:shadow-[inset_0_0_20px_rgba(6,182,212,0.3),0_0_20px_rgba(6,182,212,0.4)] hover:border-cyan-500/80',
-                iconBg: 'bg-cyan-500/10'
-            },
-            { 
-                title: '幸運福袋', 
-                desc: '經典福袋募集機制，滿團即開！保證出土頂級大獎，每一格都蘊含翻轉價值的可能。', 
-                icon: LuckyBagIcon, 
-                href: '/lucky-bags', 
-                color: 'text-fuchsia-500',
-                bg: 'bg-indigo-950',
-                border: 'border-fuchsia-500/30',
-                hoverGlow: 'hover:shadow-[0_0_30px_rgba(217,70,239,0.5)] hover:border-fuchsia-500/80',
-                iconBg: 'bg-fuchsia-500/10'
-            },
-            { 
-                title: '團拆活動', 
-                desc: '精彩直播互動團拆，享受與其他藏友共享開箱的狂熱瞬間。公平配對，全場見證。', 
-                icon: Users2, 
-                href: '/group-break', 
-                color: 'text-rose-500',
-                bg: 'bg-neutral-900',
-                border: 'border-rose-500/30',
-                hoverGlow: 'hover:shadow-[0_0_30px_rgba(225,29,72,0.4)] hover:border-rose-500/80',
-                iconBg: 'bg-rose-500/10'
-            },
-          ].map((item, i) => (
-            <Link 
-                key={i} 
-                href={item.href} 
-                className={cn(
-                    "group relative p-8 md:p-12 xl:p-16 rounded-[3rem] border transition-all duration-500 hover:-translate-y-3 shadow-2xl overflow-hidden min-h-[380px] md:min-h-[420px] flex flex-col justify-between active:scale-[0.98]",
-                    item.bg, item.border, item.hoverGlow
-                )}
-            >
-              <div className="absolute top-10 right-10 flex gap-2 opacity-5 group-hover:opacity-20 transition-opacity pointer-events-none">
-                  <div className={cn("w-8 h-8 rounded-full", item.iconBg)} />
-                  <div className={cn("w-8 h-8 rounded-full", item.iconBg)} />
-              </div>
-              
-              <div>
-                <div className={cn("inline-flex p-5 md:p-6 rounded-[2rem] mb-8 md:mb-10 transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 shadow-inner", item.iconBg, item.color)}>
-                    <item.icon className="w-10 h-10 md:w-14 md:h-14" />
-                </div>
-                
-                <div className="space-y-3 md:space-y-4 text-left">
-                    <h3 className={cn("text-3xl md:text-5xl font-black font-headline tracking-tighter drop-shadow-md transition-colors duration-500", item.color)}>{item.title}</h3>
-                    <p className="text-base md:text-lg text-white/70 leading-relaxed font-medium line-clamp-2 md:line-clamp-none">{item.desc}</p>
-                </div>
-              </div>
-              
-              <div className={cn("mt-8 md:mt-12 flex items-center text-sm md:text-base font-black font-headline tracking-[0.3em] transition-all duration-500 uppercase", item.color)}>
-                ENTER <ChevronRight className="ml-2 w-4 h-4 md:w-5 md:h-5 group-hover:translate-x-2 transition-transform" />
-              </div>
-            </Link>
-          ))}
         </div>
       </section>
 

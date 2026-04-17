@@ -144,7 +144,7 @@ export default function BetLandingPage() {
         <div className="container py-8 md:py-16 relative overflow-hidden px-4 md:px-8">
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-destructive/5 blur-[120px] pointer-events-none" />
 
-            <div className="text-center mb-8 md:mb-12 relative z-10 space-y-4">
+            <div className="text-center mb-6 md:mb-8 relative z-10 space-y-4">
                 <div className="flex justify-center">
                     <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-destructive/10 border border-destructive/20 text-destructive text-[10px] md:text-sm font-bold tracking-[0.2em] uppercase animate-fade-in-up">
                         <Swords className="w-3 h-3 md:w-4 md:h-4 text-accent animate-pulse" /> ONE SPIN, ONE DESTINY
@@ -153,21 +153,22 @@ export default function BetLandingPage() {
                 
             </div>
 
-            {/* 直觀遊戲規則區塊 */}
-            <div className="max-w-5xl mx-auto mb-12 md:mb-16 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
+            {/* 直觀遊戲規則區塊 - 手機版四宮格美化版 */}
+            <div className="max-w-6xl mx-auto mb-12 md:mb-16 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
                     {[
-                        { title: '1/10 命中率', desc: '每注固定 10% 機率直接帶走卡片', icon: Target, color: 'text-primary' },
-                        { title: '雙幣別支付', desc: '支援使用鑽石或紅利 P+ 參與', icon: RefreshCw, color: 'text-accent' },
-                        { title: '1:10 價值比', desc: '鑽石與 P+ 點比例固定 1:10', icon: Gem, color: 'text-destructive' },
-                        { title: '資產即時發放', desc: '中獎後卡片立即存入數位收藏庫', icon: ShieldCheck, color: 'text-green-400' },
+                        { title: '1/10 命中率', desc: '每注固定 10% 機率直接帶走卡片', icon: Target, color: 'text-primary', bg: 'bg-primary/10' },
+                        { title: '雙幣別支付', desc: '支援使用鑽石或紅利 P+ 參與', icon: RefreshCw, color: 'text-accent', bg: 'bg-accent/10' },
+                        { title: '1:10 價值比', desc: '鑽石與 P+ 點比例固定 1:10', icon: Gem, color: 'text-destructive', bg: 'bg-destructive/10' },
+                        { title: '資產即時發放', desc: '中獎後卡片立即存入數位收藏庫', icon: ShieldCheck, color: 'text-green-400', bg: 'bg-green-400/10' },
                     ].map((item, idx) => (
-                        <div key={idx} className="p-2.5 md:p-4 rounded-2xl bg-card/20 backdrop-blur-md border border-white/5 flex flex-col items-center text-center group hover:bg-card/30 transition-all">
-                            <div className={cn("p-1.5 md:p-2 rounded-xl bg-black/20 mb-2 md:mb-3 group-hover:scale-110 transition-transform", item.color)}>
-                                <item.icon className="w-4 h-4 md:w-6 md:h-6" />
+                        <div key={idx} className="relative p-4 md:p-8 rounded-2xl md:rounded-[2rem] bg-card/40 backdrop-blur-xl border border-white/10 flex flex-col items-center text-center group hover:border-white/20 transition-all shadow-xl hover:shadow-2xl hover:-translate-y-1">
+                            <div className={cn("p-3 md:p-4 rounded-xl md:rounded-2xl mb-3 md:mb-6 transition-transform duration-500 group-hover:scale-110 shadow-inner", item.bg, item.color)}>
+                                <item.icon className="w-6 h-6 md:w-10 md:h-10" />
                             </div>
-                            <h4 className="text-[10px] md:text-sm font-black text-white mb-1 tracking-tight">{item.title}</h4>
-                            <p className="text-[8px] md:text-[10px] text-muted-foreground font-medium leading-tight">{item.desc}</p>
+                            <h4 className="text-xs md:text-xl font-black text-white mb-1 md:mb-3 tracking-tight font-headline">{item.title}</h4>
+                            <p className="text-[10px] md:text-sm text-muted-foreground font-medium leading-relaxed line-clamp-2">{item.desc}</p>
+                            <div className={cn("absolute inset-0 rounded-2xl md:rounded-[2rem] opacity-0 group-hover:opacity-10 transition-opacity bg-gradient-to-br", item.bg)} />
                         </div>
                     ))}
                 </div>
@@ -224,13 +225,13 @@ export default function BetLandingPage() {
                 ))}
             </div>
 
-            {/* 全部卡片展示區 */}
-            <div className="mb-6 md:mb-10 flex items-center justify-between animate-fade-in-up">
-                <h2 className="flex items-center text-base md:text-xl font-bold font-headline text-white tracking-widest uppercase">
-                    <Package className="w-4 h-4 md:w-6 md:h-6 mr-3 text-primary animate-pulse" />
+            {/* 全部卡片展示區 - 優化版 */}
+            <div className="mb-4 md:mb-6 flex items-center justify-end animate-fade-in-up">
+                <div className="h-px flex-1 mr-4 md:mr-6 bg-gradient-to-l from-primary/30 to-transparent hidden md:block" />
+                <h2 className="flex items-center text-sm md:text-lg font-bold font-headline text-white tracking-widest uppercase">
                     全部卡片
+                    <Package className="w-3 h-3 md:w-5 md:h-5 ml-3 text-primary animate-pulse" />
                 </h2>
-                <div className="h-px flex-1 mx-4 md:mx-6 bg-gradient-to-r from-primary/30 to-transparent hidden md:block" />
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 max-w-7xl mx-auto">
                 {!allBettingItems && Array.from({length: 6}).map((_, i) => <Skeleton key={i} className="aspect-[2.5/4] rounded-[1.5rem]" />)}
