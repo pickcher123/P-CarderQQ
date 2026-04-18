@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { format } from 'date-fns';
+import Image from 'next/image';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -62,9 +63,9 @@ export default function Home() {
       <section className="relative min-h-[85vh] md:min-h-[95vh] flex items-center justify-center overflow-hidden py-4 md:py-8">
         <div className="absolute inset-0 z-0 overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-b from-primary/20 via-background to-background" />
-            <div className="absolute top-1/6 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-primary/10 rounded-full blur-[80px] md:blur-[120px] animate-pulse-slow" />
-            <div className="absolute bottom-1/4 left-1/3 w-[200px] md:w-[400px] h-[200px] md:h-[400px] bg-accent/5 rounded-full blur-[60px] md:blur-[100px] animate-blob" />
-            <div className="absolute top-1/2 right-1/4 w-[250px] md:w-[500px] h-[250px] md:h-[500px] bg-primary/5 rounded-full blur-[80px] md:blur-[120px] animate-blob animation-delay-2000" />
+            <div className="absolute top-1/6 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-primary/10 rounded-full blur-[80px] md:blur-[120px] animate-pulse-slow [will-change:transform]" />
+            <div className="absolute bottom-1/4 left-1/3 w-[200px] md:w-[400px] h-[200px] md:h-[400px] bg-accent/5 rounded-full blur-[60px] md:blur-[100px] animate-blob [will-change:transform]" />
+            <div className="absolute top-1/2 right-1/4 w-[250px] md:w-[500px] h-[250px] md:h-[500px] bg-primary/5 rounded-full blur-[80px] md:blur-[120px] animate-blob animation-delay-2000 [will-change:transform]" />
         </div>
 
         <div className="container relative z-10 text-center space-y-6 md:space-y-10 px-4">
@@ -396,9 +397,11 @@ export default function Home() {
                 <div className="flex flex-col text-white">
                     <div className="relative w-full aspect-auto min-h-[250px] md:min-h-[300px]">
                         {selectedNews.imageUrl && (
-                            <img 
+                            <Image 
                                 src={selectedNews.imageUrl} 
                                 alt={selectedNews.title} 
+                                width={800}
+                                height={450}
                                 className="w-full h-auto object-contain block"
                                 onError={(e) => {
                                     (e.target as HTMLImageElement).src = 'https://picsum.photos/seed/news-fallback/800/450';

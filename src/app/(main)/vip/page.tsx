@@ -56,10 +56,24 @@ interface RedemptionItem {
     imageUrl: string;
     description: string;
     isActive: boolean;
+// ...
     order?: number;
 }
 
+function StatCard({ label, value, icon: Icon, color }: { label: string, value: number, icon: any, color: string }) {
+    return (
+        <div className="p-4 md:p-6 rounded-[1.5rem] bg-white/5 border border-white/5 backdrop-blur-md text-center group hover:border-white/20 transition-all shadow-xl">
+            <div className={cn("p-2 rounded-xl bg-white/5 w-fit mx-auto mb-2 transition-transform group-hover:scale-110 group-hover:rotate-3", color)}>
+                <Icon className="w-5 h-5 md:w-6 md:h-6" />
+            </div>
+            <p className="text-[9px] font-black uppercase text-white/40 tracking-[0.1em] mb-0.5">{label}</p>
+            <p className="text-xl md:text-2xl font-black font-code text-white drop-shadow-sm">{value.toLocaleString()}</p>
+        </div>
+    );
+}
+
 function LeaderboardDialog({ children }: { children: React.ReactNode }) {
+// ...
     const firestore = useFirestore();
     
     const topSpendersQuery = useMemoFirebase(() => {
@@ -380,13 +394,13 @@ export default function VIPZonePage() {
     }, [userProfile, systemConfig]);
 
     const achievements = useMemo(() => [
-        { id: 'first-card', title: '初次啼聲', category: '收藏', icon: Package, unlocked: userCards && userCards.length > 0, condition: '獲得第一張卡片' },
-        { id: 'collection-50', title: '資深館長', category: '收藏', icon: Library, unlocked: userCards && userCards.length >= 50, condition: '收藏達到 50 張卡片' },
+        { id: 'first-card', title: '初次啼聲', category: '收藏', icon: Package, unlocked: (userCards?.length || 0) > 0, condition: '獲得第一張卡片' },
+        { id: 'collection-50', title: '資深館長', category: '收藏', icon: Library, unlocked: (userCards?.length || 0) >= 50, condition: '收藏達到 50 張卡片' },
         { id: 'legend-collector', title: '傳奇見證者', category: '稀有度', icon: Crown, unlocked: stats.legends > 0, condition: '獲得 1 張傳奇卡' },
         { id: 'draw-master', title: '卡池支配者', category: '抽卡', icon: Zap, unlocked: stats.draws >= 100, condition: '累計抽卡 100 次' },
         { id: 'bet-pro', title: '命運賭徒', category: '拼卡', icon: Dices, unlocked: stats.bets >= 20, condition: '參與拼卡 20 次' },
         { id: 'whale-gift', title: '官方之友', category: '特殊', icon: Gift, unlocked: stats.maxAdminGift >= 5000, condition: '單次獲得官方贈點 5000 以上' },
-        { id: 'full-squad', title: '夢幻陣容', category: '收藏', icon: Users2, unlocked: userCards && userCards.length >= 100, condition: '收藏達到 100 張卡片' },
+        { id: 'full-squad', title: '夢幻陣容', category: '收藏', icon: Users2, unlocked: (userCards?.length || 0) >= 100, condition: '收藏達到 100 張卡片' },
         { id: 'lucky-star', title: '強運體質', category: '機率', icon: Sparkles, unlocked: stats.legends >= 5, condition: '獲得 5 張傳奇卡' },
         { id: 'foil-lover', title: '萬中選一', category: '特殊', icon: Zap, unlocked: stats.foils > 0, condition: '獲得 1 張亮面卡' },
         { id: 'bet-master', title: '拼卡大師', category: '拼卡', icon: Dices, unlocked: stats.bets >= 50, condition: '參與拼卡 50 次' },
@@ -395,8 +409,7 @@ export default function VIPZonePage() {
         { id: 'sell-king', title: '快速轉點王', category: '管理', icon: RefreshCw, unlocked: stats.quickSells >= 10, condition: '使用快速轉點 10 次' },
         { id: 'legend-20', title: '傳說級收藏家', category: '稀有度', icon: Trophy, unlocked: stats.legends >= 20, condition: '獲得 20 張傳奇卡' },
         { id: 'wealthy', title: '點數大亨', category: '資產', icon: Gem, unlocked: (userProfile?.points || 0) >= 50000, condition: '持有 50,000 以上鑽石' },
-        { id: 'collector-max', title: '收藏之巔', category: '收藏', icon: Archive, unlocked: userCards && userCards.length >= 200, condition: '收藏達到 200 張卡片' },
-        // 新增成就
+        { id: 'collector-max', title: '收藏之巔', category: '收藏', icon: Archive, unlocked: (userCards?.length || 0) >= 200, condition: '收藏達到 200 張卡片' },
         { id: 'super-draw', title: '十連狂熱', category: '抽卡', icon: Zap, unlocked: stats.draws >= 1000, condition: '累計抽卡 1000 次' },
         { id: 'p-plus-pro', title: '紅利狂人', category: '資產', icon: PPlusIcon, unlocked: (userProfile?.totalBonusEarned || 0) >= 1000000, condition: '累計獲得紅利破百萬' },
         { id: 'bet-legend', title: '拼卡之神', category: '拼卡', icon: Dices, unlocked: stats.bets >= 200, condition: '參與拼卡 200 次' },
@@ -473,21 +486,11 @@ export default function VIPZonePage() {
                 </div>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4 mb-16 relative z-10 w-full max-w-5xl mx-auto">
-                {[
-                    { label: '加入天數', value: stats.daysJoined, icon: CalendarCheck, color: 'text-accent' },
-                    { label: '累計抽卡數', value: stats.draws, icon: Package, color: 'text-primary' },
-                    { label: '拼卡參與次數', value: stats.bets, icon: Dices, color: 'text-rose-500' },
-                    { label: '獲得最高贈點', value: stats.maxAdminGift, icon: Gift, color: 'text-emerald-500' },
-                    { label: '傳奇珍藏數', value: stats.legends, icon: Sparkles, color: 'text-purple-500' },
-                ].map((stat, i) => (
-                    <div key={i} className="p-4 md:p-6 rounded-[1.5rem] bg-white/5 border border-white/5 backdrop-blur-md text-center group hover:border-white/20 transition-all shadow-xl">
-                        <div className={cn("p-2 rounded-xl bg-white/5 w-fit mx-auto mb-2 transition-transform group-hover:scale-110 group-hover:rotate-3", stat.color)}>
-                            <stat.icon className="w-5 h-5 md:w-6 md:h-6" />
-                        </div>
-                        <p className="text-[9px] font-black uppercase text-white/40 tracking-[0.1em] mb-0.5">{stat.label}</p>
-                        <p className="text-xl md:text-2xl font-black font-code text-white drop-shadow-sm">{stat.value.toLocaleString()}</p>
-                    </div>
-                ))}
+                <StatCard label="加入天數" value={stats.daysJoined} icon={CalendarCheck} color="text-accent" />
+                <StatCard label="累計抽卡數" value={stats.draws} icon={Package} color="text-primary" />
+                <StatCard label="拼卡參與次數" value={stats.bets} icon={Dices} color="text-rose-500" />
+                <StatCard label="獲得最高贈點" value={stats.maxAdminGift} icon={Gift} color="text-emerald-500" />
+                <StatCard label="傳奇珍藏數" value={stats.legends} icon={Sparkles} color="text-purple-500" />
             </div>
 
 
@@ -509,37 +512,41 @@ export default function VIPZonePage() {
                         const userSpend = userProfile.totalSpent || 0;
                         const isUnlocked = userSpend >= lvl.threshold;
                         const b = currentLevelBenefits[index];
+                        const progress = Math.min(100, (userSpend / lvl.threshold) * 100);
                         
                         return (
                             <div 
                                 key={lvl.level} 
                                 className={cn(
-                                    "flex flex-row items-center justify-between p-4 md:p-6 rounded-2xl md:rounded-[2rem] border transition-all duration-500 group",
+                                    "flex flex-col p-4 md:p-6 rounded-2xl md:rounded-[2rem] border transition-all duration-500 group",
                                     isCurrent ? "bg-primary/20 border-primary shadow-[0_0_30px_rgba(6,182,212,0.3)]" : 
-                                    isUnlocked ? "bg-white/10 border-white/20" : "bg-black/80 border-white/10"
+                                    isUnlocked ? "bg-white/10 border-white/20" : "bg-black/40 border-white/5"
                                 )}
-                                style={!isUnlocked ? { opacity: 0.85 } : {}}
                             >
-                                <div className="flex items-center gap-3 md:gap-6 text-left flex-1">
-                                    <div className="relative shrink-0">
-                                        <MemberLevelCrown level={lvl.level} size="xs" />
-                                        {isUnlocked && !isCurrent && <CheckCircle2 className="absolute -top-1 -right-1 w-3 h-3 text-green-500 bg-background rounded-full" />}
+                                <div className="flex flex-row items-center justify-between mb-3">
+                                    <div className="flex items-center gap-3 md:gap-6 text-left flex-1 min-w-0">
+                                        <div className="relative shrink-0">
+                                            <MemberLevelCrown level={lvl.level} size="xs" />
+                                            {isUnlocked && !isCurrent && <CheckCircle2 className="absolute -top-1 -right-1 w-3 h-3 text-green-500 bg-background rounded-full" />}
+                                        </div>
+                                        <div className="min-w-0">
+                                            <h3 className={cn("text-sm md:text-lg font-black font-headline tracking-wide truncate", lvl.color)}>{lvl.level}</h3>
+                                            <p className="text-[9px] md:text-xs text-slate-300 font-bold font-code mt-0.5">
+                                                門檻: <span className="text-white">{(lvl.threshold).toLocaleString()}</span> 💎
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div className="min-w-0">
-                                        <h3 className={cn("text-sm md:text-xl font-black font-headline tracking-wide truncate", lvl.color, !isUnlocked && "opacity-60")}>{lvl.level}</h3>
-                                        <p className="text-[9px] md:text-xs text-slate-300 font-bold font-code mt-0.5 flex items-center gap-1">
-                                            門檻: <span className="text-white">{(lvl.threshold).toLocaleString()}</span> 💎
-                                        </p>
+                                    <div className="flex items-center justify-end gap-2 shrink-0">
+                                        {b.free && <Badge variant="outline" className="border-green-500/50 text-green-400 bg-green-500/10 px-2 py-0.5 text-[9px] md:text-xs font-black">免運</Badge>}
+                                        {b.rate > 0 && <Badge variant="outline" className="border-primary/50 text-primary bg-primary/10 px-2 py-0.5 text-[9px] md:text-xs font-black">{b.rate}%</Badge>}
+                                        {isCurrent && <Badge className="bg-primary text-primary-foreground font-black px-2 py-0.5 text-[9px] md:text-xs">目前</Badge>}
                                     </div>
                                 </div>
-
-                                <div className="flex items-center justify-end gap-2 shrink-0">
-                                    {b.free && <Badge variant="outline" className="border-green-500/50 text-green-400 bg-green-500/10 px-2 py-0.5 text-[9px] md:text-xs font-black"><Truck className="w-2.5 h-2.5 md:w-3 md:h-3 mr-1"/> 免運</Badge>}
-                                    {b.rate > 0 && <Badge variant="outline" className="border-primary/50 text-primary bg-primary/10 px-2 py-0.5 text-[9px] md:text-xs font-black"><PPlusIcon className="w-2.5 h-2.5 md:w-3 md:h-3 mr-1"/> {b.rate}%</Badge>}
-                                    
-                                    {isCurrent && <Badge className="bg-primary text-primary-foreground font-black px-2 py-0.5 text-[9px] md:text-xs shadow-[0_0_15px_rgba(6,182,212,0.5)]">目前</Badge>}
-                                    {!isUnlocked && <Lock className="w-4 h-4 text-white/40" />}
-                                </div>
+                                {!isUnlocked && (
+                                    <div className="w-full h-1.5 bg-black/50 rounded-full overflow-hidden">
+                                        <div className="h-full bg-primary/50" style={{ width: `${progress}%` }} />
+                                    </div>
+                                )}
                             </div>
                         )
                     })}
