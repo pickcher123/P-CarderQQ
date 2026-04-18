@@ -788,48 +788,56 @@ export default function OpenPackPage() {
                     </motion.div>
                 </div>
             ) : (
-                <div className="w-full max-w-6xl px-4 z-20 overflow-y-auto custom-scrollbar select-none flex-grow mt-0">
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 md:gap-4 py-1">
-                        {sessionPrizes.map((p, i) => (
-                            <div key={i} className="animate-fade-in-up" style={{ animationDelay: `${i * 80}ms` }}>
-                                {p.type === 'points' ? (
-                                    <div className={cn(
-                                        "w-full aspect-[2.5/4] rounded-3xl flex flex-col items-center justify-center p-4 border shadow-2xl transition-all hover:scale-105 group",
-                                        pointPrizeRarityStyles[p.rarity].bg,
-                                        pointPrizeRarityStyles[p.rarity].border
-                                    )}>
-                                        <div className="relative mb-2">
-                                            <div className="absolute inset-0 blur-2xl opacity-40 group-hover:opacity-80 transition-opacity bg-current" style={{ color: 'hsl(var(--accent))' }} />
-                                            <PPlusIcon className={cn("w-12 h-12 md:w-16 md:h-16 relative z-10", pointPrizeRarityStyles[p.rarity].text)} />
+                <div className="w-full max-w-6xl px-4 z-20 flex-grow mt-4 flex flex-col justify-center relative select-none">
+                    <div className="relative group">
+                        <div id="prize-scroll-container" className="flex flex-row gap-4 py-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide scroll-smooth">
+                            {sessionPrizes.map((p, i) => (
+                                <div key={i} className="animate-fade-in-up snap-center w-[160px] md:w-[200px] flex-shrink-0" style={{ animationDelay: `${i * 80}ms` }}>
+                                    {p.type === 'points' ? (
+                                        <div className={cn(
+                                            "w-full aspect-[2.5/4] rounded-3xl flex flex-col items-center justify-center p-4 border shadow-2xl transition-all hover:scale-105 group",
+                                            pointPrizeRarityStyles[p.rarity].bg,
+                                            pointPrizeRarityStyles[p.rarity].border
+                                        )}>
+                                            <div className="relative mb-2">
+                                                <div className="absolute inset-0 blur-2xl opacity-40 group-hover:opacity-80 transition-opacity bg-current" style={{ color: 'hsl(var(--accent))' }} />
+                                                <PPlusIcon className={cn("w-12 h-12 md:w-16 md:h-16 relative z-10", pointPrizeRarityStyles[p.rarity].text)} />
+                                            </div>
+                                            <p className="font-code text-2xl md:text-3xl font-black text-white drop-shadow-md">{p.points}</p>
+                                            <Badge variant="outline" className="mt-3 border-white/5 bg-black/20 text-[8px] font-black uppercase text-white/30">Bonus Reward</Badge>
                                         </div>
-                                        <p className="font-code text-2xl md:text-3xl font-black text-white drop-shadow-md">{p.points}</p>
-                                        <Badge variant="outline" className="mt-3 border-white/5 bg-black/20 text-[8px] font-black uppercase text-white/30">Bonus Reward</Badge>
-                                    </div>
-                                ) : (
-                                    <div className="relative group transition-all hover:scale-105">
-                                        <CardItem 
-                                            name={p.name} 
-                                            imageUrl={p.imageUrl} 
-                                            backImageUrl={p.backImageUrl} 
-                                            imageHint={p.name} 
-                                            rarity={p.rarity} 
-                                            serialNumber={p.serialNumber} 
-                                            isFlippable={true} 
-                                        />
-                                        {p.type === 'last-prize' && (
-                                            <Badge className="absolute top-2 right-2 bg-accent text-accent-foreground font-black text-[8px] h-5 px-2 shadow-xl border-none">
-                                                LAST ONE
-                                            </Badge>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        ))}
+                                    ) : (
+                                        <div className="w-full aspect-[2.5/4] rounded-3xl overflow-hidden shadow-2xl transition-all hover:scale-105 group border border-white/5 h-full">
+                                            <CardItem 
+                                                name={p.name} 
+                                                imageUrl={p.imageUrl} 
+                                                imageHint={p.name} 
+                                                rarity={p.rarity} 
+                                                className="h-full"
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* 電腦版點擊箭頭 */}
+                        {sessionPrizes.length > 2 && (
+                            <button 
+                                className="absolute right-0 top-1/2 -translate-y-1/2 z-50 bg-black/60 backdrop-blur-md p-4 rounded-l-full border border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.5)] hover:bg-red-500/20 transition-all hidden md:block"
+                                onClick={() => {
+                                    const container = document.getElementById('prize-scroll-container');
+                                    if (container) container.scrollBy({ left: 300, behavior: 'smooth' });
+                                }}
+                            >
+                                <ChevronRight className="w-8 h-8 text-red-500" />
+                            </button>
+                        )}
                     </div>
                 </div>
             )}
 
-            <div className="w-full flex flex-col items-center gap-1 z-30 pt-2 pb-2 select-none mt-4">
+            <div className="w-full flex flex-col items-center gap-1 z-30 pt-2 pb-2 select-none -mt-4 mb-8">
                  {(step === 'revealing' || step === 'done') && (
                     <div className={cn(
                         "bg-black/85 backdrop-blur-3xl border border-white/10 p-3 rounded-[2rem] w-full max-w-[340px] shadow-[0_20px_50px_rgba(0,0,0,0.8)] animate-fade-in-up transition-all"

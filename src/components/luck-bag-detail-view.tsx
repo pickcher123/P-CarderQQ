@@ -267,7 +267,7 @@ export function LuckBagDetailView({ luckBag }: { luckBag: LuckBagWithCount }) {
                                             <div className="space-y-2">
                                                 {[...luckBag.otherPrizesList, ...luckBag.otherPointsList.map(p => ({ ...p, isPoints: true }))].slice(3).map((prize, index) => (
                                                     <div key={prize.prizeId} className="p-3 bg-white rounded-lg border flex items-center justify-between">
-                                                        <span className="font-bold text-sm text-slate-500">{index + 7} 獎</span>
+                                                        <span className="font-bold text-sm text-slate-900">{index + 7} 獎</span>
                                                         <span className="font-bold text-sm text-slate-900">{'isPoints' in prize ? `${prize.points} 點數` : prize.name}</span>
                                                     </div>
                                                 ))}
@@ -391,7 +391,7 @@ export function LuckBagDetailView({ luckBag }: { luckBag: LuckBagWithCount }) {
                     {previewCard && (
                         <div className="w-full flex flex-col items-center gap-6">
                             <h2 className="text-sm font-black text-white text-center px-4">{previewCard.name}</h2>
-                            <div className="w-full max-w-[200px]">
+                            <div className="w-full max-w-[600px]">
                                 <CardItem name={previewCard.name} imageUrl={previewCard.imageUrl} backImageUrl={previewCard.backImageUrl} imageHint={previewCard.name} rarity="legendary" isFlippable={true}/>
                             </div>
                         </div>

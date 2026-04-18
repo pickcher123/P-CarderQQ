@@ -149,9 +149,9 @@ export function MemberLevelCrown({ level, showLabel = false, className, size = '
 
             {showLabel && (
                 <div className={cn(
-                    "px-4 py-1 rounded-full text-[10px] md:text-xs font-black font-headline tracking-[0.15em] bg-black/60 border backdrop-blur-sm whitespace-nowrap shadow-xl",
+                    "px-4 py-1.5 rounded-full text-[10px] md:text-sm font-black font-headline tracking-[0.15em] bg-black/60 border backdrop-blur-sm whitespace-nowrap shadow-xl",
                     levelInfo.border,
-                    levelInfo.color,
+                    "text-white", // 將 levelInfo.color 強制強制固定為白色
                     isHighLevel && "animate-shimmer bg-gradient-to-r from-transparent via-white/10 to-transparent bg-[length:200%_100%]"
                 )}>
                     {level.toUpperCase()}
