@@ -48,7 +48,7 @@ export function MobileBottomNav({ systemConfig }: { systemConfig: SystemConfig |
               key={link.href}
               href={link.href!}
               className={cn(
-                "flex flex-col items-center justify-center gap-1 text-[10px] font-bold transition-all duration-300",
+                "flex flex-col items-center justify-center gap-1 text-[10px] font-bold transition-all duration-300 active:scale-95",
                 isActive ? "text-foreground" : "text-muted-foreground opacity-70"
               )}
             >
@@ -57,6 +57,15 @@ export function MobileBottomNav({ systemConfig }: { systemConfig: SystemConfig |
                 isActive ? cn(link.color, "scale-110") : "text-muted-foreground",
                 link.isVip && isActive && "fill-accent/10 drop-shadow-[0_0_5px_rgba(234,179,8,0.4)]"
               )} />
+              
+              {/* 高亮細線 indicator */}
+              {isActive && (
+                <div className={cn(
+                    "absolute -top-[1px] left-1/2 -translate-x-1/2 w-4 h-[2px] rounded-full transition-all duration-300",
+                    link.isVip ? "bg-gradient-to-r from-amber-300 to-accent shadow-[0_0_8px_rgba(234,179,8,0.5)]" : "bg-current"
+                )} />
+              )}
+
               <span className={cn(
                 "truncate w-full text-center transition-all duration-300",
                 isActive && "font-black"
