@@ -1,7 +1,7 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, doc, updateDoc, writeBatch, serverTimestamp, increment, where } from 'firebase/firestore';
+import { collection, query, doc, updateDoc, writeBatch, serverTimestamp, increment, where, limit } from 'firebase/firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
@@ -378,7 +378,7 @@ export default function UsersAdminPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const isSuperAdmin = currentUser?.email === SUPER_ADMIN_EMAIL;
 
-  const usersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'users')) : null, [firestore]);
+  const usersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'users'), limit(50)) : null, [firestore]);
   const { data: users, isLoading, forceRefetch } = useCollection<UserProfile>(usersQuery);
   
   const filteredUsers = useMemo(() => {
@@ -415,7 +415,7 @@ export default function UsersAdminPage() {
             <TableBody>
                 {isLoading ? Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={i}><TableCell colSpan={5} className="p-6"><Skeleton className="h-12 w-full rounded-2xl" /></TableCell></TableRow>
-                )) : filteredUsers.map((user) => (
+                )) : filteredUsers.length > 0 ? filteredUsers.map((user) => (
                     <TableRow key={user.id} className={cn("hover:bg-slate-50/80 transition-colors border-b-slate-100", user.email === SUPER_ADMIN_EMAIL && "bg-blue-50/40")}>
                     <TableCell className="pl-8 py-5"><UserDetailsDialog user={user} /></TableCell>
                     <TableCell><Badge variant="outline" className="font-black text-[10px] border-slate-300 text-slate-700 uppercase h-6 px-3 bg-white shadow-sm">{user.userLevel}</Badge></TableCell>
@@ -433,7 +433,13 @@ export default function UsersAdminPage() {
                         <ModifyPointsDialog user={user} onUpdate={() => forceRefetch?.()} />
                     </div></TableCell>
                     </TableRow>
-                ))}
+                )) : (
+                    <TableRow>
+                        <TableCell colSpan={5} className="py-20 text-center text-slate-400 font-black tracking-widest uppercase">
+                            查無符合條件的會員
+                        </TableCell>
+                    </TableRow>
+                )}
             </TableBody>
             </Table>
         </ScrollArea>

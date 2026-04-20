@@ -391,7 +391,7 @@ export function LuckBagDetailView({ luckBag }: { luckBag: LuckBagWithCount }) {
                     {previewCard && (
                         <div className="w-full flex flex-col items-center gap-6">
                             <h2 className="text-sm font-black text-white text-center px-4">{previewCard.name}</h2>
-                            <div className="w-full max-w-[200px]">
+                            <div className="w-full max-w-[600px]">
                                 <CardItem name={previewCard.name} imageUrl={previewCard.imageUrl} backImageUrl={previewCard.backImageUrl} imageHint={previewCard.name} rarity="legendary" isFlippable={true}/>
                             </div>
                         </div>

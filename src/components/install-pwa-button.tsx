@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Download } from 'lucide-react';
+import { Download, X } from 'lucide-react';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => void;
@@ -12,10 +12,10 @@ interface BeforeInstallPromptEvent extends Event {
 export function InstallPWAButton() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isAvailable, setIsAvailable] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
-      // Prevent browser's default prompt
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       setIsAvailable(true);
@@ -41,15 +41,24 @@ export function InstallPWAButton() {
     setIsAvailable(false);
   };
 
-  if (!isAvailable) return null;
+  if (!isAvailable || !isVisible) return null;
 
   return (
-    <Button 
-      onClick={handleInstallClick}
-      className="fixed bottom-20 left-4 z-[9999] rounded-full shadow-lg bg-primary text-primary-foreground font-black animate-bounce"
-    >
-      <Download className="mr-2 h-4 w-4" />
-      安裝 APP
-    </Button>
+    <div className="fixed bottom-20 left-4 z-[9999] flex items-center gap-2">
+      <Button 
+        onClick={handleInstallClick}
+        className="rounded-full shadow-lg bg-primary text-primary-foreground font-black animate-bounce"
+      >
+        <Download className="mr-2 h-4 w-4" />
+        安裝 APP
+      </Button>
+      <button 
+        onClick={() => setIsVisible(false)}
+        className="bg-black/50 hover:bg-black/70 text-white p-1.5 rounded-full transition-colors"
+        aria-label="關閉"
+      >
+        <X className="h-4 w-4" />
+      </button>
+    </div>
   );
 }

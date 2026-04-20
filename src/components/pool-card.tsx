@@ -256,7 +256,10 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                     <div className="relative z-10 flex flex-col p-4 md:p-6 bg-slate-950/40">
                         <div className="text-center mb-4 space-y-2">
                             <h3 className="text-lg font-headline font-black text-white uppercase truncate">{pool.name}</h3>
-                            <Badge variant="outline" className="text-[10px] text-primary border-primary/20">{pool.description}</Badge>
+                            <div className="flex items-center justify-center gap-2">
+                                <Badge variant="outline" className="text-[10px] text-primary border-primary/20">{pool.description}</Badge>
+                                <Badge variant="secondary" className="text-[10px] text-white/60 bg-white/5 border-white/10">已抽 {todayDrawCount} 抽</Badge>
+                            </div>
                         </div>
                         <div className="bg-black/60 border border-white/10 p-3 rounded-2xl mb-4">
                             <div className="flex justify-between items-baseline mb-2">
@@ -311,8 +314,11 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                     )}
                 </div>
                 <div className="mt-2 p-2 space-y-3">
-                    <div className="flex items-center justify-between gap-1 px-1 mb-1 overflow-hidden">
-                        <div className="flex items-center gap-1.5">
+                    <div className="flex items-center justify-between gap-2 px-1 mb-2">
+                        <Badge variant="secondary" className="text-[10px] text-white/80 bg-white/5 border-white/10 font-bold px-3 py-1">
+                            已抽 {todayDrawCount} 抽
+                        </Badge>
+                        <div className="flex items-center gap-1.5 overflow-hidden justify-end">
                             {pool.minLevel && pool.minLevel !== '新手收藏家' && (
                                 <Badge variant="outline" className="bg-primary/10 border-primary/30 text-white text-[8px] font-black h-5 px-2 flex items-center gap-1.5 uppercase shrink-0">
                                     <ShieldCheck className="w-2.5 h-2.5 text-primary" /> 等級: {pool.minLevel}
@@ -326,10 +332,13 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                         : "bg-amber-500/20 border-amber-500/50"
                                 )}>
                                     <Ban className={cn("w-3 h-3", isDailyLimitReached ? "text-white" : "text-amber-500")} /> 
-                                    今日限額: {pool.dailyLimit} 包
+                                    限額: {pool.dailyLimit}
                                 </Badge>
                             )}
                         </div>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-1 px-1 mb-1">
                         <Badge variant="secondary" className="bg-black/60 border-white/10 text-primary text-[8px] font-code font-black h-5 px-1.5 flex items-center gap-1 shrink-0">
                             <Clock className="w-2.5 h-2.5" />下架: {pool.expiresAt ? format(new Date(pool.expiresAt.seconds * 1000), "MM-dd HH:mm") : '--'}
                         </Badge>
@@ -453,7 +462,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
 
             <Dialog open={!!previewCard} onOpenChange={(open) => !open && setPreviewCard(null)}>
                 <DialogContent className="max-w-[min(95vw,420px)] bg-transparent border-none p-0 flex flex-col items-center gap-6 [&>button:last-child]:hidden">
-                    <DialogTitle asChild>
+                    <DialogTitle>
                         <VisuallyHidden>卡片預覽</VisuallyHidden>
                     </DialogTitle>
                     {previewCard && (

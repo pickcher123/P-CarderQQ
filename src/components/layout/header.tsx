@@ -6,24 +6,17 @@ import { Logo, CrossedCardsIcon, LuckyBagIcon, PPlusIcon } from '@/components/ic
 import { useUser, useAuth, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { useRouter, usePathname } from 'next/navigation';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { doc } from 'firebase/firestore';
 import type { UserProfile } from '@/types/user-profile';
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { PurchasePointsDialog } from '@/components/purchase-points-dialog';
 import type { SystemConfig } from '@/types/system';
 import { MemberLevelCrown } from '@/components/member-level-crown';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { PurchasePointsDialog } from '@/components/purchase-points-dialog';
 
 const navLinks = [
   { href: '/draw', label: '抽卡專區', icon: Package, color: "text-primary" },
@@ -57,7 +50,7 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
   
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border/40 bg-background/95 backdrop-blur-sm">
+    <div className="sticky top-0 z-40 w-full border-b border-border/40 bg-background/95 backdrop-blur-sm">
       <div className="container flex h-16 items-center px-4 md:px-8">
         <div className="mr-auto flex items-center ml-1">
           <Logo className="text-primary" />
@@ -211,6 +204,6 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
           </div>
         </div>
       </div>
-    </header>
+    </div>
   );
 }

@@ -78,6 +78,13 @@ const LuckBagCard = ({ bag, priority = false, index }: { bag: LuckBagWithCount, 
                 "animate-fade-in-up"
             )}>
                 
+                {/* 參與狀態徽章 */}
+                <div className="absolute top-4 left-4 z-30">
+                    <Badge className={cn("text-[9px] font-black shadow-lg", false ? "bg-primary text-white" : "bg-white/20 text-white/50")}>
+                        {false ? "參與中" : "未參與"}
+                    </Badge>
+                </div>
+                
                 {/* 左側：寬螢幕區塊 (顯示獎項) */}
                 <div className="relative flex-[1.4] flex flex-col bg-slate-600 rounded-2xl p-3 md:p-4 shadow-inner border-b-4 border-white/10">
                     <div className="relative flex-1 flex bg-[#f0f4f7] rounded-lg overflow-hidden border-4 border-[#ccd6d9] items-center p-4">
@@ -138,9 +145,17 @@ const LuckBagCard = ({ bag, priority = false, index }: { bag: LuckBagWithCount, 
 
                         <div className="space-y-2">
                             <div className="w-full bg-slate-300 h-3 rounded-full overflow-hidden border-2 border-slate-400 shadow-inner">
-                                <div className="h-full bg-slate-800 transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(0,0,0,0.2)]" style={{ width: `${progress}%` }} />
+                                <div 
+                                    className={cn(
+                                        "h-full bg-slate-800 transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(0,0,0,0.2)]",
+                                        progress >= 80 && "bg-rose-500 animate-pulse"
+                                    )} 
+                                    style={{ width: `${progress}%` }} 
+                                />
                             </div>
-                            <p className="text-[8px] font-black text-slate-400 uppercase text-right tracking-widest">Crowdfunding Progress</p>
+                            <p className="text-[8px] font-black text-slate-400 uppercase text-right tracking-widest">
+                                {progress >= 80 ? "🔥 即將額滿" : "Crowdfunding Progress"}
+                            </p>
                         </div>
                     </div>
 

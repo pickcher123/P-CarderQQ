@@ -145,12 +145,11 @@ export default function BetLandingPage() {
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-destructive/5 blur-[120px] pointer-events-none" />
 
             <div className="text-center mb-6 md:mb-8 relative z-10 space-y-4">
-                <div className="flex justify-center">
+                <div className="flex justify-center -mt-8 mb-4">
                     <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-destructive/10 border border-destructive/20 text-destructive text-[10px] md:text-sm font-bold tracking-[0.2em] uppercase animate-fade-in-up">
                         <Swords className="w-3 h-3 md:w-4 md:h-4 text-accent animate-pulse" /> ONE SPIN, ONE DESTINY
                     </div>
                 </div>
-                
             </div>
 
             {/* 直觀遊戲規則區塊 - 手機版四宮格美化版 */}

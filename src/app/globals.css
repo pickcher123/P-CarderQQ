@@ -105,6 +105,12 @@
   .animate-bounce-right {
     animation: bounce-right 1s infinite;
   }
+  .animate-pulse-slow {
+    animation: pulse-slow 3s infinite;
+  }
+  .animate-pulse-slowest {
+    animation: pulse-slow 5s infinite;
+  }
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }

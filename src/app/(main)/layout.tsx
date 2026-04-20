@@ -21,11 +21,13 @@ export default function MainLayout({
   const systemConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'systemConfig', 'main') : null, [firestore]);
   const { data: systemConfig } = useDoc<SystemConfig>(systemConfigRef);
   
+  const isMarqueeVisible = systemConfig?.featureFlags?.isMarqueeEnabled !== false;
+  
   return (
     <div className="relative flex min-h-screen flex-col">
       <AnimatedBackground backgroundUrl={systemConfig?.backgroundUrl} backgroundOpacity={systemConfig?.backgroundOpacity} />
       <Header systemConfig={systemConfig} />
-      {systemConfig?.featureFlags?.isMarqueeEnabled !== false && <NewsMarquee />}
+      {isMarqueeVisible && <NewsMarquee />}
       <main className="flex-1 pb-20 md:pb-0">{children}</main>
       <InstallPWAButton />
       <FloatingLineButton systemConfig={systemConfig} />

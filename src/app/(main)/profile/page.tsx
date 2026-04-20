@@ -239,25 +239,41 @@ export default function ProfilePage() {
         if (!isUserLoading && !user) router.push('/login');
     }, [isUserLoading, user, router]);
 
-    const handleSaveChanges = async () => {
-        if (!userProfileRef || !userProfile) return;
-        
-        try {
-            const updates: any = { realName, phone, address };
+        const handleSaveChanges = async () => {
+            if (!userProfileRef || !userProfile) return;
             
-            if (username !== userProfile.username) {
-                if (userProfile.hasChangedUsername) {
-                    toast({ variant: "destructive", title: "修改失敗", description: "會員名稱僅限修改一次。" });
-                    return;
-                }
-                updates.username = username;
-                updates.hasChangedUsername = true;
+            if (username.length > 20) {
+                toast({ variant: "destructive", title: "修改失敗", description: "會員名稱長度不得超過 20 個字。" });
+                return;
             }
 
-            await updateDoc(userProfileRef, updates);
-            toast({ title: "成功", description: "個人資料已更新。" });
-        } catch (e) { toast({ variant: "destructive", title: "錯誤" }); }
-    };
+            try {
+                const updates: any = { realName, phone, address };
+                
+                if (username !== userProfile.username) {
+                    if (userProfile.hasChangedUsername) {
+                        toast({ variant: "destructive", title: "修改失敗", description: "會員名稱僅限修改一次。" });
+                        return;
+                    }
+                    
+                    // 檢查名稱是否重複
+                    const q = query(collection(firestore, 'users'), where('username', '==', username));
+                    const snapshot = await getDocs(q);
+                    const isDuplicate = snapshot.docs.some(doc => doc.id !== user.uid);
+                    
+                    if (isDuplicate) {
+                        toast({ variant: "destructive", title: "修改失敗", description: "此會員名稱已被使用。" });
+                        return;
+                    }
+
+                    updates.username = username;
+                    updates.hasChangedUsername = true;
+                }
+
+                await updateDoc(userProfileRef, updates);
+                toast({ title: "成功", description: "個人資料已更新。" });
+            } catch (e) { toast({ variant: "destructive", title: "錯誤" }); }
+        };
 
     const currentBenefit = useMemo(() => {
         if (!userProfile || !systemConfig?.levelBenefits) return null;

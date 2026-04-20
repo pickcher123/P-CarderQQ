@@ -181,8 +181,6 @@ export default function CardPoolDetailPage() {
   const [startTimeValue, setStartTimeValue] = useState("00:00");
   
   const [newPointPrize, setNewPointPrize] = useState({ points: 100, quantity: 10, rarity: 'common' as Rarity });
-  const [salesStats, setSalesStats] = useState({ totalPoolValue: 0, totalDrawnValue: 0, loss: 0, totalRevenue: 0 });
-  const [isLoadingStats, setIsLoadingStats] = useState(true);
 
   // Fetch Card Pool details
   const cardPoolRef = useMemoFirebase(() => {
@@ -277,12 +275,6 @@ export default function CardPoolDetailPage() {
       } finally {
         setIsLoadingStats(false);
       }
-    }
-    fetchSalesStats();
-  }, [firestore, cardPoolId, allCards, cardPool]);
-
-
-
   // Fetch all pools, betting items, and lucky bags to enforce the "assigned once" rule
   const { data: allCardPools } = useCollection<CardPool>(useMemoFirebase(() => firestore ? collection(firestore, 'cardPools') : null, [firestore]));
   const { data: bettingItems } = useCollection<any>(useMemoFirebase(() => firestore ? collection(firestore, 'betting-items') : null, [firestore]));

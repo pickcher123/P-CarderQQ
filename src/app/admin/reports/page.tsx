@@ -54,31 +54,34 @@ export default function ReportsPage() {
         const selectedDate = new Date(parseInt(currentYear), parseInt(currentMonth));
         const monthStart = startOfMonth(selectedDate);
         const monthEnd = endOfMonth(selectedDate);
+        
         const filteredTransactions = allTransactions.filter(tx => {
             if (!tx.transactionDate) return false;
             const txDate = new Date(tx.transactionDate.seconds * 1000);
             return txDate >= monthStart && txDate <= monthEnd;
         });
+        
+        const dailyIncome: { [key: string]: number } = {};
+        for (let d = new Date(monthStart); d <= monthEnd; d.setDate(d.getDate() + 1)) {
+            dailyIncome[d.getDate().toString()] = 0;
+        }
+
         const activePlayerIds = new Set<string>();
-        const sectionIssuedValue: { [key: string]: number } = { draw: 0, 'lucky-bag': 0, betting: 0, arena: 0, 'group-break': 0 };
         const stats = filteredTransactions.reduce((acc, tx) => {
-            if (tx.transactionType === 'Deposit' && tx.section === 'deposit') acc.totalIncome += tx.amount;
+            if (tx.transactionType === 'Deposit' && tx.section === 'deposit') {
+                acc.totalIncome += tx.amount;
+                const txDate = new Date(tx.transactionDate.seconds * 1000);
+                dailyIncome[txDate.getDate().toString()] += tx.amount;
+            }
             if (tx.amount < 0 && ['draw', 'lucky-bag', 'betting', 'arena', 'group-break', 'shipping'].includes(tx.section || '')) acc.totalConsumption += Math.abs(tx.amount);
-            const val = tx.issuedValue || 0;
-            acc.totalIssuedValue += val;
-            if (tx.section && sectionIssuedValue.hasOwnProperty(tx.section)) sectionIssuedValue[tx.section] += val;
+            acc.totalIssuedValue += (tx.issuedValue || 0);
             if (['draw', 'lucky-bag', 'betting', 'arena', 'group-break'].includes(tx.section || '')) activePlayerIds.add(tx.userId);
             return acc;
         }, { totalIncome: 0, totalConsumption: 0, totalIssuedValue: 0 });
+        
         return {
             reportStats: { ...stats, netIncome: stats.totalIncome - stats.totalIssuedValue, activePlayers: activePlayerIds.size },
-            chartData: [
-                { section: '抽卡', value: sectionIssuedValue.draw, fill: "#0ea5e9" },
-                { section: '福袋', value: sectionIssuedValue['lucky-bag'], fill: "#f59e0b" },
-                { section: '拼卡', value: sectionIssuedValue.betting, fill: "#ec4899" },
-                { section: '競技', value: sectionIssuedValue.arena, fill: "#10b981" },
-                { section: '團拆', value: sectionIssuedValue['group-break'] || 0, fill: "#8b5cf6" },
-            ],
+            chartData: Object.entries(dailyIncome).map(([day, value]) => ({ day: `${day}日`, value })),
         };
     }, [allTransactions, currentYear, currentMonth]);
     
@@ -120,17 +123,17 @@ export default function ReportsPage() {
             
             <Card className="border-slate-200 shadow-sm rounded-2xl bg-white overflow-hidden">
                 <CardHeader className="border-b border-slate-50 bg-slate-50/50">
-                    <CardTitle className="text-lg font-bold flex items-center gap-2"><BarChart className="h-5 w-5 text-slate-400" /> 專區發放價值分佈</CardTitle>
+                    <CardTitle className="text-lg font-bold flex items-center gap-2"><BarChart className="h-5 w-5 text-slate-400" /> 每日儲值金額</CardTitle>
                 </CardHeader>
                 <CardContent className="p-8">
                     <div className="h-[400px] w-full">
                          <ResponsiveContainer width="100%" height="100%">
                             <RechartsBarChart data={chartData} margin={{ top: 20, right: 30, bottom: 20, left: 20 }}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                                <XAxis dataKey="section" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} dy={10} />
+                                <XAxis dataKey="day" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} dy={10} />
                                 <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
                                 <Tooltip cursor={{ fill: '#f8fafc' }} content={<CustomTooltip />} />
-                                <Bar dataKey="value" radius={[6, 6, 0, 0]} barSize={50} />
+                                <Bar dataKey="value" radius={[6, 6, 0, 0]} barSize={20} fill="#10b981" />
                             </RechartsBarChart>
                         </ResponsiveContainer>
                     </div>
