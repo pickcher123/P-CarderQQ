@@ -850,15 +850,27 @@ export default function OpenPackPage() {
 
                         {/* 電腦版點擊箭頭 */}
                         {sessionPrizes.length > 2 && (
-                            <button 
-                                className="absolute right-0 top-1/2 -translate-y-1/2 z-50 bg-black/60 backdrop-blur-md p-4 rounded-l-full border border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.5)] hover:bg-red-500/20 transition-all hidden md:block"
-                                onClick={() => {
-                                    const container = document.getElementById('prize-scroll-container');
-                                    if (container) container.scrollBy({ left: 300, behavior: 'smooth' });
-                                }}
-                            >
-                                <ChevronRight className="w-8 h-8 text-red-500" />
-                            </button>
+                            <>
+                                <button 
+                                    className="absolute left-0 top-1/2 -translate-y-1/2 z-50 bg-black/60 backdrop-blur-md p-4 rounded-r-full border border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.5)] hover:bg-red-500/20 transition-all hidden md:block"
+                                    onClick={() => {
+                                        const container = document.getElementById('prize-scroll-container');
+                                        if (container) container.scrollBy({ left: -300, behavior: 'smooth' });
+                                    }}
+                                >
+                                    <ChevronRight className="w-8 h-8 text-red-500 rotate-180" />
+                                </button>
+
+                                <button 
+                                    className="absolute right-0 top-1/2 -translate-y-1/2 z-50 bg-black/60 backdrop-blur-md p-4 rounded-l-full border border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.5)] hover:bg-red-500/20 transition-all hidden md:block"
+                                    onClick={() => {
+                                        const container = document.getElementById('prize-scroll-container');
+                                        if (container) container.scrollBy({ left: 300, behavior: 'smooth' });
+                                    }}
+                                >
+                                    <ChevronRight className="w-8 h-8 text-red-500" />
+                                </button>
+                            </>
                         )}
                     </div>
                 </div>
