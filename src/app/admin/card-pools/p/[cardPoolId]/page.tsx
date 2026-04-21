@@ -79,6 +79,7 @@ interface CardPool {
   totalPacks?: number;
   remainingPacks?: number;
   hasProtection?: boolean;
+  isActive?: boolean;
   isFeatured?: boolean;
   currency?: 'diamond' | 'p-point';
   cardRarities?: { [cardId: string]: Rarity };
@@ -312,6 +313,7 @@ export default function CardPoolDetailPage() {
         totalPacks: cardPool.totalPacks || 0,
         remainingPacks: cardPool.remainingPacks ?? cardPool.totalPacks,
         hasProtection: cardPool.hasProtection !== false,
+        isActive: cardPool.isActive !== false,
         isFeatured: cardPool.isFeatured || false,
         currency: cardPool.currency || 'diamond',
         cardRarities: cardPool.cardRarities || {},
@@ -720,6 +722,23 @@ export default function CardPoolDetailPage() {
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100 shadow-inner">
+                                <div className="space-y-0.5">
+                                    <Label className="text-base flex items-center gap-2 font-black text-slate-900">
+                                        <Ban className="h-4 w-4 text-rose-500" />
+                                        卡池啟用狀態
+                                    </Label>
+                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Active Pool Status</p>
+                                </div>
+                                <Switch
+                                    checked={poolDetails.isActive !== false}
+                                    onCheckedChange={(checked) => {
+                                        setPoolDetails({ ...poolDetails, isActive: checked });
+                                        handleUpdatePoolDetails('isActive', checked);
+                                    }}
+                                />
+                            </div>
+
                             <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100 shadow-inner">
                                 <div className="space-y-0.5">
                                     <Label className="text-base flex items-center gap-2 font-black text-slate-900">
