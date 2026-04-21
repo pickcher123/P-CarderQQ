@@ -58,6 +58,7 @@ export function CardItem({ name, imageUrl, backImageUrl, imageHint, rarity, seri
   }
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isFlippable) return; // 收藏庫的一般卡片不可翻轉，所以直接返回
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -71,14 +72,15 @@ export function CardItem({ name, imageUrl, backImageUrl, imageHint, rarity, seri
   };
 
   const handleMouseLeave = () => {
+    if (!isFlippable) return;
     setZoomPos(null);
   };
 
   const styles = rarity ? (rarityStyles[rarity] || rarityStyles.common) : rarityStyles.common;
 
   return (
-    <div 
-      className="group w-full aspect-[2.5/4] [perspective:1200px]" 
+    <div
+      className="group w-full aspect-[2.5/4] [perspective:1200px]"
       onClick={handleCardClick}
       ref={containerRef}
     >
@@ -113,8 +115,17 @@ export function CardItem({ name, imageUrl, backImageUrl, imageHint, rarity, seri
                 onError={() => setImgError(true)}
             />
             
-            {/* Magnifying Glass Overlay (Front) */}
-            {zoomPos && !isFlipped && (
+          {/* Magnifying Glass Icon (Hover only) */}
+          {!isFlippable && (
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none">
+                 <div className="p-2 rounded-full bg-black/50 backdrop-blur-sm border border-white/20">
+                     <Search className="w-5 h-5 text-white" />
+                 </div>
+              </div>
+          )}
+
+          {/* Magnifying Glass Interaction Overlay (Zoom, only if flipped/flippable mode) */}
+          {zoomPos && isFlippable && !isFlipped && (
                 <div 
                     className="absolute inset-0 z-10 cursor-zoom-in"
                     style={{

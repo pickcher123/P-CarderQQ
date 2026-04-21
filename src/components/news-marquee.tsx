@@ -19,14 +19,14 @@ export function NewsMarquee() {
     const [isVisible, setIsVisible] = useState(true);
 
     useEffect(() => {
-        if (localStorage.getItem('marquee-dismissed') === 'true') {
+        if (sessionStorage.getItem('marquee-dismissed') === 'true') {
           setIsVisible(false);
         }
     }, []);
 
     const dismiss = () => {
         setIsVisible(false);
-        localStorage.setItem('marquee-dismissed', 'true');
+        sessionStorage.setItem('marquee-dismissed', 'true');
     };
 
     // 抓取最近的消息，前端過濾

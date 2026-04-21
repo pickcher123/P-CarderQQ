@@ -504,9 +504,6 @@ export default function CollectionPage() {
                             <div className="absolute top-2 left-2 z-10" onClick={(e) => e.stopPropagation()}>
                                 <Checkbox checked={selectedCardIds.has(card.id)} onCheckedChange={(c) => handleSelectCard(card.id, c)} className="bg-background/80 border-primary/50 h-5 w-5 data-[state=checked]:bg-primary" />
                             </div>
-                            <button className="absolute top-2 right-2 z-10 h-6 w-6 rounded-full bg-black/40 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                <SearchCode className="h-3 w-3" />
-                            </button>
                         </div>
                     ))}
                 </div>
@@ -552,9 +549,6 @@ export default function CollectionPage() {
                             <div className="absolute top-2 left-2 z-10" onClick={(e) => e.stopPropagation()}>
                                 <Checkbox checked={selectedCardIds.has(card.id)} onCheckedChange={(c) => handleSelectCard(card.id, c)} className="bg-background/80 border-orange-500/50 h-5 w-5 data-[state=checked]:bg-orange-500" />
                             </div>
-                            <button className="absolute top-2 right-2 z-10 h-6 w-6 rounded-full bg-black/40 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                <SearchCode className="h-3 w-3" />
-                            </button>
                         </div>
                     ))}
                 </div>
@@ -584,6 +578,7 @@ export default function CollectionPage() {
 
       <Dialog open={!!previewCard} onOpenChange={(open) => !open && setPreviewCard(null)}>
         <DialogContent className="max-w-[min(95vw,420px)] sm:max-w-md bg-transparent border-none shadow-none p-0 overflow-visible flex flex-col items-center gap-6 [&>button:last-child]:hidden">
+            <DialogTitle className="sr-only">卡片預覽</DialogTitle>
             {previewCard && (
                 <div className="w-full flex flex-col items-center gap-6 animate-in zoom-in-95 duration-300">
                     <h2 className="text-[12px] md:text-sm font-black font-headline text-white drop-shadow-2xl tracking-tight leading-tight uppercase px-6 text-center max-w-[280px]">{previewCard.name}</h2>

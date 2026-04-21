@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth, useFirestore, initiateEmailSignIn, initiateEmailSignUp, initiateGoogleSignIn, initiatePasswordReset } from '@/firebase';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, query, collection, where, getDocs } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { FirebaseError } from 'firebase/app';
@@ -174,6 +174,27 @@ export default function LoginPage() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (registerUsername.length > 20) {
+        toast({
+            variant: "destructive",
+            title: "註冊失敗",
+            description: "會員名稱長度不得超過 20 個字。",
+        });
+        return;
+    }
+    
+    // 檢查名稱是否重複
+    const q = query(collection(firestore, 'users'), where('username', '==', registerUsername));
+    const snapshot = await getDocs(q);
+    if (!snapshot.empty) {
+        toast({
+            variant: "destructive",
+            title: "註冊失敗",
+            description: "此會員名稱已被使用。",
+        });
+        return;
+    }
+
     if (registerPassword !== registerConfirmPassword) {
         toast({
             variant: "destructive",

@@ -10,6 +10,7 @@ import { PPlusIcon } from '@/components/icons';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useUser, useAuth, useDoc, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
+import { addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { collection, query, where, getDoc, doc, serverTimestamp, increment, runTransaction, getDocs, updateDoc, Timestamp, limit } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { getApp } from 'firebase/app';
@@ -52,6 +53,8 @@ interface FirestoreErrorInfo {
 function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
   console.error('Firestore Error Object: ', error);
   const auth = getAuth(getApp());
+  
+  // 紀錄完整的除錯資訊到 console
   const errInfo: FirestoreErrorInfo = {
     error: error instanceof Error ? error.message : String(error),
     authInfo: {
@@ -69,9 +72,24 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
     },
     operationType,
     path
-  }
+  };
   console.error('Firestore Error Info: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
+
+  // 轉換為親切提示
+  let userFriendlyMessage = '系統發生異常，請稍後再試。';
+  const errorMessage = errInfo.error.toLowerCase();
+
+  if (errorMessage.includes('permission')) {
+    userFriendlyMessage = '權限不足，請重新整理頁面。';
+  } else if (errorMessage.includes('unavailable') || errorMessage.includes('timeout')) {
+    userFriendlyMessage = '交易逾時，若點數已扣除請稍候查看背包。';
+  } else if (errorMessage.includes('insufficient') || errorMessage.includes('點數不足')) {
+    userFriendlyMessage = '點數不足，無法進行抽卡。';
+  } else if (errorMessage.includes('fully sold') || errorMessage.includes('sold out')) {
+    userFriendlyMessage = '卡包已售罄。';
+  }
+
+  throw new Error(userFriendlyMessage);
 }
 
 type Rarity = 'legendary' | 'rare' | 'common';
@@ -373,38 +391,17 @@ export default function OpenPackPage() {
                             });
                             transaction.update(doc(firestore, 'allCards', picked.id), { isSold: true });
                             
-                            transaction.set(doc(collection(firestore, 'drawnCardLogs')), {
-                                cardId: picked.id,
-                                sellPrice: (picked as Card).sellPrice || 0,
-                                poolId: poolId,
-                                userId: user.uid,
-                                timestamp: serverTimestamp()
-                            });
+                             // Side Effect: Moved to outside
                             
                             if (picked.rarity === 'legendary') {
-                                transaction.set(doc(collection(firestore, 'announcements')), {
-                                    username: uData.username,
-                                    action: '抽中',
-                                    prize: picked.name,
-                                    prizeImageUrl: picked.imageUrl,
-                                    rarity: 'legendary',
-                                    timestamp: serverTimestamp(),
-                                    section: 'draw'
-                                });
+                                // Side Effect: Moved to outside
                             }
                         } else if (picked.type === 'points') {
                             const idx = updatedPoints.findIndex(p => p.prizeId === (picked as PointPrize).prizeId);
                             updatedPoints[idx].quantity -= 1;
                             
                             if (picked.rarity === 'legendary') {
-                                transaction.set(doc(collection(firestore, 'announcements')), {
-                                    username: uData.username,
-                                    action: '抽中',
-                                    prize: `${(picked as PointPrize).points} P+ 點數`,
-                                    rarity: 'legendary',
-                                    timestamp: serverTimestamp(),
-                                    section: 'draw'
-                                });
+                                // Side Effect: Moved to outside
                             }
                         }
                         (picked as any).serialNumber = `${Math.floor(Math.random() * 9000) + 1000}`;
@@ -428,23 +425,7 @@ export default function OpenPackPage() {
                             });
                             transaction.update(doc(firestore, 'allCards', lpSnap.id), { isSold: true });
                             
-                            transaction.set(doc(collection(firestore, 'drawnCardLogs')), {
-                                cardId: lpSnap.id,
-                                sellPrice: lpData.sellPrice || 0,
-                                poolId: poolId,
-                                userId: user.uid,
-                                timestamp: serverTimestamp()
-                            });
-                            
-                            transaction.set(doc(collection(firestore, 'announcements')), {
-                                username: uData.username,
-                                action: '獲得最後賞',
-                                prize: lpData.name,
-                                prizeImageUrl: lpData.imageUrl,
-                                rarity: 'legendary',
-                                timestamp: serverTimestamp(),
-                                section: 'draw'
-                            });
+                            // Side Effect: Moved to outside
                         }
                     }
                     
@@ -477,21 +458,66 @@ export default function OpenPackPage() {
                         lockedAt: serverTimestamp() 
                     });
                     
-                    transaction.set(doc(collection(firestore, 'transactions'), `${user.uid}_${Date.now()}`), { 
-                        userId: user.uid, 
-                        targetId: poolId, 
-                        transactionType: 'Purchase', 
-                        section: 'draw', 
-                        currency: pData.currency || 'diamond', 
-                        amount: -finalCost, 
-                        details: `Draw ${actualCount} from pool: ${pData.name}`, 
-                        transactionDate: serverTimestamp() 
-                    });
+                    // Side Effect: Moved to outside
                     
-                    return { newBatch, lpPrize, cashback, newRemaining, updatedCards, updatedPoints };
+                    return { newBatch, lpPrize, cashback, newRemaining, updatedCards, updatedPoints, uData };
                 });
                 
                 if (result) {
+                    // Start of side-effects execution
+                    // Handle drawing logs and announcements
+                    result.newBatch.forEach(picked => {
+                         /* addDocumentNonBlocking(collection(firestore, 'drawnCardLogs'), {
+                            cardId: picked.type === 'card' || picked.type === 'last-prize' ? picked.id : (picked as PointPrize).prizeId,
+                            sellPrice: (picked.type === 'card' || picked.type === 'last-prize') ? ((picked as Card).sellPrice || 0) : 0,
+                            poolId: poolId,
+                            userId: user.uid,
+                            timestamp: serverTimestamp()
+                        }); */
+                        if (picked.rarity === 'legendary') {
+                             addDocumentNonBlocking(collection(firestore, 'announcements'), {
+                                username: result.uData.username,
+                                action: '抽中',
+                                prize: picked.type === 'card' ? picked.name : `${(picked as PointPrize).points} P+ 點數`,
+                                prizeImageUrl: picked.type === 'card' && (picked as Card).imageUrl ? (picked as Card).imageUrl : null,
+                                rarity: 'legendary',
+                                timestamp: serverTimestamp(),
+                                section: 'draw'
+                            });
+                        }
+                    });
+                    
+                    if (result.lpPrize) {
+                        /* addDocumentNonBlocking(collection(firestore, 'drawnCardLogs'), {
+                            cardId: result.lpPrize.id,
+                            sellPrice: (result.lpPrize as Card).sellPrice || 0,
+                            poolId: poolId,
+                            userId: user.uid,
+                            timestamp: serverTimestamp()
+                        }); */
+                        addDocumentNonBlocking(collection(firestore, 'announcements'), {
+                            username: result.uData.username,
+                            action: '獲得最後賞',
+                            prize: (result.lpPrize as Card).name,
+                            prizeImageUrl: (result.lpPrize as Card).imageUrl,
+                            rarity: 'legendary',
+                            timestamp: serverTimestamp(),
+                            section: 'draw'
+                        });
+                    }
+                    
+                    // Create Transaction Log
+                    setDocumentNonBlocking(doc(firestore, 'transactions', `${user.uid}_${Date.now()}`), {
+                        userId: user.uid,
+                        targetId: poolId,
+                        transactionType: 'Purchase',
+                        section: 'draw',
+                        currency: cardPool.currency || 'diamond',
+                        amount: -(result.newBatch.length === 3 && cardPool.price3Draws ? cardPool.price3Draws : (cardPool.price || 0) * result.newBatch.length),
+                        details: `Draw ${result.newBatch.length} from pool: ${cardPool.name}`,
+                        transactionDate: serverTimestamp()
+                    }, {});
+                    // End of side-effects
                     const combined = [...result.newBatch];
                     if (result.lpPrize) combined.push(result.lpPrize);
                     
@@ -810,7 +836,8 @@ export default function OpenPackPage() {
                                         <div className="w-full aspect-[2.5/4] rounded-3xl overflow-hidden shadow-2xl transition-all hover:scale-105 group border border-white/5 h-full">
                                             <CardItem 
                                                 name={p.name} 
-                                                imageUrl={p.imageUrl} 
+                                                imageUrl={p.imageUrl}
+                                                backImageUrl={p.backImageUrl} 
                                                 imageHint={p.name} 
                                                 rarity={p.rarity} 
                                                 className="h-full"
@@ -823,15 +850,27 @@ export default function OpenPackPage() {
 
                         {/* 電腦版點擊箭頭 */}
                         {sessionPrizes.length > 2 && (
-                            <button 
-                                className="absolute right-0 top-1/2 -translate-y-1/2 z-50 bg-black/60 backdrop-blur-md p-4 rounded-l-full border border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.5)] hover:bg-red-500/20 transition-all hidden md:block"
-                                onClick={() => {
-                                    const container = document.getElementById('prize-scroll-container');
-                                    if (container) container.scrollBy({ left: 300, behavior: 'smooth' });
-                                }}
-                            >
-                                <ChevronRight className="w-8 h-8 text-red-500" />
-                            </button>
+                            <>
+                                <button 
+                                    className="absolute left-0 top-1/2 -translate-y-1/2 z-50 bg-black/60 backdrop-blur-md p-4 rounded-r-full border border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.5)] hover:bg-red-500/20 transition-all hidden md:block"
+                                    onClick={() => {
+                                        const container = document.getElementById('prize-scroll-container');
+                                        if (container) container.scrollBy({ left: -300, behavior: 'smooth' });
+                                    }}
+                                >
+                                    <ChevronRight className="w-8 h-8 text-red-500 rotate-180" />
+                                </button>
+
+                                <button 
+                                    className="absolute right-0 top-1/2 -translate-y-1/2 z-50 bg-black/60 backdrop-blur-md p-4 rounded-l-full border border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.5)] hover:bg-red-500/20 transition-all hidden md:block"
+                                    onClick={() => {
+                                        const container = document.getElementById('prize-scroll-container');
+                                        if (container) container.scrollBy({ left: 300, behavior: 'smooth' });
+                                    }}
+                                >
+                                    <ChevronRight className="w-8 h-8 text-red-500" />
+                                </button>
+                            </>
                         )}
                     </div>
                 </div>

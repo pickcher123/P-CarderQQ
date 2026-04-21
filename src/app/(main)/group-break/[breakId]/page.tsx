@@ -298,11 +298,16 @@ export default function GroupBreakDetailPage() {
             <h1 className="font-headline text-3xl md:text-4xl font-black text-white leading-tight tracking-tighter italic drop-shadow-md">{groupBreak.title}</h1>
             <p className="text-muted-foreground leading-relaxed font-medium opacity-80">{groupBreak.description}</p>
             {groupBreak.youtubeUrl && (
-                <Button asChild variant="outline" className="w-full h-14 rounded-2xl border-red-500/30 bg-red-500/5 text-red-500 hover:bg-red-500/10 font-black shadow-lg">
-                    <Link href={groupBreak.youtubeUrl.includes('youtube.com') ? groupBreak.youtubeUrl : `https://youtube.com/watch?v=${groupBreak.youtubeUrl}`} target="_blank">
-                        前往收看實況頻道
-                    </Link>
-                </Button>
+                <div className="mt-6">
+                    <p className="text-[10px] font-black text-white/50 uppercase tracking-[0.2em] mb-2">
+                        {groupBreak.status === 'completed' ? '直播檔案回顧' : '實況傳輸頻道'}
+                    </p>
+                    <Button asChild variant="outline" className="w-full h-14 rounded-2xl border-red-500/30 bg-red-500/5 text-red-500 hover:bg-red-500/10 font-black shadow-lg text-lg">
+                        <Link href={groupBreak.youtubeUrl.includes('youtube.com') ? groupBreak.youtubeUrl : `https://youtube.com/watch?v=${groupBreak.youtubeUrl}`} target="_blank">
+                            {groupBreak.status === 'completed' ? '▶ 點擊觀看回顧' : '前往收看實況頻道'}
+                        </Link>
+                    </Button>
+                </div>
             )}
           </div>
         </div>

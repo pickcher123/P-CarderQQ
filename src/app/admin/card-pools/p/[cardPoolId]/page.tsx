@@ -79,6 +79,7 @@ interface CardPool {
   totalPacks?: number;
   remainingPacks?: number;
   hasProtection?: boolean;
+  isActive?: boolean;
   isFeatured?: boolean;
   currency?: 'diamond' | 'p-point';
   cardRarities?: { [cardId: string]: Rarity };
@@ -181,8 +182,6 @@ export default function CardPoolDetailPage() {
   const [startTimeValue, setStartTimeValue] = useState("00:00");
   
   const [newPointPrize, setNewPointPrize] = useState({ points: 100, quantity: 10, rarity: 'common' as Rarity });
-  const [salesStats, setSalesStats] = useState({ totalPoolValue: 0, totalDrawnValue: 0, loss: 0, totalRevenue: 0 });
-  const [isLoadingStats, setIsLoadingStats] = useState(true);
 
   // Fetch Card Pool details
   const cardPoolRef = useMemoFirebase(() => {
@@ -200,7 +199,7 @@ export default function CardPoolDetailPage() {
 
   useEffect(() => {
     async function fetchSalesStats() {
-      console.log('DEBUG: fetchSalesStats triggered', { firestore: !!firestore, cardPoolId, allCards: !!allCards });
+
       if (!firestore || !cardPoolId || !allCards) return;
       setIsLoadingStats(true);
       try {
@@ -218,18 +217,9 @@ export default function CardPoolDetailPage() {
             }
         }
 
-        console.log('DEBUG: Querying transactions...');
-        const txQuery = query(collection(firestore, 'transactions'), where('targetId', '==', cardPoolId));
-        const txSnapshot = await getDocs(txQuery);
-        console.log('DEBUG: Transactions queried successfully.');
+
         
-        let totalSales = 0;
-        txSnapshot.forEach(doc => {
-            const tx = doc.data();
-            if (tx.transactionType === 'Purchase' && tx.amount < 0) {
-                totalSales += Math.abs(tx.amount);
-            }
-        });
+
 
         // Calculate total pool value
         let totalPoolValue = 0;
@@ -277,12 +267,9 @@ export default function CardPoolDetailPage() {
       } finally {
         setIsLoadingStats(false);
       }
+      fetchSalesStats();
     }
-    fetchSalesStats();
   }, [firestore, cardPoolId, allCards, cardPool]);
-
-
-
   // Fetch all pools, betting items, and lucky bags to enforce the "assigned once" rule
   const { data: allCardPools } = useCollection<CardPool>(useMemoFirebase(() => firestore ? collection(firestore, 'cardPools') : null, [firestore]));
   const { data: bettingItems } = useCollection<any>(useMemoFirebase(() => firestore ? collection(firestore, 'betting-items') : null, [firestore]));
@@ -326,6 +313,7 @@ export default function CardPoolDetailPage() {
         totalPacks: cardPool.totalPacks || 0,
         remainingPacks: cardPool.remainingPacks ?? cardPool.totalPacks,
         hasProtection: cardPool.hasProtection !== false,
+        isActive: cardPool.isActive !== false,
         isFeatured: cardPool.isFeatured || false,
         currency: cardPool.currency || 'diamond',
         cardRarities: cardPool.cardRarities || {},
@@ -734,6 +722,23 @@ export default function CardPoolDetailPage() {
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100 shadow-inner">
+                                <div className="space-y-0.5">
+                                    <Label className="text-base flex items-center gap-2 font-black text-slate-900">
+                                        <Ban className="h-4 w-4 text-rose-500" />
+                                        卡池啟用狀態
+                                    </Label>
+                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Active Pool Status</p>
+                                </div>
+                                <Switch
+                                    checked={poolDetails.isActive !== false}
+                                    onCheckedChange={(checked) => {
+                                        setPoolDetails({ ...poolDetails, isActive: checked });
+                                        handleUpdatePoolDetails('isActive', checked);
+                                    }}
+                                />
+                            </div>
+
                             <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100 shadow-inner">
                                 <div className="space-y-0.5">
                                     <Label className="text-base flex items-center gap-2 font-black text-slate-900">

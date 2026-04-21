@@ -36,6 +36,7 @@ interface CardPool {
     remainingPacks?: number;
     hasProtection?: boolean;
     isFeatured?: boolean;
+    isActive?: boolean;
     currency?: 'diamond' | 'p-point';
     cardRarities?: { [cardId: string]: any };
     cards?: { cardId: string; quantity: number }[];
@@ -97,7 +98,8 @@ export default function DrawPage() {
     return cardPools.filter(p => 
         (p.remainingPacks ?? 0) > 0 && 
         (!p.expiresAt || p.expiresAt.seconds > now) &&
-        (!p.startsAt || p.startsAt.seconds < now)
+        (!p.startsAt || p.startsAt.seconds < now) &&
+        (p.isActive !== false)
     ).sort((a, b) => (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0));
   }, [cardPools]);
 

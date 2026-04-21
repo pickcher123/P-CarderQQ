@@ -462,7 +462,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
 
             <Dialog open={!!previewCard} onOpenChange={(open) => !open && setPreviewCard(null)}>
                 <DialogContent className="max-w-[min(95vw,420px)] bg-transparent border-none p-0 flex flex-col items-center gap-6 [&>button:last-child]:hidden">
-                    <DialogTitle asChild>
+                    <DialogTitle>
                         <VisuallyHidden>卡片預覽</VisuallyHidden>
                     </DialogTitle>
                     {previewCard && (
