@@ -77,8 +77,8 @@ export function CardItem({ name, imageUrl, backImageUrl, imageHint, rarity, seri
   const styles = rarity ? (rarityStyles[rarity] || rarityStyles.common) : rarityStyles.common;
 
   return (
-    <div 
-      className="group w-full aspect-[2.5/4] [perspective:1200px]" 
+    <div
+      className="group w-full aspect-[2.5/4] [perspective:1200px]"
       onClick={handleCardClick}
       ref={containerRef}
     >

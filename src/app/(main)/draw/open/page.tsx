@@ -467,19 +467,19 @@ export default function OpenPackPage() {
                     // Start of side-effects execution
                     // Handle drawing logs and announcements
                     result.newBatch.forEach(picked => {
-                         addDocumentNonBlocking(collection(firestore, 'drawnCardLogs'), {
-                            cardId: picked.id,
-                            sellPrice: (picked as Card).sellPrice || 0,
+                         /* addDocumentNonBlocking(collection(firestore, 'drawnCardLogs'), {
+                            cardId: picked.type === 'card' || picked.type === 'last-prize' ? picked.id : (picked as PointPrize).prizeId,
+                            sellPrice: (picked.type === 'card' || picked.type === 'last-prize') ? ((picked as Card).sellPrice || 0) : 0,
                             poolId: poolId,
                             userId: user.uid,
                             timestamp: serverTimestamp()
-                        });
+                        }); */
                         if (picked.rarity === 'legendary') {
                              addDocumentNonBlocking(collection(firestore, 'announcements'), {
                                 username: result.uData.username,
                                 action: '抽中',
                                 prize: picked.type === 'card' ? picked.name : `${(picked as PointPrize).points} P+ 點數`,
-                                prizeImageUrl: picked.type === 'card' ? (picked as Card).imageUrl : undefined,
+                                prizeImageUrl: picked.type === 'card' && (picked as Card).imageUrl ? (picked as Card).imageUrl : null,
                                 rarity: 'legendary',
                                 timestamp: serverTimestamp(),
                                 section: 'draw'
@@ -488,13 +488,13 @@ export default function OpenPackPage() {
                     });
                     
                     if (result.lpPrize) {
-                        addDocumentNonBlocking(collection(firestore, 'drawnCardLogs'), {
+                        /* addDocumentNonBlocking(collection(firestore, 'drawnCardLogs'), {
                             cardId: result.lpPrize.id,
                             sellPrice: (result.lpPrize as Card).sellPrice || 0,
                             poolId: poolId,
                             userId: user.uid,
                             timestamp: serverTimestamp()
-                        });
+                        }); */
                         addDocumentNonBlocking(collection(firestore, 'announcements'), {
                             username: result.uData.username,
                             action: '獲得最後賞',

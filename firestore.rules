@@ -34,14 +34,8 @@ service cloud.firestore {
     }
 
     match /transactions/{transactionId} {
-      allow create: if isSignedIn();
-      allow read: if isSignedIn();
-    }
-    
-    match /drawnCardLogs/{logId} {
-       allow create: if isSignedIn();
-       // 修正讀取規則，直接對 resource.data.userId 進行檢查
-       allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
     
     // 定義 SalesStats 規則 (假设 salesStats 是獨立集合或在 users 內)
