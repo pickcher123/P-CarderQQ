@@ -405,17 +405,19 @@ export default function GroupBreakDetailPage() {
                     <AlertDialogContent className="rounded-[2.5rem] bg-slate-200 border-slate-400 border-[10px] p-10 text-slate-900">
                         <AlertDialogHeader>
                             <AlertDialogTitle className="font-headline font-black text-slate-800 uppercase text-2xl italic tracking-tighter">系統交易確認</AlertDialogTitle>
-                            <AlertDialogDescription className="text-slate-600 font-bold space-y-4">
-                                <p>確定要參與此團拆活動嗎？</p>
-                                <div className="p-4 rounded-xl border border-destructive/20 bg-destructive/5 text-left text-[11px] leading-relaxed space-y-1.5">
-                                    <p className="font-black text-destructive flex items-center gap-2"><AlertCircle className="w-3.5 h-3.5" /> 購買條款告知：</p>
-                                    <ul className="list-none pl-0 space-y-1 font-bold">
-                                        <li>● 本站商品屬機率型抽選及數位內容，購買後即視為參與活動。</li>
-                                        <li>● 本服務經提供即完成，依《消保法》不適用七日鑑賞期。</li>
-                                        <li>● 請確認商品描述，並確保網路連線狀態穩定。</li>
-                                        <li>● 在進行購買前,您需要完全同意本站的購買規則。一旦完成購買,即視同您已同意所有相關條款,不得以規則內容為由要求退換貨。</li>
-                                        <li>● 請避免短時間內頻繁購買,否則可能因金流或銀行風險控管導致該帳戶暫時性凍結,建議您於消費前一次性購買足量點數。</li>
-                                    </ul>
+                            <AlertDialogDescription asChild>
+                                <div className="text-slate-600 font-bold space-y-4">
+                                    <p>確定要參與此團拆活動嗎？</p>
+                                    <div className="p-4 rounded-xl border border-destructive/20 bg-destructive/5 text-left text-[11px] leading-relaxed space-y-1.5">
+                                        <p className="font-black text-destructive flex items-center gap-2"><AlertCircle className="w-3.5 h-3.5" /> 購買條款告知：</p>
+                                        <ul className="list-none pl-0 space-y-1 font-bold">
+                                            <li>● 本站商品屬機率型抽選及數位內容，購買後即視為參與活動。</li>
+                                            <li>● 本服務經提供即完成，依《消保法》不適用七日鑑賞期。</li>
+                                            <li>● 請確認商品描述，並確保網路連線狀態穩定。</li>
+                                            <li>● 在進行購買前,您需要完全同意本站的購買規則。一旦完成購買,即視同您已同意所有相關條款,不得以規則內容為由要求退換貨。</li>
+                                            <li>● 請避免短時間內頻繁購買,否則可能因金流或銀行風險控管導致該帳戶暫時性凍結,建議您於消費前一次性購買足量點數。</li>
+                                        </ul>
+                                    </div>
                                 </div>
                             </AlertDialogDescription>
                         </AlertDialogHeader>

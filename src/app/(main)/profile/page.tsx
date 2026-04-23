@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Shield, Gem, Truck, User as UserIcon, Loader2, History, MapPin, ChevronRight, Settings, Sparkles, CheckCircle2, Crown, Package, AlertCircle } from 'lucide-react';
 import { PPlusIcon } from "@/components/icons";
 import { useDoc, useFirestore, useUser, useMemoFirebase, useCollection } from "@/firebase";
-import { doc, collection, writeBatch, serverTimestamp, increment, query, where, updateDoc } from "firebase/firestore";
+import { doc, collection, writeBatch, serverTimestamp, increment, query, where, updateDoc, getDocs } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -242,22 +242,23 @@ export default function ProfilePage() {
         const handleSaveChanges = async () => {
             if (!userProfileRef || !userProfile) return;
             
-            if (username.length > 20) {
-                toast({ variant: "destructive", title: "修改失敗", description: "會員名稱長度不得超過 20 個字。" });
+            const trimmedUsername = username.trim();
+            if (trimmedUsername.length < 2 || trimmedUsername.length > 12) {
+                toast({ variant: "destructive", title: "修改失敗", description: "會員名稱長度限定為 2 ~ 12 個字。" });
                 return;
             }
 
             try {
                 const updates: any = { realName, phone, address };
                 
-                if (username !== userProfile.username) {
+                if (trimmedUsername !== userProfile.username) {
                     if (userProfile.hasChangedUsername) {
                         toast({ variant: "destructive", title: "修改失敗", description: "會員名稱僅限修改一次。" });
                         return;
                     }
                     
                     // 檢查名稱是否重複
-                    const q = query(collection(firestore, 'users'), where('username', '==', username));
+                    const q = query(collection(firestore, 'users'), where('username', '==', trimmedUsername));
                     const snapshot = await getDocs(q);
                     const isDuplicate = snapshot.docs.some(doc => doc.id !== user.uid);
                     
@@ -266,7 +267,7 @@ export default function ProfilePage() {
                         return;
                     }
 
-                    updates.username = username;
+                    updates.username = trimmedUsername;
                     updates.hasChangedUsername = true;
                 }
 
@@ -396,11 +397,19 @@ export default function ProfilePage() {
                                                 onChange={(e) => setUsername(e.target.value)} 
                                                 disabled={userProfile.hasChangedUsername}
                                                 className={cn(
-                                                    "h-12 bg-background/50 border-white/10 rounded-xl transition-all",
+                                                    "h-12 bg-background/50 border-white/10 rounded-xl transition-all font-bold",
                                                     userProfile.hasChangedUsername ? "opacity-50 cursor-not-allowed" : "focus:border-primary"
                                                 )} 
+                                                placeholder="請輸入 2-12 位會員名稱"
                                             />
-                                            {!userProfile.hasChangedUsername && <p className="text-[10px] text-primary/60 font-medium italic">* 會員名稱設定後將無法再次修改，請謹慎選擇。</p>}
+                                            {!userProfile.hasChangedUsername ? (
+                                                <p className="text-[10px] text-primary/80 font-bold bg-primary/5 p-2 rounded-lg border border-primary/10">
+                                                    <Sparkles className="w-3 h-3 inline mr-1" /> 
+                                                    注意：會員名稱限修改 <span className="text-primary underline">一次</span>，長度限定為 <span className="text-primary underline">2 ~ 12</span> 個字。
+                                                </p>
+                                            ) : (
+                                                <p className="text-[10px] text-muted-foreground font-medium italic">您已使用過更名機會。</p>
+                                            )}
                                         </div>
                                         <div className="space-y-2">
                                             <Label htmlFor="realName" className="text-xs uppercase font-bold text-muted-foreground tracking-widest">收件姓名 (真實姓名)</Label>

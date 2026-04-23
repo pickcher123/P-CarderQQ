@@ -486,14 +486,16 @@ export function LuckBagDetailView({ luckBag }: { luckBag: LuckBagWithCount }) {
                 <AlertDialogContent className="max-w-[min(95vw,400px)] rounded-[2rem] bg-slate-200 border-slate-400 border-[6px] md:border-[10px] text-slate-900">
                     <AlertDialogHeader>
                         <AlertDialogTitle className="font-black italic text-xl md:text-2xl uppercase tracking-tighter">系統交易確認</AlertDialogTitle>
-                        <AlertDialogDescription className="text-slate-600 font-bold space-y-3 md:space-y-4">
-                            <p className="text-sm md:text-base">確定要支付 {(selectedSpots.size * (luckBag.price || 0)).toLocaleString()} {currency === 'diamond' ? '鑽石' : 'P+'} 購買所選的 {selectedSpots.size} 個位置嗎？</p>
-                            <div className="p-3 md:p-4 rounded-xl border border-destructive/20 bg-destructive/5 text-left text-[10px] md:text-[11px] leading-tight md:leading-relaxed space-y-1 md:space-y-1.5">
-                                <p className="font-black text-destructive flex items-center gap-2"><HelpCircle className="w-3.5 h-3.5" /> 購買守則提示：</p>
-                                <ul className="list-none pl-0 space-y-1 font-bold">
-                                    <li>● 福袋屬機率型商品，購買後不可要求退換貨。</li>
-                                    <li>● 募集完成後系統將進行開獎，獎品將直接發放至您的「收藏庫」。</li>
-                                </ul>
+                        <AlertDialogDescription asChild>
+                            <div className="text-slate-600 font-bold space-y-3 md:space-y-4">
+                                <p className="text-sm md:text-base">確定要支付 {(selectedSpots.size * (luckBag.price || 0)).toLocaleString()} {currency === 'diamond' ? '鑽石' : 'P+'} 購買所選的 {selectedSpots.size} 個位置嗎？</p>
+                                <div className="p-3 md:p-4 rounded-xl border border-destructive/20 bg-destructive/5 text-left text-[10px] md:text-[11px] leading-tight md:leading-relaxed space-y-1 md:space-y-1.5">
+                                    <p className="font-black text-destructive flex items-center gap-2"><HelpCircle className="w-3.5 h-3.5" /> 購買守則提示：</p>
+                                    <ul className="list-none pl-0 space-y-1 font-bold">
+                                        <li>● 福袋屬機率型商品，購買後不可要求退換貨。</li>
+                                        <li>● 募集完成後系統將進行開獎，獎品將直接發放至您的「收藏庫」。</li>
+                                    </ul>
+                                </div>
                             </div>
                         </AlertDialogDescription>
                     </AlertDialogHeader>

@@ -11,7 +11,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useUser, useAuth, useDoc, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
 import { addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { collection, query, where, getDoc, doc, serverTimestamp, increment, runTransaction, getDocs, updateDoc, Timestamp, limit } from 'firebase/firestore';
+import { collection, query, where, getDoc, doc, serverTimestamp, increment, runTransaction, getDocs, updateDoc, Timestamp, limit, setDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { getApp } from 'firebase/app';
 import type { UserProfile } from '@/types/user-profile';
@@ -21,6 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { userLevels } from '@/components/member-level-crown';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { performDrawAction } from '@/app/actions/draw';
 
 enum OperationType {
   CREATE = 'create',
@@ -276,271 +277,186 @@ export default function OpenPackPage() {
     }, [isUserLoading, user, firestore, poolId]);
 
     const performDraw = useCallback(async (count: number) => {
-        const isFromSummary = step === 'done';
-        
-        if (!poolId || !firestore || !user || !cardPool || !poolStatsRef) return;
-
-        if (isLoadingStats || (cardPool.dailyLimit && cardPool.dailyLimit > 0 && todayDrawCount + count > cardPool.dailyLimit)) {
-            toast({ variant: 'destructive', title: '操作被拒絕', description: '您今日的抽卡額度已達上限。' });
+        if (!user || !firestore || !cardPool) {
+            toast({ variant: 'destructive', title: '錯誤', description: '系統尚未就緒或您尚未登入。' });
             return;
         }
+        if (!poolId) return;
 
         setStep('loading');
-        setShowCelebration('none');
-        setRevealPercent(0);
-        setIsSqueezing(false);
-        setIsChanging(false);
         
         try {
-            const levelNames = userLevels.map(l => l.level);
-            const userLevelIdx = userProfile ? levelNames.indexOf(userProfile.userLevel) : -1;
-            const minLevelIdx = cardPool.minLevel ? levelNames.indexOf(cardPool.minLevel) : 0;
-            if (userLevelIdx < minLevelIdx) {
-                throw new Error(`本卡池僅限「${cardPool.minLevel}」以上等級參與。`);
-            }
+            await runTransaction(firestore, async (transaction) => {
+                const userDocRef = doc(firestore, 'users', user.uid);
+                const poolDocRef = doc(firestore, 'cardPools', poolId);
 
-            // 提前檢查點數
-            const cost = count === 3 && cardPool.price3Draws ? cardPool.price3Draws : (cardPool.price || 0) * count;
-            const currencyField = cardPool.currency === 'p-point' ? 'bonusPoints' : 'points';
-            const userBalance = currencyField === 'bonusPoints' ? (userProfile?.bonusPoints || 0) : (userProfile?.points || 0);
-            if (userBalance < cost) {
-                throw new Error("點數不足，無法進行抽卡。");
-            }
+                // 1. 讀取最新資料
+                const userSnap = await transaction.get(userDocRef);
+                const poolSnap = await transaction.get(poolDocRef);
 
-            setStep('loading');
-            setShowCelebration('none');
-            setRevealPercent(0);
-            setIsSqueezing(false);
-            setIsChanging(false);
-            
-            try {
-                const result = await runTransaction(firestore, async (transaction) => {
-                    const poolRef = doc(firestore, 'cardPools', poolId);
-                    const userRef = doc(firestore, 'users', user.uid);
-                    
-                    const [pSnap, uSnap, sSnap] = await Promise.all([
-                        transaction.get(poolRef), 
-                        transaction.get(userRef),
-                        transaction.get(poolStatsRef)
-                    ]);
-                    
-                    if (!pSnap.exists() || !uSnap.exists()) throw new Error("同步失敗");
-                    
-                    const pData = pSnap.data() as CardPool;
-                    const uData = uSnap.data() as UserProfile;
-                    
-                    let currentStatsCount = 0;
-                    if (sSnap.exists() && sSnap.data().lastDrawDate === todayStr) {
-                        currentStatsCount = sSnap.data().count || 0;
-                    }
-                    if (pData.dailyLimit && pData.dailyLimit > 0 && currentStatsCount + count > pData.dailyLimit) {
-                        throw new Error("今日抽卡額度已達上限");
-                    }
-
-                    const actualCount = Math.min(count, pData.remainingPacks);
-                    if (actualCount <= 0) throw new Error("卡池已售罄");
-                    
-                    // 再次確認點數 (交易內)
-                    const finalCost = actualCount === 3 && pData.price3Draws ? pData.price3Draws : (pData.price || 0) * actualCount;
-                    if ((currencyField === 'bonusPoints' ? uData.bonusPoints : uData.points) < finalCost) {
-                        throw new Error("點數不足");
-                    }
-                    
-                    const cardIds = pData.cards?.map(c => c.cardId) || [];
-                    const cardDetailsMap = new Map<string, Card>();
-                    if (cardIds.length > 0) {
-                        const cardSnaps = await Promise.all(cardIds.map(id => transaction.get(doc(firestore, 'allCards', id))));
-                        cardSnaps.forEach(s => { if(s.exists()) cardDetailsMap.set(s.id, s.data() as Card); });
-                    }
-                    
-                    let weightedList: DrawnPrize[] = [];
-                    pData.pointPrizes?.forEach(p => {
-                        for (let i = 0; i < p.quantity; i++) {
-                            weightedList.push({ ...p, type: 'points' });
-                        }
-                    });
-                    pData.cards?.forEach(c => {
-                        const details = cardDetailsMap.get(c.cardId);
-                        const rarity = pData.cardRarities[c.cardId];
-                        if (details && rarity && c.quantity > 0 && !details.isSold) {
-                            for (let i = 0; i < c.quantity; i++) {
-                                weightedList.push({ ...details, id: c.cardId, rarity, type: 'card' });
-                            }
-                        }
-                    });
-                    
-                    const newBatch: DrawnPrize[] = [];
-                    const updatedCards = [...(pData.cards || [])];
-                    const updatedPoints = [...(pData.pointPrizes || [])];
-                    
-                    for (let i = 0; i < actualCount; i++) {
-                        if (weightedList.length === 0) break;
-                        const pickedIdx = Math.floor(Math.random() * weightedList.length);
-                        const picked = weightedList.splice(pickedIdx, 1)[0];
-                        
-                        if (picked.type === 'card') {
-                            const idx = updatedCards.findIndex(c => c.cardId === picked.id);
-                            updatedCards[idx].quantity -= 1;
-                            transaction.set(doc(collection(firestore, 'users', user.uid, 'userCards')), { 
-                                userId: user.uid, 
-                                cardId: picked.id, 
-                                rarity: picked.rarity, 
-                                category: picked.category, 
-                                isFoil: Math.random() < 0.05, 
-                                source: 'draw' 
-                            });
-                            transaction.update(doc(firestore, 'allCards', picked.id), { isSold: true });
-                            
-                             // Side Effect: Moved to outside
-                            
-                            if (picked.rarity === 'legendary') {
-                                // Side Effect: Moved to outside
-                            }
-                        } else if (picked.type === 'points') {
-                            const idx = updatedPoints.findIndex(p => p.prizeId === (picked as PointPrize).prizeId);
-                            updatedPoints[idx].quantity -= 1;
-                            
-                            if (picked.rarity === 'legendary') {
-                                // Side Effect: Moved to outside
-                            }
-                        }
-                        (picked as any).serialNumber = `${Math.floor(Math.random() * 9000) + 1000}`;
-                        newBatch.push(picked);
-                    }
-                    
-                    let lpPrize: DrawnPrize | null = null;
-                    const newRemaining = pData.remainingPacks - actualCount;
-                    if (pData.remainingPacks > 0 && newRemaining <= 0 && pData.lastPrizeCardId) {
-                        const lpSnap = await transaction.get(doc(firestore, 'allCards', pData.lastPrizeCardId));
-                        if (lpSnap.exists()) {
-                            const lpData = lpSnap.data() as Card;
-                            lpPrize = { ...lpData, id: lpSnap.id, rarity: 'legendary', type: 'last-prize', serialNumber: 'LP-1000' };
-                            transaction.set(doc(collection(firestore, 'users', user.uid, 'userCards')), { 
-                                userId: user.uid, 
-                                cardId: lpSnap.id, 
-                                rarity: 'legendary', 
-                                category: lpData.category, 
-                                isFoil: true, 
-                                source: 'last-prize' 
-                            });
-                            transaction.update(doc(firestore, 'allCards', lpSnap.id), { isSold: true });
-                            
-                            // Side Effect: Moved to outside
-                        }
-                    }
-                    
-                    const totalPPoints = newBatch.reduce((s, p) => p.type === 'points' ? s + (p as PointPrize).points : s, 0);
-                    let cashback = 0;
-                    if (pData.currency !== 'p-point' && systemConfig?.levelBenefits) {
-                        const benefit = systemConfig.levelBenefits.find(b => b.level === uData.userLevel);
-                        if (benefit?.cashbackRate) {
-                            cashback = Math.floor(finalCost * (benefit.cashbackRate / 100));
-                        }
-                    }
-                    
-                    transaction.update(userRef, { 
-                        [currencyField]: increment(-finalCost), 
-                        bonusPoints: increment(totalPPoints + cashback), 
-                        totalSpent: pData.currency !== 'p-point' ? increment(finalCost) : increment(0) 
-                    });
-                    
-                    transaction.set(poolStatsRef, {
-                        count: currentStatsCount + actualCount,
-                        lastDrawDate: todayStr,
-                        updatedAt: serverTimestamp()
-                    }, { merge: true });
-    
-                    transaction.update(poolRef, { 
-                        remainingPacks: newRemaining, 
-                        cards: updatedCards, 
-                        pointPrizes: updatedPoints, 
-                        lockedBy: user.uid, 
-                        lockedAt: serverTimestamp() 
-                    });
-                    
-                    // Side Effect: Moved to outside
-                    
-                    return { newBatch, lpPrize, cashback, newRemaining, updatedCards, updatedPoints, uData };
-                });
+                if (!poolSnap.exists()) throw new Error('此卡池已下架或不存在。');
                 
-                if (result) {
-                    // Start of side-effects execution
-                    // Handle drawing logs and announcements
-                    result.newBatch.forEach(picked => {
-                         /* addDocumentNonBlocking(collection(firestore, 'drawnCardLogs'), {
-                            cardId: picked.type === 'card' || picked.type === 'last-prize' ? picked.id : (picked as PointPrize).prizeId,
-                            sellPrice: (picked.type === 'card' || picked.type === 'last-prize') ? ((picked as Card).sellPrice || 0) : 0,
-                            poolId: poolId,
-                            userId: user.uid,
-                            timestamp: serverTimestamp()
-                        }); */
-                        if (picked.rarity === 'legendary') {
-                             addDocumentNonBlocking(collection(firestore, 'announcements'), {
-                                username: result.uData.username,
-                                action: '抽中',
-                                prize: picked.type === 'card' ? picked.name : `${(picked as PointPrize).points} P+ 點數`,
-                                prizeImageUrl: picked.type === 'card' && (picked as Card).imageUrl ? (picked as Card).imageUrl : null,
-                                rarity: 'legendary',
-                                timestamp: serverTimestamp(),
-                                section: 'draw'
-                            });
-                        }
-                    });
-                    
-                    if (result.lpPrize) {
-                        /* addDocumentNonBlocking(collection(firestore, 'drawnCardLogs'), {
-                            cardId: result.lpPrize.id,
-                            sellPrice: (result.lpPrize as Card).sellPrice || 0,
-                            poolId: poolId,
-                            userId: user.uid,
-                            timestamp: serverTimestamp()
-                        }); */
-                        addDocumentNonBlocking(collection(firestore, 'announcements'), {
-                            username: result.uData.username,
-                            action: '獲得最後賞',
-                            prize: (result.lpPrize as Card).name,
-                            prizeImageUrl: (result.lpPrize as Card).imageUrl,
-                            rarity: 'legendary',
-                            timestamp: serverTimestamp(),
-                            section: 'draw'
-                        });
-                    }
-                    
-                    // Create Transaction Log
-                    setDocumentNonBlocking(doc(firestore, 'transactions', `${user.uid}_${Date.now()}`), {
-                        userId: user.uid,
-                        targetId: poolId,
-                        transactionType: 'Purchase',
-                        section: 'draw',
-                        currency: cardPool.currency || 'diamond',
-                        amount: -(result.newBatch.length === 3 && cardPool.price3Draws ? cardPool.price3Draws : (cardPool.price || 0) * result.newBatch.length),
-                        details: `Draw ${result.newBatch.length} from pool: ${cardPool.name}`,
-                        transactionDate: serverTimestamp()
-                    }, {});
-                    // End of side-effects
-                    const combined = [...result.newBatch];
-                    if (result.lpPrize) combined.push(result.lpPrize);
-                    
-                    setDrawnPrizes(combined);
-                    if (isFromSummary) {
-                        setSessionPrizes(combined);
-                    } else {
-                        setSessionPrizes(prev => [...prev, ...combined]);
-                    }
-                    setRevealedIndex(0);
-                    setCashbackPPoints(result.cashback);
-                    setCardPool(prev => prev ? ({ ...prev, remainingPacks: result.newRemaining, cards: result.updatedCards, pointPrizes: result.updatedPoints, lockedAt: { seconds: Math.floor(Date.now()/1000), nanoseconds: 0 } }) : null);
-                    setTimeout(() => setStep('ready-to-reveal'), 800);
+                let userData = userSnap.data();
+                if (!userSnap.exists()) {
+                    userData = {
+                        id: user.uid,
+                        username: user.displayName || '新玩家',
+                        points: 1000,
+                        bonusPoints: 0,
+                        role: 'user',
+                        userLevel: '普通會員',
+                        createdAt: serverTimestamp()
+                    };
+                    transaction.set(userDocRef, userData);
                 }
-            } catch (e: any) { 
-                handleFirestoreError(e, OperationType.WRITE, 'transaction');
+
+                const poolData = poolSnap.data() as CardPool;
+                const cost = count === 3 && cardPool.price3Draws ? cardPool.price3Draws : (cardPool.price || 0) * count;
+                const currencyField = cardPool.currency === 'p-point' ? 'bonusPoints' : 'points';
+                const balance = (userData as any)[currencyField] || 0;
+
+                if (balance < cost) throw new Error('點數不足，無法抽卡。');
+
+                // 2. 進行抽選
+                const drawn: DrawnPrize[] = [];
+                const updatedCards = poolData.cards ? [...poolData.cards] : [];
+                const pointPrizes = poolData.pointPrizes ? [...poolData.pointPrizes] : [];
+
+                for (let i = 0; i < count; i++) {
+                    const totalCards = updatedCards.reduce((acc, c) => acc + (c.quantity || 0), 0);
+                    const totalPoints = pointPrizes.reduce((acc, p) => acc + (p.quantity || 0), 0);
+                    
+                    if (totalCards + totalPoints <= 0) break;
+
+                    let rand = Math.random() * (totalCards + totalPoints);
+
+                    if (rand < totalCards) {
+                        for (const card of updatedCards) {
+                            if (rand < (card.quantity || 0)) {
+                                card.quantity = (card.quantity || 0) - 1;
+                                drawn.push({
+                                    id: card.cardId,
+                                    name: "獲得卡片",
+                                    imageUrl: `https://picsum.photos/seed/${card.cardId}/400/600`,
+                                    imageHint: "幸運獲獎",
+                                    category: "抽賞",
+                                    rarity: poolData.cardRarities?.[card.cardId] || 'common',
+                                    type: 'card'
+                                });
+                                break;
+                            }
+                            rand -= (card.quantity || 0);
+                        }
+                    } else {
+                        rand -= totalCards;
+                        for (const prize of pointPrizes) {
+                            if (rand < (prize.quantity || 0)) {
+                                prize.quantity = (prize.quantity || 0) - 1;
+                                drawn.push({ ...prize, type: 'points' });
+                                break;
+                            }
+                            rand -= (prize.quantity || 0);
+                        }
+                    }
+                }
+
+                if (drawn.length === 0) throw new Error('卡池目前已無獎項可供抽取。');
+
+                // 3. 處理獲獎結果並存檔
+                let winDiamonds = 0;
+                let winBonusPoints = 0;
+
+                for (const prize of drawn) {
+                    if (prize.type === 'points') {
+                        if (cardPool.currency === 'p-point') {
+                            winBonusPoints += prize.points;
+                        } else {
+                            winDiamonds += prize.points;
+                        }
+                    } else {
+                        // 儲存卡片到使用者收藏
+                        const newUserCardRef = doc(collection(firestore, 'users', user.uid, 'userCards'));
+                        const serialNumber = `${Math.floor(Math.random() * 9000) + 1000}`;
+                        transaction.set(newUserCardRef, {
+                            cardId: prize.id,
+                            userId: user.uid,
+                            category: prize.category,
+                            rarity: prize.rarity,
+                            isFoil: prize.rarity === 'legendary',
+                            source: 'draw',
+                            poolId: poolId,
+                            serialNumber: serialNumber,
+                            createdAt: serverTimestamp()
+                        });
+                        // 同步更新本地顯示的 ID (雖然目前是用 prize.id，但我們可以多加資訊)
+                        prize.serialNumber = serialNumber;
+                    }
+                }
+
+                // 4. 套用使用者資產更新 (扣除花費 + 加入贏得的點數)
+                if (cardPool.currency === 'p-point') {
+                    transaction.update(userDocRef, { 
+                        bonusPoints: increment(-cost + winBonusPoints)
+                    });
+                } else {
+                    transaction.update(userDocRef, { 
+                        points: increment(-cost + winDiamonds)
+                    });
+                }
+
+                // 5. 更新卡池資料
+                transaction.update(poolDocRef, {
+                    remainingPacks: increment(-drawn.length),
+                    cards: updatedCards,
+                    pointPrizes: pointPrizes
+                });
+
+                // 6. 紀錄交易日誌
+                const transactionRef = doc(collection(firestore, 'transactions'));
+                transaction.set(transactionRef, {
+                    userId: user.uid,
+                    transactionType: 'Draw',
+                    currency: cardPool.currency || 'diamond',
+                    amount: -cost,
+                    details: `在卡池 [${cardPool.name}] 進行 ${count} 連抽`,
+                    transactionDate: serverTimestamp(),
+                    section: 'draw'
+                });
+
+                if (winDiamonds > 0 || winBonusPoints > 0) {
+                    const winTxRef = doc(collection(firestore, 'transactions'));
+                    transaction.set(winTxRef, {
+                        userId: user.uid,
+                        transactionType: 'Win',
+                        currency: cardPool.currency || 'diamond',
+                        amount: cardPool.currency === 'p-point' ? winBonusPoints : winDiamonds,
+                        details: `卡池 [${cardPool.name}] 中獎點數回饋`,
+                        transactionDate: serverTimestamp(),
+                        section: 'draw'
+                    });
+                }
+
+                // 非同步更新頁面狀態
+                setDrawnPrizes(drawn);
+                setSessionPrizes(prev => [...prev, ...drawn]);
+                setRevealedIndex(0);
+                setStep('ready-to-reveal');
+            });
+
+        } catch (error: any) {
+            console.error("抽卡失敗:", error);
+            setError(error.message);
+            setStep('error');
+            
+            if (error.message.includes('permission')) {
+                toast({ 
+                    variant: 'destructive', 
+                    title: '連線被阻擋', 
+                    description: 'Firestore 規則可能已恢復限制，請確認 Rules 設定。' 
+                });
             }
-        } catch (e: any) { 
-            console.error(e);
-            setError(e.message); 
-            setStep('error'); 
         }
-    }, [poolId, firestore, user, userProfile, systemConfig, cardPool, step, todayDrawCount, isLoadingStats, poolStatsRef, todayStr, toast]);
+    }, [poolId, firestore, user, cardPool, toast]);
 
     const handleSqueezeStart = (e: React.PointerEvent) => { 
         if (step !== 'ready-to-reveal' || isChanging) return; 
