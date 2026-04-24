@@ -16,18 +16,6 @@ interface NewsItem {
 
 export function NewsMarquee() {
     const firestore = useFirestore();
-    const [isVisible, setIsVisible] = useState(true);
-
-    useEffect(() => {
-        if (sessionStorage.getItem('marquee-dismissed') === 'true') {
-          setIsVisible(false);
-        }
-    }, []);
-
-    const dismiss = () => {
-        setIsVisible(false);
-        sessionStorage.setItem('marquee-dismissed', 'true');
-    };
 
     // 抓取最近的消息，前端過濾
     const newsQuery = useMemoFirebase(() => {
@@ -47,7 +35,7 @@ export function NewsMarquee() {
         return newsItems.find(n => n.isMarquee === true);
     }, [newsItems]);
 
-    if (isLoading || !latestMarqueeItem || !isVisible) {
+    if (isLoading || !latestMarqueeItem) {
         return null;
     }
 
@@ -97,15 +85,6 @@ export function NewsMarquee() {
                     </div>
                 </Link>
             </div>
-
-            {/* 關閉按鈕 */}
-            <button 
-                onClick={dismiss}
-                className="mr-3 p-1 text-muted-foreground hover:text-white transition-colors z-20"
-                aria-label="關閉跑馬燈"
-            >
-                <X className="w-3 h-3 md:w-4 md:h-4" />
-            </button>
         </div>
     );
 }

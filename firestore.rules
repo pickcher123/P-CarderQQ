@@ -2,8 +2,88 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
+    // --- 全域輔助函式 ---
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function isVerifiedAdmin() { 
+      return isSignedIn() && 
+             (request.auth.token.email == "pickcher123@gmail.com" && request.auth.token.email_verified == true) ||
+             exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+
+    // --- 預設拒絕所有存取 ---
     match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if isVerifiedAdmin();
+    }
+
+    // --- 使用者資料管理 ---
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isVerifiedAdmin();
+      allow create: if isOwner(userId) && 
+                      incoming().role == "user" && 
+                      incoming().keys().hasAll(['id', 'points']);
+      allow update: if (isOwner(userId) && 
+                       incoming().get('role', 'user') == existing().get('role', 'user') && 
+                       incoming().get('id', userId) == existing().get('id', userId) &&
+                       // 更名限制：若使用者名稱改變，才檢查限制
+                       (incoming().get('username', '') == existing().get('username', '') || (
+                         !existing().get('hasChangedUsername', false) && 
+                         incoming().hasChangedUsername == true &&
+                         incoming().username is string &&
+                         incoming().username.size() >= 2 &&
+                         incoming().username.size() <= 12
+                       ))
+                      ) || isVerifiedAdmin();
+      
+      // 使用者子集合 (如 poolStats)
+      match /{allSubcollections=**} {
+        allow read, write: if isOwner(userId) || isVerifiedAdmin();
+      }
+    }
+
+    // --- 卡池管理 (核心抽卡邏輯防禦) ---
+    match /cardPools/{poolId} {
+      allow read: if true; // 所有人可看卡池
+      allow update: if (
+        isSignedIn() && 
+        // 動作鎖定：玩家只能更新特定庫存欄位
+        incoming().diff(existing()).affectedKeys().hasOnly(['cards', 'pointPrizes', 'remainingPacks', 'lockedBy', 'lockedAt'])
+      ) || isVerifiedAdmin();
+    }
+
+    // --- 唯讀靜態集合 ---
+    match /allCards/{cardId} {
+      allow read: if true;
+      allow write: if isVerifiedAdmin();
+    }
+
+    match /drawCategories/{catId} {
+      allow read: if true;
+      allow write: if isVerifiedAdmin();
+    }
+
+    match /systemConfig/{configId} {
+      allow read: if true;
+      allow write: if isVerifiedAdmin();
+    }
+    
+    match /news/{newsId} {
+      allow read: if true;
+      allow write: if isVerifiedAdmin();
+    }
+
+    // --- 其他互動集合 ---
+    match /announcements/{id} {
+      allow read: if true;
+      allow create: if isSignedIn(); // 抽到大獎時系統會建立公告
+    }
+    
+    match /wishes/{id} {
+      allow create: if isSignedIn();
+      allow read: if isVerifiedAdmin();
     }
   }
 }

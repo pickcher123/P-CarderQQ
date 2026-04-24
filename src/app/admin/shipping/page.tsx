@@ -298,13 +298,15 @@ export default function ShippingAdminPage() {
                     <AlertDialogTitle className="flex items-center gap-2 text-xl font-black text-rose-600">
                         <AlertTriangle className="h-6 w-6" /> 確認取消訂單並退還資產？
                     </AlertDialogTitle>
-                    <AlertDialogDescription className="font-bold text-slate-600 space-y-4">
-                        <p>您即將把此訂單標記為「已取消」。這將會觸發以下自動程序：</p>
-                        <ul className="list-disc pl-5 space-y-1 text-slate-900">
-                            <li>退還該訂單所有卡片至會員收藏庫</li>
-                            <li>退還該訂單扣除的手續費 (鑽石)</li>
-                            <li><span className="text-rose-600 underline">注意：訂單一旦取消並退產，將無法再變更為其他狀態。</span></li>
-                        </ul>
+                    <AlertDialogDescription asChild>
+                        <div className="font-bold text-slate-600 space-y-4">
+                            <p>您即將把此訂單標記為「已取消」。這將會觸發以下自動程序：</p>
+                            <ul className="list-disc pl-5 space-y-1 text-slate-900">
+                                <li>退還該訂單所有卡片至會員收藏庫</li>
+                                <li>退還該訂單扣除的手續費 (鑽石)</li>
+                                <li><span className="text-rose-600 underline">注意：訂單一旦取消並退產，將無法再變更為其他狀態。</span></li>
+                            </ul>
+                        </div>
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter className="gap-3">

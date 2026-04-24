@@ -114,7 +114,7 @@ export default function CollectionPage() {
         return {
           ...cardDetails,
           ...userCard,
-          serialNumber: `${Math.floor(Math.random() * 9000) + 1000}`
+          serialNumber: userCard.serialNumber || '0000'
         }
       }
       return null;

@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Shield, Gem, Truck, User as UserIcon, Loader2, History, MapPin, ChevronRight, Settings, Sparkles, CheckCircle2, Crown, Package, AlertCircle } from 'lucide-react';
 import { PPlusIcon } from "@/components/icons";
 import { useDoc, useFirestore, useUser, useMemoFirebase, useCollection } from "@/firebase";
-import { doc, collection, writeBatch, serverTimestamp, increment, query, where, updateDoc } from "firebase/firestore";
+import { doc, collection, writeBatch, serverTimestamp, increment, query, where, updateDoc, getDocs } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -151,8 +151,9 @@ function ShippingOrdersTab({ userId }: { userId: string }) {
         <Card className="border-white/5 bg-card/30 backdrop-blur-xl rounded-[2rem] overflow-hidden">
             <CardHeader className="bg-muted/20 pb-4"><CardTitle className="text-lg flex items-center gap-2"><Truck className="h-5 w-5 text-primary"/> 出貨進度查詢</CardTitle></CardHeader>
             <CardContent className="p-0">
-                <Table>
-                    <TableHeader className="bg-muted/10"><TableRow className="border-white/5"><TableHead className="pl-6">張數</TableHead><TableHead>申請時間</TableHead><TableHead>狀態</TableHead><TableHead className="text-right pr-6">操作</TableHead></TableRow></TableHeader>
+                <div className="overflow-x-auto custom-scrollbar">
+                    <Table className="min-w-[500px] md:min-w-full">
+                        <TableHeader className="bg-muted/10"><TableRow className="border-white/5"><TableHead className="pl-6">張數</TableHead><TableHead>申請時間</TableHead><TableHead>狀態</TableHead><TableHead className="text-right pr-6">操作</TableHead></TableRow></TableHeader>
                     <TableBody>
                         {isLoading ? <TableRow><TableCell colSpan={4} className="p-6"><Skeleton className="h-10 w-full"/></TableCell></TableRow> : 
                         sortedOrders.map(order => (
@@ -168,6 +169,7 @@ function ShippingOrdersTab({ userId }: { userId: string }) {
                         )}
                     </TableBody>
                 </Table>
+                </div>
             </CardContent>
         </Card>
     );
@@ -183,8 +185,9 @@ function TransactionsTab({ userId }: { userId: string }) {
         <Card className="border-white/5 bg-card/30 backdrop-blur-xl rounded-[2rem] overflow-hidden">
             <CardHeader className="bg-muted/20 pb-4"><CardTitle className="text-lg flex items-center gap-2"><History className="h-5 w-5 text-primary"/> 最近 30 筆交易明細</CardTitle></CardHeader>
             <CardContent className="p-0">
-                <Table>
-                    <TableHeader className="bg-muted/10"><TableRow className="border-white/5"><TableHead className="pl-6">詳情內容</TableHead><TableHead>變動金額</TableHead><TableHead className="pr-6">交易時間</TableHead></TableRow></TableHeader>
+                <div className="overflow-x-auto custom-scrollbar">
+                    <Table className="min-w-[600px] md:min-w-full">
+                        <TableHeader className="bg-muted/10"><TableRow className="border-white/5"><TableHead className="pl-6">詳情內容</TableHead><TableHead>變動金額</TableHead><TableHead className="pr-6">交易時間</TableHead></TableRow></TableHeader>
                     <TableBody>
                         {isLoading ? <TableRow><TableCell colSpan={3} className="p-6"><Skeleton className="h-10 w-full"/></TableCell></TableRow> :
                         sorted.map(tx => (
@@ -204,6 +207,7 @@ function TransactionsTab({ userId }: { userId: string }) {
                         )}
                     </TableBody>
                 </Table>
+                </div>
             </CardContent>
         </Card>
     );
@@ -242,22 +246,23 @@ export default function ProfilePage() {
         const handleSaveChanges = async () => {
             if (!userProfileRef || !userProfile) return;
             
-            if (username.length > 20) {
-                toast({ variant: "destructive", title: "修改失敗", description: "會員名稱長度不得超過 20 個字。" });
+            const trimmedUsername = username.trim();
+            if (trimmedUsername.length < 2 || trimmedUsername.length > 12) {
+                toast({ variant: "destructive", title: "修改失敗", description: "會員名稱長度限定為 2 ~ 12 個字。" });
                 return;
             }
 
             try {
                 const updates: any = { realName, phone, address };
                 
-                if (username !== userProfile.username) {
+                if (trimmedUsername !== userProfile.username) {
                     if (userProfile.hasChangedUsername) {
                         toast({ variant: "destructive", title: "修改失敗", description: "會員名稱僅限修改一次。" });
                         return;
                     }
                     
                     // 檢查名稱是否重複
-                    const q = query(collection(firestore, 'users'), where('username', '==', username));
+                    const q = query(collection(firestore, 'users'), where('username', '==', trimmedUsername));
                     const snapshot = await getDocs(q);
                     const isDuplicate = snapshot.docs.some(doc => doc.id !== user.uid);
                     
@@ -266,7 +271,7 @@ export default function ProfilePage() {
                         return;
                     }
 
-                    updates.username = username;
+                    updates.username = trimmedUsername;
                     updates.hasChangedUsername = true;
                 }
 
@@ -308,9 +313,9 @@ export default function ProfilePage() {
                     <Card className="overflow-hidden border-primary/30 bg-gradient-to-br from-primary/20 via-card/80 to-background rounded-[2.5rem] shadow-2xl group">
                         <CardContent className="pt-10 flex flex-col items-center text-center relative overflow-hidden">
                             <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform"><Crown className="w-24 h-24 text-primary" /></div>
-                            <div className="relative group/avatar">
-                                <div className="absolute -inset-4 bg-primary/20 rounded-full blur-xl opacity-0 group-hover/avatar:opacity-100 transition-opacity animate-pulse" />
-                                <MemberLevelCrown level={userProfile.userLevel} size="sm" />
+                            <div className="relative group/avatar mb-4">
+                                <div className="absolute -inset-12 bg-primary/20 rounded-full blur-3xl opacity-0 group-hover/avatar:opacity-100 transition-opacity animate-pulse" />
+                                <MemberLevelCrown level={userProfile.userLevel} size="lg" />
                             </div>
                             <h2 className="text-3xl font-black font-headline mt-6 tracking-tight text-white drop-shadow-md">{userProfile.username}</h2>
                             <div className="mt-2 flex items-center gap-2 bg-primary/10 px-4 py-1 rounded-full border border-primary/20">
@@ -396,11 +401,19 @@ export default function ProfilePage() {
                                                 onChange={(e) => setUsername(e.target.value)} 
                                                 disabled={userProfile.hasChangedUsername}
                                                 className={cn(
-                                                    "h-12 bg-background/50 border-white/10 rounded-xl transition-all",
+                                                    "h-12 bg-background/50 border-white/10 rounded-xl transition-all font-bold",
                                                     userProfile.hasChangedUsername ? "opacity-50 cursor-not-allowed" : "focus:border-primary"
                                                 )} 
+                                                placeholder="請輸入 2-12 位會員名稱"
                                             />
-                                            {!userProfile.hasChangedUsername && <p className="text-[10px] text-primary/60 font-medium italic">* 會員名稱設定後將無法再次修改，請謹慎選擇。</p>}
+                                            {!userProfile.hasChangedUsername ? (
+                                                <p className="text-[10px] text-primary/80 font-bold bg-primary/5 p-2 rounded-lg border border-primary/10">
+                                                    <Sparkles className="w-3 h-3 inline mr-1" /> 
+                                                    注意：會員名稱限修改 <span className="text-primary underline">一次</span>，長度限定為 <span className="text-primary underline">2 ~ 12</span> 個字。
+                                                </p>
+                                            ) : (
+                                                <p className="text-[10px] text-muted-foreground font-medium italic">您已使用過更名機會。</p>
+                                            )}
                                         </div>
                                         <div className="space-y-2">
                                             <Label htmlFor="realName" className="text-xs uppercase font-bold text-muted-foreground tracking-widest">收件姓名 (真實姓名)</Label>

@@ -11,7 +11,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useUser, useAuth, useDoc, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
 import { addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { collection, query, where, getDoc, doc, serverTimestamp, increment, runTransaction, getDocs, updateDoc, Timestamp, limit } from 'firebase/firestore';
+import { collection, query, where, getDoc, doc, serverTimestamp, increment, runTransaction, getDocs, updateDoc, Timestamp, limit, setDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { getApp } from 'firebase/app';
 import type { UserProfile } from '@/types/user-profile';
@@ -21,6 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { userLevels } from '@/components/member-level-crown';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { performDrawAction } from '@/app/actions/draw';
 
 enum OperationType {
   CREATE = 'create',
@@ -276,74 +277,190 @@ export default function OpenPackPage() {
     }, [isUserLoading, user, firestore, poolId]);
 
     const performDraw = useCallback(async (count: number) => {
-        const isFromSummary = step === 'done';
-        
-        if (!poolId || !firestore || !user || !cardPool || !poolStatsRef) return;
-
-        if (isLoadingStats || (cardPool.dailyLimit && cardPool.dailyLimit > 0 && todayDrawCount + count > cardPool.dailyLimit)) {
-            toast({ variant: 'destructive', title: '操作被拒絕', description: '您今日的抽卡額度已達上限。' });
+        if (!user || !firestore || !cardPool) {
+            toast({ variant: 'destructive', title: '錯誤', description: '系統尚未就緒或您尚未登入。' });
             return;
         }
+        if (!poolId) return;
 
         setStep('loading');
-        setShowCelebration('none');
-        setRevealPercent(0);
-        setIsSqueezing(false);
-        setIsChanging(false);
         
         try {
-            const levelNames = userLevels.map(l => l.level);
-            const userLevelIdx = userProfile ? levelNames.indexOf(userProfile.userLevel) : -1;
-            const minLevelIdx = cardPool.minLevel ? levelNames.indexOf(cardPool.minLevel) : 0;
-            if (userLevelIdx < minLevelIdx) {
-                throw new Error(`本卡池僅限「${cardPool.minLevel}」以上等級參與。`);
-            }
+            await runTransaction(firestore, async (transaction) => {
+                const userDocRef = doc(firestore, 'users', user.uid);
+                const poolDocRef = doc(firestore, 'cardPools', poolId);
 
-            // 提前檢查點數
-            const cost = count === 3 && cardPool.price3Draws ? cardPool.price3Draws : (cardPool.price || 0) * count;
-            const currencyField = cardPool.currency === 'p-point' ? 'bonusPoints' : 'points';
-            const userBalance = currencyField === 'bonusPoints' ? (userProfile?.bonusPoints || 0) : (userProfile?.points || 0);
-            if (userBalance < cost) {
-                throw new Error("點數不足，無法進行抽卡。");
-            }
+                // 1. 讀取最新資料
+                const userSnap = await transaction.get(userDocRef);
+                const poolSnap = await transaction.get(poolDocRef);
 
-            setStep('loading');
-            setShowCelebration('none');
-            setRevealPercent(0);
-            setIsSqueezing(false);
-            setIsChanging(false);
-            
-            try {
-                // 發送請求至後端 API 執行抽卡
-                const response = await fetch('/api/draw', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        userId: user.uid,
-                        poolId,
-                        count,
-                        currencyField,
-                        todayStr
-                    })
-                });
+                if (!poolSnap.exists()) throw new Error('此卡池已下架或不存在。');
                 
-                const data = await response.json();
-                if (!data.success) throw new Error(data.error);
+                let userData = userSnap.data();
+                if (!userSnap.exists()) {
+                    userData = {
+                        id: user.uid,
+                        username: user.displayName || '新玩家',
+                        points: 1000,
+                        bonusPoints: 0,
+                        role: 'user',
+                        userLevel: '普通會員',
+                        createdAt: serverTimestamp()
+                    };
+                    transaction.set(userDocRef, userData);
+                }
 
-                console.log("DEBUG: Backend draw successful");
-                setStep('success'); 
-            } catch (error: any) {
-                console.error("DEBUG: 抽卡失敗:", error);
-                alert(`抽卡失敗: ${error.message}`);
-                setStep('idle');
-                throw error;
-            }
+                const poolData = poolSnap.data() as CardPool;
+                const cost = count === 3 && cardPool.price3Draws ? cardPool.price3Draws : (cardPool.price || 0) * count;
+                const currencyField = cardPool.currency === 'p-point' ? 'bonusPoints' : 'points';
+                const balance = (userData as any)[currencyField] || 0;
+
+                if (balance < cost) throw new Error('點數不足，無法抽卡。');
+
+                // 2. 進行抽選
+                const drawn: DrawnPrize[] = [];
+                const updatedCards = poolData.cards ? [...poolData.cards] : [];
+                const pointPrizes = poolData.pointPrizes ? [...poolData.pointPrizes] : [];
+
+                for (let i = 0; i < count; i++) {
+                    const totalCards = updatedCards.reduce((acc, c) => acc + (c.quantity || 0), 0);
+                    const totalPoints = pointPrizes.reduce((acc, p) => acc + (p.quantity || 0), 0);
+                    
+                    if (totalCards + totalPoints <= 0) break;
+
+                    let rand = Math.random() * (totalCards + totalPoints);
+
+                    if (rand < totalCards) {
+                        for (const card of updatedCards) {
+                            if (rand < (card.quantity || 0)) {
+                                card.quantity = (card.quantity || 0) - 1;
+                                drawn.push({
+                                    id: card.cardId,
+                                    name: "獲得卡片",
+                                    imageUrl: `https://picsum.photos/seed/${card.cardId}/400/600`,
+                                    imageHint: "幸運獲獎",
+                                    category: "抽賞",
+                                    rarity: poolData.cardRarities?.[card.cardId] || 'common',
+                                    type: 'card'
+                                });
+                                break;
+                            }
+                            rand -= (card.quantity || 0);
+                        }
+                    } else {
+                        rand -= totalCards;
+                        for (const prize of pointPrizes) {
+                            if (rand < (prize.quantity || 0)) {
+                                prize.quantity = (prize.quantity || 0) - 1;
+                                drawn.push({ ...prize, type: 'points' });
+                                break;
+                            }
+                            rand -= (prize.quantity || 0);
+                        }
+                    }
+                }
+
+                if (drawn.length === 0) throw new Error('卡池目前已無獎項可供抽取。');
+
+                // 3. 處理獲獎結果並存檔
+                let winDiamonds = 0;
+                let winBonusPoints = 0;
+
+                for (const prize of drawn) {
+                    if (prize.type === 'points') {
+                        if (cardPool.currency === 'p-point') {
+                            winBonusPoints += prize.points;
+                        } else {
+                            winDiamonds += prize.points;
+                        }
+                    } else {
+                        // 儲存卡片到使用者收藏
+                        const newUserCardRef = doc(collection(firestore, 'users', user.uid, 'userCards'));
+                        const serialNumber = `${Math.floor(Math.random() * 9000) + 1000}`;
+                        transaction.set(newUserCardRef, {
+                            cardId: prize.id,
+                            userId: user.uid,
+                            category: prize.category,
+                            rarity: prize.rarity,
+                            isFoil: prize.rarity === 'legendary',
+                            source: 'draw',
+                            poolId: poolId,
+                            serialNumber: serialNumber,
+                            createdAt: serverTimestamp()
+                        });
+                        // 同步更新本地顯示的 ID (雖然目前是用 prize.id，但我們可以多加資訊)
+                        prize.serialNumber = serialNumber;
+                    }
+                }
+
+                // 4. 套用使用者資產更新 (扣除花費 + 加入贏得的點數)
+                if (cardPool.currency === 'p-point') {
+                    transaction.update(userDocRef, { 
+                        bonusPoints: increment(-cost + winBonusPoints)
+                    });
+                } else {
+                    transaction.update(userDocRef, { 
+                        points: increment(-cost + winDiamonds)
+                    });
+                }
+
+                // 5. 更新卡池資料
+                transaction.update(poolDocRef, {
+                    remainingPacks: increment(-drawn.length),
+                    cards: updatedCards,
+                    pointPrizes: pointPrizes
+                });
+
+                // 6. 紀錄交易日誌
+                const transactionRef = doc(collection(firestore, 'transactions'));
+                transaction.set(transactionRef, {
+                    userId: user.uid,
+                    transactionType: 'Draw',
+                    currency: cardPool.currency || 'diamond',
+                    amount: -cost,
+                    details: `在卡池 [${cardPool.name}] 進行 ${count} 連抽`,
+                    transactionDate: serverTimestamp(),
+                    section: 'draw'
+                });
+
+                if (winDiamonds > 0 || winBonusPoints > 0) {
+                    const winTxRef = doc(collection(firestore, 'transactions'));
+                    transaction.set(winTxRef, {
+                        userId: user.uid,
+                        transactionType: 'Win',
+                        currency: cardPool.currency || 'diamond',
+                        amount: cardPool.currency === 'p-point' ? winBonusPoints : winDiamonds,
+                        details: `卡池 [${cardPool.name}] 中獎點數回饋`,
+                        transactionDate: serverTimestamp(),
+                        section: 'draw'
+                    });
+                }
+
+                // 非同步更新頁面狀態
+                setDrawnPrizes(drawn);
+                setSessionPrizes(prev => [...prev, ...drawn]);
+                setRevealedIndex(0);
+                setRevealPercent(0);
+                setIsSqueezing(false);
+                setShowCelebration('none');
+                setLandingVFX('none');
+                setStep('ready-to-reveal');
+            });
+
         } catch (error: any) {
-            console.error("DEBUG: 抽卡預檢查失敗:", error);
-            setStep('idle');
-            throw error;
+            console.error("抽卡失敗:", error);
+            setError(error.message);
+            setStep('error');
+            
+            if (error.message.includes('permission')) {
+                toast({ 
+                    variant: 'destructive', 
+                    title: '連線被阻擋', 
+                    description: 'Firestore 規則可能已恢復限制，請確認 Rules 設定。' 
+                });
+            }
         }
-    }, [poolId, firestore, user, userProfile, systemConfig, cardPool, step, todayDrawCount, isLoadingStats, poolStatsRef, todayStr, toast]);
+    }, [poolId, firestore, user, cardPool, toast]);
 
     const handleSqueezeStart = (e: React.PointerEvent) => { 
         if (step !== 'ready-to-reveal' || isChanging) return; 
@@ -493,7 +610,7 @@ export default function OpenPackPage() {
             <CelebrationVFX type={landingVFX !== 'none' ? landingVFX : showCelebration} />
             <Button variant="ghost" onClick={() => router.back()} className="absolute top-2 left-2 font-bold text-white/40 z-50 text-xs"><ArrowLeft className="mr-1 h-3 w-3" /> 返回</Button>
             
-            <div className="w-full flex flex-col items-center justify-end pb-1 min-h-[40px] z-10 select-none mt-10 md:mt-0">
+            <div className="w-full flex flex-col items-center justify-end pb-1 min-h-[40px] z-10 select-none mt-2 md:mt-0">
                 {step !== 'done' && step !== 'waiting-to-start' && step !== 'init-loading' && (
                     <div className="flex justify-center mb-1">
                         <div className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-500 text-[8px] font-black uppercase shadow-xl backdrop-blur-md">
@@ -617,7 +734,7 @@ export default function OpenPackPage() {
                     </motion.div>
                 </div>
             ) : (
-                <div className="w-full max-w-6xl px-4 z-20 flex-grow mt-4 flex flex-col justify-center relative select-none">
+                <div className="w-full max-w-6xl px-4 z-20 mt-0 flex flex-col relative select-none">
                     <div className="relative group">
                         <div id="prize-scroll-container" className="flex flex-row gap-4 py-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide scroll-smooth">
                             {sessionPrizes.map((p, i) => (
