@@ -440,6 +440,10 @@ export default function OpenPackPage() {
                 setDrawnPrizes(drawn);
                 setSessionPrizes(prev => [...prev, ...drawn]);
                 setRevealedIndex(0);
+                setRevealPercent(0);
+                setIsSqueezing(false);
+                setShowCelebration('none');
+                setLandingVFX('none');
                 setStep('ready-to-reveal');
             });
 
@@ -606,7 +610,7 @@ export default function OpenPackPage() {
             <CelebrationVFX type={landingVFX !== 'none' ? landingVFX : showCelebration} />
             <Button variant="ghost" onClick={() => router.back()} className="absolute top-2 left-2 font-bold text-white/40 z-50 text-xs"><ArrowLeft className="mr-1 h-3 w-3" /> 返回</Button>
             
-            <div className="w-full flex flex-col items-center justify-end pb-1 min-h-[40px] z-10 select-none mt-10 md:mt-0">
+            <div className="w-full flex flex-col items-center justify-end pb-1 min-h-[40px] z-10 select-none mt-2 md:mt-0">
                 {step !== 'done' && step !== 'waiting-to-start' && step !== 'init-loading' && (
                     <div className="flex justify-center mb-1">
                         <div className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-500 text-[8px] font-black uppercase shadow-xl backdrop-blur-md">
@@ -730,7 +734,7 @@ export default function OpenPackPage() {
                     </motion.div>
                 </div>
             ) : (
-                <div className="w-full max-w-6xl px-4 z-20 flex-grow mt-4 flex flex-col justify-center relative select-none">
+                <div className="w-full max-w-6xl px-4 z-20 mt-0 flex flex-col relative select-none">
                     <div className="relative group">
                         <div id="prize-scroll-container" className="flex flex-row gap-4 py-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide scroll-smooth">
                             {sessionPrizes.map((p, i) => (

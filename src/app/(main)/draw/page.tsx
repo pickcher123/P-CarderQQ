@@ -24,6 +24,7 @@ interface DrawCategory {
     name: string;
     imageUrl: string;
     order?: number;
+    linkUrl?: string; // Add linkUrl
 }
 
 interface CardPool {
@@ -83,6 +84,16 @@ export default function DrawPage() {
   useEffect(() => {
       if (categories && cardPools) {
           const sortedCategories = [...categories].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+          
+          // Add custom category "球卡一番賞"
+          sortedCategories.push({
+              id: 'ifansan-prize',
+              name: '球卡一番賞',
+              imageUrl: 'https://i.ibb.co/ynNvhHmN/P-carder.jpg', // Provide a default image URL
+              order: 99,
+              linkUrl: 'https://ifansan.com/?0000V'
+          } as any);
+
           const counts = sortedCategories.map(category => {
               const count = cardPools.filter(pool => pool.categoryId === category.id).length;
               return { ...category, poolCount: count };
@@ -201,7 +212,8 @@ export default function DrawPage() {
             ))}
             {!finalIsLoading && categoriesWithCounts.map((category, index) => (
                 <Link 
-                    href={`/draw/${encodeURIComponent(category.id)}`} 
+                    href={category.linkUrl || `/draw/${encodeURIComponent(category.id)}`} 
+                    target={category.linkUrl ? "_blank" : undefined}
                     key={category.id} 
                     className={cn(
                         "group relative aspect-[16/9] rounded-[1.5rem] md:rounded-[3rem] overflow-hidden block border border-white/10 transition-all duration-500",

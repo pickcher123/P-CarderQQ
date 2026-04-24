@@ -81,7 +81,7 @@ export default function Home() {
                 <span className="absolute inset-0 text-white blur-[20px] md:blur-[30px] opacity-30 pointer-events-none select-none">P+CARDER</span>
             </h1>
             <p className="text-lg md:text-3xl text-muted-foreground max-w-2xl mx-auto font-body font-bold tracking-widest leading-relaxed opacity-80 [image-rendering:pixelated] font-mono">
-                一站式球員卡遊玩平台<br />
+                頂級球員卡福袋平台<br />
                 <span className="text-primary/80">打造屬於你的玩卡體驗</span>
             </p>
           </div>
@@ -260,7 +260,7 @@ export default function Home() {
                 iconBg: 'bg-amber-400/10'
             },
             { 
-                title: '拼卡競技', 
+                title: '拚卡專區', 
                 desc: '高風險高回報的幸運輪盤。自由挑選幸運號碼，1/10 中獎機率挑戰您的命運極限。', 
                 icon: CrossedCardsIcon, 
                 href: '/bet', 
@@ -271,7 +271,7 @@ export default function Home() {
                 iconBg: 'bg-cyan-500/10'
             },
             { 
-                title: '幸運福袋', 
+                title: '福袋專區', 
                 desc: '經典福袋募集機制，滿團即開！保證出土頂級大獎，每一格都蘊含翻轉價值的可能。', 
                 icon: LuckyBagIcon, 
                 href: '/lucky-bags', 
@@ -282,7 +282,7 @@ export default function Home() {
                 iconBg: 'bg-fuchsia-500/10'
             },
             { 
-                title: '團拆活動', 
+                title: '團拆專區', 
                 desc: '精彩直播互動團拆，享受與其他藏友共享開箱的狂熱瞬間。公平配對，全場見證。', 
                 icon: Users2, 
                 href: '/group-break', 

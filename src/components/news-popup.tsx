@@ -100,13 +100,13 @@ export function NewsPopup() {
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
             <DialogContent className={cn(
-                "p-0 bg-card/95 backdrop-blur-xl border-primary/20 overflow-hidden shadow-2xl transition-all duration-300",
+                "p-0 bg-card/95 backdrop-blur-xl border-primary/20 overflow-hidden shadow-2xl transition-all duration-300 rounded-2xl",
                 isImageMode 
-                    ? "max-w-[min(95vw,400px)] md:max-w-[600px]" 
-                    : "max-w-[min(90vw,320px)] md:max-w-[500px]"
+                    ? "w-[50vw] max-w-[280px] md:max-w-[600px]" 
+                    : "w-[50vw] max-w-[250px] md:max-w-[500px]"
             )}>
                 {isImageMode ? (
-                    <div className="relative w-full aspect-auto min-h-[200px] group">
+                    <div className="relative w-full aspect-auto min-h-[120px] group">
                         {latestNews.imageUrl && (
                             <SafeImage 
                                 src={latestNews.imageUrl} 
@@ -120,7 +120,7 @@ export function NewsPopup() {
                         <div className="absolute top-3 left-3 flex gap-1.5">
                             {latestNews.isPinned && (
                                 <Badge className="bg-primary text-[10px] h-5 px-2 shadow-[0_0_8px_rgba(6,182,212,0.5)] flex items-center gap-1">
-                                    <Megaphone className="w-3 h-3" /> 重要
+                                    <Megaphone className="w-3 h-3" />
                                 </Badge>
                             )}
                             <Badge variant="secondary" className="bg-black/60 backdrop-blur-md border-white/10 text-[10px] h-5 px-2">{latestNews.category}</Badge>
@@ -128,7 +128,7 @@ export function NewsPopup() {
                     </div>
                 ) : null}
 
-                <div className="p-5 md:p-8 space-y-4">
+                <div className="p-3 md:p-8 space-y-2 md:space-y-4">
                     {!isImageMode && (
                         <div className="flex items-center justify-between">
                             <div className="flex gap-1.5">
@@ -139,7 +139,7 @@ export function NewsPopup() {
                                 )}
                                 <Badge variant="secondary" className="bg-black/60 backdrop-blur-md border-white/10 text-[10px] h-5 px-2">{latestNews.category}</Badge>
                             </div>
-                            <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-code">
+                            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground font-code">
                                 <Calendar className="h-3 w-3" />
                                 {latestNews.createdAt ? format(new Date(latestNews.createdAt.seconds * 1000), 'yyyy-MM-dd') : '---'}
                             </div>
@@ -147,46 +147,46 @@ export function NewsPopup() {
                     )}
 
                     {isImageMode && (
-                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-code">
+                        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground font-code">
                             <Calendar className="h-3 w-3" />
                             {latestNews.createdAt ? format(new Date(latestNews.createdAt.seconds * 1000), 'yyyy-MM-dd') : '---'}
                         </div>
                     )}
                     
                     <DialogHeader>
-                        <DialogTitle className="text-xl md:text-2xl font-bold font-body leading-tight text-white text-left">
+                        <DialogTitle className="text-xs md:text-2xl font-bold font-body leading-tight text-white text-left">
                             {latestNews.title}
                         </DialogTitle>
                         <DialogDescription className="sr-only">最新消息彈窗內容</DialogDescription>
                     </DialogHeader>
 
                     {!isImageMode && (
-                        <div className="max-h-[50vh] md:max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
+                        <div className="max-h-[25vh] md:max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
                             <div 
-                                className="text-muted-foreground leading-relaxed text-sm md:text-base whitespace-pre-wrap font-body"
+                                className="text-muted-foreground leading-relaxed text-[10px] md:text-base whitespace-pre-wrap font-body"
                                 dangerouslySetInnerHTML={{ __html: latestNews.content || '' }}
                             />
                         </div>
                     )}
 
-                    <div className="pt-4 flex flex-col gap-3 border-t border-white/5">
+                    <div className="pt-2 md:pt-4 flex flex-col gap-2 border-t border-white/5">
                         <div className="flex items-center space-x-2 cursor-pointer group">
                             <Checkbox 
                                 id="do-not-show-popup" 
                                 checked={doNotShowAgain} 
                                 onCheckedChange={(checked) => setDoNotShowAgain(!!checked)}
-                                className="border-primary/50 data-[state=checked]:bg-primary h-4 w-4"
+                                className="border-primary/50 data-[state=checked]:bg-primary h-3 w-3"
                             />
                             <Label 
                                 htmlFor="do-not-show-popup" 
-                                className="text-xs text-muted-foreground cursor-pointer group-hover:text-primary transition-colors"
+                                className="text-[10px] text-muted-foreground cursor-pointer group-hover:text-primary transition-colors"
                             >
-                                不再顯示此則消息
+                                不再顯示消息
                             </Label>
                         </div>
                         <Button 
                             onClick={handleClose}
-                            className="w-full bg-primary text-primary-foreground font-bold h-11 text-base hover:shadow-[0_0_15px_rgba(6,182,212,0.4)] transition-all active:scale-95"
+                            className="w-full bg-primary text-primary-foreground font-bold h-8 md:h-11 text-[10px] md:text-base hover:shadow-[0_0_15px_rgba(6,182,212,0.4)] transition-all active:scale-95"
                         >
                             我知道了
                         </Button>
