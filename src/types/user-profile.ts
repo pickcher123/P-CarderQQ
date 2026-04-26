@@ -15,6 +15,7 @@ export interface UserProfile {
   totalSpent: number; // 累積消費金額 (Diamonds)，用於升級
   role: 'admin' | 'user';
   permissions?: string[];
+  tags?: string[];
   createdAt?: Timestamp;
   address?: string;
 }
