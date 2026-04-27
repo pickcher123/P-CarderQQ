@@ -577,13 +577,13 @@ export default function CollectionPage() {
       </div>
 
       <Dialog open={!!previewCard} onOpenChange={(open) => !open && setPreviewCard(null)}>
-        <DialogContent className="max-w-[min(95vw,420px)] sm:max-w-md bg-transparent border-none shadow-none p-0 overflow-visible flex flex-col items-center gap-6 [&>button:last-child]:hidden">
-            <DialogTitle className="sr-only">卡片預覽</DialogTitle>
+        <DialogContent className="max-w-[min(95vw,420px)] bg-transparent border-none shadow-none p-0 overflow-visible flex flex-col items-center justify-center gap-4 sm:gap-6 [&>button:last-child]:hidden">
+            <DialogTitle><VisuallyHidden>卡片預覽</VisuallyHidden></DialogTitle>
             {previewCard && (
-                <div className="w-full flex flex-col items-center gap-6 animate-in zoom-in-95 duration-300">
-                    <h2 className="text-[12px] md:text-sm font-black font-headline text-white drop-shadow-2xl tracking-tight leading-tight uppercase px-6 text-center max-w-[280px]">{previewCard.name}</h2>
+                <div className="w-full flex flex-col items-center gap-4 sm:gap-6 animate-in zoom-in-95 duration-300">
+                    <h2 className="text-[11px] sm:text-sm font-black font-headline text-white drop-shadow-2xl tracking-tight leading-tight uppercase px-6 text-center max-w-[280px]">{previewCard.name}</h2>
                     
-                    <div className="w-full max-w-[300px] sm:max-w-[230px] mx-auto relative group">
+                    <div className="w-[85%] sm:w-full max-w-[300px] sm:max-w-[230px] mx-auto relative group">
                         <div className="absolute -inset-4 bg-primary/20 rounded-[2rem] blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
                         <CardItem 
                             name={previewCard.name} 
@@ -596,9 +596,9 @@ export default function CollectionPage() {
                             priority={true}
                         />
                     </div>
-                    <div className="flex flex-col items-center text-center gap-3">
+                    <div className="flex flex-col items-center text-center gap-2 sm:gap-3">
                         <p className="text-[9px] text-primary font-bold uppercase tracking-[0.2em] animate-pulse">點擊卡片可翻轉查看</p>
-                        <div className="flex items-center gap-3 mt-4">
+                        <div className="flex items-center gap-3 mt-2 sm:mt-4">
                             <Badge variant="outline" className="capitalize border-primary/50 text-primary bg-black/60 backdrop-blur-xl px-4 py-1 font-black tracking-widest shadow-lg text-[10px]">
                                 {previewCard.rarity}
                             </Badge>
@@ -614,10 +614,10 @@ export default function CollectionPage() {
             <Button 
                 variant="ghost" 
                 size="icon" 
-                className="mt-4 rounded-full bg-black/60 hover:bg-black/80 text-white border border-white/20 h-12 w-12 shadow-2xl transition-all hover:scale-110 active:scale-95 flex items-center justify-center"
+                className="mt-2 sm:mt-4 rounded-full bg-black/60 hover:bg-black/80 text-white border border-white/20 h-10 w-10 sm:h-12 sm:w-12 shadow-2xl transition-all hover:scale-110 active:scale-95 flex items-center justify-center"
                 onClick={() => setPreviewCard(null)}
             >
-                <X className="h-6 w-6" />
+                <X className="h-5 w-5 sm:h-6 sm:w-6" />
             </Button>
         </DialogContent>
       </Dialog>

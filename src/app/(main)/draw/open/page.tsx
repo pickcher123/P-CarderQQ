@@ -5,7 +5,14 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { CardItem } from '@/components/card-item';
 import { cn } from '@/lib/utils';
-import { Gem, Sparkles, Loader2, RotateCcw, ArrowLeft, PlayCircle, FastForward, Check, Disc3, RotateCw, Clock, ChevronsUp, X, ShieldCheck, Star, Trophy, Diamond, Layers, Zap, AlertCircle, Ban, ChevronRight } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { VisuallyHidden } from '@/components/ui/visually-hidden';
+import { Gem, Sparkles, Loader2, RotateCcw, ArrowLeft, PlayCircle, FastForward, Check, Disc3, RotateCw, Clock, ChevronsUp, X, ShieldCheck, Star, Trophy, Diamond, Layers, Zap, AlertCircle, Ban, ChevronRight, Hash } from 'lucide-react';
 import { PPlusIcon } from '@/components/icons';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -203,6 +210,7 @@ export default function OpenPackPage() {
     const [isSqueezing, setIsSqueezing] = useState(false);
     const [isChanging, setIsChanging] = useState(false); 
     const [landingVFX, setLandingVFX] = useState<'none' | 'rare' | 'legendary'>('none');
+    const [previewCard, setPreviewCard] = useState<any | null>(null);
 
     const topRarityCelebration = useMemo(() => {
         if (drawnPrizes.length === 0) return 'none';
@@ -741,11 +749,14 @@ export default function OpenPackPage() {
                             {sessionPrizes.map((p, i) => (
                                 <div key={i} className="animate-fade-in-up snap-center w-[160px] md:w-[200px] flex-shrink-0" style={{ animationDelay: `${i * 80}ms` }}>
                                     {p.type === 'points' ? (
-                                        <div className={cn(
-                                            "w-full aspect-[2.5/4] rounded-3xl flex flex-col items-center justify-center p-4 border shadow-2xl transition-all hover:scale-105 group",
-                                            pointPrizeRarityStyles[p.rarity].bg,
-                                            pointPrizeRarityStyles[p.rarity].border
-                                        )}>
+                                        <div 
+                                            className={cn(
+                                                "w-full aspect-[2.5/4] rounded-3xl flex flex-col items-center justify-center p-4 border shadow-2xl transition-all hover:scale-105 group cursor-pointer",
+                                                pointPrizeRarityStyles[p.rarity].bg,
+                                                pointPrizeRarityStyles[p.rarity].border
+                                            )}
+                                            onClick={() => setPreviewCard({ ...p, isPoints: true })}
+                                        >
                                             <div className="relative mb-2">
                                                 <div className="absolute inset-0 blur-2xl opacity-40 group-hover:opacity-80 transition-opacity bg-current" style={{ color: 'hsl(var(--accent))' }} />
                                                 <PPlusIcon className={cn("w-12 h-12 md:w-16 md:h-16 relative z-10", pointPrizeRarityStyles[p.rarity].text)} />
@@ -754,7 +765,10 @@ export default function OpenPackPage() {
                                             <Badge variant="outline" className="mt-3 border-white/5 bg-black/20 text-[8px] font-black uppercase text-white/30">Bonus Reward</Badge>
                                         </div>
                                     ) : (
-                                        <div className="w-full aspect-[2.5/4] rounded-3xl overflow-hidden shadow-2xl transition-all hover:scale-105 group border border-white/5 h-full">
+                                        <div 
+                                            className="w-full aspect-[2.5/4] rounded-3xl overflow-hidden shadow-2xl transition-all hover:scale-105 group border border-white/5 h-full cursor-zoom-in"
+                                            onClick={() => setPreviewCard({ ...p, rarity: p.rarity })}
+                                        >
                                             <CardItem 
                                                 name={p.name} 
                                                 imageUrl={p.imageUrl}
@@ -762,6 +776,7 @@ export default function OpenPackPage() {
                                                 imageHint={p.name} 
                                                 rarity={p.rarity} 
                                                 className="h-full"
+                                                isFlippable={false}
                                             />
                                         </div>
                                     )}
@@ -873,6 +888,32 @@ export default function OpenPackPage() {
                     </div>
                  )}
             </div>
+            
+            <Dialog open={!!previewCard} onOpenChange={(open) => !open && setPreviewCard(null)}>
+                <DialogContent className="max-w-[min(95vw,420px)] bg-transparent border-none p-0 flex flex-col items-center justify-center gap-4 sm:gap-6 [&>button:last-child]:hidden z-[200]">
+                    <DialogTitle><VisuallyHidden>卡片預覽</VisuallyHidden></DialogTitle>
+                    {previewCard && (
+                        <div className="w-full flex flex-col items-center gap-4 sm:gap-6">
+                            <h2 className="text-[11px] sm:text-sm font-black text-white text-center px-4 uppercase">{previewCard.name}</h2>
+                            <div className="w-[85%] sm:w-full max-w-[360px]">
+                                {previewCard.isPoints ? (
+                                    <div className={cn("w-full aspect-[2.5/4] rounded-3xl flex flex-col items-center justify-center p-4 border shadow-2xl", pointPrizeRarityStyles[previewCard.rarity as Rarity].bg, pointPrizeRarityStyles[previewCard.rarity as Rarity].border)}>
+                                        <PPlusIcon className={cn("w-20 h-20 mb-4", pointPrizeRarityStyles[previewCard.rarity as Rarity].text)} />
+                                        <p className="font-headline text-5xl font-black text-white">{previewCard.points}</p>
+                                        <Badge variant="outline" className="mt-6 border-white/20 text-[10px] font-black uppercase tracking-widest text-white/40">Bonus Reward</Badge>
+                                    </div>
+                                ) : (
+                                    <CardItem name={previewCard.name} imageUrl={previewCard.imageUrl} backImageUrl={previewCard.backImageUrl} imageHint={previewCard.name} rarity={previewCard.rarity} isFlippable={true}/>
+                                )}
+                            </div>
+                            {!previewCard.isPoints && <p className="text-[9px] text-primary font-bold uppercase animate-pulse">點擊翻轉</p>}
+                        </div>
+                    )}
+                    <Button variant="ghost" size="icon" className="mt-2 sm:mt-4 rounded-full bg-black/80 h-10 w-10 sm:h-12 sm:w-12 text-white" onClick={() => setPreviewCard(null)}>
+                        <X className="h-5 w-5 sm:h-6 sm:w-6" />
+                    </Button>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

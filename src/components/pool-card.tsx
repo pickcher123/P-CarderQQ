@@ -410,13 +410,17 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                 <ScrollArea className="max-h-[70vh] p-6">
                     <div className="space-y-8 pb-20">
                         {lastPrizeCard && (
-                            <div className="border-2 p-6 rounded-[2.5rem] bg-accent/10 border-accent/40 flex flex-col sm:flex-row items-center gap-6">
+                            <div 
+                                className="border-2 p-6 rounded-[2.5rem] bg-accent/10 border-accent/40 flex flex-col sm:flex-row items-center gap-6 cursor-zoom-in transition-all hover:bg-accent/20"
+                                onClick={() => setPreviewCard({ ...lastPrizeCard, rarity: 'legendary' })}
+                            >
                                 <div className="relative w-32 aspect-[2.5/4] rounded-2xl overflow-hidden border-2 border-white/20 p-1">
                                     <SafeImage src={lastPrizeCard.imageUrl} alt="lp" sizes="120px" fill className="object-contain" />
                                 </div>
                                 <div className="text-center sm:text-left flex-1">
                                     <p className="text-lg font-black text-accent uppercase">最後賞：{lastPrizeCard.name}</p>
                                     <p className="text-sm text-white/60">最後一抽可得此 Legendary 資產。</p>
+                                    <p className="text-[10px] text-accent font-bold mt-2 animate-pulse uppercase">點擊預覽卡片</p>
                                 </div>
                             </div>
                         )}
@@ -460,14 +464,14 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
             </DialogContent>
 
             <Dialog open={!!previewCard} onOpenChange={(open) => !open && setPreviewCard(null)}>
-                <DialogContent className="max-w-[min(95vw,420px)] bg-transparent border-none p-0 flex flex-col items-center gap-6 [&>button:last-child]:hidden">
+                <DialogContent className="max-w-[min(95vw,420px)] bg-transparent border-none p-0 flex flex-col items-center justify-center gap-4 sm:gap-6 [&>button:last-child]:hidden">
                     <DialogTitle>
                         <VisuallyHidden>卡片預覽</VisuallyHidden>
                     </DialogTitle>
                     {previewCard && (
-                        <div className="w-full flex flex-col items-center gap-6">
-                            <h2 className="text-sm font-black text-white text-center">{previewCard.name}</h2>
-                            <div className="w-full max-w-[400px]">
+                        <div className="w-full flex flex-col items-center gap-4 sm:gap-6">
+                            <h2 className="text-sm font-black text-white text-center px-4">{previewCard.name}</h2>
+                            <div className="w-[85%] sm:w-full max-w-[360px]">
                                 {previewCard.isPoints ? (
                                     <div className={cn("w-full aspect-[2.5/4] rounded-3xl flex flex-col items-center justify-center p-4 border shadow-2xl", pointPrizeStyles[previewCard.rarity as Rarity].bg, pointPrizeStyles[previewCard.rarity as Rarity].border)}>
                                         <PPlusIcon className={cn("w-20 h-20 mb-4", pointPrizeStyles[previewCard.rarity as Rarity].text)} />
@@ -481,8 +485,8 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                             {!previewCard.isPoints && <p className="text-[9px] text-primary font-bold uppercase animate-pulse">點擊翻轉</p>}
                         </div>
                     )}
-                    <Button variant="ghost" size="icon" className="mt-4 rounded-full bg-black/80 h-12 w-12 text-white" onClick={() => setPreviewCard(null)}>
-                        <X className="h-6 w-6" />
+                    <Button variant="ghost" size="icon" className="mt-2 sm:mt-4 rounded-full bg-black/80 h-10 w-10 sm:h-12 sm:w-12 text-white" onClick={() => setPreviewCard(null)}>
+                        <X className="h-5 w-5 sm:h-6 sm:w-6" />
                     </Button>
                 </DialogContent>
             </Dialog>
