@@ -27,7 +27,8 @@ import {
   RefreshCw,
   UserCircle,
   Palette,
-  LayoutGrid
+  LayoutGrid,
+  Megaphone
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -54,8 +55,12 @@ const sidebarNavItems = [
       { href: '/admin/users', label: '會員資訊', icon: UserCircle, permission: 'users' },
       { href: '/admin/rewards', label: '會員回饋', icon: Gift, permission: 'rewards' },
     ]},
-    { title: '營運操作', items: [
+    { title: '行銷管理', items: [
       { href: '/admin/news', label: '消息管理', icon: Newspaper, permission: 'news' },
+      { href: '/admin/announcements', label: '站內公告', icon: Megaphone, permission: 'announcements' },
+      { href: '/admin/coupons', label: '優惠券管理', icon: Ticket, permission: 'coupons' },
+    ]},
+    { title: '營運操作', items: [
       { href: '/admin/partners', label: '合作夥伴', icon: Users2, permission: 'partners' },
       { href: '/admin/shipping', label: '出貨管理', icon: Truck, permission: 'shipping' },
     ]},

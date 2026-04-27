@@ -5,6 +5,7 @@ import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { Megaphone, ChevronRight, X } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState, useEffect } from 'react';
+import { cn } from '@/lib/utils';
 
 interface NewsItem {
     id: string;
@@ -14,7 +15,11 @@ interface NewsItem {
     isMarquee?: boolean;
 }
 
-export function NewsMarquee() {
+interface NewsMarqueeProps {
+    isDrawing?: boolean;
+}
+
+export function NewsMarquee({ isDrawing }: NewsMarqueeProps) {
     const firestore = useFirestore();
 
     // 抓取最近的消息，前端過濾
@@ -40,11 +45,14 @@ export function NewsMarquee() {
     }
 
     return (
-        <div className="bg-background/40 backdrop-blur-md border-b border-white/5 h-7 md:h-9 overflow-hidden relative flex items-center justify-between">
+        <div className={cn(
+            "backdrop-blur-md border-b border-white/10 h-8 md:h-9 overflow-hidden relative flex items-center justify-between shadow-xl shadow-black/40 transition-colors duration-500",
+            isDrawing ? "bg-black/80" : "bg-background/60"
+        )}>
             <div className="flex items-center flex-1 overflow-hidden">
                 {/* 品牌標籤 - 移至左側，增加左邊距以對齊 Logo */}
-                <div className="px-3 md:px-5 z-20 flex items-center ml-2 md:ml-4">
-                    <span className="text-[8px] md:text-[10px] font-black text-primary uppercase tracking-[0.2em] italic whitespace-nowrap drop-shadow-[0_0_8px_rgba(6,182,212,0.4)] animate-pulse-slow">
+                <div className="px-2 md:px-5 z-20 flex items-center ml-1 md:ml-4">
+                    <span className="text-[7px] md:text-[10px] font-black text-primary uppercase tracking-[0.2em] italic whitespace-nowrap drop-shadow-[0_0_8px_rgba(6,182,212,0.4)] animate-pulse-slow">
                         NEWS
                     </span>
                 </div>
@@ -52,9 +60,9 @@ export function NewsMarquee() {
                 {/* 固定內容區塊 */}
                 <Link 
                     href={`/news?id=${latestMarqueeItem.id}`} 
-                    className="flex items-center gap-3 text-[10px] md:text-sm text-muted-foreground transition-all group overflow-hidden h-full px-4 animate-pulse-slowest"
+                    className="flex items-center gap-2 md:gap-3 text-[9px] md:text-sm text-muted-foreground transition-all group overflow-hidden h-full px-2 md:px-4 animate-pulse-slowest"
                 >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 md:gap-3">
                         {/* 置頂消息動態脈衝燈 */}
                         {latestMarqueeItem.isPinned ? (
                             <div className="flex items-center justify-center shrink-0">

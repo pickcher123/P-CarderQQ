@@ -81,7 +81,7 @@ export default function Home() {
                 <span className="absolute inset-0 text-white blur-[20px] md:blur-[30px] opacity-30 pointer-events-none select-none">P+CARDER</span>
             </h1>
             <p className="text-lg md:text-3xl text-muted-foreground max-w-2xl mx-auto font-body font-bold tracking-widest leading-relaxed opacity-80 [image-rendering:pixelated] font-mono">
-                一站式球員卡遊玩平台<br />
+                頂級球員卡福袋平台<br />
                 <span className="text-primary/80">打造屬於你的玩卡體驗</span>
             </p>
           </div>
@@ -260,7 +260,7 @@ export default function Home() {
                 iconBg: 'bg-amber-400/10'
             },
             { 
-                title: '拼卡競技', 
+                title: '拚卡專區', 
                 desc: '高風險高回報的幸運輪盤。自由挑選幸運號碼，1/10 中獎機率挑戰您的命運極限。', 
                 icon: CrossedCardsIcon, 
                 href: '/bet', 
@@ -271,7 +271,7 @@ export default function Home() {
                 iconBg: 'bg-cyan-500/10'
             },
             { 
-                title: '幸運福袋', 
+                title: '福袋專區', 
                 desc: '經典福袋募集機制，滿團即開！保證出土頂級大獎，每一格都蘊含翻轉價值的可能。', 
                 icon: LuckyBagIcon, 
                 href: '/lucky-bags', 
@@ -282,7 +282,7 @@ export default function Home() {
                 iconBg: 'bg-fuchsia-500/10'
             },
             { 
-                title: '團拆活動', 
+                title: '團拆專區', 
                 desc: '精彩直播互動團拆，享受與其他藏友共享開箱的狂熱瞬間。公平配對，全場見證。', 
                 icon: Users2, 
                 href: '/group-break', 
@@ -322,38 +322,6 @@ export default function Home() {
               </div>
             </Link>
           ))}
-        </div>
-      </section>
-
-      {/* VIP & Glory Section */}
-      <section className="container pb-20 md:pb-40 px-4 text-white">
-        <Separator className="mb-20 md:mb-32 opacity-5" />
-        
-        <div className="relative px-6 py-8 md:p-12 rounded-[32px] bg-gradient-to-br from-primary/10 via-card/60 to-accent/5 border border-white/5 overflow-hidden group shadow-lg backdrop-blur-xl animate-fade-in-up">
-          <div className="relative z-10 grid lg:grid-cols-2 gap-8 md:gap-12 items-center">
-            <div className="space-y-4 md:space-y-6 text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 text-accent font-black font-headline tracking-[0.2em] text-[10px] md:text-xs">
-                <Sparkles className="w-4 h-4 fill-accent animate-pulse" /> 榮耀之路
-              </div>
-              <h2 className="text-2xl md:text-5xl font-black font-headline leading-[1.1] tracking-tight">榮耀皇冠<br className="hidden sm:block" />地位象徵</h2>
-              <p className="text-sm md:text-base text-muted-foreground leading-relaxed max-w-lg mx-auto lg:mx-0 font-body font-medium opacity-80">
-                解鎖專屬頭像框與進階稱號。從「新手收藏家」邁向傳說中的「P+卡神」，在排行榜上刻下您的不朽紀錄。
-              </p>
-              <div className="flex flex-col sm:flex-row flex-wrap gap-3 justify-center lg:justify-start">
-                <Button size="sm" asChild className="h-10 px-6 text-sm font-black rounded-xl shadow-lg bg-accent text-accent-foreground hover:bg-accent/90 transition-all hover:scale-105 active:scale-95 border-none">
-                    <Link href="/profile">查看我的身分階級</Link>
-                </Button>
-                <Button variant="ghost" size="sm" asChild className="h-10 px-6 text-sm font-bold text-white hover:bg-white/5 transition-all">
-                    <Link href="/vip">了解等級特權</Link>
-                </Button>
-              </div>
-            </div>
-            <div className="flex justify-center lg:justify-end">
-              <div className="relative w-32 h-32 md:w-48 md:h-48 animate-float">
-                <Trophy className="w-full h-full text-accent drop-shadow-[0_0_20px_rgba(234,179,8,0.4)]" />
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 

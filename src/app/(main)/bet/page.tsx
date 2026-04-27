@@ -145,10 +145,15 @@ export default function BetLandingPage() {
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-destructive/5 blur-[120px] pointer-events-none" />
 
             <div className="text-center mb-6 md:mb-8 relative z-10 space-y-4">
-                <div className="flex justify-center -mt-8 mb-4">
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-destructive/10 border border-destructive/20 text-destructive text-[10px] md:text-sm font-bold tracking-[0.2em] uppercase animate-fade-in-up">
-                        <Swords className="w-3 h-3 md:w-4 md:h-4 text-accent animate-pulse" /> ONE SPIN, ONE DESTINY
+                <div className="flex justify-center mb-1">
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-destructive/10 border border-destructive/20 text-destructive text-[10px] md:text-xs font-bold tracking-[0.2em] uppercase animate-fade-in-up">
+                        <Swords className="w-3 h-3 md:w-3.5 md:h-3.5 text-accent animate-pulse" /> ONE SPIN, ONE DESTINY
                     </div>
+                </div>
+                <div className="flex flex-col items-center justify-center animate-fade-in-up">
+                    <h1 className="font-headline text-3xl sm:text-6xl font-black tracking-widest text-white drop-shadow-[0_0_15px_rgba(219,39,119,0.4)]">
+                        拚卡專區
+                    </h1>
                 </div>
             </div>
 

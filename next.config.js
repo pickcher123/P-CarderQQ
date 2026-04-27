@@ -27,10 +27,10 @@ const nextConfig = {
   images: {
     unoptimized: false,
     remotePatterns: [
-      { protocol: 'https', hostname: 'images.unsplash.com' },
       { protocol: 'https', hostname: 'picsum.photos' },
       { protocol: 'https', hostname: 'firebasestorage.googleapis.com' },
-      { protocol: 'https', hostname: 'storage.googleapis.com' }
+      { protocol: 'https', hostname: 'storage.googleapis.com' },
+      { protocol: 'https', hostname: 'i.ibb.co' }
     ],
   },
   async headers() {

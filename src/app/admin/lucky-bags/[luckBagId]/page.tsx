@@ -21,7 +21,7 @@ import { Label } from '@/components/ui/label';
 import { Card as UICard, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, Image as ImageIcon, Upload, ArrowLeft, Check, Settings, Gem, Package, Users, Trophy, Eye, EyeOff, Search, Loader2, Sparkles, Copy, ListChecks, UserCheck, Archive, Play, ChevronUp, ChevronDown } from 'lucide-react';
+import { PlusCircle, Trash2, Image as ImageIcon, Upload, ArrowLeft, Check, Settings, Gem, Package, Users, Trophy, Eye, EyeOff, Search, Loader2, Sparkles, Copy, ListChecks, UserCheck, Archive, Play, ChevronUp, ChevronDown, RefreshCw } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -34,7 +34,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { PPlusIcon } from '@/components/icons';
-
+import { resetLuckyBagParticipants } from '@/app/actions/lucky-bag';
 
 type LuckBagStatus = 'draft' | 'published' | '已開獎';
 type PrizeLevel = 'first' | 'second' | 'third';
@@ -96,6 +96,22 @@ export default function LuckBagDetailPage() {
   const firestore = useFirestore();
   const auth = useAuth();
   const { toast } = useToast();
+
+  const isSuperAdmin = useMemo(() => auth?.currentUser?.email === 'pickcher123@gmail.com', [auth]);
+
+  const handleResetParticipants = async () => {
+    if (!auth?.currentUser?.uid || !luckBagId) return;
+    try {
+      const res = await resetLuckyBagParticipants(auth.currentUser.uid, luckBagId);
+      if (res.success) {
+        toast({ title: '重設成功', description: '所有參與者資料已清除，活動已回至草稿狀態。' });
+      } else {
+        toast({ variant: 'destructive', title: '重設失敗', description: res.error });
+      }
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: '錯誤', description: error.message });
+    }
+  };
 
   const [isPrizeDialogOpen, setIsPrizeDialogOpen] = useState(false);
   const [selectedPrizeLevel, setSelectedPrizeLevel] = useState<PrizeLevel | 'other'>('first');
@@ -612,6 +628,29 @@ export default function LuckBagDetailPage() {
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>
+
+                {isSuperAdmin && (
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="outline" size="sm" className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600">
+                                <RefreshCw className="mr-2 h-4 w-4" /> 重設參與資料
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent className="light bg-white text-slate-900 border-none shadow-2xl rounded-3xl">
+                            <AlertDialogHeader>
+                                <AlertDialogTitle className="text-xl font-black italic uppercase tracking-widest text-red-600">絕對機密：數據重置協議</AlertDialogTitle>
+                                <AlertDialogDescription className="text-slate-600 font-medium pt-2">
+                                    此操作將會清除當前福袋活動的所有參與者資料與已選擇的格位，並將<span className="text-blue-600 font-bold">全額退還點數</span>給所有參與玩家。這是一個不可逆的過程。<br/><br/>
+                                    <span className="font-bold text-red-600 underline">注意：此操作無法復原，系統會自動處理退款並產生交易日誌。</span>
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter className="pt-4">
+                                <AlertDialogCancel className="rounded-xl border-slate-200">撤回請求</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleResetParticipants} className="bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold shadow-lg shadow-red-200">啟動重置</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                )}
 
                  <div className="flex items-center space-x-2">
                     <Switch id="status-toggle" checked={isPublished} onCheckedChange={handleStatusToggle} disabled={bagDetails.status === '已開獎'} />

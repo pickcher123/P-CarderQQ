@@ -293,10 +293,10 @@ export default function LuckyBagsPage() {
               </Dialog>
           </div>
 
-          <div className="text-center mb-12 relative z-10 space-y-4">
-            <div className="flex justify-center">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 border border-accent/20 text-accent text-[10px] font-bold tracking-[0.3em] uppercase animate-fade-in-up">
-                    <Sparkles className="w-3 h-3" /> COLLECTIVE DESTINY
+            <div className="text-center mb-12 relative z-10 space-y-4">
+            <div className="flex justify-center mb-1">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent/10 border border-accent/20 text-accent text-[10px] md:text-xs font-bold tracking-[0.2em] uppercase animate-fade-in-up">
+                    <Sparkles className="w-3 h-3 md:w-3.5 md:h-3.5 animate-pulse" /> UNWRAP YOUR FORTUNE
                 </div>
             </div>
             

@@ -89,6 +89,21 @@ interface ShippingOrder {
 function UserDetailsDialog({ user }: { user: UserProfile }) {
     const firestore = useFirestore();
     const [isOpen, setIsOpen] = useState(false);
+    const [newTag, setNewTag] = useState('');
+    const { toast } = useToast();
+
+    const handleAddTag = async () => {
+        if (!firestore || !newTag.trim()) return;
+        try {
+            const userRef = doc(firestore, 'users', user.id);
+            const currentTags = user.tags || [];
+            await updateDoc(userRef, { tags: [...currentTags, newTag.trim()] });
+            setNewTag('');
+            toast({ title: '標籤已新增' });
+        } catch (error) {
+            toast({ variant: 'destructive', title: '新增失敗' });
+        }
+    }
 
     const txQuery = useMemoFirebase(() => {
         if (!firestore || !isOpen) return null;
@@ -121,6 +136,7 @@ function UserDetailsDialog({ user }: { user: UserProfile }) {
                 </div>
             </DialogTrigger>
             <DialogContent className="light w-[95vw] md:max-w-4xl max-h-[95vh] flex flex-col p-0 overflow-hidden bg-white border-none shadow-2xl text-slate-900">
+                <DialogTitle className="sr-only">會員詳細資料</DialogTitle>
                 <DialogHeader className="p-4 md:p-8 pb-3 md:pb-4 bg-slate-50 border-b border-slate-100">
                     <DialogTitle className="flex items-center gap-3 text-lg md:text-xl font-black text-slate-900">
                         <UserIcon className="text-slate-400 h-5 w-5" /> 會員詳細資料
@@ -151,6 +167,18 @@ function UserDetailsDialog({ user }: { user: UserProfile }) {
                                                     <span className="font-code font-bold text-slate-700">{user.createdAt ? format((user.createdAt as any).toDate(), 'yyyy-MM-dd') : '-'}</span>
                                                 </div>
                                                 <div className="text-left"><p className="text-slate-500 text-[9px] font-black uppercase mb-1">UID</p><p className="font-mono text-[10px] font-bold break-all bg-slate-50 p-2 rounded border border-slate-100">{user.id}</p></div>
+                                                <div className="text-left">
+                                                    <p className="text-slate-500 text-[9px] font-black uppercase mb-1">用戶標籤</p>
+                                                    <div className="flex flex-wrap gap-1 mb-2">
+                                                        {(user.tags || []).map(tag => (
+                                                            <Badge key={tag} className="text-[10px] bg-sky-100 text-sky-800 flex items-center gap-1">{tag}</Badge>
+                                                        ))}
+                                                    </div>
+                                                    <div className="flex gap-1">
+                                                        <Input placeholder="新增標籤" className="h-6 text-[10px]" value={newTag} onChange={e => setNewTag(e.target.value)} />
+                                                        <Button size="sm" className="h-6 text-[10px]" onClick={handleAddTag}>新增</Button>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </Card>
 
@@ -339,6 +367,7 @@ function ModifyPermissionsDialog({ user, onUpdate }: { user: UserProfile, onUpda
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild><Button variant="outline" size="sm" className="h-8 text-[10px] rounded-lg font-black bg-white border-slate-200 text-slate-700">模組授權</Button></DialogTrigger>
             <DialogContent className="light w-[95vw] md:max-w-2xl max-h-[90vh] rounded-3xl bg-white shadow-2xl border-none text-slate-900 p-0 flex flex-col overflow-hidden">
+                <DialogTitle className="sr-only">管理模組授權</DialogTitle>
                 <DialogHeader className="p-6 border-b border-slate-50">
                     <DialogTitle className="text-xl font-black text-slate-900">管理模組授權 - {user.username}</DialogTitle>
                 </DialogHeader>
@@ -400,6 +429,7 @@ function ModifyPointsDialog({ user, onUpdate }: { user: UserProfile, onUpdate: (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild><Button variant="outline" size="sm" className="h-8 text-[10px] rounded-lg font-black bg-white border-slate-200 text-slate-700">資產修正</Button></DialogTrigger>
             <DialogContent className="light w-[95vw] md:max-w-md max-h-[90vh] rounded-3xl bg-white shadow-2xl border-none p-0 flex flex-col overflow-hidden text-slate-900">
+                <DialogTitle className="sr-only">資產手動修正</DialogTitle>
                 <DialogHeader className="p-6 md:p-8 pb-3 md:pb-4 text-center border-b border-slate-50">
                     <DialogTitle className="text-lg md:text-xl font-black text-slate-900 uppercase tracking-widest italic">資產手動修正協議</DialogTitle>
                 </DialogHeader>

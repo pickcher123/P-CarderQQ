@@ -13,11 +13,11 @@ import type { SystemConfig } from '@/types/system';
  * 行動版底部導覽順序：抽卡 → 拚卡 → 福袋 → 團拆 → 收藏 → VIP
  */
 const navLinks = [
-  { href: '/draw', label: '抽卡', icon: Package, color: "text-primary" },
-  { href: '/bet', label: '拼卡', icon: CrossedCardsIcon, color: "text-destructive" },
-  { href: '/lucky-bags', label: '福袋', icon: LuckyBagIcon, color: "text-accent" },
-  { href: '/group-break', label: '團拆', icon: Users2, color: "text-green-400" },
-  { href: '/collection', label: '收藏', icon: Library, color: "text-primary/70" },
+  { href: '/draw', label: '抽卡專區', icon: Package, color: "text-primary" },
+  { href: '/bet', label: '拼卡專區', icon: CrossedCardsIcon, color: "text-destructive" },
+  { href: '/lucky-bags', label: '福袋專區', icon: LuckyBagIcon, color: "text-accent" },
+  { href: '/group-break', label: '團拆專區', icon: Users2, color: "text-green-400" },
+  { href: '/collection', label: '收藏庫', icon: Library, color: "text-primary/70" },
   { href: '/vip', label: 'VIP', icon: Crown, color: "text-accent", isVip: true },
 ];
 

@@ -2,7 +2,7 @@
 'use client';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, Truck, Ticket, Archive, Gem, Package, Swords, Users2, Newspaper, UserCircle, ShoppingBag, Palette, ShieldCheck, Plus, LayoutList, BarChartHorizontal, ArrowUpRight, Megaphone, Trash2, AlertTriangle, Lock, Loader2 } from 'lucide-react';
+import { Users, Truck, Ticket, Archive, Gem, Package, Swords, Users2, Newspaper, UserCircle, ShoppingBag, Palette, ShieldCheck, Plus, LayoutList, BarChartHorizontal, ArrowUpRight, Megaphone, Trash2, AlertTriangle, FileText, Lock, Loader2 } from 'lucide-react';
 import { useCollection, useFirestore, useMemoFirebase, useDoc, useUser } from "@/firebase";
 import { collection, doc, updateDoc, query, where, getDocs, writeBatch, deleteDoc } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -36,6 +36,10 @@ const QUICK_LINKS = [
     { label: '消息發布', href: '/admin/news', icon: Newspaper, color: 'text-purple-700' },
     { label: '兌換商店', href: '/admin/rewards', icon: ShoppingBag, color: 'text-rose-700' },
     { label: '素材管理', href: '/admin/materials', icon: Palette, color: 'text-orange-700' },
+    { label: '異常預警', href: '/admin/alerts', icon: AlertTriangle, color: 'text-rose-600' },
+    { label: '操作日誌', href: '/admin/activity-logs', icon: FileText, color: 'text-slate-700' },
+    { label: '優惠券管理', href: '/admin/coupons', icon: Ticket, color: 'text-emerald-600' },
+    { label: '站內公告', href: '/admin/announcements', icon: Megaphone, color: 'text-blue-500' },
 ];
 
 const SUPER_ADMIN_EMAIL = 'pickcher123@gmail.com';

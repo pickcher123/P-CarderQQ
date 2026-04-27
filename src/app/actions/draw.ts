@@ -39,6 +39,17 @@ export async function performDrawAction(userId: string, poolId: string, count: n
 
       if (balance < cost) throw new Error('點數不足');
 
+      // 更新統計
+      const todayStr = new Date().toISOString().split('T')[0];
+      const poolStatsRef = adminDb.collection('users').doc(userId).collection('poolStats').doc(poolId);
+      const poolStatsSnap = await transaction.get(poolStatsRef);
+      const poolStatsData = poolStatsSnap.exists ? poolStatsSnap.data() : { count: 0, lastDrawDate: '' };
+      const newCount = (poolStatsData.lastDrawDate === todayStr ? (poolStatsData.count || 0) : 0) + count;
+      transaction.set(poolStatsRef, {
+        count: newCount,
+        lastDrawDate: todayStr
+      }, { merge: true });
+
       // 抽卡邏輯
       const drawn = [];
       let remainingCards = [...(poolData.cards || [])];
@@ -72,10 +83,18 @@ export async function performDrawAction(userId: string, poolId: string, count: n
         cards: remainingCards
       });
 
-      return drawn;
+      return { drawn, userData: userSnap.data()! };
     });
 
-    return { success: true, data: result };
+    // 推送中獎通知
+    if (result.drawn.some(card => card.rarity === 'rare' || card.rarity === 'super-rare')) {
+      const { pushLineMessage } = await import('@/lib/line');
+      if (result.userData.lineUserId) {
+        await pushLineMessage(result.userData.lineUserId, `恭喜抽中大獎！\n獎項：${result.drawn.filter(c => c.rarity === 'rare' || c.rarity === 'super-rare').map(c => c.name).join(', ')}`);
+      }
+    }
+
+    return { success: true, data: result.drawn };
   } catch (error: any) {
     console.error('Server Action Error:', error);
     return { success: false, error: error.message };

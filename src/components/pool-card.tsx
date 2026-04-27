@@ -258,7 +258,6 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                             <h3 className="text-lg font-headline font-black text-white uppercase truncate">{pool.name}</h3>
                             <div className="flex items-center justify-center gap-2">
                                 <Badge variant="outline" className="text-[10px] text-primary border-primary/20">{pool.description}</Badge>
-                                <Badge variant="secondary" className="text-[10px] text-white/60 bg-white/5 border-white/10">已抽 {todayDrawCount} 抽</Badge>
                             </div>
                         </div>
                         <div className="bg-black/60 border border-white/10 p-3 rounded-2xl mb-4">
@@ -371,9 +370,9 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                 <span className="flex-1 text-center italic">
                                     {`單抽 ${pool.price?.toLocaleString()}`}
                                 </span>
-                                {pool.currency === 'p-point' ? <PPlusIcon className="w-4 h-4 ml-2" /> : (
-                                    <div className="relative flex items-center justify-center w-6 h-6 ml-2 rounded-full bg-primary/20 border border-primary/50">
-                                        <Gem className="w-3.5 h-3.5 text-primary" />
+                                {pool.currency === 'p-point' ? <PPlusIcon className="w-5 h-5 ml-2 text-amber-400" /> : (
+                                    <div className="relative flex items-center justify-center w-7 h-7 ml-2 rounded-full bg-sky-500/30 border border-sky-400/50">
+                                        <Gem className="w-4 h-4 text-sky-300" />
                                     </div>
                                 )}
                             </Button>
@@ -393,9 +392,9 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                 <span className="flex-1 text-center italic">
                                     {!canDraw3 ? '今日額度不足三抽' : `${Math.min(3, pool.remainingPacks || 0)}連抽 ${((Math.min(3, pool.remainingPacks || 0) === 3 ? pool.price3Draws : (pool.price || 0) * (Math.min(3, pool.remainingPacks || 0))) || 0).toLocaleString()}`}
                                 </span>
-                                {canDraw3 && (pool.currency === 'p-point' ? <PPlusIcon className="w-6 h-6 ml-2" /> : (
-                                    <div className="relative flex items-center justify-center w-8 h-8 ml-2 rounded-full bg-white/20 border border-white/30">
-                                        <Gem className="w-5 h-5 text-primary" />
+                                {canDraw3 && (pool.currency === 'p-point' ? <PPlusIcon className="w-7 h-7 ml-2 text-amber-400" /> : (
+                                    <div className="relative flex items-center justify-center w-9 h-9 ml-2 rounded-full bg-sky-500/30 border border-sky-400/50">
+                                        <Gem className="w-6 h-6 text-sky-300" />
                                     </div>
                                 ))}
                             </Button>
