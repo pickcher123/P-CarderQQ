@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import * as VisuallyHiddenPrimitive from "@radix-ui/react-visually-hidden";
-import { Gem, Sparkles, Loader2, RotateCcw, ArrowLeft, PlayCircle, FastForward, Check, Disc3, RotateCw, Clock, ChevronsUp, X, ShieldCheck, Star, Trophy, Diamond, Layers, Zap, AlertCircle, Ban, ChevronRight, Hash } from 'lucide-react';
+import { Gem, Sparkles, Loader2, RotateCcw, ArrowLeft, PlayCircle, FastForward, Check, Disc3, RotateCw, Clock, ChevronsUp, X, ShieldCheck, Star, Trophy, Layers, Zap, AlertCircle, Ban, ChevronRight, Hash } from 'lucide-react';
 import { PPlusIcon } from '@/components/icons';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -373,16 +373,12 @@ export default function OpenPackPage() {
                 if (drawn.length === 0) throw new Error('卡池目前已無獎項可供抽取。');
 
                 // 3. 處理獲獎結果並存檔
-                let winDiamonds = 0;
                 let winBonusPoints = 0;
 
                 for (const prize of drawn) {
                     if (prize.type === 'points') {
-                        if (cardPool.currency === 'p-point') {
-                            winBonusPoints += prize.points;
-                        } else {
-                            winDiamonds += prize.points;
-                        }
+                        // Always award P-points (bonusPoints)
+                        winBonusPoints += prize.points;
                     } else {
                         // 儲存卡片到使用者收藏
                         const newUserCardRef = doc(collection(firestore, 'users', user.uid, 'userCards'));
@@ -404,15 +400,16 @@ export default function OpenPackPage() {
                 }
 
                 // 4. 套用使用者資產更新 (扣除花費 + 加入贏得的點數)
+                const updateFields: any = {};
                 if (cardPool.currency === 'p-point') {
-                    transaction.update(userDocRef, { 
-                        bonusPoints: increment(-cost + winBonusPoints)
-                    });
+                    updateFields.bonusPoints = increment(-cost + winBonusPoints);
                 } else {
-                    transaction.update(userDocRef, { 
-                        points: increment(-cost + winDiamonds)
-                    });
+                    updateFields.points = increment(-cost);
+                    if (winBonusPoints > 0) {
+                        updateFields.bonusPoints = increment(winBonusPoints);
+                    }
                 }
+                transaction.update(userDocRef, updateFields);
 
                 // 5. 更新卡池資料
                 transaction.update(poolDocRef, {
@@ -442,13 +439,13 @@ export default function OpenPackPage() {
                   lastDrawDate: todayStr
                 }, { merge: true });
 
-                if (winDiamonds > 0 || winBonusPoints > 0) {
+                if (winBonusPoints > 0) {
                     const winTxRef = doc(collection(firestore, 'transactions'));
                     transaction.set(winTxRef, {
                         userId: user.uid,
                         transactionType: 'Win',
-                        currency: cardPool.currency || 'diamond',
-                        amount: cardPool.currency === 'p-point' ? winBonusPoints : winDiamonds,
+                        currency: 'p-point',
+                        amount: winBonusPoints,
                         details: `卡池 [${cardPool.name}] 中獎點數回饋`,
                         transactionDate: serverTimestamp(),
                         section: 'draw'
@@ -555,7 +552,7 @@ export default function OpenPackPage() {
                             <h2 className="text-xs md:text-base font-headline font-black text-white uppercase truncate px-2">{cardPool.name}</h2>
                             <div className="grid grid-cols-2 gap-2">
                                 <div className="p-2 bg-white/5 rounded-xl border border-white/10"><span className="text-[7px] text-muted-foreground font-black block uppercase">本次抽數</span><span className="text-base font-black text-white">{initialDrawCount} 包</span></div>
-                                <div className="p-2 bg-white/5 rounded-xl border border-white/10"><span className="text-[7px] text-muted-foreground font-black block uppercase">花費金額</span><div className="flex items-center justify-center gap-1 text-base font-black text-white">{cardPool.currency === 'p-point' ? <><PPlusIcon className="w-3 h-3 text-sky-400" />{cost}</> : <><Diamond className="w-3 h-3 text-sky-400" />{cost}</>}</div></div>
+                                <div className="p-2 bg-white/5 rounded-xl border border-white/10"><span className="text-[7px] text-muted-foreground font-black block uppercase">花費金額</span><div className="flex items-center justify-center gap-1 text-base font-black text-white">{cardPool.currency === 'p-point' ? <><PPlusIcon className="w-3 h-3 text-sky-400" />{cost}</> : <><Gem className="w-3 h-3 text-sky-400" /> {cost}</>}</div></div>
                             </div>
                             <div className="flex flex-col gap-2">
                                 {cardPool.minLevel && cardPool.minLevel !== '新手收藏家' && (
@@ -830,16 +827,16 @@ export default function OpenPackPage() {
                             </Button>
                         ) : (step === 'done' || (step === 'revealing' && revealedIndex === drawnPrizes.length - 1)) && (
                             <>
-                                <div className="grid grid-cols-2 gap-3 w-full">
+                                <div className="flex gap-2 w-full">
                                     {isLimitReachedForSingle ? (
-                                        <Button disabled className="col-span-2 h-14 text-sm font-black rounded-2xl bg-slate-800 text-slate-500 border border-slate-700 opacity-50 italic">
+                                        <Button disabled className="flex-1 h-14 text-sm font-black rounded-2xl bg-slate-800 text-slate-500 border border-slate-700 opacity-50 italic">
                                             今日次數已用完
                                         </Button>
                                     ) : (
                                         <>
                                             <Button 
                                                 className={cn(
-                                                    "h-16 text-sm font-black border-2 transition-all shadow-xl rounded-2xl flex flex-col items-center justify-center gap-1",
+                                                    "flex-1 h-14 text-sm font-black border-2 transition-all shadow-xl rounded-2xl flex items-center justify-center gap-2 px-2",
                                                     isLoadingStats ? "bg-slate-800 text-slate-500 border-slate-700 opacity-50" : "bg-slate-900 text-white border-white/10 hover:border-primary/50 hover:bg-slate-800"
                                                 )}
                                                 onClick={() => performDraw(1)} 
@@ -847,14 +844,14 @@ export default function OpenPackPage() {
                                             >
                                                 {isLoadingStats ? <Loader2 className="h-5 w-5 animate-spin" /> : 
                                                     <>
-                                                        <span className="text-[12px] opacity-70">單抽</span>
-                                                        <span className="text-lg flex items-center font-headline"><Diamond className="w-4 h-4 mr-1 text-sky-400"/>{cardPool?.price}</span>
+                                                        <span className="text-[10px] opacity-70">單抽</span>
+                                                        <span className="text-sm flex items-center font-headline"><Gem className="w-3 h-3 mr-1 text-sky-400"/>{cardPool?.price}</span>
                                                     </>
                                                 }
                                             </Button>
                                             <Button 
                                                 className={cn(
-                                                    "h-16 text-sm font-black rounded-2xl transition-all shadow-xl flex flex-col items-center justify-center gap-1",
+                                                    "flex-1 h-14 text-sm font-black rounded-2xl transition-all shadow-xl flex items-center justify-center gap-2 px-2",
                                                     (isLoadingStats || !canDraw3) ? "bg-slate-800 text-slate-500 border border-slate-700 opacity-50" : "bg-primary text-primary-foreground hover:bg-primary/90"
                                                 )}
                                                 onClick={() => performDraw(3)} 
@@ -862,8 +859,8 @@ export default function OpenPackPage() {
                                             >
                                                 {isLoadingStats ? <Loader2 className="h-5 w-5 animate-spin" /> : !canDraw3 ? '今日額度不足' : 
                                                     <>
-                                                        <span className="text-[12px] opacity-90">3 連抽</span>
-                                                        <span className="text-lg flex items-center font-headline"><Diamond className="w-4 h-4 mr-1"/>{cardPool?.price3Draws}</span>
+                                                        <span className="text-[10px] opacity-90">3 連抽</span>
+                                                        <span className="text-sm flex items-center font-headline"><Gem className="w-3 h-3 mr-1"/>{cardPool?.price3Draws}</span>
                                                     </>
                                                 }
                                             </Button>
