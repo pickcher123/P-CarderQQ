@@ -295,11 +295,24 @@ export default function BetCategoryPage() {
                                     </div>
                                 </div>
                             )}
-                            <div className="relative flex-1 bg-black/90 rounded-[1rem] border-[6px] border-slate-950 overflow-hidden p-4">
-                                <div className={cn("w-full aspect-[2.5/4] relative cursor-zoom-in", isSold && "grayscale opacity-30")} onClick={() => !isSold && setPreviewCard(card)}>
+                            <div className="relative flex-1 bg-black/90 rounded-[1rem] border-[6px] border-slate-950 overflow-hidden p-4 group-hover:border-primary/20 transition-colors">
+                                <div className={cn("w-full aspect-[2.5/4] relative cursor-zoom-in transition-all duration-500", isSold && "grayscale opacity-20 scale-95")} onClick={() => !isSold && setPreviewCard(card)}>
                                     <Image src={card.imageUrl} alt={card.name} fill className="object-contain" sizes="(max-width: 768px) 50vw, 25vw" />
                                 </div>
-                                {isSold && <div className="absolute inset-0 flex items-center justify-center"><Badge className="bg-destructive text-white font-black px-4 py-1 rotate-[-12deg] uppercase">已售出</Badge></div>}
+                                {isSold && (
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
+                                        <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-[2px]" />
+                                        <div className="relative z-10 flex flex-col items-center gap-3">
+                                            <div className="p-3 rounded-full bg-destructive/10 border border-destructive/20 text-destructive shadow-[0_0_15px_rgba(239,68,68,0.2)]">
+                                                <XCircle className="w-8 h-8" />
+                                            </div>
+                                            <Badge className="bg-destructive text-white font-black px-4 py-1.5 rotate-[-12deg] uppercase tracking-tighter text-sm shadow-[0_5px_15px_rgba(239,68,68,0.4)] border-none">
+                                                已被抽出
+                                            </Badge>
+                                            <p className="text-[10px] font-black text-destructive/60 uppercase tracking-[0.2em] mt-2">Drawn Out</p>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                             <div className="mt-3 space-y-2">
                                 <div className="flex flex-wrap gap-1">

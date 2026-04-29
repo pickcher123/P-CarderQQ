@@ -22,6 +22,7 @@ import { cn } from '@/lib/utils';
 interface CardData {
     id: string;
     source?: string;
+    isRecycled?: boolean;
 }
 
 const AREAS = [

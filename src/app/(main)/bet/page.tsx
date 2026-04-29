@@ -8,7 +8,7 @@ import { useCollection, useFirestore, useMemoFirebase, useUser, useDoc } from '@
 import { collection, query, getDocs, orderBy, doc, getDoc, runTransaction, increment, serverTimestamp, where } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CrossedCardsIcon, PPlusIcon } from '@/components/icons';
-import { Info, Sparkles, Gem, HelpCircle, Gift, ShoppingBag, Loader2, Truck, Check, Package, Settings, ChevronRight, Swords, Target, RefreshCw, ShieldCheck } from 'lucide-react';
+import { Info, Sparkles, Gem, HelpCircle, Gift, ShoppingBag, Loader2, Truck, Check, Package, Settings, ChevronRight, Swords, Target, RefreshCw, ShieldCheck, XCircle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -239,13 +239,28 @@ export default function BetLandingPage() {
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 max-w-7xl mx-auto">
                 {!allBettingItems && Array.from({length: 6}).map((_, i) => <Skeleton key={i} className="aspect-[2.5/4] rounded-[1.5rem]" />)}
-                {cardsInBetting?.slice(0, 12).map((card) => (
-                    <BettingGameDialog key={card.id} card={{...card, category: 'all'}} categoryName={encodeURIComponent('all')}>
-                        <div className="relative aspect-[2.5/4] rounded-[1.5rem] overflow-hidden border border-white/10 bg-slate-900 cursor-pointer hover:border-primary transition-all">
-                            <SafeImage src={card.imageUrl} alt={card.name} fill className="object-cover" sizes="(max-width: 768px) 50vw, 16vw" />
-                        </div>
-                    </BettingGameDialog>
-                ))}
+                {cardsInBetting?.slice(0, 12).map((card) => {
+                    const isSold = card.isSold;
+                    return (
+                        <BettingGameDialog key={card.id} card={{...card, category: 'all'}} categoryName={encodeURIComponent('all')} disabled={isSold}>
+                            <div className={cn(
+                                "relative aspect-[2.5/4] rounded-[1.5rem] overflow-hidden border border-white/10 bg-slate-900 cursor-pointer hover:border-primary transition-all group",
+                                isSold && "grayscale opacity-40 cursor-not-allowed"
+                            )}>
+                                <SafeImage src={card.imageUrl} alt={card.name} fill className="object-cover" sizes="(max-width: 768px) 50vw, 16vw" />
+                                {isSold && (
+                                    <div className="absolute inset-0 flex items-center justify-center p-2 z-10">
+                                        <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" />
+                                        <div className="relative flex flex-col items-center gap-1">
+                                            <XCircle className="w-6 h-6 text-destructive" />
+                                            <span className="text-[10px] font-black text-white bg-destructive px-2 py-0.5 rounded rotate-[-12deg] shadow-lg">已被抽出</span>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </BettingGameDialog>
+                    );
+                })}
             </div>
 
             <div className="mt-20 text-center flex flex-col items-center opacity-20">

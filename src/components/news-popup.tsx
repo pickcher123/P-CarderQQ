@@ -99,99 +99,99 @@ export function NewsPopup() {
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-            <DialogContent className={cn(
-                "p-0 bg-card/95 backdrop-blur-xl border-primary/20 overflow-hidden shadow-2xl transition-all duration-300 rounded-2xl",
-                isImageMode 
-                    ? "w-[50vw] max-w-[280px] md:max-w-[600px]" 
-                    : "w-[50vw] max-w-[250px] md:max-w-[500px]"
-            )}>
-                {isImageMode ? (
-                    <div className="relative w-full aspect-auto min-h-[120px] group">
-                        {latestNews.imageUrl && (
-                            <SafeImage 
-                                src={latestNews.imageUrl} 
-                                alt={latestNews.title} 
-                                className="w-full h-auto object-contain block"
-                                width={800}
-                                height={600}
-                            />
+        <DialogContent className={cn(
+            "p-0 bg-card/95 backdrop-blur-xl border-primary/20 overflow-hidden shadow-2xl transition-all duration-300 rounded-3xl",
+            isImageMode 
+                ? "w-[92vw] md:w-[80vw] max-w-[450px] md:max-w-[900px]" 
+                : "w-[92vw] md:w-[70vw] max-w-[400px] md:max-w-[750px]"
+        )}>
+            {isImageMode ? (
+                <div className="relative w-full aspect-auto min-h-[150px] group">
+                    {latestNews.imageUrl && (
+                        <SafeImage 
+                            src={latestNews.imageUrl} 
+                            alt={latestNews.title} 
+                            className="w-full h-auto object-contain block"
+                            width={1200}
+                            height={800}
+                        />
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent pointer-events-none" />
+                    <div className="absolute top-4 left-4 flex gap-2">
+                        {latestNews.isPinned && (
+                            <Badge className="bg-primary text-[10px] md:text-xs h-6 px-3 shadow-[0_0_10px_rgba(6,182,212,0.5)] flex items-center gap-1 border-none">
+                                <Megaphone className="w-3.5 h-3.5" />
+                            </Badge>
                         )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent pointer-events-none" />
-                        <div className="absolute top-3 left-3 flex gap-1.5">
-                            {latestNews.isPinned && (
-                                <Badge className="bg-primary text-[10px] h-5 px-2 shadow-[0_0_8px_rgba(6,182,212,0.5)] flex items-center gap-1">
-                                    <Megaphone className="w-3 h-3" />
-                                </Badge>
-                            )}
-                            <Badge variant="secondary" className="bg-black/60 backdrop-blur-md border-white/10 text-[10px] h-5 px-2">{latestNews.category}</Badge>
-                        </div>
-                    </div>
-                ) : null}
-
-                <div className="p-3 md:p-8 space-y-2 md:space-y-4">
-                    {!isImageMode && (
-                        <div className="flex items-center justify-between">
-                            <div className="flex gap-1.5">
-                                {latestNews.isPinned && (
-                                    <Badge className="bg-primary text-[10px] h-5 px-2 shadow-[0_0_8px_rgba(6,182,212,0.5)] flex items-center gap-1">
-                                        <Megaphone className="w-3 h-3" /> 重要
-                                    </Badge>
-                                )}
-                                <Badge variant="secondary" className="bg-black/60 backdrop-blur-md border-white/10 text-[10px] h-5 px-2">{latestNews.category}</Badge>
-                            </div>
-                            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground font-code">
-                                <Calendar className="h-3 w-3" />
-                                {latestNews.createdAt ? format(new Date(latestNews.createdAt.seconds * 1000), 'yyyy-MM-dd') : '---'}
-                            </div>
-                        </div>
-                    )}
-
-                    {isImageMode && (
-                        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground font-code">
-                            <Calendar className="h-3 w-3" />
-                            {latestNews.createdAt ? format(new Date(latestNews.createdAt.seconds * 1000), 'yyyy-MM-dd') : '---'}
-                        </div>
-                    )}
-                    
-                    <DialogHeader>
-                        <DialogTitle className="text-xs md:text-2xl font-bold font-body leading-tight text-white text-left">
-                            {latestNews.title}
-                        </DialogTitle>
-                        <DialogDescription className="sr-only">最新消息彈窗內容</DialogDescription>
-                    </DialogHeader>
-
-                    {!isImageMode && (
-                        <div className="max-h-[25vh] md:max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
-                            <div 
-                                className="text-muted-foreground leading-relaxed text-[10px] md:text-base whitespace-pre-wrap font-body"
-                                dangerouslySetInnerHTML={{ __html: latestNews.content || '' }}
-                            />
-                        </div>
-                    )}
-
-                    <div className="pt-2 md:pt-4 flex flex-col gap-2 border-t border-white/5">
-                        <div className="flex items-center space-x-2 cursor-pointer group">
-                            <Checkbox 
-                                id="do-not-show-popup" 
-                                checked={doNotShowAgain} 
-                                onCheckedChange={(checked) => setDoNotShowAgain(!!checked)}
-                                className="border-primary/50 data-[state=checked]:bg-primary h-3 w-3"
-                            />
-                            <Label 
-                                htmlFor="do-not-show-popup" 
-                                className="text-[10px] text-muted-foreground cursor-pointer group-hover:text-primary transition-colors"
-                            >
-                                不再顯示消息
-                            </Label>
-                        </div>
-                        <Button 
-                            onClick={handleClose}
-                            className="w-full bg-primary text-primary-foreground font-bold h-8 md:h-11 text-[10px] md:text-base hover:shadow-[0_0_15px_rgba(6,182,212,0.4)] transition-all active:scale-95"
-                        >
-                            我知道了
-                        </Button>
+                        <Badge variant="secondary" className="bg-black/60 backdrop-blur-md border-white/10 text-[10px] md:text-xs h-6 px-3">{latestNews.category}</Badge>
                     </div>
                 </div>
+            ) : null}
+
+            <div className="p-5 md:p-10 space-y-4 md:space-y-6">
+                {!isImageMode && (
+                    <div className="flex items-center justify-between">
+                        <div className="flex gap-2">
+                            {latestNews.isPinned && (
+                                <Badge className="bg-primary text-[10px] md:text-xs h-6 px-3 shadow-[0_0_10px_rgba(6,182,212,0.5)] flex items-center gap-1 border-none">
+                                    <Megaphone className="w-3.5 h-3.5" /> 重要
+                                </Badge>
+                            )}
+                            <Badge variant="secondary" className="bg-black/60 backdrop-blur-md border-white/10 text-[10px] md:text-xs h-6 px-3">{latestNews.category}</Badge>
+                        </div>
+                        <div className="flex items-center gap-2 text-[10px] md:text-xs text-muted-foreground font-code">
+                            <Calendar className="h-4 w-4" />
+                            {latestNews.createdAt ? format(new Date(latestNews.createdAt.seconds * 1000), 'yyyy-MM-dd') : '---'}
+                        </div>
+                    </div>
+                )}
+
+                {isImageMode && (
+                    <div className="flex items-center gap-2 text-[10px] md:text-xs text-muted-foreground font-code">
+                        <Calendar className="h-3.5 w-3.5" />
+                        {latestNews.createdAt ? format(new Date(latestNews.createdAt.seconds * 1000), 'yyyy-MM-dd') : '---'}
+                    </div>
+                )}
+                
+                <DialogHeader>
+                    <DialogTitle className="text-lg md:text-3xl font-black font-body leading-tight text-white text-left tracking-tight">
+                        {latestNews.title}
+                    </DialogTitle>
+                    <DialogDescription className="sr-only">最新消息彈窗內容</DialogDescription>
+                </DialogHeader>
+
+                {!isImageMode && (
+                    <div className="max-h-[35vh] md:max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
+                        <div 
+                            className="text-white/80 leading-relaxed text-sm md:text-lg whitespace-pre-wrap font-body font-medium"
+                            dangerouslySetInnerHTML={{ __html: latestNews.content || '' }}
+                        />
+                    </div>
+                )}
+
+                <div className="pt-4 md:pt-6 flex flex-col gap-3 md:gap-4 border-t border-white/10">
+                    <div className="flex items-center space-x-3 cursor-pointer group">
+                        <Checkbox 
+                            id="do-not-show-popup" 
+                            checked={doNotShowAgain} 
+                            onCheckedChange={(checked) => setDoNotShowAgain(!!checked)}
+                            className="border-primary/50 data-[state=checked]:bg-primary h-4 w-4 rounded-md"
+                        />
+                        <Label 
+                            htmlFor="do-not-show-popup" 
+                            className="text-xs md:text-sm text-muted-foreground cursor-pointer group-hover:text-primary transition-colors font-bold"
+                        >
+                            不再顯示此消息
+                        </Label>
+                    </div>
+                    <Button 
+                        onClick={handleClose}
+                        className="w-full bg-primary text-primary-foreground font-black h-11 md:h-14 text-sm md:text-lg rounded-2xl shadow-[0_8px_20px_rgba(6,182,212,0.3)] transition-all hover:scale-[1.02] active:scale-[0.98] border-none"
+                    >
+                        我知道了
+                    </Button>
+                </div>
+            </div>
             </DialogContent>
         </Dialog>
     );

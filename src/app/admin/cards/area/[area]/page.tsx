@@ -58,6 +58,7 @@ interface CardData {
     sellPrice?: number;
     source?: string;
     isSold?: boolean;
+    isRecycled?: boolean;
     dailyLimit?: number;
     minLevel?: string;
 }
@@ -263,8 +264,15 @@ export default function CardAreaManagementPage() {
     
     if (searchTerm.trim()) cards = cards.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()));
     if (sportFilter !== '全部') cards = cards.filter(c => c.category === sportFilter);
-    if (activeTab === 'active') cards = cards.filter(c => !c.isSold);
-    else cards = cards.filter(c => c.isSold);
+    
+    if (activeTab === 'active') {
+        cards = cards.filter(c => !c.isSold);
+    } else if (activeTab === 'recycled') {
+        cards = cards.filter(c => c.isRecycled);
+    } else {
+        // sold tab shows cards that are sold but NOT recycled (i.e. won/drawn by user)
+        cards = cards.filter(c => c.isSold && !c.isRecycled);
+    }
     
     return cards.sort((a, b) => a.name.localeCompare(b.name));
   }, [allCards, area, cardPools, bettingItems, luckBags, searchTerm, sportFilter, activeTab]);
@@ -288,7 +296,17 @@ export default function CardAreaManagementPage() {
                 backUploadTask.on('state_changed', (s) => setBackUploadProgress((s.bytesTransferred / s.totalBytes) * 100), reject, () => getDownloadURL(backUploadTask.snapshot.ref).then(resolve));
             });
         }
-        const cardData: any = { name: currentCard.name, category: currentCard.category, sellPrice: currentCard.sellPrice || 0, imageUrl, backImageUrl, isSold: currentCard.isSold || false, dailyLimit: Number(currentCard.dailyLimit || 0), minLevel: currentCard.minLevel || '新手收藏家' };
+        const cardData: any = { 
+            name: currentCard.name, 
+            category: currentCard.category, 
+            sellPrice: currentCard.sellPrice || 0, 
+            imageUrl, 
+            backImageUrl, 
+            isSold: currentCard.isSold || false, 
+            isRecycled: currentCard.isRecycled || false,
+            dailyLimit: Number(currentCard.dailyLimit || 0), 
+            minLevel: currentCard.minLevel || '新手收藏家' 
+        };
         if (!isEditMode && area === 'group-break') { cardData.source = 'group-break'; cardData.isSold = true; }
         if (isEditMode && currentCard.id) await updateDoc(doc(firestore, 'allCards', currentCard.id), cardData);
         else await addDoc(collection(firestore, 'allCards'), cardData);
@@ -299,7 +317,13 @@ export default function CardAreaManagementPage() {
 
   const handleToggleSold = async (card: CardData) => {
     if (!firestore || !card.id) return;
-    try { await updateDoc(doc(firestore, 'allCards', card.id), { isSold: !card.isSold }); toast({ title: '狀態已更新' }); } catch (e) { console.error(e); toast({ variant: 'destructive' }); }
+    try { 
+        const newSold = !card.isSold;
+        const updateData: any = { isSold: newSold };
+        if (!newSold) updateData.isRecycled = false;
+        await updateDoc(doc(firestore, 'allCards', card.id), updateData); 
+        toast({ title: '狀態已更新' }); 
+    } catch (e) { console.error(e); toast({ variant: 'destructive' }); }
   };
 
   const handleDeleteCard = async (card: CardData) => {
@@ -352,7 +376,8 @@ export default function CardAreaManagementPage() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <TabsList className="bg-slate-200/50 p-1 rounded-2xl h-12 w-fit border border-slate-200 shadow-inner">
                 <TabsTrigger value="active" className="rounded-xl px-8 font-black text-xs data-[state=active]:bg-white data-[state=active]:shadow-md">在庫資產</TabsTrigger>
-                <TabsTrigger value="sold" className="rounded-xl px-8 font-black text-xs data-[state=active]:bg-white data-[state=active]:shadow-md">已抽出/回收</TabsTrigger>
+                <TabsTrigger value="recycled" className="rounded-xl px-8 font-black text-xs data-[state=active]:bg-white data-[state=active]:shadow-md">已回收</TabsTrigger>
+                <TabsTrigger value="sold" className="rounded-xl px-8 font-black text-xs data-[state=active]:bg-white data-[state=active]:shadow-md">已抽出</TabsTrigger>
             </TabsList>
 
             <div className="bg-white border border-slate-200 rounded-[2rem] overflow-hidden shadow-md">
@@ -394,8 +419,10 @@ export default function CardAreaManagementPage() {
                                     <TableCell>
                                         <div className="flex items-center space-x-3">
                                             <Switch checked={card.isSold} onCheckedChange={() => handleToggleSold(card)} />
-                                            <Label className={cn("text-[10px] font-black uppercase tracking-tighter", card.isSold ? "text-rose-600" : "text-emerald-600")}>
-                                                {card.isSold ? "已抽出" : "在庫中"}
+                                            <Label className={cn("text-[10px] font-black uppercase tracking-tighter", 
+                                                card.isRecycled ? "text-amber-600" : (card.isSold ? "text-rose-600" : "text-emerald-600")
+                                            )}>
+                                                {card.isRecycled ? "已回收" : (card.isSold ? "已抽出" : "在庫中")}
                                             </Label>
                                         </div>
                                     </TableCell>
@@ -446,8 +473,17 @@ export default function CardAreaManagementPage() {
                         </div>
 
                         <div className="p-6 rounded-[2rem] border border-slate-200 bg-slate-50/50 space-y-6">
-                            <div className="flex items-center gap-2 text-slate-900 font-black text-sm uppercase tracking-widest">
-                                <Ban className="w-4 h-4 text-rose-500" /> 參與限制 (用於拼卡專區)
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2 text-slate-900 font-black text-sm uppercase tracking-widest">
+                                    <Ban className="w-4 h-4 text-rose-500" /> 參與限制 (用於拼卡專區)
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">已回收狀態</Label>
+                                    <Switch 
+                                        checked={currentCard.isRecycled || false} 
+                                        onCheckedChange={(val) => setCurrentCard({...currentCard, isRecycled: val, isSold: val ? true : currentCard.isSold})} 
+                                    />
+                                </div>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-2">
