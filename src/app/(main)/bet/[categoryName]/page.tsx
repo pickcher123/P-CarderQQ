@@ -242,8 +242,6 @@ export default function BetCategoryPage() {
             return (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0); // Default latest (featured first)
         });
     }, [allCards, bettingItems, searchTerm, sortOption, soldCardIds]);
-    
-    const soldCardIds = useMemo(() => new Set(bettingItems?.soldCardIds || []), [bettingItems]);
 
     return (
         <div className="container py-8 relative text-white">
