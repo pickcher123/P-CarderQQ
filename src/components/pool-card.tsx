@@ -258,7 +258,6 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                             <h3 className="text-lg font-headline font-black text-white uppercase truncate">{pool.name}</h3>
                             <div className="flex items-center justify-center gap-2">
                                 <Badge variant="outline" className="text-[10px] text-primary border-primary/20">{pool.description}</Badge>
-                                <Badge variant="secondary" className="text-[10px] text-white/60 bg-white/5 border-white/10">已抽 {todayDrawCount} 抽</Badge>
                             </div>
                         </div>
                         <div className="bg-black/60 border border-white/10 p-3 rounded-2xl mb-4">
@@ -371,9 +370,9 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                 <span className="flex-1 text-center italic">
                                     {`單抽 ${pool.price?.toLocaleString()}`}
                                 </span>
-                                {pool.currency === 'p-point' ? <PPlusIcon className="w-4 h-4 ml-2" /> : (
-                                    <div className="relative flex items-center justify-center w-6 h-6 ml-2 rounded-full bg-primary/20 border border-primary/50">
-                                        <Gem className="w-3.5 h-3.5 text-primary" />
+                                {pool.currency === 'p-point' ? <PPlusIcon className="w-5 h-5 ml-2 text-amber-400" /> : (
+                                    <div className="relative flex items-center justify-center w-7 h-7 ml-2 rounded-full bg-sky-500/30 border border-sky-400/50">
+                                        <Gem className="w-4 h-4 text-sky-300" />
                                     </div>
                                 )}
                             </Button>
@@ -393,9 +392,9 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                 <span className="flex-1 text-center italic">
                                     {!canDraw3 ? '今日額度不足三抽' : `${Math.min(3, pool.remainingPacks || 0)}連抽 ${((Math.min(3, pool.remainingPacks || 0) === 3 ? pool.price3Draws : (pool.price || 0) * (Math.min(3, pool.remainingPacks || 0))) || 0).toLocaleString()}`}
                                 </span>
-                                {canDraw3 && (pool.currency === 'p-point' ? <PPlusIcon className="w-6 h-6 ml-2" /> : (
-                                    <div className="relative flex items-center justify-center w-8 h-8 ml-2 rounded-full bg-white/20 border border-white/30">
-                                        <Gem className="w-5 h-5 text-primary" />
+                                {canDraw3 && (pool.currency === 'p-point' ? <PPlusIcon className="w-7 h-7 ml-2 text-amber-400" /> : (
+                                    <div className="relative flex items-center justify-center w-9 h-9 ml-2 rounded-full bg-sky-500/30 border border-sky-400/50">
+                                        <Gem className="w-6 h-6 text-sky-300" />
                                     </div>
                                 ))}
                             </Button>
@@ -411,13 +410,17 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                 <ScrollArea className="max-h-[70vh] p-6">
                     <div className="space-y-8 pb-20">
                         {lastPrizeCard && (
-                            <div className="border-2 p-6 rounded-[2.5rem] bg-accent/10 border-accent/40 flex flex-col sm:flex-row items-center gap-6">
+                            <div 
+                                className="border-2 p-6 rounded-[2.5rem] bg-accent/10 border-accent/40 flex flex-col sm:flex-row items-center gap-6 cursor-zoom-in transition-all hover:bg-accent/20"
+                                onClick={() => setPreviewCard({ ...lastPrizeCard, rarity: 'legendary' })}
+                            >
                                 <div className="relative w-32 aspect-[2.5/4] rounded-2xl overflow-hidden border-2 border-white/20 p-1">
                                     <SafeImage src={lastPrizeCard.imageUrl} alt="lp" sizes="120px" fill className="object-contain" />
                                 </div>
                                 <div className="text-center sm:text-left flex-1">
                                     <p className="text-lg font-black text-accent uppercase">最後賞：{lastPrizeCard.name}</p>
                                     <p className="text-sm text-white/60">最後一抽可得此 Legendary 資產。</p>
+                                    <p className="text-[10px] text-accent font-bold mt-2 animate-pulse uppercase">點擊預覽卡片</p>
                                 </div>
                             </div>
                         )}
@@ -461,14 +464,14 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
             </DialogContent>
 
             <Dialog open={!!previewCard} onOpenChange={(open) => !open && setPreviewCard(null)}>
-                <DialogContent className="max-w-[min(95vw,420px)] bg-transparent border-none p-0 flex flex-col items-center gap-6 [&>button:last-child]:hidden">
+                <DialogContent className="max-w-[min(95vw,420px)] bg-transparent border-none p-0 flex flex-col items-center justify-center gap-4 sm:gap-6 [&>button:last-child]:hidden">
                     <DialogTitle>
                         <VisuallyHidden>卡片預覽</VisuallyHidden>
                     </DialogTitle>
                     {previewCard && (
-                        <div className="w-full flex flex-col items-center gap-6">
-                            <h2 className="text-sm font-black text-white text-center">{previewCard.name}</h2>
-                            <div className="w-full max-w-[400px]">
+                        <div className="w-full flex flex-col items-center gap-6 sm:gap-8 pt-4">
+                            <h2 className="text-base sm:text-lg font-black text-white text-center px-4 drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]">{previewCard.name}</h2>
+                            <div className="w-[80%] sm:w-full max-w-[320px]">
                                 {previewCard.isPoints ? (
                                     <div className={cn("w-full aspect-[2.5/4] rounded-3xl flex flex-col items-center justify-center p-4 border shadow-2xl", pointPrizeStyles[previewCard.rarity as Rarity].bg, pointPrizeStyles[previewCard.rarity as Rarity].border)}>
                                         <PPlusIcon className={cn("w-20 h-20 mb-4", pointPrizeStyles[previewCard.rarity as Rarity].text)} />
@@ -482,8 +485,8 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                             {!previewCard.isPoints && <p className="text-[9px] text-primary font-bold uppercase animate-pulse">點擊翻轉</p>}
                         </div>
                     )}
-                    <Button variant="ghost" size="icon" className="mt-4 rounded-full bg-black/80 h-12 w-12 text-white" onClick={() => setPreviewCard(null)}>
-                        <X className="h-6 w-6" />
+                    <Button variant="ghost" size="icon" className="mt-2 sm:mt-4 rounded-full bg-black/80 h-10 w-10 sm:h-12 sm:w-12 text-white" onClick={() => setPreviewCard(null)}>
+                        <X className="h-5 w-5 sm:h-6 sm:w-6" />
                     </Button>
                 </DialogContent>
             </Dialog>

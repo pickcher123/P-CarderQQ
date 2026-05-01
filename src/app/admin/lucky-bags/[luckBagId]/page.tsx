@@ -4,7 +4,7 @@ import { useState, ChangeEvent, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useDoc, useCollection, useFirestore, useMemoFirebase, useAuth } from '@/firebase';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { collection, doc, updateDoc, query, writeBatch, serverTimestamp, arrayUnion, arrayRemove, getDocs, addDoc } from 'firebase/firestore';
+import { collection, doc, updateDoc, query, writeBatch, serverTimestamp, arrayUnion, arrayRemove, getDocs, addDoc, increment } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,7 +21,7 @@ import { Label } from '@/components/ui/label';
 import { Card as UICard, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, Image as ImageIcon, Upload, ArrowLeft, Check, Settings, Gem, Package, Users, Trophy, Eye, EyeOff, Search, Loader2, Sparkles, Copy, ListChecks, UserCheck, Archive, Play, ChevronUp, ChevronDown } from 'lucide-react';
+import { PlusCircle, Trash2, Image as ImageIcon, Upload, ArrowLeft, Check, Settings, Gem, Package, Users, Trophy, Eye, EyeOff, Search, Loader2, Sparkles, Copy, ListChecks, UserCheck, Archive, Play, ChevronUp, ChevronDown, RefreshCw, Maximize2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -34,7 +34,8 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { PPlusIcon } from '@/components/icons';
-
+import { resetLuckyBagParticipants } from '@/app/actions/lucky-bag';
+import { VisuallyHidden } from '@/components/ui/visually-hidden';
 
 type LuckBagStatus = 'draft' | 'published' | '已開獎';
 type PrizeLevel = 'first' | 'second' | 'third';
@@ -97,6 +98,22 @@ export default function LuckBagDetailPage() {
   const auth = useAuth();
   const { toast } = useToast();
 
+  const isSuperAdmin = useMemo(() => auth?.currentUser?.email === 'pickcher123@gmail.com', [auth]);
+
+  const handleResetParticipants = async () => {
+    if (!auth?.currentUser?.uid || !luckBagId) return;
+    try {
+      const res = await resetLuckyBagParticipants(auth.currentUser.uid, luckBagId);
+      if (res.success) {
+        toast({ title: '重設成功', description: '所有參與者資料已清除，活動已回至草稿狀態。' });
+      } else {
+        toast({ variant: 'destructive', title: '重設失敗', description: res.error });
+      }
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: '錯誤', description: error.message });
+    }
+  };
+
   const [isPrizeDialogOpen, setIsPrizeDialogOpen] = useState(false);
   const [selectedPrizeLevel, setSelectedPrizeLevel] = useState<PrizeLevel | 'other'>('first');
   const [searchTerm, setSearchTerm] = useState('');
@@ -110,6 +127,7 @@ export default function LuckBagDetailPage() {
   const [otherPrizeWinningNumbers, setOtherPrizeWinningNumbers] = useState<Record<string, string>>({});
   const [isDistributing, setIsDistributing] = useState(false);
   const [selectedCardsToAdd, setSelectedCardsToAdd] = useState<string[]>([]);
+  const [previewTarget, setPreviewTarget] = useState<{imageUrl: string, name: string} | null>(null);
 
 
   // Fetch Luck Bag details
@@ -458,7 +476,7 @@ export default function LuckBagDetailPage() {
                          // Handle points distribution
                          const userRef = doc(firestore, 'users', winnerId);
                          batch.update(userRef, {
-                             points: admin.firestore.FieldValue.increment(otherPrize.points || 0)
+                             points: increment(otherPrize.points || 0)
                          });
                          const txRef = doc(collection(firestore, 'transactions'));
                          batch.set(txRef, {
@@ -567,18 +585,31 @@ export default function LuckBagDetailPage() {
     if (!allCards) return [];
     
     // ENFORCE RULE: Filter out cards assigned to other areas
-    const currentBagCardIds = new Set([
-        luckBag?.prizes?.first,
-        luckBag?.prizes?.second,
-        luckBag?.prizes?.third,
-        ...(luckBag?.otherPrizes?.map(p => p.cardId) || [])
-    ]);
-
-    return allCards.filter(c => 
-        (!c.isSold && !globallyAssignedCardIds.has(c.id)) || 
-        currentBagCardIds.has(c.id)
-    );
-  }, [allCards, globallyAssignedCardIds, luckBag]);
+    // Also, if we are editing a specific prizelevel, we want to see the card currently IN that level,
+    // but we MUST EXCLUDE cards assigned to OTHER levels in this same bag.
+    
+    const otherLevelsInBag = new Set<string>();
+    if (selectedPrizeLevel !== 'first' && luckBag?.prizes?.first) otherLevelsInBag.add(luckBag.prizes.first);
+    if (selectedPrizeLevel !== 'second' && luckBag?.prizes?.second) otherLevelsInBag.add(luckBag.prizes.second);
+    if (selectedPrizeLevel !== 'third' && luckBag?.prizes?.third) otherLevelsInBag.add(luckBag.prizes.third);
+    
+    // For "other" prizes, it's a bit different since it's a list
+    const otherPrizesIds = new Set(luckBag?.otherPrizes?.map(p => p.cardId).filter((id): id is string => !!id) || []);
+    
+    return allCards.filter(c => {
+        // Basic: Must not be sold and not in other areas
+        const isFree = !c.isSold && !globallyAssignedCardIds.has(c.id);
+        
+        if (selectedPrizeLevel === 'other') {
+            // Adding to other prizes: must be free AND not already in "other prizes"
+            return isFree && !otherPrizesIds.has(c.id);
+        } else {
+            // Selecting for first/second/third: 
+            // Must be free AND NOT in any of the OTHER specific levels
+            return isFree && !otherLevelsInBag.has(c.id);
+        }
+    });
+  }, [allCards, globallyAssignedCardIds, luckBag, selectedPrizeLevel]);
 
   if (isLoadingBag || !bagDetails) {
     return <div className="container p-8"><Skeleton className="w-full h-96" /></div>;
@@ -612,6 +643,29 @@ export default function LuckBagDetailPage() {
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>
+
+                {isSuperAdmin && (
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="outline" size="sm" className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600">
+                                <RefreshCw className="mr-2 h-4 w-4" /> 重設參與資料
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent className="light bg-white text-slate-900 border-none shadow-2xl rounded-3xl">
+                            <AlertDialogHeader>
+                                <AlertDialogTitle className="text-xl font-black italic uppercase tracking-widest text-red-600">絕對機密：數據重置協議</AlertDialogTitle>
+                                <AlertDialogDescription className="text-slate-600 font-medium pt-2">
+                                    此操作將會清除當前福袋活動的所有參與者資料與已選擇的格位，並將<span className="text-blue-600 font-bold">全額退還點數</span>給所有參與玩家。這是一個不可逆的過程。<br/><br/>
+                                    <span className="font-bold text-red-600 underline">注意：此操作無法復原，系統會自動處理退款並產生交易日誌。</span>
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter className="pt-4">
+                                <AlertDialogCancel className="rounded-xl border-slate-200">撤回請求</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleResetParticipants} className="bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold shadow-lg shadow-red-200">啟動重置</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                )}
 
                  <div className="flex items-center space-x-2">
                     <Switch id="status-toggle" checked={isPublished} onCheckedChange={handleStatusToggle} disabled={bagDetails.status === '已開獎'} />
@@ -699,34 +753,42 @@ export default function LuckBagDetailPage() {
                                 {(['first', 'second', 'third'] as PrizeLevel[]).map((level) => (
                                     <div key={level} className="flex flex-col p-4 border rounded-xl bg-card/50 hover:border-primary/50 transition-all">
                                         <div className="flex items-center gap-4 mb-4">
-                                            <div className="relative w-16 h-20 bg-muted rounded-lg overflow-hidden shrink-0 border border-white/10 shadow-lg">
+                                            <div className="relative w-12 h-16 md:w-16 md:h-20 bg-muted rounded-lg overflow-hidden shrink-0 border border-white/10 shadow-lg">
                                                 {prizeCards[level] ? (
-                                                    <Image src={prizeCards[level]!.imageUrl} alt={prizeCards[level]!.name} fill className="object-cover" />
+                                                    <div className="relative w-full h-full group">
+                                                        <Image src={prizeCards[level]!.imageUrl} alt={prizeCards[level]!.name} fill className="object-cover" />
+                                                        <button 
+                                                            onClick={() => setPreviewTarget({ imageUrl: prizeCards[level]!.imageUrl, name: prizeCards[level]!.name })}
+                                                            className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+                                                        >
+                                                            <Maximize2 className="w-5 h-5 text-white" />
+                                                        </button>
+                                                    </div>
                                                 ) : (
                                                     <div className="flex items-center justify-center h-full"><Trophy className="w-6 h-6 text-muted-foreground opacity-20" /></div>
                                                 )}
                                             </div>
-                                            <div className="overflow-hidden">
-                                                <p className="text-[10px] font-black uppercase text-primary tracking-widest">{{first: 'Grand Prize 頭獎', second: 'Second Prize 貳獎', third: 'Third Prize 叁獎'}[level]}</p>
-                                                <p className="font-bold text-sm truncate">{prizeCards[level] ? prizeCards[level]!.name : '尚未設定'}</p>
+                                            <div className="overflow-hidden min-w-0">
+                                                <p className="text-[9px] md:text-[10px] font-black uppercase text-primary tracking-widest truncate">{{first: 'Grand Prize 頭獎', second: 'Second Prize 貳獎', third: 'Third Prize 叁獎'}[level]}</p>
+                                                <p className="font-bold text-xs md:text-sm truncate">{prizeCards[level] ? prizeCards[level]!.name : '尚未設定'}</p>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-3">
-                                            <div className="flex-1">
+                                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
+                                            <div className="flex-1 w-full">
                                                 <Label className="text-[9px] uppercase font-bold text-muted-foreground mb-1 block">輸入中獎序號</Label>
                                                 <Input 
                                                     type="number" 
                                                     placeholder="例如: 8"
                                                     value={topPrizeWinningNumbers[level]}
                                                     onChange={(e) => setTopPrizeWinningNumbers(prev => ({...prev, [level]: e.target.value}))}
-                                                    className="font-code text-lg font-black"
+                                                    className="font-code text-base md:text-lg font-black h-9 md:h-10"
                                                 />
                                             </div>
                                             {topPrizeWinningNumbers[level] && (
-                                                <div className="pt-5 shrink-0">
-                                                    <Badge className="bg-primary/20 text-primary border-primary/30 h-10 px-3">
-                                                        <UserCheck className="w-3.5 h-3.5 mr-1.5"/> 
-                                                        {userMap.get(purchases?.find(p => p.spotNumber === parseInt(topPrizeWinningNumbers[level]))?.userId || '') || '號碼錯誤'}
+                                                <div className="sm:pt-5 shrink-0 w-full sm:w-auto">
+                                                    <Badge className="bg-primary/20 text-primary border-primary/30 h-8 md:h-10 px-2 md:px-3 w-full justify-center">
+                                                        <UserCheck className="w-3 h-3 md:w-3.5 md:h-3.5 mr-1 md:mr-1.5 shrink-0"/> 
+                                                        <span className="truncate">{userMap.get(purchases?.find(p => p.spotNumber === parseInt(topPrizeWinningNumbers[level]))?.userId || '') || '號碼錯誤'}</span>
                                                     </Badge>
                                                 </div>
                                             )}
@@ -1008,6 +1070,33 @@ export default function LuckBagDetailPage() {
                     </Button>
                 </DialogFooter>
             )}
+            </DialogContent>
+        </Dialog>
+
+        <Dialog open={!!previewTarget} onOpenChange={(open) => !open && setPreviewTarget(null)}>
+            <DialogContent className="p-0 bg-transparent border-none shadow-none max-w-[90vw] md:max-w-md flex flex-col items-center justify-center">
+                <VisuallyHidden>
+                    <DialogTitle>{previewTarget?.name || '卡片預覽'}</DialogTitle>
+                </VisuallyHidden>
+                {previewTarget && (
+                    <div className="relative aspect-[2.5/3.5] w-full animate-in zoom-in-95 duration-200">
+                        <Image 
+                            src={previewTarget.imageUrl} 
+                            alt={previewTarget.name} 
+                            fill 
+                            className="object-contain rounded-2xl drop-shadow-[0_0_30px_rgba(255,255,255,0.2)]" 
+                            priority
+                        />
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="absolute -top-4 -right-4 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md"
+                            onClick={() => setPreviewTarget(null)}
+                        >
+                            <X className="w-5 h-5" />
+                        </Button>
+                    </div>
+                )}
             </DialogContent>
         </Dialog>
     </div>

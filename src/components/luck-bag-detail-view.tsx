@@ -382,22 +382,21 @@ export function LuckBagDetailView({ luckBag }: { luckBag: LuckBagWithCount }) {
                 )}
             </div>
             
-            {/* 卡片預覽 Dialog */}
             <Dialog open={!!previewCard} onOpenChange={(open) => !open && setPreviewCard(null)}>
-                <DialogContent className="max-w-[min(95vw,420px)] bg-transparent border-none p-0 flex flex-col items-center gap-6 [&>button:last-child]:hidden">
+                <DialogContent className="max-w-[min(95vw,420px)] bg-transparent border-none p-0 flex flex-col items-center justify-center gap-4 sm:gap-6 [&>button:last-child]:hidden">
                     <DialogTitle asChild>
                         <VisuallyHidden>卡片預覽</VisuallyHidden>
                     </DialogTitle>
                     {previewCard && (
-                        <div className="w-full flex flex-col items-center gap-6">
-                            <h2 className="text-sm font-black text-white text-center px-4">{previewCard.name}</h2>
-                            <div className="w-full max-w-[600px]">
+                        <div className="w-full flex flex-col items-center gap-6 sm:gap-8 pt-4">
+                            <h2 className="text-base sm:text-lg font-black text-white text-center px-4 drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]">{previewCard.name}</h2>
+                            <div className="w-[80%] sm:w-full max-w-[320px]">
                                 <CardItem name={previewCard.name} imageUrl={previewCard.imageUrl} backImageUrl={previewCard.backImageUrl} imageHint={previewCard.name} rarity="legendary" isFlippable={true}/>
                             </div>
                         </div>
                     )}
-                    <Button variant="ghost" size="icon" className="mt-4 rounded-full bg-black/80 h-12 w-12 text-white" onClick={() => setPreviewCard(null)}>
-                        <X className="h-6 w-6" />
+                    <Button variant="ghost" size="icon" className="mt-2 sm:mt-4 rounded-full bg-black/80 h-10 w-10 sm:h-12 sm:w-12 text-white" onClick={() => setPreviewCard(null)}>
+                        <X className="h-5 w-5 sm:h-6 sm:w-6" />
                     </Button>
                 </DialogContent>
             </Dialog>

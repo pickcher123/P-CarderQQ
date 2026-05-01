@@ -165,7 +165,12 @@ export default function AdminPage() {
     
     const systemConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'systemConfig', 'main') : null, [firestore]);
     const { data: systemConfig, isLoading: isLoadingSystemConfig, forceRefetch } = useDoc<SystemConfig>(systemConfigRef);
+    const [announcement, setAnnouncement] = useState('');
     
+    useEffect(() => {
+        if (systemConfig?.announcement) setAnnouncement(systemConfig.announcement);
+    }, [systemConfig]);
+
     const isSuperAdmin = currentUser?.email === SUPER_ADMIN_EMAIL;
 
     const totalUsers = users?.length ?? 0;
@@ -272,6 +277,40 @@ export default function AdminPage() {
                 </Card>
 
                 <div className="space-y-8">
+                    <Card className="border-slate-200 shadow-md bg-white rounded-2xl">
+                        <CardHeader className="border-b border-slate-50">
+                            <CardTitle className="text-lg font-black flex items-center gap-2 text-slate-900"><Archive className="h-5 w-5 text-slate-500"/> 全域設定</CardTitle>
+                            <CardDescription className="text-slate-500 font-medium">系統全站公告與設定。</CardDescription>
+                        </CardHeader>
+                        <CardContent className="pt-6 space-y-6">
+                            <div className="space-y-2">
+                                <Label className="text-xs font-black uppercase text-slate-500 tracking-widest flex items-center gap-2">
+                                    <Megaphone className="w-3 h-3"/> 首頁系統公告
+                                </Label>
+                                <textarea 
+                                    className="w-full min-h-[100px] p-4 rounded-xl border border-slate-200 font-medium text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                                    value={announcement}
+                                    onChange={(e) => setAnnouncement(e.target.value)}
+                                    placeholder="輸入首頁顯示的跑馬燈下方的公告內容..."
+                                />
+                                <div className="flex justify-end">
+                                    <Button 
+                                        size="sm" 
+                                        onClick={async () => {
+                                            if (!systemConfigRef) return;
+                                            await updateDoc(systemConfigRef, { announcement });
+                                            toast({ title: '已儲存公告' });
+                                        }}
+                                        className="bg-primary text-black font-black rounded-lg"
+                                    >
+                                        儲存公告
+                                    </Button>
+                                </div>
+                                <p className="text-[10px] text-slate-400 font-bold">若留空則首頁不會顯示公告區塊。</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+
                     <Card className="border-slate-200 shadow-md bg-white rounded-2xl">
                         <CardHeader className="border-b border-slate-50">
                             <CardTitle className="text-lg font-black flex items-center gap-2 text-slate-900"><ShieldCheck className="h-5 w-5 text-slate-500"/> 維護開關</CardTitle>

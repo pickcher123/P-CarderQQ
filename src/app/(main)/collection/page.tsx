@@ -14,13 +14,20 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Checkbox } from '@/components/ui/checkbox';
-import { Ship, RefreshCw, Gem, Loader2, CheckSquare, Square, Shield, LayoutGrid, Users, Users2, MapPin, SearchCode, X, Sparkles, ChevronRight, Package, Library, Hash, Info, AlertTriangle, RotateCcw } from 'lucide-react';
+import * as VisuallyHiddenPrimitive from "@radix-ui/react-visually-hidden";
+import { Ship, RefreshCw, Gem, Loader2, CheckSquare, Square, Shield, LayoutGrid, Users, Users2, MapPin, SearchCode, X, Sparkles, ChevronRight, Package, Library, Hash, Info, AlertTriangle, RotateCcw, Filter, ArrowUpDown, RotateCw } from 'lucide-react';
 import { useCollection, useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, doc, writeBatch, serverTimestamp, getDoc, increment, updateDoc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -35,6 +42,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { PPlusIcon } from '@/components/icons';
+import { motion, AnimatePresence } from 'motion/react';
 
 type Rarity = 'common' | 'rare' | 'legendary';
 type ShippingMethod = '7-11' | '郵寄' | '面交自取';
@@ -49,6 +57,7 @@ interface UserCard {
     source?: string;
     breakTitle?: string;
     teamName?: string;
+    serialNumber?: string;
 }
 
 interface AllCards {
@@ -59,6 +68,8 @@ interface AllCards {
     imageHint: string;
     sellPrice?: number;
     isSold?: boolean;
+    category?: string; // Add this
+    teamName?: string; // Maybe add this too
 }
 
 type MergedCard = UserCard & AllCards & { serialNumber: string };
@@ -79,6 +90,8 @@ export default function CollectionPage() {
   const [shippingName, setShippingName] = useState('');
   const [shippingPhone, setShippingPhone] = useState('');
   const [shippingAddress, setShippingAddress] = useState('');
+  const [filterCategory, setFilterCategory] = useState<string | null>(null);
+  const [sortOption, setSortOption] = useState<'price' | 'unsold' | 'latest'>('latest');
 
   const userProfileRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -114,6 +127,7 @@ export default function CollectionPage() {
         return {
           ...cardDetails,
           ...userCard,
+          category: (userCard.category && userCard.category !== 'all') ? userCard.category : (cardDetails.category || userCard.category || 'general'),
           serialNumber: userCard.serialNumber || '0000'
         }
       }
@@ -121,8 +135,21 @@ export default function CollectionPage() {
     }).filter((c): c is MergedCard => c !== null);
   }, [userCards, allCards]);
 
-  const standardCards = useMemo(() => mergedCards.filter(c => c.source !== 'group-break'), [mergedCards]);
-  const groupBreakCards = useMemo(() => mergedCards.filter(c => c.source === 'group-break'), [mergedCards]);
+  const sortedMergedCards = useMemo(() => {
+      let sorted = [...mergedCards];
+      if (sortOption === 'price') sorted.sort((a,b) => (b.sellPrice || 0) - (a.sellPrice || 0));
+      else if (sortOption === 'unsold') sorted.sort((a,b) => (a.isSold ? 1 : -1) - (b.isSold ? 1 : -1));
+      // latest increase is hard to know without timestamp on userCards, assuming index order is okay
+      return sorted;
+  }, [mergedCards, sortOption]);
+
+  const filteredMergedCards = useMemo(() => {
+      if (!filterCategory) return sortedMergedCards;
+      return sortedMergedCards.filter(c => c.category === filterCategory);
+  }, [sortedMergedCards, filterCategory]);
+
+  const standardCards = useMemo(() => filteredMergedCards.filter(c => c.source !== 'group-break'), [filteredMergedCards]);
+  const groupBreakCards = useMemo(() => filteredMergedCards.filter(c => c.source === 'group-break'), [filteredMergedCards]);
 
   const hasFreeShipping = useMemo(() => {
       if (!userProfile || !systemConfig?.levelBenefits) return false;
@@ -130,7 +157,7 @@ export default function CollectionPage() {
       return benefit?.freeShipping || false;
   }, [userProfile, systemConfig]);
 
-  const handleSelectCard = (userCardId: string, isSelected: boolean | 'indeterminate') => {
+  const handleSelectCard = (userCardId: string, isSelected: boolean) => {
     setSelectedCardIds(prev => {
       const newSet = new Set(prev);
       if (isSelected) newSet.add(userCardId);
@@ -183,7 +210,10 @@ export default function CollectionPage() {
 
       for (const card of cardsToSell) {
         batch.delete(doc(firestore, 'users', user.uid, 'userCards', card.id));
-        batch.update(doc(firestore, 'allCards', card.cardId), { isSold: true });
+        batch.update(doc(firestore, 'allCards', card.cardId), { 
+            isSold: true,
+            isRecycled: true 
+        });
       }
 
       batch.set(doc(collection(firestore, 'transactions')), {
@@ -279,216 +309,360 @@ export default function CollectionPage() {
     </div>
   );
 
+  if (isUserLoading) return (
+    <div className="container py-20 text-center animate-fade-in-up">
+        <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto" />
+    </div>
+  );
+
   const isAllSelected = mergedCards.length > 0 && selectedCardIds.size === mergedCards.length;
 
-  const addressLabel = useMemo(() => {
-    if (shippingMethod === '7-11') return '出貨門市';
-    if (shippingMethod === '郵寄') return '寄送地址';
-    return '自取地點';
-  }, [shippingMethod]);
+  const addressLabel = 
+    shippingMethod === '7-11' ? '出貨門市' : 
+    shippingMethod === '郵寄' ? '寄送地址' : '自取地點';
 
   return (
-    <div className="container py-12 md:py-20 relative text-white">
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[400px] bg-primary/5 blur-[100px] pointer-events-none" />
-      
-      <div className="text-center mb-16 relative z-10">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold tracking-[0.3em] mb-4 uppercase animate-fade-in-up">
-            <Library className="w-3 h-3" /> Digital Asset Vault
-        </div>
-        <h1 className="font-headline text-4xl font-black tracking-[0.2em] sm:text-6xl text-white drop-shadow-[0_0_15px_rgba(6,182,212,0.4)] mb-2 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
-            我的數位收藏
-        </h1>
-        <p className="text-muted-foreground font-medium animate-fade-in-up" style={{ animationDelay: '200ms' }}>管理您的珍稀卡片，點擊可查看正反面詳情。</p>
-      </div>
-      
-      <div className="bg-card/30 backdrop-blur-xl border border-white/5 rounded-[2rem] p-6 lg:p-8 mb-16 shadow-2xl relative overflow-hidden animate-fade-in-up" style={{ animationDelay: '300ms' }}>
-        <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
-            <Sparkles className="w-32 h-32 text-primary" />
-        </div>
+    <div className="min-h-screen bg-slate-950/20 text-white">
+      <div className="container py-12 md:py-24 relative">
+        {/* Futuristic Background Elements */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] bg-primary/10 blur-[120px] pointer-events-none opacity-50" />
+        <div className="absolute top-[20%] right-[10%] w-64 h-64 bg-accent/20 blur-[100px] pointer-events-none opacity-30 animate-pulse" />
+        <div className="absolute top-[40%] left-[5%] w-48 h-48 bg-primary/20 blur-[80px] pointer-events-none opacity-30" />
         
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8 relative z-10 text-white">
-            <div className="space-y-4">
-                <div className="flex items-center gap-4">
-                    <div className="bg-primary/20 p-3 rounded-2xl border border-primary/30">
-                        <Package className="w-6 h-6 text-primary" />
+        {/* Header Section */}
+        <div className="text-center mb-20 relative z-20">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-slate-900/50 backdrop-blur-xl border border-white/10 text-primary text-[11px] font-black tracking-[0.4em] mb-6 uppercase shadow-2xl"
+          >
+            <Library className="w-3.5 h-3.5" /> Premium Digital Vault
+          </motion.div>
+          
+          <motion.h1 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="font-headline text-3xl font-black tracking-[0.2em] sm:text-6xl text-white drop-shadow-[0_0_15px_rgba(6,182,212,0.4)] mb-4 px-4 break-words text-center"
+          >
+            我的<span className="text-transparent bg-clip-text bg-gradient-to-br from-white via-white to-white/30">收藏</span>
+          </motion.h1>
+          
+          <motion.p 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="max-w-2xl mx-auto text-slate-400 font-medium tracking-wide text-sm md:text-base leading-relaxed"
+          >
+            在這裡管理您的珍稀卡片與數位資產。所有收藏均已鏈上驗證，隨時可進行實體交付或快速轉點。
+          </motion.p>
+        </div>
+
+        {/* Selection & Actions Bar - Fixed at bottom when active */}
+        <AnimatePresence>
+            {selectedCardIds.size > 0 && (
+                <motion.div 
+                    initial={{ y: 100, opacity: 0, x: '-50%' }}
+                    animate={{ y: 0, opacity: 1, x: '-50%' }}
+                    exit={{ y: 100, opacity: 0, x: '-50%' }}
+                    className="fixed bottom-[75px] md:bottom-6 left-1/2 -translate-x-1/2 z-50 w-[95vw] max-w-5xl"
+                >
+                    <div className="bg-slate-900/80 backdrop-blur-3xl border border-white/10 rounded-[2rem] p-3 md:p-6 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] flex flex-col md:flex-row items-center gap-3 md:gap-6 justify-between">
+                        <div className="flex items-center gap-3 md:gap-5 w-full md:w-auto">
+                            <div className="relative shrink-0">
+                                <div className="absolute inset-0 bg-primary/20 blur-md rounded-xl" />
+                                <div className="relative bg-slate-950 p-3 md:p-4 rounded-xl border border-primary/30">
+                                    <Package className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+                                </div>
+                                <div className="absolute -top-1 -right-1 md:-top-2 md:-right-2 bg-primary text-black text-[9px] md:text-[10px] font-black w-5 h-5 md:w-6 md:h-6 rounded-full flex items-center justify-center shadow-lg">
+                                    {selectedCardIds.size}
+                                </div>
+                            </div>
+                            
+                            <div className="space-y-0.5">
+                                <p className="text-white font-black text-sm md:text-lg tracking-tight">已選擇卡片</p>
+                                <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-1.5 group">
+                                        <Gem className="w-3 h-3 text-primary" />
+                                        <span className="text-xs font-code font-black text-white">{conversionValues.diamonds.toLocaleString()}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 group">
+                                        <PPlusIcon className="w-3 h-3 text-accent" />
+                                        <span className="text-xs font-code font-black text-white">{conversionValues.pPoints.toLocaleString()}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 w-full md:w-auto mt-1 md:mt-0">
+                            <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={handleClearSelection}
+                                className="h-10 md:h-12 rounded-xl hover:bg-white/5 text-slate-400 font-bold px-3 md:px-6 text-xs md:text-sm"
+                            >
+                                <RotateCcw className="mr-1.5 h-3.5 w-3.5" /> 清除
+                            </Button>
+                            
+                            <div className="flex gap-2 flex-1">
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button className="flex-1 h-10 md:h-12 rounded-xl bg-white text-black hover:bg-slate-200 font-black transition-all active:scale-95 shadow-xl text-xs md:text-sm">
+                                            <Ship className="mr-1 h-4 w-4" /> 批量出貨
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent className="rounded-[2rem] md:rounded-[3rem] bg-slate-950 border-white/5 shadow-3xl text-white p-3 md:p-12 overflow-hidden max-w-[95vw] md:max-w-2xl">
+                                        <div className="absolute top-0 right-0 p-4 md:p-12 opacity-5 pointer-events-none">
+                                            <Ship className="w-24 h-24 md:w-64 md:h-64 text-primary" />
+                                        </div>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle className="text-lg md:text-3xl font-black italic tracking-tighter text-white flex flex-col md:flex-row md:items-center gap-1 md:gap-4">
+                                                DELIVERY REQUEST
+                                                {hasFreeShipping && <Badge className="bg-emerald-500 text-black font-black border-none animate-pulse w-max text-[10px]">FREE SHIP</Badge>}
+                                            </AlertDialogTitle>
+                                            <AlertDialogDescription className="text-slate-400 font-medium text-xs md:text-lg mt-0.5 md:mt-2">
+                                                請填寫您的收件資訊，我們將盡速為您安排配送。
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <div className="space-y-2 md:space-y-8 my-2 md:my-8 relative z-10">
+                                            <RadioGroup defaultValue="7-11" onValueChange={(value: ShippingMethod) => setShippingMethod(value)} className="grid grid-cols-3 gap-1 md:gap-4">
+                                                <div className={cn("flex flex-col gap-0.5 md:gap-2 border p-1.5 md:p-5 rounded-xl md:rounded-3xl transition-all cursor-pointer", shippingMethod === '7-11' ? 'bg-primary/5 border-primary/40 ring-1 ring-primary/40' : 'bg-slate-900 border-white/5 hover:bg-slate-800')}>
+                                                    <div className="flex justify-between items-center">
+                                                        <RadioGroupItem value="7-11" id="r1" className="border-white/20 text-primary scale-50" />
+                                                        <Package className="w-2.5 h-2.5 md:w-4 md:h-4 text-primary/40" />
+                                                    </div>
+                                                    <Label htmlFor="r1" className="cursor-pointer font-black text-[8px] md:text-sm text-white mt-0.5">7-11</Label>
+                                                    <p className="text-[7px] md:text-[10px] text-slate-500 font-bold uppercase truncate">{hasFreeShipping ? '運 0' : `${SHIPPING_FEE}`}</p>
+                                                </div>
+                                                <div className={cn("flex flex-col gap-0.5 md:gap-2 border p-1.5 md:p-5 rounded-xl md:rounded-3xl transition-all cursor-pointer", shippingMethod === '郵寄' ? 'bg-primary/5 border-primary/40 ring-1 ring-primary/40' : 'bg-slate-900 border-white/5 hover:bg-slate-800')}>
+                                                    <div className="flex justify-between items-center">
+                                                        <RadioGroupItem value="郵寄" id="r2" className="border-white/20 text-primary scale-50" />
+                                                        <MapPin className="w-2.5 h-2.5 md:w-4 md:h-4 text-primary/40" />
+                                                    </div>
+                                                    <Label htmlFor="r2" className="cursor-pointer font-black text-[8px] md:text-sm text-white mt-0.5">郵寄</Label>
+                                                    <p className="text-[7px] md:text-[10px] text-slate-500 font-bold uppercase truncate">{hasFreeShipping ? '運 0' : `${SHIPPING_FEE}`}</p>
+                                                </div>
+                                                <div className={cn("flex flex-col gap-0.5 md:gap-2 border p-1.5 md:p-5 rounded-xl md:rounded-3xl transition-all cursor-pointer", shippingMethod === '面交自取' ? 'bg-primary/5 border-primary/40 ring-1 ring-primary/40' : 'bg-slate-900 border-white/5 hover:bg-slate-800')}>
+                                                    <div className="flex justify-between items-center">
+                                                        <RadioGroupItem value="面交自取" id="r3" className="border-white/20 text-primary scale-50" />
+                                                        <Users className="w-2.5 h-2.5 md:w-4 md:h-4 text-primary/40" />
+                                                    </div>
+                                                    <Label htmlFor="r3" className="cursor-pointer font-black text-[8px] md:text-sm text-white mt-0.5">自取</Label>
+                                                    <p className="text-[7px] md:text-[10px] text-slate-500 font-bold uppercase truncate">NO FEE</p>
+                                                </div>
+                                            </RadioGroup>
+                                            
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5 md:gap-6">
+                                                <div className="space-y-0.5 md:space-y-3">
+                                                    <Label className="text-[8px] md:text-[11px] uppercase font-black text-slate-500 tracking-[0.2em] ml-1">Name</Label>
+                                                    <Input 
+                                                        value={shippingName} 
+                                                        onChange={(e) => setShippingName(e.target.value)} 
+                                                        className="h-8 md:h-14 bg-slate-900/50 backdrop-blur-md rounded-lg md:rounded-2xl text-white border-white/5 focus:border-primary/50 transition-all font-bold text-xs"
+                                                        placeholder="收件人全名"
+                                                    />
+                                                </div>
+                                                <div className="space-y-0.5 md:space-y-3">
+                                                    <Label className="text-[8px] md:text-[11px] uppercase font-black text-slate-500 tracking-[0.2em] ml-1">Phone</Label>
+                                                    <Input 
+                                                        value={shippingPhone} 
+                                                        onChange={(e) => setShippingPhone(e.target.value)} 
+                                                        className="h-8 md:h-14 bg-slate-900/50 backdrop-blur-md rounded-lg md:rounded-2xl text-white border-white/5 focus:border-primary/50 transition-all font-bold text-xs"
+                                                        placeholder="聯絡電話"
+                                                    />
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="space-y-0.5 md:space-y-3">
+                                                <Label className="text-[8px] md:text-[11px] uppercase font-black text-slate-500 tracking-[0.2em] ml-1">{addressLabel}</Label>
+                                                {shippingMethod === '面交自取' ? (
+                                                    <div className="p-2 md:p-6 bg-primary/5 rounded-lg md:rounded-[2rem] border border-dashed border-primary/30 space-y-0.5 md:space-y-3">
+                                                        <p className="text-[10px] md:text-base font-black text-primary flex items-center gap-1 md:gap-3">
+                                                            <MapPin className="w-3 h-3 md:w-5 md:h-5" />
+                                                            {PICKUP_ADDRESS}
+                                                        </p>
+                                                        <p className="text-[7px] md:text-xs text-slate-400 font-medium leading-relaxed italic">
+                                                            * 注意：自取需事先完成預約。
+                                                        </p>
+                                                    </div>
+                                                ) : (
+                                                    <div className="relative">
+                                                        <div className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 text-slate-500">
+                                                            <SearchCode className="w-3 h-3 md:w-5 md:h-5" />
+                                                        </div>
+                                                        <Input 
+                                                            value={shippingAddress} 
+                                                            onChange={(e) => setShippingAddress(e.target.value)} 
+                                                            placeholder={shippingMethod === '7-11' ? "門市名稱或店號" : "詳細配送地址"}
+                                                            className="h-8 md:h-16 pl-8 md:pl-12 bg-slate-900/50 backdrop-blur-md rounded-lg md:rounded-2xl text-white border-white/5 focus:border-primary/50 transition-all font-bold text-xs"
+                                                        />
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div className="p-2 md:p-6 rounded-lg md:rounded-[2rem] bg-amber-500/5 border border-amber-500/20 flex items-start gap-1.5 md:gap-4">
+                                                <div className="p-1.5 md:p-3 bg-amber-500/10 rounded-md md:rounded-2xl">
+                                                    <AlertTriangle className="w-3 h-3 md:w-5 md:h-5 text-amber-500" />
+                                                </div>
+                                                <div className="space-y-0.5">
+                                                    <p className="text-[7px] md:text-xs font-black text-amber-500 uppercase tracking-widest">重要安全提醒</p>
+                                                    <p className="text-[7px] md:text-[11px] font-bold text-amber-200/60 leading-relaxed">
+                                                        包裹出貨錄影存證。請務必【全程錄影開箱】，否則不受理退換貨。
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <AlertDialogFooter className="gap-1 md:gap-4">
+                                            <AlertDialogCancel className="h-8 md:h-16 rounded-lg md:rounded-[2rem] font-bold bg-white/5 border-white/5 text-white hover:bg-white/10 px-3 md:px-8 text-[10px] md:text-sm">取消</AlertDialogCancel>
+                                            <AlertDialogAction onClick={handleShipping} disabled={isProcessing} className="h-8 md:h-16 rounded-lg md:rounded-[2rem] font-black bg-primary text-black hover:bg-primary/90 shadow-2xl px-4 md:px-12 text-[10px] md:text-sm">
+                                                {isProcessing ? <Loader2 className="animate-spin" /> : '確認申請與支付'}
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+
+                                </AlertDialog>
+
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="outline" className="flex-1 h-10 md:h-12 rounded-xl border-white/10 bg-slate-950/50 text-white hover:bg-white/5 font-bold transition-all active:scale-95 shadow-xl text-xs md:text-sm">
+                                            <RefreshCw className="mr-1 h-4 w-4 text-primary" /> 快速轉點
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent className="rounded-[2rem] md:rounded-[3rem] bg-slate-950 border-white/5 shadow-3xl text-white p-4 md:p-12 overflow-hidden max-w-[90vw] md:max-w-xl">
+                                        <div className="absolute top-0 right-0 p-6 md:p-12 opacity-5 pointer-events-none">
+                                            <RefreshCw className="w-32 h-32 md:w-64 md:h-64 text-destructive" />
+                                        </div>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle className="text-xl md:text-3xl font-black italic tracking-tighter text-white flex items-center gap-2 md:gap-4">
+                                                ASSET RECOVERY
+                                            </AlertDialogTitle>
+                                            <AlertDialogDescription className="text-slate-400 font-medium text-sm md:text-lg mt-1 md:mt-2">
+                                                將卡片資產轉換為數位代幣。此操作具有不可逆性。
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <div className="space-y-4 md:space-y-8 my-4 md:my-8 relative z-10">
+                                            <div className="bg-slate-900 border border-white/5 p-4 md:p-8 rounded-2xl md:rounded-[2.5rem] space-y-3 md:space-y-6 shadow-2xl">
+                                                <div className="flex justify-between items-center border-b border-white/5 pb-3 md:pb-6">
+                                                    <div className="space-y-0.5">
+                                                        <p className="text-[9px] md:text-[11px] font-black text-slate-500 uppercase tracking-widest leading-none">獲得鑽石獲取</p>
+                                                        <p className="text-[10px] md:text-xs text-slate-600 font-bold">💎 鑽石資產</p>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <span className="font-code text-xl md:text-4xl font-black text-primary flex items-center gap-1.5 md:gap-3 drop-shadow-md">
+                                                            +{conversionValues.diamonds.toLocaleString()} <Gem className="w-4 h-4 md:w-6 md:h-6"/>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex justify-between items-center">
+                                                    <div className="space-y-0.5">
+                                                        <p className="text-[9px] md:text-[11px] font-black text-slate-500 uppercase tracking-widest leading-none">獲得紅利P點</p>
+                                                        <p className="text-[10px] md:text-xs text-slate-600 font-bold">✨ 紅利資產</p>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <span className="font-code text-xl md:text-4xl font-black text-accent flex items-center gap-1.5 md:gap-3 drop-shadow-md">
+                                                            +{conversionValues.pPoints.toLocaleString()} <PPlusIcon className="w-4 h-4 md:w-6 md:h-6"/>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="p-3 md:p-6 rounded-2xl md:rounded-[2rem] bg-rose-500/5 border border-rose-500/20 flex items-start gap-2 md:gap-4">
+                                                <div className="p-2 md:p-3 bg-rose-500/10 rounded-xl md:rounded-2xl">
+                                                    <Info className="w-4 h-4 md:w-5 md:h-5 text-rose-500" />
+                                                </div>
+                                                <p className="text-[9px] md:text-[11px] font-bold text-rose-200/60 leading-relaxed">
+                                                    警告：快速轉點完成後，所選的 {selectedCardIds.size} 張卡片將立即從您的收藏中永久移除並銷毀，相關權益將無法恢復。
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <AlertDialogFooter className="gap-2 md:gap-4">
+                                            <AlertDialogCancel className="h-10 md:h-16 rounded-xl md:rounded-[2rem] font-bold bg-white/5 border-white/5 text-white hover:bg-white/10 px-4 md:px-8 text-sm">放棄轉點</AlertDialogCancel>
+                                            <AlertDialogAction onClick={handleQuickSell} disabled={isProcessing} className="h-10 md:h-16 rounded-xl md:rounded-[2rem] font-black bg-rose-600 text-white hover:bg-rose-700 shadow-[0_0_30px_rgba(225,29,72,0.3)] px-6 md:px-12 border-none text-sm">
+                                                確認資產變現
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </div>
+                        </div>
+                    </div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+
+        {/* Filters & Sorting Placeholder (UI Only) */}
+        <div className="flex flex-col md:flex-row justify-between items-end mb-10 gap-6 relative z-10 px-4">
+          <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2 text-slate-400">
+                  <LayoutGrid className="w-4 h-4" />
+                  <span className="text-xs font-black uppercase tracking-widest">Total Assets: {mergedCards.length}</span>
+              </div>
+          </div>
+          <div className="flex items-center gap-3">
+              <Button variant="ghost" size="sm" onClick={handleSelectAll} disabled={mergedCards.length === 0} className="rounded-xl hover:bg-white/5 text-slate-400 font-black text-[10px] uppercase tracking-widest">
+                  <CheckSquare className="mr-2 h-4 w-4 text-primary" /> 
+                  {isAllSelected ? 'Deselect All' : 'Select All'}
+              </Button>
+              <Separator orientation="vertical" className="h-4 bg-white/10" />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="rounded-xl hover:bg-white/5 text-slate-400 font-black text-[10px] uppercase tracking-widest">
+                        <Filter className="mr-2 h-4 w-4" /> {filterCategory || 'All'}
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-slate-900 border-white/10 text-white">
+                    <DropdownMenuItem onClick={() => setFilterCategory(null)}>All</DropdownMenuItem>
+                    {Array.from(new Set(mergedCards.map(c => c.category))).filter(c => c).map(cat => (
+                        <DropdownMenuItem key={cat} onClick={() => setFilterCategory(cat)}>{cat}</DropdownMenuItem>
+                    ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="rounded-xl hover:bg-white/5 text-slate-400 font-black text-[10px] uppercase tracking-widest">
+                        <ArrowUpDown className="mr-2 h-4 w-4" /> Sort: {sortOption}
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-slate-900 border-white/10 text-white">
+                    <DropdownMenuItem onClick={() => setSortOption('latest')}>Latest</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setSortOption('price')}>Price (High)</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setSortOption('unsold')}>Unsold First</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+          </div>
+        </div>
+
+      <div className="space-y-24 relative z-10 pt-12 pb-24">
+        {standardCards.length > 0 && (
+            <motion.section 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+            >
+                <div className="flex items-center gap-6 mb-12">
+                    <div className="relative group">
+                        <div className="absolute -inset-2 bg-primary/20 blur-lg rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="relative p-3.5 rounded-2xl bg-slate-900 border border-white/5 shadow-2xl">
+                            <LayoutGrid className="text-primary w-6 h-6" />
+                        </div>
                     </div>
                     <div>
-                        <p className="text-2xl font-black text-white font-headline tracking-tight">已選擇 {selectedCardIds.size} 張卡片</p>
-                        <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest mt-1">Management Actions</p>
+                        <h2 className="text-2xl md:text-3xl font-black italic text-white tracking-tighter">STANDARD COLLECTION</h2>
+                        <p className="text-[10px] text-slate-500 uppercase tracking-[0.3em] font-black mt-1">一般收藏區域 • Verified Digital Assets</p>
                     </div>
+                    <div className="h-[2px] flex-1 bg-gradient-to-r from-white/10 to-transparent ml-4" />
                 </div>
                 
-                <div className="flex flex-wrap items-center gap-6">
-                    <div className="flex items-center gap-2.5">
-                        <span className="text-xs font-bold text-muted-foreground uppercase">預計獲取:</span>
-                        <div className="flex items-center gap-4">
-                            <span className="font-code text-xl font-black text-primary flex items-center gap-1.5 drop-shadow-[0_0_8px_rgba(6,182,212,0.4)]">
-                                {conversionValues.diamonds.toLocaleString()} <Gem className="w-4 h-4"/>
-                            </span>
-                            <span className="font-code text-xl font-black text-accent flex items-center gap-1.5 drop-shadow-[0_0_8px_rgba(234,179,8,0.4)]">
-                                {conversionValues.pPoints.toLocaleString()} <PPlusIcon className="w-4 h-4"/>
-                            </span>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="sm" onClick={handleSelectAll} disabled={mergedCards.length === 0} className="h-10 rounded-xl hover:bg-white/5 border border-white/5 text-white">
-                            {isAllSelected ? <CheckSquare className="mr-2 text-primary h-4 w-4" /> : <Square className="mr-2 h-4 w-4" />}
-                            {isAllSelected ? '取消全選' : '全選所有'}
-                        </Button>
-                        {selectedCardIds.size > 0 && (
-                            <Button variant="ghost" size="sm" onClick={handleClearSelection} className="h-10 rounded-xl hover:bg-white/5 text-white/60">
-                                <RotateCcw className="mr-2 h-4 w-4" /> 清除
-                            </Button>
-                        )}
-                    </div>
-                </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
-                <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                        <Button variant="outline" size="lg" disabled={selectedCardIds.size === 0 || isProcessing} className="flex-1 lg:flex-none h-14 px-8 rounded-2xl border-white/10 bg-white/5 hover:bg-white/10 font-bold text-white">
-                            <Ship className="mr-2 h-5 w-5 text-primary" /> 批量出貨
-                        </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent className="rounded-[2.5rem] bg-background/95 backdrop-blur-2xl border-white/10 shadow-2xl text-white">
-                        <AlertDialogHeader>
-                            <AlertDialogTitle className="flex items-center gap-3 text-2xl font-black font-headline text-white">
-                                <Ship className="text-primary" /> 確認出貨請求
-                                {hasFreeShipping && <Badge className="bg-green-500 animate-pulse border-none">免運福利</Badge>}
-                            </AlertDialogTitle>
-                            <AlertDialogDescription className="text-white/70">請確認運送方式與收件資訊，提交後卡片將進入物流流程。</AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <div className="space-y-6 my-4 p-2 text-white">
-                            <RadioGroup defaultValue="7-11" onValueChange={(value: ShippingMethod) => setShippingMethod(value)} className="grid grid-cols-1 gap-3">
-                                <div className={cn("flex items-center space-x-3 border p-4 rounded-2xl transition-all", shippingMethod === '7-11' ? 'bg-primary/10 border-primary/30 ring-1 ring-primary/30' : 'hover:bg-white/5 border-white/10')}>
-                                    <RadioGroupItem value="7-11" id="r1" /><Label htmlFor="r1" className="cursor-pointer flex-1 font-bold text-white">7-11 (手續費 {hasFreeShipping ? 0 : SHIPPING_FEE}💎)</Label>
-                                </div>
-                                <div className={cn("flex items-center space-x-3 border p-4 rounded-2xl transition-all", shippingMethod === '郵寄' ? 'bg-primary/10 border-primary/30 ring-1 ring-primary/30' : 'hover:bg-white/5 border-white/10')}>
-                                    <RadioGroupItem value="郵寄" id="r2" /><Label htmlFor="r2" className="cursor-pointer flex-1 font-bold text-white">郵寄 (手續費 {hasFreeShipping ? 0 : SHIPPING_FEE}💎)</Label>
-                                </div>
-                                <div className={cn("flex items-center space-x-3 border p-4 rounded-2xl transition-all", shippingMethod === '面交自取' ? 'bg-primary/10 border-primary/30 ring-1 ring-primary/30' : 'hover:bg-white/5 border-white/10')}>
-                                    <RadioGroupItem value="面交自取" id="r3" /><Label htmlFor="r3" className="cursor-pointer flex-1 font-bold text-white">面交自取 (免費)</Label>
-                                </div>
-                            </RadioGroup>
-                            
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label className="text-xs uppercase font-bold text-muted-foreground">收件姓名</Label>
-                                    <Input value={shippingName} onChange={(e) => setShippingName(e.target.value)} className="h-12 bg-background/50 rounded-xl text-white border-white/10" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-xs uppercase font-bold text-muted-foreground">聯絡電話</Label>
-                                    <Input value={shippingPhone} onChange={(e) => setShippingPhone(e.target.value)} className="h-12 bg-background/50 rounded-xl text-white border-white/10" />
-                                </div>
-                            </div>
-                            
-                            <div className="space-y-2">
-                                <Label className="text-xs uppercase font-bold text-muted-foreground">{addressLabel}</Label>
-                                {shippingMethod === '面交自取' ? (
-                                    <div className="p-4 bg-primary/10 rounded-2xl border border-dashed border-primary/50 space-y-2">
-                                        <p className="text-sm font-bold text-primary flex items-center gap-2">
-                                            <MapPin className="w-4 h-4" />
-                                            自取地點：{PICKUP_ADDRESS}
-                                        </p>
-                                        <p className="text-[10px] text-white/60 leading-relaxed italic">
-                                            來之前請務必先透過官方 Line@ 與我們預約時間，以免撲空喔！
-                                        </p>
-                                    </div>
-                                ) : (
-                                    <Input 
-                                        value={shippingAddress} 
-                                        onChange={(e) => setShippingAddress(e.target.value)} 
-                                        placeholder={shippingMethod === '7-11' ? "請輸入 7-11 門市名稱" : "請輸入詳細實體地址"}
-                                        className="h-12 bg-background/50 rounded-xl text-white border-white/10"
-                                    />
-                                )}
-                            </div>
-
-                            <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/10 flex items-start gap-3">
-                                <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                                <div className="space-y-1.5 text-left">
-                                    <p className="text-xs font-black text-amber-500 uppercase tracking-wide">開箱權益與責任提醒</p>
-                                    <p className="text-[11px] font-bold text-amber-200/80 leading-relaxed">
-                                        ● 為保障您的換貨權益，收到包裹後請務必【全程錄影開箱】。若商品有重大瑕疵，需憑影片進行後續處理。<br />
-                                        ● 請務必確認您的個人寄件資訊填寫正確。若因資訊錯誤導致配送失敗或商品遺失，相關責任將由消費者自行承擔。
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        <AlertDialogFooter className="gap-3 pt-4">
-                            <AlertDialogCancel className="h-12 rounded-2xl font-bold bg-white/5 border-white/10 text-white hover:bg-white/10">取消</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleShipping} disabled={isProcessing} className="h-12 rounded-2xl font-black bg-primary text-primary-foreground shadow-2xl border-none">
-                                {isProcessing ? <Loader2 className="animate-spin" /> : '確認出貨申請'}
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
-
-                <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                        <Button disabled={selectedCardIds.size === 0 || isProcessing} size="lg" className="flex-1 lg:flex-none h-14 px-8 rounded-2xl bg-destructive text-white hover:bg-destructive/90 font-black shadow-[0_0_20px_rgba(219,39,119,0.3)] transition-all active:scale-95 border-none">
-                            <RefreshCw className="mr-2 h-5 w-5" /> 快速轉點
-                        </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent className="rounded-[2.5rem] bg-background/95 backdrop-blur-2xl border-destructive/20 shadow-2xl text-white">
-                        <AlertDialogHeader>
-                            <AlertDialogTitle className="flex items-center gap-3 text-2xl font-black font-headline text-white">
-                                <RefreshCw className="text-destructive" /> 確認快速轉點
-                            </AlertDialogTitle>
-                            <div className="py-4 space-y-6 text-left">
-                                <AlertDialogDescription className="text-base text-white/70">
-                                    確定要將所選的 {selectedCardIds.size} 張卡片進行轉點嗎？轉點後卡片將被回收，系統會按價值折算為鑽石與紅利 P 點。此操作不可撤銷。
-                                </AlertDialogDescription>
-                                
-                                <div className="bg-destructive/5 p-6 rounded-3xl border border-destructive/20 space-y-4 shadow-inner">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm font-bold text-muted-foreground uppercase">獲得鑽石</span>
-                                        <span className="font-code text-2xl font-black text-primary flex items-center gap-2 drop-shadow-md">
-                                            {conversionValues.diamonds.toLocaleString()} <Gem className="w-5 h-5"/>
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm font-bold text-muted-foreground uppercase">獲得紅利 P 點</span>
-                                        <span className="font-code text-2xl font-black text-accent flex items-center gap-2 drop-shadow-md">
-                                            {conversionValues.pPoints.toLocaleString()} <PPlusIcon className="w-5 h-5"/>
-                                        </span>
-                                    </div>
-                                </div>
-                                <p className="text-[10px] text-muted-foreground italic text-center">注意：團拆限定卡片將會自動保留，不參與此次轉換。</p>
-                            </div>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter className="gap-3">
-                            <AlertDialogCancel className="h-12 rounded-xl font-bold bg-white/5 border-white/10 text-white">取消</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleQuickSell} disabled={isProcessing} className="h-12 rounded-xl font-black bg-destructive text-white hover:bg-destructive/90 shadow-2xl border-none">
-                                確認回收並轉換
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
-            </div>
-        </div>
-      </div>
-
-      <div className="space-y-20 animate-fade-in-up" style={{ animationDelay: '400ms' }}>
-        {standardCards.length > 0 && (
-            <section>
-                <div className="flex items-center gap-4 mb-10">
-                    <div className="p-3 rounded-2xl bg-primary/10 border border-primary/20 shadow-[0_0_15px_rgba(6,182,212,0.2)]">
-                        <LayoutGrid className="text-primary w-6 h-6" />
-                    </div>
-                    <div>
-                        <h2 className="text-2xl md:text-3xl font-black font-headline text-white tracking-widest">一般收藏區域</h2>
-                        <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold mt-1 opacity-60">Standard Collection Assets</p>
-                    </div>
-                    <div className="h-px flex-1 bg-gradient-to-r from-primary/30 to-transparent ml-4 hidden sm:block" />
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 md:gap-6">
+                <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4 md:gap-6">
                     {standardCards.map((card, index) => (
-                        <div 
+                        <motion.div 
                             key={card.id} 
-                            className="relative group animate-fade-in-up"
-                            style={{ animationDelay: `${500 + index * 50}ms` }}
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: 0.1 + index * 0.02 }}
+                            className={cn(
+                                "group relative rounded-2xl transition-all duration-500 cursor-pointer",
+                                selectedCardIds.has(card.id) ? "ring-2 ring-primary ring-offset-4 ring-offset-slate-950 scale-[0.98]" : "hover:scale-[1.02]"
+                            )}
                             onClick={() => setPreviewCard(card)}
                         >
                             <CardItem 
@@ -501,33 +675,71 @@ export default function CollectionPage() {
                                 rarity={card.rarity} 
                                 priority={index < 12} 
                             />
-                            <div className="absolute top-2 left-2 z-10" onClick={(e) => e.stopPropagation()}>
-                                <Checkbox checked={selectedCardIds.has(card.id)} onCheckedChange={(c) => handleSelectCard(card.id, c)} className="bg-background/80 border-primary/50 h-5 w-5 data-[state=checked]:bg-primary" />
+                            <div className="absolute top-3 right-3 bg-slate-900/80 backdrop-blur-md text-[9px] font-black tracking-widest text-primary px-2 py-0.5 rounded-lg border border-primary/20 pointer-events-none z-20">
+                                {card.sellPrice ? `${card.sellPrice}💎` : 'N/A'}
                             </div>
-                        </div>
+                            
+                            {/* Selection Overlay */}
+                            <div 
+                                className="absolute top-3 left-3 z-30" 
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleSelectCard(card.id, !selectedCardIds.has(card.id));
+                                }}
+                            >
+                                <div className={cn(
+                                    "w-6 h-6 rounded-lg border-2 transition-all flex items-center justify-center backdrop-blur-md",
+                                    selectedCardIds.has(card.id) 
+                                        ? "bg-primary border-primary text-black shadow-[0_0_15px_rgba(6,182,212,0.5)]" 
+                                        : "bg-black/40 border-white/20 hover:border-white/40"
+                                )}>
+                                    {selectedCardIds.has(card.id) && <CheckSquare className="w-4 h-4 stroke-[3]" />}
+                                </div>
+                            </div>
+
+                            {/* Hover info */}
+                            <div className="absolute inset-x-0 bottom-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none">
+                                <div className="bg-slate-900/90 backdrop-blur-md border border-white/10 p-2 rounded-xl text-center shadow-2xl">
+                                    <p className="text-[10px] font-black text-white line-clamp-1 truncate">{card.name}</p>
+                                </div>
+                            </div>
+                        </motion.div>
                     ))}
                 </div>
-            </section>
+            </motion.section>
         )}
 
         {groupBreakCards.length > 0 && (
-            <section>
-                <div className="flex items-center gap-4 mb-10">
-                    <div className="p-3 rounded-2xl bg-orange-500/10 border border-orange-500/20 shadow-[0_0_15px_rgba(249,115,22,0.2)]">
-                        <Users2 className="text-orange-500 w-6 h-6" />
+            <motion.section
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+            >
+                <div className="flex items-center gap-6 mb-12">
+                    <div className="relative group">
+                        <div className="absolute -inset-2 bg-orange-500/20 blur-lg rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="relative p-3.5 rounded-2xl bg-slate-900 border border-white/5 shadow-2xl">
+                            <Users2 className="text-orange-500 w-6 h-6" />
+                        </div>
                     </div>
                     <div>
-                        <h2 className="text-2xl md:text-3xl font-black font-headline text-orange-400 tracking-widest">團拆精選專區</h2>
-                        <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold mt-1 opacity-60">Exclusive Team Break Rewards</p>
+                        <h2 className="text-2xl md:text-3xl font-black italic text-orange-400 tracking-tighter">EXCLUSIVE BREAKS</h2>
+                        <p className="text-[10px] text-slate-500 uppercase tracking-[0.3em] font-black mt-1">團拆精選專區 • Team Break Rewards</p>
                     </div>
-                    <div className="h-px flex-1 bg-gradient-to-r from-orange-500/30 to-transparent ml-4 hidden sm:block" />
+                    <div className="h-[2px] flex-1 bg-gradient-to-r from-orange-500/20 to-transparent ml-4" />
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 md:gap-6">
+
+                <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4 md:gap-6">
                     {groupBreakCards.map((card, index) => (
-                        <div 
+                        <motion.div 
                             key={card.id} 
-                            className="relative group animate-fade-in-up"
-                            style={{ animationDelay: `${600 + index * 50}ms` }}
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: 0.2 + index * 0.02 }}
+                            className={cn(
+                                "group relative rounded-2xl transition-all duration-500 cursor-pointer",
+                                selectedCardIds.has(card.id) ? "ring-2 ring-orange-500 ring-offset-4 ring-offset-slate-950 scale-[0.98]" : "hover:scale-[1.02]"
+                            )}
                             onClick={() => setPreviewCard(card)}
                         >
                             <CardItem 
@@ -540,72 +752,116 @@ export default function CollectionPage() {
                                 rarity={card.rarity} 
                                 priority={index < 12} 
                             />
-                            <div className="absolute top-2 right-8 z-10">
-                                <Badge className="bg-orange-500 text-white text-[8px] md:text-[10px] px-2 py-0.5 font-black uppercase shadow-lg border-none">LIVE</Badge>
+                            
+                            <div className="absolute top-3 left-16 bg-slate-900/80 backdrop-blur-md text-[9px] font-black tracking-widest text-primary px-2 py-0.5 rounded-lg border border-primary/20 pointer-events-none z-20">
+                                {card.sellPrice ? `${card.sellPrice}💎` : 'N/A'}
                             </div>
-                            <div className="absolute bottom-2 left-0 right-0 z-10 text-center px-2 pointer-events-none">
-                                <div className="text-[7px] md:text-[9px] font-black text-white bg-black/80 backdrop-blur-md py-1 rounded-full border border-orange-500/30 uppercase tracking-tighter">重點卡片</div>
+
+                            <div className="absolute top-3 right-3 z-30">
+                                <Badge className="bg-orange-500 text-black text-[9px] px-2 py-0.5 font-bold italic tracking-tighter shadow-lg border-none animate-pulse">BREAK</Badge>
                             </div>
-                            <div className="absolute top-2 left-2 z-10" onClick={(e) => e.stopPropagation()}>
-                                <Checkbox checked={selectedCardIds.has(card.id)} onCheckedChange={(c) => handleSelectCard(card.id, c)} className="bg-background/80 border-orange-500/50 h-5 w-5 data-[state=checked]:bg-orange-500" />
+
+                            <div 
+                                className="absolute top-3 left-3 z-30" 
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleSelectCard(card.id, !selectedCardIds.has(card.id));
+                                }}
+                            >
+                                <div className={cn(
+                                    "w-6 h-6 rounded-lg border-2 transition-all flex items-center justify-center backdrop-blur-md",
+                                    selectedCardIds.has(card.id) 
+                                        ? "bg-orange-500 border-orange-500 text-black shadow-[0_0_15px_rgba(249,115,22,0.5)]" 
+                                        : "bg-black/40 border-white/20 hover:border-white/40"
+                                )}>
+                                    {selectedCardIds.has(card.id) && <CheckSquare className="w-4 h-4 stroke-[3]" />}
+                                </div>
                             </div>
-                        </div>
+                        </motion.div>
                     ))}
                 </div>
-            </section>
+            </motion.section>
         )}
 
         {(isLoadingUserCards || isLoadingCards) && (
             <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-6">
-                {Array.from({length: 16}).map((_, i) => <div key={i} className="aspect-2.5/3.5"><Skeleton className="h-full w-full rounded-2xl" /></div>)}
+                {Array.from({length: 16}).map((_, i) => <div key={i} className="aspect-[2.5/4]"><Skeleton className="h-full w-full rounded-2xl bg-white/5" /></div>)}
             </div>
         )}
 
-        {!isLoadingUserCards && mergedCards.length === 0 && (
-            <div className="text-center py-32 animate-fade-in-up">
-                <div className="p-10 rounded-full bg-white/5 border border-dashed border-white/10 inline-block mb-6">
-                    <Library className="w-16 h-16 text-muted-foreground opacity-20" />
-                </div>
-                <p className="text-muted-foreground text-xl font-bold uppercase tracking-[0.2em] mb-8">Vault is currently empty</p>
-                <Button asChild size="lg" className="h-14 px-10 rounded-2xl font-black text-lg shadow-[0_0_20px_rgba(6,182,212,0.3)] border-none"><Link href="/draw">開始您的收藏之旅 <ChevronRight className="ml-2 h-5 w-5" /></Link></Button>
-            </div>
-        )}
-      </div>
-
-      <div className="mt-20 text-center flex flex-col items-center opacity-20">
-        <p className="text-[10px] md:text-[12px] text-muted-foreground font-headline uppercase tracking-[0.5em] origin-center scale-[0.2]">P+Carder Official Security Terminal • Verified Asset</p>
-      </div>
-
-      <Dialog open={!!previewCard} onOpenChange={(open) => !open && setPreviewCard(null)}>
-        <DialogContent className="max-w-[min(95vw,420px)] sm:max-w-md bg-transparent border-none shadow-none p-0 overflow-visible flex flex-col items-center gap-6 [&>button:last-child]:hidden">
-            <DialogTitle className="sr-only">卡片預覽</DialogTitle>
-            {previewCard && (
-                <div className="w-full flex flex-col items-center gap-6 animate-in zoom-in-95 duration-300">
-                    <h2 className="text-[12px] md:text-sm font-black font-headline text-white drop-shadow-2xl tracking-tight leading-tight uppercase px-6 text-center max-w-[280px]">{previewCard.name}</h2>
-                    
-                    <div className="w-full max-w-[300px] sm:max-w-[230px] mx-auto relative group">
-                        <div className="absolute -inset-4 bg-primary/20 rounded-[2rem] blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
-                        <CardItem 
-                            name={previewCard.name} 
-                            imageUrl={previewCard.imageUrl} 
-                            backImageUrl={previewCard.backImageUrl}
-                            imageHint={previewCard.imageHint} 
-                            serialNumber={previewCard.serialNumber} 
-                            rarity={previewCard.rarity} 
-                            isFlippable={true}
-                            priority={true}
-                        />
+        {!isLoadingUserCards && !isLoadingCards && mergedCards.length === 0 && (
+            <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-center py-40 bg-slate-900/20 backdrop-blur-sm rounded-[4rem] border border-white/5 relative overflow-hidden"
+            >
+                <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
+                <div className="relative z-10 flex flex-col items-center">
+                    <div className="p-12 rounded-full bg-slate-950 border border-white/5 shadow-inner mb-8 group">
+                        <Library className="w-20 h-20 text-slate-700 group-hover:text-primary transition-colors duration-500" />
                     </div>
-                    <div className="flex flex-col items-center text-center gap-3">
-                        <p className="text-[9px] text-primary font-bold uppercase tracking-[0.2em] animate-pulse">點擊卡片可翻轉查看</p>
-                        <div className="flex items-center gap-3 mt-4">
-                            <Badge variant="outline" className="capitalize border-primary/50 text-primary bg-black/60 backdrop-blur-xl px-4 py-1 font-black tracking-widest shadow-lg text-[10px]">
-                                {previewCard.rarity}
-                            </Badge>
-                            <div className="flex items-center gap-1.5 bg-black/60 backdrop-blur-md border border-white/10 px-4 py-1 rounded-full text-[10px] font-code font-black text-white shadow-lg tracking-widest uppercase">
-                                <Hash className="w-3 h-3 text-primary" />
+                    <h3 className="text-3xl font-black italic text-white tracking-widest mb-4">VAULT IS EMPTY</h3>
+                    <p className="text-slate-500 font-medium max-w-sm mb-12">您目前的數位收藏庫尚無卡片。立即前往商城，開啟您的第一包珍稀收藏。</p>
+                    <Button asChild size="lg" className="h-16 px-12 rounded-[2rem] font-black text-lg bg-primary text-black hover:bg-primary/90 shadow-[0_20px_40px_-10px_rgba(6,182,212,0.5)] transition-all active:scale-95 border-none">
+                        <Link href="/draw">
+                            START COLLECTION <ChevronRight className="ml-2 h-6 w-6" />
+                        </Link>
+                    </Button>
+                </div>
+            </motion.div>
+        )}
+      </div>
+
+      {/* Showroom Preview Dialog */}
+      <Dialog open={!!previewCard} onOpenChange={(open) => !open && setPreviewCard(null)}>
+        <DialogContent className="max-w-[min(95vw,500px)] bg-slate-950/40 backdrop-blur-3xl border-white/10 shadow-none p-0 overflow-visible flex flex-col items-center justify-center gap-8 rounded-[3rem]">
+            <DialogTitle><VisuallyHiddenPrimitive.Root>Card Showroom</VisuallyHiddenPrimitive.Root></DialogTitle>
+            {previewCard && (
+                <div className="w-full h-full p-4 md:p-12 flex flex-col items-center gap-4 md:gap-10">
+                    <div className="flex flex-col items-center text-center gap-1 md:gap-3">
+                        <Badge variant="outline" className="border-primary/30 text-primary bg-primary/5 px-4 py-1 font-black italic tracking-[0.2em] uppercase text-[10px] mb-1 md:mb-2 rounded-full">
+                            {console.log('PREVIEW_CARD_DEBUG:', previewCard)}
+                            {previewCard.category ? previewCard.category.toUpperCase() : 'GENERAL ASSET'}
+                            {previewCard.teamName ? ` | ${previewCard.teamName.toUpperCase()}` : ''}
+                        </Badge>
+                        <h2 className="text-xl md:text-3xl font-black italic tracking-tighter text-white uppercase drop-shadow-2xl">{previewCard.name}</h2>
+                    </div>
+
+                    <div className="w-full max-w-[200px] md:max-w-[280px] perspective-1000">
+                        <motion.div 
+                            initial={{ rotateX: 20, y: 20, opacity: 0 }}
+                            animate={{ rotateX: 0, y: 0, opacity: 1 }}
+                            className="relative group cursor-grab active:cursor-grabbing"
+                        >
+                            <div className="absolute -inset-10 bg-primary/20 blur-[60px] opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+                            <CardItem 
+                                name={previewCard.name} 
+                                imageUrl={previewCard.imageUrl} 
+                                backImageUrl={previewCard.backImageUrl}
+                                imageHint={previewCard.imageHint} 
+                                serialNumber={previewCard.serialNumber} 
+                                rarity={previewCard.rarity} 
+                                isFlippable={true}
+                                priority={true}
+                            />
+                        </motion.div>
+                    </div>
+
+                    <div className="flex flex-col items-center gap-4 md:gap-6 w-full">
+                        <div className="flex items-center gap-3">
+                             <div className="flex items-center gap-1.5 bg-slate-900 border border-white/10 px-4 py-2 md:px-5 md:py-2.5 rounded-2xl text-[10px] md:text-xs font-code font-black text-white shadow-xl tracking-widest uppercase">
+                                <Hash className="w-3.5 h-3.5 text-primary" />
                                 {previewCard.serialNumber}
                             </div>
+                            <Separator orientation="vertical" className="h-6 bg-white/10" />
+                            <div className="flex items-center gap-1.5 bg-slate-900 border border-white/10 px-5 py-2.5 rounded-2xl text-xs font-code font-black text-white shadow-xl tracking-widest uppercase">
+                                <Gem className="w-3.5 h-3.5 text-primary" />
+                                {previewCard.sellPrice || 10}
+                            </div>
+                        </div>
+
+                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] flex items-center gap-2">
+                           <RotateCw className="w-3 h-3 animate-spin-slow" /> Click to Flip Card
                         </div>
                     </div>
                 </div>
@@ -614,7 +870,7 @@ export default function CollectionPage() {
             <Button 
                 variant="ghost" 
                 size="icon" 
-                className="mt-4 rounded-full bg-black/60 hover:bg-black/80 text-white border border-white/20 h-12 w-12 shadow-2xl transition-all hover:scale-110 active:scale-95 flex items-center justify-center"
+                className="absolute -top-16 md:-top-20 right-0 md:-right-12 rounded-full bg-slate-900/80 backdrop-blur-md text-white border border-white/10 h-10 w-10 md:h-12 md:w-12 hover:bg-white/10 transition-all flex items-center justify-center p-0"
                 onClick={() => setPreviewCard(null)}
             >
                 <X className="h-6 w-6" />
@@ -622,5 +878,6 @@ export default function CollectionPage() {
         </DialogContent>
       </Dialog>
     </div>
-  );
+  </div>
+);
 }

@@ -2,7 +2,7 @@ import { useState, useMemo, useRef } from 'react';
 import { useFirestore, useMemoFirebase, useUser, useDoc } from '@/firebase';
 import { collection, doc, serverTimestamp, increment, runTransaction, arrayUnion, query, where, getDocs } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
-import { Gem, Circle, AlertCircle, ChevronRight } from 'lucide-react';
+import { Gem, Circle, AlertCircle, ChevronRight, XCircle } from 'lucide-react';
 import { PPlusIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import {
@@ -104,7 +104,7 @@ export function BettingGameDialog({ card, children, categoryName, onSpinStart, o
                 const cardRef = doc(firestore, 'allCards', card.id);
                 const cardSnap = await transaction.get(cardRef);
                 const cardData = cardSnap.data();
-                if (cardData?.isSold) throw new Error("此卡片已被贏走，請重新整理後再試。");
+                if (cardData?.isSold) throw new Error("此卡片已被抽出，請重新整理後再試。");
                 
                 // Lock check
                 if (cardData?.lockedBy && cardData.lockedBy !== user.uid && cardData.lockedAt && (Date.now() - cardData.lockedAt.toMillis() < 30000)) {
@@ -181,9 +181,16 @@ export function BettingGameDialog({ card, children, categoryName, onSpinStart, o
                 </VisuallyHidden>
                 <div className="grid grid-cols-2 h-full">
                     <div className="p-2 md:p-8 bg-black/40 flex flex-col items-center justify-center border-r border-slate-950 relative overflow-hidden">
-                        <div className="relative w-full rounded-[1rem] border-[4px] border-slate-950 bg-transparent aspect-[2.5/4] p-2">
-                            <CardItem name={card.name} imageUrl={card.imageUrl} backImageUrl={card.backImageUrl} imageHint={card.imageHint} isFlippable={true} rarity="legendary" />
+                        <div className={cn("relative w-full rounded-[1rem] border-[4px] border-slate-950 bg-transparent aspect-[2.5/4] p-2", card.isSold && !isProcessing && "opacity-30 grayscale")}>
+                            <CardItem name={card.name} imageUrl={card.imageUrl} backImageUrl={card.backImageUrl} imageHint={card.imageHint} isFlippable={!card.isSold} rarity="legendary" />
                         </div>
+                        {card.isSold && !isProcessing && (
+                            <div className="absolute inset-0 flex items-center justify-center z-20">
+                                <div className="p-4 rounded-3xl bg-destructive/20 border border-destructive/40 backdrop-blur-md shadow-[0_0_20px_rgba(239,68,68,0.3)]">
+                                    <p className="text-xl font-black text-white italic tracking-tighter uppercase rotate-[-5deg]">OUT OF STOCK</p>
+                                </div>
+                            </div>
+                        )}
                     </div>
                     <div className="p-3 md:p-6 flex flex-col justify-between bg-slate-950/40 relative">
                         <div className={cn("space-y-4 transition-opacity", isProcessing && "opacity-50 pointer-events-none")}>
@@ -249,6 +256,10 @@ export function BettingGameDialog({ card, children, categoryName, onSpinStart, o
                                 <div className="flex flex-col items-center gap-2 mt-2">
                                     <p className={cn("text-lg md:text-6xl font-black font-code", result.won ? "text-amber-400 drop-shadow-[0_0_15px_rgba(234,179,8,0.8)]" : "text-white/20")}>{result.spot}</p>
                                     <Button onClick={() => { setResult(null); setSelectedSpots(new Set()); setIsProcessing(false); }} className="w-full h-10 rounded-xl bg-slate-800 text-white text-xs font-bold">再拼一次</Button>
+                                </div>
+                            ) : card.isSold ? (
+                                <div className="mt-2 p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-center">
+                                    <p className="text-xs font-bold text-destructive tracking-widest uppercase">此品項已被抽出</p>
                                 </div>
                             ) : (
                                 <AlertDialog>

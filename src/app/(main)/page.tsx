@@ -2,11 +2,11 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Package, Users2, ChevronRight, Trophy, Sparkles, Newspaper, Calendar, ShieldCheck, Zap, Target, Crown, Gem } from 'lucide-react';
+import { Package, Users2, ChevronRight, Trophy, Sparkles, Newspaper, Calendar, ShieldCheck, Zap, Target, Crown, Gem, Megaphone } from 'lucide-react';
 import { Logo, CrossedCardsIcon, LuckyBagIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, limit } from 'firebase/firestore';
+import { useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy, limit, doc } from 'firebase/firestore';
 import { format } from 'date-fns';
 import Image from 'next/image';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -18,6 +18,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { NewsPopup } from '@/components/news-popup';
 import { SafeImage } from '@/components/safe-image';
+import { FloatingCardsBackground } from '@/components/floating-cards-background';
 
 interface NewsItem {
     id: string;
@@ -55,20 +56,35 @@ export default function Home() {
 
   const { data: partners, isLoading: isLoadingPartners } = useCollection<Partner>(partnersQuery);
 
+  const systemConfigRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, 'systemConfig', 'main');
+  }, [firestore]);
+  const { data: systemConfig } = useDoc<any>(systemConfigRef);
+
   return (
     <div className="flex flex-col min-h-screen">
       <NewsPopup />
       
       {/* Hero Section */}
       <section className="relative min-h-[85vh] md:min-h-[95vh] flex items-center justify-center overflow-hidden py-4 md:py-8">
-        <div className="absolute inset-0 z-0 overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-b from-primary/20 via-background to-background" />
-            <div className="absolute top-1/6 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-primary/10 rounded-full blur-[80px] md:blur-[120px] animate-pulse-slow [will-change:transform]" />
-            <div className="absolute bottom-1/4 left-1/3 w-[200px] md:w-[400px] h-[200px] md:h-[400px] bg-accent/5 rounded-full blur-[60px] md:blur-[100px] animate-blob [will-change:transform]" />
-            <div className="absolute top-1/2 right-1/4 w-[250px] md:w-[500px] h-[250px] md:h-[500px] bg-primary/5 rounded-full blur-[80px] md:blur-[120px] animate-blob animation-delay-2000 [will-change:transform]" />
-        </div>
+        {(systemConfig?.showFloatingBackground !== false) && <FloatingCardsBackground />}
 
         <div className="container relative z-10 text-center space-y-6 md:space-y-10 px-4">
+          {systemConfig?.announcement && (
+            <div className="max-w-3xl mx-auto mb-8 animate-bounce-slow">
+              <div className="bg-primary/20 backdrop-blur-md border border-primary/30 rounded-2xl p-4 md:p-6 flex items-center gap-4 text-left shadow-[0_0_30px_rgba(6,182,212,0.2)]">
+                <div className="p-3 bg-primary rounded-xl shrink-0">
+                  <Megaphone className="w-6 h-6 text-black" />
+                </div>
+                <div>
+                  <h3 className="text-primary font-black text-sm uppercase tracking-widest mb-1">系統公告 / SYSTEM NOTICE</h3>
+                  <p className="text-white font-bold text-sm md:text-base leading-relaxed">{systemConfig.announcement}</p>
+                </div>
+              </div>
+            </div>
+          )}
+          
           <div className="inline-flex items-center gap-2 px-3 py-1 md:px-4 md:py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] md:text-xs font-black tracking-[0.3em] font-headline mb-2 md:mb-4 animate-fade-in-up uppercase">
             <Sparkles className="w-3 h-3 md:w-4 md:h-4" /> 公開透明、機率披露、數位存證
           </div>
@@ -105,7 +121,7 @@ export default function Home() {
       {/* 最新消息中心 */}
       <section className="relative py-20 md:py-32 bg-card/10 border-y border-white/5 overflow-hidden">
         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] -mr-80 -mt-80 pointer-events-none" />
-        <div className="container relative z-10">
+        <div className="container relative z-10 transition-transform duration-700">
             <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 md:mb-16 gap-6">
                 <div className="space-y-2 md:space-y-4">
                     <div className="inline-flex items-center gap-2 text-primary font-bold font-headline tracking-[0.4em] text-[10px] md:text-xs">
@@ -325,38 +341,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* VIP & Glory Section */}
-      <section className="container pb-20 md:pb-40 px-4 text-white">
-        <Separator className="mb-20 md:mb-32 opacity-5" />
-        
-        <div className="relative px-6 py-8 md:p-12 rounded-[32px] bg-gradient-to-br from-primary/10 via-card/60 to-accent/5 border border-white/5 overflow-hidden group shadow-lg backdrop-blur-xl animate-fade-in-up">
-          <div className="relative z-10 grid lg:grid-cols-2 gap-8 md:gap-12 items-center">
-            <div className="space-y-4 md:space-y-6 text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 text-accent font-black font-headline tracking-[0.2em] text-[10px] md:text-xs">
-                <Sparkles className="w-4 h-4 fill-accent animate-pulse" /> 榮耀之路
-              </div>
-              <h2 className="text-2xl md:text-5xl font-black font-headline leading-[1.1] tracking-tight">榮耀皇冠<br className="hidden sm:block" />地位象徵</h2>
-              <p className="text-sm md:text-base text-muted-foreground leading-relaxed max-w-lg mx-auto lg:mx-0 font-body font-medium opacity-80">
-                解鎖專屬頭像框與進階稱號。從「新手收藏家」邁向傳說中的「P+卡神」，在排行榜上刻下您的不朽紀錄。
-              </p>
-              <div className="flex flex-col sm:flex-row flex-wrap gap-3 justify-center lg:justify-start">
-                <Button size="sm" asChild className="h-10 px-6 text-sm font-black rounded-xl shadow-lg bg-accent text-accent-foreground hover:bg-accent/90 transition-all hover:scale-105 active:scale-95 border-none">
-                    <Link href="/profile">查看我的身分階級</Link>
-                </Button>
-                <Button variant="ghost" size="sm" asChild className="h-10 px-6 text-sm font-bold text-white hover:bg-white/5 transition-all">
-                    <Link href="/vip">了解等級特權</Link>
-                </Button>
-              </div>
-            </div>
-            <div className="flex justify-center lg:justify-end">
-              <div className="relative w-32 h-32 md:w-48 md:h-48 animate-float">
-                <Trophy className="w-full h-full text-accent drop-shadow-[0_0_20px_rgba(234,179,8,0.4)]" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* 合作夥伴 Section */}
       <section className="container pb-20 md:pb-40 px-4 text-white">
         <div className="mb-20 md:mb-32">
@@ -372,8 +356,8 @@ export default function Home() {
                     <Skeleton className="h-20 w-40 rounded-xl" />
                 ) : (
                     partners?.map((partner) => (
-                        <div key={partner.id} className="w-32 md:w-48 h-20 md:h-24 flex items-center justify-center grayscale hover:grayscale-0 transition-all">
-                            <SafeImage src={partner.logoUrl} alt={partner.name} className="object-contain max-h-full" width={192} height={96} />
+                        <div key={partner.id} className="w-40 md:w-64 h-24 md:h-32 flex items-center justify-center grayscale hover:grayscale-0 transition-all">
+                            <SafeImage src={partner.logoUrl} alt={partner.name} className="object-contain max-h-full" width={320} height={160} />
                         </div>
                     ))
                 )}

@@ -58,6 +58,7 @@ interface CardData {
     sellPrice?: number;
     source?: string;
     isSold?: boolean;
+    isRecycled?: boolean;
     dailyLimit?: number;
     minLevel?: string;
 }
@@ -205,6 +206,30 @@ export default function CardAreaManagementPage() {
   const { data: bettingItems } = useCollection<{allCardIds: string[]}>(useMemoFirebase(() => firestore ? collection(firestore, 'betting-items') : null, [firestore]));
   const { data: luckBags } = useCollection<{prizes?: any, otherPrizes?: {cardId: string}[]}>(useMemoFirebase(() => firestore ? collection(firestore, 'luckBags') : null, [firestore]));
 
+  const cardAssignmentMap = useMemo(() => {
+    const map = new Map<string, { type: string, name: string }>();
+    
+    cardPools?.forEach((p: any) => {
+        p.cards?.forEach((c: any) => map.set(c.cardId, { type: 'cardPool', name: p.name || '卡池' }));
+        if (p.lastPrizeCardId) map.set(p.lastPrizeCardId, { type: 'cardPool', name: (p.name || '卡池') + ' (最後賞)' });
+    });
+
+    bettingItems?.forEach((item: any) => {
+        item.allCardIds?.forEach((id: string) => map.set(id, { type: 'betting', name: item.id || '競猜' }));
+    });
+
+    luckBags?.forEach((bag: any) => {
+        if (bag.prizes?.first) map.set(bag.prizes.first, { type: 'luckyBag', name: bag.name || '福袋' });
+        if (bag.prizes?.second) map.set(bag.prizes.second, { type: 'luckyBag', name: bag.name || '福袋' });
+        if (bag.prizes?.third) map.set(bag.prizes.third, { type: 'luckyBag', name: bag.name || '福袋' });
+        bag.otherPrizes?.forEach((p: any) => {
+            if (p.cardId) map.set(p.cardId, { type: 'luckyBag', name: bag.name || '福袋' });
+        });
+    });
+
+    return map;
+  }, [cardPools, bettingItems, luckBags]);
+
   const filteredCards = useMemo(() => {
     if (!allCards) return [];
     let cards = [...allCards];
@@ -225,11 +250,11 @@ export default function CardAreaManagementPage() {
     } else if (area === 'lucky-bag') {
         const ids = new Set<string>();
         luckBags?.forEach(b => {
-            if(b.prizes?.first && allCardIdSet.has(b.prizes.first)) luckyBagIds.add(b.prizes.first);
-            if(b.prizes?.second && allCardIdSet.has(b.prizes.second)) luckyBagIds.add(b.prizes.second);
-            if(b.prizes?.third && allCardIdSet.has(b.prizes.third)) luckyBagIds.add(b.prizes.third);
+            if(b.prizes?.first && allCardIdSet.has(b.prizes.first)) ids.add(b.prizes.first);
+            if(b.prizes?.second && allCardIdSet.has(b.prizes.second)) ids.add(b.prizes.second);
+            if(b.prizes?.third && allCardIdSet.has(b.prizes.third)) ids.add(b.prizes.third);
             b.otherPrizes?.forEach(p => {
-                if (allCardIdSet.has(p.cardId)) luckyBagIds.add(p.cardId);
+                if (allCardIdSet.has(p.cardId)) ids.add(p.cardId);
             });
         });
         cards = cards.filter(c => ids.has(c.id!));
@@ -239,8 +264,15 @@ export default function CardAreaManagementPage() {
     
     if (searchTerm.trim()) cards = cards.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()));
     if (sportFilter !== '全部') cards = cards.filter(c => c.category === sportFilter);
-    if (activeTab === 'active') cards = cards.filter(c => !c.isSold);
-    else cards = cards.filter(c => c.isSold);
+    
+    if (activeTab === 'active') {
+        cards = cards.filter(c => !c.isSold);
+    } else if (activeTab === 'recycled') {
+        cards = cards.filter(c => c.isRecycled);
+    } else {
+        // sold tab shows cards that are sold but NOT recycled (i.e. won/drawn by user)
+        cards = cards.filter(c => c.isSold && !c.isRecycled);
+    }
     
     return cards.sort((a, b) => a.name.localeCompare(b.name));
   }, [allCards, area, cardPools, bettingItems, luckBags, searchTerm, sportFilter, activeTab]);
@@ -264,7 +296,17 @@ export default function CardAreaManagementPage() {
                 backUploadTask.on('state_changed', (s) => setBackUploadProgress((s.bytesTransferred / s.totalBytes) * 100), reject, () => getDownloadURL(backUploadTask.snapshot.ref).then(resolve));
             });
         }
-        const cardData: any = { name: currentCard.name, category: currentCard.category, sellPrice: currentCard.sellPrice || 0, imageUrl, backImageUrl, isSold: currentCard.isSold || false, dailyLimit: Number(currentCard.dailyLimit || 0), minLevel: currentCard.minLevel || '新手收藏家' };
+        const cardData: any = { 
+            name: currentCard.name, 
+            category: currentCard.category, 
+            sellPrice: currentCard.sellPrice || 0, 
+            imageUrl, 
+            backImageUrl, 
+            isSold: currentCard.isSold || false, 
+            isRecycled: currentCard.isRecycled || false,
+            dailyLimit: Number(currentCard.dailyLimit || 0), 
+            minLevel: currentCard.minLevel || '新手收藏家' 
+        };
         if (!isEditMode && area === 'group-break') { cardData.source = 'group-break'; cardData.isSold = true; }
         if (isEditMode && currentCard.id) await updateDoc(doc(firestore, 'allCards', currentCard.id), cardData);
         else await addDoc(collection(firestore, 'allCards'), cardData);
@@ -275,11 +317,27 @@ export default function CardAreaManagementPage() {
 
   const handleToggleSold = async (card: CardData) => {
     if (!firestore || !card.id) return;
-    try { await updateDoc(doc(firestore, 'allCards', card.id), { isSold: !card.isSold }); toast({ title: '狀態已更新' }); } catch (e) { console.error(e); toast({ variant: 'destructive' }); }
+    try { 
+        const newSold = !card.isSold;
+        const updateData: any = { isSold: newSold };
+        if (!newSold) updateData.isRecycled = false;
+        await updateDoc(doc(firestore, 'allCards', card.id), updateData); 
+        toast({ title: '狀態已更新' }); 
+    } catch (e) { console.error(e); toast({ variant: 'destructive' }); }
   };
 
   const handleDeleteCard = async (card: CardData) => {
     if (!firestore || !card.id || !storage) return;
+    
+    if (cardAssignmentMap.has(card.id)) {
+        toast({ 
+            variant: "destructive", 
+            title: "無法刪除", 
+            description: `此卡片目前已分配至「${cardAssignmentMap.get(card.id)?.name}」，請先從該處移除後再行刪除。` 
+        });
+        return;
+    }
+
     try {
         if (card.imageUrl && card.imageUrl.includes('firebasestorage.googleapis.com')) {
             try { await deleteObject(ref(storage, card.imageUrl)); } catch (err) { console.error(err); }
@@ -318,7 +376,8 @@ export default function CardAreaManagementPage() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <TabsList className="bg-slate-200/50 p-1 rounded-2xl h-12 w-fit border border-slate-200 shadow-inner">
                 <TabsTrigger value="active" className="rounded-xl px-8 font-black text-xs data-[state=active]:bg-white data-[state=active]:shadow-md">在庫資產</TabsTrigger>
-                <TabsTrigger value="sold" className="rounded-xl px-8 font-black text-xs data-[state=active]:bg-white data-[state=active]:shadow-md">已抽出/回收</TabsTrigger>
+                <TabsTrigger value="recycled" className="rounded-xl px-8 font-black text-xs data-[state=active]:bg-white data-[state=active]:shadow-md">已回收</TabsTrigger>
+                <TabsTrigger value="sold" className="rounded-xl px-8 font-black text-xs data-[state=active]:bg-white data-[state=active]:shadow-md">已抽出</TabsTrigger>
             </TabsList>
 
             <div className="bg-white border border-slate-200 rounded-[2rem] overflow-hidden shadow-md">
@@ -327,6 +386,7 @@ export default function CardAreaManagementPage() {
                         <TableHeader className="bg-slate-50 border-b-slate-200">
                             <TableRow>
                                 <TableHead className="pl-8 text-slate-900 font-black uppercase text-[10px] tracking-widest py-5">名稱資訊</TableHead>
+                                <TableHead className="text-slate-900 font-black uppercase text-[10px] tracking-widest text-center">分配位置</TableHead>
                                 <TableHead className="text-slate-900 font-black uppercase text-[10px] tracking-widest">運動分類</TableHead>
                                 <TableHead className="text-slate-900 font-black uppercase text-[10px] tracking-widest text-center">視覺預覽</TableHead>
                                 <TableHead className="text-slate-900 font-black uppercase text-[10px] tracking-widest">庫存狀態</TableHead>
@@ -339,6 +399,15 @@ export default function CardAreaManagementPage() {
                             filteredCards.map((card) => (
                                 <TableRow key={card.id} className="hover:bg-slate-50 transition-colors border-b-slate-100 group">
                                     <TableCell className="pl-8 font-black text-slate-900 py-4">{card.name}</TableCell>
+                                    <TableCell className="text-center">
+                                        {cardAssignmentMap.has(card.id!) ? (
+                                            <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 text-[10px] font-black uppercase">
+                                                {cardAssignmentMap.get(card.id!)?.name}
+                                            </Badge>
+                                        ) : (
+                                            <Badge variant="outline" className="text-slate-400 border-slate-200 text-[10px] font-black uppercase">閒置中</Badge>
+                                        )}
+                                    </TableCell>
                                     <TableCell><Badge variant="outline" className="text-[10px] font-black border-slate-300 text-slate-700 bg-white px-3 h-6 uppercase">{card.category}</Badge></TableCell>
                                     <TableCell>
                                         <div className="flex justify-center">
@@ -350,8 +419,10 @@ export default function CardAreaManagementPage() {
                                     <TableCell>
                                         <div className="flex items-center space-x-3">
                                             <Switch checked={card.isSold} onCheckedChange={() => handleToggleSold(card)} />
-                                            <Label className={cn("text-[10px] font-black uppercase tracking-tighter", card.isSold ? "text-rose-600" : "text-emerald-600")}>
-                                                {card.isSold ? "已抽出" : "在庫中"}
+                                            <Label className={cn("text-[10px] font-black uppercase tracking-tighter", 
+                                                card.isRecycled ? "text-amber-600" : (card.isSold ? "text-rose-600" : "text-emerald-600")
+                                            )}>
+                                                {card.isRecycled ? "已回收" : (card.isSold ? "已抽出" : "在庫中")}
                                             </Label>
                                         </div>
                                     </TableCell>
@@ -402,8 +473,17 @@ export default function CardAreaManagementPage() {
                         </div>
 
                         <div className="p-6 rounded-[2rem] border border-slate-200 bg-slate-50/50 space-y-6">
-                            <div className="flex items-center gap-2 text-slate-900 font-black text-sm uppercase tracking-widest">
-                                <Ban className="w-4 h-4 text-rose-500" /> 參與限制 (用於拼卡專區)
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2 text-slate-900 font-black text-sm uppercase tracking-widest">
+                                    <Ban className="w-4 h-4 text-rose-500" /> 參與限制 (用於拼卡專區)
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">已回收狀態</Label>
+                                    <Switch 
+                                        checked={currentCard.isRecycled || false} 
+                                        onCheckedChange={(val) => setCurrentCard({...currentCard, isRecycled: val, isSold: val ? true : currentCard.isSold})} 
+                                    />
+                                </div>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-2">
