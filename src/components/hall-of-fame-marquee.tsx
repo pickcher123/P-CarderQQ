@@ -1,12 +1,12 @@
 'use client';
 
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { Trophy, Crown, Star, Sparkles } from 'lucide-react';
 import { useMemo } from 'react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { MarqueeContainer } from './ui/marquee-container';
+import { useAnnouncementData } from '@/hooks/use-announcement-data';
 
 interface Announcement {
     id: string;
@@ -20,25 +20,9 @@ interface Announcement {
 }
 
 export function HallOfFameMarquee() {
-    const firestore = useFirestore();
-
-    const announcementsQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return query(
-            collection(firestore, 'announcements'),
-            orderBy('timestamp', 'desc'),
-            limit(50)
-        );
-    }, [firestore]);
-
-    const { data: rawAnnouncements, isLoading, error } = useCollection<Announcement>(announcementsQuery);
-
-    const announcements = useMemo(() => {
-        if (!rawAnnouncements) return [];
-        return rawAnnouncements
-            .filter(a => a.rarity === 'legendary' && a.section === 'draw')
-            .slice(0, 10);
-    }, [rawAnnouncements]);
+    const { data: announcements, isLoading, error } = useAnnouncementData<Announcement>(50, (data) => 
+        data.filter(a => a.rarity === 'legendary' && a.section === 'draw').slice(0, 10)
+    );
 
     if (error || isLoading || !announcements || announcements.length === 0) {
         return null;
@@ -100,16 +84,11 @@ export function HallOfFameMarquee() {
                 <div className="absolute inset-y-0 left-0 w-24 md:w-48 bg-gradient-to-r from-background via-background/40 to-transparent z-20 pointer-events-none" />
                 <div className="absolute inset-y-0 right-0 w-24 md:w-48 bg-gradient-to-l from-background via-background/40 to-transparent z-20 pointer-events-none" />
 
-                <div className="animate-marquee flex min-w-full shrink-0 items-center">
+                <MarqueeContainer>
                     {announcements.map((item, index) => (
                         <MarqueeItem key={`${item.id}-${index}`} item={item} />
                     ))}
-                </div>
-                <div className="animate-marquee flex min-w-full shrink-0 items-center" aria-hidden="true">
-                    {announcements.map((item, index) => (
-                        <MarqueeItem key={`duplicate-${item.id}-${index}`} item={item} />
-                    ))}
-                </div>
+                </MarqueeContainer>
             </div>
         </section>
     );

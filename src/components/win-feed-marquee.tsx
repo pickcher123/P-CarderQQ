@@ -1,10 +1,11 @@
 
 'use client';
 
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, limit, Timestamp } from 'firebase/firestore';
 import { Trophy } from 'lucide-react';
 import { useMemo } from 'react';
+import { MarqueeContainer } from './ui/marquee-container';
+import { useAnnouncementData } from '@/hooks/use-announcement-data';
+import { Timestamp } from 'firebase/firestore';
 
 interface Announcement {
     id: string;
@@ -23,18 +24,7 @@ const rarityStyles = {
 };
 
 export function WinFeedMarquee() {
-    const firestore = useFirestore();
-
-    const announcementsQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return query(
-            collection(firestore, 'announcements'),
-            orderBy('timestamp', 'desc'),
-            limit(5)
-        );
-    }, [firestore]);
-
-    const { data: announcements, isLoading } = useCollection<Announcement>(announcementsQuery);
+    const { data: announcements, isLoading } = useAnnouncementData<Announcement>(5);
 
     const marqueeItems = useMemo(() => {
         if (!announcements) return [];
@@ -65,19 +55,12 @@ export function WinFeedMarquee() {
             </p>
         </div>
     );
-
-    return (
         <div className="bg-background/80 backdrop-blur-sm border-b border-border/50 h-8 overflow-hidden relative flex items-center">
-            <div className="animate-marquee flex min-w-full shrink-0 items-center">
+            <MarqueeContainer>
                 {marqueeItems.map((item, index) => (
                     <MarqueeItem key={`${item.id}-${index}`} item={item} />
                 ))}
-            </div>
-            <div className="animate-marquee flex min-w-full shrink-0 items-center" aria-hidden="true">
-                {marqueeItems.map((item, index) => (
-                    <MarqueeItem key={`duplicate-${item.id}-${index}`} item={item} />
-                ))}
-            </div>
+            </MarqueeContainer>
         </div>
     );
 }

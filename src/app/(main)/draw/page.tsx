@@ -87,15 +87,6 @@ export default function DrawPage() {
       if (categories && cardPools) {
           const sortedCategories = [...categories].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
           
-          // Add custom category "球卡一番賞"
-          sortedCategories.push({
-              id: 'ifansan-prize',
-              name: '球卡一番賞',
-              imageUrl: 'https://i.ibb.co/ynNvhHmN/P-carder.jpg', // Provide a default image URL
-              order: 99,
-              linkUrl: 'https://ifansan.com/?0000V'
-          } as any);
-
           const counts = sortedCategories.map(category => {
               const count = cardPools.filter(pool => pool.categoryId === category.id).length;
               return { ...category, poolCount: count };
@@ -249,18 +240,9 @@ export default function DrawPage() {
                     </div>
 
                     <div className="absolute inset-0 flex flex-col items-center justify-center p-4 md:p-12 text-center">
-                        <div className="transform transition-transform duration-500 group-hover:translate-y-[-5px] w-full px-2">
+                <div className="transform transition-transform duration-500 group-hover:translate-y-[-5px] w-full px-2">
                             <h3 className="font-headline text-base lg:text-2xl xl:text-4xl font-black text-white tracking-tighter drop-shadow-[0_2px_15px_rgba(0,0,0,0.8)] group-hover:text-primary transition-colors">
-                                {category.id === 'ifansan-prize' ? (
-                                    <>
-                                        球卡一番賞
-                                        <span className="block text-xs lg:text-base xl:text-lg font-medium mt-1">
-                                            (500元/抽 以下)
-                                        </span>
-                                    </>
-                                ) : (
-                                    <span className="truncate block">{category.name}</span>
-                                )}
+                                <span className="truncate block">{category.name}</span>
                             </h3>
                         </div>
                     </div>

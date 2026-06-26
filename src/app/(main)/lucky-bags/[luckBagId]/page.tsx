@@ -110,7 +110,7 @@ export default function LuckyBagPage() {
                     返回福袋清單
                 </Button>
 
-                <div className="max-w-6xl mx-auto rounded-[3rem] overflow-hidden bg-slate-200 border-b-[16px] border-r-[16px] border-slate-400 shadow-[0_50px_100px_rgba(0,0,0,0.8)] animate-fade-in-up">
+                <div className="max-w-6xl mx-auto rounded-[3rem] overflow-hidden bg-white border-2 border-slate-300 shadow-lg animate-fade-in-up">
                     <LuckBagDetailView luckBag={luckBagWithData} />
                 </div>
             </div>

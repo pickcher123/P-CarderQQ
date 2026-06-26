@@ -1,5 +1,6 @@
 {
   "name": "P+Carder | 頂級球員卡福袋平台",
   "description": "頂級球員卡福袋平台",
-  "requestFramePermissions": []
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

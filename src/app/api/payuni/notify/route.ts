@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     const decryptedString = decrypt(encryptInfo, hashKey, ivBuffer);
     const result = querystring.parse(decryptedString);
 
-    const { TradeAmt, MerTradeNo, TradeNo, TradeStatus } = result;
+    const { TradeAmt, MerTradeNo, TradeNo } = result;
     const amount = Number(TradeAmt);
     const ourTradeId = MerTradeNo as string;
     const payuniTradeId = TradeNo as string;

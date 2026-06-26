@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
     return new NextResponse('Invalid signature', { status: 401 });
   }
 
-  const events = JSON.parse(body).events;
+  // const events = JSON.parse(body).events;
   
   // Handle events
   // Examples:

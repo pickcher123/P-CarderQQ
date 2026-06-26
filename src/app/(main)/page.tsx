@@ -19,6 +19,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { NewsPopup } from '@/components/news-popup';
 import { SafeImage } from '@/components/safe-image';
 import { FloatingCardsBackground } from '@/components/floating-cards-background';
+import { CardExhibitionCalendar } from '@/components/card-exhibition-calendar';
 
 interface NewsItem {
     id: string;
@@ -343,6 +344,7 @@ export default function Home() {
 
       {/* 合作夥伴 Section */}
       <section className="container pb-20 md:pb-40 px-4 text-white">
+        <CardExhibitionCalendar />
         <div className="mb-20 md:mb-32">
             <div className="text-center mb-12 space-y-4">
                 <div className="inline-flex items-center gap-2 text-primary font-bold font-headline tracking-[0.4em] text-[10px] md:text-xs uppercase">

@@ -2,15 +2,15 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from "@/firebase";
-import { collection, query, where, Timestamp, doc } from 'firebase/firestore';
+import { useUser, useFirestore, useMemoFirebase, useDoc } from "@/firebase";
+import { doc } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@/components/ui/visually-hidden';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Trophy, Layers, Gem, Sparkles, Clock, ShieldCheck, Diamond, Star, X, Ban, AlertCircle, Archive } from 'lucide-react';
+import { Trophy, Layers, Gem, Clock, ShieldCheck, Diamond, Star, X, Ban, Archive } from 'lucide-react';
 import { PPlusIcon } from '@/components/icons';
 import { SafeImage } from '@/components/safe-image';
 import { format } from 'date-fns';
@@ -24,7 +24,7 @@ type Rarity = typeof RARITIES[number];
 const rarityStyles: Record<Rarity, { text: string, bg: string, border: string, shadow: string, label: string, icon: any }> = {
   legendary: { text: 'text-accent', bg: 'bg-accent/10', border: 'border-accent/40', shadow: 'shadow-accent/20', label: 'LEGENDARY', icon: Star },
   rare: { text: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/40', shadow: 'shadow-primary/20', label: 'RARE', icon: Diamond },
-  common: { text: 'text-slate-400', bg: 'bg-white/5', border: 'border-white/20', shadow: 'shadow-white/5', label: 'COMMON', icon: Layers },
+  common: { text: 'text-slate-900', bg: 'bg-slate-300', border: 'border-black', shadow: 'shadow-slate-300/5', label: 'COMMON', icon: Layers },
 };
 
 const pointPrizeStyles: Record<Rarity, { text: string, bg: string, border: string }> = {
@@ -272,50 +272,45 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                     router.push(`/draw/open?poolId=${pool.id}&draws=${pendingDraws}`);
                 }}
             />
-            <div className="relative flex flex-col p-2 bg-slate-900 border-[8px] border-slate-950 rounded-[2.5rem] shadow-2xl group transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_0_40px_rgba(251,191,36,0.3)] [perspective:1000px]">
-                <div className="relative flex flex-col bg-black/90 rounded-[1.5rem] border-[10px] border-slate-950 overflow-hidden transition-transform duration-500 group-hover:[transform:rotateY(5deg)_rotateX(5deg)]">
-                    <div className="relative z-10 flex flex-col p-4 md:p-6 bg-slate-950/40">
-                        <div className="text-center mb-4 space-y-2">
-                            <h3 className="text-lg font-headline font-black uppercase truncate bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-primary/80">{pool.name}</h3>
+            <div className="relative flex flex-col p-2 bg-sky-50 border-[4px] border-black rounded-[2.5rem] shadow-lg group transition-all duration-500 hover:-translate-y-2 hover:shadow-xl [perspective:1000px]">
+                <div className="relative flex flex-col bg-sky-50 rounded-[1.5rem] border-[10px] border-sky-100 overflow-hidden transition-transform duration-500 group-hover:[transform:rotateY(5deg)_rotateX(5deg)]">
+                    <div className="relative z-10 flex flex-col p-4 md:p-6 bg-sky-50/50">
+                        <div className="text-center mb-4 space-y-2 bg-sky-100/50 p-2 rounded-xl">
+                            <h3 className="text-lg font-headline font-black text-slate-900 uppercase truncate">{pool.name}</h3>
                             <div className="flex items-center justify-center gap-2">
-                                <Badge variant="outline" className="text-[10px] text-primary/70 border-primary/20 bg-primary/5">{pool.description}</Badge>
+                                <Badge variant="outline" className="text-[10px] text-primary border-primary/20 bg-primary/5">{pool.description}</Badge>
                             </div>
                         </div>
-                        <div className="relative bg-slate-950/50 border border-white/5 p-3 rounded-2xl mb-4 shadow-[inset_0_0_15px_rgba(0,0,0,0.5)]">
+                        <div className="bg-white border border-slate-200 p-3 rounded-2xl mb-4">
                             <div className="flex justify-between items-baseline mb-2">
-                                <span className="text-[9px] font-black text-primary/70 uppercase tracking-wider">庫存餘額</span>
-                                <div className="font-code text-xl font-black text-white">
-                                    {pool.remainingPacks} <span className="text-[10px] text-white/30">/ {pool.totalPacks}</span>
-                                </div>
+                                <span className="text-[9px] font-black text-primary uppercase">即時存量</span>
+                                <div className="font-code text-xl font-black text-slate-900">{pool.remainingPacks} <span className="text-[10px] text-slate-400">/ {pool.totalPacks}</span></div>
                             </div>
-                            <div className="h-2 w-full bg-slate-900 rounded-full overflow-hidden border border-white/5">
-                                <div 
-                                    className="h-full bg-gradient-to-r from-primary/60 to-primary transition-all duration-1000 shadow-[0_0_10px_rgba(6,182,212,0.4)]" 
-                                    style={{ width: `${(pool.remainingPacks || 0) / (pool.totalPacks || 1) * 100}%` }} 
-                                />
+                            <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden border border-slate-200 shadow-inner">
+                                <div className="h-full bg-primary transition-all duration-1000" style={{ width: `${(pool.remainingPacks || 0) / (pool.totalPacks || 1) * 100}%` }} />
                             </div>
                         </div>
                         <div className="grid grid-cols-3 gap-2 mb-4">
                             {RARITIES.map(r => (
-                                <div key={r} className={cn("p-2 rounded-2xl border flex flex-col items-center transition-all hover:scale-105", rarityStyles[r].bg, rarityStyles[r].border)}>
+                                <div key={r} className={cn("p-2 rounded-2xl border flex flex-col items-center", rarityStyles[r].bg, rarityStyles[r].border)}>
                                     <span className={cn("text-[7px] font-black uppercase", rarityStyles[r].text)}>{rarityStyles[r].label}</span>
-                                    <span className="text-xs font-black font-code text-white">{rarityProbabilities[r].toFixed(1)}%</span>
+                                    <span className="text-xs font-black font-code text-slate-900">{rarityProbabilities[r].toFixed(1)}%</span>
                                 </div>
                             ))}
                         </div>
                         <DialogTrigger asChild>
-                            <div className="flex-1 bg-slate-950 rounded-2xl p-4 cursor-pointer flex flex-col shadow-[inset_0_0_30px_rgba(0,0,0,0.8),0_0_15px_rgba(6,182,212,0.1)] border border-white/10 min-h-[140px] transition-all hover:scale-[1.02] hover:border-primary/50 hover:shadow-[inset_0_0_20px_rgba(0,0,0,0.5),0_0_20px_rgba(6,182,212,0.3)]">
+                            <div className="flex-1 bg-white rounded-2xl p-4 cursor-pointer flex flex-col shadow-sm border border-slate-200 border-b-[6px] border-b-primary min-h-[140px] transition-all hover:scale-[1.02] hover:border-primary/50 hover:shadow-md">
                                 <div className="flex justify-between items-center mb-3">
                                     <span className="text-[10px] font-black text-primary uppercase flex items-center gap-2"><Trophy className="w-4 h-4" /> 剩餘大獎</span>
                                     {lastPrizeCard && <Badge className="bg-accent text-accent-foreground text-[8px] font-black border-none animate-pulse">最後賞</Badge>}
                                 </div>
                                 <div className="grid grid-cols-4 gap-2 flex-1 items-center">
                                     {topPrizesPreview.map(item => (
-                                        <div key={item.id} className="aspect-[2.5/4] relative rounded-lg overflow-hidden border border-white/5 bg-slate-950">
+                                        <div key={item.id} className="aspect-[2.5/4] relative rounded-lg overflow-hidden border border-slate-100 bg-slate-50">
                                             {item.isPoints ? (
                                                 <div className={cn("w-full h-full flex flex-col items-center justify-center p-1", pointPrizeStyles[item.rarity as Rarity].bg)}>
                                                     <PPlusIcon className={cn("w-6 h-6 mb-1", pointPrizeStyles[item.rarity as Rarity].text)} />
-                                                    <p className="text-[8px] font-black text-white leading-none">{item.points}</p>
+                                                    <p className="text-[8px] font-black text-slate-900 leading-none">{item.points}</p>
                                                 </div>
                                             ) : (
                                                 <SafeImage src={item.imageUrl} alt={item.name} sizes="80px" fill className="object-contain" />
@@ -333,14 +328,14 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                         </DialogTrigger>
                     </div>
                     {poolStatus.status === 'sold-out' && (
-                        <div className="absolute inset-0 z-50 bg-rose-950/40 backdrop-blur-[1px] flex items-center justify-center p-6">
-                            <div className="bg-rose-600 text-white px-8 py-4 rounded-xl font-black text-2xl rotate-[-12deg] shadow-2xl">已售罄</div>
+                        <div className="absolute inset-0 z-50 bg-white/80 backdrop-blur-[1px] flex items-center justify-center p-6">
+                            <div className="bg-slate-800 text-white px-8 py-4 rounded-xl font-black text-2xl rotate-[-12deg] shadow-2xl">已售罄</div>
                         </div>
                     )}
                 </div>
                 <div className="mt-2 p-2 space-y-3">
                     <div className="flex items-center justify-between gap-2 px-1 mb-2">
-                        <Badge variant="secondary" className="text-[10px] text-white/80 bg-white/5 border-white/10 font-bold px-3 py-1">
+                        <Badge variant="secondary" className="text-[10px] text-slate-900 bg-slate-200 border-slate-300 font-bold px-3 py-1">
                             已抽 {todayDrawCount} 抽
                         </Badge>
                         <div className="flex items-center gap-1.5 overflow-hidden justify-end">
@@ -382,7 +377,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                             {poolStatus.message || '無法抽卡'}
                         </Button>
                     ) : (
-                        <div className="grid grid-cols-3 gap-2">
+                        <div className="grid grid-cols-3 gap-2 max-w-sm mx-auto w-full">
                             {[1, 3, 10].map((drawCount) => {
                                 const canDraw = !isLoadingStats && (!pool.dailyLimit || pool.dailyLimit === 0 || (todayDrawCount + drawCount <= pool.dailyLimit));
                                 const price = drawCount === 1 ? (pool.price || 0) 
@@ -395,10 +390,10 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                     <Button 
                                         key={drawCount}
                                         className={cn(
-                                            "w-full h-24 flex flex-col items-center justify-center gap-1.5 rounded-2xl transition-all active:translate-y-1 active:border-b-0 px-2",
+                                            "w-full h-12 flex flex-row items-center justify-center gap-1 rounded-xl transition-all active:translate-y-1 active:border-b-0 px-2.5",
                                             !canDraw 
-                                                ? "bg-slate-800 text-slate-500 border-slate-700 opacity-50" 
-                                                : "bg-primary text-primary-foreground border-b-4 border-slate-950"
+                                                ? "bg-slate-200 text-slate-400 border-slate-300 border-b-4 opacity-50" 
+                                                : "bg-primary text-white border-b-4 border-b-sky-900/50 shadow-lg hover:brightness-105"
                                         )} 
                                         disabled={!canDraw} 
                                         onClick={() => {
@@ -408,14 +403,14 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                             handleDraw(drawsToPerform);
                                         }}
                                     >
-                                        <span className="text-[10px] font-bold uppercase opacity-80">{label}</span>
-                                        <span className="text-sm font-black italic">
+                                        <span className="text-[11px] font-bold shrink-0">{label}</span>
+                                        <span className="text-xs font-black italic shrink-0">
                                             {price.toLocaleString()}
                                         </span>
-                                        {pool.currency === 'p-point' ? <PPlusIcon className="w-5 h-5 text-amber-400" /> : (
-                                            <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-black/20 border border-white/10">
-                                                <Gem className="w-3.5 h-3.5 text-sky-300" />
-                                            </div>
+                                        {pool.currency === 'p-point' ? (
+                                            <PPlusIcon className="w-4 h-4 shrink-0" />
+                                        ) : (
+                                            <Gem className="w-3.5 h-3.5 shrink-0" />
                                         )}
                                     </Button>
                                 );

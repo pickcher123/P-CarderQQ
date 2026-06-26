@@ -39,6 +39,7 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: "/192x192.png",
+    apple: "/192x192.png",
   },
   manifest: '/manifest.json',
 };
@@ -59,7 +60,7 @@ export default function RootLayout({
         'url': 'https://p-carder.com/',
         'logo': {
           '@type': 'ImageObject',
-          'url': 'https://p-carder.com/logo.png'
+          'url': 'https://p-carder.com/192x192.png'
         },
         'contactPoint': {
           '@type': 'ContactPoint',

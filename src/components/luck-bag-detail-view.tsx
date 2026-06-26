@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { doc, collection, query, serverTimestamp, increment, runTransaction } from 'firebase/firestore';
+import { doc, collection, serverTimestamp, increment, runTransaction } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { 
     AlertDialog, 
@@ -15,7 +15,7 @@ import {
     AlertDialogTitle, 
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Gem, Loader2, Trophy, X, Dices, Users, Info, HelpCircle, CheckCircle2 } from 'lucide-react';
+import { Gem, Loader2, Trophy, X, Dices, Users, Info, HelpCircle } from 'lucide-react';
 import { PPlusIcon } from '@/components/icons';
 import { CardItem } from '@/components/card-item';
 import { cn } from '@/lib/utils';
@@ -24,7 +24,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { VisuallyHidden } from '@/components/ui/visually-hidden';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import type { LuckBagWithCount, CardData } from '@/app/(main)/lucky-bags/page';
 import type { UserProfile } from '@/types/user-profile';
@@ -74,6 +73,9 @@ const PrizeDisplayCard = ({ card, levelText, onPreview }: { card?: CardData, lev
         </div>
     );
 };
+
+// Add common style definition if not present. Assuming it's needed for the UI.
+const commonRarityStyle = "border-slate-800 bg-slate-900"; 
 
 export function LuckBagDetailView({ luckBag }: { luckBag: LuckBagWithCount }) {
     const { user } = useUser();
@@ -211,10 +213,10 @@ export function LuckBagDetailView({ luckBag }: { luckBag: LuckBagWithCount }) {
     const progress = (participantCount / (luckBag.totalParticipants || 1)) * 100;
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-2 relative bg-slate-200">
+        <div className="grid grid-cols-1 lg:grid-cols-2 relative bg-white">
             {/* 左側獎項展示區 */}
-            <div className="p-4 md:p-10 flex flex-col items-center border-b lg:border-b-0 lg:border-r border-slate-400">
-                <div className="relative w-full aspect-[4/5] bg-slate-600 rounded-2xl p-4 md:p-6 shadow-inner flex flex-col">
+            <div className="p-4 md:p-10 flex flex-col items-center border-b lg:border-b-0 lg:border-r border-slate-200">
+                <div className="relative w-full aspect-[4/5] bg-slate-100 rounded-2xl p-4 md:p-6 shadow-sm flex flex-col">
                     <div className="relative flex-1 flex flex-col bg-[#f0f4f7] rounded-sm overflow-hidden p-4 md:p-6 border-4 border-[#ccd6d9]">
                         <div className="mb-4 md:mb-6">
                             <h1 className="font-headline text-base md:text-lg font-black text-slate-900 uppercase">{luckBag.name}</h1>
@@ -254,9 +256,9 @@ export function LuckBagDetailView({ luckBag }: { luckBag: LuckBagWithCount }) {
                             {(luckBag.otherPrizesList && luckBag.otherPrizesList.length > 0 || luckBag.otherPointsList && luckBag.otherPointsList.length > 0) && (
                                 <Dialog>
                                     <DialogTrigger asChild>
-                                        <div className="col-span-3 p-4 bg-slate-800 rounded-lg border flex items-center justify-center gap-3 cursor-pointer hover:bg-slate-900 transition-colors mt-2">
-                                            <Trophy className="w-6 h-6 text-white" />
-                                            <p className="text-sm font-black text-white">查看其他獎項</p>
+                                        <div className="col-span-3 p-4 bg-slate-100 rounded-lg border flex items-center justify-center gap-3 cursor-pointer hover:bg-slate-200 transition-colors mt-2">
+                                            <Trophy className="w-6 h-6 text-slate-900" />
+                                            <p className="text-sm font-black text-slate-900">查看其他獎項</p>
                                         </div>
                                     </DialogTrigger>
                                     <DialogContent className="max-w-md bg-slate-200 border-slate-400">
@@ -292,7 +294,7 @@ export function LuckBagDetailView({ luckBag }: { luckBag: LuckBagWithCount }) {
             </div>
             
             {/* 右側選號互動區 */}
-            <div className="p-4 md:p-10 flex flex-col bg-slate-200 text-slate-900">
+            <div className="p-4 md:p-10 flex flex-col bg-white text-slate-900">
                 {!isCompleted ? (
                     <>
                         <div className="mb-4 md:mb-6 flex flex-col gap-3 md:gap-4">
@@ -310,12 +312,12 @@ export function LuckBagDetailView({ luckBag }: { luckBag: LuckBagWithCount }) {
                                     </Button>
                                 </div>
                             </div>
-                            <div className="h-2.5 md:h-3 w-full bg-slate-300 rounded-full overflow-hidden border-2 border-slate-400 shadow-inner">
-                                <div className="h-full bg-slate-800 transition-all duration-1000" style={{ width: `${progress}%` }} />
+                            <div className="h-2.5 md:h-3 w-full bg-slate-200 rounded-full overflow-hidden border-2 border-slate-300 shadow-inner">
+                                <div className="h-full bg-sky-500 transition-all duration-1000" style={{ width: `${progress}%` }} />
                             </div>
                         </div>
 
-                        <ScrollArea className="flex-grow h-[300px] md:h-[400px] border-4 border-slate-400 bg-slate-300 rounded-xl p-2 md:p-3 shadow-inner">
+                        <ScrollArea className="flex-grow h-[300px] md:h-[400px] border-4 border-slate-200 bg-slate-100 rounded-xl p-2 md:p-3 shadow-inner">
                             <div className="grid grid-cols-5 sm:grid-cols-8 gap-1.5 md:gap-2 p-2 md:p-3">
                                 {Array.from({ length: luckBag.totalParticipants || 0 }).map((_, i) => { 
                                     const spot = i + 1; 
@@ -327,9 +329,9 @@ export function LuckBagDetailView({ luckBag }: { luckBag: LuckBagWithCount }) {
                                             onClick={() => handleSpotClick(spot)} 
                                             className={cn(
                                                 "aspect-square rounded-full flex items-center justify-center font-black text-[10px] md:text-xs transition-all border-2", 
-                                                taken ? "bg-black/10 text-black/20 border-transparent opacity-40" : 
-                                                selectedSpots.has(spot) ? "bg-slate-800 text-white border-black scale-110 shadow-lg" : 
-                                                "bg-slate-100 border-slate-400 text-slate-800 hover:border-slate-800"
+                                                taken ? "bg-slate-200 text-slate-400 border-transparent" : 
+                                                selectedSpots.has(spot) ? "bg-sky-500 text-white border-sky-600 scale-110 shadow-lg" : 
+                                                "bg-white border-slate-300 text-slate-700 hover:border-sky-400"
                                             )}
                                         >
                                             <span className="font-code">{spot}</span>
@@ -358,7 +360,7 @@ export function LuckBagDetailView({ luckBag }: { luckBag: LuckBagWithCount }) {
                                         {currency === 'diamond' ? <Gem className="w-6 h-6 md:w-8 md:h-8 text-primary" /> : <PPlusIcon className="w-6 h-6 md:w-8 md:h-8" />}
                                     </div>
                                 </div>
-                                <Button className="w-full sm:w-auto h-14 md:h-16 rounded-2xl px-8 md:px-10 font-black bg-slate-800 text-white hover:bg-slate-950 shadow-xl transition-all active:scale-95 text-base md:text-lg" disabled={selectedSpots.size === 0 || isSubmitting} onClick={() => setIsConfirming(true)}>
+                                <Button className="w-full sm:w-auto h-14 md:h-16 rounded-2xl px-8 md:px-10 font-black bg-slate-900 text-white hover:bg-black shadow-xl transition-all active:scale-95 text-base md:text-lg" disabled={selectedSpots.size === 0 || isSubmitting} onClick={() => setIsConfirming(true)}>
                                     {isSubmitting ? <Loader2 className="animate-spin" /> : '確認購買並鎖定'}
                                 </Button>
                             </div>
