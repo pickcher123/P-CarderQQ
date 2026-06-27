@@ -169,7 +169,8 @@ export default function AdminLayout({
 
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
 
-  const isSuperAdmin = useMemo(() => user?.email === 'pickcher123@gmail.com', [user]);
+  const superAdmins = useMemo(() => ['pickcher123@gmail.com'], []);
+  const isSuperAdmin = useMemo(() => user?.email && superAdmins.includes(user.email), [user, superAdmins]);
 
   if (isUserLoading || isProfileLoading) {
     return (

@@ -266,39 +266,39 @@ export default function LoginPage() {
   )
 
   return (
-    <div className="relative min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center py-12 px-4 bg-background text-foreground font-mono overflow-hidden">
+    <div className="relative min-h-screen flex flex-col items-center pt-8 px-4 bg-background text-foreground font-mono overflow-hidden">
       {/* 掃描線效果 */}
       <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,255,255,0.06),rgba(0,255,255,0.02),rgba(255,0,255,0.06))] z-50 bg-[length:100%_4px,3px_100%] opacity-20" />
       
       {/* 背景光暈 */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/20 rounded-full blur-[150px] pointer-events-none animate-pulse" />
 
-      <div className="w-full max-w-[420px] relative z-10 space-y-8 animate-in fade-in zoom-in duration-500">
-        <div className="text-center space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-sm bg-primary/20 border border-primary text-primary text-[10px] font-black tracking-[0.3em] mb-2 uppercase">
-                <Terminal className="w-3 h-3" /> 系統就緒
+      <div className="w-full max-w-[300px] relative z-10 space-y-2 animate-in fade-in zoom-in duration-500">
+        <div className="text-center space-y-0.5">
+            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm bg-primary/20 border border-primary text-primary text-[8px] font-black tracking-[0.2em] mb-0.5 uppercase">
+                <Terminal className="w-2 h-2" /> 系統就緒
             </div>
-            <h1 className="text-5xl font-black tracking-tighter text-foreground drop-shadow-[0_0_10px_rgba(6,182,212,0.5)]">存取保險庫</h1>
-            <p className="text-xs text-muted-foreground font-bold tracking-widest uppercase">初始化收藏協議</p>
+            <h1 className="text-2xl font-black tracking-tighter text-foreground drop-shadow-[0_0_10px_rgba(6,182,212,0.5)]">存取保險庫</h1>
+            <p className="text-[8px] text-muted-foreground font-bold tracking-widest uppercase">初始化收藏協議</p>
         </div>
 
         <Tabs defaultValue="login" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 bg-background p-1 rounded-none h-12 mb-6 border border-border">
-            <TabsTrigger value="login" className="rounded-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold font-mono">登入</TabsTrigger>
-            <TabsTrigger value="register" className="rounded-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold font-mono">註冊</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 bg-background p-0.5 rounded-none h-8 mb-2 border border-border">
+            <TabsTrigger value="login" className="rounded-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold font-mono text-xs">登入</TabsTrigger>
+            <TabsTrigger value="register" className="rounded-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold font-mono text-xs">註冊</TabsTrigger>
           </TabsList>
           
           <TabsContent value="login">
             <form onSubmit={handleLogin}>
-              <Card className="bg-card/80 border-border rounded-none shadow-lg">
-                <CardHeader className="p-8 pb-4">
-                  <CardTitle className="text-xl font-bold flex items-center gap-2 text-foreground">
-                    <LogIn className="h-5 w-5" /> 需要驗證
+              <Card className="bg-card/80 border-border rounded-none shadow-sm">
+                <CardHeader className="p-2 pb-1">
+                  <CardTitle className="text-xs font-bold flex items-center gap-1 text-foreground">
+                    <LogIn className="h-3 w-3" /> 需要驗證
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-8 pt-0 space-y-5">
-                  <div className="space-y-2">
-                    <Label htmlFor="login-email" className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">電子郵件</Label>
+                <CardContent className="p-2 pt-0 space-y-2">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="login-email" className="text-[8px] uppercase font-bold text-muted-foreground tracking-widest">電子郵件</Label>
                     <Input 
                       id="login-email" 
                       type="email" 
@@ -307,16 +307,16 @@ export default function LoginPage() {
                       value={loginEmail}
                       onChange={(e) => setLoginEmail(e.target.value)}
                       disabled={isLoading}
-                      className="h-12 bg-background border-input rounded-none focus:border-primary"
+                      className="h-8 bg-background border-input rounded-none focus:border-primary text-xs"
                       />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-0.5">
                     <div className="flex items-center justify-between">
-                        <Label htmlFor="login-password" className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">密碼</Label>
+                        <Label htmlFor="login-password" className="text-[8px] uppercase font-bold text-muted-foreground tracking-widest">密碼</Label>
                          <Button
                             type="button"
                             variant="link"
-                            className="h-auto p-0 text-[9px] uppercase font-black tracking-widest text-muted-foreground hover:text-primary"
+                            className="h-auto p-0 text-[7px] uppercase font-black tracking-widest text-muted-foreground hover:text-primary"
                             onClick={() => setResetDialogOpen(true)}
                         >
                             忘記密碼？
@@ -329,14 +329,14 @@ export default function LoginPage() {
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
                       disabled={isLoading}
-                      className="h-12 bg-background border-input rounded-none focus:border-primary"
+                      className="h-8 bg-background border-input rounded-none focus:border-primary text-xs"
                       />
                   </div>
                    <SocialLogin />
                 </CardContent>
-                <CardFooter className="p-8 pt-0">
-                  <Button className="w-full h-14 rounded-none font-black text-lg bg-primary text-primary-foreground hover:bg-primary/90 border border-primary shadow-lg" type="submit" disabled={isLoading}>
-                      {isLoading ? <Loader2 className="animate-spin mr-2" /> : null}
+                <CardFooter className="p-2 pt-0">
+                  <Button className="w-full h-8 rounded-none font-black text-xs bg-primary text-primary-foreground hover:bg-primary/90 border border-primary shadow-md" type="submit" disabled={isLoading}>
+                      {isLoading ? <Loader2 className="animate-spin mr-1 h-3 w-3" /> : null}
                       {isLoading ? '驗證中...' : '執行登入'}
                   </Button>
                 </CardFooter>

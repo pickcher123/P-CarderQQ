@@ -80,16 +80,16 @@ export function PurchasePointsDialog({ children }: { children: React.ReactNode }
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="max-w-[min(95vw,580px)] p-0 overflow-hidden rounded-[2.5rem] bg-background/95 backdrop-blur-3xl border border-primary/20 shadow-2xl text-white">
-        <div className="p-6 md:p-10">
-            <DialogHeader className="mb-6 md:mb-8">
-                <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 rounded-2xl bg-primary/10 border border-primary/30 shadow-[0_0_15px_rgba(6,182,212,0.2)]">
-                        <Gem className="h-5 w-5 md:h-6 md:w-6 text-primary animate-pulse" />
+      <DialogContent className="max-w-[min(90vw,400px)] p-0 overflow-hidden rounded-[2rem] bg-background/95 backdrop-blur-3xl border border-primary/20 shadow-2xl text-white">
+        <div className="p-4 md:p-6">
+            <DialogHeader className="mb-4 md:mb-6">
+                <div className="flex items-center gap-2 mb-2">
+                    <div className="p-1.5 rounded-xl bg-primary/10 border border-primary/30 shadow-[0_0_10px_rgba(6,182,212,0.2)]">
+                        <Gem className="h-4 w-4 md:h-5 md:w-5 text-primary animate-pulse" />
                     </div>
-                    <DialogTitle className="text-xl md:text-3xl font-black font-headline tracking-widest text-white italic">點數儲值 RECHARGE</DialogTitle>
+                    <DialogTitle className="text-lg md:text-2xl font-black font-headline tracking-widest text-white italic">點數儲值</DialogTitle>
                 </div>
-                <DialogDescription className="text-muted-foreground text-xs md:text-sm font-medium tracking-wide">選擇您的儲值方案。高額方案享有最高 <span className="text-accent font-bold">10%</span> 點數回饋。</DialogDescription>
+                <DialogDescription className="text-muted-foreground text-[10px] md:text-xs font-medium tracking-wide">選擇您的儲值方案。高額方案享有最高 <span className="text-accent font-bold">10%</span> 點數回饋。</DialogDescription>
             </DialogHeader>
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 md:gap-4 py-2 md:py-4">
