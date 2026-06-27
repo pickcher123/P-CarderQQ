@@ -12,7 +12,8 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
-import { collection, query, where, orderBy } from "firebase/firestore";
+import { collection, query, where, orderBy, doc, getDoc } from "firebase/firestore";
+import { useEffect, useState, useMemo } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import Autoplay from "embla-carousel-autoplay";
 
@@ -27,9 +28,23 @@ interface Advertisement {
 
 export function AdCarousel() {
   const firestore = useFirestore();
-  const plugin = React.useRef(
-    Autoplay({ delay: 4000, stopOnInteraction: true })
-  );
+  const [delay, setDelay] = useState(4000);
+
+  useEffect(() => {
+    if (!firestore) return;
+    const loadSettings = async () => {
+        const docRef = doc(firestore, 'settings', 'carousel');
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            setDelay(docSnap.data().delay || 4000);
+        }
+    };
+    loadSettings();
+  }, [firestore]);
+
+  const plugin = useMemo(() =>
+    Autoplay({ delay, stopOnInteraction: true })
+  , [delay]);
 
   const adsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -57,10 +72,10 @@ export function AdCarousel() {
   return (
     <div className="container px-4 animate-fade-in-up">
       <Carousel
-        plugins={[plugin.current]}
+        plugins={[plugin]}
         className="w-full relative group"
-        onMouseEnter={plugin.current.stop}
-        onMouseLeave={plugin.current.reset}
+        onMouseEnter={plugin.stop}
+        onMouseLeave={plugin.reset}
       >
         <CarouselContent>
           {ads.map((ad) => (

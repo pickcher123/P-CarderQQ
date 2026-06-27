@@ -55,7 +55,15 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
         <div className="mr-auto flex items-center ml-1">
           <Logo className="text-primary" />
           <nav className="ml-6 hidden items-center space-x-6 text-sm font-medium md:flex">
-            {navLinks.map((link) => {
+            {navLinks
+                .filter(link => {
+                    if (link.href === '/draw' && systemConfig?.featureFlags?.isDrawEnabled === false) return false;
+                    if (link.href === '/bet' && systemConfig?.featureFlags?.isBettingEnabled === false) return false;
+                    if (link.href === '/lucky-bags' && systemConfig?.featureFlags?.isLuckyBagEnabled === false) return false;
+                    if (link.href === '/group-break' && systemConfig?.featureFlags?.isGroupBreakEnabled === false) return false;
+                    return true;
+                })
+                .map((link) => {
               const isActive = pathname.startsWith(link.href);
               const Icon = link.icon;
               return (

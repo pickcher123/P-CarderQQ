@@ -28,7 +28,8 @@ import {
   UserCircle,
   Palette,
   LayoutGrid,
-  Megaphone
+  Megaphone,
+  Calendar
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -59,6 +60,7 @@ const sidebarNavItems = [
       { href: '/admin/news', label: '消息管理', icon: Newspaper, permission: 'news' },
       { href: '/admin/announcements', label: '站內公告', icon: Megaphone, permission: 'announcements' },
       { href: '/admin/coupons', label: '優惠券管理', icon: Ticket, permission: 'coupons' },
+      { href: '/admin/card-exhibitions', label: '卡展行事曆', icon: Calendar, permission: 'card-exhibitions' },
     ]},
     { title: '營運操作', items: [
       { href: '/admin/partners', label: '合作夥伴', icon: Users2, permission: 'partners' },

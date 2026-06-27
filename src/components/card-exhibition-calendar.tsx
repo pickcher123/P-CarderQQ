@@ -14,7 +14,7 @@ interface Exhibition {
     description: string;
 }
 
-export function CardExhibitionCalendar() {
+export function CardExhibitionCalendar({ hideHeader = false }: { hideHeader?: boolean }) {
     const firestore = useFirestore();
     const q = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -26,8 +26,8 @@ export function CardExhibitionCalendar() {
     if (isLoading || !exhibitions || exhibitions.length === 0) return null;
 
     return (
-        <section className="container py-12 md:py-20 text-white">
-            <h2 className="text-3xl md:text-5xl font-black font-headline tracking-tight text-center mb-12">卡展行事曆</h2>
+        <div className={cn("text-white", !hideHeader && "container py-12 md:py-20")}>
+            {!hideHeader && <h2 className="text-3xl md:text-5xl font-black font-headline tracking-tight text-center mb-12">卡展行事曆</h2>}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {exhibitions.map((exh) => (
                     <Card key={exh.id} className="bg-card/40 border-white/5 p-6 rounded-3xl hover:border-primary/50 transition-all">
@@ -42,6 +42,6 @@ export function CardExhibitionCalendar() {
                     </Card>
                 ))}
             </div>
-        </section>
+        </div>
     );
 }

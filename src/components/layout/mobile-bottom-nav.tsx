@@ -39,7 +39,15 @@ export function MobileBottomNav({ systemConfig }: { systemConfig: SystemConfig |
         className="container grid h-16 items-center justify-between px-1"
         style={{ gridTemplateColumns: `repeat(${navLinks.length}, minmax(0, 1fr))` }}
       >
-        {navLinks.map((link) => {
+        {navLinks
+          .filter(link => {
+            if (link.href === '/draw' && systemConfig?.featureFlags?.isDrawEnabled === false) return false;
+            if (link.href === '/bet' && systemConfig?.featureFlags?.isBettingEnabled === false) return false;
+            if (link.href === '/lucky-bags' && systemConfig?.featureFlags?.isLuckyBagEnabled === false) return false;
+            if (link.href === '/group-break' && systemConfig?.featureFlags?.isGroupBreakEnabled === false) return false;
+            return true;
+          })
+          .map((link) => {
           const isActive = (link.href === '/' && pathname === '/') || (link.href !== '/' && pathname.startsWith(link.href!));
           const Icon = link.icon;
 

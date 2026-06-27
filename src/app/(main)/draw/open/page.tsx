@@ -13,7 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import * as VisuallyHiddenPrimitive from "@radix-ui/react-visually-hidden";
-import { Gem, Sparkles, Loader2, RotateCcw, ArrowLeft, PlayCircle, FastForward, Check, Disc3, RotateCw, Clock, ChevronsUp, X, ShieldCheck, Star, Trophy, Layers, Zap, AlertCircle, Ban, ChevronRight, Hash, Share2, Download } from 'lucide-react';
+import { Gem, Sparkles, Loader2, RotateCcw, ArrowLeft, PlayCircle, FastForward, Check, Disc3, RotateCw, Clock, ChevronsUp, X, ShieldCheck, Star, Trophy, Layers, Zap, AlertCircle, Ban, ChevronRight, Hash, Download } from 'lucide-react';
 import { PackPreview, RevealComponent, DrawResults, CelebrationVFX } from '@/components/draw';
 import { rarityVisuals, pointPrizeRarityStyles } from '@/lib/draw-constants';
 import { drawFromPool } from '@/lib/draw-utils';
@@ -131,8 +131,6 @@ export default function OpenPackPage() {
     const [isChanging, setIsChanging] = useState(false); 
     const [landingVFX, setLandingVFX] = useState<'none' | 'rare' | 'legendary'>('none');
     const [previewCard, setPreviewCard] = useState<any | null>(null);
-    const [isSharing, setIsSharing] = useState(false);
-    const shareRef = useRef<HTMLDivElement>(null);
 
     const topRarityCelebration = useMemo(() => {
         if (drawnPrizes.length === 0) return 'none';
@@ -389,52 +387,6 @@ export default function OpenPackPage() {
         }
     };
 
-    const handleShare = async () => {
-        if (!shareRef.current) return;
-        setIsSharing(true);
-        try {
-            // Wait for UI to update (render the share layout)
-            await new Promise(r => setTimeout(r, 100));
-            
-            // html-to-image can be sensitive to styles. 
-            // We ensure it's captured at a good scale.
-            const dataUrl = await toPng(shareRef.current, {
-                cacheBust: true,
-                pixelRatio: 2, // Higher quality
-                backgroundColor: '#020617', // bg-slate-950
-                style: {
-                    transform: 'scale(1)',
-                    margin: '0',
-                },
-                filter: (node) => {
-                    // Filter out UI elements we don't want in the share image
-                    const className = node.className || '';
-                    if (typeof className === 'string' && className.includes('no-share')) return false;
-                    return true;
-                }
-            });
-            
-            const link = document.createElement('a');
-            link.download = `pplus-draw-${Date.now()}.png`;
-            link.href = dataUrl;
-            link.click();
-            
-            toast({
-                title: "分享圖已儲存",
-                description: "戰利品清單已成功轉為圖片！",
-            });
-        } catch (err) {
-            console.error('Share generation error:', err);
-            toast({
-                variant: "destructive",
-                title: "分享圖生成失敗",
-                description: "無法製作分享圖，可能是因為連線或瀏覽器權限限制。",
-            });
-        } finally {
-            setIsSharing(false);
-        }
-    };
-
     const completeReveal = () => {
         setRevealPercent(100); 
         setStep('revealing'); 
@@ -632,28 +584,12 @@ export default function OpenPackPage() {
                 </div>
             ) : (
                 <div className="w-full max-w-6xl px-4 z-20 mt-0 flex flex-col relative select-none">
-                    {/* Share Content Wrapper (only actual content to be captured) */}
-                    <div ref={shareRef} className={cn("relative group p-2 rounded-3xl overflow-hidden", isSharing ? "bg-slate-950" : "")}>
-                        {/* Background for sharing capture */}
-                        {isSharing && (
-                            <>
-                                <div className="absolute inset-0 bg-slate-950 z-[-1]" />
-                                <div className="absolute inset-0 bg-[url('/draw_background.png')] bg-cover opacity-30 z-[-1]" />
-                                
-                                <div className="mb-6 flex flex-col items-center pt-4">
-                                    <Logo className="h-10 text-primary mb-2" />
-                                    <h2 className="text-xl font-headline font-black text-white italic uppercase tracking-wider">P+ CARDER 抽卡結果</h2>
-                                    <p className="text-[10px] text-white/40 uppercase tracking-[0.2em]">{format(new Date(), 'yyyy/MM/dd HH:mm')}</p>
-                                </div>
-                            </>
-                        )}
-
+                    {/* Prize scroll container */}
                         <div id="prize-scroll-container" className={cn(
-                            "flex flex-row gap-4 py-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide scroll-smooth",
-                            isSharing ? "overflow-visible flex-wrap justify-center max-w-[800px]" : ""
+                            "flex flex-row gap-4 py-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide scroll-smooth"
                         )}>
                             {sessionPrizes.map((p, i) => (
-                                <div key={i} className="animate-fade-in-up snap-center w-[160px] md:w-[200px] flex-shrink-0" style={{ animationDelay: `${isSharing ? '0ms' : `${i * 80}ms`}` }}>
+                                <div key={i} className="animate-fade-in-up snap-center w-[160px] md:w-[200px] flex-shrink-0" style={{ animationDelay: `${i * 80}ms` }}>
                                     {p.type === 'points' ? (
                                         <div 
                                             className={cn(
@@ -690,14 +626,8 @@ export default function OpenPackPage() {
                             ))}
                         </div>
 
-                        {isSharing && (
-                            <div className="mt-8 mb-4 flex flex-col items-center">
-                                <p className="text-[10px] text-primary/60 font-black uppercase tracking-widest italic">Join the Collection: ais-p-carder.web.app</p>
-                            </div>
-                        )}
-
                         {/* 電腦版點擊箭頭 */}
-                        {sessionPrizes.length > 2 && !isSharing && (
+                        {sessionPrizes.length > 2 && (
                             <>
                                 <button 
                                     className="absolute left-0 top-1/2 -translate-y-1/2 z-50 bg-black/60 backdrop-blur-md p-4 rounded-r-full border border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.5)] hover:bg-red-500/20 transition-all hidden md:block"
@@ -721,7 +651,6 @@ export default function OpenPackPage() {
                             </>
                         )}
                     </div>
-                </div>
             )}
 
             <div className="w-full flex flex-col items-center gap-1 z-30 pt-2 pb-2 select-none -mt-4 mb-8">
@@ -770,16 +699,7 @@ export default function OpenPackPage() {
                                     <div className="grid grid-cols-2 gap-1 w-full relative">
                                         {step === 'done' ? (
                                             <>
-                                                <Button 
-                                                    onClick={handleShare}
-                                                    disabled={isSharing}
-                                                    variant="outline" 
-                                                    className="h-10 text-[11px] font-bold border-emerald-500/40 text-emerald-500 rounded-xl bg-emerald-500/5 hover:bg-emerald-500/10"
-                                                >
-                                                    {isSharing ? <Loader2 className="animate-spin w-3 h-3" /> : <Share2 className="w-3 h-3 mr-1" />}
-                                                    分享
-                                                </Button>
-                                                <Button asChild variant="outline" className="h-10 text-[11px] font-bold border-primary/40 text-primary rounded-xl bg-primary/5 shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:bg-primary/10">
+                                                <Button asChild variant="outline" className="col-span-2 h-10 text-[11px] font-bold border-primary/40 text-primary rounded-xl bg-primary/5 shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:bg-primary/10">
                                                     <Link href="/collection">前往收藏</Link>
                                                 </Button>
                                             </>

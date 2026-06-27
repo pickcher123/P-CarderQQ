@@ -162,7 +162,7 @@ export function CardItem({ name, imageUrl, backImageUrl, imageHint, rarity, seri
             </div>
           )}
 
-          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 [transform:translateZ(1px)] pointer-events-none">
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-1000 [transform:translateZ(1px)] pointer-events-none">
              <div className="absolute inset-[-150%] rounded-full [background:radial-gradient(circle_at_var(--mouse-x)_var(--mouse-y),rgba(255,255,255,0.1),transparent_40%)]" 
                 style={ { '--mouse-x': '0px', '--mouse-y': '0px' } as React.CSSProperties }
              />

@@ -25,6 +25,7 @@ interface DrawCategory {
     imageUrl: string;
     order?: number;
     linkUrl?: string; // Add linkUrl
+    isActive?: boolean;
 }
 
 interface CardPool {
@@ -85,7 +86,7 @@ export default function DrawPage() {
 
   useEffect(() => {
       if (categories && cardPools) {
-          const sortedCategories = [...categories].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+          const sortedCategories = [...categories].filter(c => c.isActive !== false).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
           
           const counts = sortedCategories.map(category => {
               const count = cardPools.filter(pool => pool.categoryId === category.id).length;

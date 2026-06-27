@@ -55,6 +55,8 @@ export function WinFeedMarquee() {
             </p>
         </div>
     );
+
+    return (
         <div className="bg-background/80 backdrop-blur-sm border-b border-border/50 h-8 overflow-hidden relative flex items-center">
             <MarqueeContainer>
                 {marqueeItems.map((item, index) => (

@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, ChangeEvent } from 'react';
+import { useState, ChangeEvent, useEffect } from 'react';
 import { useCollection, useFirestore, useMemoFirebase, useStorage } from '@/firebase';
-import { collection, doc, setDoc, deleteDoc, updateDoc, query, orderBy, serverTimestamp, addDoc } from 'firebase/firestore';
+import { collection, doc, setDoc, deleteDoc, updateDoc, query, orderBy, serverTimestamp, addDoc, getDoc } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL, uploadString } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
 import { Button } from '@/components/ui/button';
@@ -38,13 +38,40 @@ export default function AdvertisementAdminPage() {
   const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isAiGenerating, setIsAiGenerating] = useState(false);
+  const [carouselDelay, setCarouselDelay] = useState(4000);
+
+  // Load carousel settings
+  useEffect(() => {
+      if (!firestore) return;
+      const loadSettings = async () => {
+          const docRef = doc(firestore, 'settings', 'carousel');
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+              setCarouselDelay(docSnap.data().delay || 4000);
+          }
+      };
+      loadSettings();
+  }, [firestore]);
+
+  const saveCarouselSettings = async () => {
+      if (!firestore) return;
+      setIsProcessing(true);
+      try {
+          await setDoc(doc(firestore, 'settings', 'carousel'), { delay: carouselDelay });
+          toast({ title: '輪播設定已儲存' });
+      } catch (e) {
+          toast({ variant: 'destructive', title: '設定儲存失敗' });
+      } finally {
+          setIsProcessing(false);
+      }
+  };
 
   // Form states
   const [adTitle, setAdTitle] = useState('');
   const [adLink, setAdLink] = useState('');
   const [aiPrompt, setAiPrompt] = useState('');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
   const adsQuery = useMemoFirebase(() => {
@@ -58,17 +85,17 @@ export default function AdvertisementAdminPage() {
     setAdTitle('');
     setAdLink('');
     setAiPrompt('');
-    setSelectedFile(null);
-    setPreviewUrl(null);
+    setSelectedFiles([]);
+    setPreviewUrls([]);
     setUploadProgress(null);
     setIsProcessing(false);
   };
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setSelectedFile(file);
-      setPreviewUrl(URL.createObjectURL(file));
+    if (e.target.files) {
+      const files = Array.from(e.target.files);
+      setSelectedFiles(files);
+      setPreviewUrls(files.map(file => URL.createObjectURL(file)));
     }
   };
 
@@ -77,43 +104,39 @@ export default function AdvertisementAdminPage() {
   };
 
   const handleSaveAd = async () => {
-    if (!adTitle.trim() || !previewUrl || !firestore) return;
+    if (!adTitle.trim() || previewUrls.length === 0 || !firestore) return;
     setIsProcessing(true);
 
     try {
-      let finalImageUrl = previewUrl;
+      for (let i = 0; i < selectedFiles.length; i++) {
+        const file = selectedFiles[i];
+        let finalImageUrl = previewUrls[i];
 
-      // If it's a new file upload
-      if (selectedFile && storage) {
-        const fileExtension = selectedFile.name.split('.').pop();
-        const fileName = `P-Carder/ads/${uuidv4()}.${fileExtension}`;
-        const storageRef = ref(storage, fileName);
-        const uploadTask = uploadBytesResumable(storageRef, selectedFile);
+        // If it's a new file upload
+        if (storage) {
+          const fileExtension = file.name.split('.').pop();
+          const fileName = `P-Carder/ads/${uuidv4()}.${fileExtension}`;
+          const storageRef = ref(storage, fileName);
+          const uploadTask = uploadBytesResumable(storageRef, file);
 
-        finalImageUrl = await new Promise((resolve, reject) => {
-          uploadTask.on('state_changed', 
-            (snapshot) => setUploadProgress((snapshot.bytesTransferred / snapshot.totalBytes) * 100),
-            reject,
-            () => getDownloadURL(uploadTask.snapshot.ref).then(resolve)
-          );
+          finalImageUrl = await new Promise((resolve, reject) => {
+            uploadTask.on('state_changed', 
+              (snapshot) => setUploadProgress((snapshot.bytesTransferred / snapshot.totalBytes) * 100),
+              reject,
+              () => getDownloadURL(uploadTask.snapshot.ref).then(resolve)
+            );
+          });
+        }
+
+        await addDoc(collection(firestore, 'advertisements'), {
+          title: `${adTitle} ${i + 1}`,
+          imageUrl: finalImageUrl,
+          linkUrl: adLink,
+          isActive: true,
+          order: (ads?.length ?? 0) + i + 1,
+          createdAt: serverTimestamp(),
         });
-      } 
-      // If it's from AI (data URI)
-      else if (previewUrl.startsWith('data:image') && storage) {
-        const fileName = `P-Carder/ads/ai-${uuidv4()}.png`;
-        const storageRef = ref(storage, fileName);
-        const uploadTask = await uploadString(storageRef, previewUrl, 'data_url');
-        finalImageUrl = await getDownloadURL(uploadTask.ref);
       }
-
-      await addDoc(collection(firestore, 'advertisements'), {
-        title: adTitle,
-        imageUrl: finalImageUrl,
-        linkUrl: adLink,
-        isActive: true,
-        order: (ads?.length ?? 0) + 1,
-        createdAt: serverTimestamp(),
-      });
 
       toast({ title: '成功', description: '廣告已新增並上傳。' });
       setIsAddDialogOpen(false);
@@ -165,6 +188,23 @@ export default function AdvertisementAdminPage() {
           </Button>
         </div>
       </div>
+
+      <Card className="border-slate-200 bg-white shadow-sm rounded-2xl">
+        <CardHeader>
+          <CardTitle>輪播設定</CardTitle>
+          <CardDescription>設定廣告輪播的自動切換秒數</CardDescription>
+        </CardHeader>
+        <CardContent className="flex items-center gap-4">
+          <Input 
+            type="number" 
+            value={carouselDelay / 1000} 
+            onChange={(e) => setCarouselDelay(Number(e.target.value) * 1000)} 
+            className="w-24"
+          />
+          <Label>秒</Label>
+          <Button onClick={saveCarouselSettings} disabled={isProcessing}>儲存設定</Button>
+        </CardContent>
+      </Card>
 
       <Card className="border-slate-200 bg-white overflow-hidden shadow-sm rounded-2xl">
         <Table>
@@ -302,10 +342,19 @@ export default function AdvertisementAdminPage() {
             <div className="space-y-2">
               <Label className="text-xs font-bold text-slate-500 uppercase">廣告圖片 (21:9 比例佳)</Label>
               <div className="flex flex-col gap-4">
-                <div className="aspect-[21/9] relative w-full bg-slate-50 rounded-xl border border-slate-200 overflow-hidden flex items-center justify-center">
-                  {previewUrl ? <SafeImage src={previewUrl} alt="preview" fill className="object-cover" /> : <ImageIcon className="text-slate-200" />}
+                <div className="grid grid-cols-2 gap-2">
+                    {previewUrls.map((url, i) => (
+                        <div key={i} className="aspect-[21/9] relative w-full bg-slate-50 rounded-xl border border-slate-200 overflow-hidden flex items-center justify-center">
+                           <SafeImage src={url} alt="preview" fill className="object-cover" />
+                        </div>
+                    ))}
+                    {previewUrls.length === 0 && (
+                        <div className="aspect-[21/9] relative w-full bg-slate-50 rounded-xl border border-slate-200 overflow-hidden flex items-center justify-center col-span-2">
+                            <ImageIcon className="text-slate-200" />
+                        </div>
+                    )}
                 </div>
-                <Input type="file" accept="image/*" onChange={handleFileChange} className="text-xs" />
+                <Input type="file" multiple accept="image/*" onChange={handleFileChange} className="text-xs" />
                 {uploadProgress !== null && <Progress value={uploadProgress} className="h-1.5" />}
               </div>
             </div>

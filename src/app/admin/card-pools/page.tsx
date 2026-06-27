@@ -9,6 +9,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Card } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { PlusCircle, Edit, Trash2, Settings, Loader2, List, Image as ImageIcon, Upload, Save } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   AlertDialog,
@@ -42,6 +43,7 @@ interface DrawCategory {
     name: string;
     imageUrl: string;
     order?: number;
+    isActive?: boolean;
 }
 
 interface CardPool {
@@ -165,6 +167,7 @@ export default function DrawCategoriesAdminPage() {
                     name: categoryName,
                     imageUrl: imageUrl || `https://picsum.photos/seed/${Math.random()}/800/1000`,
                     order: (categories?.length ?? 0) + 1,
+                    isActive: true,
                 });
                 toast({ title: '成功', description: `已新增分類：${categoryName}` });
                 setIsAddDialogOpen(false);
@@ -196,6 +199,17 @@ export default function DrawCategoriesAdminPage() {
         console.error("Error deleting category:", error);
         toast({ variant: 'destructive', title: '錯誤', description: '刪除失敗。' });
       }
+    }
+    
+    const handleToggleActive = async (categoryId: string, isActive: boolean) => {
+        if (!firestore) return;
+        try {
+            await updateDoc(doc(firestore, 'drawCategories', categoryId), { isActive });
+            toast({ title: '成功', description: '狀態已更新。' });
+        } catch (error) {
+            console.error("Error updating category status:", error);
+            toast({ variant: 'destructive', title: '錯誤', description: '更新狀態失敗。' });
+        }
     }
     
     const handleOrderChange = useCallback(async (categoryId: string, newOrder: number) => {
@@ -325,6 +339,7 @@ export default function DrawCategoriesAdminPage() {
                             <TableHead className="w-24 text-slate-900 font-black uppercase text-[10px] tracking-widest">封面</TableHead>
                             <TableHead className="text-slate-900 font-black uppercase text-[10px] tracking-widest pl-6">分類名稱</TableHead>
                             <TableHead className="text-slate-900 font-black uppercase text-[10px] tracking-widest">卡池數量</TableHead>
+                            <TableHead className="text-center text-slate-900 font-black uppercase text-[10px] tracking-widest">狀態</TableHead>
                             <TableHead className="text-right pr-8 text-slate-900 font-black uppercase text-[10px] tracking-widest">操作</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -366,6 +381,9 @@ export default function DrawCategoriesAdminPage() {
                                     <Badge variant="secondary" className="bg-slate-900 text-white font-code px-3 border-none h-6">
                                         {category.poolCount} POOLS
                                     </Badge>
+                                </TableCell>
+                                <TableCell className="text-center">
+                                    <Switch checked={category.isActive !== false} onCheckedChange={(checked) => handleToggleActive(category.id!, checked)} />
                                 </TableCell>
                                 <TableCell className="text-right pr-8 space-x-1">
                                     <Button size="sm" variant="ghost" onClick={() => router.push(`/admin/card-pools/c/${category.id}`)} className="rounded-xl font-bold h-9 px-4 hover:bg-slate-100">
