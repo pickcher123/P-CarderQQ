@@ -197,8 +197,8 @@ export default function Home() {
                         ))
                     )}
                 </CarouselContent>
-                <CarouselPrevious className="hidden md:flex -left-12" />
-                <CarouselNext className="hidden md:flex -right-12" />
+                <CarouselPrevious className="flex -left-2 md:-left-12 h-8 w-8 md:h-10 md:w-10" />
+                <CarouselNext className="flex -right-2 md:-right-12 h-8 w-8 md:h-10 md:w-10" />
             </Carousel>
         </div>
       </section>
@@ -260,8 +260,8 @@ export default function Home() {
                         </CarouselItem>
                     ))}
                 </CarouselContent>
-                <CarouselPrevious className="hidden md:flex -left-12" />
-                <CarouselNext className="hidden md:flex -right-12" />
+                <CarouselPrevious className="flex -left-2 md:-left-12 h-8 w-8 md:h-10 md:w-10" />
+                <CarouselNext className="flex -right-2 md:-right-12 h-8 w-8 md:h-10 md:w-10" />
             </Carousel>
         </div>
       </section>

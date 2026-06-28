@@ -1,5 +1,6 @@
 
 'use client';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Users, Truck, Ticket, Archive, Gem, Package, Swords, Users2, Newspaper, UserCircle, ShoppingBag, Palette, ShieldCheck, Plus, LayoutList, BarChartHorizontal, ArrowUpRight, Megaphone, Trash2, AlertTriangle, FileText, Lock, Loader2 } from 'lucide-react';
@@ -233,6 +234,29 @@ export default function AdminPage() {
                     </Button>
                 ))}
             </div>
+
+            <Card className="border-slate-200 shadow-sm bg-white overflow-hidden">
+                <CardHeader>
+                    <CardTitle className="text-lg font-black text-slate-900">營運數據概覽</CardTitle>
+                </CardHeader>
+                <CardContent className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={[
+                            { name: '會員', count: totalUsers },
+                            { name: '在庫卡片', count: cardsInStock },
+                            { name: '待出貨', count: pendingOrders?.length || 0 },
+                            { name: '福袋', count: luckBags?.length || 0 },
+                            { name: '卡池', count: activePoolsCount },
+                        ]}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="name" />
+                            <YAxis />
+                            <Tooltip />
+                            <Bar dataKey="count" fill="#06b6d4" />
+                        </BarChart>
+                    </ResponsiveContainer>
+                </CardContent>
+            </Card>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 {[

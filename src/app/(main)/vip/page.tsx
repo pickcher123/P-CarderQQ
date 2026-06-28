@@ -506,7 +506,7 @@ export default function VIPZonePage() {
                     <div className="h-px flex-1 bg-gradient-to-r from-amber-500/30 to-transparent ml-4 hidden sm:block" />
                 </div>
 
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-1">
+                <div className="space-y-4">
                     {userLevels.map((lvl, index) => {
                         const isCurrent = userProfile.userLevel === lvl.level;
                         const userSpend = userProfile.totalSpent || 0;
@@ -518,35 +518,25 @@ export default function VIPZonePage() {
                             <div 
                                 key={lvl.level} 
                                 className={cn(
-                                    "flex flex-col p-4 md:p-6 rounded-2xl md:rounded-[2rem] border transition-all duration-500 group",
-                                    isCurrent ? "bg-primary/20 border-primary shadow-[0_0_30px_rgba(6,182,212,0.3)]" : 
-                                    isUnlocked ? "bg-white/10 border-white/20" : "bg-black/40 border-white/5"
+                                    "relative flex items-center p-5 md:p-6 rounded-3xl border transition-all duration-300 group",
+                                    isCurrent ? "bg-primary/10 border-primary shadow-[0_0_20px_rgba(6,182,212,0.2)]" : 
+                                    isUnlocked ? "bg-card border-border hover:border-primary/50" : "bg-slate-950 border-white/10 opacity-70 grayscale hover:opacity-100 hover:grayscale-0"
                                 )}
                             >
-                                <div className="flex flex-row items-center justify-between mb-3">
-                                    <div className="flex items-center gap-3 md:gap-6 text-left flex-1 min-w-0">
-                                        <div className="relative shrink-0">
-                                            <MemberLevelCrown level={lvl.level} size="xs" />
-                                            {isUnlocked && !isCurrent && <CheckCircle2 className="absolute -top-1 -right-1 w-3 h-3 text-green-500 bg-background rounded-full" />}
-                                        </div>
-                                        <div className="min-w-0">
-                                            <h3 className={cn("text-sm md:text-lg font-black font-headline tracking-wide truncate", lvl.color)}>{lvl.level}</h3>
-                                            <p className="text-[9px] md:text-xs text-slate-300 font-bold font-code mt-0.5">
-                                                門檻: <span className="text-white">{(lvl.threshold).toLocaleString()}</span> 💎
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center justify-end gap-2 shrink-0">
-                                        {b.free && <Badge variant="outline" className="border-green-500/50 text-green-400 bg-green-500/10 px-2 py-0.5 text-[9px] md:text-xs font-black">免運</Badge>}
-                                        {b.rate > 0 && <Badge variant="outline" className="border-primary/50 text-primary bg-primary/10 px-2 py-0.5 text-[9px] md:text-xs font-black">{b.rate}%</Badge>}
-                                        {isCurrent && <Badge className="bg-primary text-primary-foreground font-black px-2 py-0.5 text-[9px] md:text-xs">目前</Badge>}
+                                <div className="mr-6 shrink-0">
+                                    <MemberLevelCrown level={lvl.level} size="sm" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <h3 className={cn("text-lg font-black font-headline tracking-wide truncate", lvl.color)}>{lvl.level}</h3>
+                                    <div className="flex items-center gap-4 text-xs font-bold font-code mt-1 text-white/60">
+                                        <span>門檻: {lvl.threshold.toLocaleString()} 💎</span>
+                                        {b.free && <span className="text-emerald-400">● 免運</span>}
+                                        {b.rate > 0 && <span className="text-primary">● {b.rate}% 回饋</span>}
                                     </div>
                                 </div>
-                                {!isUnlocked && (
-                                    <div className="w-full h-1.5 bg-black/50 rounded-full overflow-hidden">
-                                        <div className="h-full bg-primary/50" style={{ width: `${progress}%` }} />
-                                    </div>
-                                )}
+                                {isCurrent && <Badge className="bg-primary text-primary-foreground font-black px-4 py-1 ml-4 shadow-lg shadow-primary/20">當前等級</Badge>}
+                                {isUnlocked && !isCurrent && <CheckCircle2 className="text-emerald-500 w-6 h-6 ml-4" />}
+                                {!isUnlocked && <Lock className="text-white/20 w-6 h-6 ml-4" />}
                             </div>
                         )
                     })}
