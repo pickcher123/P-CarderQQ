@@ -199,14 +199,14 @@ export default function BetLandingPage() {
                         { title: '1:10 價值比', desc: '鑽石與 P+ 點比例固定 1:10', icon: Gem, color: 'text-amber-400', border: 'border-amber-500/30' },
                         { title: '資產即時發放', desc: '中獎後卡片立即存入數位收藏庫', icon: ShieldCheck, color: 'text-emerald-400', border: 'border-emerald-500/30' },
                     ].map((item, idx) => (
-                        <div key={idx} className={cn("relative p-6 md:p-8 rounded-2xl bg-card/20 backdrop-blur-md border border-white/5 flex flex-col items-center text-center group hover:bg-primary/5 hover:border-primary/50 transition-all duration-300 shadow-xl hover:shadow-2xl hover:-translate-y-1", item.border)}>
-                            <div className={cn("absolute -top-px -left-px w-6 h-6 border-t-2 border-l-2", item.color)} />
-                            <div className={cn("absolute -bottom-px -right-px w-6 h-6 border-b-2 border-r-2", item.color)} />
-                            <div className={cn("mb-6 p-4 rounded-full bg-black/20 border border-white/5 shadow-inner", item.color)}>
-                                <item.icon className="w-8 h-8" />
+                        <div key={idx} className={cn("relative p-3 md:p-8 rounded-xl md:rounded-2xl bg-card/20 backdrop-blur-md border border-white/5 flex flex-col items-center text-center group hover:bg-primary/5 hover:border-primary/50 transition-all duration-300 shadow-xl hover:shadow-2xl hover:-translate-y-1", item.border)}>
+                            <div className={cn("absolute -top-px -left-px w-4 h-4 md:w-6 md:h-6 border-t-2 border-l-2", item.color)} />
+                            <div className={cn("absolute -bottom-px -right-px w-4 h-4 md:w-6 md:h-6 border-b-2 border-r-2", item.color)} />
+                            <div className={cn("mb-2 md:mb-6 p-2 md:p-4 rounded-full bg-black/20 border border-white/5 shadow-inner", item.color)}>
+                                <item.icon className="w-5 h-5 md:w-8 md:h-8" />
                             </div>
-                            <h4 className="text-sm font-black text-white mb-3 tracking-[0.1em] font-headline uppercase">{item.title}</h4>
-                            <p className="text-xs text-muted-foreground font-medium leading-relaxed">{item.desc}</p>
+                            <h4 className="text-[10px] md:text-sm font-black text-white mb-1 md:mb-3 tracking-[0.1em] font-headline uppercase">{item.title}</h4>
+                            <p className="text-[8px] md:text-xs text-muted-foreground font-medium leading-relaxed">{item.desc}</p>
                         </div>
                     ))}
                 </div>

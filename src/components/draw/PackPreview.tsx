@@ -49,13 +49,12 @@ export function PackPreview({
                         </div>
                     </div>
                     <div className="mt-3 px-2">
-                            <div className="p-4 rounded-xl border border-destructive/30 bg-destructive/5 flex flex-col items-center text-center gap-2">
-                                <div className="flex items-center gap-1.5 justify-center mb-1"><AlertCircle className="w-4 h-4 text-destructive" /><p className="text-[11px] font-black text-destructive uppercase">購買條款告知</p></div>
-                                <ul className="text-[11px] text-white/80 font-bold space-y-1.5 text-left list-none pl-0">
-                                    <li>● 本站商品屬機率型抽選及數位內容，購買後即視為參與活動。</li>
-                                    <li>● 本服務經提供即完成，依《消保法》不適用七日鑑賞期。</li>
-                                    <li>● 在進行購買前,您需要完全同意本站的購買規則。</li>
-                                    <li>● 啟動開獎之後,代表您完全同意本站的購買規則。</li>
+                            <div className="p-3 rounded-xl border border-destructive/30 bg-destructive/5 flex flex-col items-center text-center gap-1.5">
+                                <div className="flex items-center gap-1 justify-center mb-0.5"><AlertCircle className="w-3.5 h-3.5 text-destructive" /><p className="text-[9px] font-black text-destructive uppercase">購買條款告知</p></div>
+                                <ul className="text-[9px] text-white/80 font-bold space-y-0.5 text-left list-none pl-0">
+                                    <li>● 本站商品屬機率型抽選及數位內容。</li>
+                                    <li>● 本服務即完成，依《消保法》不適用鑑賞期。</li>
+                                    <li>● 啟動開獎即視為完全同意購買規則。</li>
                                 </ul>
                             </div>
                         </div>
