@@ -196,11 +196,6 @@ export default function GroupBreakPage() {
       </div>
 
       <div className="text-center mb-12 md:mb-16 relative z-10 space-y-4">
-        <div className="flex justify-center">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold tracking-[0.3em] uppercase animate-fade-in-up">
-                <Monitor className="w-3 h-3 text-primary animate-pulse" /> LIVE UNBOXING CHANNELS
-            </div>
-        </div>
         
         <div className="flex items-center justify-center animate-fade-in-up">
             <h1 className="font-headline text-3xl font-black tracking-[0.2em] sm:text-6xl text-white drop-shadow-[0_0_15px_rgba(6,182,212,0.4)]">

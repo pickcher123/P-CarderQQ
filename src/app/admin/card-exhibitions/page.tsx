@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { useCollection, useFirestore } from '@/firebase';
+import { useState } from 'react';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, addDoc, deleteDoc, doc, Timestamp, orderBy, query } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,7 +19,7 @@ export default function CardExhibitionsAdmin() {
     const [date, setDate] = useState('');
     const [description, setDescription] = useState('');
 
-    const q = useMemo(() => {
+    const q = useMemoFirebase(() => {
         if (!firestore) return null;
         return query(collection(firestore, 'card_exhibitions'), orderBy('date', 'asc'));
     }, [firestore]);

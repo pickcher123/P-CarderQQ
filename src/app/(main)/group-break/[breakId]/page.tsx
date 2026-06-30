@@ -299,9 +299,7 @@ export default function GroupBreakDetailPage() {
           </div>
 
           <div className="space-y-4 px-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold tracking-[0.3em] uppercase">
-                <Radio className="w-3.5 h-3.5" /> 直播訊號傳輸中
-            </div>
+            
             <h1 className="font-headline text-3xl md:text-4xl font-black text-white leading-tight tracking-tighter italic drop-shadow-md">{groupBreak.title}</h1>
             <p className="text-muted-foreground leading-relaxed font-medium opacity-80">{groupBreak.description}</p>
             {groupBreak.youtubeUrl && (

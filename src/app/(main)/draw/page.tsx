@@ -188,11 +188,6 @@ export default function DrawPage() {
         </div>
 
         <div className="text-center mb-2 md:mb-1 relative z-10 space-y-1">
-            <div className="flex justify-center">
-                <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[8px] md:text-[10px] font-bold tracking-[0.2em] uppercase animate-fade-in-up shadow-[0_0_15px_rgba(251,191,36,0.2)]">
-                    <Sparkles className="w-2.5 h-2.5" /> SELECT YOUR DESTINY
-                </div>
-            </div>
         </div>
 
         {/* 傳奇大獎牆區塊 */}

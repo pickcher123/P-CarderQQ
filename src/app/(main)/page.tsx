@@ -276,13 +276,13 @@ export default function Home() {
                 <h2 className="text-2xl md:text-4xl font-black font-headline tracking-tight text-white">我們的合作夥伴</h2>
             </div>
             
-            <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 justify-items-center items-center gap-4 md:gap-8 opacity-70">
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 justify-items-center items-center gap-4 md:gap-8 opacity-70">
                 {isLoadingPartners ? (
                     <Skeleton className="h-16 w-20 rounded-xl" />
                 ) : (
                     partners?.map((partner) => (
                         <div key={partner.id} className="w-full aspect-[2/1] flex items-center justify-center grayscale hover:grayscale-0 transition-all">
-                            <SafeImage src={partner.logoUrl} alt={partner.name} className="object-contain max-h-full" width={160} height={80} />
+                            <SafeImage src={partner.logoUrl} alt={partner.name} className="object-contain max-h-full" width={200} height={100} />
                         </div>
                     ))
                 )}

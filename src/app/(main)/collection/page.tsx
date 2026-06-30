@@ -331,14 +331,6 @@ export default function CollectionPage() {
         
         {/* Header Section */}
         <div className="text-center mb-20 relative z-20">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-slate-900/50 backdrop-blur-xl border border-white/10 text-primary text-[11px] font-black tracking-[0.4em] mb-6 uppercase shadow-2xl"
-          >
-            <Library className="w-3.5 h-3.5" /> Premium Digital Vault
-          </motion.div>
-          
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -348,14 +340,6 @@ export default function CollectionPage() {
             我的<span className="text-transparent bg-clip-text bg-gradient-to-br from-white via-white to-white/30">收藏</span>
           </motion.h1>
           
-          <motion.p 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="max-w-2xl mx-auto text-slate-400 font-medium tracking-wide text-sm md:text-base leading-relaxed"
-          >
-            在這裡管理您的珍稀卡片與數位資產。所有收藏均已鏈上驗證，隨時可進行實體交付或快速轉點。
-          </motion.p>
         </div>
 
         {/* Selection & Actions Bar - Fixed at bottom when active */}
@@ -645,17 +629,16 @@ export default function CollectionPage() {
                     <div className="relative group">
                         <div className="absolute -inset-2 bg-primary/20 blur-lg rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
                         <div className="relative p-3.5 rounded-2xl bg-slate-900 border border-white/5 shadow-2xl">
-                            <LayoutGrid className="text-primary w-6 h-6" />
+                            <Library className="text-primary w-6 h-6" />
                         </div>
                     </div>
-                    <div>
-                        <h2 className="text-2xl md:text-3xl font-black italic text-white tracking-tighter">STANDARD COLLECTION</h2>
-                        <p className="text-[10px] text-slate-500 uppercase tracking-[0.3em] font-black mt-1">一般收藏區域 • Verified Digital Assets</p>
+                    <div className="flex-1">
+                        <h2 className="text-3xl md:text-4xl font-black italic text-white tracking-tighter">我的卡片</h2>
+                        <div className="h-[2px] w-12 bg-primary mt-2"></div>
                     </div>
-                    <div className="h-[2px] flex-1 bg-gradient-to-r from-white/10 to-transparent ml-4" />
                 </div>
                 
-                <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4 md:gap-6">
+                <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3 md:gap-4">
                     {standardCards.map((card, index) => (
                         <motion.div 
                             key={card.id} 
@@ -663,8 +646,8 @@ export default function CollectionPage() {
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ delay: 0.1 + index * 0.02 }}
                             className={cn(
-                                "group relative rounded-2xl transition-all duration-500 cursor-pointer",
-                                selectedCardIds.has(card.id) ? "ring-2 ring-primary ring-offset-4 ring-offset-slate-950 scale-[0.98]" : "hover:scale-[1.02]"
+                                "group relative rounded-xl transition-all duration-300 cursor-pointer p-2 bg-slate-900/50 hover:bg-slate-800/50 border border-white/5",
+                                selectedCardIds.has(card.id) ? "ring-2 ring-primary bg-primary/5" : ""
                             )}
                             onClick={() => setPreviewCard(card)}
                         >
@@ -678,32 +661,22 @@ export default function CollectionPage() {
                                 rarity={card.rarity} 
                                 priority={index < 12} 
                             />
-                            {/* <div className="absolute top-3 right-3 bg-slate-900/80 backdrop-blur-md text-[9px] font-black tracking-widest text-primary px-2 py-0.5 rounded-lg border border-primary/20 pointer-events-none z-20">
-                                {card.sellPrice ? `${card.sellPrice}💎` : 'N/A'}
-                            </div> */}
                             
                             {/* Selection Overlay */}
                             <div 
-                                className="absolute top-3 left-3 z-30" 
+                                className="absolute top-2 left-2 z-30" 
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     handleSelectCard(card.id, !selectedCardIds.has(card.id));
                                 }}
                             >
                                 <div className={cn(
-                                    "w-6 h-6 rounded-lg border-2 transition-all flex items-center justify-center backdrop-blur-md",
+                                    "w-5 h-5 rounded-md border transition-all flex items-center justify-center",
                                     selectedCardIds.has(card.id) 
-                                        ? "bg-primary border-primary text-black shadow-[0_0_15px_rgba(6,182,212,0.5)]" 
+                                        ? "bg-primary border-primary text-black" 
                                         : "bg-black/40 border-white/20 hover:border-white/40"
                                 )}>
-                                    {selectedCardIds.has(card.id) && <CheckSquare className="w-4 h-4 stroke-[3]" />}
-                                </div>
-                            </div>
-
-                            {/* Hover info */}
-                            <div className="absolute inset-x-0 bottom-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none">
-                                <div className="bg-slate-900/90 backdrop-blur-md border border-white/10 p-2 rounded-xl text-center shadow-2xl">
-                                    <p className="text-[10px] font-black text-white line-clamp-1 truncate">{card.name}</p>
+                                    {selectedCardIds.has(card.id) && <CheckSquare className="w-3 h-3 stroke-[3]" />}
                                 </div>
                             </div>
                         </motion.div>
@@ -725,9 +698,9 @@ export default function CollectionPage() {
                             <Users2 className="text-orange-500 w-6 h-6" />
                         </div>
                     </div>
-                    <div>
-                        <h2 className="text-2xl md:text-3xl font-black italic text-orange-400 tracking-tighter">EXCLUSIVE BREAKS</h2>
-                        <p className="text-[10px] text-slate-500 uppercase tracking-[0.3em] font-black mt-1">團拆精選專區 • Team Break Rewards</p>
+                    <div className="flex-1">
+                        <h2 className="text-3xl md:text-4xl font-black italic text-orange-400 tracking-tighter">團拆精選專區</h2>
+                        <div className="h-[2px] w-12 bg-orange-400 mt-2"></div>
                     </div>
                     <div className="h-[2px] flex-1 bg-gradient-to-r from-orange-500/20 to-transparent ml-4" />
                 </div>
@@ -803,7 +776,7 @@ export default function CollectionPage() {
                     <div className="p-12 rounded-full bg-slate-950 border border-white/5 shadow-inner mb-8 group">
                         <Library className="w-20 h-20 text-slate-700 group-hover:text-primary transition-colors duration-500" />
                     </div>
-                    <h3 className="text-3xl font-black italic text-white tracking-widest mb-4">VAULT IS EMPTY</h3>
+                    <h3 className="text-3xl font-black italic text-white tracking-widest mb-4">收藏庫為空</h3>
                     <p className="text-slate-500 font-medium max-w-sm mb-12">您目前的數位收藏庫尚無卡片。立即前往商城，開啟您的第一包珍稀收藏。</p>
                     <Button asChild size="lg" className="h-16 px-12 rounded-[2rem] font-black text-lg bg-primary text-black hover:bg-primary/90 shadow-[0_20px_40px_-10px_rgba(6,182,212,0.5)] transition-all active:scale-95 border-none">
                         <Link href="/draw">

@@ -294,11 +294,7 @@ export default function LuckyBagsPage() {
           </div>
 
             <div className="text-center mb-12 relative z-10 space-y-4">
-            <div className="flex justify-center mb-1">
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent/10 border border-accent/20 text-accent text-[10px] md:text-xs font-bold tracking-[0.2em] uppercase animate-fade-in-up">
-                    <Sparkles className="w-3 h-3 md:w-3.5 md:h-3.5 animate-pulse" /> UNWRAP YOUR FORTUNE
-                </div>
-            </div>
+
             
             <div className="flex items-center justify-center animate-fade-in-up">
                 <h1 className="font-headline text-3xl sm:text-6xl font-black tracking-widest text-white drop-shadow-[0_0_15px_rgba(234,179,8,0.4)]">
