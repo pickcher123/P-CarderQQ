@@ -81,7 +81,7 @@ export default function Home() {
                   <Megaphone className="w-6 h-6 text-black" />
                 </div>
                 <div>
-                  <h3 className="text-primary font-black text-sm uppercase tracking-widest mb-1">系統公告 / SYSTEM NOTICE</h3>
+                  <h3 className="text-primary font-black text-sm uppercase tracking-widest mb-1">系統公告</h3>
                   <p className="text-white font-bold text-sm md:text-base leading-relaxed">{systemConfig.announcement}</p>
                 </div>
               </div>

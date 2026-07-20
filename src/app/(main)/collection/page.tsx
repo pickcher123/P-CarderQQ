@@ -3,6 +3,12 @@ import { useState, useMemo, useEffect } from 'react';
 import { CardItem } from '@/components/card-item';
 import { Button } from '@/components/ui/button';
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -322,25 +328,26 @@ export default function CollectionPage() {
     shippingMethod === '郵寄' ? '寄送地址' : '自取地點';
 
   return (
-    <div className="min-h-screen bg-slate-950/20 text-white">
-      <div className="container py-12 md:py-24 relative">
-        {/* Futuristic Background Elements */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] bg-primary/10 blur-[120px] pointer-events-none opacity-50" />
-        <div className="absolute top-[20%] right-[10%] w-64 h-64 bg-accent/20 blur-[100px] pointer-events-none opacity-30 animate-pulse" />
-        <div className="absolute top-[40%] left-[5%] w-48 h-48 bg-primary/20 blur-[80px] pointer-events-none opacity-30" />
-        
-        {/* Header Section */}
-        <div className="text-center mb-20 relative z-20">
-          <motion.h1 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="font-headline text-3xl font-black tracking-[0.2em] sm:text-6xl text-white drop-shadow-[0_0_15px_rgba(6,182,212,0.4)] mb-4 px-4 break-words text-center"
-          >
-            我的<span className="text-transparent bg-clip-text bg-gradient-to-br from-white via-white to-white/30">收藏</span>
-          </motion.h1>
+    <TooltipProvider>
+      <div className="min-h-screen bg-slate-950/20 text-white">
+        <div className="container py-12 md:py-24 relative">
+          {/* Futuristic Background Elements */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] bg-primary/10 blur-[120px] pointer-events-none opacity-50" />
+          <div className="absolute top-[20%] right-[10%] w-64 h-64 bg-accent/20 blur-[100px] pointer-events-none opacity-30 animate-pulse" />
+          <div className="absolute top-[40%] left-[5%] w-48 h-48 bg-primary/20 blur-[80px] pointer-events-none opacity-30" />
           
-        </div>
+          {/* Header Section */}
+          <div className="text-center mb-20 relative z-20">
+            <motion.h1 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="font-headline text-3xl font-black tracking-[0.2em] sm:text-6xl text-white drop-shadow-[0_0_15px_rgba(6,182,212,0.4)] mb-4 px-4 break-words text-center"
+            >
+              我的<span className="text-transparent bg-clip-text bg-gradient-to-br from-white via-white to-white/30">收藏</span>
+            </motion.h1>
+            
+          </div>
 
         {/* Selection & Actions Bar - Fixed at bottom when active */}
         <AnimatePresence>
@@ -585,17 +592,29 @@ export default function CollectionPage() {
               </div>
           </div>
           <div className="flex items-center gap-1">
-              <Button variant="ghost" size="sm" onClick={handleSelectAll} disabled={mergedCards.length === 0} className="rounded-lg hover:bg-white/5 text-slate-400 font-black text-[10px] uppercase tracking-widest px-2 h-8">
-                  <CheckSquare className="mr-1 h-3.5 w-3.5 text-primary" /> 
-                  {isAllSelected ? 'Deselect' : 'Select'}
-              </Button>
+              <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="sm" onClick={handleSelectAll} disabled={mergedCards.length === 0} className="rounded-lg hover:bg-white/5 text-slate-400 font-black text-[10px] uppercase tracking-widest px-2 h-8">
+                        <CheckSquare className="mr-1 h-3.5 w-3.5 text-primary" /> 
+                        {isAllSelected ? 'Deselect' : 'Select'}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {isAllSelected ? '取消全選' : '全選'}
+                  </TooltipContent>
+              </Tooltip>
               <Separator orientation="vertical" className="h-4 bg-white/10" />
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="rounded-lg hover:bg-white/5 text-slate-400 font-black text-[10px] uppercase tracking-widest px-2 h-8">
-                        <Filter className="mr-1 h-3.5 w-3.5" /> {filterCategory || 'All'}
-                    </Button>
-                </DropdownMenuTrigger>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                      <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="rounded-lg hover:bg-white/5 text-slate-400 font-black text-[10px] uppercase tracking-widest px-2 h-8">
+                              <Filter className="mr-1 h-3.5 w-3.5" /> {filterCategory || 'All'}
+                          </Button>
+                      </DropdownMenuTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent>篩選分類</TooltipContent>
+                </Tooltip>
                 <DropdownMenuContent className="bg-slate-900 border-white/10 text-white">
                     <DropdownMenuItem onClick={() => setFilterCategory(null)}>All</DropdownMenuItem>
                     {Array.from(new Set(mergedCards.map(c => c.category))).filter(c => c).map(cat => (
@@ -604,11 +623,16 @@ export default function CollectionPage() {
                 </DropdownMenuContent>
               </DropdownMenu>
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="rounded-xl hover:bg-white/5 text-slate-400 font-black text-[10px] uppercase tracking-widest">
-                        <ArrowUpDown className="mr-2 h-4 w-4" /> Sort: {sortOption}
-                    </Button>
-                </DropdownMenuTrigger>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                      <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="rounded-xl hover:bg-white/5 text-slate-400 font-black text-[10px] uppercase tracking-widest">
+                              <ArrowUpDown className="mr-2 h-4 w-4" /> Sort: {sortOption}
+                          </Button>
+                      </DropdownMenuTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent>排序方式</TooltipContent>
+                </Tooltip>
                 <DropdownMenuContent className="bg-slate-900 border-white/10 text-white">
                     <DropdownMenuItem onClick={() => setSortOption('latest')}>Latest</DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setSortOption('price')}>Price (High)</DropdownMenuItem>
@@ -847,5 +871,6 @@ export default function CollectionPage() {
       </Dialog>
     </div>
   </div>
+</TooltipProvider>
 );
 }

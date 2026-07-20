@@ -501,7 +501,7 @@ export default function VIPZonePage() {
                     </div>
                     <div>
                         <h2 className="text-2xl md:text-3xl font-black font-headline text-white tracking-widest uppercase italic">榮耀階級圖譜</h2>
-                        <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold mt-1 opacity-60">VIP Progression Matrix</p>
+                        <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold mt-1 opacity-60"></p>
                     </div>
                     <div className="h-px flex-1 bg-gradient-to-r from-amber-500/30 to-transparent ml-4 hidden sm:block" />
                 </div>
@@ -549,16 +549,15 @@ export default function VIPZonePage() {
                         <h2 className="text-2xl md:text-3xl font-black font-headline tracking-widest flex items-center gap-3 italic">
                             <MedalIcon className="text-primary h-8 w-8 animate-pulse" /> 榮譽成就牆
                         </h2>
-                        <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest ml-11">Hall of Achievement</p>
                     </div>
                     <Badge variant="outline" className="border-primary/30 text-primary font-code bg-primary/5 px-4 h-8 text-sm">
-                        {unlockedAchievements.length} / {achievements.length} UNLOCKED
+                        {unlockedAchievements.length} / {achievements.length} 已解鎖
                     </Badge>
                 </div>
                 
                 <div className="space-y-8">
                     <div className="flex items-center gap-3">
-                        <Badge className="bg-emerald-500 text-white font-black px-3 py-0.5">ALREADY EARNED</Badge>
+                        <Badge className="bg-emerald-500 text-white font-black px-3 py-0.5">已解鎖</Badge>
                         <div className="h-px flex-1 bg-emerald-500/20" />
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6">
@@ -575,7 +574,7 @@ export default function VIPZonePage() {
 
                 <div className="space-y-8">
                     <div className="flex items-center gap-3">
-                        <Badge variant="outline" className="border-white/20 text-white/40 font-black px-3 py-0.5">NOT YET DISCOVERED</Badge>
+                        <Badge variant="outline" className="border-white/20 text-white/40 font-black px-3 py-0.5">未解鎖</Badge>
                         <div className="h-px flex-1 bg-white/5" />
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6">
@@ -587,7 +586,7 @@ export default function VIPZonePage() {
             </section>
 
             <div className="mt-32 text-center opacity-30">
-                <p className="text-[10px] text-white/40 font-headline uppercase tracking-[0.5em]">P+Carder Honor System • Authenticity Guaranteed</p>
+                <p className="text-[10px] text-white/40 font-headline uppercase tracking-[0.5em]"></p>
             </div>
         </div>
     );
