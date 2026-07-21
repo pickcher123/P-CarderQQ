@@ -80,7 +80,7 @@ export function CardItem({ name, imageUrl, backImageUrl, imageHint, rarity, seri
 
   return (
     <div
-      className="group w-full aspect-[2.5/4] [perspective:1200px]"
+      className="group w-full aspect-[2.5/4] [perspective:1200px] transition-transform duration-300 hover:scale-[1.02]"
       onClick={handleCardClick}
       ref={containerRef}
     >
@@ -94,7 +94,7 @@ export function CardItem({ name, imageUrl, backImageUrl, imageHint, rarity, seri
         {/* Card Front */}
          <div 
           className={cn(
-            'absolute w-full h-full [backface-visibility:hidden] rounded-xl overflow-hidden border transition-all duration-300 bg-transparent',
+            'absolute w-full h-full [backface-visibility:hidden] rounded-xl overflow-hidden border transition-all duration-300 bg-transparent group-hover:shadow-2xl',
             styles.glow,
           )}
           onMouseMove={handleMouseMove}

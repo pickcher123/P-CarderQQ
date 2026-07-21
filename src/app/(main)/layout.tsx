@@ -1,4 +1,5 @@
 'use client';
+import { motion } from "motion/react";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { AnimatedBackground } from "@/components/animated-background";
@@ -29,7 +30,14 @@ export default function MainLayout({
       <AnimatedBackground backgroundUrl={systemConfig?.backgroundUrl} backgroundOpacity={systemConfig?.backgroundOpacity} />
       <Header systemConfig={systemConfig} />
       {isMarqueeVisible && <NewsMarquee isDrawing={isDrawing} />}
-      <main className="flex-1 pb-20 md:pb-0">{children}</main>
+      <motion.main 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
+        className="flex-1 pb-20 md:pb-0"
+      >
+        {children}
+      </motion.main>
       <InstallPWAButton />
       <FloatingLineButton systemConfig={systemConfig} />
       {pathname === '/' && <Footer />}

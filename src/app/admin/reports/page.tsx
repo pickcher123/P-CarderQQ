@@ -4,9 +4,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useRequest, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection, query, orderBy, where, Timestamp } from "firebase/firestore";
 import { useMemo, useState } from "react";
-import { Gem, ShoppingCart, Users, BarChart, Calendar, ArrowDownRight, TrendingUp, ArrowUpRight, Loader2 } from 'lucide-react';
+import { Gem, ShoppingCart, Users, BarChart, Calendar, ArrowDownRight, TrendingUp, ArrowUpRight, Loader2, Download } from 'lucide-react';
 import { getYear, getMonth, startOfMonth, endOfMonth } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { Bar, BarChart as RechartsBarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { cn } from '@/lib/utils';
 import { PPlusIcon } from "@/components/icons";
@@ -66,6 +67,28 @@ export default function ReportsPage() {
     // for historical report data which doesn't change frequently.
     const { data: allTransactions, isLoading } = useRequest<Transaction[]>(transactionsQuery);
 
+    const exportToCSV = () => {
+        if (!allTransactions) return;
+        const header = ["ID", "User ID", "Date", "Amount", "Type", "Section", "Status"];
+        const rows = allTransactions.map(tx => [
+            tx.id,
+            tx.userId,
+            new Date(tx.transactionDate.seconds * 1000).toLocaleString(),
+            tx.amount,
+            tx.transactionType,
+            tx.section || '',
+            tx.status
+        ]);
+        
+        const csvContent = [header, ...rows].map(row => row.join(',')).join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `report_${currentYear}_${parseInt(currentMonth) + 1}.csv`);
+        link.click();
+    };
+
     const { reportStats, chartData } = useMemo(() => {
         if (!allTransactions) return { reportStats: { totalIncome: 0, totalConsumption: 0, totalIssuedValue: 0, netIncome: 0, activePlayers: 0 }, chartData: [] };
         
@@ -103,6 +126,9 @@ export default function ReportsPage() {
                     {isLoading && <Loader2 className="w-5 h-5 animate-spin text-slate-400" />}
                 </div>
                 <div className="flex gap-2">
+                    <Button variant="outline" onClick={exportToCSV} className="font-bold border-slate-200">
+                        <Download className="w-4 h-4 mr-2" /> 匯出 CSV
+                    </Button>
                     <Select value={currentYear} onValueChange={setCurrentYear}>
                         <SelectTrigger className="w-[120px] bg-white border-slate-200 font-bold"><Calendar className="w-4 h-4 mr-2" /><SelectValue /></SelectTrigger>
                         <SelectContent>{years.map(year => <SelectItem key={year} value={year.toString()}>{year}年</SelectItem>)}</SelectContent>

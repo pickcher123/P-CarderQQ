@@ -18,6 +18,7 @@ export default function CardExhibitionsAdmin() {
     const [title, setTitle] = useState('');
     const [date, setDate] = useState('');
     const [description, setDescription] = useState('');
+    const [imageUrl, setImageUrl] = useState('');
 
     const q = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -32,11 +33,13 @@ export default function CardExhibitionsAdmin() {
                 title,
                 date: Timestamp.fromDate(new Date(date)),
                 description,
+                imageUrl,
             });
             toast({ title: '成功', description: '卡展已新增' });
             setTitle('');
             setDate('');
             setDescription('');
+            setImageUrl('');
         } catch (e) {
             toast({ variant: 'destructive', title: '錯誤', description: '新增失敗' });
         }
@@ -65,6 +68,10 @@ export default function CardExhibitionsAdmin() {
                     <div className="space-y-2">
                         <Label>描述</Label>
                         <Textarea value={description} onChange={(e) => setDescription(e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>宣傳圖片 (URL)</Label>
+                        <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} />
                     </div>
                     <Button onClick={handleAdd}><Plus className="mr-2" /> 新增</Button>
                 </CardContent>

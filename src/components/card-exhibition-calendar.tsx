@@ -6,12 +6,14 @@ import { collection, query, orderBy } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
 
 interface Exhibition {
     id: string;
     title: string;
     date: { seconds: number };
     description: string;
+    imageUrl?: string;
 }
 
 export function CardExhibitionCalendar({ hideHeader = false }: { hideHeader?: boolean }) {
@@ -51,6 +53,11 @@ export function CardExhibitionCalendar({ hideHeader = false }: { hideHeader?: bo
                                     return (
                                         <Card key={exh.id} className="bg-card/40 border-white/5 p-4 rounded-2xl">
                                             <CardContent className="p-0 flex items-start gap-4">
+                                                {exh.imageUrl && (
+                                                    <div className="relative w-24 h-24 shrink-0 rounded-xl overflow-hidden">
+                                                        <Image src={exh.imageUrl} alt={exh.title} fill className="object-cover" referrerPolicy="no-referrer" />
+                                                    </div>
+                                                )}
                                                 <div className="flex flex-col items-center justify-center bg-primary/10 p-3 rounded-xl min-w-[4rem]">
                                                     <span className="text-sm font-bold text-primary">{format(date, 'MM月')}</span>
                                                     <span className="text-xl font-black text-white">{format(date, 'dd日')}</span>

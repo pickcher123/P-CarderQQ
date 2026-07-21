@@ -36,9 +36,6 @@ export default function AboutPage() {
 
       {/* 品牌故事標題 */}
       <div className="text-center space-y-4 relative z-10">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold tracking-[0.3em] mb-2 uppercase animate-fade-in-up">
-            <Sparkles className="w-3 h-3" /> Our Brand Narrative
-        </div>
         <h1 className="font-headline text-4xl md:text-6xl font-black tracking-tight text-white drop-shadow-[0_0_15px_rgba(6,182,212,0.4)] animate-fade-in-up">
             關於 <span className="text-primary">P+CARDER</span>
         </h1>

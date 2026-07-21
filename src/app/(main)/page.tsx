@@ -88,10 +88,6 @@ export default function Home() {
             </div>
           )}
           
-          <div className="inline-flex items-center gap-2 px-3 py-1 md:px-4 md:py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] md:text-xs font-black tracking-[0.3em] font-headline mb-2 md:mb-4 animate-fade-in-up uppercase">
-            <Sparkles className="w-3 h-3 md:w-4 md:h-4" /> 公開透明、機率披露、數位存證
-          </div>
-          
           <div className="space-y-3 md:space-y-4 animate-fade-in-up">
             <h1 className="font-headline text-5xl sm:text-7xl md:text-[12rem] font-black tracking-tighter leading-none relative">
                 <span className="bg-clip-text text-transparent bg-gradient-to-b from-white via-white/90 to-primary/40 drop-shadow-[0_0_25px_rgba(6,182,212,0.5)]">
