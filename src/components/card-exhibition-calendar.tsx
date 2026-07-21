@@ -12,6 +12,7 @@ interface Exhibition {
     id: string;
     title: string;
     date: { seconds: number };
+    endDate?: { seconds: number };
     description: string;
     imageUrl?: string;
 }
@@ -49,7 +50,8 @@ export function CardExhibitionCalendar({ hideHeader = false }: { hideHeader?: bo
                             <h3 className="text-xl font-black text-primary tracking-widest uppercase">{month}</h3>
                             <div className="space-y-3">
                                 {exhList.map((exh) => {
-                                    const date = new Date(exh.date.seconds * 1000);
+                                    const startDate = new Date(exh.date.seconds * 1000);
+                                    const endDate = exh.endDate ? new Date(exh.endDate.seconds * 1000) : null;
                                     return (
                                         <Card key={exh.id} className="bg-card/40 border-white/5 p-4 rounded-2xl">
                                             <CardContent className="p-0 flex items-start gap-4">
@@ -58,9 +60,14 @@ export function CardExhibitionCalendar({ hideHeader = false }: { hideHeader?: bo
                                                         <Image src={exh.imageUrl} alt={exh.title} fill className="object-cover" referrerPolicy="no-referrer" />
                                                     </div>
                                                 )}
-                                                <div className="flex flex-col items-center justify-center bg-primary/10 p-3 rounded-xl min-w-[4rem]">
-                                                    <span className="text-sm font-bold text-primary">{format(date, 'MM月')}</span>
-                                                    <span className="text-xl font-black text-white">{format(date, 'dd日')}</span>
+                                                <div className="flex flex-col items-center justify-center bg-primary/10 p-3 rounded-xl min-w-[5rem]">
+                                                    <span className="text-sm font-bold text-primary">{format(startDate, 'MM/dd')}</span>
+                                                    {endDate && (
+                                                        <>
+                                                            <span className="text-xs text-white/50">-</span>
+                                                            <span className="text-sm font-bold text-primary">{format(endDate, 'MM/dd')}</span>
+                                                        </>
+                                                    )}
                                                 </div>
                                                 <div className="space-y-1">
                                                     <h4 className="font-black text-white text-lg">{exh.title}</h4>

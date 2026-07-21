@@ -16,7 +16,8 @@ export default function CardExhibitionsAdmin() {
     const firestore = useFirestore();
     const { toast } = useToast();
     const [title, setTitle] = useState('');
-    const [date, setDate] = useState('');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
     const [description, setDescription] = useState('');
     const [imageUrl, setImageUrl] = useState('');
 
@@ -27,17 +28,19 @@ export default function CardExhibitionsAdmin() {
     const { data: exhibitions } = useCollection<any>(q);
 
     const handleAdd = async () => {
-        if (!firestore || !title || !date) return;
+        if (!firestore || !title || !startDate) return;
         try {
             await addDoc(collection(firestore, 'card_exhibitions'), {
                 title,
-                date: Timestamp.fromDate(new Date(date)),
+                date: Timestamp.fromDate(new Date(startDate)),
+                endDate: endDate ? Timestamp.fromDate(new Date(endDate)) : Timestamp.fromDate(new Date(startDate)),
                 description,
                 imageUrl,
             });
             toast({ title: '成功', description: '卡展已新增' });
             setTitle('');
-            setDate('');
+            setStartDate('');
+            setEndDate('');
             setDescription('');
             setImageUrl('');
         } catch (e) {
@@ -62,8 +65,12 @@ export default function CardExhibitionsAdmin() {
                         <Input value={title} onChange={(e) => setTitle(e.target.value)} />
                     </div>
                     <div className="space-y-2">
-                        <Label>日期</Label>
-                        <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+                        <Label>開始日期</Label>
+                        <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>結束日期</Label>
+                        <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
                     </div>
                     <div className="space-y-2">
                         <Label>描述</Label>
