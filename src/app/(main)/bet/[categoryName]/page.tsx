@@ -316,7 +316,7 @@ export default function BetCategoryPage() {
                     />
                 </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-3 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {isLoading ? Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="aspect-[2.5/4] rounded-[2rem]" />) : 
                 filteredCards.map((card) => {
                     const isSold = soldCardIds.has(card.id) || card.isSold;

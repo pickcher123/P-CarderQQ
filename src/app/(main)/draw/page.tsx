@@ -187,7 +187,12 @@ export default function DrawPage() {
             </Dialog>
         </div>
 
-        <div className="text-center mb-2 md:mb-1 relative z-10 space-y-1">
+        <div className="text-center mb-12 relative z-10 space-y-4">
+            <div className="flex items-center justify-center animate-fade-in-up">
+                <h1 className="font-headline text-3xl sm:text-6xl font-black tracking-widest text-white drop-shadow-[0_0_15px_rgba(6,182,212,0.4)]">
+                    抽卡專區
+                </h1>
+            </div>
         </div>
 
         {/* 傳奇大獎牆區塊 */}

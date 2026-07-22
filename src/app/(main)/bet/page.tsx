@@ -177,7 +177,7 @@ export default function BetLandingPage() {
         <div className="container py-8 md:py-16 relative overflow-hidden px-4 md:px-8">
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-destructive/5 blur-[120px] pointer-events-none" />
 
-            <div className="text-center mb-12 relative z-10 space-y-4 animate-fade-in-up px-4 md:px-8">
+            <div className="flex items-center justify-center animate-fade-in-up mb-12">
                 <h1 className="font-headline text-3xl sm:text-6xl font-black tracking-widest text-white drop-shadow-[0_0_15px_rgba(219,39,119,0.4)]">
                     拚卡專區
                 </h1>

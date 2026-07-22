@@ -69,15 +69,28 @@ export default function CardExhibitionsAdmin() {
         const [title, setTitle] = useState(exh.title);
         const [description, setDescription] = useState(exh.description || '');
         const [imageUrl, setImageUrl] = useState(exh.imageUrl || '');
+        const [startDate, setStartDate] = useState(format(new Date(exh.date.seconds * 1000), 'yyyy-MM-dd'));
+        const [endDate, setEndDate] = useState(exh.endDate ? format(new Date(exh.endDate.seconds * 1000), 'yyyy-MM-dd') : '');
 
         if (isEditing) {
             return (
                 <Card className="p-4 space-y-2">
                     <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+                    <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                    <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
                     <Textarea value={description} onChange={(e) => setDescription(e.target.value)} />
                     <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} />
                     <div className="flex gap-2">
-                        <Button onClick={() => { handleUpdate(exh.id, { title, description, imageUrl }); setIsEditing(false); }}>儲存</Button>
+                        <Button onClick={() => { 
+                            handleUpdate(exh.id, { 
+                                title, 
+                                description, 
+                                imageUrl, 
+                                date: Timestamp.fromDate(new Date(startDate)),
+                                endDate: endDate ? Timestamp.fromDate(new Date(endDate)) : Timestamp.fromDate(new Date(startDate))
+                            }); 
+                            setIsEditing(false); 
+                        }}>儲存</Button>
                         <Button variant="outline" onClick={() => setIsEditing(false)}>取消</Button>
                     </div>
                 </Card>

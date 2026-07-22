@@ -662,7 +662,7 @@ export default function CollectionPage() {
                     </div>
                 </div>
                 
-                <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3 md:gap-4">
+                <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3 md:gap-4">
                     {standardCards.map((card, index) => (
                         <motion.div 
                             key={card.id} 
@@ -680,7 +680,6 @@ export default function CollectionPage() {
                                 imageUrl={card.imageUrl} 
                                 backImageUrl={card.backImageUrl}
                                 imageHint={card.imageHint} 
-                                serialNumber={card.serialNumber} 
                                 isFlippable={false} 
                                 rarity={card.rarity} 
                                 priority={index < 12} 
