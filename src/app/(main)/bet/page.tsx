@@ -177,31 +177,27 @@ export default function BetLandingPage() {
         <div className="container py-8 md:py-16 relative overflow-hidden px-4 md:px-8">
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-destructive/5 blur-[120px] pointer-events-none" />
 
-            <div className="text-center mb-6 md:mb-8 relative z-10 space-y-4">
-                <div className="flex flex-col items-center justify-center animate-fade-in-up">
-                    <h1 className="font-headline text-3xl sm:text-6xl font-black tracking-widest text-white drop-shadow-[0_0_15px_rgba(219,39,119,0.4)]">
-                        拚卡專區
-                    </h1>
-                </div>
+            <div className="text-center mb-12 relative z-10 space-y-4 animate-fade-in-up px-4 md:px-8">
+                <h1 className="font-headline text-3xl sm:text-6xl font-black tracking-widest text-white drop-shadow-[0_0_15px_rgba(219,39,119,0.4)]">
+                    拚卡專區
+                </h1>
             </div>
 
             {/* 直觀遊戲規則區塊 - 科技感強化版 */}
             <div className="max-w-6xl mx-auto mb-12 md:mb-16 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {[
-                        { title: '1/10 命中率', desc: '每注固定 10% 機率直接帶走卡片', icon: Target, color: 'text-cyan-400', border: 'border-cyan-500/30' },
-                        { title: '雙幣別支付', desc: '支援使用鑽石或紅利 P+ 參與', icon: RefreshCw, color: 'text-fuchsia-400', border: 'border-fuchsia-500/30' },
-                        { title: '1:10 價值比', desc: '鑽石與 P+ 點比例固定 1:10', icon: Gem, color: 'text-amber-400', border: 'border-amber-500/30' },
-                        { title: '資產即時發放', desc: '中獎後卡片立即存入數位收藏庫', icon: ShieldCheck, color: 'text-emerald-400', border: 'border-emerald-500/30' },
+                        { title: '1/10 命中率', desc: '每注固定 10% 機率直接帶走卡片', icon: Target, color: 'text-cyan-400' },
+                        { title: '雙幣別支付', desc: '支援使用鑽石或紅利 P+ 參與', icon: RefreshCw, color: 'text-fuchsia-400' },
+                        { title: '1:10 價值比', desc: '鑽石與 P+ 點比例固定 1:10', icon: Gem, color: 'text-amber-400' },
+                        { title: '資產即時發放', desc: '中獎後卡片立即存入數位收藏庫', icon: ShieldCheck, color: 'text-emerald-400' },
                     ].map((item, idx) => (
-                        <div key={idx} className={cn("relative p-3 md:p-8 rounded-xl md:rounded-2xl bg-card/20 backdrop-blur-md border border-white/5 flex flex-col items-center text-center group hover:bg-primary/5 hover:border-primary/50 transition-all duration-300 shadow-xl hover:shadow-2xl hover:-translate-y-1", item.border)}>
-                            <div className={cn("absolute -top-px -left-px w-4 h-4 md:w-6 md:h-6 border-t-2 border-l-2", item.color)} />
-                            <div className={cn("absolute -bottom-px -right-px w-4 h-4 md:w-6 md:h-6 border-b-2 border-r-2", item.color)} />
-                            <div className={cn("mb-2 md:mb-6 p-2 md:p-4 rounded-full bg-black/20 border border-white/5 shadow-inner", item.color)}>
-                                <item.icon className="w-5 h-5 md:w-8 md:h-8" />
+                        <div key={idx} className="relative p-6 rounded-2xl bg-slate-950/40 backdrop-blur-sm border border-white/5 flex flex-col items-center text-center group hover:border-primary/30 transition-all duration-300">
+                            <div className={cn("mb-4 p-3 rounded-2xl bg-black/30 border border-white/5", item.color)}>
+                                <item.icon className="w-6 h-6" />
                             </div>
-                            <h4 className="text-[10px] md:text-sm font-black text-white mb-1 md:mb-3 tracking-[0.1em] font-headline uppercase">{item.title}</h4>
-                            <p className="text-[8px] md:text-xs text-muted-foreground font-medium leading-relaxed">{item.desc}</p>
+                            <h4 className="text-sm font-black text-white mb-2 tracking-widest font-headline uppercase">{item.title}</h4>
+                            <p className="text-xs text-slate-300 font-bold leading-relaxed">{item.desc}</p>
                         </div>
                     ))}
                 </div>

@@ -30,7 +30,9 @@ const nextConfig = {
       { protocol: 'https', hostname: 'picsum.photos' },
       { protocol: 'https', hostname: 'firebasestorage.googleapis.com' },
       { protocol: 'https', hostname: 'storage.googleapis.com' },
-      { protocol: 'https', hostname: 'i.ibb.co' }
+      { protocol: 'https', hostname: 'i.ibb.co' },
+      { protocol: 'https', hostname: 'scontent-tpe1-1.cdninstagram.com' },
+      { protocol: 'https', hostname: '*.cdninstagram.com' }
     ],
   },
   async headers() {

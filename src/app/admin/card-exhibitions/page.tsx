@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, addDoc, deleteDoc, doc, Timestamp, orderBy, query } from 'firebase/firestore';
+import { collection, addDoc, deleteDoc, updateDoc, doc, Timestamp, orderBy, query } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -48,10 +48,54 @@ export default function CardExhibitionsAdmin() {
         }
     };
 
+    const handleUpdate = async (id: string, updatedData: any) => {
+        if (!firestore) return;
+        try {
+            await updateDoc(doc(firestore, 'card_exhibitions', id), updatedData);
+            toast({ title: '成功', description: '卡展已更新' });
+        } catch (e) {
+            toast({ variant: 'destructive', title: '錯誤', description: '更新失敗' });
+        }
+    };
+
     const handleDelete = async (id: string) => {
         if (!firestore) return;
         await deleteDoc(doc(firestore, 'card_exhibitions', id));
         toast({ title: '已刪除' });
+    };
+
+    const ExhibitionItem = ({ exh }: { exh: any }) => {
+        const [isEditing, setIsEditing] = useState(false);
+        const [title, setTitle] = useState(exh.title);
+        const [description, setDescription] = useState(exh.description || '');
+        const [imageUrl, setImageUrl] = useState(exh.imageUrl || '');
+
+        if (isEditing) {
+            return (
+                <Card className="p-4 space-y-2">
+                    <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+                    <Textarea value={description} onChange={(e) => setDescription(e.target.value)} />
+                    <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} />
+                    <div className="flex gap-2">
+                        <Button onClick={() => { handleUpdate(exh.id, { title, description, imageUrl }); setIsEditing(false); }}>儲存</Button>
+                        <Button variant="outline" onClick={() => setIsEditing(false)}>取消</Button>
+                    </div>
+                </Card>
+            );
+        }
+
+        return (
+            <Card key={exh.id} className="p-4 flex justify-between items-center">
+                <div>
+                    <h3 className="font-bold">{exh.title}</h3>
+                    <p className="text-sm text-muted-foreground">{format(new Date(exh.date.seconds * 1000), 'yyyy-MM-dd')}</p>
+                </div>
+                <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => setIsEditing(true)}>編輯</Button>
+                    <Button variant="destructive" onClick={() => handleDelete(exh.id)}><Trash2 /></Button>
+                </div>
+            </Card>
+        );
     };
 
     return (
@@ -84,15 +128,7 @@ export default function CardExhibitionsAdmin() {
                 </CardContent>
             </Card>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {exhibitions?.map((exh) => (
-                    <Card key={exh.id} className="p-4 flex justify-between items-center">
-                        <div>
-                            <h3 className="font-bold">{exh.title}</h3>
-                            <p>{format(new Date(exh.date.seconds * 1000), 'yyyy-MM-dd')}</p>
-                        </div>
-                        <Button variant="destructive" onClick={() => handleDelete(exh.id)}><Trash2 /></Button>
-                    </Card>
-                ))}
+                {exhibitions?.map((exh) => <ExhibitionItem key={exh.id} exh={exh} />)}
             </div>
         </div>
     );
