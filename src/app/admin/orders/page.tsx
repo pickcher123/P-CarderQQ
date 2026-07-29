@@ -31,10 +31,10 @@ interface Transaction {
 
 const sectionTabs: {value: TransactionSection | 'all', label: string}[] = [
     { value: 'all', label: '全部遊戲' },
-    { value: 'draw', label: '抽卡專區' },
-    { value: 'lucky-bag', label: '福袋專區' },
-    { value: 'betting', label: '拼卡專區' },
-    { value: 'group-break', label: '團拆專區' },
+    { value: 'draw', label: '抽卡' },
+    { value: 'lucky-bag', label: '福袋' },
+    { value: 'betting', label: '拼卡' },
+    { value: 'group-break', label: '團拆' },
 ];
 
 const years = Array.from({ length: 5 }, (_, i) => getYear(new Date()) - i);
@@ -248,10 +248,10 @@ export default function OrdersAdminPage() {
                         </TableCell>
                         <TableCell>
                             <Badge variant="outline" className="capitalize text-[10px] border-slate-200 text-slate-500 font-black tracking-tighter bg-white px-2.5 h-6">
-                                {tx.section === 'draw' ? '抽卡專區' : 
-                                 tx.section === 'lucky-bag' ? '福袋專區' : 
-                                 tx.section === 'betting' ? '拼卡專區' : 
-                                 tx.section === 'group-break' ? '團拆專區' : 
+                                {tx.section === 'draw' ? '抽卡' : 
+                                 tx.section === 'lucky-bag' ? '福袋' : 
+                                 tx.section === 'betting' ? '拼卡' : 
+                                 tx.section === 'group-break' ? '團拆' : 
                                  tx.section === 'shipping' ? '出貨物流' : tx.section || '-'}
                             </Badge>
                         </TableCell>

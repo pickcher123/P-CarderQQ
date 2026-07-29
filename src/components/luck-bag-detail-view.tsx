@@ -83,6 +83,8 @@ export function LuckBagDetailView({ luckBag }: { luckBag: LuckBagWithCount }) {
     const { toast } = useToast();
     
     const [selectedSpots, setSelectedSpots] = useState<Set<number>>(new Set());
+    const [selectedAgentId, setSelectedAgentId] = useState<string>('');
+    const [selectedAgentName, setSelectedAgentName] = useState<string>('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isConfirming, setIsConfirming] = useState(false);
     const [previewCard, setPreviewCard] = useState<CardData | null>(null);
@@ -93,6 +95,9 @@ export function LuckBagDetailView({ luckBag }: { luckBag: LuckBagWithCount }) {
     
     // 參與名單狀態
     const [isListOpen, setIsListOpen] = useState(false);
+
+    const agentsQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'agents') : null), [firestore]);
+    const { data: agents } = useCollection<{ id: string, name: string }>(agentsQuery);
 
     const purchasesQuery = useMemoFirebase(() => 
         (firestore && luckBag.id) ? collection(firestore, 'luckBags', luckBag.id, 'luckBagPurchases') : null, 
@@ -176,7 +181,9 @@ export function LuckBagDetailView({ luckBag }: { luckBag: LuckBagWithCount }) {
                         username: userData.username,
                         luckBagId: luckBag.id, 
                         spotNumber: spot, 
-                        purchasedAt: serverTimestamp() 
+                        purchasedAt: serverTimestamp(),
+                        agentId: selectedAgentId || null,
+                        agentName: selectedAgentName || null
                     });
                 }
                 
@@ -352,18 +359,38 @@ export function LuckBagDetailView({ luckBag }: { luckBag: LuckBagWithCount }) {
                                 <p className="text-xs md:text-sm font-bold text-slate-500 mt-2">請留意官方直播時間，系統將於直播後派發獎項。</p>
                             </div>
                         ) : (
-                            <div className="mt-6 md:mt-8 pt-6 md:pt-8 border-t border-slate-400 flex flex-col sm:flex-row justify-between items-center sm:items-end gap-4 md:gap-0">
-                                <div className="w-full sm:w-auto text-center sm:text-left">
-                                    <p className="text-[8px] md:text-[9px] font-black text-slate-500 uppercase">預計支付金額</p>
-                                    <div className="flex items-center justify-center sm:justify-start gap-1.5 md:gap-2 text-3xl md:text-4xl font-black font-code text-accent">
-                                        {(selectedSpots.size * (luckBag.price || 0)).toLocaleString()}
-                                        {currency === 'diamond' ? <Gem className="w-6 h-6 md:w-8 md:h-8 text-primary" /> : <PPlusIcon className="w-6 h-6 md:w-8 md:h-8" />}
-                                    </div>
+                            <>
+                                <div className="mt-4 md:mt-6 space-y-2">
+                                    <Label className="text-[10px] font-black uppercase text-slate-500">選擇業務 (選填)</Label>
+                                    <select 
+                                        className="w-full h-12 bg-slate-100 border-none rounded-2xl px-4 font-bold text-sm text-slate-900"
+                                        value={selectedAgentId}
+                                        onChange={(e) => {
+                                            setSelectedAgentId(e.target.value);
+                                            const agent = agents?.find(a => a.id === e.target.value);
+                                            setSelectedAgentName(agent?.name || '');
+                                        }}
+                                    >
+                                        <option value="">不指定業務</option>
+                                        {agents?.map(agent => (
+                                            <option key={agent.id} value={agent.id}>{agent.name}</option>
+                                        ))}
+                                    </select>
                                 </div>
-                                <Button className="w-full sm:w-auto h-14 md:h-16 rounded-2xl px-8 md:px-10 font-black bg-slate-900 text-white hover:bg-black shadow-xl transition-all active:scale-95 text-base md:text-lg" disabled={selectedSpots.size === 0 || isSubmitting} onClick={() => setIsConfirming(true)}>
-                                    {isSubmitting ? <Loader2 className="animate-spin" /> : '確認購買並鎖定'}
-                                </Button>
-                            </div>
+                                
+                                <div className="mt-6 md:mt-8 pt-6 md:pt-8 border-t border-slate-400 flex flex-col sm:flex-row justify-between items-center sm:items-end gap-4 md:gap-0">
+                                    <div className="w-full sm:w-auto text-center sm:text-left">
+                                        <p className="text-[8px] md:text-[9px] font-black text-slate-500 uppercase">預計支付金額</p>
+                                        <div className="flex items-center justify-center sm:justify-start gap-1.5 md:gap-2 text-3xl md:text-4xl font-black font-code text-accent">
+                                            {(selectedSpots.size * (luckBag.price || 0)).toLocaleString()}
+                                            {currency === 'diamond' ? <Gem className="w-6 h-6 md:w-8 md:h-8 text-primary" /> : <PPlusIcon className="w-6 h-6 md:w-8 md:h-8" />}
+                                        </div>
+                                    </div>
+                                    <Button className="w-full sm:w-auto h-14 md:h-16 rounded-2xl px-8 md:px-10 font-black bg-slate-900 text-white hover:bg-black shadow-xl transition-all active:scale-95 text-base md:text-lg" disabled={selectedSpots.size === 0 || isSubmitting} onClick={() => setIsConfirming(true)}>
+                                        {isSubmitting ? <Loader2 className="animate-spin" /> : '確認購買並鎖定'}
+                                    </Button>
+                                </div>
+                            </>
                         )}
                     </>
                 ) : (

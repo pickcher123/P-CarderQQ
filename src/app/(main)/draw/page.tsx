@@ -126,9 +126,9 @@ export default function DrawPage() {
                 <Settings className="w-20 h-20 text-primary" />
             </div>
             <div className="space-y-3">
-                <h2 className="text-4xl font-black font-headline tracking-widest text-white italic">專區維護中</h2>
+                <h2 className="text-4xl font-black font-headline tracking-widest text-white italic">維護中</h2>
                 <p className="text-muted-foreground font-medium max-w-md mx-auto leading-relaxed">
-                    為了提供更流暢的開獎體驗，抽卡專區正在進行伺服器優化與系統升級，請稍後再試。
+                    為了提供更流暢的開獎體驗，抽卡正在進行伺服器優化與系統升級，請稍後再試。
                 </p>
             </div>
             <Button asChild variant="outline" className="h-12 px-10 rounded-xl border-primary/30 hover:bg-primary/5 font-bold transition-all">
@@ -190,7 +190,7 @@ export default function DrawPage() {
         <div className="text-center mb-12 relative z-10 space-y-4">
             <div className="flex items-center justify-center animate-fade-in-up">
                 <h1 className="font-headline text-3xl sm:text-6xl font-black tracking-widest text-white drop-shadow-[0_0_15px_rgba(6,182,212,0.4)]">
-                    抽卡專區
+                    抽卡
                 </h1>
             </div>
         </div>

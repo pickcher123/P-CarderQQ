@@ -316,52 +316,45 @@ export default function BetCategoryPage() {
                     />
                 </div>
             </div>
-            <div className="grid grid-cols-3 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-8">
                 {isLoading ? Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="aspect-[2.5/4] rounded-[2rem]" />) : 
                 filteredCards.map((card) => {
                     const isSold = soldCardIds.has(card.id) || card.isSold;
                     return (
-                        <div key={card.id} className="relative flex flex-col p-3 bg-slate-900 border-[6px] border-slate-950 rounded-[1.5rem] shadow-xl min-h-[420px] group transition-all hover:-translate-y-2">
+                        <div key={card.id} className={cn("relative p-4 md:p-6 bg-gradient-to-b from-slate-900 to-slate-950 border border-white/5 rounded-[2.5rem] shadow-2xl transition-all duration-300 hover:border-primary/50 hover:shadow-[0_0_30px_rgba(6,182,212,0.15)] group flex flex-col", isSold && "opacity-60")}>
                             {card.isFeatured && (
-                                <div className="absolute -top-2 -left-2 z-20 rotate-[-15deg]">
-                                    <div className="bg-accent text-accent-foreground font-black text-[10px] px-3 py-1 rounded-full shadow-lg border border-white/20 uppercase tracking-widest">
-                                        精選
+                                <div className="absolute -top-3 -right-3 z-20">
+                                    <div className="bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 font-black text-xs px-4 py-1.5 rounded-full shadow-lg uppercase tracking-widest animate-pulse">
+                                        HOT
                                     </div>
                                 </div>
                             )}
-                            <div className="relative flex-1 bg-black/90 rounded-[1rem] border-[6px] border-slate-950 overflow-hidden p-4 group-hover:border-primary/20 transition-colors">
-                                <div className={cn("w-full aspect-[2.5/4] relative cursor-zoom-in transition-all duration-500", isSold && "grayscale opacity-20 scale-95")} onClick={() => !isSold && setPreviewCard(card)}>
-                                    <div className="absolute top-2 left-2 bg-slate-900/80 backdrop-blur-md text-[9px] font-black tracking-widest text-primary px-2 py-0.5 rounded-lg border border-primary/20 pointer-events-none z-20">
-                                        {card.sellPrice ? `${card.sellPrice}💎` : 'N/A'}
-                                    </div>
-                                    <Image src={card.imageUrl} alt={card.name} fill className="object-contain" sizes="(max-width: 768px) 50vw, 25vw" />
-                                </div>
+                            
+                            <div className="relative flex-1 bg-black rounded-[2rem] border-[4px] border-slate-950 overflow-hidden mb-4 shadow-inner">
+                                <Image src={card.imageUrl} alt={card.name} fill className="object-contain transition-transform duration-700 group-hover:scale-110" sizes="(max-width: 768px) 50vw, 25vw" referrerPolicy="no-referrer" />
+                                
                                 {isSold && (
-                                    <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
-                                        <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-[2px]" />
-                                        <div className="relative z-10 flex flex-col items-center gap-3">
-                                            <div className="p-3 rounded-full bg-destructive/10 border border-destructive/20 text-destructive shadow-[0_0_15px_rgba(239,68,68,0.2)]">
-                                                <XCircle className="w-8 h-8" />
-                                            </div>
-                                            <Badge className="bg-destructive text-white font-black px-4 py-1.5 rotate-[-12deg] uppercase tracking-tighter text-sm shadow-[0_5px_15px_rgba(239,68,68,0.4)] border-none">
-                                                已被抽出
-                                            </Badge>
-                                            <p className="text-[10px] font-black text-destructive/60 uppercase tracking-[0.2em] mt-2">Drawn Out</p>
-                                        </div>
+                                    <div className="absolute inset-0 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm z-10">
+                                        <Badge className="bg-destructive text-white font-black px-6 py-2 uppercase tracking-tighter text-base border-none shadow-xl">
+                                            已抽出
+                                        </Badge>
                                     </div>
                                 )}
                             </div>
-                            <div className="mt-3 space-y-2">
-                                <div className="flex flex-wrap gap-1">
-                                    {card.minLevel && card.minLevel !== '新手收藏家' && <Badge variant="outline" className="text-[7px] border-primary/30 text-primary uppercase">{card.minLevel} 限定</Badge>}
-                                </div>
-                                <div className="grid grid-cols-1 gap-2">
-                                    {isSold ? <Button variant="outline" disabled className="w-full h-9 rounded-xl opacity-50 font-bold">已被抽出</Button> : (
-                                        <><BettingGameDialog card={card} categoryName={categoryName} onSpinStart={()=>{}} onClose={()=>{}}><Button className="w-full h-9 font-black rounded-xl bg-destructive text-white border-b-4 border-slate-950 flex justify-between px-3 active:translate-y-1 active:border-b-0 transition-all"><span className="text-[8px] uppercase font-headline">JACKPOT</span><span className="flex-1 text-center">拼手氣</span><LeverHeadIcon className="w-4 h-4" /></Button></BettingGameDialog>
-                                        <DirectPurchaseDialog card={card} categoryName={categoryName}><Button variant="outline" className="w-full h-9 font-black rounded-xl bg-white/5 border-white/10 border-b-4 border-slate-950 flex justify-between px-3 active:translate-y-1 active:border-b-0 transition-all hover:bg-white/10"><span className="text-[8px] uppercase font-headline">BUY</span><span className="flex-1 text-center">直接購買</span><Gem className="w-4 h-4 text-primary" /></Button></DirectPurchaseDialog></>
-                                    )}
+                            
+                            <div className="space-y-2 text-center">
+                                <h3 className="font-bold text-white group-hover:text-primary transition-colors truncate">{card.name}</h3>
+                                <div className="flex justify-center items-center gap-1.5 text-xs font-black text-slate-400">
+                                    <Gem className="w-3.5 h-3.5 text-primary" />
+                                    {card.sellPrice ? card.sellPrice.toLocaleString() : '---'}
                                 </div>
                             </div>
+                            
+                            <BettingGameDialog card={card} categoryName={categoryName}>
+                                <Button variant={isSold ? "secondary" : "default"} className="w-full mt-4 rounded-xl font-black tracking-widest uppercase transition-all duration-300" disabled={isSold}>
+                                    {isSold ? '已售罄' : '立即拼卡'}
+                                </Button>
+                            </BettingGameDialog>
                         </div>
                     );
                 })}

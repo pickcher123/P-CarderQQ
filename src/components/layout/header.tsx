@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { User, Gem, LogIn, LogOut, ShieldCheck, Loader2, Package, Library, Plus, Users2, ChevronDown, Crown, ChevronRight, Info } from 'lucide-react';
+import { User, Gem, LogIn, LogOut, ShieldCheck, Loader2, Package, Library, Plus, Users2, ChevronDown, Crown, ChevronRight, Info, Activity } from 'lucide-react';
 import { Logo, CrossedCardsIcon, LuckyBagIcon, PPlusIcon } from '@/components/icons';
 import { useUser, useAuth, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
@@ -19,10 +19,10 @@ import { Badge } from '@/components/ui/badge';
 import { PurchasePointsDialog } from '@/components/purchase-points-dialog';
 
 const navLinks = [
-  { href: '/draw', label: '抽卡專區', icon: Package, color: "text-primary" },
-  { href: '/bet', label: '拼卡專區', icon: CrossedCardsIcon, color: "text-destructive" },
-  { href: '/lucky-bags', label: '福袋專區', icon: LuckyBagIcon, color: "text-accent" },
-  { href: '/group-break', label: '團拆專區', icon: Users2, color: "text-green-400" },
+  { href: '/draw', label: '抽卡', icon: Package, color: "text-primary" },
+  { href: '/bet', label: '拼卡', icon: CrossedCardsIcon, color: "text-destructive" },
+  { href: '/lucky-bags', label: '福袋', icon: LuckyBagIcon, color: "text-accent" },
+  { href: '/group-break', label: '團拆', icon: Users2, color: "text-green-400" },
   { href: '/collection', label: '收藏庫', icon: Library, color: "text-primary/70" },
   { href: '/vip', label: 'VIP', icon: Crown, color: "text-accent" },
   { href: '/about', label: '關於我們', icon: Info, color: "text-slate-400" },

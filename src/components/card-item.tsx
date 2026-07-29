@@ -3,7 +3,7 @@
 import { SafeImage } from '@/components/safe-image';
 import { cn } from '@/lib/utils';
 import { useState, useRef } from 'react';
-import { RotateCw, Gem, Hash, Search } from 'lucide-react';
+import { RotateCw, Gem, Search } from 'lucide-react';
 
 type Rarity = 'common' | 'rare' | 'legendary';
 
@@ -13,7 +13,6 @@ type CardItemProps = {
   backImageUrl?: string;
   imageHint: string;
   rarity?: Rarity;
-  serialNumber?: string;
   isFlippable?: boolean;
   onFlip?: () => void;
   priority?: boolean;
@@ -34,7 +33,7 @@ const rarityStyles = {
   },
 };
 
-export function CardItem({ name, imageUrl, backImageUrl, imageHint, rarity, serialNumber, isFlippable = true, onFlip, priority = false }: CardItemProps) {
+export function CardItem({ name, imageUrl, backImageUrl, imageHint, rarity, isFlippable = true, onFlip, priority = false }: CardItemProps) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [zoomPos, setZoomPos] = useState<{ x: number; y: number } | null>(null);
   const [imgError, setImgError] = useState(false);
@@ -144,15 +143,7 @@ export function CardItem({ name, imageUrl, backImageUrl, imageHint, rarity, seri
           
           <div className="absolute inset-0 bg-gradient-to-t from-black/5 via-transparent to-transparent pointer-events-none" />
           
-          {/* Digital Serial Number Badge */}
-          {serialNumber && (
-            <div className="absolute top-2.5 right-2.5 z-20">
-              <div className="flex items-center gap-1.5 bg-black/85 backdrop-blur-xl border border-primary/40 px-2.5 py-1.5 rounded-lg text-[10px] md:text-[13px] font-code font-black text-white shadow-[0_0_15px_rgba(6,182,212,0.4)] tracking-widest uppercase">
-                <Hash className="w-3 h-3 md:w-4 md:h-4 text-primary animate-pulse" />
-                {serialNumber}
-              </div>
-            </div>
-          )}
+          {/* Digital Serial Number Badge (Removed) */}
           
           {isFlippable && (
             <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">

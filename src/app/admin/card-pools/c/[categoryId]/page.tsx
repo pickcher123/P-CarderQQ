@@ -152,7 +152,7 @@ export default function CardPoolsAdminPage() {
           <TableHeader className="bg-muted/50">
             <TableRow>
               <TableHead className="pl-6">卡池名稱</TableHead>
-              <TableHead>價格 (單抽/三抽)</TableHead>
+              <TableHead>價格 (1抽/三抽)</TableHead>
               <TableHead>存量狀態</TableHead>
               <TableHead>上架狀態</TableHead>
               <TableHead className="w-24">排序權重</TableHead>

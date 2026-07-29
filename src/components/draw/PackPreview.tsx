@@ -27,31 +27,31 @@ export function PackPreview({
         <div className="flex flex-col items-center min-h-screen p-2 pt-10 md:pt-32 relative select-none">
             <div className="w-full max-w-[340px] space-y-4 animate-fade-in-up">
                 <div className="relative p-2 bg-slate-900 border-[6px] border-slate-950 rounded-[2rem] shadow-2xl overflow-hidden">
-                    <div className="bg-black rounded-[1.5rem] border-[6px] border-slate-950 overflow-hidden p-4 space-y-4 text-center">
-                        <Logo className="mx-auto scale-75" asStatic />
-                        <h2 className="text-xs md:text-base font-headline font-black text-white uppercase truncate px-2">{cardPool.name}</h2>
+                    <div className="bg-slate-950 rounded-[1.5rem] border-[3px] border-slate-900 overflow-hidden p-4 space-y-4 text-center">
+                        <Logo className="mx-auto scale-75 opacity-80" asStatic />
+                        <h2 className="text-xs md:text-base font-headline font-black text-slate-300 uppercase truncate px-2">{cardPool.name}</h2>
                         <div className="grid grid-cols-2 gap-2">
-                            <div className="p-2 bg-white/5 rounded-xl border border-white/10"><span className="text-[7px] text-muted-foreground font-black block uppercase">本次抽數</span><span className="text-base font-black text-white">{initialDrawCount} 包</span></div>
-                            <div className="p-2 bg-white/5 rounded-xl border border-white/10">
-                                <span className="text-[7px] text-muted-foreground font-black block uppercase">花費金額</span>
-                                <div className="flex items-center justify-center gap-1 text-base font-black text-white">
+                            <div className="p-2 bg-slate-900/50 rounded-xl border border-slate-800"><span className="text-[7px] text-slate-500 font-black block uppercase">本次抽數</span><span className="text-base font-black text-slate-100">{initialDrawCount} 包</span></div>
+                            <div className="p-2 bg-slate-900/50 rounded-xl border border-slate-800">
+                                <span className="text-[7px] text-slate-500 font-black block uppercase">花費金額</span>
+                                <div className="flex items-center justify-center gap-1 text-base font-black text-slate-100">
                                     {cardPool.currency === 'p-point' ? 
-                                        <><PPlusIcon className="w-3 h-3 text-sky-400" />{cost}</> : 
-                                        <><Gem className="w-3 h-3 text-sky-400" /> {cost}</>
+                                        <><PPlusIcon className="w-3 h-3 text-sky-700" />{cost}</> : 
+                                        <><Gem className="w-3 h-3 text-sky-700" /> {cost}</>
                                     }
                                 </div>
                             </div>
                         </div>
                         <div className="flex flex-col gap-2">
                             {cardPool.minLevel && cardPool.minLevel !== '新手收藏家' && (
-                                <div className={cn("p-2 rounded-xl border flex items-center justify-center gap-2", isLevelMet ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-500" : "bg-rose-500/10 border-rose-500/30 text-rose-500")}><ShieldCheck className="w-3 h-3" /><span className="text-[9px] font-black uppercase">等級限制: {cardPool.minLevel}</span></div>
+                                <div className={cn("p-2 rounded-xl border flex items-center justify-center gap-2", isLevelMet ? "bg-emerald-950/30 border-emerald-900/50 text-emerald-600" : "bg-rose-950/30 border-rose-900/50 text-rose-600")}><ShieldCheck className="w-3 h-3" /><span className="text-[9px] font-black uppercase">等級限制: {cardPool.minLevel}</span></div>
                             )}
                         </div>
                     </div>
                     <div className="mt-3 px-2">
-                            <div className="p-3 rounded-xl border border-destructive/30 bg-destructive/5 flex flex-col items-center text-center gap-1.5">
-                                <div className="flex items-center gap-1 justify-center mb-0.5"><AlertCircle className="w-3.5 h-3.5 text-destructive" /><p className="text-[9px] font-black text-destructive uppercase">購買條款告知</p></div>
-                                <ul className="text-[9px] text-white/80 font-bold space-y-0.5 text-left list-none pl-0">
+                            <div className="p-3 rounded-xl border border-slate-800 bg-slate-950/50 flex flex-col items-center text-center gap-1.5">
+                                <div className="flex items-center gap-1 justify-center mb-0.5"><AlertCircle className="w-3.5 h-3.5 text-slate-600" /><p className="text-[9px] font-black text-slate-600 uppercase">購買條款告知</p></div>
+                                <ul className="text-[9px] text-slate-500 font-bold space-y-0.5 text-left list-none pl-0">
                                     <li>● 本站商品屬機率型抽選及數位內容。</li>
                                     <li>● 本服務即完成，依《消保法》不適用鑑賞期。</li>
                                     <li>● 啟動開獎即視為完全同意購買規則。</li>
@@ -63,7 +63,7 @@ export function PackPreview({
                             size="lg"
                             className={cn(
                                 "w-full h-14 text-xl font-black rounded-xl shadow-xl transition-all",
-                                (isLevelMet && !isLimitReachedForInitial && !isLoadingStats) ? "bg-primary text-primary-foreground border-b-[6px] border-slate-950 active:translate-y-1 active:border-b-0" : "bg-slate-800 text-slate-500 border-slate-700"
+                                (isLevelMet && !isLimitReachedForInitial && !isLoadingStats) ? "bg-slate-800 text-slate-200 border-b-[6px] border-slate-950 active:translate-y-1 active:border-b-0 hover:bg-slate-700" : "bg-slate-900 text-slate-600 border-slate-950"
                             )}
                             onClick={() => (isLevelMet && !isLimitReachedForInitial && !isLoadingStats) ? performDraw(initialDrawCount) : null}
                             disabled={!isLevelMet || isLimitReachedForInitial || isLoadingStats}

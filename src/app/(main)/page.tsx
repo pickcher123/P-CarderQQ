@@ -21,6 +21,7 @@ import { SafeImage } from '@/components/safe-image';
 import { FloatingCardsBackground } from '@/components/floating-cards-background';
 import { CardExhibitionCalendar } from '@/components/card-exhibition-calendar';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import { PredictionSection } from '@/components/prediction-section';
 
 interface NewsItem {
     id: string;
@@ -116,6 +117,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* 賽事預測 */}
+      <PredictionSection />
 
       {/* 最新消息中心 */}
       <section className="relative py-12 md:py-16 bg-card/10 border-y border-white/5 overflow-hidden">

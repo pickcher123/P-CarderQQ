@@ -81,6 +81,16 @@ service cloud.firestore {
       allow create: if isSignedIn(); // 抽到大獎時系統會建立公告
     }
     
+    match /predictionEvents/{eventId} {
+      allow read: if true;
+      allow write: if isVerifiedAdmin();
+    }
+
+    match /userPredictions/{predictionId} {
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+    }
+    
     match /wishes/{id} {
       allow create: if isSignedIn();
       allow read: if isVerifiedAdmin();

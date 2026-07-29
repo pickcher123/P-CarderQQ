@@ -432,7 +432,9 @@ export default function OpenPackPage() {
                 isLevelMet={isLevelMet}
                 isLimitReachedForInitial={isLimitReachedForInitial}
                 isLoadingStats={isLoadingStats}
-                performDraw={performDraw}
+                performDraw={(count) => performDraw(count, selectedAgentId)}
+                agents={agents}
+                onSelectAgent={setSelectedAgentId}
             />
         );
     }
@@ -442,7 +444,7 @@ export default function OpenPackPage() {
             <div className="flex flex-col h-screen items-center justify-center p-6 text-white select-none">
                 <Loader2 className="animate-spin text-primary w-12 h-12 mb-4" />
                 <p className="text-muted-foreground">{step === 'loading' ? '正在從資料庫讀取卡包...' : error}</p>
-                {step === 'error' && <Button className="mt-6 rounded-xl font-bold px-10" asChild><Link href="/draw">返回抽卡專區</Link></Button>}
+                {step === 'error' && <Button className="mt-6 rounded-xl font-bold px-10" asChild><Link href="/draw">返回抽卡</Link></Button>}
             </div>
         );
     }
@@ -707,7 +709,7 @@ export default function OpenPackPage() {
                                             <Button 
                                                 onClick={() => setStep('done')} 
                                                 variant="outline" 
-                                                className="col-span-2 h-10 text-[11px] font-bold border-primary/40 text-primary rounded-xl bg-primary/5 shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:bg-primary/10 animate-pulse"
+                                                className="col-span-2 h-10 text-[11px] font-bold border-primary/40 text-primary rounded-xl bg-primary/5 shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:bg-primary/10"
                                             >
                                                 查看本次總結
                                             </Button>

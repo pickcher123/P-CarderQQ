@@ -1,6 +1,7 @@
 'use client';
 import { useState, useMemo, useEffect } from 'react';
 import { CardItem } from '@/components/card-item';
+import { CardReportDialog } from '@/components/card-report-dialog';
 import { Button } from '@/components/ui/button';
 import {
   Tooltip,
@@ -91,6 +92,7 @@ export default function CollectionPage() {
   const [selectedCardIds, setSelectedCardIds] = useState<Set<string>>(new Set());
   const [isProcessing, setIsProcessing] = useState(false);
   const [previewCard, setPreviewCard] = useState<MergedCard | null>(null);
+  const [isReportOpen, setIsReportOpen] = useState(false);
   
   const [shippingMethod, setShippingMethod] = useState<ShippingMethod>('7-11');
   const [shippingName, setShippingName] = useState('');
@@ -722,7 +724,7 @@ export default function CollectionPage() {
                         </div>
                     </div>
                     <div className="flex-1">
-                        <h2 className="text-3xl md:text-4xl font-black italic text-orange-400 tracking-tighter">團拆精選專區</h2>
+                        <h2 className="text-3xl md:text-4xl font-black italic text-orange-400 tracking-tighter">團拆精選</h2>
                         <div className="h-[2px] w-12 bg-orange-400 mt-2"></div>
                     </div>
                     <div className="h-[2px] flex-1 bg-gradient-to-r from-orange-500/20 to-transparent ml-4" />
@@ -838,7 +840,6 @@ export default function CollectionPage() {
                                 imageUrl={previewCard.imageUrl} 
                                 backImageUrl={previewCard.backImageUrl}
                                 imageHint={previewCard.imageHint} 
-                                serialNumber={previewCard.serialNumber} 
                                 rarity={previewCard.rarity} 
                                 isFlippable={true}
                                 priority={true}
@@ -848,12 +849,7 @@ export default function CollectionPage() {
 
                     <div className="flex flex-col items-center gap-4 md:gap-6 w-full">
                         <div className="flex items-center gap-3">
-                             <div className="flex items-center gap-1.5 bg-slate-900 border border-white/10 px-4 py-2 md:px-5 md:py-2.5 rounded-2xl text-[10px] md:text-xs font-code font-black text-white shadow-xl tracking-widest uppercase">
-                                <Hash className="w-3.5 h-3.5 text-primary" />
-                                {previewCard.serialNumber}
-                            </div>
-                            <Separator orientation="vertical" className="h-6 bg-white/10" />
-                            <div className="flex items-center gap-1.5 bg-slate-900 border border-white/10 px-5 py-2.5 rounded-2xl text-xs font-code font-black text-white shadow-xl tracking-widest uppercase">
+                             <div className="flex items-center gap-1.5 bg-slate-900 border border-white/10 px-5 py-2.5 rounded-2xl text-xs font-code font-black text-white shadow-xl tracking-widest uppercase">
                                 <Gem className="w-3.5 h-3.5 text-primary" />
                                 {previewCard.sellPrice || 10}
                             </div>
@@ -862,12 +858,14 @@ export default function CollectionPage() {
                         <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] flex items-center gap-2">
                            <RotateCw className="w-3 h-3 animate-spin-slow" /> Click to Flip Card
                         </div>
+                        <Button onClick={() => setIsReportOpen(true)} className="bg-primary text-black font-black w-full rounded-xl">生成鑑定報告</Button>
                     </div>
                 </div>
             )}
             
         </DialogContent>
       </Dialog>
+      <CardReportDialog card={previewCard} open={isReportOpen} onOpenChange={setIsReportOpen} />
     </div>
   </div>
 </TooltipProvider>

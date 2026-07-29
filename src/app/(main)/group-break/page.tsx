@@ -152,9 +152,9 @@ export default function GroupBreakPage() {
                 <Settings className="w-20 h-20 text-primary" />
             </div>
             <div className="space-y-3">
-                <h2 className="text-4xl font-black font-headline tracking-widest text-white italic">專區維護中</h2>
+                <h2 className="text-4xl font-black font-headline tracking-widest text-white italic">維護中</h2>
                 <p className="text-muted-foreground font-medium max-w-md mx-auto leading-relaxed">
-                    團拆專區正在調整直播串流配置與獎品派發系統，請各位藏友耐心等候。
+                    團拆正在調整直播串流配置與獎品派發系統，請各位藏友耐心等候。
                 </p>
             </div>
             <Button asChild variant="outline" className="h-12 px-10 rounded-xl border-primary/30 hover:bg-primary/5 text-primary font-bold transition-all">
@@ -199,7 +199,7 @@ export default function GroupBreakPage() {
         
         <div className="flex items-center justify-center animate-fade-in-up">
             <h1 className="font-headline text-3xl font-black tracking-[0.2em] sm:text-6xl text-white drop-shadow-[0_0_15px_rgba(6,182,212,0.4)]">
-                團拆專區
+                團拆
             </h1>
         </div>
       </div>

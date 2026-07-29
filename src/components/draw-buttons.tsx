@@ -34,14 +34,14 @@ export function DrawButtons({
             <Button 
                 className={cn(
                     "flex-1 h-14 text-sm font-black border-2 transition-all shadow-xl rounded-2xl flex items-center justify-center gap-1 px-1",
-                    isLoadingStats ? "bg-slate-800 text-slate-500 border-slate-700 opacity-50" : "bg-slate-900 text-white border-white/10 hover:border-primary/50 hover:bg-slate-800"
+                    isLoadingStats ? "bg-slate-900 text-slate-500 border-slate-800 opacity-50" : "bg-slate-950 text-slate-200 border border-slate-800 hover:border-slate-600 hover:bg-slate-900"
                 )}
                 onClick={() => performDraw(1)} 
                 disabled={isLoadingStats || (cardPool?.remainingPacks ?? 0) < 1}
             >
                 {isLoadingStats ? <Loader2 className="h-5 w-5 animate-spin" /> : 
                     <>
-                        <span className="text-[9px] opacity-70">單抽</span>
+                        <span className="text-[9px] opacity-70">1抽</span>
                         <span className="text-xs flex items-center font-headline"><Gem className="w-3 h-3 mr-0.5 text-sky-400"/>{cardPool?.price}</span>
                     </>
                 }
@@ -49,7 +49,7 @@ export function DrawButtons({
             <Button 
                 className={cn(
                     "flex-1 h-14 text-sm font-black rounded-2xl transition-all shadow-xl flex items-center justify-center gap-1 px-1",
-                    (isLoadingStats || !canDraw3) ? "bg-slate-800 text-slate-500 border border-slate-700 opacity-50" : "bg-primary text-primary-foreground hover:bg-primary/90"
+                    (isLoadingStats || !canDraw3) ? "bg-slate-900 text-slate-500 border border-slate-800 opacity-50" : "bg-indigo-950 text-indigo-100 border border-indigo-800 hover:bg-indigo-900 hover:border-indigo-700"
                 )}
                 onClick={() => performDraw(3)} 
                 disabled={isLoadingStats || (cardPool?.remainingPacks ?? 0) < 3 || !canDraw3}
@@ -64,7 +64,7 @@ export function DrawButtons({
             <Button 
                 className={cn(
                     "flex-1 h-14 text-sm font-black rounded-2xl transition-all shadow-xl flex items-center justify-center gap-1 px-1",
-                    (isLoadingStats || !canDraw10) ? "bg-slate-800 text-slate-500 border border-slate-700 opacity-50" : "bg-cyan-500 text-white hover:bg-cyan-600"
+                    (isLoadingStats || !canDraw10) ? "bg-slate-900 text-slate-500 border border-slate-800 opacity-50" : "bg-amber-950 text-amber-100 border border-amber-800 hover:bg-amber-900 hover:border-amber-700"
                 )}
                 onClick={() => performDraw(10)} 
                 disabled={isLoadingStats || (cardPool?.remainingPacks ?? 0) < 10 || !canDraw10}

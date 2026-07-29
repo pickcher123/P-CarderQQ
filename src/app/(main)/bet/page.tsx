@@ -159,9 +159,9 @@ export default function BetLandingPage() {
                     <Settings className="w-20 h-20 text-destructive" />
                 </div>
                 <div className="space-y-3">
-                    <h2 className="text-4xl font-black font-headline tracking-widest text-white italic">專區維護中</h2>
+                    <h2 className="text-4xl font-black font-headline tracking-widest text-white italic">維護中</h2>
                     <p className="text-muted-foreground font-medium max-w-md mx-auto leading-relaxed">
-                        拼卡專區目前正在進行機率演算法優化與系統升級，為了確保公平性，暫時停止服務。
+                        拼卡目前正在進行機率演算法優化與系統升級，為了確保公平性，暫時停止服務。
                     </p>
                 </div>
                 <Button asChild variant="outline" className="h-12 px-10 rounded-xl border-destructive/30 hover:bg-destructive/5 font-bold transition-all">
@@ -179,7 +179,7 @@ export default function BetLandingPage() {
 
             <div className="flex items-center justify-center animate-fade-in-up mb-12">
                 <h1 className="font-headline text-3xl sm:text-6xl font-black tracking-widest text-white drop-shadow-[0_0_15px_rgba(219,39,119,0.4)]">
-                    拚卡專區
+                    拚卡
                 </h1>
             </div>
 

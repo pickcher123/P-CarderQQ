@@ -383,7 +383,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                 const price = drawCount === 1 ? (pool.price || 0) 
                                             : drawCount === 3 ? (pool.price3Draws || (pool.price || 0) * 3) 
                                             : (pool.price10Draws || (pool.price || 0) * 10);
-                                const label = drawCount === 1 ? '單抽' : `${drawCount}連`;
+                                const label = drawCount === 1 ? '1抽' : `${drawCount}連`;
                                 const drawsToPerform = Math.min(drawCount, pool.remainingPacks || 0);
                                 
                                 return (
@@ -392,8 +392,8 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                         className={cn(
                                             "w-full h-12 flex flex-row items-center justify-center gap-1 rounded-xl transition-all active:translate-y-1 active:border-b-0 px-2.5",
                                             !canDraw 
-                                                ? "bg-slate-200 text-slate-400 border-slate-300 border-b-4 opacity-50" 
-                                                : "bg-primary text-white border-b-4 border-b-sky-900/50 shadow-lg hover:brightness-105"
+                                                ? "bg-slate-900 text-slate-600 border-slate-950 border-b-4 opacity-50" 
+                                                : "bg-slate-800 text-slate-200 border-slate-950 border-b-4 hover:bg-slate-700"
                                         )} 
                                         disabled={!canDraw} 
                                         onClick={() => {

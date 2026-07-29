@@ -241,6 +241,10 @@ export function BettingGameDialog({ card, children, categoryName, onSpinStart, o
                                     <ChevronRight className="w-6 h-6 md:w-8 md:h-8 text-rose-500 fill-rose-500 drop-shadow-[0_0_10px_rgba(244,63,94,0.8)]" />
                                 </div>
 
+                                <div className="absolute -right-8 md:-right-12 top-4 md:top-8 w-4 h-32 md:h-48 flex flex-col items-center z-20">
+                                    <div className="w-2 h-20 md:h-32 bg-slate-700 rounded-full" />
+                                    <div className="w-8 h-8 md:w-12 md:h-12 bg-red-600 rounded-full shadow-[0_0_10px_rgba(220,38,38,0.8)] -mt-2 animate-bounce" />
+                                </div>
                                 <div className="relative h-10 md:h-20 w-full overflow-hidden rounded-lg bg-black/90 border-[3px] border-slate-950 shadow-inner flex flex-col items-center">
                                     <div className="absolute inset-0 z-10 pointer-events-none bg-gradient-to-b from-black via-transparent to-black opacity-80" />
                                     <div className="absolute top-0 left-0 right-0 h-[30%] bg-gradient-to-b from-black/40 to-transparent z-10 pointer-events-none" />

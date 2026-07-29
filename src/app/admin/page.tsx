@@ -345,10 +345,10 @@ export default function AdminPage() {
                         </CardHeader>
                         <CardContent className="pt-6 space-y-4">
                             {[
-                                { label: '抽卡專區', flag: 'isDrawEnabled' },
-                                { label: '福袋專區', flag: 'isLuckyBagEnabled' },
-                                { label: '拼卡專區', flag: 'isBettingEnabled' },
-                                { label: '團拆專區', flag: 'isGroupBreakEnabled' },
+                                { label: '抽卡', flag: 'isDrawEnabled' },
+                                { label: '福袋', flag: 'isLuckyBagEnabled' },
+                                { label: '拼卡', flag: 'isBettingEnabled' },
+                                { label: '團拆', flag: 'isGroupBreakEnabled' },
                                 { label: '中獎跑馬燈', flag: 'isMarqueeEnabled' },
                             ].map((feat) => (
                                 <div key={feat.flag} className="flex items-center justify-between p-3.5 border border-slate-100 rounded-xl bg-slate-50/50">

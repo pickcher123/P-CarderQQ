@@ -32,6 +32,7 @@ import {
   Calendar
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
+import { Activity } from 'lucide-react';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,7 @@ const sidebarNavItems = [
       { href: '/admin/orders', label: '交易紀錄', icon: FileText, permission: 'orders' },
       { href: '/admin/deposits', label: '儲值管理', icon: CreditCard, permission: 'deposits' },
       { href: '/admin/conversions', label: '轉點紀錄', icon: RefreshCw, permission: 'conversions' },
+      { href: '/admin/agents', label: '業務專區', icon: UserCircle, permission: 'agents' },
     ]},
     { title: '遊戲管理', items: [
       { href: '/admin/cards', label: '卡片總管', icon: CreditCard, permission: 'cards' },
@@ -51,6 +53,7 @@ const sidebarNavItems = [
       { href: '/admin/betting', label: '拼卡管理', icon: Swords, permission: 'betting' },
       { href: '/admin/lucky-bags', label: '福袋管理', icon: Ticket, permission: 'lucky-bags' },
       { href: '/admin/group-breaks', label: '團拆管理', icon: Users2, permission: 'group-breaks' },
+      { href: '/admin/predictions', label: '賽事預測管理', icon: Activity, permission: 'predictions' },
     ]},
     { title: '會員管理', items: [
       { href: '/admin/users', label: '會員資訊', icon: UserCircle, permission: 'users' },

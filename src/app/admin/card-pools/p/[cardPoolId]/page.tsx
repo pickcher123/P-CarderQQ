@@ -89,6 +89,7 @@ interface CardPool {
   expiresAt?: Timestamp;
   dailyLimit?: number;
   minLevel?: string;
+  agentId?: string;
 }
 
 interface CardData {
@@ -183,6 +184,9 @@ export default function CardPoolDetailPage() {
   const [startTimeValue, setStartTimeValue] = useState("00:00");
   
   const [newPointPrize, setNewPointPrize] = useState({ points: 100, quantity: 10, rarity: 'common' as Rarity });
+
+  const agentsQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'agents') : null), [firestore]);
+  const { data: agents } = useCollection<{ id: string, name: string }>(agentsQuery);
 
   // Fetch Card Pool details
   const cardPoolRef = useMemoFirebase(() => {
@@ -326,6 +330,7 @@ export default function CardPoolDetailPage() {
         pointPrizes: cardPool.pointPrizes || [],
         dailyLimit: cardPool.dailyLimit || 0,
         minLevel: cardPool.minLevel || '新手收藏家',
+        agentId: cardPool.agentId || '',
       };
       setPoolDetails(details);
       if (cardPool.expiresAt) {
@@ -717,6 +722,17 @@ export default function CardPoolDetailPage() {
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <div className="space-y-2">
+                            <Label htmlFor="pool-agent" className="text-[10px] font-black uppercase text-slate-500 tracking-widest">負責業務</Label>
+                            <Select value={poolDetails.agentId || ''} onValueChange={(val) => { setPoolDetails({...poolDetails, agentId: val}); handleUpdatePoolDetails('agentId', val); }}>
+                                <SelectTrigger className="h-12 border-slate-200 font-bold bg-white text-slate-900">
+                                    <SelectValue placeholder="請選擇負責業務" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {agents?.map(agent => <SelectItem key={agent.id} value={agent.id} className="font-bold">{agent.name}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
                             <Label htmlFor="pool-name" className="text-[10px] font-black uppercase text-slate-500 tracking-widest">卡池名稱</Label>
                             <Input id="pool-name" value={poolDetails.name || ''} onChange={e => setPoolDetails({...poolDetails, name: e.target.value})} onBlur={e => handleUpdatePoolDetails('name', e.target.value)} className="h-12 border-slate-200 font-bold text-slate-900 bg-white" />
                         </div>
@@ -844,7 +860,7 @@ export default function CardPoolDetailPage() {
                                 <div className="space-y-2">
                                     <Label htmlFor="pool-price" className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-500">
                                         {poolDetails.currency === 'p-point' ? <PPlusIcon className="h-4 w-4"/> : <Gem className="h-4 w-4 text-primary"/>}
-                                        單抽價格
+                                        1抽價格
                                     </Label>
                                     <Input id="pool-price" type="number" value={poolDetails.price || 0} onChange={e => setPoolDetails({...poolDetails, price: Number(e.target.value)})} onBlur={e => handleUpdatePoolDetails('price', Number(e.target.value))} className="h-12 border-slate-200 font-code font-black text-lg text-slate-900 bg-white" />
                                 </div>

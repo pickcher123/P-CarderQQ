@@ -56,6 +56,36 @@
         "order": { "type": "number" }
       },
       "required": ["id", "name", "logoUrl"]
+    },
+    "PredictionEvent": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "PredictionEvent",
+      "type": "object",
+      "description": "Sports event for predictions.",
+      "properties": {
+        "id": { "type": "string" },
+        "matchName": { "type": "string" },
+        "startTime": { "type": "string", "format": "date-time" },
+        "question": { "type": "string" },
+        "options": { "type": "array", "items": { "type": "string" } },
+        "reward": { "type": "number" },
+        "status": { "type": "string", "enum": ["open", "closed", "resolved"] }
+      },
+      "required": ["id", "matchName", "startTime", "question", "options", "reward", "status"]
+    },
+    "UserPrediction": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserPrediction",
+      "type": "object",
+      "description": "User's prediction for an event.",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "eventId": { "type": "string" },
+        "option": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "eventId", "option", "timestamp"]
     }
   },
   "auth": {
@@ -63,20 +93,28 @@
   },
   "firestore": {
     "/users/{userId}": {
-      "schema": { "$ref": "#/backend/entities/UserProfile" },
+      "schema": { "$ref": "#/entities/UserProfile" },
       "description": "Stores user profile data."
     },
     "/users_public/{userId}": {
-      "schema": { "$ref": "#/backend/entities/UserPublic" },
+      "schema": { "$ref": "#/entities/UserPublic" },
       "description": "Publicly accessible user profile data."
     },
     "/announcements/{annId}": {
-      "schema": { "$ref": "#/backend/entities/Announcement" },
+      "schema": { "$ref": "#/entities/Announcement" },
       "description": "Global hall of fame data."
     },
     "/partners/{partnerId}": {
-      "schema": { "$ref": "#/backend/entities/Partner" },
+      "schema": { "$ref": "#/entities/Partner" },
       "description": "Partner organizations."
+    },
+    "/predictionEvents/{eventId}": {
+      "schema": { "$ref": "#/entities/PredictionEvent" },
+      "description": "Sports prediction events."
+    },
+    "/userPredictions/{predictionId}": {
+      "schema": { "$ref": "#/entities/UserPrediction" },
+      "description": "User predictions."
     },
     "/systemConfig/{configId}": {
       "schema": "object",

@@ -566,7 +566,7 @@ export default function VIPZonePage() {
                         ))}
                         {unlockedAchievements.length === 0 && (
                             <div className="col-span-full py-10 text-center text-white/20 italic font-bold">
-                                尚未解鎖任何成就，快去專區體驗吧！
+                                尚未解鎖任何成就，快去體驗吧！
                             </div>
                         )}
                     </div>

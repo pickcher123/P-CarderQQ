@@ -241,29 +241,7 @@ export default function LoginPage() {
     }
   };
 
-  const SocialLogin = () => (
-    <>
-        <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-white/20" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-black px-2 text-muted-foreground font-mono tracking-widest">
-                    或
-                </span>
-            </div>
-        </div>
-        <Button 
-            variant="outline" 
-            className="w-full h-12 rounded-none border-primary/50 text-primary hover:bg-primary/20 transition-all font-mono font-bold" 
-            onClick={handleGoogleLogin} 
-            disabled={isLoading}
-        >
-            <GoogleIcon className="mr-3 h-5 w-5"/>
-            使用 Google 登入
-        </Button>
-    </>
-  )
+  const [isRegistering, setIsRegistering] = useState(false);
 
   return (
     <div className="relative min-h-screen flex flex-col items-center pt-8 px-4 bg-background text-foreground font-mono overflow-hidden">
@@ -273,151 +251,61 @@ export default function LoginPage() {
       {/* 背景光暈 */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/20 rounded-full blur-[150px] pointer-events-none animate-pulse" />
 
-      <div className="w-full max-w-[300px] relative z-10 space-y-2 animate-in fade-in zoom-in duration-500">
-        <div className="text-center space-y-0.5">
-            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm bg-primary/20 border border-primary text-primary text-[8px] font-black tracking-[0.2em] mb-0.5 uppercase">
-                <Terminal className="w-2 h-2" /> 系統就緒
-            </div>
-            <h1 className="text-2xl font-black tracking-tighter text-foreground drop-shadow-[0_0_10px_rgba(6,182,212,0.5)]">存取保險庫</h1>
-            <p className="text-[8px] text-muted-foreground font-bold tracking-widest uppercase">初始化收藏協議</p>
+      <div className="w-full max-w-[400px] relative z-10 space-y-8 animate-in fade-in zoom-in duration-500 pt-16">
+        <div className="text-center space-y-1">
+            <h1 className="text-6xl font-black tracking-tighter text-primary drop-shadow-[0_0_15px_rgba(6,182,212,0.8)]">P+Carder</h1>
+            <p className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase">初始化收藏協議</p>
         </div>
 
-        <Tabs defaultValue="login" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 bg-background p-0.5 rounded-none h-8 mb-2 border border-border">
-            <TabsTrigger value="login" className="rounded-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold font-mono text-xs">登入</TabsTrigger>
-            <TabsTrigger value="register" className="rounded-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold font-mono text-xs">註冊</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="login">
-            <form onSubmit={handleLogin}>
-              <Card className="bg-card/80 border-border rounded-none shadow-sm">
-                <CardHeader className="p-2 pb-1">
-                  <CardTitle className="text-xs font-bold flex items-center gap-1 text-foreground">
-                    <LogIn className="h-3 w-3" /> 需要驗證
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-2 pt-0 space-y-2">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="login-email" className="text-[8px] uppercase font-bold text-muted-foreground tracking-widest">電子郵件</Label>
-                    <Input 
-                      id="login-email" 
-                      type="email" 
-                      placeholder="USER@DOMAIN.COM" 
-                      required 
-                      value={loginEmail}
-                      onChange={(e) => setLoginEmail(e.target.value)}
-                      disabled={isLoading}
-                      className="h-8 bg-background border-input rounded-none focus:border-primary text-xs"
-                      />
-                  </div>
-                  <div className="space-y-0.5">
-                    <div className="flex items-center justify-between">
-                        <Label htmlFor="login-password" className="text-[8px] uppercase font-bold text-muted-foreground tracking-widest">密碼</Label>
-                         <Button
-                            type="button"
-                            variant="link"
-                            className="h-auto p-0 text-[7px] uppercase font-black tracking-widest text-muted-foreground hover:text-primary"
-                            onClick={() => setResetDialogOpen(true)}
-                        >
-                            忘記密碼？
-                        </Button>
-                    </div>
-                    <Input 
-                      id="login-password" 
-                      type="password" 
-                      required 
-                      value={loginPassword}
-                      onChange={(e) => setLoginPassword(e.target.value)}
-                      disabled={isLoading}
-                      className="h-8 bg-background border-input rounded-none focus:border-primary text-xs"
-                      />
-                  </div>
-                   <SocialLogin />
-                </CardContent>
-                <CardFooter className="p-2 pt-0">
-                  <Button className="w-full h-8 rounded-none font-black text-xs bg-primary text-primary-foreground hover:bg-primary/90 border border-primary shadow-md" type="submit" disabled={isLoading}>
-                      {isLoading ? <Loader2 className="animate-spin mr-1 h-3 w-3" /> : null}
-                      {isLoading ? '驗證中...' : '執行登入'}
-                  </Button>
-                </CardFooter>
-              </Card>
-            </form>
-          </TabsContent>
+        <Card className="bg-card/80 border-border rounded-none shadow-md p-6">
+            <CardContent className="p-0 space-y-6">
+                <Button 
+                    variant="outline" 
+                    className="w-full h-14 rounded-none border-primary/50 text-primary hover:bg-primary/20 transition-all font-mono font-bold text-sm" 
+                    onClick={handleGoogleLogin} 
+                    disabled={isLoading}
+                >
+                    <GoogleIcon className="mr-3 h-6 w-6"/>
+                    使用 Google 登入
+                </Button>
 
-          <TabsContent value="register">
-             <form onSubmit={handleRegister}>
-              <Card className="bg-card/80 border-border rounded-none shadow-lg">
-                <CardHeader className="p-8 pb-4">
-                  <CardTitle className="text-xl font-bold flex items-center gap-2 text-foreground">
-                    <Sparkles className="h-5 w-5" /> 新使用者註冊
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-8 pt-0 space-y-4">
-                   <div className="space-y-2">
-                    <Label htmlFor="register-username" className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">使用者名稱</Label>
-                    <Input 
-                      id="register-username" 
-                      required 
-                      value={registerUsername}
-                      onChange={(e) => setRegisterUsername(e.target.value)}
-                      disabled={isLoading}
-                      className="h-12 bg-background border-input rounded-none focus:border-primary"
-                      />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="register-email" className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">電子郵件</Label>
-                    <Input
-                      id="register-email"
-                      type="email"
-                      placeholder="USER@DOMAIN.COM"
-                      required
-                      value={registerEmail}
-                      onChange={(e) => setRegisterEmail(e.target.value)}
-                      disabled={isLoading}
-                      className="h-12 bg-background border-input rounded-none focus:border-primary"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="register-password" className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">密碼</Label>
-                        <Input 
-                        id="register-password" 
-                        type="password" 
-                        required 
-                        value={registerPassword}
-                        onChange={(e) => setRegisterPassword(e.target.value)}
-                        disabled={isLoading}
-                        className="h-12 bg-background border-input rounded-none focus:border-primary"
-                        />
+                <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t border-white/20" />
                     </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="register-confirm-password" className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">確認密碼</Label>
-                        <Input 
-                        id="register-confirm-password" 
-                        type="password" 
-                        required 
-                        value={registerConfirmPassword}
-                        onChange={(e) => setRegisterConfirmPassword(e.target.value)}
-                        disabled={isLoading}
-                        className="h-12 bg-background border-input rounded-none focus:border-primary"
-                        />
+                    <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-card px-3 text-muted-foreground font-mono tracking-widest">
+                            或
+                        </span>
                     </div>
-                  </div>
-                  <SocialLogin />
-                </CardContent>
-                <CardFooter className="p-8 pt-0">
-                  <Button className="w-full h-14 rounded-none font-black text-lg bg-primary text-primary-foreground hover:bg-primary/90 border border-primary shadow-lg" type="submit" disabled={isLoading}>
-                      {isLoading ? <Loader2 className="animate-spin mr-2" /> : null}
-                      {isLoading ? '初始化中...' : '初始化帳戶'}
-                  </Button>
-                </CardFooter>
-              </Card>
-             </form>
-          </TabsContent>
-        </Tabs>
+                </div>
+
+                {isRegistering ? (
+                    <form onSubmit={handleRegister} className="space-y-4">
+                        <Input placeholder="使用者名稱" value={registerUsername} onChange={(e) => setRegisterUsername(e.target.value)} disabled={isLoading} className="h-12 bg-background border-input rounded-none text-sm" />
+                        <Input type="email" placeholder="電子郵件" value={registerEmail} onChange={(e) => setRegisterEmail(e.target.value)} disabled={isLoading} className="h-12 bg-background border-input rounded-none text-sm" />
+                        <Input type="password" placeholder="密碼" value={registerPassword} onChange={(e) => setRegisterPassword(e.target.value)} disabled={isLoading} className="h-12 bg-background border-input rounded-none text-sm" />
+                        <Input type="password" placeholder="確認密碼" value={registerConfirmPassword} onChange={(e) => setRegisterConfirmPassword(e.target.value)} disabled={isLoading} className="h-12 bg-background border-input rounded-none text-sm" />
+                        <Button className="w-full h-12 rounded-none font-black text-sm bg-primary text-primary-foreground hover:bg-primary/90" type="submit" disabled={isLoading}>註冊</Button>
+                        <p className="text-xs text-center text-muted-foreground">已有帳戶？ <button type="button" onClick={() => setIsRegistering(false)} className="text-primary hover:underline">立即登入</button></p>
+                    </form>
+                ) : (
+                    <form onSubmit={handleLogin} className="space-y-4">
+                        <Input type="email" placeholder="電子郵件" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} disabled={isLoading} className="h-12 bg-background border-input rounded-none text-sm" />
+                        <Input type="password" placeholder="密碼" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} disabled={isLoading} className="h-12 bg-background border-input rounded-none text-sm" />
+                        <Button className="w-full h-12 rounded-none font-black text-sm bg-primary text-primary-foreground hover:bg-primary/90" type="submit" disabled={isLoading}>登入</Button>
+                        <div className="flex justify-between items-center text-xs">
+                            <button type="button" onClick={() => setResetDialogOpen(true)} className="text-muted-foreground hover:text-primary">忘記密碼？</button>
+                            <button type="button" onClick={() => setIsRegistering(true)} className="text-primary hover:underline">註冊新帳戶</button>
+                        </div>
+                    </form>
+                )}
+            </CardContent>
+        </Card>
       </div>
 
        <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
+        {/* Dialog content ... same as before ... */}
         <DialogContent className="rounded-none bg-background border border-border p-8">
           <DialogHeader>
             <DialogTitle className="text-xl font-black font-mono italic text-primary">重設安全金鑰</DialogTitle>
