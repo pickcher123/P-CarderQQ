@@ -19,13 +19,15 @@ export default function AdminPredictionsPage() {
     const [question, setQuestion] = useState('');
     const [options, setOptions] = useState('');
     const [reward, setReward] = useState('');
+    const [bettingEndTime, setBettingEndTime] = useState('');
 
     const handleCreateEvent = async () => {
-        if (!matchName || !question || !options || !reward) return;
+        if (!matchName || !question || !options || !reward || !bettingEndTime) return;
         try {
             await addDoc(eventsCollection, {
                 matchName,
                 startTime: new Date().toISOString(), // Simplified for now
+                bettingEndTime,
                 question,
                 options: options.split(',').map(o => o.trim()),
                 reward: Number(reward),
@@ -36,6 +38,7 @@ export default function AdminPredictionsPage() {
             setQuestion('');
             setOptions('');
             setReward('');
+            setBettingEndTime('');
         } catch (error) {
             console.error(error);
         }
@@ -64,6 +67,8 @@ export default function AdminPredictionsPage() {
                     <Input value={options} onChange={e => setOptions(e.target.value)} />
                     <Label>紅利積分</Label>
                     <Input type="number" value={reward} onChange={e => setReward(e.target.value)} />
+                    <Label>下注截止時間</Label>
+                    <Input type="datetime-local" value={bettingEndTime} onChange={e => setBettingEndTime(e.target.value)} />
                     <Button onClick={handleCreateEvent}>建立賽事</Button>
                 </CardContent>
             </Card>

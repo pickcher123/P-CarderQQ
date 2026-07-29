@@ -309,6 +309,17 @@ export default function OpenPackPage() {
                     transactionDate: serverTimestamp(),
                     section: 'draw'
                 });
+
+                // 紀錄抽卡日誌
+                const logRef = doc(collection(firestore, 'drawnCardLogs'));
+                transaction.set(logRef, {
+                    userId: user.uid,
+                    poolId: poolId,
+                    agentId: cardPool.agentId || null,
+                    drawnAt: serverTimestamp(),
+                    cost: cost,
+                    count: count
+                });
                 
                 // 7. 更新統計 (統計邏輯)
                 const todayStr = format(new Date(), 'yyyy-MM-dd');
@@ -432,9 +443,7 @@ export default function OpenPackPage() {
                 isLevelMet={isLevelMet}
                 isLimitReachedForInitial={isLimitReachedForInitial}
                 isLoadingStats={isLoadingStats}
-                performDraw={(count) => performDraw(count, selectedAgentId)}
-                agents={agents}
-                onSelectAgent={setSelectedAgentId}
+                performDraw={(count) => performDraw(count)}
             />
         );
     }

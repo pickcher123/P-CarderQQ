@@ -74,6 +74,17 @@ export async function performDrawAction(userId: string, poolId: string, count: n
         }
       }
 
+      // 寫入抽卡日誌
+      const logRef = adminDb.collection('drawnCardLogs').doc();
+      transaction.set(logRef, {
+        userId,
+        poolId,
+        agentId: poolData.agentId || null,
+        drawnAt: admin.firestore.FieldValue.serverTimestamp(),
+        cost,
+        count
+      });
+
       // 更新
       transaction.update(userRef, {
         [currencyField]: admin.firestore.FieldValue.increment(-cost)
