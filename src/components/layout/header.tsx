@@ -109,7 +109,7 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                                     <ChevronDown className="ml-1 sm:ml-1.5 h-2.5 w-2.5 opacity-30 group-hover:opacity-100 group-hover:translate-y-0.5 transition-all" />
                                 </div>
                             </PopoverTrigger>
-                            <PopoverContent className="w-64 p-5 bg-card/95 backdrop-blur-3xl border-primary/20 rounded-[2.5rem] shadow-2xl animate-in zoom-in-95 duration-200" align="end" sideOffset={12}>
+                            <PopoverContent className="w-64 p-5 bg-card/95 backdrop-blur-3xl border-primary/20 rounded-[2.5rem] shadow-2xl animate-in zoom-in-95 duration-200" align="start" sideOffset={12} collisionPadding={16}>
                                 <div className="space-y-4">
                                     <div className="flex items-center justify-between">
                                         <p className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-black">資產概覽</p>

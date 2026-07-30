@@ -6,8 +6,14 @@ import { useParams, useRouter } from 'next/navigation';
 import { useDoc, useCollection, useFirestore, useMemoFirebase, useStorage } from '@/firebase';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { doc, updateDoc, collection, addDoc, getDoc, setDoc, query, where, serverTimestamp, writeBatch } from 'firebase/firestore';
+// ... existing imports
 import { v4 as uuidv4 } from 'uuid';
 import { Skeleton } from '@/components/ui/skeleton';
+// ... (rest of imports)
+
+import { MLB_TEAMS, NBA_TEAMS, MLB_TEAMS_DETAILED, NBA_TEAMS_DETAILED, getTeamLogoUrl } from '@/lib/draw-constants';
+
+// ...
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -37,6 +43,7 @@ type Team = {
   name: string;
   price: number;
   userId?: string;
+  logoUrl?: string;
 }
 
 interface Winnings {
@@ -446,10 +453,12 @@ export default function GroupBreakAdminDetailPage() {
         toast({variant: 'destructive', title: '錯誤', description: '請輸入有效的隊伍名稱和價格。'});
         return;
     }
+    const autoLogo = getTeamLogoUrl(newTeamName.trim());
     const newTeam: Team = {
         teamId: uuidv4(),
-        name: newTeamName,
+        name: newTeamName.trim(),
         price: newTeamPrice,
+        ...(autoLogo ? { logoUrl: autoLogo } : {})
     };
     const updatedTeams = [...(groupBreak.teams || []), newTeam];
     try {
@@ -462,6 +471,54 @@ export default function GroupBreakAdminDetailPage() {
         toast({ variant: 'destructive', title: '錯誤', description: '新增隊伍失敗。'})
     }
   }
+
+  const handleBulkAddTeams = async (league: 'NBA' | 'MLB') => {
+      if (!groupBreakRef || !groupBreak) return;
+      const teamList = league === 'NBA' ? NBA_TEAMS_DETAILED : MLB_TEAMS_DETAILED;
+      const currentTeams = groupBreak.teams || [];
+      const existingNames = new Set(currentTeams.map(t => t.name));
+      
+      const teamsToAdd = teamList.filter(t => !existingNames.has(t.name));
+      
+      if (teamsToAdd.length === 0) {
+          toast({ 
+              title: '提示', 
+              description: `目前活動已包含所有 ${league} 的 ${teamList.length} 支隊伍。` 
+          });
+          return;
+      }
+
+      const defaultPrice = newTeamPrice > 0 ? newTeamPrice : 100;
+      const newTeams = teamsToAdd.map(t => ({
+          teamId: uuidv4(),
+          name: t.name,
+          logoUrl: t.logoUrl,
+          price: defaultPrice,
+      }));
+
+      const updatedTeams = [...currentTeams, ...newTeams];
+      try {
+          await updateDoc(groupBreakRef, { teams: updatedTeams });
+          toast({ 
+              title: '🎉 一鍵新增成功！', 
+              description: `已新增 ${teamsToAdd.length} 支 ${league} 隊伍與球隊 LOGO（單價：${defaultPrice} ${details.currency === 'p-point' ? 'P點' : '鑽石'}）。`
+          });
+      } catch (e) {
+          console.error("Error adding bulk teams", e);
+          toast({ variant: 'destructive', title: '錯誤', description: '新增隊伍失敗。' });
+      }
+  };
+
+  const handleClearAllTeams = async () => {
+      if (!groupBreakRef) return;
+      try {
+          await updateDoc(groupBreakRef, { teams: [] });
+          toast({ title: '已清空隊伍', description: '隊伍選項已成功重設。' });
+      } catch (e) {
+          console.error("Error clearing teams", e);
+          toast({ variant: 'destructive', title: '錯誤', description: '清空隊伍失敗。' });
+      }
+  };
 
   const handleRemoveTeam = async (teamId: string) => {
     if (!groupBreakRef || !groupBreak?.teams) return;
@@ -662,21 +719,72 @@ export default function GroupBreakAdminDetailPage() {
            {isTeamBreak && (
              <Card className="shadow-lg border-white/5 bg-card/40">
                 <CardHeader>
-                    <CardTitle className="text-xl">隊伍與價格矩陣</CardTitle>
-                    <CardDescription>手動定義每個隊伍的價格。玩家將購買特定隊伍。</CardDescription>
+                    <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                      <div>
+                        <CardTitle className="text-xl flex items-center gap-2">
+                          隊伍與價格矩陣
+                          <Badge variant="secondary" className="font-mono text-xs">
+                            {details.teams?.length || 0} 隊
+                          </Badge>
+                        </CardTitle>
+                        <CardDescription>手動定義每個隊伍的價格，或點擊上方「一鍵新增隊伍」自動導入聯盟。</CardDescription>
+                      </div>
+
+                      {/* 一鍵增加隊伍 按鈕區 */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Button 
+                          type="button" 
+                          onClick={() => handleBulkAddTeams('NBA')} 
+                          className="font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm"
+                        >
+                          🏀 一鍵新增 NBA (30隊)
+                        </Button>
+                        <Button 
+                          type="button" 
+                          onClick={() => handleBulkAddTeams('MLB')} 
+                          className="font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-sm"
+                        >
+                          ⚾ 一鍵新增 MLB (30隊)
+                        </Button>
+                        {details.teams && details.teams.length > 0 && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button type="button" variant="outline" size="sm" className="text-rose-400 border-rose-500/30 hover:bg-rose-500/10">
+                                <Trash2 className="w-4 h-4 mr-1" /> 清空
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>確定要清空所有隊伍嗎？</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  此操作將清除目前設定的 {details.teams.length} 支隊伍，無法復原。
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>取消</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleClearAllTeams} className="bg-rose-600 hover:bg-rose-700">確定清空</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                      </div>
+                    </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                    <div className="flex gap-2 p-4 bg-muted/20 rounded-lg border border-dashed border-white/10">
-                        <div className="flex-1 space-y-1">
-                            <Label className="text-[10px] uppercase font-bold text-muted-foreground">新隊伍名稱</Label>
+                    <div className="flex gap-2 p-4 bg-muted/20 rounded-lg border border-dashed border-white/10 flex-wrap items-end">
+                        <div className="flex-1 space-y-1 min-w-[200px]">
+                            <Label className="text-[10px] uppercase font-bold text-muted-foreground">手動新增單隊名稱</Label>
                             <Input placeholder="例如：洛杉磯道奇" value={newTeamName} onChange={(e) => setNewTeamName(e.target.value)} />
                         </div>
                         <div className="w-32 space-y-1">
-                            <Label className="text-[10px] uppercase font-bold text-muted-foreground">價格 ({currency === 'diamond' ? '鑽石' : 'P點'})</Label>
-                            <Input type="number" placeholder="0" value={newTeamPrice || ''} onChange={(e) => setNewTeamPrice(Number(e.target.value))} />
+                            <Label className="text-[10px] uppercase font-bold text-muted-foreground">單隊價格 ({currency === 'diamond' ? '鑽石' : 'P點'})</Label>
+                            <Input type="number" placeholder="100" value={newTeamPrice || ''} onChange={(e) => setNewTeamPrice(Number(e.target.value))} />
                         </div>
-                        <Button onClick={handleAddTeam} className="mt-5 font-bold"><PlusCircle className="mr-2 h-4 w-4"/>新增</Button>
+                        <Button onClick={handleAddTeam} className="font-bold"><PlusCircle className="mr-2 h-4 w-4"/>新增單隊</Button>
                     </div>
+                    <p className="text-xs text-muted-foreground italic -mt-4">
+                      💡 提示：點擊「一鍵新增 NBA / MLB」時，若「單隊價格」有填寫數字，會以此價格作為所有新新增隊伍的初始金額（預設為 100）。
+                    </p>
                      <div className="border rounded-xl bg-card/50 max-h-96 overflow-y-auto">
                         <Table>
                             <TableHeader className="bg-muted/50 sticky top-0 z-10">
@@ -687,30 +795,46 @@ export default function GroupBreakAdminDetailPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {details.teams?.map(team => (
-                                    <TableRow key={team.teamId} className="hover:bg-white/5 transition-colors">
-                                        <TableCell className="font-bold pl-6">{team.name}</TableCell>
-                                        <TableCell>
-                                            <div className="flex items-center gap-2">
-                                                {currency === 'diamond' ? <Gem className="h-3 w-3 text-primary opacity-50"/> : <PPlusIcon className="h-3 w-3 opacity-50"/>}
-                                                <Input 
-                                                    type="number" 
-                                                    defaultValue={team.price}
-                                                    onBlur={(e) => handleUpdateTeamPrice(team.teamId, Number(e.target.value))}
-                                                    className="h-8 bg-transparent"
-                                                />
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="text-right pr-6">
-                                             <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive" onClick={() => handleRemoveTeam(team.teamId)}>
-                                                <Trash2 className="w-4 h-4"/>
-                                             </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
+                                {details.teams?.map(team => {
+                                    const logo = getTeamLogoUrl(team.name, team.logoUrl);
+                                    return (
+                                     <TableRow key={team.teamId} className="hover:bg-white/5 transition-colors">
+                                         <TableCell className="font-bold pl-6">
+                                             <div className="flex items-center gap-3">
+                                                 {logo ? (
+                                                     <img src={logo} alt={team.name} className="w-7 h-7 object-contain flex-shrink-0 drop-shadow-sm" />
+                                                 ) : (
+                                                     <div className="w-7 h-7 rounded-full bg-slate-200 text-slate-700 text-xs font-black flex items-center justify-center">
+                                                         {team.name.slice(0, 1)}
+                                                     </div>
+                                                 )}
+                                                 <span>{team.name}</span>
+                                             </div>
+                                         </TableCell>
+                                         <TableCell>
+                                             <div className="flex items-center gap-2">
+                                                 {currency === 'diamond' ? <Gem className="h-3 w-3 text-primary opacity-50"/> : <PPlusIcon className="h-3 w-3 opacity-50"/>}
+                                                 <Input 
+                                                     type="number" 
+                                                     defaultValue={team.price}
+                                                     onBlur={(e) => handleUpdateTeamPrice(team.teamId, Number(e.target.value))}
+                                                     className="h-8 bg-transparent"
+                                                 />
+                                             </div>
+                                         </TableCell>
+                                         <TableCell className="text-right pr-6">
+                                              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive" onClick={() => handleRemoveTeam(team.teamId)}>
+                                                 <Trash2 className="w-4 h-4"/>
+                                              </Button>
+                                         </TableCell>
+                                     </TableRow>
+                                    );
+                                })}
                                 {(!details.teams || details.teams.length === 0) && (
                                     <TableRow>
-                                        <TableCell colSpan={3} className="h-24 text-center text-muted-foreground italic">尚未新增任何隊伍選項</TableCell>
+                                        <TableCell colSpan={3} className="h-24 text-center text-muted-foreground italic">
+                                          尚未新增任何隊伍選項。請點選上方「🏀 一鍵新增 NBA」或「⚾ 一鍵新增 MLB」快速為活動填入隊伍！
+                                        </TableCell>
                                     </TableRow>
                                 )}
                             </TableBody>

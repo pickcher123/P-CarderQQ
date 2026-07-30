@@ -25,6 +25,7 @@ import { Label } from '@/components/ui/label';
 import { Logo, PPlusIcon } from '@/components/icons';
 import { CardItem } from '@/components/card-item';
 import { VerifyAgeModal } from '@/components/verify-age-modal';
+import { getTeamLogoUrl } from '@/lib/draw-constants';
 
 
 type Spot = {
@@ -37,6 +38,7 @@ type Team = {
   name: string;
   price: number;
   userId?: string;
+  logoUrl?: string;
 }
 
 interface GroupBreak {
@@ -333,28 +335,41 @@ export default function GroupBreakDetailPage() {
                   </div>
               </div>
 
-              <ScrollArea className="h-[400px] rounded-3xl border-4 border-slate-400 bg-slate-300 p-4 shadow-inner custom-scrollbar text-slate-900">
+              <ScrollArea className="h-[420px] rounded-3xl border-4 border-slate-400 bg-slate-300 p-4 shadow-inner custom-scrollbar text-slate-900">
                   {isTeamBreak ? (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                           {(groupBreak.teams || []).map(team => {
                               const isTaken = takenTeams.has(team.teamId);
                               const isSelected = selectedTeams.has(team.teamId);
+                              const logoUrl = getTeamLogoUrl(team.name, team.logoUrl);
+
                               return (
                                 <button
                                     key={team.teamId}
                                     disabled={isTaken || isFull || groupBreak.status === 'completed'}
                                     onClick={() => handleTeamClick(team.teamId)}
                                     className={cn(
-                                        "relative aspect-square rounded-2xl flex flex-col items-center justify-center p-4 text-center font-bold transition-all border-b-[6px] active:translate-y-1 active:border-b-0 group",
+                                        "relative min-h-[96px] rounded-2xl flex flex-col items-center justify-between p-3 text-center font-bold transition-all border-b-[4px] active:translate-y-0.5 active:border-b-0 group",
                                         isTaken ? "bg-slate-400/50 text-slate-600 border-transparent opacity-40 cursor-not-allowed" :
-                                        isSelected ? "bg-slate-800 text-white border-black shadow-[0_0_20px_rgba(0,0,0,0.4)] z-10" :
-                                        "bg-slate-100 border-slate-400 text-slate-800 hover:bg-white"
+                                        isSelected ? "bg-slate-800 text-white border-black shadow-[0_0_15px_rgba(0,0,0,0.4)] z-10" :
+                                        "bg-slate-100 border-slate-400 text-slate-800 hover:bg-white hover:scale-[1.02]"
                                     )}
                                 >
-                                    <span className="text-sm font-black uppercase tracking-tight line-clamp-2">{team.name}</span>
-                                    <div className={cn("font-code flex items-center gap-1.5 mt-2", isSelected ? "text-primary" : "text-primary/60")}>
-                                        <span className="text-lg">{team.price.toLocaleString()}</span>
-                                        {currency === 'diamond' ? <Gem className="w-3.5 h-3.5"/> : <PPlusIcon className="w-3.5 h-3.5" />}
+                                    {logoUrl ? (
+                                        <img 
+                                            src={logoUrl} 
+                                            alt={team.name} 
+                                            className="w-10 h-10 object-contain mb-1 transition-transform group-hover:scale-110 drop-shadow-sm flex-shrink-0" 
+                                        />
+                                    ) : (
+                                        <div className="w-8 h-8 rounded-full bg-slate-300 text-slate-700 text-xs font-black flex items-center justify-center mb-1 flex-shrink-0">
+                                            {team.name.slice(0, 1)}
+                                        </div>
+                                    )}
+                                    <span className="text-xs font-black uppercase tracking-tight line-clamp-1 leading-tight">{team.name}</span>
+                                    <div className={cn("font-code flex items-center gap-1 mt-0.5 text-xs font-bold", isSelected ? "text-primary" : "text-primary/70")}>
+                                        <span className="text-sm font-black">{team.price.toLocaleString()}</span>
+                                        {currency === 'diamond' ? <Gem className="w-3 h-3"/> : <PPlusIcon className="w-3 h-3" />}
                                     </div>
                                     {isTaken && <div className="absolute inset-0 bg-black/20 rounded-2xl" />}
                                 </button>

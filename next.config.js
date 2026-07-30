@@ -7,6 +7,8 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  swcMinify: true,
+  productionBrowserSourceMaps: false,
   transpilePackages: [],
   webpack: (config, { isServer }) => {
     if (!isServer) {
@@ -32,7 +34,11 @@ const nextConfig = {
       { protocol: 'https', hostname: 'storage.googleapis.com' },
       { protocol: 'https', hostname: 'i.ibb.co' },
       { protocol: 'https', hostname: 'scontent-tpe1-1.cdninstagram.com' },
-      { protocol: 'https', hostname: '*.cdninstagram.com' }
+      { protocol: 'https', hostname: '*.cdninstagram.com' },
+      { protocol: 'https', hostname: 'static.accupass.com' },
+      { protocol: 'https', hostname: 'accupass.com' },
+      { protocol: 'https', hostname: 'a.espncdn.com' },
+      { protocol: 'https', hostname: '*.espncdn.com' }
     ],
   },
   async headers() {

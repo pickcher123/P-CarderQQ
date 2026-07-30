@@ -118,6 +118,45 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
+  /* Custom Cyberpunk Dark Scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #080d1a;
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #1e293b;
+    border-radius: 9999px;
+    border: 2px solid #080d1a;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #06b6d4;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: #0b101e;
+    border-radius: 9999px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #1e293b;
+    border-radius: 9999px;
+    border: 2px solid #0b101e;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #06b6d4;
+  }
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #1e293b #0b101e;
+  }
   .animate-blob {
     animation: blob 7s infinite;
   }

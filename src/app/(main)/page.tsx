@@ -276,13 +276,26 @@ export default function Home() {
                 <h2 className="text-2xl md:text-4xl font-black font-headline tracking-tight text-white">我們的合作夥伴</h2>
             </div>
             
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 justify-items-center items-center gap-4 md:gap-8 opacity-70">
+            <div className="flex flex-wrap justify-center items-center gap-4 md:gap-6">
                 {isLoadingPartners ? (
-                    <Skeleton className="h-16 w-20 rounded-xl" />
+                    Array.from({ length: 4 }).map((_, i) => (
+                        <Skeleton key={i} className="h-20 w-44 rounded-2xl bg-white/10" />
+                    ))
                 ) : (
                     partners?.map((partner) => (
-                        <div key={partner.id} className="w-full aspect-[2/1] flex items-center justify-center grayscale hover:grayscale-0 transition-all">
-                            <SafeImage src={partner.logoUrl} alt={partner.name} className="object-contain max-h-full" width={200} height={100} />
+                        <div 
+                            key={partner.id} 
+                            className="w-40 sm:w-48 h-20 flex items-center justify-center p-3 rounded-2xl bg-white/90 hover:bg-white border border-white/20 shadow-lg shadow-black/20 hover:shadow-2xl hover:scale-105 transition-all duration-300 group"
+                        >
+                            <div className="w-full h-full relative flex items-center justify-center mix-blend-multiply overflow-hidden">
+                                <SafeImage 
+                                    src={partner.logoUrl} 
+                                    alt={partner.name} 
+                                    className="object-contain max-h-full max-w-full group-hover:scale-105 transition-transform duration-300" 
+                                    width={200} 
+                                    height={100} 
+                                />
+                            </div>
                         </div>
                     ))
                 )}

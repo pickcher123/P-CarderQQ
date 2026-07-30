@@ -124,8 +124,8 @@ export default function PartnersAdminPage() {
                 partners?.map((item) => (
                 <TableRow key={item.id} className="hover:bg-slate-50 border-slate-100 group">
                     <TableCell className="py-4">
-                        <div className="w-16 h-16 rounded-lg bg-slate-100 flex items-center justify-center overflow-hidden mx-auto">
-                            <SafeImage src={item.logoUrl} alt={item.name} className="object-contain" width={64} height={64} />
+                        <div className="w-16 h-16 rounded-xl bg-slate-100 flex items-center justify-center overflow-hidden mx-auto p-1.5 border border-slate-200/80 shadow-inner">
+                            <SafeImage src={item.logoUrl} alt={item.name} className="object-contain max-h-full max-w-full mix-blend-multiply" width={64} height={64} />
                         </div>
                     </TableCell>
                     <TableCell>

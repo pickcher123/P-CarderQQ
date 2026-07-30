@@ -22,7 +22,11 @@ import { AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 
+import { v4 as uuidv4 } from 'uuid';
+import { MLB_TEAMS, NBA_TEAMS, MLB_TEAMS_DETAILED, NBA_TEAMS_DETAILED } from '@/lib/draw-constants';
+
 type BreakType = 'spot' | 'team';
+
 
 interface GroupBreak {
   id: string;
@@ -51,6 +55,8 @@ export default function GroupBreaksAdminPage() {
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newBreak, setNewBreak] = useState(defaultBreak);
+  const [teamPreset, setTeamPreset] = useState<'none' | 'nba' | 'mlb'>('none');
+  const [defaultTeamPrice, setDefaultTeamPrice] = useState<number>(100);
 
   const groupBreaksQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -61,6 +67,8 @@ export default function GroupBreaksAdminPage() {
 
   const handleAddNew = () => {
     setNewBreak(defaultBreak);
+    setTeamPreset('none');
+    setDefaultTeamPrice(100);
     setIsDialogOpen(true);
   };
 
@@ -85,7 +93,23 @@ export default function GroupBreaksAdminPage() {
         dataToSave.totalSpots = newBreak.totalSpots;
         dataToSave.spots = Array.from({ length: newBreak.totalSpots || 0 }, (_, i) => ({ spotNumber: i + 1 }));
       } else {
-        dataToSave.teams = [];
+        if (teamPreset === 'nba') {
+          dataToSave.teams = NBA_TEAMS_DETAILED.map(team => ({ 
+            teamId: uuidv4(), 
+            name: team.name, 
+            logoUrl: team.logoUrl,
+            price: defaultTeamPrice || 100 
+          }));
+        } else if (teamPreset === 'mlb') {
+          dataToSave.teams = MLB_TEAMS_DETAILED.map(team => ({ 
+            teamId: uuidv4(), 
+            name: team.name, 
+            logoUrl: team.logoUrl,
+            price: defaultTeamPrice || 100 
+          }));
+        } else {
+          dataToSave.teams = [];
+        }
       }
 
       const docRef = await addDoc(collection(firestore, 'groupBreaks'), dataToSave);
@@ -175,8 +199,36 @@ export default function GroupBreaksAdminPage() {
                 </div>
             )}
              {newBreak.breakType === 'team' && (
-                <div className="text-sm text-muted-foreground p-4 bg-muted rounded-md">
-                    隊伍選項和價格將在活動詳情頁中設定。
+                <div className="space-y-3 p-4 bg-muted/40 rounded-lg border">
+                  <Label className="font-bold text-sm flex items-center gap-2">
+                    ⚡ 一鍵帶入聯盟隊伍
+                  </Label>
+                  <RadioGroup value={teamPreset} onValueChange={(v: any) => setTeamPreset(v)} className="space-y-1.5">
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="none" id="preset-none" />
+                      <Label htmlFor="preset-none" className="cursor-pointer">無 (建立後再手動新增)</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="nba" id="preset-nba" />
+                      <Label htmlFor="preset-nba" className="cursor-pointer font-bold text-emerald-600 dark:text-emerald-400">🏀 NBA (一鍵帶入 30 支隊伍)</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="mlb" id="preset-mlb" />
+                      <Label htmlFor="preset-mlb" className="cursor-pointer font-bold text-blue-600 dark:text-blue-400">⚾ MLB (一鍵帶入 30 支隊伍)</Label>
+                    </div>
+                  </RadioGroup>
+                  {teamPreset !== 'none' && (
+                    <div className="space-y-1.5 pt-2 border-t border-muted-foreground/20">
+                      <Label htmlFor="presetPrice" className="text-xs font-semibold">預設單隊價格</Label>
+                      <Input
+                        id="presetPrice"
+                        type="number"
+                        value={defaultTeamPrice}
+                        onChange={e => setDefaultTeamPrice(Number(e.target.value))}
+                        placeholder="100"
+                      />
+                    </div>
+                  )}
                 </div>
             )}
           </div>
