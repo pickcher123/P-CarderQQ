@@ -19,7 +19,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, ImageIcon, Loader2, Upload, Youtube, Trash2, PlusCircle, Copy, Trophy, Check, Sparkles, Gem, Package, ShieldCheck, Search, Filter, Archive } from 'lucide-react';
+import { ArrowLeft, ImageIcon, Loader2, Upload, Youtube, Trash2, PlusCircle, Copy, Trophy, Check, Sparkles, Gem, Package, ShieldCheck, Search, Filter, Archive, User, Dices, Flame, RotateCcw, Shuffle, CheckCircle2, Zap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
@@ -36,6 +36,7 @@ import { PPlusIcon } from '@/components/icons';
 type Spot = {
   spotNumber: number;
   userId?: string;
+  userName?: string;
 };
 
 type Team = {
@@ -43,6 +44,7 @@ type Team = {
   name: string;
   price: number;
   userId?: string;
+  userName?: string;
   logoUrl?: string;
 }
 
@@ -80,6 +82,253 @@ interface CardData {
     imageUrl: string;
     rarity?: string;
     isSold?: boolean;
+}
+
+function DrawControl({ groupBreak, groupBreakRef, getBuyerName, forceRefetch }: { 
+    groupBreak: GroupBreak, 
+    groupBreakRef: any, 
+    getBuyerName: (userId?: string, savedName?: string) => string | null,
+    forceRefetch?: () => void
+}) {
+    const { toast } = useToast();
+    const [isDrawDialogOpen, setIsDrawDialogOpen] = useState(false);
+    const [drawMode, setDrawMode] = useState<'direct' | 'shuffle'>('direct');
+    const [isDrawing, setIsDrawing] = useState(false);
+    const [drawProgress, setDrawProgress] = useState(0);
+    const [rollingTeam, setRollingTeam] = useState<string>('');
+
+    const isTeamBreak = groupBreak.breakType === 'team';
+    const totalItems = isTeamBreak ? (groupBreak.teams?.length || 0) : (groupBreak.totalSpots || 0);
+    
+    const soldItemsCount = isTeamBreak 
+        ? (groupBreak.teams?.filter(t => t.userId)?.length || 0) 
+        : (groupBreak.spots?.filter(s => s.userId)?.length || 0);
+
+    const isCompleted = groupBreak.status === 'completed';
+
+    const handleExecuteDraw = async () => {
+        if (!groupBreakRef) return;
+        setIsDrawing(true);
+        setDrawProgress(0);
+
+        const sampleNames = isTeamBreak 
+            ? (groupBreak.teams?.map(t => t.name) || []) 
+            : Array.from({ length: totalItems }, (_, i) => `位置 #${i + 1}`);
+
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += 4;
+            setDrawProgress(Math.min(progress, 100));
+            if (sampleNames.length > 0) {
+                const randomIdx = Math.floor(Math.random() * sampleNames.length);
+                setRollingTeam(sampleNames[randomIdx]);
+            }
+
+            if (progress >= 100) {
+                clearInterval(interval);
+                finalizeDraw();
+            }
+        }, 70);
+    };
+
+    const finalizeDraw = async () => {
+        try {
+            let newWinnings: Winnings[] = [];
+
+            if (isTeamBreak && groupBreak.teams) {
+                if (drawMode === 'shuffle') {
+                    const buyers = groupBreak.teams
+                        .filter(t => t.userId)
+                        .map(t => ({ userId: t.userId!, username: getBuyerName(t.userId, t.userName) || '藏友' }));
+                    
+                    const shuffledBuyers = [...buyers].sort(() => Math.random() - 0.5);
+
+                    newWinnings = groupBreak.teams.map((t, idx) => {
+                        const buyer = shuffledBuyers[idx % (shuffledBuyers.length || 1)];
+                        return {
+                            teamId: t.teamId,
+                            teamName: t.name,
+                            userId: buyer?.userId || t.userId || 'system',
+                            username: buyer?.username || (t.userId ? (getBuyerName(t.userId, t.userName) || '藏友') : '流局 (未售出)'),
+                        };
+                    });
+                } else {
+                    newWinnings = groupBreak.teams.map(t => ({
+                        teamId: t.teamId,
+                        teamName: t.name,
+                        userId: t.userId || 'system',
+                        username: t.userId ? (getBuyerName(t.userId, t.userName) || '藏友') : '流局 (未售出)',
+                    }));
+                }
+            } else if (!isTeamBreak && groupBreak.spots) {
+                newWinnings = groupBreak.spots.map(s => ({
+                    teamId: `spot-${s.spotNumber}`,
+                    teamName: `位置 #${s.spotNumber}`,
+                    userId: s.userId || 'system',
+                    username: s.userId ? (getBuyerName(s.userId, s.userName) || '藏友') : '流局 (未售出)',
+                }));
+            }
+
+            await updateDoc(groupBreakRef, {
+                status: 'completed',
+                winnings: newWinnings
+            });
+
+            toast({
+                title: '🎉 隨機開獎配對完成！',
+                description: `開獎結果已成功儲存並同步至前台直播頻道。`,
+            });
+
+            setIsDrawing(false);
+            setIsDrawDialogOpen(false);
+            if (forceRefetch) forceRefetch();
+        } catch (error: any) {
+            console.error('Error in draw completion:', error);
+            toast({ variant: 'destructive', title: '開獎失敗', description: error.message });
+            setIsDrawing(false);
+        }
+    };
+
+    return (
+        <Card className={cn("shadow-xl border-2 transition-all overflow-hidden my-6", isCompleted ? "border-emerald-500/30 bg-emerald-950/20" : "border-amber-500/30 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950")}>
+            <CardHeader className="pb-4">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div className="space-y-1">
+                        <CardTitle className="text-xl sm:text-2xl font-black italic tracking-tight flex items-center gap-2.5 text-white">
+                            <Dices className="h-6 w-6 text-amber-400 animate-bounce" />
+                            【開獎控制台】隨機搖號與配對中心
+                        </CardTitle>
+                        <CardDescription className="text-slate-300 font-medium text-xs">
+                            {isCompleted ? '活動已完成隨機開獎配對，中獎結果已發佈至直播頻道。' : '當購買名額達標或隨時可點擊下方按鈕啟動隨機搖號配對模式。'}
+                        </CardDescription>
+                    </div>
+
+                    <Button 
+                        onClick={() => setIsDrawDialogOpen(true)}
+                        size="lg"
+                        className={cn(
+                            "h-13 px-6 text-base sm:text-lg font-black rounded-2xl shadow-2xl transition-all border-b-4 active:translate-y-1 active:border-b-0 shrink-0",
+                            isCompleted 
+                                ? "bg-slate-800 text-amber-400 border-slate-950 hover:bg-slate-700" 
+                                : "bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-slate-950 border-amber-800 hover:brightness-110 shadow-amber-500/20"
+                        )}
+                    >
+                        {isCompleted ? (
+                            <>
+                                <RotateCcw className="mr-2 h-5 w-5" /> 重新隨機開獎
+                            </>
+                        ) : (
+                            <>
+                                <Zap className="mr-2 h-5 w-5 fill-slate-950" /> 啟動隨機開獎儀式
+                            </>
+                        )}
+                    </Button>
+                </div>
+            </CardHeader>
+            <CardContent>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 bg-slate-950/60 rounded-2xl border border-white/10">
+                    <div className="space-y-0.5">
+                        <p className="text-[10px] font-black uppercase text-slate-400">開獎狀態</p>
+                        <Badge className={cn("font-extrabold text-xs px-2.5 py-0.5", isCompleted ? "bg-emerald-500 text-slate-950" : "bg-amber-500 text-slate-950")}>
+                            {isCompleted ? '🎉 已開獎' : '⏳ 待開獎'}
+                        </Badge>
+                    </div>
+                    <div className="space-y-0.5">
+                        <p className="text-[10px] font-black uppercase text-slate-400">已出售名額</p>
+                        <p className="font-code font-black text-white text-base">
+                            {soldItemsCount} / {totalItems} <span className="text-xs text-amber-400">({totalItems ? Math.round((soldItemsCount / totalItems) * 100) : 0}%)</span>
+                        </p>
+                    </div>
+                    <div className="space-y-0.5">
+                        <p className="text-[10px] font-black uppercase text-slate-400">標的規模</p>
+                        <p className="font-code font-black text-white text-base">{totalItems} {isTeamBreak ? '隊' : '位置'}</p>
+                    </div>
+                    <div className="space-y-0.5">
+                        <p className="text-[10px] font-black uppercase text-slate-400">團拆類型</p>
+                        <p className="font-black text-primary text-sm">{isTeamBreak ? '隊伍拆卡 (Team Break)' : '選號拆卡 (Spot Break)'}</p>
+                    </div>
+                </div>
+
+                {/* 啟動開獎彈窗對話框 - 稍微往下置中 (top-[56%] -translate-y-[44%]) */}
+                <Dialog open={isDrawDialogOpen} onOpenChange={(open) => !isDrawing && setIsDrawDialogOpen(open)}>
+                    <DialogContentNew className="fixed left-[50%] top-[56%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-44%] gap-5 border-4 border-slate-700 bg-slate-900 p-6 sm:p-8 shadow-[0_25px_70px_rgba(0,0,0,0.85)] rounded-[2.5rem] text-white">
+                        <DialogHeaderNew>
+                            <DialogTitleNew className="font-headline text-2xl sm:text-3xl font-black text-amber-400 flex items-center gap-3 italic tracking-tight">
+                                <Sparkles className="h-7 w-7 text-amber-400 animate-spin shrink-0" />
+                                啟動隨機開獎與配對儀式
+                            </DialogTitleNew>
+                        </DialogHeaderNew>
+
+                        {isDrawing ? (
+                            <div className="py-8 flex flex-col items-center justify-center space-y-6 text-center">
+                                <div className="relative w-28 h-28 flex items-center justify-center bg-slate-950 rounded-full border-4 border-amber-500/50 shadow-[0_0_35px_rgba(245,158,11,0.5)]">
+                                    <div className="absolute inset-0 rounded-full border-4 border-amber-400 border-t-transparent animate-spin" />
+                                    <Dices className="w-12 h-12 text-amber-400 animate-bounce" />
+                                </div>
+
+                                <div className="space-y-2 max-w-xs">
+                                    <p className="text-xl font-black font-headline tracking-widest text-white animate-pulse">
+                                        {rollingTeam || '亂數洗牌中...'}
+                                    </p>
+                                    <p className="text-xs font-bold text-amber-400/80 uppercase tracking-widest">
+                                        正在執行加密亂數洗牌配對 ({drawProgress}%)
+                                    </p>
+                                </div>
+
+                                <Progress value={drawProgress} className="h-3 w-full bg-slate-800 rounded-full" />
+                            </div>
+                        ) : (
+                            <div className="space-y-5">
+                                <div className="p-4 bg-slate-950/80 rounded-2xl border border-slate-800 space-y-3">
+                                    <Label className="text-xs font-black uppercase tracking-widest text-slate-400">請選擇開獎配對模式</Label>
+                                    <RadioGroup value={drawMode} onValueChange={(v: any) => setDrawMode(v)} className="space-y-3">
+                                        <div className="flex items-start space-x-3 p-3 rounded-xl bg-slate-900 border border-slate-800 hover:border-amber-500/50 transition-colors cursor-pointer">
+                                            <RadioGroupItem value="direct" id="mode-direct" className="mt-1" />
+                                            <Label htmlFor="mode-direct" className="cursor-pointer space-y-1">
+                                                <div className="font-bold text-white text-sm flex items-center gap-2">
+                                                    <CheckCircle2 className="w-4 h-4 text-emerald-400" /> 原位直接揭曉 (Direct Match)
+                                                </div>
+                                                <p className="text-xs text-slate-400 font-medium">
+                                                    以買家原先選擇之隊伍/號碼作為最終獲勝標的，即時發佈中獎結果。
+                                                </p>
+                                            </Label>
+                                        </div>
+
+                                        {isTeamBreak && (
+                                            <div className="flex items-start space-x-3 p-3 rounded-xl bg-slate-900 border border-slate-800 hover:border-amber-500/50 transition-colors cursor-pointer">
+                                                <RadioGroupItem value="shuffle" id="mode-shuffle" className="mt-1" />
+                                                <Label htmlFor="mode-shuffle" className="cursor-pointer space-y-1">
+                                                    <div className="font-bold text-white text-sm flex items-center gap-2">
+                                                        <Shuffle className="w-4 h-4 text-amber-400" /> 盲盒二次隨機洗牌 (Random Shuffle)
+                                                    </div>
+                                                    <p className="text-xs text-slate-400 font-medium">
+                                                        將所有參團玩家與隊伍進行二次加密亂數洗牌分配，增加極致隨機樂趣！
+                                                    </p>
+                                                </Label>
+                                            </div>
+                                        )}
+                                    </RadioGroup>
+                                </div>
+
+                                <div className="p-3.5 bg-amber-500/10 rounded-2xl border border-amber-500/20 text-xs text-amber-300 leading-relaxed font-bold">
+                                    ⚠️ 開獎提醒：點擊確定後將執行開獎，結果將即時發佈至前台直播頻道與玩家個人中心。
+                                </div>
+
+                                <DialogFooterNew className="gap-3 sm:gap-4 mt-2">
+                                    <Button variant="ghost" onClick={() => setIsDrawDialogOpen(false)} className="h-12 rounded-xl text-slate-400 font-bold hover:bg-slate-800 hover:text-white">
+                                        取消返回
+                                    </Button>
+                                    <Button onClick={handleExecuteDraw} className="h-12 px-6 rounded-xl font-black bg-amber-500 text-slate-950 hover:bg-amber-400 shadow-xl text-base">
+                                        <Zap className="mr-2 h-5 w-5 fill-slate-950" /> 確認啟動開獎
+                                    </Button>
+                                </DialogFooterNew>
+                            </div>
+                        )}
+                    </DialogContentNew>
+                </Dialog>
+            </CardContent>
+        </Card>
+    );
 }
 
 
@@ -360,6 +609,27 @@ export default function GroupBreakAdminDetailPage() {
   }, [firestore, breakId]);
 
   const { data: groupBreak, isLoading: isLoadingBreak, forceRefetch } = useDoc<GroupBreak>(groupBreakRef);
+
+  const usersQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'users'));
+  }, [firestore]);
+  const { data: allUsers } = useCollection<UserProfile>(usersQuery);
+
+  const userMap = useMemo(() => {
+    const map = new Map<string, string>();
+    allUsers?.forEach(u => {
+      if (u.id) map.set(u.id, u.username || u.displayName || '藏友');
+    });
+    return map;
+  }, [allUsers]);
+
+  const getBuyerName = (userId?: string, savedName?: string) => {
+    if (!userId) return null;
+    if (savedName) return savedName;
+    if (userMap.has(userId)) return userMap.get(userId)!;
+    return `藏友 ${userId.slice(0, 5)}`;
+  };
 
   useEffect(() => {
     if (groupBreak) {
@@ -790,13 +1060,15 @@ export default function GroupBreakAdminDetailPage() {
                             <TableHeader className="bg-muted/50 sticky top-0 z-10">
                                 <TableRow>
                                     <TableHead className="pl-6">隊伍名稱</TableHead>
-                                    <TableHead className="w-40">價格</TableHead>
+                                    <TableHead className="w-36">購買玩家</TableHead>
+                                    <TableHead className="w-32">價格</TableHead>
                                     <TableHead className="w-20 text-right pr-6">操作</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {details.teams?.map(team => {
                                     const logo = getTeamLogoUrl(team.name, team.logoUrl);
+                                    const buyerName = getBuyerName(team.userId, team.userName);
                                     return (
                                      <TableRow key={team.teamId} className="hover:bg-white/5 transition-colors">
                                          <TableCell className="font-bold pl-6">
@@ -810,6 +1082,18 @@ export default function GroupBreakAdminDetailPage() {
                                                  )}
                                                  <span>{team.name}</span>
                                              </div>
+                                         </TableCell>
+                                         <TableCell>
+                                             {team.userId ? (
+                                                 <Badge className="bg-amber-100 text-amber-900 border-amber-300 font-bold hover:bg-amber-100 flex items-center gap-1 w-fit shadow-xs">
+                                                     <User className="w-3 h-3 text-amber-700 shrink-0" />
+                                                     <span className="truncate max-w-[100px]">{buyerName || '已卡位'}</span>
+                                                 </Badge>
+                                             ) : (
+                                                 <Badge variant="outline" className="text-slate-400 border-dashed text-[11px]">
+                                                     未售出
+                                                 </Badge>
+                                             )}
                                          </TableCell>
                                          <TableCell>
                                              <div className="flex items-center gap-2">
@@ -832,7 +1116,7 @@ export default function GroupBreakAdminDetailPage() {
                                 })}
                                 {(!details.teams || details.teams.length === 0) && (
                                     <TableRow>
-                                        <TableCell colSpan={3} className="h-24 text-center text-muted-foreground italic">
+                                        <TableCell colSpan={4} className="h-24 text-center text-muted-foreground italic">
                                           尚未新增任何隊伍選項。請點選上方「🏀 一鍵新增 NBA」或「⚾ 一鍵新增 MLB」快速為活動填入隊伍！
                                         </TableCell>
                                     </TableRow>
@@ -843,6 +1127,7 @@ export default function GroupBreakAdminDetailPage() {
                 </CardContent>
              </Card>
            )}
+           <DrawControl groupBreak={groupBreak} groupBreakRef={groupBreakRef} getBuyerName={getBuyerName} forceRefetch={forceRefetch} />
            <PrizeAssignment groupBreak={groupBreak} groupBreakRef={groupBreakRef} />
         </div>
 

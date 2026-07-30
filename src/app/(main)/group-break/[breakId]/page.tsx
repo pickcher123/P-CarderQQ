@@ -11,8 +11,10 @@ import {
   ArrowLeft, Gem, Loader2, Dices, 
   CheckCircle2, 
   Radio, Zap, SearchCode, X, Hash,
-  TicketCheck, AlertCircle
+  TicketCheck, AlertCircle, User
 } from 'lucide-react';
+import { useCollection } from '@/firebase';
+import { query } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
@@ -31,6 +33,7 @@ import { getTeamLogoUrl } from '@/lib/draw-constants';
 type Spot = {
   spotNumber: number;
   userId?: string;
+  userName?: string;
 };
 
 type Team = {
@@ -38,6 +41,7 @@ type Team = {
   name: string;
   price: number;
   userId?: string;
+  userName?: string;
   logoUrl?: string;
 }
 
@@ -95,6 +99,28 @@ export default function GroupBreakDetailPage() {
   }, [firestore, breakId]);
 
   const { data: groupBreak, isLoading: isLoadingBreak, forceRefetch } = useDoc<GroupBreak>(groupBreakRef);
+
+  const usersQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'users'));
+  }, [firestore]);
+  const { data: allUsers } = useCollection<UserProfile>(usersQuery);
+
+  const userMap = useMemo(() => {
+    const map = new Map<string, string>();
+    allUsers?.forEach(u => {
+      if (u.id) map.set(u.id, u.username || u.displayName || '藏友');
+    });
+    return map;
+  }, [allUsers]);
+
+  const getBuyerName = (userId?: string, savedName?: string) => {
+    if (!userId) return '';
+    if (savedName) return savedName;
+    if (userMap.has(userId)) return userMap.get(userId)!;
+    if (user?.uid === userId) return userProfile?.username || userProfile?.displayName || '我';
+    return `藏友 ${userId.slice(0, 5)}`;
+  };
 
   const { takenSpots, takenTeams, isFull } = useMemo(() => {
     if (!groupBreak) return { takenSpots: new Set(), takenTeams: new Set(), isFull: false };
@@ -205,19 +231,21 @@ export default function GroupBreakDetailPage() {
                 throw new Error(`您的${currency === 'diamond' ? '鑽石' : 'P點'}餘額不足，需要 ${totalCost} 點。`);
             }
             
+            const currentBuyerName = userData.username || userData.displayName || user.displayName || '藏友';
+
             if(isTeamBreak) {
                 for (const teamId of selectedTeams) {
                     const team = currentGroupBreak.teams?.find(t => t.teamId === teamId);
                     if (team?.userId) throw new Error("部分隊伍已被選走，請重新整理後再試。");
                 }
-                const updatedTeams = currentGroupBreak.teams?.map(t => selectedTeams.has(t.teamId) ? { ...t, userId: user.uid } : t);
+                const updatedTeams = currentGroupBreak.teams?.map(t => selectedTeams.has(t.teamId) ? { ...t, userId: user.uid, userName: currentBuyerName } : t);
                 transaction.update(groupBreakRef, { teams: updatedTeams });
             } else {
                 for (const spotNumber of selectedSpots) {
                     const spot = currentGroupBreak.spots?.find(s => s.spotNumber === spotNumber);
                     if (spot?.userId) throw new Error("部分號碼已被選走，請重新整理後再試。");
                 }
-                 const updatedSpots = currentGroupBreak.spots?.map(s => selectedSpots.has(s.spotNumber) ? { ...s, userId: user.uid } : s);
+                 const updatedSpots = currentGroupBreak.spots?.map(s => selectedSpots.has(s.spotNumber) ? { ...s, userId: user.uid, userName: currentBuyerName } : s);
                  transaction.update(groupBreakRef, { spots: updatedSpots });
             }
             
@@ -342,6 +370,7 @@ export default function GroupBreakDetailPage() {
                               const isTaken = takenTeams.has(team.teamId);
                               const isSelected = selectedTeams.has(team.teamId);
                               const logoUrl = getTeamLogoUrl(team.name, team.logoUrl);
+                              const buyerName = getBuyerName(team.userId, team.userName);
 
                               return (
                                 <button
@@ -349,8 +378,8 @@ export default function GroupBreakDetailPage() {
                                     disabled={isTaken || isFull || groupBreak.status === 'completed'}
                                     onClick={() => handleTeamClick(team.teamId)}
                                     className={cn(
-                                        "relative min-h-[96px] rounded-2xl flex flex-col items-center justify-between p-3 text-center font-bold transition-all border-b-[4px] active:translate-y-0.5 active:border-b-0 group",
-                                        isTaken ? "bg-slate-400/50 text-slate-600 border-transparent opacity-40 cursor-not-allowed" :
+                                        "relative min-h-[108px] rounded-2xl flex flex-col items-center justify-between p-2.5 text-center font-bold transition-all border-b-[4px] active:translate-y-0.5 active:border-b-0 group overflow-hidden",
+                                        isTaken ? "bg-slate-200/90 border-slate-300 text-slate-800 shadow-sm cursor-not-allowed" :
                                         isSelected ? "bg-slate-800 text-white border-black shadow-[0_0_15px_rgba(0,0,0,0.4)] z-10" :
                                         "bg-slate-100 border-slate-400 text-slate-800 hover:bg-white hover:scale-[1.02]"
                                     )}
@@ -359,41 +388,61 @@ export default function GroupBreakDetailPage() {
                                         <img 
                                             src={logoUrl} 
                                             alt={team.name} 
-                                            className="w-10 h-10 object-contain mb-1 transition-transform group-hover:scale-110 drop-shadow-sm flex-shrink-0" 
+                                            className={cn("w-9 h-9 object-contain mb-0.5 transition-transform drop-shadow-sm flex-shrink-0", isTaken ? "opacity-75" : "group-hover:scale-110")} 
                                         />
                                     ) : (
-                                        <div className="w-8 h-8 rounded-full bg-slate-300 text-slate-700 text-xs font-black flex items-center justify-center mb-1 flex-shrink-0">
+                                        <div className="w-8 h-8 rounded-full bg-slate-300 text-slate-700 text-xs font-black flex items-center justify-center mb-0.5 flex-shrink-0">
                                             {team.name.slice(0, 1)}
                                         </div>
                                     )}
-                                    <span className="text-xs font-black uppercase tracking-tight line-clamp-1 leading-tight">{team.name}</span>
-                                    <div className={cn("font-code flex items-center gap-1 mt-0.5 text-xs font-bold", isSelected ? "text-primary" : "text-primary/70")}>
-                                        <span className="text-sm font-black">{team.price.toLocaleString()}</span>
-                                        {currency === 'diamond' ? <Gem className="w-3 h-3"/> : <PPlusIcon className="w-3 h-3" />}
-                                    </div>
-                                    {isTaken && <div className="absolute inset-0 bg-black/20 rounded-2xl" />}
+                                    
+                                    <span className={cn("text-xs font-black uppercase tracking-tight line-clamp-1 leading-tight", isTaken && "text-slate-700")}>
+                                        {team.name}
+                                    </span>
+
+                                    {isTaken ? (
+                                        <div className="w-full bg-slate-900 text-amber-300 rounded-xl py-1 px-1.5 text-[11px] font-black flex items-center justify-center gap-1 shadow-md mt-1 truncate border border-slate-700">
+                                            <User className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                                            <span className="truncate">{buyerName || '已售出'}</span>
+                                        </div>
+                                    ) : (
+                                        <div className={cn("font-code flex items-center gap-1 mt-0.5 text-xs font-bold", isSelected ? "text-primary" : "text-primary/70")}>
+                                            <span className="text-sm font-black">{team.price.toLocaleString()}</span>
+                                            {currency === 'diamond' ? <Gem className="w-3 h-3"/> : <PPlusIcon className="w-3 h-3" />}
+                                        </div>
+                                    )}
                                 </button>
                           )})}
                       </div>
                   ) : (
-                      <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-2.5">
+                      <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2.5">
                         {Array.from({ length: groupBreak.totalSpots || 0 }).map((_, i) => {
                           const spotNumber = i + 1;
+                          const spotObj = groupBreak.spots?.find(s => s.spotNumber === spotNumber);
                           const isTaken = takenSpots.has(spotNumber);
                           const isSelected = selectedSpots.has(spotNumber);
+                          const buyerName = getBuyerName(spotObj?.userId, spotObj?.userName);
+
                           return (
                             <button
                               key={spotNumber}
                               disabled={isTaken || isFull || groupBreak.status === 'completed'}
                               onClick={() => handleSpotClick(spotNumber)}
+                              title={isTaken ? `買家: ${buyerName}` : `號碼 ${spotNumber}`}
                               className={cn(
-                                "relative aspect-square rounded-full flex items-center justify-center font-black text-xs transition-all border-b-4 active:translate-y-1 active:border-b-0",
-                                isTaken ? "bg-slate-400/50 text-slate-600 border-transparent opacity-40" :
+                                "relative min-h-[64px] rounded-2xl flex flex-col items-center justify-center p-1.5 font-black text-xs transition-all border-b-4 active:translate-y-1 active:border-b-0",
+                                isTaken ? "bg-slate-200 border-slate-300 text-slate-800 cursor-not-allowed" :
                                 isSelected ? "bg-slate-800 text-white border-black shadow-[0_0_15px_rgba(0,0,0,0.4)]" :
                                 "bg-slate-100 text-slate-800 border-slate-400 hover:border-slate-800"
                               )}
                             >
-                                <span className="font-code">{spotNumber}</span>
+                                <span className="font-code text-sm font-black">#{spotNumber}</span>
+                                {isTaken && (
+                                  <span className="w-full text-[10px] font-extrabold text-amber-900 bg-amber-300/90 py-0.5 px-1 rounded-md truncate mt-1 border border-amber-400 flex items-center justify-center gap-0.5 shadow-sm">
+                                    <User className="w-2.5 h-2.5 shrink-0" />
+                                    <span className="truncate">{buyerName || '已卡位'}</span>
+                                  </span>
+                                )}
                             </button>
                           );
                         })}
