@@ -8,7 +8,7 @@ import { useCollection, useFirestore, useMemoFirebase, useUser, useDoc } from '@
 import { collection, query, getDocs, orderBy, doc, getDoc, runTransaction, increment, serverTimestamp, where } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CrossedCardsIcon, PPlusIcon } from '@/components/icons';
-import { Info, Sparkles, Gem, HelpCircle, Gift, ShoppingBag, Loader2, Truck, Check, Package, Settings, ChevronRight, Swords, Target, RefreshCw, ShieldCheck, XCircle, Search } from 'lucide-react';
+import { Info, Sparkles, Gem, HelpCircle, Gift, ShoppingBag, Loader2, Truck, Check, Package, Settings, ChevronRight, Swords, Target, RefreshCw, RefreshCcw, ShieldCheck, XCircle, Search } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -177,29 +177,96 @@ export default function BetLandingPage() {
         <div className="container py-8 md:py-16 relative overflow-hidden px-4 md:px-8">
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-destructive/5 blur-[120px] pointer-events-none" />
 
-            <div className="flex items-center justify-center animate-fade-in-up mb-12">
-                <h1 className="font-headline text-3xl sm:text-6xl font-black tracking-widest text-white drop-shadow-[0_0_15px_rgba(219,39,119,0.4)]">
-                    拚卡
-                </h1>
-            </div>
 
-            {/* 直觀遊戲規則區塊 - 科技感強化版 */}
-            <div className="max-w-6xl mx-auto mb-12 md:mb-16 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+
+            {/* 直觀遊戲規則區塊 - 科技感 FeatureGridPro */}
+            <div className="max-w-5xl mx-auto mb-12 md:mb-16 animate-fade-in-up relative" style={{ animationDelay: '100ms' }}>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 relative z-10">
                     {[
-                        { title: '1/10 命中率', desc: '每注固定 10% 機率直接帶走卡片', icon: Target, color: 'text-cyan-400' },
-                        { title: '雙幣別支付', desc: '支援使用鑽石或紅利 P+ 參與', icon: RefreshCw, color: 'text-fuchsia-400' },
-                        { title: '1:10 價值比', desc: '鑽石與 P+ 點比例固定 1:10', icon: Gem, color: 'text-amber-400' },
-                        { title: '資產即時發放', desc: '中獎後卡片立即存入數位收藏庫', icon: ShieldCheck, color: 'text-emerald-400' },
-                    ].map((item, idx) => (
-                        <div key={idx} className="relative p-6 rounded-2xl bg-slate-950/40 backdrop-blur-sm border border-white/5 flex flex-col items-center text-center group hover:border-primary/30 transition-all duration-300">
-                            <div className={cn("mb-4 p-3 rounded-2xl bg-black/30 border border-white/5", item.color)}>
-                                <item.icon className="w-6 h-6" />
+                        {
+                            id: 1,
+                            title: '1/10 命中率',
+                            description: '每注固定 10% 機率直接帶走卡片',
+                            icon: Target,
+                            glowColor: 'rgba(34, 211, 238, 1)', // Cyan
+                            bgGradient: 'from-cyan-900/20 to-transparent',
+                            iconColor: 'text-cyan-400',
+                        },
+                        {
+                            id: 2,
+                            title: '雙幣別支付',
+                            description: '支援使用鑽石或紅利 P+ 參與',
+                            icon: RefreshCcw,
+                            glowColor: 'rgba(168, 85, 247, 1)', // Purple
+                            bgGradient: 'from-purple-900/20 to-transparent',
+                            iconColor: 'text-purple-400',
+                        },
+                        {
+                            id: 3,
+                            title: '1:10 價值比',
+                            description: '鑽石與 P+ 點比例固定 1:10',
+                            icon: Gem,
+                            glowColor: 'rgba(251, 191, 36, 1)', // Amber
+                            bgGradient: 'from-amber-900/20 to-transparent',
+                            iconColor: 'text-amber-400',
+                        },
+                        {
+                            id: 4,
+                            title: '資產即時發放',
+                            description: '中獎後卡片立即存入數位收藏庫',
+                            icon: ShieldCheck,
+                            glowColor: 'rgba(16, 185, 129, 1)', // Emerald
+                            bgGradient: 'from-emerald-900/20 to-transparent',
+                            iconColor: 'text-emerald-400',
+                        }
+                    ].map((item) => {
+                        const IconComponent = item.icon;
+                        return (
+                            <div 
+                                key={item.id}
+                                className="group relative rounded-2xl p-[1.5px] overflow-hidden cursor-pointer hover:-translate-y-1.5 transition-transform duration-500 hover:shadow-[0_10px_30px_-10px_var(--glow)]"
+                                style={{ '--glow': item.glowColor } as React.CSSProperties}
+                            >
+                                {/* === 動態流光邊框層 === */}
+                                <div 
+                                    className="absolute inset-[-100%] opacity-0 group-hover:opacity-100 transition-opacity duration-300 animate-[spin_3s_linear_infinite]"
+                                    style={{
+                                        background: `conic-gradient(from 0deg, transparent 0 270deg, var(--glow) 360deg)`
+                                    }}
+                                />
+                                
+                                {/* 靜態微光邊框 (非Hover狀態) */}
+                                <div className="absolute inset-0 bg-slate-700/30 group-hover:bg-transparent transition-colors duration-300 rounded-2xl" />
+
+                                {/* === 內部卡片層 === */}
+                                <div className={cn(
+                                    "relative h-full bg-[#0a0f1c]/95 backdrop-blur-xl rounded-[15px] p-4 sm:p-5",
+                                    "flex flex-col items-center text-center z-10",
+                                    "bg-gradient-to-b", item.bgGradient
+                                )}>
+                                    {/* 科技掃描線 Overlay */}
+                                    <div className="absolute inset-0 opacity-[0.03] group-hover:opacity-10 pointer-events-none bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,#fff_2px,#fff_4px)] transition-opacity duration-300" />
+
+                                    {/* 頂部反光斑 (Glare) */}
+                                    <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+
+                                    {/* Icon 區塊 - 加入呼吸脈衝效果 */}
+                                    <div className="relative mb-3 mt-1 sm:mb-4 sm:mt-2">
+                                        <div className="absolute inset-0 bg-[var(--glow)] blur-lg opacity-20 group-hover:opacity-50 group-hover:animate-pulse transition-opacity duration-300 rounded-full" />
+                                        <IconComponent className={cn("w-8 h-8 relative z-10", item.iconColor, "drop-shadow-[0_0_8px_var(--glow)]")} />
+                                    </div>
+
+                                    {/* 文字區塊 */}
+                                    <h3 className="text-slate-100 font-bold text-sm md:text-base tracking-widest mb-1.5 sm:mb-2 z-10 font-headline">
+                                        {item.title}
+                                    </h3>
+                                    <p className="text-slate-400 text-xs leading-relaxed font-light z-10">
+                                        {item.description}
+                                    </p>
+                                </div>
                             </div>
-                            <h4 className="text-sm font-black text-white mb-2 tracking-widest font-headline uppercase">{item.title}</h4>
-                            <p className="text-xs text-slate-300 font-bold leading-relaxed">{item.desc}</p>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             </div>
 

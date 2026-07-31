@@ -293,15 +293,7 @@ export default function LuckyBagsPage() {
               </Dialog>
           </div>
 
-            <div className="text-center mb-12 relative z-10 space-y-4">
 
-            
-            <div className="flex items-center justify-center animate-fade-in-up">
-                <h1 className="font-headline text-3xl sm:text-6xl font-black tracking-widest text-white drop-shadow-[0_0_15px_rgba(234,179,8,0.4)]">
-                    福袋
-                </h1>
-            </div>
-          </div>
 
           <div className="space-y-16 max-w-6xl mx-auto">
             <section>

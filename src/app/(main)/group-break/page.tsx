@@ -195,14 +195,7 @@ export default function GroupBreakPage() {
           </Dialog>
       </div>
 
-      <div className="text-center mb-12 md:mb-16 relative z-10 space-y-4">
-        
-        <div className="flex items-center justify-center animate-fade-in-up">
-            <h1 className="font-headline text-3xl font-black tracking-[0.2em] sm:text-6xl text-white drop-shadow-[0_0_15px_rgba(6,182,212,0.4)]">
-                團拆
-            </h1>
-        </div>
-      </div>
+
 
       <div className="space-y-16 md:space-y-24 max-w-5xl mx-auto">
         <section>
