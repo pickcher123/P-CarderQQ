@@ -53,25 +53,20 @@ export function CardExhibitionCalendar({ hideHeader = false }: { hideHeader?: bo
                                     const startDate = new Date(exh.date.seconds * 1000);
                                     const endDate = exh.endDate ? new Date(exh.endDate.seconds * 1000) : null;
                                     return (
-                                        <Card key={exh.id} className="bg-card/40 border-white/5 p-4 rounded-2xl">
-                                            <CardContent className="p-0 flex items-start gap-4">
-                                                {exh.imageUrl && (
-                                                    <div className="relative w-24 h-24 shrink-0 rounded-xl overflow-hidden">
-                                                        <Image src={exh.imageUrl} alt={exh.title} fill className="object-cover" referrerPolicy="no-referrer" />
-                                                    </div>
-                                                )}
-                                                <div className="flex flex-col items-center justify-center bg-primary/10 p-3 rounded-xl min-w-[5rem]">
-                                                    <span className="text-sm font-bold text-primary">{format(startDate, 'MM/dd')}</span>
+                                            <Card key={exh.id} className="bg-slate-900/40 border-white/5 p-3 rounded-xl hover:bg-slate-800/50 transition-colors">
+                                            <CardContent className="p-0 flex items-center gap-4">
+                                                <div className="flex flex-col items-center justify-center bg-primary/10 p-2 rounded-lg min-w-[4rem]">
+                                                    <span className="text-xs font-bold text-primary">{format(startDate, 'MM/dd')}</span>
                                                     {endDate && (
                                                         <>
-                                                            <span className="text-xs text-white/50">-</span>
-                                                            <span className="text-sm font-bold text-primary">{format(endDate, 'MM/dd')}</span>
+                                                            <span className="text-[10px] text-white/50">-</span>
+                                                            <span className="text-xs font-bold text-primary">{format(endDate, 'MM/dd')}</span>
                                                         </>
                                                     )}
                                                 </div>
-                                                <div className="space-y-1">
-                                                    <h4 className="font-black text-white text-lg">{exh.title}</h4>
-                                                    <p className="text-muted-foreground text-sm">{exh.description}</p>
+                                                <div className="flex-1 min-w-0">
+                                                    <h4 className="font-bold text-white text-sm truncate">{exh.title}</h4>
+                                                    <p className="text-muted-foreground text-xs truncate">{exh.description}</p>
                                                 </div>
                                             </CardContent>
                                         </Card>

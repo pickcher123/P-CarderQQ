@@ -47,14 +47,8 @@ const rarityStyles: Record<Rarity, { text: string, bg: string, border: string, s
     badgeBg: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
   },
 };
-const pointPrizeStyles: Record<Rarity, { text: string, bg: string, border: string, glow: string }> = {
-  legendary: { text: 'text-amber-400', bg: 'bg-gradient-to-br from-amber-500/25 via-amber-950/40 to-slate-950', border: 'border-amber-500/50', glow: 'shadow-[0_0_25px_rgba(245,158,11,0.3)]' },
-  rare: { text: 'text-purple-400', bg: 'bg-gradient-to-br from-purple-500/25 via-purple-950/40 to-slate-950', border: 'border-purple-500/50', glow: 'shadow-[0_0_25px_rgba(168,85,247,0.3)]' },
-  common: { text: 'text-cyan-400', bg: 'bg-gradient-to-br from-cyan-500/20 via-slate-900 to-slate-950', border: 'border-cyan-500/40', glow: 'shadow-[0_0_20px_rgba(34,211,238,0.2)]' },
-};
 interface CardData { id: string; name: string; imageUrl: string; backImageUrl?: string; imageHint: string; isSold?: boolean; }
-interface PointPrize { prizeId: string; points: number; quantity: number; rarity: Rarity; }
-interface CardPool { id: string; name: string; description: string; price?: number; price3Draws?: number; price10Draws?: number; totalPacks?: number; remainingPacks?: number; hasProtection?: boolean; isFeatured?: boolean; currency?: 'diamond' | 'p-point'; cardRarities?: { [cardId: string]: Rarity }; cards?: { cardId: string; quantity: number }[]; pointPrizes?: PointPrize[]; lastPrizeCardId?: string; imageUrl?: string; startsAt?: { seconds: number; nanoseconds: number; }; expiresAt?: { seconds: number; nanoseconds: number; }; lockedBy?: string; lockedAt?: { seconds: number; nanoseconds: number; }; categoryId?: string; dailyLimit?: number; minLevel?: string; isAdult?: boolean; }
+interface CardPool { id: string; name: string; description: string; price?: number; price3Draws?: number; price10Draws?: number; totalPacks?: number; remainingPacks?: number; hasProtection?: boolean; isFeatured?: boolean; currency?: 'diamond' | 'p-point'; cardRarities?: { [cardId: string]: Rarity }; cards?: { cardId: string; quantity: number }[]; lastPrizeCardId?: string; imageUrl?: string; startsAt?: { seconds: number; nanoseconds: number; }; expiresAt?: { seconds: number; nanoseconds: number; }; lockedBy?: string; lockedAt?: { seconds: number; nanoseconds: number; }; categoryId?: string; dailyLimit?: number; minLevel?: string; isAdult?: boolean; }
 const LOCK_DURATION = 120;
 
 export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, allCardsMap: Map<string, CardData>, userProfile: any }) {
@@ -140,12 +134,6 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                     }
                 });
             }
-            if (pool.pointPrizes) {
-                pool.pointPrizes.filter(p => p.rarity === rarity && p.quantity > 0).forEach(p => {
-                    if (result.length >= 4) return;
-                    result.push({ id: p.prizeId, name: `${p.points} P+`, isPoints: true, points: p.points, rarity: p.rarity, quantity: p.quantity, type: 'points' });
-                });
-            }
         }
         return result;
     }, [pool, allCardsMap]);
@@ -168,19 +156,6 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                         isPoints: false,
                     });
                 }
-            });
-        }
-        if (pool.pointPrizes) {
-            pool.pointPrizes.forEach(p => {
-                list.push({
-                    id: p.prizeId,
-                    name: `${p.points} P+`,
-                    rarity: p.rarity,
-                    quantity: p.quantity,
-                    isSoldOut: p.quantity <= 0,
-                    isPoints: true,
-                    points: p.points,
-                });
             });
         }
         return list;
@@ -252,11 +227,11 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                 </div>
 
                 {/* 👑 本池焦點頭獎 HERO SHOWCASE */}
-                <div className="mb-8 relative group">
+                <div className="mb-6 sm:mb-8 relative group">
                     {/* Golden Ambient Backdrop Glow */}
-                    <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/30 via-yellow-400/20 to-amber-600/30 rounded-3xl blur-md opacity-80 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+                    <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/30 via-yellow-400/20 to-amber-600/30 rounded-2xl blur-md opacity-80 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
-                    <div className="relative bg-gradient-to-b from-[#13192a]/95 via-[#0c101d]/95 to-[#080b14]/95 border-2 border-amber-500/60 rounded-2xl p-4 sm:p-5 md:p-6 shadow-[0_10px_35px_rgba(245,158,11,0.2)] overflow-hidden">
+                    <div className="relative bg-gradient-to-b from-[#13192a]/95 via-[#0c101d]/95 to-[#080b14]/95 border-2 border-amber-500/60 rounded-2xl p-4 sm:p-6 shadow-[0_10px_35px_rgba(245,158,11,0.2)] overflow-hidden">
                         {/* Animated Shimmer Stream */}
                         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-400 via-yellow-200 via-amber-500 to-amber-400 bg-[length:200%_100%] animate-shimmer" />
 
@@ -266,20 +241,20 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                 <div className="p-1.5 rounded-xl bg-amber-500/20 border border-amber-400/50 text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.4)]">
                                     <Trophy className="w-5 h-5 text-amber-300 animate-bounce" />
                                 </div>
-                                <div>
-                                    <h3 className="text-base sm:text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-400 tracking-wider font-headline flex items-center gap-1.5">
-                                        <span>本池焦點頭獎 GRAND PRIZE</span>
-                                        <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
+                                <div className="min-w-0">
+                                    <h3 className="text-sm sm:text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-400 tracking-wider font-headline flex items-center gap-1.5 truncate">
+                                        <span>焦點頭獎</span>
+                                        <Sparkles className="w-4 h-4 text-amber-300 animate-pulse shrink-0" />
                                     </h3>
-                                    <p className="text-[11px] sm:text-xs text-slate-400">本卡池內最高價值賞品與焦點機率卡</p>
+                                    <p className="text-[10px] sm:text-xs text-slate-400 truncate">本池最高價值賞品</p>
                                 </div>
                             </div>
 
                             <button 
                                 onClick={() => setIsInventoryOpen(true)}
-                                className="flex items-center gap-1 text-xs font-bold text-amber-300 hover:text-white bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/50 px-3 py-1.5 rounded-full transition-all cursor-pointer shadow-sm hover:shadow-[0_0_12px_rgba(245,158,11,0.3)]"
+                                className="shrink-0 flex items-center gap-1 text-[11px] sm:text-xs font-bold text-amber-300 hover:text-white bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/50 px-3 py-1.5 rounded-full transition-all cursor-pointer shadow-sm hover:shadow-[0_0_12px_rgba(245,158,11,0.3)]"
                             >
-                                <span>完整清冊</span>
+                                <span>清冊</span>
                                 <ChevronRight className="w-3.5 h-3.5" />
                             </button>
                         </div>
@@ -291,47 +266,33 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                 {topPrizesPreview[0] && (
                                     <div 
                                         onClick={() => setPreviewCard(topPrizesPreview[0])}
-                                        className="relative bg-gradient-to-r from-amber-950/50 via-slate-900/90 to-amber-950/50 border-2 border-amber-400/70 hover:border-amber-300 rounded-xl p-3.5 sm:p-4 flex flex-col sm:flex-row items-center gap-4 cursor-pointer transition-all duration-300 hover:scale-[1.01] hover:shadow-[0_0_30px_rgba(245,158,11,0.35)] group/hero"
+                                        className="relative bg-gradient-to-r from-amber-950/50 via-slate-900/90 to-amber-950/50 border border-amber-400/70 hover:border-amber-300 rounded-xl p-3 flex flex-row items-center gap-3 cursor-pointer transition-all duration-300 hover:scale-[1.01] hover:shadow-[0_0_20px_rgba(245,158,11,0.2)] group/hero"
                                     >
-
                                         {/* Image / Point Box */}
-                                        <div className="relative w-24 sm:w-28 aspect-[2.5/4] rounded-lg overflow-hidden border-2 border-amber-400/80 p-1 bg-slate-950 shrink-0 shadow-[0_0_20px_rgba(245,158,11,0.35)] group-hover/hero:border-amber-300 transition-colors mt-0 sm:mt-0">
-                                            {topPrizesPreview[0].isPoints ? (
-                                                <div className="w-full h-full bg-gradient-to-br from-amber-500/30 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-2 text-center">
-                                                    <PPlusIcon className="w-10 h-10 text-amber-300 mb-1 drop-shadow-[0_0_12px_rgba(245,158,11,0.6)] animate-pulse" />
-                                                    <span className="text-white font-black font-headline text-xl sm:text-2xl">{topPrizesPreview[0].points}</span>
-                                                    <span className="text-[9px] text-amber-300/90 uppercase font-bold">P+ Bonus</span>
-                                                </div>
-                                            ) : (
-                                                <SafeImage src={topPrizesPreview[0].imageUrl} alt={topPrizesPreview[0].name} sizes="140px" fill className="object-contain p-0.5" />
-                                            )}
+                                        <div className="relative w-20 sm:w-24 aspect-[2.5/4] rounded-lg overflow-hidden border border-amber-400/80 p-1 bg-slate-950 shrink-0 shadow-lg group-hover/hero:border-amber-300 transition-colors">
+                                            <SafeImage src={topPrizesPreview[0].imageUrl} alt={topPrizesPreview[0].name} sizes="100px" fill className="object-contain" />
                                         </div>
 
                                         {/* Details */}
-                                        <div className="text-center sm:text-left flex-1 min-w-0">
-                                            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-1.5">
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-1.5 mb-1 flex-wrap">
                                                 <span className={cn(
-                                                    "px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border",
+                                                    "px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border",
                                                     rarityStyles[topPrizesPreview[0].rarity as Rarity]?.badgeBg || "bg-amber-500/20 text-amber-300 border-amber-500/50"
                                                 )}>
-                                                    {rarityStyles[topPrizesPreview[0].rarity as Rarity]?.label || 'LEGENDARY'}
+                                                    {rarityStyles[topPrizesPreview[0].rarity as Rarity]?.label || '傳說賞'}
                                                 </span>
-                                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/25 border border-amber-400/50 text-amber-200 flex items-center gap-1 shadow-sm">
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
-                                                    剩餘 {topPrizesPreview[0].quantity ?? 1} 包
+                                                <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-500/25 border border-amber-400/50 text-amber-200">
+                                                    剩 {topPrizesPreview[0].quantity ?? 1}
                                                 </span>
                                             </div>
 
-                                            <h4 className="text-base sm:text-lg font-black text-white truncate drop-shadow-[0_2px_8px_rgba(245,158,11,0.5)] mb-1">
+                                            <h4 className="text-sm sm:text-base font-black text-white truncate mb-1">
                                                 {topPrizesPreview[0].name}
                                             </h4>
-
-                                            <p className="text-xs text-slate-300 line-clamp-2 mb-2 font-light">
-                                                {topPrizesPreview[0].isPoints ? '幸運獲得高額 P+ 紅利點數，可用於商城兌換或參與極致活動！' : '稀有高品質限定收藏卡，獲取機率極低，抽中即存入個人專屬庫！'}
-                                            </p>
-
-                                            <span className="inline-flex items-center gap-1 text-[11px] text-amber-300 font-bold group-hover/hero:underline">
-                                                <Eye className="w-3.5 h-3.5" /> 點擊預覽卡片詳細細節
+                                            
+                                            <span className="inline-flex items-center gap-0.5 text-[10px] text-amber-400/80 font-bold group-hover/hero:text-amber-300">
+                                                <Eye className="w-3 h-3" /> 查看細節
                                             </span>
                                         </div>
                                     </div>
@@ -339,44 +300,26 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
 
                                 {/* 2. Secondary Top Prizes Row */}
                                 {topPrizesPreview.length > 1 && (
-                                    <div>
-                                        <p className="text-[11px] font-bold text-amber-200/80 mb-2 flex items-center gap-1">
-                                            <span>其他大獎品項 ({topPrizesPreview.length - 1})：</span>
-                                        </p>
-                                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                                            {topPrizesPreview.slice(1).map(item => (
+                                    <div className="grid grid-cols-2 gap-2">
+                                            {topPrizesPreview.slice(1, 3).map(item => (
                                                 <div 
                                                     key={item.id} 
                                                     onClick={() => setPreviewCard(item)}
-                                                    className="bg-slate-900/90 hover:bg-slate-800/90 border border-slate-700/80 hover:border-amber-400/60 rounded-xl p-2.5 flex items-center gap-2.5 cursor-pointer transition-all duration-300 hover:scale-[1.02] shadow-md group/sub"
+                                                    className="bg-slate-900/90 hover:bg-slate-800/90 border border-slate-700/80 hover:border-amber-400/60 rounded-xl p-2 flex items-center gap-2 cursor-pointer transition-all shadow-sm group/sub"
                                                 >
-                                                    <div className="relative w-12 h-16 rounded-lg overflow-hidden border border-amber-400/40 bg-slate-950 shrink-0 flex items-center justify-center p-0.5">
-                                                        {item.isPoints ? (
-                                                            <div className="flex flex-col items-center">
-                                                                <PPlusIcon className="w-6 h-6 text-amber-300" />
-                                                                <span className="text-[10px] font-black text-white">{item.points}</span>
-                                                            </div>
-                                                        ) : (
-                                                            <SafeImage src={item.imageUrl} alt={item.name} fill className="object-contain" />
-                                                        )}
+                                                    <div className="relative w-10 h-12 rounded-lg overflow-hidden border border-amber-400/40 bg-slate-950 shrink-0 flex items-center justify-center p-0.5">
+                                                        <SafeImage src={item.imageUrl} alt={item.name} fill className="object-contain" />
                                                     </div>
                                                     <div className="min-w-0 flex-1">
-                                                        <span className={cn(
-                                                            "text-[9px] font-bold block truncate",
-                                                            item.rarity === 'legendary' ? 'text-amber-400' : 'text-purple-400'
-                                                        )}>
-                                                            {item.rarity === 'legendary' ? 'LEGENDARY' : 'RARE'}
-                                                        </span>
-                                                        <p className="text-xs font-bold text-slate-100 truncate group-hover/sub:text-amber-300 transition-colors">
+                                                        <p className="text-[10px] font-bold text-slate-100 truncate group-hover/sub:text-amber-300">
                                                             {item.name}
                                                         </p>
-                                                        <span className="text-[10px] text-slate-400">
-                                                            剩 {item.quantity ?? 1} 包
+                                                        <span className="text-[9px] text-slate-400">
+                                                            剩 {item.quantity ?? 1}
                                                         </span>
                                                     </div>
                                                 </div>
                                             ))}
-                                        </div>
                                     </div>
                                 )}
                             </div>
@@ -390,23 +333,23 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                         {lastPrizeCard && (
                             <div 
                                 onClick={() => setPreviewCard({ ...lastPrizeCard, rarity: 'legendary' })}
-                                className="mt-3.5 bg-gradient-to-r from-amber-500/25 via-purple-500/20 to-slate-900 border border-amber-400/60 hover:border-amber-300 rounded-xl p-3 flex items-center justify-between cursor-pointer transition-all hover:scale-[1.01] shadow-md group/last"
+                                className="mt-4 bg-slate-900 border border-amber-500/30 rounded-xl p-2.5 flex items-center justify-between cursor-pointer transition-all hover:border-amber-500/60 shadow-inner group/last"
                             >
-                                <div className="flex items-center gap-3 min-w-0">
-                                    <div className="relative w-10 h-12 rounded-lg border border-amber-400 bg-slate-950 shrink-0 overflow-hidden shadow-md">
+                                <div className="flex items-center gap-2 min-w-0">
+                                    <div className="relative w-8 h-10 rounded-lg border border-amber-400 bg-slate-950 shrink-0 overflow-hidden shadow-sm">
                                         <SafeImage src={lastPrizeCard.imageUrl} alt="last prize" fill className="object-contain" />
                                     </div>
                                     <div className="min-w-0">
-                                        <div className="flex items-center gap-1 text-[10px] font-black text-amber-300 uppercase tracking-widest">
-                                            <Trophy className="w-3 h-3 text-amber-400 animate-pulse" />
-                                            【最後賞】清空卡池自動獲得
+                                        <div className="flex items-center gap-1 text-[9px] font-black text-amber-400 uppercase tracking-widest">
+                                            <Trophy className="w-2.5 h-2.5" />
+                                            最後賞
                                         </div>
-                                        <p className="text-xs sm:text-sm font-black text-white truncate group-hover/last:text-amber-300 transition-colors">
+                                        <p className="text-[11px] font-black text-white truncate group-hover/last:text-amber-300">
                                             {lastPrizeCard.name}
                                         </p>
                                     </div>
                                 </div>
-                                <ChevronRight className="w-4 h-4 text-amber-300 shrink-0 ml-2" />
+                                <ChevronRight className="w-3.5 h-3.5 text-amber-400 shrink-0 ml-1" />
                             </div>
                         )}
                     </div>
@@ -580,15 +523,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                                         "relative w-full aspect-[2.5/4] mb-2 rounded-lg overflow-hidden border p-1 bg-slate-950 flex flex-col items-center justify-center shadow-md",
                                                         c.isSoldOut ? "border-slate-800" : style.border
                                                     )}>
-                                                        {c.isPoints ? (
-                                                            <div className={cn("w-full h-full flex flex-col items-center justify-center rounded-md p-2", pointPrizeStyles[c.rarity as Rarity].bg)}>
-                                                                <PPlusIcon className={cn("w-10 h-10 sm:w-12 sm:h-12 mb-1 drop-shadow-[0_0_10px_rgba(34,211,238,0.5)]", pointPrizeStyles[c.rarity as Rarity].text)} />
-                                                                <p className="font-headline text-base sm:text-xl font-black text-white">{c.points}</p>
-                                                                <span className="text-[9px] text-slate-400 uppercase tracking-widest mt-0.5">P+ Bonus</span>
-                                                            </div>
-                                                        ) : (
-                                                            <SafeImage src={c.imageUrl} alt={c.name} sizes="140px" fill className="object-contain p-0.5" />
-                                                        )}
+                                                        <SafeImage src={c.imageUrl} alt={c.name} sizes="140px" fill className="object-contain p-0.5" />
 
                                                         {/* 已售罄水印印章 */}
                                                         {c.isSoldOut && (

@@ -118,8 +118,36 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 賽事預測 */}
-      <PredictionSection />
+      {/* 賽事預測與卡展行事曆 */}
+      <section className="py-12 md:py-16 container px-4 relative">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-7xl mx-auto">
+          {/* 賽事預測 */}
+          <div className="space-y-6">
+            <div className="flex items-center justify-center animate-fade-in-up">
+              <h2 className="font-headline text-3xl font-black tracking-widest text-white drop-shadow-[0_0_15px_rgba(6,182,212,0.4)]">
+                賽事預測
+              </h2>
+            </div>
+            <PredictionSection />
+          </div>
+
+          {/* 卡展行事曆 */}
+          <div className="space-y-6">
+            <div className="flex items-center justify-center animate-fade-in-up">
+                <h2 className="font-headline text-3xl font-black tracking-widest text-white drop-shadow-[0_0_15px_rgba(6,182,212,0.4)]">
+                    卡展行事曆
+                </h2>
+            </div>
+            <Card className="bg-slate-950/60 backdrop-blur-md border-white/10 rounded-2xl p-6 h-full">
+                <CardContent className="p-0">
+                    <ScrollArea className="h-[500px]">
+                        <CardExhibitionCalendar hideHeader />
+                    </ScrollArea>
+                </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
 
       {/* 最新消息中心 */}
       <section className="relative py-12 md:py-16 bg-card/10 border-y border-white/5 overflow-hidden">

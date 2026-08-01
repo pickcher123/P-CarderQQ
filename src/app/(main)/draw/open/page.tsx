@@ -248,54 +248,43 @@ export default function OpenPackPage() {
                 if (balance < cost) throw new Error('點數不足，無法抽卡。');
 
                 // 2. 進行抽選
-                const { drawn, updatedCards, updatedPointPrizes } = drawFromPool(poolData, count);
+                const { drawn, updatedCards } = drawFromPool(poolData, count);
 
                 if (drawn.length === 0) throw new Error('卡池目前已無獎項可供抽取。');
 
                 // 3. 處理獲獎結果並存檔
-                let winBonusPoints = 0;
-
                 for (const prize of drawn) {
-                    if (prize.type === 'points') {
-                        // Always award P-points (bonusPoints)
-                        winBonusPoints += prize.points;
-                    } else {
-                        // 儲存卡片到使用者收藏
-                        const newUserCardRef = doc(collection(firestore, 'users', user.uid, 'userCards'));
-                        const serialNumber = `${Math.floor(Math.random() * 9000) + 1000}`;
-                        transaction.set(newUserCardRef, {
-                            cardId: (prize as any).id,
-                            userId: user.uid,
-                            category: (prize as any).category,
-                            rarity: (prize as any).rarity,
-                            isFoil: (prize as any).rarity === 'legendary',
-                            source: 'draw',
-                            poolId: poolId,
-                            serialNumber: serialNumber,
-                            createdAt: serverTimestamp()
-                        });
-                        // 同步更新本地顯示的 ID (雖然目前是用 prize.id，但我們可以多加資訊)
-                        (prize as any).serialNumber = serialNumber;
-                    }
+                    // 儲存卡片到使用者收藏
+                    const newUserCardRef = doc(collection(firestore, 'users', user.uid, 'userCards'));
+                    const serialNumber = `${Math.floor(Math.random() * 9000) + 1000}`;
+                    transaction.set(newUserCardRef, {
+                        cardId: (prize as any).id,
+                        userId: user.uid,
+                        category: (prize as any).category,
+                        rarity: (prize as any).rarity,
+                        isFoil: (prize as any).rarity === 'legendary',
+                        source: 'draw',
+                        poolId: poolId,
+                        serialNumber: serialNumber,
+                        createdAt: serverTimestamp()
+                    });
+                    // 同步更新本地顯示的 ID (雖然目前是用 prize.id，但我們可以多加資訊)
+                    (prize as any).serialNumber = serialNumber;
                 }
 
-                // 4. 套用使用者資產更新 (扣除花費 + 加入贏得的點數)
+                // 4. 套用使用者資產更新 (扣除花費)
                 const updateFields: any = {};
                 if (cardPool.currency === 'p-point') {
-                    updateFields.bonusPoints = increment(-cost + winBonusPoints);
+                    updateFields.bonusPoints = increment(-cost);
                 } else {
                     updateFields.points = increment(-cost);
-                    if (winBonusPoints > 0) {
-                        updateFields.bonusPoints = increment(winBonusPoints);
-                    }
                 }
                 transaction.update(userDocRef, updateFields);
 
                 // 5. 更新卡池資料
                 transaction.update(poolDocRef, {
                     remainingPacks: increment(-drawn.length),
-                    cards: updatedCards,
-                    pointPrizes: updatedPointPrizes
+                    cards: updatedCards
                 });
 
                 // 6. 紀錄交易日誌
@@ -329,19 +318,6 @@ export default function OpenPackPage() {
                   count: newCount,
                   lastDrawDate: todayStr
                 }, { merge: true });
-
-                if (winBonusPoints > 0) {
-                    const winTxRef = doc(collection(firestore, 'transactions'));
-                    transaction.set(winTxRef, {
-                        userId: user.uid,
-                        transactionType: 'Win',
-                        currency: 'p-point',
-                        amount: winBonusPoints,
-                        details: `卡池 [${cardPool.name}] 中獎點數回饋`,
-                        transactionDate: serverTimestamp(),
-                        section: 'draw'
-                    });
-                }
 
                 return { drawn };
             });

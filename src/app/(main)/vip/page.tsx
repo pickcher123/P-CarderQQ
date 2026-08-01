@@ -62,12 +62,12 @@ interface RedemptionItem {
 
 function StatCard({ label, value, icon: Icon, color }: { label: string, value: number, icon: any, color: string }) {
     return (
-        <div className="p-4 md:p-6 rounded-[1.5rem] bg-white/5 border border-white/5 backdrop-blur-md text-center group hover:border-white/20 transition-all shadow-xl">
-            <div className={cn("p-2 rounded-xl bg-white/5 w-fit mx-auto mb-2 transition-transform group-hover:scale-110 group-hover:rotate-3", color)}>
-                <Icon className="w-5 h-5 md:w-6 md:h-6" />
+        <div className="p-4 rounded-2xl bg-[#1c222d] border border-white/5 shadow-xl hover:border-white/10 transition-all group">
+            <div className={cn("mb-3 flex items-center justify-center", color)}>
+                <Icon className="w-8 h-8 opacity-80" />
             </div>
-            <p className="text-[9px] font-black uppercase text-white/40 tracking-[0.1em] mb-0.5">{label}</p>
-            <p className="text-xl md:text-2xl font-black font-code text-white drop-shadow-sm">{value.toLocaleString()}</p>
+            <p className="text-xs text-white/50 mb-1">{label}</p>
+            <p className="text-xl font-black text-white">{value.toLocaleString()}</p>
         </div>
     );
 }
@@ -320,26 +320,25 @@ function CompactDailyCheckIn() {
 function AchievementItem({ item }: { item: any }) {
     return (
         <div className={cn(
-            "flex flex-col items-center p-4 md:p-6 rounded-[2rem] border transition-all duration-500 relative overflow-hidden h-full group",
+            "flex flex-col items-center p-5 rounded-3xl border transition-all duration-500 relative overflow-hidden h-full group",
             item.unlocked 
-                ? "bg-gradient-to-br from-card/80 to-card/40 border-primary/50 shadow-[0_10px_30px_-10px_rgba(6,182,212,0.3)] hover:border-primary hover:shadow-[0_0_20px_rgba(6,182,212,0.2)]" 
-                : "bg-black/90 border-white/5 grayscale hover:border-white/20"
+                ? "bg-card/60 border-white/10 shadow-lg hover:border-primary/50" 
+                : "bg-black/60 border-white/5 grayscale hover:border-white/10"
         )}>
             <div className={cn(
-                "p-3 md:p-5 rounded-3xl mb-3 md:mb-5 transition-all duration-300", 
+                "p-4 rounded-2xl mb-4 transition-all duration-300", 
                 item.unlocked 
-                    ? "bg-primary/10 text-primary group-hover:scale-110 group-hover:bg-primary/20" 
+                    ? "bg-primary/10 text-primary group-hover:scale-105" 
                     : "bg-white/5 text-white/10"
             )}>
-                {item.unlocked ? <item.icon className="w-8 h-8 md:w-12 md:h-12" /> : <Lock className="w-6 h-6 md:w-8 h-8" />}
+                {item.unlocked ? <item.icon className="w-8 h-8" /> : <Lock className="w-6 h-6" />}
             </div>
-            <h4 className={cn("font-black text-[11px] md:text-base text-center line-clamp-1 mb-1 transition-colors", item.unlocked ? "text-white" : "text-white/30")}>{item.title}</h4>
-            <p className={cn("text-[9px] md:text-[11px] text-center line-clamp-2 mb-3", item.unlocked ? "text-white/50" : "text-white/20")}>{item.condition}</p>
+            <h4 className={cn("font-black text-xs text-center line-clamp-1 mb-1 transition-colors", item.unlocked ? "text-white" : "text-white/30")}>{item.title}</h4>
+            <p className={cn("text-[10px] text-center line-clamp-2 mb-4", item.unlocked ? "text-white/50" : "text-white/20")}>{item.condition}</p>
             <Badge variant="outline" className={cn(
-                "text-[7px] md:text-[10px] h-5 md:h-6 font-black uppercase tracking-widest px-3 md:px-4 mt-auto rounded-full transition-colors", 
-                item.unlocked ? "border-primary/30 text-primary bg-primary/5" : "border-white/5 text-white/10 bg-black/40"
+                "text-[9px] h-6 font-black uppercase tracking-widest px-4 mt-auto rounded-full transition-colors", 
+                item.unlocked ? "border-primary/20 text-primary bg-primary/5" : "border-white/5 text-white/10 bg-black/40"
             )}>{item.category}</Badge>
-            {item.unlocked && <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-accent opacity-0 group-hover:opacity-100 transition-opacity" />}
         </div>
     );
 }
@@ -438,59 +437,56 @@ export default function VIPZonePage() {
 
     return (
         <div className="container py-12 md:py-20 max-w-6xl relative text-white">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-primary/5 blur-[120px] pointer-events-none" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/10 via-background to-background pointer-events-none" />
+            <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.03] pointer-events-none" />
             
-            <div className="flex flex-col lg:flex-row items-start justify-between mb-16 gap-10 animate-fade-in-up relative z-10">
-                <div className="flex flex-col sm:flex-row items-center gap-8">
-                    <MemberLevelCrown level={userProfile.userLevel} size="md" />
-                    <div className="space-y-4 text-center sm:text-left">
-                        <div className="flex items-center justify-center sm:justify-start gap-4">
-                            <h1 className="text-4xl font-black font-headline text-white">{userProfile.username}</h1>
-                            <Badge className="bg-accent text-accent-foreground font-black px-3 h-7 border-none shadow-[0_0_15px_rgba(234,179,8,0.4)]">VIP</Badge>
+            <div className="flex flex-col lg:flex-row items-center lg:items-end justify-between mb-16 gap-10 animate-fade-in-up relative z-10 p-8 rounded-[3rem] bg-card/20 border border-white/5 backdrop-blur-sm">
+                <div className="flex flex-col sm:flex-row items-center gap-8 text-center sm:text-left">
+                    <MemberLevelCrown level={userProfile.userLevel} size="lg" />
+                    <div className="space-y-3">
+                        <div className="flex flex-col sm:flex-row items-center sm:items-baseline justify-center sm:justify-start gap-4">
+                            <h1 className="text-5xl font-black font-headline text-white tracking-tighter">{userProfile.username}</h1>
+                            <Badge className="bg-amber-500/10 text-amber-500 font-black px-4 h-7 border border-amber-500/30 rounded-full shadow-[0_0_15px_rgba(245,158,11,0.2)]">VIP</Badge>
                         </div>
-                            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="flex items-center gap-2 text-accent font-black text-sm bg-accent/10 px-4 py-1.5 rounded-full border border-accent/20">
-                                        <Crown className="h-4 w-4" />
-                                        {userProfile.userLevel}
-                                    </div>
-                                    <LeaderboardDialog>
-                                        <Button className="h-9 px-5 rounded-full bg-gradient-to-r from-accent to-amber-600 text-accent-foreground font-black text-xs uppercase tracking-widest hover:scale-105 transition-all shadow-[0_0_15px_rgba(234,179,8,0.3)]">
-                                            <ListOrdered className="mr-2 h-4 w-4" /> 榮耀排行榜 <ChevronRight className="ml-1 h-3 w-3" />
-                                        </Button>
-                                    </LeaderboardDialog>
-                                </div>
+                        <div className="flex items-center justify-center sm:justify-start gap-4">
+                            <div className="flex items-center gap-2 text-accent font-black text-sm bg-accent/10 px-4 py-1.5 rounded-full border border-accent/20">
+                                <Crown className="h-4 w-4" />
+                                {userProfile.userLevel}
                             </div>
+                            <LeaderboardDialog>
+                                <Button variant="ghost" className="h-9 px-4 rounded-full text-white/70 hover:text-white font-bold text-xs uppercase tracking-widest transition-all">
+                                    <ListOrdered className="mr-2 h-4 w-4" /> 榮耀排行榜 <ChevronRight className="ml-1 h-3 w-3" />
+                                </Button>
+                            </LeaderboardDialog>
+                        </div>
                     </div>
                 </div>
 
-                {/* 新增：整合後的簽到與紅利區塊 */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full lg:max-w-xl">
-                    <Card className="bg-card/40 border-primary/30 rounded-3xl backdrop-blur-xl text-white p-4 flex flex-col justify-between">
-                         <div className="flex items-center gap-2 mb-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full lg:max-w-md">
+                    <Card className="bg-background/40 border-white/5 rounded-3xl backdrop-blur-xl text-white p-4 flex flex-col justify-between">
+                         <div className="flex items-center gap-2 mb-3">
                              <CalendarCheck className="w-5 h-5 text-primary" />
-                             <span className="text-sm font-bold uppercase">每日簽到</span>
+                             <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">每日簽到</span>
                          </div>
                          <CompactDailyCheckIn />
                     </Card>
-                    <Card className="bg-card/40 border-accent/30 rounded-3xl backdrop-blur-xl text-white p-4 flex flex-col justify-between">
-                        <div className="flex items-center gap-2 mb-2">
+                    <Card className="bg-background/40 border-white/5 rounded-3xl backdrop-blur-xl text-white p-4 flex flex-col justify-between">
+                        <div className="flex items-center gap-2 mb-3">
                              <PPlusIcon className="w-5 h-5 text-accent" />
-                             <span className="text-sm font-bold uppercase">餘額</span>
-                             <p className="text-xl font-black font-code text-accent ml-auto">{(userProfile?.bonusPoints ?? 0).toLocaleString()}</p>
+                             <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">餘額</span>
+                             <p className="text-lg font-black font-code text-accent ml-auto">{(userProfile?.bonusPoints ?? 0).toLocaleString()}</p>
                         </div>
                         <RedeemPrizesDialog>
-                            <Button className="bg-accent text-accent-foreground font-black w-full h-8 rounded-xl text-xs shadow-[0_0_15px_rgba(234,179,8,0.3)]">前往兌換</Button>
+                            <Button className="bg-white/10 hover:bg-white/20 text-white font-bold w-full h-9 rounded-xl text-xs uppercase tracking-widest">前往兌換</Button>
                         </RedeemPrizesDialog>
                     </Card>
                 </div>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4 mb-16 relative z-10 w-full max-w-5xl mx-auto">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-16 relative z-10 w-full max-w-5xl mx-auto">
                 <StatCard label="加入天數" value={stats.daysJoined} icon={CalendarCheck} color="text-accent" />
                 <StatCard label="累計抽卡數" value={stats.draws} icon={Package} color="text-primary" />
                 <StatCard label="拼卡參與次數" value={stats.bets} icon={Dices} color="text-rose-500" />
                 <StatCard label="獲得最高贈點" value={stats.maxAdminGift} icon={Gift} color="text-emerald-500" />
-                <StatCard label="傳奇珍藏數" value={stats.legends} icon={Sparkles} color="text-purple-500" />
             </div>
 
 

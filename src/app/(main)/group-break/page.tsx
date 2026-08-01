@@ -47,12 +47,12 @@ const GroupBreakCard = ({ groupBreak, index, cardOpacity }: { groupBreak: GroupB
     <Link 
         href={`/group-break/${b.id}`} 
         className={cn(
-            "group relative flex flex-col p-4 bg-slate-800 border-b-[8px] border-r-[8px] border-slate-950 rounded-[2rem] shadow-[0_20px_40px_rgba(0,0,0,0.5)] transition-all duration-500 hover:-translate-y-2",
+            "group relative flex flex-col p-4 bg-gradient-to-b from-[#13192a]/95 via-[#0c101d]/95 to-[#080b14]/95 border border-white/10 rounded-2xl shadow-[0_10px_35px_rgba(0,0,0,0.4)] transition-all duration-500 hover:border-primary/50 hover:shadow-[0_0_30px_rgba(6,182,212,0.2)]",
             "animate-fade-in-up"
         )}
     >
-        <div className="relative flex-1 flex flex-col bg-slate-900 rounded-[1.5rem] p-3 md:p-5 border-b-4 border-white/5 shadow-inner overflow-hidden">
-            <div className="relative flex-1 aspect-video rounded-xl overflow-hidden bg-black shadow-[inset:0_0_20px_rgba(0,0,0,1)] border-2 border-slate-950">
+        <div className="relative flex-1 flex flex-col bg-slate-950/50 rounded-xl p-3 md:p-5 border border-white/5 shadow-inner overflow-hidden">
+            <div className="relative flex-1 aspect-video rounded-xl overflow-hidden bg-black shadow-[inset:0_0_20px_rgba(0,0,0,1)] border border-white/10">
                 <SafeImage 
                     src={b.imageUrl} 
                     alt={b.title} 
@@ -77,12 +77,6 @@ const GroupBreakCard = ({ groupBreak, index, cardOpacity }: { groupBreak: GroupB
                         {b.title}
                     </h3>
                 </div>
-            </div>
-
-            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col gap-2 opacity-40 group-hover:opacity-100 transition-opacity hidden md:flex">
-                <div className="w-4 h-4 rounded-full bg-slate-950 border border-white/5 shadow-inner" />
-                <div className="w-4 h-4 rounded-full bg-slate-950 border border-white/5 shadow-inner" />
-                <div className="w-1 h-8 bg-slate-950 mx-auto rounded-full" />
             </div>
         </div>
 
@@ -109,11 +103,6 @@ const GroupBreakCard = ({ groupBreak, index, cardOpacity }: { groupBreak: GroupB
                         <div className="h-full bg-primary shadow-[0_0_10px_rgba(6,182,212,0.6)] transition-all duration-1000" style={{ width: `${progress}%` }} />
                     </div>
                 </div>
-            </div>
-            
-            <div className="flex justify-center gap-16 opacity-40">
-                <div className="w-6 h-1.5 bg-slate-950 rounded-full" />
-                <div className="w-6 h-1.5 bg-slate-950 rounded-full" />
             </div>
         </div>
     </Link>
