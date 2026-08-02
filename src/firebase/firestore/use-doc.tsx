@@ -22,7 +22,7 @@ export interface UseDocResult<T> {
   data: WithId<T> | null; // Document data with ID, or null.
   isLoading: boolean;       // True if loading.
   error: FirestoreError | Error | null; // Error object, or null.
-  setData?: (data: T & { id: string }) => void;
+  setData?: (_data: T & { id: string }) => void;
   forceRefetch?: () => void;
 }
 

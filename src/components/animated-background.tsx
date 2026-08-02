@@ -1,7 +1,6 @@
 'use client';
 
 import { SafeImage } from '@/components/safe-image';
-import { cn } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 
 export function AnimatedBackground({ backgroundUrl, backgroundOpacity }: { backgroundUrl?: string | null, backgroundOpacity?: number }) {

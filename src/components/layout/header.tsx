@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { User, Gem, LogIn, LogOut, ShieldCheck, Loader2, Package, Library, Plus, Users2, ChevronDown, Crown, ChevronRight, Info, Activity } from 'lucide-react';
+import { User, Gem, LogIn, LogOut, ShieldCheck, Loader2, Package, Library, Plus, Users2, ChevronDown, Crown, Info } from 'lucide-react';
 import { Logo, CrossedCardsIcon, LuckyBagIcon, PPlusIcon } from '@/components/icons';
 import { useUser, useAuth, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
@@ -14,7 +14,6 @@ import { cn } from '@/lib/utils';
 import type { SystemConfig } from '@/types/system';
 import { MemberLevelCrown } from '@/components/member-level-crown';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { PurchasePointsDialog } from '@/components/purchase-points-dialog';
 

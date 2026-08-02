@@ -37,4 +37,4 @@ if (isServer) {
   env = { ...processEnv };
 }
 
-export { env };
+export { env, server, client };

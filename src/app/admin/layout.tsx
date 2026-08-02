@@ -2,15 +2,13 @@
 import { useUser, useDoc, useFirestore, useMemoFirebase } from "@/firebase";
 import { doc } from "firebase/firestore";
 import type { UserProfile } from "@/types/user-profile";
-import { useRouter } from "next/navigation";
-import { useEffect, useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import Link from 'next/link';
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
   CreditCard,
-  Settings,
   ChevronLeft,
   ChevronsLeft,
   ShieldAlert,
@@ -27,16 +25,14 @@ import {
   RefreshCw,
   UserCircle,
   Palette,
-  LayoutGrid,
   Megaphone,
   Calendar
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { Activity } from 'lucide-react';
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Sheet, SheetContent, SheetHeader, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 
 const sidebarNavItems = [
     { title: '數據中心', items: [

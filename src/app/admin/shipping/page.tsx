@@ -69,7 +69,7 @@ function OrderDetailsDialog({ order, cardMap, isOpen, onOpenChange }: {
     order: ShippingOrder | null, 
     cardMap: Map<string, CardData>,
     isOpen: boolean,
-    onOpenChange: (open: boolean) => void 
+    onOpenChange: (_open: boolean) => void 
 }) {
     if (!order) return null;
     return (

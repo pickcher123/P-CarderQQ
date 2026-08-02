@@ -1,14 +1,13 @@
 'use client';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
 import { format, startOfMonth, endOfMonth, getYear, getMonth } from 'date-fns';
 import { useMemo, useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from '@/lib/utils';
-import { Gem, RefreshCw, Calendar, Sparkles, User, Info, ArrowDownLeft } from 'lucide-react';
+import { Gem, RefreshCw, User, Info, ArrowDownLeft } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { PPlusIcon } from '@/components/icons';
 import type { UserProfile } from '@/types/user-profile';

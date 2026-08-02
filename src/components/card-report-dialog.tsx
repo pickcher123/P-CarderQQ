@@ -8,7 +8,7 @@ interface CardData {
     sellPrice?: number;
 }
 
-export function CardReportDialog({ card, open, onOpenChange }: { card: CardData | null, open: boolean, onOpenChange: (open: boolean) => void }) {
+export function CardReportDialog({ card, open, onOpenChange }: { card: CardData | null, open: boolean, onOpenChange: (_open: boolean) => void }) {
     if (!card) return null;
 
     const rarityScore = card.rarity === 'legendary' ? 95 : card.rarity === 'rare' ? 75 : 40;

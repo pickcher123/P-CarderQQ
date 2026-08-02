@@ -1,16 +1,14 @@
 'use client';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useRequest, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection, query, orderBy, where, Timestamp } from "firebase/firestore";
 import { useMemo, useState } from "react";
-import { Gem, ShoppingCart, Users, BarChart, Calendar, ArrowDownRight, TrendingUp, ArrowUpRight, Loader2, Download } from 'lucide-react';
+import { ShoppingCart, Users, BarChart, Calendar, ArrowDownRight, TrendingUp, ArrowUpRight, Loader2, Download } from 'lucide-react';
 import { getYear, getMonth, startOfMonth, endOfMonth } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Bar, BarChart as RechartsBarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { cn } from '@/lib/utils';
-import { PPlusIcon } from "@/components/icons";
 
 interface Transaction {
     id: string;

@@ -3,9 +3,9 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, Truck, Ticket, Archive, Gem, Package, Swords, Users2, Newspaper, UserCircle, ShoppingBag, Palette, ShieldCheck, Plus, LayoutList, BarChartHorizontal, ArrowUpRight, Megaphone, Trash2, AlertTriangle, FileText, Lock, Loader2 } from 'lucide-react';
+import { Users, Truck, Ticket, Archive, Package, Swords, Newspaper, UserCircle, ShoppingBag, Palette, ShieldCheck, Plus, LayoutList, BarChartHorizontal, Megaphone, Trash2, AlertTriangle, FileText, Lock, Loader2 } from 'lucide-react';
 import { useRequest, useFirestore, useMemoFirebase, useDoc, useUser } from "@/firebase";
-import { collection, doc, updateDoc, query, where, getDocs, writeBatch, deleteDoc } from "firebase/firestore";
+import { collection, doc, updateDoc, query, where, getDocs, writeBatch } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -168,7 +168,7 @@ export default function AdminPage() {
     
     // systemConfig is still a listener because it controls site-wide maintenance modes
     const systemConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'systemConfig', 'main') : null, [firestore]);
-    const { data: systemConfig, isLoading: isLoadingSystemConfig, forceRefetch } = useDoc<SystemConfig>(systemConfigRef);
+    const { data: systemConfig, forceRefetch } = useDoc<SystemConfig>(systemConfigRef);
     const [announcement, setAnnouncement] = useState('');
     
     useEffect(() => {

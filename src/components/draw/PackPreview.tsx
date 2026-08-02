@@ -21,7 +21,7 @@ export function PackPreview({
     isLevelMet: boolean,
     isLimitReachedForInitial: boolean,
     isLoadingStats: boolean,
-    performDraw: (count: number) => void
+    performDraw: (_count: number) => void
 }) {
     const cost = initialDrawCount === 3 && cardPool.price3Draws ? cardPool.price3Draws : (cardPool.price || 0) * initialDrawCount;
     const canStart = isLevelMet && !isLimitReachedForInitial && !isLoadingStats;

@@ -10,7 +10,7 @@ export interface AppEvents {
 }
 
 // A generic type for a callback function.
-type Callback<T> = (data: T) => void;
+type Callback<T> = (_data: T) => void;
 
 /**
  * A strongly-typed pub/sub event emitter.

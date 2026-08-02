@@ -1,12 +1,12 @@
 'use client';
 import { useState } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
-import { collection, query, orderBy, limit, addDoc, updateDoc, doc, Timestamp } from "firebase/firestore";
+import { collection, query, orderBy, limit, addDoc, Timestamp } from "firebase/firestore";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Plus, Ticket } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 
@@ -16,7 +16,7 @@ export default function AdminCouponsPage() {
     const [newCoupon, setNewCoupon] = useState({ code: '', discount: 0, expiresAt: '' });
 
     const couponsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'coupons'), orderBy('createdAt', 'desc'), limit(50)) : null, [firestore]);
-    const { data: coupons, isLoading } = useCollection<any>(couponsQuery);
+    const { data: coupons } = useCollection<any>(couponsQuery);
 
     const handleCreateCoupon = async () => {
         if (!firestore || !newCoupon.code) return;

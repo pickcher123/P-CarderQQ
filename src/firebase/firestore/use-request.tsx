@@ -6,11 +6,9 @@ import {
   getDocs,
   DocumentData,
   FirestoreError,
-  QuerySnapshot,
   CollectionReference,
   getDoc,
   DocumentReference,
-  DocumentSnapshot,
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';

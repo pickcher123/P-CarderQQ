@@ -1,9 +1,9 @@
 
 'use client';
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, addDoc, getDocs, query, deleteDoc, doc, updateDoc, writeBatch, orderBy, getCountFromServer } from 'firebase/firestore';
+import { collection, addDoc, query, deleteDoc, doc, updateDoc, getCountFromServer } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -35,7 +35,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Gem, Users, Trash2, Edit, Trophy, Package } from 'lucide-react';
+import { PlusCircle, Gem, Users, Trash2, Edit } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRouter } from 'next/navigation';
 import { Switch } from '@/components/ui/switch';

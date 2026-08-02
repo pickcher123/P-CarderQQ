@@ -2,7 +2,7 @@ import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { useMemo } from 'react';
 
-export function useAnnouncementData<T>(limitCount: number = 50, filterFn?: (data: T[]) => T[]) {
+export function useAnnouncementData<T>(limitCount: number = 50, filterFn?: (_data: T[]) => T[]) {
     const firestore = useFirestore();
     const announcementsQuery = useMemoFirebase(() => {
         if (!firestore) return null;

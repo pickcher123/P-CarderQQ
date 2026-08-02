@@ -8,14 +8,6 @@ interface CelebrationVFXProps {
   type: 'none' | 'rare' | 'legendary';
 }
 
-interface StarProp {
-  id: number;
-  rotation: number;
-  translation: number;
-  delay: number;
-  size: string;
-}
-
 export function CelebrationVFX({ type }: CelebrationVFXProps) {
   const isNone = type === 'none';
   const isLegendary = type === 'legendary';

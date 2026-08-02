@@ -1,22 +1,18 @@
 'use client';
 
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Upload, Image as ImageIcon, Wallpaper, Trash2, CheckCircle2, RefreshCw, Palette, BookOpen, Boxes, Loader2, Info, Layers } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Image as ImageIcon, Wallpaper, Trash2, BookOpen, Info, Layers } from 'lucide-react';
 import { useFirestore, useDoc, useStorage, useMemoFirebase } from "@/firebase";
 import { doc, updateDoc } from "firebase/firestore";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { useState, ChangeEvent, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { SafeImage } from "@/components/safe-image";
 import { ref, uploadBytesResumable, getDownloadURL, listAll, deleteObject } from "firebase/storage";
 import { v4 as uuidv4 } from 'uuid';
-import { Progress } from "@/components/ui/progress";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
@@ -45,7 +41,7 @@ export default function MaterialsAdminPage() {
     const [isLoadingBackgrounds, setIsLoadingBackgrounds] = useState(true);
     
     const systemConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'systemConfig', 'main') : null, [firestore]);
-    const { data: systemConfig, isLoading: isLoadingSystemConfig } = useDoc<SystemConfig>(systemConfigRef);
+    const { data: systemConfig } = useDoc<SystemConfig>(systemConfigRef);
     
     const [currentOpacity, setCurrentOpacity] = useState(1);
     const [currentCardOpacity, setCurrentCardOpacity] = useState(0.85);

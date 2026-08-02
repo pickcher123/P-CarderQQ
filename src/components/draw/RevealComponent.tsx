@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { CardItem } from '@/components/card-item';
 import { PPlusIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
-import { FastForward, Disc3, Star } from 'lucide-react';
+import { FastForward, Disc3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 

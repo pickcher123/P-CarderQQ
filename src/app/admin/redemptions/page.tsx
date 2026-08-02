@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo, ChangeEvent } from 'react';
+import { useState, ChangeEvent } from 'react';
 import { useCollection, useFirestore, useMemoFirebase, useStorage } from '@/firebase';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { collection, addDoc, updateDoc, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
@@ -28,7 +28,6 @@ import {
     AlertDialogAction,
     AlertDialogCancel,
     AlertDialogContent,
-    AlertDialogDescription,
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
@@ -38,7 +37,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Edit, Trash2, Image as ImageIcon, Sparkles, Loader2, Save } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, Save } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SafeImage } from '@/components/safe-image';
 import { Switch } from '@/components/ui/switch';

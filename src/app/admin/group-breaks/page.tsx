@@ -6,8 +6,8 @@ import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, addDoc, query, orderBy, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Card } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,7 +23,7 @@ import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 
 import { v4 as uuidv4 } from 'uuid';
-import { MLB_TEAMS, NBA_TEAMS, MLB_TEAMS_DETAILED, NBA_TEAMS_DETAILED } from '@/lib/draw-constants';
+import { MLB_TEAMS_DETAILED, NBA_TEAMS_DETAILED } from '@/lib/draw-constants';
 
 type BreakType = 'spot' | 'team';
 

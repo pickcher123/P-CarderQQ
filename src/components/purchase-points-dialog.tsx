@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { Gem, Loader2, Sparkles, Check, ArrowRight } from 'lucide-react';
+import { Gem, Loader2, ArrowRight } from 'lucide-react';
 import { PPlusIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
 

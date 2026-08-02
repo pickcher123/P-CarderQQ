@@ -3,7 +3,7 @@
 import { useState, useCallback, useMemo, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCollection, useFirestore, useMemoFirebase, useStorage } from '@/firebase';
-import { collection, doc, setDoc, deleteDoc, writeBatch, updateDoc, query, orderBy } from 'firebase/firestore';
+import { collection, doc, setDoc, writeBatch, updateDoc, query, orderBy } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
 import { Button } from '@/components/ui/button';

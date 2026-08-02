@@ -1,7 +1,6 @@
 'use client';
 
 import { SafeImage } from '@/components/safe-image';
-import { cn } from '@/lib/utils';
 
 type CardPreviewItemProps = {
   name: string;

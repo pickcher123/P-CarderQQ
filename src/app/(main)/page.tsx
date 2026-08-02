@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Package, Users2, ChevronRight, Trophy, Sparkles, Newspaper, Calendar, ShieldCheck, Zap, Target, Crown, Gem, Megaphone } from 'lucide-react';
+import { Package, Users2, ChevronRight, Trophy, Sparkles, Newspaper, Calendar, ShieldCheck, Zap, Target, Crown, Gem, Megaphone, PackageCheck, CheckCircle2 } from 'lucide-react';
 import { Logo, CrossedCardsIcon, LuckyBagIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
@@ -13,7 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { NewsPopup } from '@/components/news-popup';
@@ -66,6 +66,48 @@ export default function Home() {
   }, [firestore]);
   const { data: systemConfig } = useDoc<any>(systemConfigRef);
 
+  // 實體數據動態連動：從 Firestore 撈取真實拆卡紀錄、會員數、卡牌庫存總值與運送單數據
+  const drawnLogsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'drawnCardLogs') : null, [firestore]);
+  const { data: drawnLogs } = useCollection<any>(drawnLogsQuery);
+
+  const usersQuery = useMemoFirebase(() => firestore ? collection(firestore, 'users') : null, [firestore]);
+  const { data: users } = useCollection<any>(usersQuery);
+
+  const allCardsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'allCards') : null, [firestore]);
+  const { data: allCards } = useCollection<any>(allCardsQuery);
+
+  const shippingOrdersQuery = useMemoFirebase(() => firestore ? collection(firestore, 'shippingOrders') : null, [firestore]);
+  const { data: shippingOrders } = useCollection<any>(shippingOrdersQuery);
+
+  // 計算並綜合基底與動態實體數據
+  const platformStats = useMemo(() => {
+    const basePacks = systemConfig?.statsBaseOpenedPacks ?? 128540;
+    const realPacksCount = drawnLogs?.length ?? 0;
+    const displayPacks = (basePacks + realPacksCount).toLocaleString() + '+';
+
+    const baseValue = systemConfig?.statsBaseCardValue ?? 18900000;
+    const realCardsValue = allCards?.reduce((sum, c) => sum + (Number(c.sellPrice || c.price) || 0), 0) ?? 0;
+    const displayValue = '$' + (baseValue + realCardsValue).toLocaleString() + '+';
+
+    let displayFulfillment = '100%';
+    if (shippingOrders && shippingOrders.length > 0) {
+      const fulfilled = shippingOrders.filter(o => o.status === 'completed' || o.status === 'shipped' || o.status === 'delivered').length;
+      const rate = Math.min(100, Math.round((fulfilled / shippingOrders.length) * 100));
+      displayFulfillment = `${rate}%`;
+    }
+
+    const baseUsers = systemConfig?.statsBaseUsers ?? 35200;
+    const realUsersCount = users?.length ?? 0;
+    const displayUsers = (baseUsers + realUsersCount).toLocaleString() + '+';
+
+    return {
+      packs: displayPacks,
+      value: displayValue,
+      fulfillment: displayFulfillment,
+      users: displayUsers,
+    };
+  }, [drawnLogs, allCards, shippingOrders, users, systemConfig]);
+
   return (
     <div className="flex flex-col min-h-screen">
       <NewsPopup />
@@ -111,9 +153,100 @@ export default function Home() {
                 <div className="absolute inset-0 bg-white/10 animate-shimmer pointer-events-none" />
               </Link>
             </Button>
-            <Button size="lg" variant="outline" onClick={() => setIsCalendarOpen(true)} className="w-full sm:w-auto h-14 md:h-16 px-8 md:px-10 text-base md:text-lg font-bold rounded-2xl border-white/10 bg-white/5 backdrop-blur-md hover:bg-white/10 transition-all">
-                卡展行事曆
-            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* 平台信任度數據看板 (Stats Bar) */}
+      <section className="relative -mt-6 md:-mt-8 mb-8 md:mb-12 container px-4 z-20">
+        <div className="max-w-6xl mx-auto rounded-3xl bg-slate-950/80 backdrop-blur-2xl border border-cyan-500/20 shadow-[0_0_50px_rgba(6,182,212,0.15)] p-6 md:p-8 relative overflow-hidden">
+          {/* Subtle Ambient Glow */}
+          <div className="absolute -top-24 -left-24 w-60 h-60 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-24 -right-24 w-60 h-60 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+
+          {/* Header Indicator */}
+          <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-6">
+            <div className="flex items-center gap-2.5 text-xs md:text-sm font-bold text-cyan-400 tracking-wider">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-500"></span>
+              </span>
+              P+CARDER 平台即時信任數據看板
+            </div>
+            <div className="hidden sm:flex items-center gap-1.5 text-xs text-slate-400 font-medium">
+              <ShieldCheck className="w-4 h-4 text-emerald-400" /> 100% 隨機公正與實體出貨認證
+            </div>
+          </div>
+
+          {/* Key Metrics Grid */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+            {/* Metric 1 */}
+            <div className="flex flex-col items-center text-center p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-cyan-500/30 transition-all hover:bg-white/[0.04]">
+              <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 mb-3">
+                <PackageCheck className="w-6 h-6 md:w-7 md:h-7" />
+              </div>
+              <div className="text-2xl md:text-3xl lg:text-4xl font-black font-code text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-100 to-cyan-400 tracking-tight">
+                {platformStats.packs}
+              </div>
+              <div className="text-xs md:text-sm font-bold text-slate-200 mt-1.5">累計拆出卡片包數</div>
+              <div className="text-[10px] md:text-xs text-slate-400 mt-0.5">即時演算法公正配卡</div>
+            </div>
+
+            {/* Metric 2 */}
+            <div className="flex flex-col items-center text-center p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-amber-500/30 transition-all hover:bg-white/[0.04]">
+              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 mb-3">
+                <Trophy className="w-6 h-6 md:w-7 md:h-7" />
+              </div>
+              <div className="text-2xl md:text-3xl lg:text-4xl font-black font-code text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-amber-500 tracking-tight">
+                {platformStats.value}
+              </div>
+              <div className="text-xs md:text-sm font-bold text-slate-200 mt-1.5">開出卡片累積總市值</div>
+              <div className="text-[10px] md:text-xs text-slate-400 mt-0.5">卡市行情即時對照</div>
+            </div>
+
+            {/* Metric 3 */}
+            <div className="flex flex-col items-center text-center p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-emerald-500/30 transition-all hover:bg-white/[0.04]">
+              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 mb-3">
+                <CheckCircle2 className="w-6 h-6 md:w-7 md:h-7" />
+              </div>
+              <div className="text-2xl md:text-3xl lg:text-4xl font-black font-code text-transparent bg-clip-text bg-gradient-to-r from-emerald-200 via-emerald-400 to-teal-400 tracking-tight">
+                {platformStats.fulfillment}
+              </div>
+              <div className="text-xs md:text-sm font-bold text-slate-200 mt-1.5">實體卡片寄送妥善率</div>
+              <div className="text-[10px] md:text-xs text-slate-400 mt-0.5">全程錄影與多層防護</div>
+            </div>
+
+            {/* Metric 4 */}
+            <div className="flex flex-col items-center text-center p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-sky-500/30 transition-all hover:bg-white/[0.04]">
+              <div className="p-3 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-400 mb-3">
+                <Users2 className="w-6 h-6 md:w-7 md:h-7" />
+              </div>
+              <div className="text-2xl md:text-3xl lg:text-4xl font-black font-code text-transparent bg-clip-text bg-gradient-to-r from-white via-sky-200 to-sky-400 tracking-tight">
+                {platformStats.users}
+              </div>
+              <div className="text-xs md:text-sm font-bold text-slate-200 mt-1.5">活躍收藏卡友數</div>
+              <div className="text-[10px] md:text-xs text-slate-400 mt-0.5">全台卡迷優質首選</div>
+            </div>
+          </div>
+
+          {/* Bottom Guarantees Bar */}
+          <div className="mt-6 pt-5 border-t border-white/10 grid grid-cols-2 md:grid-cols-4 gap-3 text-center text-xs text-slate-300">
+            <div className="flex items-center justify-center gap-2 font-semibold">
+              <ShieldCheck className="w-4 h-4 text-cyan-400 shrink-0" />
+              <span>機率透明隨機抽查</span>
+            </div>
+            <div className="flex items-center justify-center gap-2 font-semibold">
+              <PackageCheck className="w-4 h-4 text-amber-400 shrink-0" />
+              <span>實體包裹雙向錄影</span>
+            </div>
+            <div className="flex items-center justify-center gap-2 font-semibold">
+              <Zap className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span>卡片一鍵快速轉點</span>
+            </div>
+            <div className="flex items-center justify-center gap-2 font-semibold">
+              <Sparkles className="w-4 h-4 text-sky-400 shrink-0" />
+              <span>特約實體合作卡店</span>
+            </div>
           </div>
         </div>
       </section>

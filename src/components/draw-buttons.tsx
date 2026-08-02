@@ -10,7 +10,7 @@ interface DrawButtonsProps {
     canDraw3: boolean;
     canDraw10: boolean;
     cardPool: CardPool | null;
-    performDraw: (count: number) => void;
+    performDraw: (_count: number) => void;
 }
 
 export function DrawButtons({

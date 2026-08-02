@@ -7,7 +7,7 @@ import { format } from 'date-fns';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import { Calendar as CalendarIcon, MapPin, Clock, Info, ChevronRight, Sparkles } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, Info, ChevronRight, Sparkles } from 'lucide-react';
 import Image from 'next/image';
 
 interface Exhibition {

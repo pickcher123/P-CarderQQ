@@ -11,7 +11,7 @@ export function DrawResults({
 }: {
     sessionPrizes: any[],
     pointPrizeRarityStyles: any,
-    setPreviewCard: (card: any) => void
+    setPreviewCard: (_card: any) => void
 }) {
     return (
         <div className="w-full max-w-6xl px-4 z-20 mt-0 flex flex-col relative select-none">

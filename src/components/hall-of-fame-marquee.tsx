@@ -1,9 +1,7 @@
 'use client';
 
-import { Trophy, Crown, Star, Sparkles } from 'lucide-react';
-import { useMemo } from 'react';
+import { Crown, Sparkles } from 'lucide-react';
 import Image from 'next/image';
-import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { MarqueeContainer } from './ui/marquee-container';
 import { useAnnouncementData } from '@/hooks/use-announcement-data';

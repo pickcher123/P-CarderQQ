@@ -54,7 +54,7 @@ function calculateLevel(totalSpent: number, benefits?: LevelBenefit[]): string {
     return matched ? matched.level : DEFAULT_LEVELS[0].level;
 }
 
-const PrizeDisplayCard = ({ card, levelText, onPreview }: { card?: CardData, levelText: string, onPreview: (card: CardData) => void }) => {
+const PrizeDisplayCard = ({ card, levelText, onPreview }: { card?: CardData, levelText: string, onPreview: (_card: CardData) => void }) => {
     if (!card) return (
         <div className="p-4 bg-black/5 rounded-lg border border-dashed h-full flex flex-col items-center justify-center opacity-40">
             <Trophy className="w-8 h-8 mb-2"/>
@@ -72,10 +72,7 @@ const PrizeDisplayCard = ({ card, levelText, onPreview }: { card?: CardData, lev
             </div>
         </div>
     );
-};
-
-// Add common style definition if not present. Assuming it's needed for the UI.
-const commonRarityStyle = "border-slate-800 bg-slate-900"; 
+}; 
 
 export function LuckBagDetailView({ luckBag }: { luckBag: LuckBagWithCount }) {
     const { user } = useUser();

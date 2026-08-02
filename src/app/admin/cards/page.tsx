@@ -6,7 +6,7 @@ import { useRequest, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import { Card } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Package, Swords, Ticket, Users2, LayoutGrid, ChevronRight, Layers, CreditCard } from 'lucide-react';
+import { Package, Swords, Ticket, Users2, ChevronRight, Layers, CreditCard } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,

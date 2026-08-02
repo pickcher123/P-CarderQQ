@@ -53,7 +53,7 @@ function translateDetails(details?: string): string {
     // 2. 拼卡專區
     match = details.match(/^Bet on (.*)\. Currency: (.*)\. Spots: \[(.*)\]\. Result: (.*)\. Win: (.*)$/);
     if (match) {
-        const [_, cardName, currency, spots, result, didWin] = match;
+        const [, cardName, currency, spots, result, didWin] = match;
         const curName = currency === 'diamond' ? '鑽石' : 'P點';
         const winText = didWin === 'true' ? '中獎' : '未中獎';
         return `拼卡「${cardName}」(${curName})。選號: [${spots}]。結果: ${result} (${winText})`;
@@ -61,7 +61,7 @@ function translateDetails(details?: string): string {
 
     match = details.match(/^Direct purchase of card: (.*) via (.*)$/);
     if (match) {
-        const [_, cardName, currency] = match;
+        const [, cardName, currency] = match;
         const curName = currency === 'diamond' ? '鑽石' : 'P點';
         return `直購卡片: ${cardName} (${curName})`;
     }

@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Sparkles, Send, Loader2, History, Wand2, Star, Zap } from 'lucide-react';
+import { Send, Loader2, History, Wand2, Zap } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, addDoc, serverTimestamp, query, where, orderBy, limit } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';

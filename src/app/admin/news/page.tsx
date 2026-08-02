@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useMemo, ChangeEvent, useEffect } from 'react';
-import { useCollection, useFirestore, useMemoFirebase, useAuth, useStorage } from '@/firebase';
+import { useState, useMemo, useEffect } from 'react';
+import { useCollection, useFirestore, useMemoFirebase, useStorage } from '@/firebase';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy, getDoc } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -39,14 +39,13 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Edit, Trash2, Image as ImageIcon, FileText, Loader2, Megaphone, Radio, MessageCircleCode, Users } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Image as ImageIcon, FileText, Loader2, Radio, MessageCircleCode, Users } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { SafeImage } from '@/components/safe-image';
 import { format } from 'date-fns';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { cn } from '@/lib/utils';
 import type { SystemConfig } from '@/types/system';
 
 interface NewsItem {

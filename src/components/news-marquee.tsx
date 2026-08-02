@@ -2,9 +2,9 @@
 
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
-import { Megaphone, ChevronRight, X } from 'lucide-react';
+import { Megaphone, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { cn } from '@/lib/utils';
 
 interface NewsItem {

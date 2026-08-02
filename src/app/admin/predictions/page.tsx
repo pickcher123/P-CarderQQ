@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, addDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, addDoc, doc, deleteDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,7 +13,7 @@ import { Trash2 } from 'lucide-react';
 export default function AdminPredictionsPage() {
     const db = useFirestore();
     const eventsCollection = useMemoFirebase(() => collection(db, 'predictionEvents'), [db]);
-    const { data: events, isLoading } = useCollection(eventsCollection);
+    const { data: events } = useCollection(eventsCollection);
 
     const [matchName, setMatchName] = useState('');
     const [question, setQuestion] = useState('');
