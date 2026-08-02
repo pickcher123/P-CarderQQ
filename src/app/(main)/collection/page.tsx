@@ -585,42 +585,44 @@ export default function CollectionPage() {
             )}
         </AnimatePresence>
 
-        {/* Filters & Sorting Placeholder (UI Only) */}
+        {/* Filters & Sorting */}
         <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-2 relative z-10 px-2 lg:px-4 text-[10px] sm:text-[11px]">
           <div className="flex items-center gap-3">
               <div className="flex items-center gap-1.5 text-slate-400">
-                  <LayoutGrid className="w-3 h-3" />
-                  <span className="font-black uppercase tracking-widest">Total Assets: {mergedCards.length}</span>
+                  <LayoutGrid className="w-3.5 h-3.5 text-primary" />
+                  <span className="font-bold tracking-wider text-slate-300">
+                      資產總數：<span className="font-code font-black text-white">{mergedCards.length}</span> 張卡片
+                  </span>
               </div>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5 flex-wrap">
               <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="ghost" size="sm" onClick={handleSelectAll} disabled={mergedCards.length === 0} className="rounded-lg hover:bg-white/5 text-slate-400 font-black text-[10px] uppercase tracking-widest px-2 h-8">
-                        <CheckSquare className="mr-1 h-3.5 w-3.5 text-primary" /> 
-                        {isAllSelected ? 'Deselect' : 'Select'}
+                    <Button variant="ghost" size="sm" onClick={handleSelectAll} disabled={mergedCards.length === 0} className="rounded-lg hover:bg-white/5 text-slate-300 font-bold text-[11px] px-2.5 h-8 border border-white/5">
+                        <CheckSquare className="mr-1.5 h-3.5 w-3.5 text-primary" /> 
+                        {isAllSelected ? '取消全選' : '全選卡片'}
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    {isAllSelected ? '取消全選' : '全選'}
+                    {isAllSelected ? '取消全選' : '勾選頁面上所有卡片'}
                   </TooltipContent>
               </Tooltip>
-              <Separator orientation="vertical" className="h-4 bg-white/10" />
+              <Separator orientation="vertical" className="h-4 bg-white/10 hidden sm:block" />
               <DropdownMenu>
                 <Tooltip>
                     <TooltipTrigger asChild>
                       <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="rounded-lg hover:bg-white/5 text-slate-400 font-black text-[10px] uppercase tracking-widest px-2 h-8">
-                              <Filter className="mr-1 h-3.5 w-3.5" /> {filterCategory || 'All'}
+                          <Button variant="ghost" size="sm" className="rounded-lg hover:bg-white/5 text-slate-300 font-bold text-[11px] px-2.5 h-8 border border-white/5">
+                              <Filter className="mr-1.5 h-3.5 w-3.5 text-amber-400" /> 分類：{filterCategory || '全部分類'}
                           </Button>
                       </DropdownMenuTrigger>
                     </TooltipTrigger>
-                    <TooltipContent>篩選分類</TooltipContent>
+                    <TooltipContent>按分類篩選卡片</TooltipContent>
                 </Tooltip>
-                <DropdownMenuContent className="bg-slate-900 border-white/10 text-white">
-                    <DropdownMenuItem onClick={() => setFilterCategory(null)}>All</DropdownMenuItem>
-                    {Array.from(new Set(mergedCards.map(c => c.category))).filter(c => c).map(cat => (
-                        <DropdownMenuItem key={cat} onClick={() => setFilterCategory(cat)}>{cat}</DropdownMenuItem>
+                <DropdownMenuContent className="bg-slate-900 border-white/10 text-white min-w-[130px]">
+                    <DropdownMenuItem onClick={() => setFilterCategory(null)}>全部分類</DropdownMenuItem>
+                    {Array.from(new Set(mergedCards.map(c => c.category))).filter(Boolean).map(cat => (
+                        <DropdownMenuItem key={cat} onClick={() => setFilterCategory(cat!)}>{cat}</DropdownMenuItem>
                     ))}
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -628,17 +630,20 @@ export default function CollectionPage() {
                 <Tooltip>
                     <TooltipTrigger asChild>
                       <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="rounded-xl hover:bg-white/5 text-slate-400 font-black text-[10px] uppercase tracking-widest">
-                              <ArrowUpDown className="mr-2 h-4 w-4" /> Sort: {sortOption}
+                          <Button variant="ghost" size="sm" className="rounded-lg hover:bg-white/5 text-slate-300 font-bold text-[11px] px-2.5 h-8 border border-white/5">
+                              <ArrowUpDown className="mr-1.5 h-3.5 w-3.5 text-sky-400" /> 排序：{
+                                sortOption === 'price' ? '價值 (高到低)' :
+                                sortOption === 'unsold' ? '在庫卡片優先' : '最新加入'
+                              }
                           </Button>
                       </DropdownMenuTrigger>
                     </TooltipTrigger>
-                    <TooltipContent>排序方式</TooltipContent>
+                    <TooltipContent>選擇卡片排序方式</TooltipContent>
                 </Tooltip>
-                <DropdownMenuContent className="bg-slate-900 border-white/10 text-white">
-                    <DropdownMenuItem onClick={() => setSortOption('latest')}>Latest</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setSortOption('price')}>Price (High)</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setSortOption('unsold')}>Unsold First</DropdownMenuItem>
+                <DropdownMenuContent className="bg-slate-900 border-white/10 text-white min-w-[140px]">
+                    <DropdownMenuItem onClick={() => setSortOption('latest')}>最新加入</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setSortOption('price')}>價值 (高到低)</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setSortOption('unsold')}>在庫卡片優先</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
           </div>

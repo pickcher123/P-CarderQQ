@@ -48,7 +48,7 @@ const rarityStyles: Record<Rarity, { text: string, bg: string, border: string, s
   },
 };
 interface CardData { id: string; name: string; imageUrl: string; backImageUrl?: string; imageHint: string; isSold?: boolean; }
-interface CardPool { id: string; name: string; description: string; price?: number; price3Draws?: number; price10Draws?: number; totalPacks?: number; remainingPacks?: number; hasProtection?: boolean; isFeatured?: boolean; currency?: 'diamond' | 'p-point'; cardRarities?: { [cardId: string]: Rarity }; cards?: { cardId: string; quantity: number }[]; lastPrizeCardId?: string; imageUrl?: string; startsAt?: { seconds: number; nanoseconds: number; }; expiresAt?: { seconds: number; nanoseconds: number; }; lockedBy?: string; lockedAt?: { seconds: number; nanoseconds: number; }; categoryId?: string; dailyLimit?: number; minLevel?: string; isAdult?: boolean; }
+interface CardPool { id: string; name: string; description: string; price?: number; price3Draws?: number; price10Draws?: number; totalPacks?: number; remainingPacks?: number; hasProtection?: boolean; isFeatured?: boolean; currency?: 'diamond' | 'p-point'; cardRarities?: { [cardId: string]: Rarity }; cards?: { cardId: string; quantity: number }[]; lastPrizeCardId?: string; imageUrl?: string; startsAt?: { seconds: number; nanoseconds: number; }; expiresAt?: { seconds: number; nanoseconds: number; }; pointMultiplier?: number; pointMultiplierExpiresAt?: { seconds: number; nanoseconds: number; }; lockedBy?: string; lockedAt?: { seconds: number; nanoseconds: number; }; categoryId?: string; dailyLimit?: number; minLevel?: string; isAdult?: boolean; }
 const LOCK_DURATION = 120;
 
 export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, allCardsMap: Map<string, CardData>, userProfile: any }) {
@@ -80,6 +80,12 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
     const isDailyLimitReached = useMemo(() => {
         return !!(pool.dailyLimit && pool.dailyLimit > 0 && todayDrawCount >= pool.dailyLimit);
     }, [pool.dailyLimit, todayDrawCount]);
+
+    const isMultiplierActive = useMemo(() => {
+        if (!pool.pointMultiplier || pool.pointMultiplier <= 1) return false;
+        if (!pool.pointMultiplierExpiresAt) return true;
+        return currentTime < new Date(pool.pointMultiplierExpiresAt.seconds * 1000);
+    }, [pool.pointMultiplier, pool.pointMultiplierExpiresAt, currentTime]);
 
     const poolStatus = useMemo(() => {
         const isSoldOut = (pool.remainingPacks ?? 0) <= 0;
@@ -188,8 +194,13 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                 <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600"></div>
 
                 <div className="text-center mb-8">
-                    <h1 className="text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-blue-500 tracking-wider">
+                    <h1 className="text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-blue-500 tracking-wider flex items-center justify-center gap-2">
                         {pool.name}
+                        {isMultiplierActive && (
+                            <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/50 hover:bg-amber-500/30">
+                                <Zap className="w-3 h-3 mr-1" /> {pool.pointMultiplier}x P點
+                            </Badge>
+                        )}
                     </h1>
                     <p className="text-slate-400 text-sm mt-2">{pool.description}</p>
                 </div>
@@ -457,14 +468,14 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                             {/* 最後賞 特殊區塊 */}
                             {lastPrizeCard && (
                                 <div 
-                                    className="relative overflow-hidden border-2 p-4 sm:p-6 rounded-2xl bg-gradient-to-r from-amber-500/15 via-purple-500/10 to-slate-950 border-amber-400/60 shadow-[0_0_25px_rgba(245,158,11,0.2)] flex flex-col sm:flex-row items-center gap-4 sm:gap-6 cursor-pointer hover:scale-[1.01] transition-all group/last"
+                                    className="relative overflow-hidden border-2 p-4 pt-10 sm:p-6 rounded-2xl bg-gradient-to-r from-amber-500/15 via-purple-500/10 to-slate-950 border-amber-400/60 shadow-[0_0_25px_rgba(245,158,11,0.2)] flex flex-col sm:flex-row items-center gap-4 sm:gap-6 cursor-pointer hover:scale-[1.01] transition-all group/last"
                                     onClick={() => setPreviewCard({ ...lastPrizeCard, rarity: 'legendary' })}
                                 >
-                                    <div className="absolute top-2 right-2 px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/50 text-amber-300 text-[10px] font-black uppercase tracking-widest flex items-center gap-1">
-                                        <Trophy className="w-3 h-3 text-amber-400" />
-                                        LAST PRIZE
+                                    <div className="absolute top-2.5 right-2.5 z-20 px-3 py-1 rounded-full bg-slate-950/90 border border-amber-400/80 text-amber-300 text-[10px] sm:text-xs font-black uppercase tracking-widest flex items-center gap-1.5 shadow-lg backdrop-blur-md">
+                                        <Trophy className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                                        <span>LAST PRIZE</span>
                                     </div>
-                                    <div className="relative w-24 sm:w-28 aspect-[2.5/4] rounded-xl overflow-hidden border-2 border-amber-400/60 p-1 bg-slate-950 shrink-0 shadow-lg group-hover/last:border-amber-300">
+                                    <div className="relative z-10 w-24 sm:w-28 aspect-[2.5/4] rounded-xl overflow-hidden border-2 border-amber-400/60 p-1 bg-slate-950 shrink-0 shadow-lg group-hover/last:border-amber-300 mt-2 sm:mt-0">
                                         <SafeImage src={lastPrizeCard.imageUrl} alt="lp" sizes="120px" fill className="object-contain" />
                                     </div>
                                     <div className="text-center sm:text-left flex-1">

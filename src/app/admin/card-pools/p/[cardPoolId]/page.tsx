@@ -87,6 +87,8 @@ interface CardPool {
   lastPrizeCardId?: string;
   startsAt?: Timestamp;
   expiresAt?: Timestamp;
+  pointMultiplier?: number;
+  pointMultiplierExpiresAt?: Timestamp;
   dailyLimit?: number;
   minLevel?: string;
   agentId?: string;
@@ -832,6 +834,37 @@ export default function CardPoolDetailPage() {
                             </RadioGroup>
                         </div>
 
+                        <div className="p-6 rounded-[2rem] border border-amber-200 bg-amber-50/50 space-y-6">
+                            <div className="flex items-center gap-2 text-slate-900 font-black text-sm uppercase tracking-widest">
+                                <Sparkles className="w-4 h-4 text-amber-500" /> P 點回饋倍率設定
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <Label htmlFor="multiplier" className="text-[10px] font-black uppercase text-slate-500 tracking-widest">回饋倍率 (例如: 1.5)</Label>
+                                    <Input id="multiplier" type="number" step="0.1" value={poolDetails.pointMultiplier || 1} onChange={e => setPoolDetails({...poolDetails, pointMultiplier: Number(e.target.value)})} onBlur={e => handleUpdatePoolDetails('pointMultiplier', Number(e.target.value))} className="h-12 border-slate-200 font-code font-black text-lg bg-white" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">倍率結束時間</Label>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button variant="outline" className="w-full h-12 justify-start text-left font-bold border-slate-200 bg-white">
+                                                {poolDetails.pointMultiplierExpiresAt ? format(poolDetails.pointMultiplierExpiresAt.toDate(), "PPP HH:mm") : "選擇結束時間"}
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0">
+                                            <Calendar mode="single" selected={poolDetails.pointMultiplierExpiresAt?.toDate()} onSelect={(date) => {
+                                                if (!date) return;
+                                                // reuse same time as regular expiresAt or default to midnight
+                                                date.setHours(23, 59);
+                                                handleUpdatePoolDetails('pointMultiplierExpiresAt', Timestamp.fromDate(date));
+                                                setPoolDetails({...poolDetails, pointMultiplierExpiresAt: Timestamp.fromDate(date)});
+                                            }} initialFocus />
+                                        </PopoverContent>
+                                    </Popover>
+                                </div>
+                            </div>
+                        </div>
+
                         <div className="p-6 rounded-[2rem] border border-slate-200 bg-slate-50/50 space-y-6">
                             <div className="flex items-center gap-2 text-slate-900 font-black text-sm uppercase tracking-widest">
                                 <Ban className="w-4 h-4 text-rose-500" /> 參與限制 (限購機制)
@@ -1063,21 +1096,21 @@ export default function CardPoolDetailPage() {
 
                 <UICard className="border-slate-200 bg-white shadow-sm overflow-hidden">
                     <CardHeader className="bg-slate-50/50 border-b">
-                       <CardTitle className="flex items-center text-amber-600 font-black"><PPlusIcon className="mr-3 h-5 w-5"/>紅利 P 點獎項配置</CardTitle>
-                       <CardDescription className="text-slate-500 font-medium">玩家抽出點數獎項後，系統將直接存入其紅利錢包。</CardDescription>
+                       <CardTitle className="flex items-center text-amber-600 font-black"><PPlusIcon className="mr-3 h-5 w-5"/>隨機球員 普/特 卡 (小賞) 配置</CardTitle>
+                       <CardDescription className="text-slate-500 font-medium">配置隨機球員普卡 / 特卡等小賞獎項，並設定其價值 (玩家可在收藏庫 Buy Back 回收轉為 P 點)。</CardDescription>
                     </CardHeader>
                      <CardContent className="p-6 space-y-6">
                         <div className="flex flex-col sm:flex-row items-end gap-4 p-5 border border-amber-100 rounded-2xl bg-amber-50/30">
                            <div className="space-y-1.5 flex-grow w-full">
-                                <Label htmlFor="points-prize" className="text-[10px] font-black uppercase text-amber-700 tracking-widest">獎勵額度 (P)</Label>
-                                <Input id="points-prize" type="number" value={newPointPrize.points} onChange={e => setNewPointPrize({...newPointPrize, points: Number(e.target.value)})} className="h-11 border-slate-200 font-code font-black text-slate-900 bg-white" />
+                                <Label htmlFor="points-prize" className="text-[10px] font-black uppercase text-amber-700 tracking-widest">小賞 Buy Back 價值 (P點)</Label>
+                                <Input id="points-prize" type="number" value={newPointPrize.points} onChange={e => setNewPointPrize({...newPointPrize, points: Number(e.target.value)})} className="h-11 border-slate-200 font-code font-black text-slate-900 bg-white" placeholder="例如: 100" />
                            </div>
                            <div className="space-y-1.5 flex-grow w-full">
-                                <Label htmlFor="points-quantity" className="text-[10px] font-black uppercase text-amber-700 tracking-widest">配置包數 (數量)</Label>
-                                <Input id="points-quantity" type="number" value={newPointPrize.quantity} onChange={e => setNewPointPrize({...newPointPrize, quantity: Number(e.target.value)})} className="h-11 border-slate-200 font-code font-black text-slate-900 bg-white" />
+                                <Label htmlFor="points-quantity" className="text-[10px] font-black uppercase text-amber-700 tracking-widest">配置數量 (包)</Label>
+                                <Input id="points-quantity" type="number" value={newPointPrize.quantity} onChange={e => setNewPointPrize({...newPointPrize, quantity: Number(e.target.value)})} className="h-11 border-slate-200 font-code font-black text-slate-900 bg-white" placeholder="例如: 10" />
                            </div>
                            <div className="space-y-1.5 w-full sm:w-48">
-                                <Label htmlFor="points-rarity" className="text-[10px] font-black uppercase text-amber-700 tracking-widest">指定等級</Label>
+                                <Label htmlFor="points-rarity" className="text-[10px] font-black uppercase text-amber-700 tracking-widest">指定等級 (普/特卡)</Label>
                                 <Select
                                     value={newPointPrize.rarity}
                                     onValueChange={(value) => setNewPointPrize(prev => ({...prev, rarity: value as Rarity}))}
@@ -1096,18 +1129,18 @@ export default function CardPoolDetailPage() {
                             <Table>
                                 <TableHeader className="bg-slate-50">
                                     <TableRow className="border-b-slate-200">
-                                        <TableHead className="text-slate-900 font-black uppercase text-[10px] pl-8 py-4">紅利獎勵</TableHead>
+                                        <TableHead className="text-slate-900 font-black uppercase text-[10px] pl-8 py-4">小賞內容 / Buy Back 價值</TableHead>
                                         <TableHead className="text-slate-900 font-black uppercase text-[10px]">剩餘數量</TableHead>
-                                        <TableHead className="text-slate-900 font-black uppercase text-[10px] w-48">等級</TableHead>
+                                        <TableHead className="text-slate-900 font-black uppercase text-[10px] w-48">等級 / 稀有度</TableHead>
                                         <TableHead className="text-slate-900 font-black uppercase text-[10px] w-24 text-right pr-8">操作</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {poolDetails.pointPrizes?.map(prize => (
                                         <TableRow key={prize.prizeId} className="hover:bg-slate-50 border-b-slate-100">
-                                            <TableCell className="font-black font-code text-amber-600 flex items-center gap-2 text-lg pl-8">
+                                            <TableCell className="font-black font-code text-amber-600 flex items-center gap-2 text-base pl-8">
                                                 <PPlusIcon className="w-4 h-4"/>
-                                                {prize.points.toLocaleString()} P
+                                                隨機球員卡 (可 Buy Back {prize.points.toLocaleString()} P)
                                             </TableCell>
                                             <TableCell className="font-black text-slate-700">{prize.quantity} 包</TableCell>
                                             <TableCell>
@@ -1132,7 +1165,7 @@ export default function CardPoolDetailPage() {
                                     ))}
                                     {(!poolDetails.pointPrizes || poolDetails.pointPrizes.length === 0) && (
                                         <TableRow>
-                                            <TableCell colSpan={4} className="h-24 text-center text-slate-400 font-bold italic">尚未新增點數獎項。</TableCell>
+                                            <TableCell colSpan={4} className="h-24 text-center text-slate-400 font-bold italic">尚未新增隨機球員小賞。</TableCell>
                                         </TableRow>
                                     )}
                                 </TableBody>
