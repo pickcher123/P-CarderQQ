@@ -42,7 +42,7 @@ export function DrawButtons({
                 {isLoadingStats ? <Loader2 className="h-5 w-5 animate-spin" /> : 
                     <>
                         <span className="text-[9px] opacity-70">1抽</span>
-                        <span className="text-xs flex items-center font-headline"><Gem className="w-3 h-3 mr-0.5 text-sky-400"/>{cardPool?.price}</span>
+                        <span className="text-[10px] flex items-center font-headline truncate"><Gem className="w-2.5 h-2.5 mr-0.5 text-sky-400"/>{cardPool?.price}</span>
                     </>
                 }
             </Button>
@@ -57,7 +57,7 @@ export function DrawButtons({
                 {isLoadingStats ? <Loader2 className="h-5 w-5 animate-spin" /> : !canDraw3 ? '額度不足' : 
                     <>
                         <span className="text-[9px] opacity-90">3 連抽</span>
-                        <span className="text-xs flex items-center font-headline"><Gem className="w-3 h-3 mr-0.5"/>{cardPool?.price3Draws}</span>
+                        <span className="text-[10px] flex items-center font-headline truncate"><Gem className="w-2.5 h-2.5 mr-0.5"/>{cardPool?.price3Draws}</span>
                     </>
                 }
             </Button>
@@ -72,7 +72,7 @@ export function DrawButtons({
                 {isLoadingStats ? <Loader2 className="h-5 w-5 animate-spin" /> : !canDraw10 ? '額度不足' : 
                     <>
                         <span className="text-[9px] opacity-90">10 連抽</span>
-                        <span className="text-xs flex items-center font-headline"><Gem className="w-3 h-3 mr-0.5"/>{cardPool?.price10Draws || (cardPool?.price || 0) * 10}</span>
+                        <span className="text-[10px] flex items-center font-headline truncate"><Gem className="w-2.5 h-2.5 mr-0.5"/>{cardPool?.price10Draws || (cardPool?.price || 0) * 10}</span>
                     </>
                 }
             </Button>

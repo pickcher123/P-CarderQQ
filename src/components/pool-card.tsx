@@ -221,7 +221,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                             <span className={cn("text-xs font-bold tracking-widest mb-1", 
                                 r === 'legendary' ? "text-amber-400" : r === 'rare' ? "text-purple-400" : "text-slate-400"
                             )}>{rarityStyles[r].label}</span>
-                            <span className="text-white font-mono text-xl font-bold">{rarityProbabilities[r].toFixed(1)}%</span>
+                            <span className="text-white font-mono text-xs sm:text-sm md:text-base font-bold">{rarityProbabilities[r].toFixed(1)}%</span>
                         </div>
                     ))}
                 </div>
@@ -388,14 +388,15 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                             <Button 
                                 key={drawCount}
                                 disabled={!canDraw || isDrawing}
-                                className={cn("h-auto py-4 flex flex-col items-center justify-center rounded-xl transition-all active:scale-95",
+                                className={cn("h-auto py-2.5 sm:py-4 px-1 flex flex-col items-center justify-center rounded-xl transition-all active:scale-95 overflow-hidden",
                                     drawCount === 10 ? "bg-gradient-to-b from-blue-600 to-indigo-800 border-2 border-cyan-400/50" : "bg-slate-800 border border-slate-600"
                                 )}
                                 onClick={() => handleDraw(drawCount)}
                             >
-                                <span className="text-white font-bold">{label}</span>
-                                <span className="flex items-center text-cyan-100 font-mono font-bold text-lg">
-                                    {price.toLocaleString()} <Gem className="w-4 h-4 ml-1" />
+                                <span className="text-white font-bold text-xs sm:text-sm whitespace-nowrap">{label}</span>
+                                <span className="flex items-center justify-center text-cyan-100 font-mono font-bold text-xs sm:text-base md:text-lg tracking-tight max-w-full truncate mt-0.5">
+                                    <span className="truncate">{price.toLocaleString()}</span>
+                                    <Gem className="w-3 h-3 sm:w-4 sm:h-4 ml-0.5 sm:ml-1 shrink-0" />
                                 </span>
                             </Button>
                         )

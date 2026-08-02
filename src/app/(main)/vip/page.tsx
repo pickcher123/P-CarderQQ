@@ -440,49 +440,49 @@ export default function VIPZonePage() {
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/10 via-background to-background pointer-events-none" />
             <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.03] pointer-events-none" />
             
-            <div className="flex flex-col lg:flex-row items-center lg:items-end justify-between mb-16 gap-10 animate-fade-in-up relative z-10 p-8 rounded-[3rem] bg-card/20 border border-white/5 backdrop-blur-sm">
-                <div className="flex flex-col sm:flex-row items-center gap-8 text-center sm:text-left">
+            <div className="flex flex-col xl:flex-row items-center xl:items-end justify-between mb-8 md:mb-16 gap-6 md:gap-10 animate-fade-in-up relative z-10 p-4 md:p-8 rounded-[2rem] md:rounded-[3rem] bg-card/20 border border-white/5 backdrop-blur-sm">
+                <div className="flex flex-col sm:flex-row items-center gap-4 md:gap-8 text-center sm:text-left w-full">
                     <MemberLevelCrown level={userProfile.userLevel} size="lg" />
-                    <div className="space-y-3">
-                        <div className="flex flex-col sm:flex-row items-center sm:items-baseline justify-center sm:justify-start gap-4">
-                            <h1 className="text-5xl font-black font-headline text-white tracking-tighter">{userProfile.username}</h1>
-                            <Badge className="bg-amber-500/10 text-amber-500 font-black px-4 h-7 border border-amber-500/30 rounded-full shadow-[0_0_15px_rgba(245,158,11,0.2)]">VIP</Badge>
+                    <div className="space-y-1 md:space-y-3 w-full">
+                        <div className="flex flex-col sm:flex-row items-center sm:items-baseline justify-center sm:justify-start gap-2 md:gap-4">
+                            <h1 className="text-3xl md:text-5xl font-black font-headline text-white tracking-tighter truncate max-w-[200px] sm:max-w-none">{userProfile.username}</h1>
+                            <Badge className="bg-amber-500/10 text-amber-500 font-black px-2 md:px-4 h-6 md:h-7 border border-amber-500/30 rounded-full shadow-[0_0_15px_rgba(245,158,11,0.2)]">VIP</Badge>
                         </div>
-                        <div className="flex items-center justify-center sm:justify-start gap-4">
-                            <div className="flex items-center gap-2 text-accent font-black text-sm bg-accent/10 px-4 py-1.5 rounded-full border border-accent/20">
-                                <Crown className="h-4 w-4" />
+                        <div className="flex items-center justify-center sm:justify-start gap-2 md:gap-4">
+                            <div className="flex items-center gap-1 md:gap-2 text-accent font-black text-xs md:text-sm bg-accent/10 px-3 md:px-4 py-1 rounded-full border border-accent/20">
+                                <Crown className="h-3 w-3 md:h-4 md:w-4" />
                                 {userProfile.userLevel}
                             </div>
                             <LeaderboardDialog>
-                                <Button variant="ghost" className="h-9 px-4 rounded-full text-white/70 hover:text-white font-bold text-xs uppercase tracking-widest transition-all">
-                                    <ListOrdered className="mr-2 h-4 w-4" /> 榮耀排行榜 <ChevronRight className="ml-1 h-3 w-3" />
+                                <Button variant="ghost" className="h-8 md:h-9 px-2 md:px-4 rounded-full text-white/70 hover:text-white font-bold text-[10px] md:text-xs uppercase tracking-widest transition-all">
+                                    <ListOrdered className="mr-1 md:mr-2 h-3 w-3 md:h-4 md:w-4" /> 榮耀排行榜 <ChevronRight className="ml-0.5 md:ml-1 h-2 w-2 md:h-3 md:w-3" />
                                 </Button>
                             </LeaderboardDialog>
                         </div>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full lg:max-w-md">
-                    <Card className="bg-background/40 border-white/5 rounded-3xl backdrop-blur-xl text-white p-4 flex flex-col justify-between">
-                         <div className="flex items-center gap-2 mb-3">
-                             <CalendarCheck className="w-5 h-5 text-primary" />
-                             <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">每日簽到</span>
+                <div className="grid grid-cols-2 gap-2 md:gap-4 w-full xl:max-w-md">
+                    <Card className="bg-background/40 border-white/5 rounded-2xl md:rounded-3xl backdrop-blur-xl text-white p-3 md:p-4 flex flex-col justify-between">
+                         <div className="flex items-center gap-1.5 md:gap-2 mb-2 md:mb-3">
+                             <CalendarCheck className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+                             <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-muted-foreground">每日簽到</span>
                          </div>
                          <CompactDailyCheckIn />
                     </Card>
-                    <Card className="bg-background/40 border-white/5 rounded-3xl backdrop-blur-xl text-white p-4 flex flex-col justify-between">
-                        <div className="flex items-center gap-2 mb-3">
-                             <PPlusIcon className="w-5 h-5 text-accent" />
-                             <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">餘額</span>
-                             <p className="text-lg font-black font-code text-accent ml-auto">{(userProfile?.bonusPoints ?? 0).toLocaleString()}</p>
+                    <Card className="bg-background/40 border-white/5 rounded-2xl md:rounded-3xl backdrop-blur-xl text-white p-3 md:p-4 flex flex-col justify-between">
+                        <div className="flex items-center gap-1.5 md:gap-2 mb-2 md:mb-3">
+                             <PPlusIcon className="w-4 h-4 md:w-5 md:h-5 text-accent" />
+                             <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-muted-foreground">餘額</span>
+                             <p className="text-sm md:text-lg font-black font-code text-accent ml-auto">{(userProfile?.bonusPoints ?? 0).toLocaleString()}</p>
                         </div>
                         <RedeemPrizesDialog>
-                            <Button className="bg-white/10 hover:bg-white/20 text-white font-bold w-full h-9 rounded-xl text-xs uppercase tracking-widest">前往兌換</Button>
+                            <Button className="bg-white/10 hover:bg-white/20 text-white font-bold w-full h-8 md:h-9 rounded-xl text-[10px] md:text-xs uppercase tracking-widest">前往兌換</Button>
                         </RedeemPrizesDialog>
                     </Card>
                 </div>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-16 relative z-10 w-full max-w-5xl mx-auto">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4 mb-10 md:mb-16 relative z-10 w-full max-w-5xl mx-auto">
                 <StatCard label="加入天數" value={stats.daysJoined} icon={CalendarCheck} color="text-accent" />
                 <StatCard label="累計抽卡數" value={stats.draws} icon={Package} color="text-primary" />
                 <StatCard label="拼卡參與次數" value={stats.bets} icon={Dices} color="text-rose-500" />
