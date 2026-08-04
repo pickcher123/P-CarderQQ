@@ -427,12 +427,12 @@ export default function VIPZonePage() {
 
     const currentLevelBenefits = [
         { free: false, rate: 0 },   // 新手
-        { free: true, rate: 1 },    // 進階
-        { free: true, rate: 1.5 },  // 資深
-        { free: true, rate: 2 },    // 大師
-        { free: true, rate: 4 },    // 殿堂
-        { free: true, rate: 5 },    // 傳奇
-        { free: true, rate: 10 },   // 卡神
+        { free: false, rate: 1 },   // 進階
+        { free: false, rate: 1.5 }, // 資深
+        { free: false, rate: 2 },   // 大師
+        { free: false, rate: 4 },   // 殿堂
+        { free: false, rate: 5 },   // 傳奇
+        { free: false, rate: 10 },  // 卡神
     ];
 
     return (
@@ -526,7 +526,6 @@ export default function VIPZonePage() {
                                     <h3 className={cn("text-lg font-black font-headline tracking-wide truncate", lvl.color)}>{lvl.level}</h3>
                                     <div className="flex items-center gap-4 text-xs font-bold font-code mt-1 text-white/60">
                                         <span>門檻: {lvl.threshold.toLocaleString()} 💎</span>
-                                        {b.free && <span className="text-emerald-400">● 免運</span>}
                                         {b.rate > 0 && <span className="text-primary">● {b.rate}% 回饋</span>}
                                     </div>
                                 </div>

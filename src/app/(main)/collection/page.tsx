@@ -360,8 +360,8 @@ export default function CollectionPage() {
                     exit={{ y: 100, opacity: 0, x: '-50%' }}
                     className="fixed bottom-[75px] md:bottom-6 left-1/2 -translate-x-1/2 z-50 w-[95vw] max-w-5xl"
                 >
-                    <div className="bg-slate-900/80 backdrop-blur-3xl border border-white/10 rounded-[2rem] p-3 md:p-6 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] flex flex-col md:flex-row items-center gap-3 md:gap-6 justify-between">
-                        <div className="flex items-center gap-3 md:gap-5 w-full md:w-auto">
+                    <div className="bg-slate-900/80 backdrop-blur-3xl border border-white/10 rounded-[2rem] p-4 md:p-6 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] flex flex-wrap items-center gap-4 justify-between w-full">
+                        <div className="flex items-center gap-4 flex-1 min-w-[200px]">
                             <div className="relative shrink-0">
                                 <div className="absolute inset-0 bg-primary/20 blur-md rounded-xl" />
                                 <div className="relative bg-slate-950 p-3 md:p-4 rounded-xl border border-primary/30">
@@ -404,114 +404,119 @@ export default function CollectionPage() {
                                             <Ship className="mr-1 h-4 w-4" /> 批量出貨
                                         </Button>
                                     </AlertDialogTrigger>
-                                    <AlertDialogContent className="rounded-[2rem] md:rounded-[3rem] bg-slate-950 border-white/5 shadow-3xl text-white p-3 md:p-12 overflow-hidden max-w-[95vw] md:max-w-2xl">
-                                        <div className="absolute top-0 right-0 p-4 md:p-12 opacity-5 pointer-events-none">
-                                            <Ship className="w-24 h-24 md:w-64 md:h-64 text-primary" />
+                                    <AlertDialogContent className="rounded-2xl md:rounded-3xl bg-slate-950 border border-white/10 shadow-2xl text-white p-0 overflow-hidden max-w-[95vw] sm:max-w-lg md:max-w-2xl max-h-[90vh] flex flex-col">
+                                        <div className="absolute top-0 right-0 p-6 md:p-8 opacity-5 pointer-events-none z-0">
+                                            <Ship className="w-24 h-24 md:w-48 md:h-48 text-primary" />
                                         </div>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle className="text-lg md:text-3xl font-black italic tracking-tighter text-white flex flex-col md:flex-row md:items-center gap-1 md:gap-4">
+                                        <AlertDialogHeader className="p-5 md:p-6 pb-4 border-b border-white/10 bg-slate-900/80 relative z-10 flex-shrink-0">
+                                            <AlertDialogTitle className="text-xl md:text-2xl font-black italic tracking-tight text-white flex flex-wrap items-center gap-2">
                                                 DELIVERY REQUEST
-                                                {hasFreeShipping && <Badge className="bg-emerald-500 text-black font-black border-none animate-pulse w-max text-[10px]">FREE SHIP</Badge>}
                                             </AlertDialogTitle>
-                                            <AlertDialogDescription className="text-slate-400 font-medium text-xs md:text-lg mt-0.5 md:mt-2">
+                                            <AlertDialogDescription className="text-slate-400 font-medium text-xs md:text-sm mt-1">
                                                 請填寫您的收件資訊，我們將盡速為您安排配送。
                                             </AlertDialogDescription>
                                         </AlertDialogHeader>
-                                        <div className="space-y-2 md:space-y-8 my-2 md:my-8 relative z-10">
-                                            <RadioGroup defaultValue="7-11" onValueChange={(value: ShippingMethod) => setShippingMethod(value)} className="grid grid-cols-3 gap-1 md:gap-4">
-                                                <div className={cn("flex flex-col gap-0.5 md:gap-2 border p-3 md:p-5 rounded-xl md:rounded-3xl transition-all cursor-pointer", shippingMethod === '7-11' ? 'bg-primary/5 border-primary/40 ring-1 ring-primary/40' : 'bg-slate-900 border-white/5 hover:bg-slate-800')}
+                                        <div className="p-5 md:p-6 space-y-5 md:space-y-6 overflow-y-auto flex-1 relative z-10">
+                                            <RadioGroup defaultValue="7-11" onValueChange={(value: ShippingMethod) => setShippingMethod(value)} className="grid grid-cols-3 gap-2 md:gap-4">
+                                                <div className={cn("flex flex-col gap-1.5 border p-3 md:p-4 rounded-xl md:rounded-2xl transition-all cursor-pointer relative", shippingMethod === '7-11' ? 'bg-primary/10 border-primary/60 ring-1 ring-primary/60 text-white shadow-lg shadow-primary/10' : 'bg-slate-900/80 border-white/10 text-slate-300 hover:bg-slate-800')}
                                                      onClick={() => setShippingMethod('7-11')}>
                                                     <div className="flex justify-between items-center">
-                                                        <RadioGroupItem value="7-11" id="r1" className="border-white/20 text-primary" />
-                                                        <Package className="w-4 h-4 md:w-6 md:h-6 text-primary/40" />
+                                                        <RadioGroupItem value="7-11" id="r1" className="border-white/30 text-primary" />
+                                                        <Package className="w-4 h-4 md:w-5 md:h-5 text-primary" />
                                                     </div>
-                                                    <Label htmlFor="r1" className="cursor-pointer font-black text-[10px] md:text-md text-white mt-0.5">7-11</Label>
-                                                    <p className="text-[8px] md:text-[12px] text-slate-500 font-bold uppercase truncate">{hasFreeShipping ? '運 0' : `${SHIPPING_FEE}`}</p>
+                                                    <Label htmlFor="r1" className="cursor-pointer font-black text-xs md:text-sm text-white mt-1">7-11</Label>
+                                                    <p className="text-[10px] md:text-xs text-slate-400 font-bold uppercase truncate">{SHIPPING_FEE} 點數</p>
                                                 </div>
-                                                <div className={cn("flex flex-col gap-0.5 md:gap-2 border p-3 md:p-5 rounded-xl md:rounded-3xl transition-all cursor-pointer", shippingMethod === '郵寄' ? 'bg-primary/5 border-primary/40 ring-1 ring-primary/40' : 'bg-slate-900 border-white/5 hover:bg-slate-800')}
+                                                <div className={cn("flex flex-col gap-1.5 border p-3 md:p-4 rounded-xl md:rounded-2xl transition-all cursor-pointer relative", shippingMethod === '郵寄' ? 'bg-primary/10 border-primary/60 ring-1 ring-primary/60 text-white shadow-lg shadow-primary/10' : 'bg-slate-900/80 border-white/10 text-slate-300 hover:bg-slate-800')}
                                                      onClick={() => setShippingMethod('郵寄')}>
                                                     <div className="flex justify-between items-center">
-                                                        <RadioGroupItem value="郵寄" id="r2" className="border-white/20 text-primary" />
-                                                        <MapPin className="w-4 h-4 md:w-6 md:h-6 text-primary/40" />
+                                                        <RadioGroupItem value="郵寄" id="r2" className="border-white/30 text-primary" />
+                                                        <MapPin className="w-4 h-4 md:w-5 md:h-5 text-primary" />
                                                     </div>
-                                                    <Label htmlFor="r2" className="cursor-pointer font-black text-[10px] md:text-md text-white mt-0.5">郵寄</Label>
-                                                    <p className="text-[8px] md:text-[12px] text-slate-500 font-bold uppercase truncate">{hasFreeShipping ? '運 0' : `${SHIPPING_FEE}`}</p>
+                                                    <Label htmlFor="r2" className="cursor-pointer font-black text-xs md:text-sm text-white mt-1">郵寄</Label>
+                                                    <p className="text-[10px] md:text-xs text-slate-400 font-bold uppercase truncate">{SHIPPING_FEE} 點數</p>
                                                 </div>
-                                                <div className={cn("flex flex-col gap-0.5 md:gap-2 border p-3 md:p-5 rounded-xl md:rounded-3xl transition-all cursor-pointer", shippingMethod === '面交自取' ? 'bg-primary/5 border-primary/40 ring-1 ring-primary/40' : 'bg-slate-900 border-white/5 hover:bg-slate-800')}
+                                                <div className={cn("flex flex-col gap-1.5 border p-3 md:p-4 rounded-xl md:rounded-2xl transition-all cursor-pointer relative", shippingMethod === '面交自取' ? 'bg-primary/10 border-primary/60 ring-1 ring-primary/60 text-white shadow-lg shadow-primary/10' : 'bg-slate-900/80 border-white/10 text-slate-300 hover:bg-slate-800')}
                                                      onClick={() => setShippingMethod('面交自取')}>
                                                     <div className="flex justify-between items-center">
-                                                        <RadioGroupItem value="面交自取" id="r3" className="border-white/20 text-primary" />
-                                                        <Users className="w-4 h-4 md:w-6 md:h-6 text-primary/40" />
+                                                        <RadioGroupItem value="面交自取" id="r3" className="border-white/30 text-primary" />
+                                                        <Users className="w-4 h-4 md:w-5 md:h-5 text-primary" />
                                                     </div>
-                                                    <Label htmlFor="r3" className="cursor-pointer font-black text-[10px] md:text-md text-white mt-0.5">自取</Label>
-                                                    <p className="text-[8px] md:text-[12px] text-slate-500 font-bold uppercase truncate">NO FEE</p>
+                                                    <Label htmlFor="r3" className="cursor-pointer font-black text-xs md:text-sm text-white mt-1">自取</Label>
+                                                    <p className="text-[10px] md:text-xs text-slate-400 font-bold uppercase truncate">免運費</p>
                                                 </div>
                                             </RadioGroup>
                                             
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5 md:gap-6">
-                                                <div className="space-y-0.5 md:space-y-3">
-                                                    <Label className="text-[8px] md:text-[11px] uppercase font-black text-slate-500 tracking-[0.2em] ml-1">Name</Label>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+                                                <div className="space-y-1.5">
+                                                    <Label className="text-xs font-bold text-slate-300 flex items-center gap-1">
+                                                        收件人姓名 <span className="text-rose-400">*</span>
+                                                    </Label>
                                                     <Input 
                                                         value={shippingName} 
                                                         onChange={(e) => setShippingName(e.target.value)} 
-                                                        className="h-8 md:h-14 bg-slate-900/50 backdrop-blur-md rounded-lg md:rounded-2xl text-white border-white/5 focus:border-primary/50 transition-all font-bold text-xs"
-                                                        placeholder="收件人全名"
+                                                        className="h-11 bg-slate-900/90 rounded-xl text-white border-white/10 focus:border-primary focus:ring-1 focus:ring-primary transition-all font-medium text-sm px-3.5"
+                                                        placeholder="例如：王小明"
                                                     />
                                                 </div>
-                                                <div className="space-y-0.5 md:space-y-3">
-                                                    <Label className="text-[8px] md:text-[11px] uppercase font-black text-slate-500 tracking-[0.2em] ml-1">Phone</Label>
+                                                <div className="space-y-1.5">
+                                                    <Label className="text-xs font-bold text-slate-300 flex items-center gap-1">
+                                                        聯絡電話 <span className="text-rose-400">*</span>
+                                                    </Label>
                                                     <Input 
                                                         value={shippingPhone} 
                                                         onChange={(e) => setShippingPhone(e.target.value)} 
-                                                        className="h-8 md:h-14 bg-slate-900/50 backdrop-blur-md rounded-lg md:rounded-2xl text-white border-white/5 focus:border-primary/50 transition-all font-bold text-xs"
-                                                        placeholder="聯絡電話"
+                                                        className="h-11 bg-slate-900/90 rounded-xl text-white border-white/10 focus:border-primary focus:ring-1 focus:ring-primary transition-all font-medium text-sm px-3.5"
+                                                        placeholder="例如：0912345678"
                                                     />
                                                 </div>
                                             </div>
                                             
-                                            <div className="space-y-0.5 md:space-y-3">
-                                                <Label className="text-[8px] md:text-[11px] uppercase font-black text-slate-500 tracking-[0.2em] ml-1">{addressLabel}</Label>
+                                            <div className="space-y-1.5">
+                                                <Label className="text-xs font-bold text-slate-300 flex items-center gap-1">
+                                                    {addressLabel} <span className="text-rose-400">*</span>
+                                                </Label>
                                                 {shippingMethod === '面交自取' ? (
-                                                    <div className="p-2 md:p-6 bg-primary/5 rounded-lg md:rounded-[2rem] border border-dashed border-primary/30 space-y-0.5 md:space-y-3">
-                                                        <p className="text-[10px] md:text-base font-black text-primary flex items-center gap-1 md:gap-3">
-                                                            <MapPin className="w-3 h-3 md:w-5 md:h-5" />
+                                                    <div className="p-4 bg-primary/10 rounded-xl border border-dashed border-primary/40 space-y-1">
+                                                        <p className="text-sm font-bold text-primary flex items-center gap-2">
+                                                            <MapPin className="w-4 h-4 flex-shrink-0" />
                                                             {PICKUP_ADDRESS}
                                                         </p>
-                                                        <p className="text-[7px] md:text-xs text-slate-400 font-medium leading-relaxed italic">
-                                                            * 注意：自取需事先完成預約。
+                                                        <p className="text-xs text-slate-400 font-medium leading-relaxed">
+                                                            * 注意：面交自取需事先與客服人員聯繫完成預約。
                                                         </p>
                                                     </div>
                                                 ) : (
                                                     <div className="relative">
-                                                        <div className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 text-slate-500">
-                                                            <SearchCode className="w-3 h-3 md:w-5 md:h-5" />
+                                                        <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                                                            <SearchCode className="w-4 h-4" />
                                                         </div>
                                                         <Input 
                                                             value={shippingAddress} 
                                                             onChange={(e) => setShippingAddress(e.target.value)} 
-                                                            placeholder={shippingMethod === '7-11' ? "門市名稱或店號" : "詳細配送地址"}
-                                                            className="h-8 md:h-16 pl-8 md:pl-12 bg-slate-900/50 backdrop-blur-md rounded-lg md:rounded-2xl text-white border-white/5 focus:border-primary/50 transition-all font-bold text-xs"
+                                                            placeholder={shippingMethod === '7-11' ? "例如：長津門市 或 店號123456" : "例如：台北市信義區信義路五段7號"}
+                                                            className="h-11 pl-10 bg-slate-900/90 rounded-xl text-white border-white/10 focus:border-primary focus:ring-1 focus:ring-primary transition-all font-medium text-sm"
                                                         />
                                                     </div>
                                                 )}
                                             </div>
 
-                                            <div className="p-2 md:p-6 rounded-lg md:rounded-[2rem] bg-amber-500/5 border border-amber-500/20 flex items-start gap-1.5 md:gap-4">
-                                                <div className="p-1.5 md:p-3 bg-amber-500/10 rounded-md md:rounded-2xl">
-                                                    <AlertTriangle className="w-3 h-3 md:w-5 md:h-5 text-amber-500" />
+                                            <div className="p-3.5 md:p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-start gap-3">
+                                                <div className="p-2 bg-amber-500/20 rounded-lg flex-shrink-0 mt-0.5">
+                                                    <AlertTriangle className="w-4 h-4 text-amber-400" />
                                                 </div>
                                                 <div className="space-y-0.5">
-                                                    <p className="text-[7px] md:text-xs font-black text-amber-500 uppercase tracking-widest">重要安全提醒</p>
-                                                    <p className="text-[7px] md:text-[11px] font-bold text-amber-200/60 leading-relaxed">
-                                                        包裹出貨錄影存證。請務必【全程錄影開箱】，否則不受理退換貨。
+                                                    <p className="text-xs font-bold text-amber-400 uppercase tracking-wider">重要安全提醒</p>
+                                                    <p className="text-xs font-medium text-amber-200/80 leading-relaxed">
+                                                        包裹出貨均有錄影存證。收到包裹後請務必【全程開箱錄影】，否則退換貨將不受理。
                                                     </p>
                                                 </div>
                                             </div>
                                         </div>
-                                        <AlertDialogFooter className="gap-1 md:gap-4">
-                                            <AlertDialogCancel className="h-8 md:h-16 rounded-lg md:rounded-[2rem] font-bold bg-white/5 border-white/5 text-white hover:bg-white/10 px-3 md:px-8 text-[10px] md:text-sm">取消</AlertDialogCancel>
-                                            <AlertDialogAction onClick={handleShipping} disabled={isProcessing} className="h-8 md:h-16 rounded-lg md:rounded-[2rem] font-black bg-primary text-black hover:bg-primary/90 shadow-2xl px-4 md:px-12 text-[10px] md:text-sm">
-                                                {isProcessing ? <Loader2 className="animate-spin" /> : '確認申請與支付'}
+                                        <AlertDialogFooter className="p-4 md:p-6 border-t border-white/10 bg-slate-900/90 flex-row justify-end gap-3 flex-shrink-0 relative z-10 m-0">
+                                            <AlertDialogCancel className="h-11 rounded-xl font-bold bg-slate-800/80 border-white/10 text-slate-300 hover:bg-slate-700 hover:text-white px-5 text-sm m-0">取消</AlertDialogCancel>
+                                            <AlertDialogAction onClick={handleShipping} disabled={isProcessing} className="h-11 rounded-xl font-bold bg-primary text-slate-950 hover:bg-primary/90 shadow-lg shadow-primary/20 px-6 text-sm m-0">
+                                                {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : '確認申請與支付'}
                                             </AlertDialogAction>
                                         </AlertDialogFooter>
                                     </AlertDialogContent>

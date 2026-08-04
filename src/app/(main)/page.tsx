@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Package, Users2, ChevronRight, Trophy, Sparkles, Newspaper, Calendar, ShieldCheck, Zap, Target, Crown, Gem, Megaphone, PackageCheck, CheckCircle2 } from 'lucide-react';
+import { ChevronRight, Trophy, Sparkles, Newspaper, Calendar, ShieldCheck, Zap, Target, Crown, Gem, Megaphone, Users2 } from 'lucide-react';
 import { Logo, CrossedCardsIcon, LuckyBagIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
@@ -66,48 +66,6 @@ export default function Home() {
   }, [firestore]);
   const { data: systemConfig } = useDoc<any>(systemConfigRef);
 
-  // 實體數據動態連動：從 Firestore 撈取真實拆卡紀錄、會員數、卡牌庫存總值與運送單數據
-  const drawnLogsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'drawnCardLogs') : null, [firestore]);
-  const { data: drawnLogs } = useCollection<any>(drawnLogsQuery);
-
-  const usersQuery = useMemoFirebase(() => firestore ? collection(firestore, 'users') : null, [firestore]);
-  const { data: users } = useCollection<any>(usersQuery);
-
-  const allCardsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'allCards') : null, [firestore]);
-  const { data: allCards } = useCollection<any>(allCardsQuery);
-
-  const shippingOrdersQuery = useMemoFirebase(() => firestore ? collection(firestore, 'shippingOrders') : null, [firestore]);
-  const { data: shippingOrders } = useCollection<any>(shippingOrdersQuery);
-
-  // 計算並綜合基底與動態實體數據
-  const platformStats = useMemo(() => {
-    const basePacks = systemConfig?.statsBaseOpenedPacks ?? 128540;
-    const realPacksCount = drawnLogs?.length ?? 0;
-    const displayPacks = (basePacks + realPacksCount).toLocaleString() + '+';
-
-    const baseValue = systemConfig?.statsBaseCardValue ?? 18900000;
-    const realCardsValue = allCards?.reduce((sum, c) => sum + (Number(c.sellPrice || c.price) || 0), 0) ?? 0;
-    const displayValue = '$' + (baseValue + realCardsValue).toLocaleString() + '+';
-
-    let displayFulfillment = '100%';
-    if (shippingOrders && shippingOrders.length > 0) {
-      const fulfilled = shippingOrders.filter(o => o.status === 'completed' || o.status === 'shipped' || o.status === 'delivered').length;
-      const rate = Math.min(100, Math.round((fulfilled / shippingOrders.length) * 100));
-      displayFulfillment = `${rate}%`;
-    }
-
-    const baseUsers = systemConfig?.statsBaseUsers ?? 35200;
-    const realUsersCount = users?.length ?? 0;
-    const displayUsers = (baseUsers + realUsersCount).toLocaleString() + '+';
-
-    return {
-      packs: displayPacks,
-      value: displayValue,
-      fulfillment: displayFulfillment,
-      users: displayUsers,
-    };
-  }, [drawnLogs, allCards, shippingOrders, users, systemConfig]);
-
   return (
     <div className="flex flex-col min-h-screen">
       <NewsPopup />
@@ -153,100 +111,6 @@ export default function Home() {
                 <div className="absolute inset-0 bg-white/10 animate-shimmer pointer-events-none" />
               </Link>
             </Button>
-          </div>
-        </div>
-      </section>
-
-      {/* 平台信任度數據看板 (Stats Bar) */}
-      <section className="relative -mt-6 md:-mt-8 mb-8 md:mb-12 container px-4 z-20">
-        <div className="max-w-6xl mx-auto rounded-3xl bg-slate-950/80 backdrop-blur-2xl border border-cyan-500/20 shadow-[0_0_50px_rgba(6,182,212,0.15)] p-6 md:p-8 relative overflow-hidden">
-          {/* Subtle Ambient Glow */}
-          <div className="absolute -top-24 -left-24 w-60 h-60 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-24 -right-24 w-60 h-60 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-
-          {/* Header Indicator */}
-          <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-6">
-            <div className="flex items-center gap-2.5 text-xs md:text-sm font-bold text-cyan-400 tracking-wider">
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-500"></span>
-              </span>
-              P+CARDER 平台即時信任數據看板
-            </div>
-            <div className="hidden sm:flex items-center gap-1.5 text-xs text-slate-400 font-medium">
-              <ShieldCheck className="w-4 h-4 text-emerald-400" /> 100% 隨機公正與實體出貨認證
-            </div>
-          </div>
-
-          {/* Key Metrics Grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-            {/* Metric 1 */}
-            <div className="flex flex-col items-center text-center p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-cyan-500/30 transition-all hover:bg-white/[0.04]">
-              <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 mb-3">
-                <PackageCheck className="w-6 h-6 md:w-7 md:h-7" />
-              </div>
-              <div className="text-2xl md:text-3xl lg:text-4xl font-black font-code text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-100 to-cyan-400 tracking-tight">
-                {platformStats.packs}
-              </div>
-              <div className="text-xs md:text-sm font-bold text-slate-200 mt-1.5">累計拆出卡片包數</div>
-              <div className="text-[10px] md:text-xs text-slate-400 mt-0.5">即時演算法公正配卡</div>
-            </div>
-
-            {/* Metric 2 */}
-            <div className="flex flex-col items-center text-center p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-amber-500/30 transition-all hover:bg-white/[0.04]">
-              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 mb-3">
-                <Trophy className="w-6 h-6 md:w-7 md:h-7" />
-              </div>
-              <div className="text-2xl md:text-3xl lg:text-4xl font-black font-code text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-amber-500 tracking-tight">
-                {platformStats.value}
-              </div>
-              <div className="text-xs md:text-sm font-bold text-slate-200 mt-1.5">開出卡片累積總市值</div>
-              <div className="text-[10px] md:text-xs text-slate-400 mt-0.5">卡市行情即時對照</div>
-            </div>
-
-            {/* Metric 3 */}
-            <div className="flex flex-col items-center text-center p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-emerald-500/30 transition-all hover:bg-white/[0.04]">
-              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 mb-3">
-                <CheckCircle2 className="w-6 h-6 md:w-7 md:h-7" />
-              </div>
-              <div className="text-2xl md:text-3xl lg:text-4xl font-black font-code text-transparent bg-clip-text bg-gradient-to-r from-emerald-200 via-emerald-400 to-teal-400 tracking-tight">
-                {platformStats.fulfillment}
-              </div>
-              <div className="text-xs md:text-sm font-bold text-slate-200 mt-1.5">實體卡片寄送妥善率</div>
-              <div className="text-[10px] md:text-xs text-slate-400 mt-0.5">全程錄影與多層防護</div>
-            </div>
-
-            {/* Metric 4 */}
-            <div className="flex flex-col items-center text-center p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-sky-500/30 transition-all hover:bg-white/[0.04]">
-              <div className="p-3 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-400 mb-3">
-                <Users2 className="w-6 h-6 md:w-7 md:h-7" />
-              </div>
-              <div className="text-2xl md:text-3xl lg:text-4xl font-black font-code text-transparent bg-clip-text bg-gradient-to-r from-white via-sky-200 to-sky-400 tracking-tight">
-                {platformStats.users}
-              </div>
-              <div className="text-xs md:text-sm font-bold text-slate-200 mt-1.5">活躍收藏卡友數</div>
-              <div className="text-[10px] md:text-xs text-slate-400 mt-0.5">全台卡迷優質首選</div>
-            </div>
-          </div>
-
-          {/* Bottom Guarantees Bar */}
-          <div className="mt-6 pt-5 border-t border-white/10 grid grid-cols-2 md:grid-cols-4 gap-3 text-center text-xs text-slate-300">
-            <div className="flex items-center justify-center gap-2 font-semibold">
-              <ShieldCheck className="w-4 h-4 text-cyan-400 shrink-0" />
-              <span>機率透明隨機抽查</span>
-            </div>
-            <div className="flex items-center justify-center gap-2 font-semibold">
-              <PackageCheck className="w-4 h-4 text-amber-400 shrink-0" />
-              <span>實體包裹雙向錄影</span>
-            </div>
-            <div className="flex items-center justify-center gap-2 font-semibold">
-              <Zap className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span>卡片一鍵快速轉點</span>
-            </div>
-            <div className="flex items-center justify-center gap-2 font-semibold">
-              <Sparkles className="w-4 h-4 text-sky-400 shrink-0" />
-              <span>特約實體合作卡店</span>
-            </div>
           </div>
         </div>
       </section>
@@ -430,29 +294,31 @@ export default function Home() {
       {/* 合作夥伴 Section */}
       <section className="container pb-8 md:pb-16 px-4 text-white">
         <div className="mb-8 md:mb-12">
-            <div className="text-center mb-8 space-y-4">
+            <div className="text-center mb-8 space-y-3">
                 <div className="inline-flex items-center gap-2 text-primary font-bold font-headline tracking-[0.4em] text-[10px] md:text-xs uppercase">
-                    合作夥伴
+                    PARTNERS
                 </div>
                 <h2 className="text-2xl md:text-4xl font-black font-headline tracking-tight text-white">我們的合作夥伴</h2>
+                <div className="w-12 h-1 bg-gradient-to-r from-transparent via-cyan-500 to-transparent mx-auto rounded-full" />
             </div>
             
             <div className="flex flex-wrap justify-center items-center gap-4 md:gap-6">
                 {isLoadingPartners ? (
                     Array.from({ length: 4 }).map((_, i) => (
-                        <Skeleton key={i} className="h-20 w-44 rounded-2xl bg-white/10" />
+                        <Skeleton key={i} className="h-24 w-52 rounded-2xl bg-white/10" />
                     ))
                 ) : (
                     partners?.map((partner) => (
                         <div 
                             key={partner.id} 
-                            className="w-40 sm:w-48 h-20 flex items-center justify-center p-3 rounded-2xl bg-white/90 hover:bg-white border border-white/20 shadow-lg shadow-black/20 hover:shadow-2xl hover:scale-105 transition-all duration-300 group"
+                            className="w-44 sm:w-56 h-24 flex flex-col items-center justify-center p-3.5 rounded-2xl bg-slate-900/80 backdrop-blur-md border border-white/10 hover:border-cyan-400/50 shadow-lg shadow-black/50 hover:shadow-cyan-500/15 hover:scale-105 transition-all duration-300 group relative overflow-hidden"
                         >
-                            <div className="w-full h-full relative flex items-center justify-center mix-blend-multiply overflow-hidden">
+                            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                            <div className="w-full h-full relative flex items-center justify-center">
                                 <SafeImage 
                                     src={partner.logoUrl} 
                                     alt={partner.name} 
-                                    className="object-contain max-h-full max-w-full group-hover:scale-105 transition-transform duration-300" 
+                                    className="object-contain max-h-full max-w-full drop-shadow-md group-hover:scale-105 transition-transform duration-300" 
                                     width={200} 
                                     height={100} 
                                 />

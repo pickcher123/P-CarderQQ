@@ -25,12 +25,12 @@ import { PPlusIcon } from '@/components/icons';
 
 const DEFAULT_LEVELS: LevelBenefit[] = [
     { level: '新手收藏家', threshold: 0, freeShipping: false, depositBonus: 0, cashbackRate: 0 },
-    { level: '進階收藏家', threshold: 15000, freeShipping: true, depositBonus: 0, cashbackRate: 1 },
-    { level: '資深收藏家', threshold: 50000, freeShipping: true, depositBonus: 0, cashbackRate: 1.5 },
-    { level: '卡牌大師', threshold: 100000, freeShipping: true, depositBonus: 0, cashbackRate: 2 },
-    { level: '殿堂級玩家', threshold: 500000, freeShipping: true, depositBonus: 0, cashbackRate: 4 },
-    { level: '傳奇收藏家', threshold: 1000000, freeShipping: true, depositBonus: 0, cashbackRate: 5 },
-    { level: 'P+卡神', threshold: 2000000, freeShipping: true, depositBonus: 0, cashbackRate: 10 },
+    { level: '進階收藏家', threshold: 15000, freeShipping: false, depositBonus: 0, cashbackRate: 1 },
+    { level: '資深收藏家', threshold: 50000, freeShipping: false, depositBonus: 0, cashbackRate: 1.5 },
+    { level: '卡牌大師', threshold: 100000, freeShipping: false, depositBonus: 0, cashbackRate: 2 },
+    { level: '殿堂級玩家', threshold: 500000, freeShipping: false, depositBonus: 0, cashbackRate: 4 },
+    { level: '傳奇收藏家', threshold: 1000000, freeShipping: false, depositBonus: 0, cashbackRate: 5 },
+    { level: 'P+卡神', threshold: 2000000, freeShipping: false, depositBonus: 0, cashbackRate: 10 },
 ];
 
 interface RedemptionItem {

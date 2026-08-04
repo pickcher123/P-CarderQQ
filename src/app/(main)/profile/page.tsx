@@ -323,18 +323,11 @@ export default function ProfilePage() {
                                 <span className="text-[10px] font-black uppercase tracking-widest text-primary">{userProfile.userLevel}</span>
                             </div>
 
-                            {currentBenefit && (
+                            {currentBenefit && currentBenefit.cashbackRate > 0 && (
                                 <div className="mt-4 flex flex-wrap justify-center gap-2 animate-fade-in-up">
-                                    {currentBenefit.freeShipping && (
-                                        <Badge variant="outline" className="bg-emerald-500/10 border-emerald-500/30 text-emerald-400 text-[9px] font-black uppercase tracking-widest px-2.5 py-1">
-                                            <Truck className="w-3 h-3 mr-1" /> 免運特權
-                                        </Badge>
-                                    )}
-                                    {currentBenefit.cashbackRate > 0 && (
-                                        <Badge variant="outline" className="bg-primary/10 border-primary/30 text-primary text-[9px] font-black uppercase tracking-widest px-2.5 py-1">
-                                            <PPlusIcon className="w-3 h-3 mr-1" /> 回饋率 {currentBenefit.cashbackRate}%
-                                        </Badge>
-                                    )}
+                                    <Badge variant="outline" className="bg-primary/10 border-primary/30 text-primary text-[9px] font-black uppercase tracking-widest px-2.5 py-1">
+                                        <PPlusIcon className="w-3 h-3 mr-1" /> 回饋率 {currentBenefit.cashbackRate}%
+                                    </Badge>
                                 </div>
                             )}
 

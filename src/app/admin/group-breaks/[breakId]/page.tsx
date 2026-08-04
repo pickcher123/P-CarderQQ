@@ -32,6 +32,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { PPlusIcon } from '@/components/icons';
+import { cn } from '@/lib/utils';
 
 type Spot = {
   spotNumber: number;
@@ -118,15 +119,16 @@ function DrawControl({ groupBreak, groupBreakRef, getBuyerName, forceRefetch }: 
         let progress = 0;
         const interval = setInterval(() => {
             progress += 4;
-            setDrawProgress(Math.min(progress, 100));
-            if (sampleNames.length > 0) {
-                const randomIdx = Math.floor(Math.random() * sampleNames.length);
-                setRollingTeam(sampleNames[randomIdx]);
-            }
-
             if (progress >= 100) {
                 clearInterval(interval);
+                setDrawProgress(100);
                 finalizeDraw();
+            } else {
+                setDrawProgress(progress);
+                if (sampleNames.length > 0) {
+                    const randomIdx = Math.floor(Math.random() * sampleNames.length);
+                    setRollingTeam(sampleNames[randomIdx]);
+                }
             }
         }, 70);
     };
@@ -179,8 +181,8 @@ function DrawControl({ groupBreak, groupBreakRef, getBuyerName, forceRefetch }: 
                 description: `開獎結果已成功儲存並同步至前台直播頻道。`,
             });
 
-            setIsDrawing(false);
             setIsDrawDialogOpen(false);
+            setIsDrawing(false);
             if (forceRefetch) forceRefetch();
         } catch (error: any) {
             console.error('Error in draw completion:', error);

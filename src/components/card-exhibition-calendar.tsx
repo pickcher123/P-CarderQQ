@@ -61,13 +61,10 @@ export function CardExhibitionCalendar({ hideHeader = false }: { hideHeader?: bo
                                     <CalendarIcon className="w-4 h-4 text-cyan-400" />
                                     {month}
                                 </h3>
-                                <span className="text-[11px] text-slate-400 flex items-center gap-1 sm:hidden">
-                                    👈 左右滑動
-                                </span>
                             </div>
 
-                            {/* 橫向滑動區塊 (Mobile / Desktop 支援左右滑動與點擊細項) */}
-                            <div className="flex gap-3 overflow-x-auto pb-3 pt-1 px-1 scrollbar-thin scrollbar-thumb-cyan-500/20 snap-x snap-mandatory -mx-1 sm:mx-0">
+                            {/* 網格區塊 (Mobile / Desktop 顯示所有展覽) */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 px-1">
                                 {exhList.map((exh) => {
                                     const startDate = new Date(exh.date.seconds * 1000);
                                     const endDate = exh.endDate ? new Date(exh.endDate.seconds * 1000) : null;
@@ -76,7 +73,7 @@ export function CardExhibitionCalendar({ hideHeader = false }: { hideHeader?: bo
                                             key={exh.id} 
                                             onClick={() => setSelectedExhibition(exh)}
                                             className={cn(
-                                                "shrink-0 w-[280px] sm:w-[320px] snap-start bg-slate-900/90 border-slate-800 hover:border-cyan-500/50 p-4 rounded-2xl cursor-pointer hover:bg-slate-800/80 transition-all duration-200 group relative flex flex-col justify-between shadow-lg"
+                                                "w-full bg-slate-900/90 border-slate-800 hover:border-cyan-500/50 p-4 rounded-2xl cursor-pointer hover:bg-slate-800/80 transition-all duration-200 group relative flex flex-col justify-between shadow-lg"
                                             )}
                                         >
                                             <CardContent className="p-0 space-y-3">
