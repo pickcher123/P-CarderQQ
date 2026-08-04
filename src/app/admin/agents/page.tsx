@@ -1,7 +1,11 @@
 'use client';
 
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, useUser, useRequest } from '@/firebase';
 import { collection, collectionGroup, query, addDoc, doc, deleteDoc } from 'firebase/firestore';
+import type { UserProfile } from '@/types/user-profile';
+import { useEffect } from 'react';
+
+const SUPER_ADMIN_EMAIL = 'pickcher123@gmail.com';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, startOfMonth, endOfMonth, getYear, getMonth } from 'date-fns';
@@ -57,11 +61,30 @@ const months = Array.from({ length: 12 }, (_, i) => ({ value: i, label: `${i + 1
 
 export default function AgentsAdminPage() {
     const firestore = useFirestore();
+    const { user: authUser } = useUser();
+
+    // 讀取當前使用者資料
+    const userProfileQuery = useMemoFirebase(() => {
+        if (!firestore || !authUser?.uid) return null;
+        return doc(firestore, 'users', authUser.uid);
+    }, [firestore, authUser?.uid]);
+    const { data: userProfile } = useRequest<UserProfile>(userProfileQuery);
+
+    const isSuperAdmin = authUser?.email === SUPER_ADMIN_EMAIL;
+    const assignedAgentId = userProfile?.agentId;
+    const isSalesOnly = !isSuperAdmin && !!assignedAgentId;
+
     const [currentYear, setCurrentYear] = useState(getYear(new Date()).toString());
     const [currentMonth, setCurrentMonth] = useState(getMonth(new Date()).toString());
     const [newAgentName, setNewAgentName] = useState('');
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
     const [agentFilter, setAgentFilter] = useState<string>('all');
+
+    useEffect(() => {
+        if (isSalesOnly && assignedAgentId) {
+            setAgentFilter(assignedAgentId);
+        }
+    }, [isSalesOnly, assignedAgentId]);
     
     // 控制展開哪些業務的套件明細
     const [expandedAgents, setExpandedAgents] = useState<Record<string, boolean>>({});
@@ -351,7 +374,7 @@ export default function AgentsAdminPage() {
                 </div>
                 
                 <div className="flex flex-wrap items-center gap-2">
-                    <Select value={agentFilter} onValueChange={setAgentFilter}>
+                    <Select value={agentFilter} onValueChange={setAgentFilter} disabled={isSalesOnly}>
                         <SelectTrigger className="w-[150px] bg-white border-slate-200 font-bold shadow-sm">
                             <SelectValue placeholder="所有業務" />
                         </SelectTrigger>

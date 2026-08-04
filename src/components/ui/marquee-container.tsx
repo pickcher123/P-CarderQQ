@@ -15,11 +15,11 @@ export function MarqueeContainer({ children, className, speed = 'normal' }: Marq
     }[speed];
 
     return (
-        <div className={cn("flex overflow-hidden relative", className)}>
-            <div className={cn("flex min-w-full shrink-0 items-center", speedClass)}>
+        <div className={cn("flex overflow-hidden relative group/marquee", className)}>
+            <div className={cn("flex min-w-full shrink-0 items-center group-hover/marquee:[animation-play-state:paused]", speedClass)}>
                 {children}
             </div>
-            <div className={cn("flex min-w-full shrink-0 items-center", speedClass)} aria-hidden="true">
+            <div className={cn("flex min-w-full shrink-0 items-center group-hover/marquee:[animation-play-state:paused]", speedClass)} aria-hidden="true">
                 {children}
             </div>
         </div>

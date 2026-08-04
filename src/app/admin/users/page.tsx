@@ -30,7 +30,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, User as UserIcon, Gem, MapPin, Search } from 'lucide-react';
+import { Loader2, User as UserIcon, Gem, MapPin, Search, UserCheck, Briefcase } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -41,20 +42,26 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { PPlusIcon } from '@/components/icons';
 
 const PERMISSION_ITEMS = [
-    { id: 'reports', label: '營業報表' },
-    { id: 'cards', label: '卡片總管' },
-    { id: 'card-pools', label: '抽卡管理' },
-    { id: 'lucky-bags', label: '福袋管理' },
-    { id: 'betting', label: '拼卡管理' },
-    { id: 'group-breaks', label: '團拆管理' },
-    { id: 'news', label: '消息管理' },
-    { id: 'rewards', label: '會員回饋' },
-    { id: 'users', label: '會員資訊' },
-    { id: 'orders', label: '交易紀錄' },
-    { id: 'shipping', label: '出貨管理' },
-    { id: 'deposits', label: '儲值管理' },
-    { id: 'conversions', label: '轉點紀錄' },
-    { id: 'materials', label: '素材管理' },
+    { id: 'reports', label: '營業報表', category: '數據中心' },
+    { id: 'orders', label: '交易紀錄', category: '數據中心' },
+    { id: 'deposits', label: '儲值管理', category: '數據中心' },
+    { id: 'conversions', label: '轉點紀錄', category: '數據中心' },
+    { id: 'agents', label: '業務專區', category: '數據中心' },
+    { id: 'cards', label: '卡片總管', category: '遊戲管理' },
+    { id: 'card-pools', label: '抽卡管理', category: '遊戲管理' },
+    { id: 'betting', label: '拼卡管理', category: '遊戲管理' },
+    { id: 'lucky-bags', label: '福袋管理', category: '遊戲管理' },
+    { id: 'group-breaks', label: '團拆管理', category: '遊戲管理' },
+    { id: 'predictions', label: '賽事預測管理', category: '遊戲管理' },
+    { id: 'users', label: '會員資訊', category: '會員管理' },
+    { id: 'rewards', label: '會員回饋', category: '會員管理' },
+    { id: 'news', label: '消息管理', category: '行銷管理' },
+    { id: 'announcements', label: '站內公告', category: '行銷管理' },
+    { id: 'coupons', label: '優惠券管理', category: '行銷管理' },
+    { id: 'card-exhibitions', label: '卡展行事曆', category: '行銷管理' },
+    { id: 'partners', label: '合作夥伴', category: '營運操作' },
+    { id: 'shipping', label: '出貨管理', category: '營運操作' },
+    { id: 'materials', label: '素材管理', category: '素材管理' },
 ];
 
 const SUPER_ADMIN_EMAIL = 'pickcher123@gmail.com';
@@ -344,9 +351,90 @@ function ToggleRoleDialog({ user, onUpdate }: { user: UserProfile, onUpdate: () 
     );
 }
 
+function AssignAgentDialog({ user, onUpdate }: { user: UserProfile, onUpdate: () => void }) {
+    const [isOpen, setIsOpen] = useState(false);
+    const [selectedAgentId, setSelectedAgentId] = useState(user.agentId || 'none');
+    const [isProcessing, setIsProcessing] = useState(false);
+    const firestore = useFirestore();
+    const { toast } = useToast();
+
+    const agentsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'agents')) : null, [firestore]);
+    const { data: agents } = useCollection<{ id: string; name: string }>(agentsQuery);
+
+    const handleConfirm = async () => {
+        if (!firestore) return;
+        setIsProcessing(true);
+        try {
+            if (selectedAgentId === 'none') {
+                await updateDoc(doc(firestore, 'users', user.id), {
+                    agentId: null,
+                    agentName: null
+                });
+                toast({ title: '已取消業務指定' });
+            } else {
+                const targetAgent = agents?.find(a => a.id === selectedAgentId);
+                await updateDoc(doc(firestore, 'users', user.id), {
+                    agentId: selectedAgentId,
+                    agentName: targetAgent?.name || '未知業務'
+                });
+                toast({ title: `已成功指定業務：${targetAgent?.name || selectedAgentId}` });
+            }
+            onUpdate();
+            setIsOpen(false);
+        } catch (error) {
+            console.error(error);
+            toast({ variant: 'destructive', title: '指定失敗' });
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className={cn("h-8 text-[10px] rounded-lg font-black bg-white border-slate-200 hover:bg-slate-50 transition-all flex items-center gap-1", user.agentName ? "text-sky-700 border-sky-200 bg-sky-50/50" : "text-slate-700")}>
+                    <Briefcase className="w-3 h-3 text-sky-600" />
+                    {user.agentName ? `業務: ${user.agentName}` : '指定業務'}
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="light w-[95vw] md:max-w-md rounded-3xl bg-white shadow-2xl border-none p-0 flex flex-col overflow-hidden text-slate-900">
+                <DialogTitle className="sr-only">指定業務帳號</DialogTitle>
+                <DialogHeader className="p-6 text-center border-b border-slate-100 bg-slate-50">
+                    <DialogTitle className="text-lg font-black text-slate-900 tracking-tight">指定業務身份 / 綁定代理</DialogTitle>
+                    <p className="text-xs text-slate-500 font-bold mt-1">將用戶 「{user.username}」 指定綁定至特定業務，該業務可查看專屬數據報表與績效。</p>
+                </DialogHeader>
+                <div className="p-6 space-y-4">
+                    <div className="space-y-2">
+                        <Label className="text-xs font-black text-slate-700">選擇業務名稱</Label>
+                        <Select value={selectedAgentId} onValueChange={setSelectedAgentId}>
+                            <SelectTrigger className="h-12 rounded-xl bg-white border-slate-200 font-bold">
+                                <SelectValue placeholder="選擇業務..." />
+                            </SelectTrigger>
+                            <SelectContent className="bg-white">
+                                <SelectItem value="none" className="font-bold text-slate-500">🚫 無業務 (不綁定)</SelectItem>
+                                {agents?.map(agent => (
+                                    <SelectItem key={agent.id} value={agent.id} className="font-bold text-slate-900">
+                                        💼 {agent.name} (ID: {agent.id})
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+                <DialogFooter className="p-6 border-t border-slate-100 bg-slate-50 gap-2">
+                    <Button variant="outline" onClick={() => setIsOpen(false)} className="rounded-xl font-bold border-slate-200">取消</Button>
+                    <Button onClick={handleConfirm} disabled={isProcessing} className="rounded-xl bg-slate-900 text-white font-black px-6 hover:bg-slate-800">
+                        {isProcessing ? <Loader2 className="animate-spin h-4 w-4" /> : '確認指定業務'}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 function ModifyPermissionsDialog({ user, onUpdate }: { user: UserProfile, onUpdate: () => void }) {
     const [isOpen, setIsOpen] = useState(false);
-    const [permissions, setPermissions] = useState(user.permissions || []);
+    const [permissions, setPermissions] = useState<string[]>(user.permissions || []);
     const [isProcessing, setIsProcessing] = useState(false);
     const firestore = useFirestore();
     const { toast } = useToast();
@@ -365,28 +453,54 @@ function ModifyPermissionsDialog({ user, onUpdate }: { user: UserProfile, onUpda
         } finally { setIsProcessing(false); }
     }
 
+    const handleSelectAll = () => {
+        setPermissions(PERMISSION_ITEMS.map(p => p.id));
+    };
+
+    const handleClearAll = () => {
+        setPermissions([]);
+    };
+
+    // 按分類整理
+    const categories = Array.from(new Set(PERMISSION_ITEMS.map(p => p.category)));
+
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild><Button variant="outline" size="sm" className="h-8 text-[10px] rounded-lg font-black bg-white border-slate-200 text-slate-700">模組授權</Button></DialogTrigger>
             <DialogContent className="light w-[95vw] md:max-w-2xl max-h-[90vh] rounded-3xl bg-white shadow-2xl border-none text-slate-900 p-0 flex flex-col overflow-hidden">
                 <DialogTitle className="sr-only">管理模組授權</DialogTitle>
-                <DialogHeader className="p-6 border-b border-slate-50">
-                    <DialogTitle className="text-xl font-black text-slate-900">管理模組授權 - {user.username}</DialogTitle>
+                <DialogHeader className="p-6 border-b border-slate-100 flex flex-row items-center justify-between">
+                    <div>
+                        <DialogTitle className="text-xl font-black text-slate-900">管理模組授權 - {user.username}</DialogTitle>
+                        <p className="text-xs text-slate-500 font-bold mt-1">獨立開關各後台功能模組的讀取與操作權限。</p>
+                    </div>
+                    <div className="flex gap-2">
+                        <Button type="button" variant="outline" size="sm" onClick={handleSelectAll} className="h-8 text-[10px] font-bold rounded-lg border-slate-200">全選</Button>
+                        <Button type="button" variant="outline" size="sm" onClick={handleClearAll} className="h-8 text-[10px] font-bold rounded-lg border-slate-200 text-red-600 hover:text-red-700">全不選</Button>
+                    </div>
                 </DialogHeader>
                 <div className="flex-1 overflow-hidden">
-                    <ScrollArea className="h-full p-6">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 py-4">
-                            {PERMISSION_ITEMS.map(item => (
-                                <div key={item.id} className="flex items-center space-x-2 p-3.5 border border-slate-100 rounded-2xl hover:bg-slate-50 transition-all cursor-pointer group hover:border-slate-300 shadow-sm">
-                                    <Checkbox id={`p-${item.id}`} checked={permissions.includes(item.id)} onCheckedChange={(c) => setPermissions(prev => c ? [...prev, item.id] : prev.filter(p => p !== item.id))} />
-                                    <Label htmlFor={`p-${item.id}`} className="text-xs cursor-pointer font-bold text-slate-700 group-hover:text-slate-900">{item.label}</Label>
+                    <ScrollArea className="h-full p-6 space-y-6">
+                        {categories.map(cat => {
+                            const catItems = PERMISSION_ITEMS.filter(p => p.category === cat);
+                            return (
+                                <div key={cat} className="space-y-3">
+                                    <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest pl-1">{cat}</h4>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                                        {catItems.map(item => (
+                                            <div key={item.id} className="flex items-center space-x-2.5 p-3 border border-slate-100 rounded-2xl hover:bg-slate-50 transition-all cursor-pointer group hover:border-slate-300 shadow-sm bg-white">
+                                                <Checkbox id={`p-${item.id}`} checked={permissions.includes(item.id)} onCheckedChange={(c) => setPermissions(prev => c ? [...prev, item.id] : prev.filter(p => p !== item.id))} />
+                                                <Label htmlFor={`p-${item.id}`} className="text-xs cursor-pointer font-bold text-slate-800 group-hover:text-slate-950">{item.label}</Label>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
-                            ))}
-                        </div>
+                            );
+                        })}
                     </ScrollArea>
                 </div>
-                <DialogFooter className="p-6 border-t border-slate-50">
-                    <Button onClick={handleConfirm} disabled={isProcessing} className="w-full rounded-2xl h-14 font-black bg-slate-900 text-white shadow-xl hover:bg-slate-800">{isProcessing ? <Loader2 className="animate-spin"/> : '儲存授權設定'}</Button>
+                <DialogFooter className="p-6 border-t border-slate-100 bg-slate-50">
+                    <Button onClick={handleConfirm} disabled={isProcessing} className="w-full rounded-2xl h-14 font-black bg-slate-900 text-white shadow-xl hover:bg-slate-800 text-base">{isProcessing ? <Loader2 className="animate-spin"/> : '儲存授權設定'}</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -514,10 +628,24 @@ export default function UsersAdminPage() {
                             <span className="flex items-center gap-1.5 text-[11px] font-black text-amber-700">{user.bonusPoints?.toLocaleString() || 0} <PPlusIcon className="w-3.5 h-3.5" /></span>
                         </div>
                     </TableCell>
-                    <TableCell><Badge variant={user.role === 'admin' ? 'destructive' : 'secondary'} className={cn("text-[9px] uppercase font-black h-5 px-2 border-none shadow-sm", user.role === 'admin' ? "bg-red-600 text-white" : "bg-slate-200 text-slate-700")}>{user.role}</Badge></TableCell>
-                    <TableCell className="text-right pr-8 py-5"><div className="flex justify-end gap-2">
+                    <TableCell>
+                        <div className="flex flex-col gap-1 items-start">
+                            <Badge variant={user.role === 'admin' ? 'destructive' : 'secondary'} className={cn("text-[9px] uppercase font-black h-5 px-2 border-none shadow-sm", user.role === 'admin' ? "bg-red-600 text-white" : "bg-slate-200 text-slate-700")}>{user.role}</Badge>
+                            {user.agentName && (
+                                <Badge variant="outline" className="text-[9px] font-bold h-5 px-2 bg-sky-50 text-sky-700 border-sky-200 flex items-center gap-1">
+                                    <Briefcase className="w-2.5 h-2.5 text-sky-600" />
+                                    {user.agentName}
+                                </Badge>
+                            )}
+                        </div>
+                    </TableCell>
+                    <TableCell className="text-right pr-8 py-5"><div className="flex justify-end gap-2 flex-wrap">
                         {isSuperAdmin && user.email !== SUPER_ADMIN_EMAIL && (
-                            <><ToggleRoleDialog user={user} onUpdate={() => forceRefetch?.()} />{user.role === 'admin' && <ModifyPermissionsDialog user={user} onUpdate={() => forceRefetch?.()} />}</>
+                            <>
+                                <ToggleRoleDialog user={user} onUpdate={() => forceRefetch?.()} />
+                                {user.role === 'admin' && <ModifyPermissionsDialog user={user} onUpdate={() => forceRefetch?.()} />}
+                                <AssignAgentDialog user={user} onUpdate={() => forceRefetch?.()} />
+                            </>
                         )}
                         <ModifyPointsDialog user={user} onUpdate={() => forceRefetch?.()} />
                     </div></TableCell>

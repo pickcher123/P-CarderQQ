@@ -15,6 +15,8 @@ export interface UserProfile {
   totalSpent: number; // 累積消費金額 (Diamonds)，用於升級
   role: 'admin' | 'user';
   permissions?: string[];
+  agentId?: string; // 綁定的業務/代理人 ID
+  agentName?: string; // 綁定的業務名稱
   tags?: string[];
   createdAt?: Timestamp;
   address?: string;

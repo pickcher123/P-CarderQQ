@@ -38,7 +38,8 @@ const nextConfig = {
       { protocol: 'https', hostname: 'static.accupass.com' },
       { protocol: 'https', hostname: 'accupass.com' },
       { protocol: 'https', hostname: 'a.espncdn.com' },
-      { protocol: 'https', hostname: '*.espncdn.com' }
+      { protocol: 'https', hostname: '*.espncdn.com' },
+      { protocol: 'https', hostname: 'images.unsplash.com' }
     ],
   },
   async headers() {
