@@ -27,4 +27,5 @@ export interface SystemConfig {
         isMarqueeEnabled?: boolean; // 新增：跑馬燈開關
     };
     levelBenefits?: LevelBenefit[];
+    bettingAutoRelistOnBuyBack?: boolean; // 拼卡 Buy Back (轉點) 自動重新上架開關
 }

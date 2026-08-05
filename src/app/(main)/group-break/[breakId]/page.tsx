@@ -57,7 +57,7 @@ interface GroupBreak {
   teams?: Team[];
   breakType: 'spot' | 'team';
   currency?: 'diamond' | 'p-point';
-  status: 'draft' | 'published' | 'completed';
+  status: 'draft' | 'published' | 'in_progress' | 'completed';
   winnings?: Winnings[];
 }
 
@@ -304,10 +304,15 @@ export default function GroupBreakDetailPage() {
                     <div className="absolute inset-0 pointer-events-none z-10 opacity-[0.05] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,2px_100%]" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-10" />
                     
-                    {(isFull || groupBreak.status === 'completed') && (
+                    {(isFull || groupBreak.status === 'completed' || groupBreak.status === 'in_progress') && (
                         <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-20">
-                            <Badge className="bg-destructive text-white text-xl font-black px-8 py-2 rounded-full rotate-[-12deg] shadow-2xl border-4 border-white/20">
-                                {groupBreak.status === 'completed' ? '離線狀態' : '已全數售罄'}
+                            <Badge className={cn(
+                              "text-xl font-black px-8 py-2 rounded-full rotate-[-12deg] shadow-2xl border-4 border-white/20 uppercase tracking-widest",
+                              groupBreak.status === 'completed' ? "bg-slate-800 text-slate-300" :
+                              groupBreak.status === 'in_progress' ? "bg-amber-500 text-slate-950 animate-pulse border-amber-300" :
+                              "bg-destructive text-white"
+                            )}>
+                                {groupBreak.status === 'completed' ? '活動已結束' : groupBreak.status === 'in_progress' ? '● 直播拆卡中' : '已全數售罄'}
                             </Badge>
                         </div>
                     )}

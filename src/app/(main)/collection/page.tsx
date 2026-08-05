@@ -36,7 +36,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import * as VisuallyHiddenPrimitive from "@radix-ui/react-visually-hidden";
 import { Ship, RefreshCw, Gem, Loader2, CheckSquare, Square, Shield, LayoutGrid, Users, Users2, MapPin, SearchCode, X, Sparkles, ChevronRight, Package, Library, Hash, Info, AlertTriangle, RotateCcw, Filter, ArrowUpDown, RotateCw } from 'lucide-react';
 import { useCollection, useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, doc, writeBatch, serverTimestamp, getDoc, increment, updateDoc } from 'firebase/firestore';
+import { collection, doc, writeBatch, serverTimestamp, getDoc, increment, updateDoc, getDocs, arrayRemove } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
@@ -251,14 +251,45 @@ export default function CollectionPage() {
       const soldCardNames = cardsToSell.map(c => c.name).join(', ');
 
       const existingAllCardIds = new Set((allCards || []).map(c => c.id));
+      const autoRelistBetting = systemConfig?.bettingAutoRelistOnBuyBack !== false; // 預設開啟自動重新上架
+
+      // 若有開啟拼卡自動重新上架，預先取得 betting-items 資料庫內容
+      let bettingItemDocs: any[] = [];
+      if (autoRelistBetting) {
+        try {
+          const bettingSnap = await getDocs(collection(firestore, 'betting-items'));
+          bettingItemDocs = bettingSnap.docs;
+        } catch (err) {
+          console.error("Fetch betting items error:", err);
+        }
+      }
 
       for (const card of cardsToSell) {
         batch.delete(doc(firestore, 'users', user.uid, 'userCards', card.id));
         if (card.cardId && existingAllCardIds.has(card.cardId)) {
-          batch.update(doc(firestore, 'allCards', card.cardId), { 
-              isSold: true,
-              isRecycled: true 
-          });
+          const isBettingCard = card.source === 'betting' || card.source === 'direct-buy' || bettingItemDocs.some(d => d.data().allCardIds?.includes(card.cardId));
+
+          if (isBettingCard && autoRelistBetting) {
+            // 重置卡片狀態為未售出，自動重新上架到拼卡專區
+            batch.update(doc(firestore, 'allCards', card.cardId), { 
+                isSold: false,
+                isRecycled: false 
+            });
+            // 從包含此卡片之 betting-items 的 soldCardIds 中移除
+            for (const itemDoc of bettingItemDocs) {
+              const itemData = itemDoc.data();
+              if (itemData.soldCardIds?.includes(card.cardId)) {
+                batch.update(itemDoc.ref, {
+                  soldCardIds: arrayRemove(card.cardId)
+                });
+              }
+            }
+          } else {
+            batch.update(doc(firestore, 'allCards', card.cardId), { 
+                isSold: true,
+                isRecycled: true 
+            });
+          }
         }
       }
 

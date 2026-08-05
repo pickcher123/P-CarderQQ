@@ -23,6 +23,7 @@ import { ArrowLeft, ImageIcon, Loader2, Upload, Youtube, Trash2, PlusCircle, Cop
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { UserProfile } from '@/types/user-profile';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
@@ -69,7 +70,7 @@ interface GroupBreak {
   youtubeUrl?: string;
   breakType: 'spot' | 'team';
   currency?: 'diamond' | 'p-point';
-  status: 'draft' | 'published' | 'completed';
+  status: 'draft' | 'published' | 'in_progress' | 'completed';
   isAdult?: boolean;
   winnings?: Winnings[];
   spots?: Spot[];
@@ -878,9 +879,15 @@ export default function GroupBreakAdminDetailPage() {
             <ArrowLeft className="mr-2 h-4 w-4" /> 返回清單
         </Button>
         <div className="flex items-center gap-2">
-            <Badge variant={groupBreak.status === 'completed' ? 'secondary' : 'default'} className="uppercase tracking-widest font-black h-7">
-                {groupBreak.status}
-            </Badge>
+            {groupBreak.status === 'completed' ? (
+              <Badge className="bg-slate-700 text-slate-300 font-bold h-7">派發完成 (completed)</Badge>
+            ) : groupBreak.status === 'in_progress' ? (
+              <Badge className="bg-amber-500 text-slate-950 font-bold animate-pulse h-7">● 直播拆卡中 (in_progress)</Badge>
+            ) : groupBreak.status === 'published' ? (
+              <Badge className="bg-emerald-600 text-white font-bold h-7">開團募集中 (published)</Badge>
+            ) : (
+              <Badge variant="outline" className="font-bold h-7">草稿 (draft)</Badge>
+            )}
             <Badge variant="outline" className="font-code h-7 border-white/10">ID: {groupBreak.id.substring(0, 8)}</Badge>
         </div>
       </div>
@@ -964,16 +971,28 @@ export default function GroupBreakAdminDetailPage() {
                 <Label htmlFor="youtubeUrl" className="flex items-center gap-2"><Youtube className="h-4 w-4 text-destructive"/> YouTube 直播 ID 或 完整連結</Label>
                 <Input id="youtubeUrl" value={details.youtubeUrl || ''} onChange={(e) => handleDetailChange('youtubeUrl', e.target.value)} onBlur={() => handleSaveDetails('youtubeUrl')} placeholder="例如：dQw4w9WgXcQ" />
               </div>
-               <div className="flex items-center justify-between p-4 bg-muted/20 border rounded-lg">
+               <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-muted/20 border rounded-lg gap-4">
                 <div className="space-y-0.5">
-                    <Label htmlFor="status" className="font-bold">公開上架狀態</Label>
-                    <p className="text-xs text-muted-foreground">開啟後玩家即可在前台看到並購買此活動</p>
+                    <Label htmlFor="status" className="font-bold">活動公開與直播狀態</Label>
+                    <p className="text-xs text-muted-foreground">控制此團拆活動在前台呈現的狀態標籤</p>
                 </div>
-                <Switch id="status" checked={details.status === 'published'} onCheckedChange={(checked) => {
-                    const newStatus = checked ? 'published' : 'draft';
-                    handleDetailChange('status', newStatus);
-                    handleSaveDetails('status');
-                }} disabled={groupBreak.status === 'completed'} />
+                <Select
+                    value={details.status || 'draft'}
+                    onValueChange={(val: any) => {
+                        handleDetailChange('status', val);
+                        handleSaveDetails('status');
+                    }}
+                >
+                    <SelectTrigger className="w-full sm:w-[200px] font-bold">
+                        <SelectValue placeholder="選擇活動狀態" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="draft" className="font-bold">草稿 (前台隱藏)</SelectItem>
+                        <SelectItem value="published" className="font-bold text-emerald-600">開團中 (募集中)</SelectItem>
+                        <SelectItem value="in_progress" className="font-bold text-amber-600">● 直播拆卡中</SelectItem>
+                        <SelectItem value="completed" className="font-bold text-slate-500">派發完成 (已結束)</SelectItem>
+                    </SelectContent>
+                </Select>
               </div>
               <div className="flex items-center justify-between p-4 bg-rose-50 border rounded-lg">
                 <div className="space-y-0.5">

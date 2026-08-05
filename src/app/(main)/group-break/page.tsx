@@ -25,7 +25,7 @@ interface GroupBreak {
   breakType: 'spot' | 'team';
   spots?: { userId?: string }[];
   teams?: { userId?: string }[];
-  status: 'draft' | 'published' | 'completed';
+  status: 'draft' | 'published' | 'in_progress' | 'completed';
   createdAt: { seconds: number, nanoseconds: number };
 }
 
@@ -42,6 +42,7 @@ const GroupBreakCard = ({ groupBreak, index, cardOpacity }: { groupBreak: GroupB
   const progress = totalSpots > 0 ? (participantCount / totalSpots) * 100 : 0;
   const isFull = totalSpots > 0 && participantCount >= totalSpots;
   const isCompleted = b.status === 'completed';
+  const isInProgress = b.status === 'in_progress';
 
   return (
     <Link 
@@ -67,9 +68,23 @@ const GroupBreakCard = ({ groupBreak, index, cardOpacity }: { groupBreak: GroupB
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-10" />
 
                 <div className="absolute top-2 right-2 z-20">
-                    <Badge variant={isCompleted ? "secondary" : isFull ? "destructive" : "default"} className="font-black text-xs tracking-widest uppercase border-none shadow-xl px-3 py-1">
-                        {isCompleted ? '已結束' : isFull ? '已滿團' : '直播中'}
-                    </Badge>
+                    {isCompleted ? (
+                      <Badge className="bg-slate-700/80 text-slate-300 font-black text-xs tracking-widest uppercase border-none shadow-xl px-3 py-1">
+                        已結束
+                      </Badge>
+                    ) : isInProgress ? (
+                      <Badge className="bg-amber-500 text-slate-950 font-black text-xs tracking-widest uppercase border-none shadow-xl px-3 py-1 animate-pulse">
+                        直播中
+                      </Badge>
+                    ) : isFull ? (
+                      <Badge className="bg-rose-600 text-white font-black text-xs tracking-widest uppercase border-none shadow-xl px-3 py-1">
+                        已滿團
+                      </Badge>
+                    ) : (
+                      <Badge className="bg-emerald-600 text-white font-black text-xs tracking-widest uppercase border-none shadow-xl px-3 py-1">
+                        開團中
+                      </Badge>
+                    )}
                 </div>
 
                 <div className="absolute inset-0 flex flex-col justify-end p-4 md:p-6 z-20">
@@ -84,8 +99,27 @@ const GroupBreakCard = ({ groupBreak, index, cardOpacity }: { groupBreak: GroupB
             <div className="flex justify-between items-end">
                 <div className="space-y-1.5">
                     <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-red-600 shadow-[0_0_5px_red] animate-pulse" />
-                        <p className="text-xs font-black text-white/40 uppercase tracking-[0.2em]">頻道訊號穩定</p>
+                        {isCompleted ? (
+                          <>
+                            <span className="w-2 h-2 rounded-full bg-slate-500" />
+                            <p className="text-xs font-black text-white/40 uppercase tracking-[0.2em]">活動已結束</p>
+                          </>
+                        ) : isInProgress ? (
+                          <>
+                            <span className="w-2 h-2 rounded-full bg-red-600 shadow-[0_0_8px_red] animate-pulse" />
+                            <p className="text-xs font-black text-red-400 uppercase tracking-[0.2em]">直播拆卡中</p>
+                          </>
+                        ) : isFull ? (
+                          <>
+                            <span className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_5px_amber]" />
+                            <p className="text-xs font-black text-amber-300/80 uppercase tracking-[0.2em]">滿團備拆中</p>
+                          </>
+                        ) : (
+                          <>
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_5px_emerald]" />
+                            <p className="text-xs font-black text-emerald-400/80 uppercase tracking-[0.2em]">熱烈開團募集中</p>
+                          </>
+                        )}
                     </div>
                     <div className="flex items-baseline gap-2">
                         <span className="font-code text-2xl md:text-3xl font-black text-primary drop-shadow-[0_0_10px_rgba(6,182,212,0.4)]">
@@ -119,17 +153,17 @@ export default function GroupBreakPage() {
   
   const groupBreaksQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'groupBreaks'), where('status', 'in', ['published', 'completed']));
+    return query(collection(firestore, 'groupBreaks'), where('status', 'in', ['published', 'in_progress', 'completed']));
   }, [firestore]);
 
   const { data: groupBreaks, isLoading } = useCollection<GroupBreak>(groupBreaksQuery);
 
   const { publishedBreaks, completedBreaks } = useMemo(() => {
     if (!groupBreaks) return { publishedBreaks: [], completedBreaks: [] };
-    const sorted = [...groupBreaks].sort((a, b) => b.createdAt.seconds - a.createdAt.seconds);
-    const published = sorted.filter(b => b.status === 'published');
+    const sorted = [...groupBreaks].sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+    const active = sorted.filter(b => b.status === 'published' || b.status === 'in_progress');
     const completed = sorted.filter(b => b.status === 'completed');
-    return { publishedBreaks: published, completedBreaks: completed };
+    return { publishedBreaks: active, completedBreaks: completed };
   }, [groupBreaks]);
 
   const displayedCompletedBreaks = showAllCompleted ? completedBreaks : completedBreaks.slice(0, 4);

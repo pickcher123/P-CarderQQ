@@ -20,6 +20,7 @@ import { format } from 'date-fns';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 
 import { v4 as uuidv4 } from 'uuid';
@@ -134,12 +135,17 @@ export default function GroupBreaksAdminPage() {
     }
   }
 
-  const handleStatusToggle = async (id: string, currentStatus: 'draft' | 'published' | 'completed') => {
+  const handleStatusChange = async (id: string, newStatus: 'draft' | 'published' | 'in_progress' | 'completed') => {
     if (!firestore) return;
-    const newStatus = currentStatus === 'published' ? 'draft' : 'published';
     try {
         await updateDoc(doc(firestore, 'groupBreaks', id), { status: newStatus });
-        toast({ title: '成功', description: `狀態已更新為 ${newStatus}`});
+        const statusMap = {
+          draft: '草稿 (隱藏)',
+          published: '開團中 (前台募集中)',
+          in_progress: '直播拆卡中',
+          completed: '派發完成'
+        };
+        toast({ title: '成功', description: `狀態已更新為：${statusMap[newStatus] || newStatus}`});
     } catch (e) {
         console.error('Error updating status:', e);
         toast({ variant: 'destructive', title: '錯誤', description: '更新狀態失敗。'});
@@ -246,10 +252,10 @@ export default function GroupBreaksAdminPage() {
             <TableRow>
               <TableHead>標題</TableHead>
               <TableHead>模式</TableHead>
-              <TableHead>狀態</TableHead>
+              <TableHead>前台狀態標示</TableHead>
               <TableHead>價格</TableHead>
               <TableHead>建立時間</TableHead>
-              <TableHead>上架</TableHead>
+              <TableHead>設定活動狀態</TableHead>
               <TableHead className="text-right">操作</TableHead>
             </TableRow>
           </TableHeader>
@@ -261,7 +267,7 @@ export default function GroupBreaksAdminPage() {
                 <TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
                 <TableCell><Skeleton className="h-5 w-24" /></TableCell>
                 <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                <TableCell><Skeleton className="h-6 w-12" /></TableCell>
+                <TableCell><Skeleton className="h-6 w-28" /></TableCell>
                 <TableCell className="text-right"><Skeleton className="h-9 w-20 ml-auto" /></TableCell>
               </TableRow>
             ))}
@@ -282,31 +288,34 @@ export default function GroupBreaksAdminPage() {
                   <TableCell><Badge variant="outline">{b.breakType === 'team' ? '隊伍' : '號碼'}</Badge></TableCell>
                   <TableCell>
                     {b.status === 'completed' ? (
-                      <Badge className="bg-purple-600 text-white font-black">派發完成</Badge>
+                      <Badge className="bg-slate-700 text-slate-300 font-black">派發完成 / 已結束</Badge>
                     ) : b.status === 'in_progress' ? (
-                      <Badge className="bg-amber-500 text-slate-950 font-black animate-pulse">進行中</Badge>
+                      <Badge className="bg-amber-500 text-slate-950 font-black animate-pulse">● 直播拆卡中</Badge>
                     ) : isFull ? (
-                      <Badge variant="destructive" className="font-black">已滿團</Badge>
+                      <Badge className="bg-rose-600 text-white font-black">已滿團</Badge>
                     ) : b.status === 'published' ? (
-                      <Badge className="bg-emerald-600 text-white font-black">開團中</Badge>
+                      <Badge className="bg-emerald-600 text-white font-black">開團募集中</Badge>
                     ) : (
-                      <Badge variant="outline">草稿</Badge>
+                      <Badge variant="outline" className="text-slate-400">草稿 (前台隱藏)</Badge>
                     )}
                   </TableCell>
                   <TableCell>{b.breakType === 'spot' ? `$${b.pricePerSpot}` : '按隊伍'}</TableCell>
                   <TableCell>{b.createdAt ? format(b.createdAt.seconds * 1000, 'yyyy-MM-dd') : 'N/A'}</TableCell>
                   <TableCell>
-                        <div className="flex items-center space-x-2">
-                            <Switch 
-                                id={`status-switch-${b.id}`}
-                                checked={b.status === 'published'}
-                                onCheckedChange={() => handleStatusToggle(b.id, b.status)}
-                                disabled={b.status === 'completed'}
-                            />
-                            <Label htmlFor={`status-switch-${b.id}`} className={cn(b.status === 'published' ? 'text-green-500' : 'text-muted-foreground')}>
-                                {b.status === 'published' ? '已上架' : '草稿'}
-                            </Label>
-                        </div>
+                    <Select
+                      value={b.status || 'draft'}
+                      onValueChange={(val: any) => handleStatusChange(b.id, val)}
+                    >
+                      <SelectTrigger className="w-[140px] h-8 text-xs font-bold">
+                        <SelectValue placeholder="選擇狀態" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="draft" className="text-xs">草稿 (隱藏)</SelectItem>
+                        <SelectItem value="published" className="text-xs text-emerald-600 font-bold">開團中 (募集中)</SelectItem>
+                        <SelectItem value="in_progress" className="text-xs text-amber-600 font-bold">● 直播拆卡中</SelectItem>
+                        <SelectItem value="completed" className="text-xs text-purple-600 font-bold">派發完成 (結束)</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </TableCell>
                   <TableCell className="text-right">
                     <Button variant="ghost" size="icon" onClick={() => router.push(`/admin/group-breaks/${b.id}`)}><Edit className="h-4 w-4" /></Button>

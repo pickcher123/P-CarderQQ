@@ -2,12 +2,14 @@
 
 import { useState, useCallback, useMemo, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { useCollection, useFirestore, useMemoFirebase, useStorage } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, useStorage, useDoc } from '@/firebase';
 import { collection, doc, setDoc, writeBatch, updateDoc, query, orderBy } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Edit, Trash2, List, Image as ImageIcon, Save, Loader2 } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, List, Image as ImageIcon, Save, Loader2, RefreshCw, Sparkles } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import type { SystemConfig } from '@/types/system';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   AlertDialog,
@@ -73,6 +75,27 @@ export default function BettingAdminPage() {
 
     const { data: categories, isLoading: isLoadingCategories } = useCollection<BettingCategory>(categoriesCollectionRef);
     const { data: bettingItems, isLoading: isLoadingBettingItems } = useCollection<BettingItems>(useMemoFirebase(() => firestore ? collection(firestore, 'betting-items') : null, [firestore]));
+
+    const systemConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'systemConfig', 'main') : null, [firestore]);
+    const { data: systemConfig } = useDoc<SystemConfig>(systemConfigRef);
+    const isAutoRelistEnabled = systemConfig?.bettingAutoRelistOnBuyBack !== false; // 預設開啟
+
+    const handleToggleAutoRelist = async (checked: boolean) => {
+        if (!firestore) return;
+        try {
+            await setDoc(doc(firestore, 'systemConfig', 'main'), {
+                bettingAutoRelistOnBuyBack: checked
+            }, { merge: true });
+            toast({
+                title: checked ? "已開啟：拼卡 Buy Back 自動重新上架" : "已關閉：拼卡 Buy Back 自動重新上架",
+                description: checked 
+                    ? "玩家將拼卡獲得的卡片「快速轉點 / Buy Back」後，系統將自動復原該卡片狀態並重新上架至拼卡專區。"
+                    : "玩家轉點後，拼卡卡片將標記為已售出 / 已回收。"
+            });
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "設定更新失敗", description: e.message });
+        }
+    };
 
     const categoriesWithCount = useMemo(() => {
         if (!categories || !bettingItems) return [];
@@ -300,6 +323,36 @@ export default function BettingAdminPage() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {/* 拼卡系統機制與功能設定卡片 */}
+            <Card className="border-slate-200 bg-gradient-to-r from-slate-900 to-slate-800 text-white p-6 rounded-2xl shadow-md mb-8">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex items-start gap-3.5">
+                        <div className="p-3 bg-pink-500/20 text-pink-400 rounded-xl border border-pink-500/30 shrink-0">
+                            <RefreshCw className="w-6 h-6 animate-spin-slow" />
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <h3 className="font-bold text-lg text-white">Buy Back 回收自動重新上架</h3>
+                                <Badge className="bg-pink-500/20 text-pink-300 border-pink-500/30 text-[10px] font-bold">自動循環</Badge>
+                            </div>
+                            <p className="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
+                                當玩家將拼卡或拼卡專區購買獲得的卡片進行「快速轉點 / Buy Back」時，系統將自動復原該卡片狀態，並將其重新上架至拼卡專區，讓其他玩家可以繼續下注拼卡。
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0 self-end sm:self-auto bg-slate-950/60 p-3 rounded-xl border border-white/10">
+                        <span className="text-xs font-bold text-slate-300">
+                            {isAutoRelistEnabled ? '自動重新上架：開啟' : '自動重新上架：關閉'}
+                        </span>
+                        <Switch 
+                            checked={isAutoRelistEnabled}
+                            onCheckedChange={handleToggleAutoRelist}
+                            className="data-[state=checked]:bg-pink-500"
+                        />
+                    </div>
+                </div>
+            </Card>
 
             <Card className="border-slate-200 bg-white overflow-hidden shadow-sm">
                 <Table>
