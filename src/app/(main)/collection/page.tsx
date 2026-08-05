@@ -138,6 +138,17 @@ export default function CollectionPage() {
           category: (userCard.category && userCard.category !== 'all') ? userCard.category : (cardDetails.category || userCard.category || 'general'),
           serialNumber: userCard.serialNumber || '0000'
         }
+      } else if (userCard.cardId.startsWith('random-player-')) {
+          return {
+              ...userCard,
+              name: '隨機球員 普/特 卡',
+              imageUrl: `https://picsum.photos/seed/${userCard.cardId.replace('random-player-', '')}/400/600`,
+              imageHint: '幸運獲獎',
+              category: '抽賞',
+              isSold: false,
+              sellPrice: 10,
+              serialNumber: userCard.serialNumber || '0000'
+          } as MergedCard;
       }
       return null;
     }).filter((c): c is MergedCard => c !== null);
@@ -155,6 +166,25 @@ export default function CollectionPage() {
       if (!filterCategory) return sortedMergedCards;
       return sortedMergedCards.filter(c => c.category === filterCategory);
   }, [sortedMergedCards, filterCategory]);
+
+  const randomPlayerCards = useMemo(() => {
+    return mergedCards.filter(c => c.name.includes('隨機球員') || c.category === '抽賞');
+  }, [mergedCards]);
+
+  const handleSelectRandomCards = () => {
+    const randomCardIds = randomPlayerCards.map(c => c.id);
+    const allRandomSelected = randomCardIds.length > 0 && randomCardIds.every(id => selectedCardIds.has(id));
+    
+    setSelectedCardIds(prev => {
+      const next = new Set(prev);
+      if (allRandomSelected) {
+        randomCardIds.forEach(id => next.delete(id));
+      } else {
+        randomCardIds.forEach(id => next.add(id));
+      }
+      return next;
+    });
+  };
 
   const standardCards = useMemo(() => filteredMergedCards.filter(c => c.source !== 'group-break'), [filteredMergedCards]);
   const groupBreakCards = useMemo(() => filteredMergedCards.filter(c => c.source === 'group-break'), [filteredMergedCards]);
@@ -192,9 +222,13 @@ export default function CollectionPage() {
     let pPoints = 0;
     
     cardsToSell.forEach(card => {
-        const basePrice = card.sellPrice || 10;
-        diamonds += basePrice * 0.7;
-        pPoints += basePrice * 0.1 * 10; 
+        if (card.name.includes('隨機球員')) {
+            pPoints += 300;
+        } else {
+            const basePrice = card.sellPrice || 10;
+            diamonds += basePrice * 0.7;
+            pPoints += basePrice * 0.1 * 10; 
+        }
     });
 
     return {
@@ -216,12 +250,16 @@ export default function CollectionPage() {
       const { diamonds, pPoints } = conversionValues;
       const soldCardNames = cardsToSell.map(c => c.name).join(', ');
 
+      const existingAllCardIds = new Set((allCards || []).map(c => c.id));
+
       for (const card of cardsToSell) {
         batch.delete(doc(firestore, 'users', user.uid, 'userCards', card.id));
-        batch.update(doc(firestore, 'allCards', card.cardId), { 
-            isSold: true,
-            isRecycled: true 
-        });
+        if (card.cardId && existingAllCardIds.has(card.cardId)) {
+          batch.update(doc(firestore, 'allCards', card.cardId), { 
+              isSold: true,
+              isRecycled: true 
+          });
+        }
       }
 
       batch.set(doc(collection(firestore, 'transactions')), {
@@ -339,16 +377,15 @@ export default function CollectionPage() {
           <div className="absolute top-[40%] left-[5%] w-48 h-48 bg-primary/20 blur-[80px] pointer-events-none opacity-30" />
           
           {/* Header Section */}
-          <div className="text-center mb-20 relative z-20">
+          <div className="text-center mb-8 relative z-20">
             <motion.h1 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="font-headline text-3xl font-black tracking-[0.2em] sm:text-6xl text-white drop-shadow-[0_0_15px_rgba(6,182,212,0.4)] mb-4 px-4 break-words text-center"
+              className="font-headline text-3xl font-black tracking-[0.2em] sm:text-6xl text-white drop-shadow-[0_0_15px_rgba(6,182,212,0.4)] mb-2 px-4 break-words text-center"
             >
               我的<span className="text-transparent bg-clip-text bg-gradient-to-br from-white via-white to-white/30">收藏</span>
             </motion.h1>
-            
           </div>
 
         {/* Selection & Actions Bar - Fixed at bottom when active */}
@@ -591,14 +628,42 @@ export default function CollectionPage() {
         </AnimatePresence>
 
         {/* Filters & Sorting */}
-        <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-2 relative z-10 px-2 lg:px-4 text-[10px] sm:text-[11px]">
-          <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5 text-slate-400">
+        <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-3 relative z-10 px-2 lg:px-4 text-[10px] sm:text-[11px]">
+          <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-1.5 text-slate-400 bg-slate-900/80 px-3 py-1.5 rounded-xl border border-white/10">
                   <LayoutGrid className="w-3.5 h-3.5 text-primary" />
                   <span className="font-bold tracking-wider text-slate-300">
-                      資產總數：<span className="font-code font-black text-white">{mergedCards.length}</span> 張卡片
+                      持有總數：<span className="font-code font-black text-white">{mergedCards.length}</span> 張
                   </span>
               </div>
+
+              {/* 隨機球員 普/特 卡 篩選與勾選按鈕 */}
+              <Button
+                variant={filterCategory === '抽賞' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setFilterCategory(filterCategory === '抽賞' ? null : '抽賞')}
+                className={cn(
+                  "rounded-xl text-[11px] font-bold px-3 py-1.5 h-auto transition-all border shadow-sm",
+                  filterCategory === '抽賞' 
+                    ? "bg-amber-500 text-black border-amber-400 hover:bg-amber-400" 
+                    : "bg-slate-900/80 text-amber-300 border-amber-500/30 hover:bg-amber-500/20"
+                )}
+              >
+                <Sparkles className="mr-1.5 h-3.5 w-3.5 text-amber-400" />
+                隨機球員 普/特 卡：<span className="font-code font-black ml-1">{randomPlayerCards.length}</span> 張
+              </Button>
+
+              {randomPlayerCards.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSelectRandomCards}
+                  className="rounded-xl text-[11px] font-bold px-3 py-1.5 h-auto bg-amber-500/10 text-amber-300 border-amber-500/40 hover:bg-amber-500/20"
+                >
+                  <CheckSquare className="mr-1.5 h-3.5 w-3.5" />
+                  {randomPlayerCards.every(c => selectedCardIds.has(c.id)) ? '取消勾選所有普特卡' : '勾選所有普特卡'}
+                </Button>
+              )}
           </div>
           <div className="flex items-center gap-1.5 flex-wrap">
               <Tooltip>
@@ -825,26 +890,25 @@ export default function CollectionPage() {
 
       {/* Showroom Preview Dialog */}
       <Dialog open={!!previewCard} onOpenChange={(open) => !open && setPreviewCard(null)}>
-        <DialogContent className="max-w-[min(95vw,500px)] bg-slate-950/40 backdrop-blur-3xl border-white/10 shadow-none p-0 overflow-visible flex flex-col items-center justify-center gap-8 rounded-[3rem]">
+        <DialogContent className="max-w-[min(90vw,360px)] bg-slate-950/90 backdrop-blur-2xl border-white/15 shadow-2xl p-5 overflow-hidden flex flex-col items-center justify-center gap-4 rounded-3xl">
             <DialogTitle><VisuallyHiddenPrimitive.Root>Card Showroom</VisuallyHiddenPrimitive.Root></DialogTitle>
             {previewCard && (
-                <div className="w-full h-full p-4 md:p-12 flex flex-col items-center gap-4 md:gap-10">
-                    <div className="flex flex-col items-center text-center gap-1 md:gap-3">
-                        <Badge variant="outline" className="border-primary/30 text-primary bg-primary/5 px-4 py-1 font-black italic tracking-[0.2em] uppercase text-[10px] mb-1 md:mb-2 rounded-full">
-                            {console.log('PREVIEW_CARD_DEBUG:', previewCard)}
+                <div className="w-full flex flex-col items-center gap-4">
+                    <div className="flex flex-col items-center text-center gap-1">
+                        <Badge variant="outline" className="border-primary/40 text-primary bg-primary/10 px-3 py-0.5 font-bold tracking-wider uppercase text-[10px] rounded-full">
                             {previewCard.category ? previewCard.category.toUpperCase() : 'GENERAL ASSET'}
                             {previewCard.teamName ? ` | ${previewCard.teamName.toUpperCase()}` : ''}
                         </Badge>
-                        <h2 className="text-xl md:text-3xl font-black italic tracking-tighter text-white uppercase drop-shadow-2xl">{previewCard.name}</h2>
+                        <h2 className="text-base sm:text-lg font-black italic tracking-tight text-white uppercase drop-shadow-md max-w-[260px] truncate">{previewCard.name}</h2>
                     </div>
 
-                    <div className="w-full max-w-[200px] md:max-w-[280px] perspective-1000">
+                    <div className="w-full max-w-[160px] sm:max-w-[190px] perspective-1000 my-1">
                         <motion.div 
-                            initial={{ rotateX: 20, y: 20, opacity: 0 }}
+                            initial={{ rotateX: 15, y: 10, opacity: 0 }}
                             animate={{ rotateX: 0, y: 0, opacity: 1 }}
                             className="relative group cursor-grab active:cursor-grabbing"
                         >
-                            <div className="absolute -inset-10 bg-primary/20 blur-[60px] opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+                            <div className="absolute -inset-4 bg-primary/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
                             <CardItem 
                                 name={previewCard.name} 
                                 imageUrl={previewCard.imageUrl} 
@@ -857,18 +921,18 @@ export default function CollectionPage() {
                         </motion.div>
                     </div>
 
-                    <div className="flex flex-col items-center gap-4 md:gap-6 w-full">
-                        <div className="flex items-center gap-3">
-                             <div className="flex items-center gap-1.5 bg-slate-900 border border-white/10 px-5 py-2.5 rounded-2xl text-xs font-code font-black text-white shadow-xl tracking-widest uppercase">
-                                <Gem className="w-3.5 h-3.5 text-primary" />
-                                {previewCard.sellPrice || 10}
-                            </div>
+                    <div className="flex flex-col items-center gap-3 w-full pt-1">
+                        <div className="flex items-center gap-1.5 bg-slate-900/90 border border-white/10 px-4 py-1.5 rounded-xl text-xs font-code font-black text-white shadow-md tracking-wider">
+                            <Gem className="w-3.5 h-3.5 text-primary" />
+                            {previewCard.sellPrice || 10}
                         </div>
 
-                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] flex items-center gap-2">
-                           <RotateCw className="w-3 h-3 animate-spin-slow" /> Click to Flip Card
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                           <RotateCw className="w-3 h-3 text-primary animate-spin-slow" /> 點擊卡片可翻面觀看
                         </div>
-                        <Button onClick={() => setIsReportOpen(true)} className="bg-primary text-black font-black w-full rounded-xl">生成鑑定報告</Button>
+                        <Button onClick={() => setIsReportOpen(true)} className="bg-primary text-black font-bold h-9 w-full rounded-xl text-xs hover:bg-primary/90 transition-all shadow-md">
+                            生成鑑定報告
+                        </Button>
                     </div>
                 </div>
             )}

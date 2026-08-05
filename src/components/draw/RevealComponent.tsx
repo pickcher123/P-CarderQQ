@@ -1,10 +1,9 @@
 import { motion } from 'framer-motion';
 import { CardItem } from '@/components/card-item';
-import { PPlusIcon } from '@/components/icons';
+import { RandomPlayerCard } from '@/components/random-player-card';
 import { Button } from '@/components/ui/button';
 import { FastForward, Disc3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
 
 export function RevealComponent({
     currentPrize,
@@ -77,10 +76,8 @@ export function RevealComponent({
                                     />
                                 </div>
                             ) : (
-                                <div className={cn("w-full h-full flex flex-col items-center justify-center p-3 rounded-xl shadow-inner border-2", pointPrizeRarityStyles[currentPrize.rarity].bg, pointPrizeRarityStyles[currentPrize.rarity].border)}>
-                                    <PPlusIcon className={cn("w-16 h-16 mb-4 drop-shadow-[0_0_20px_currentColor]", pointPrizeRarityStyles[currentPrize.rarity].text)} />
-                                    <p className="font-headline text-4xl font-black text-white drop-shadow-lg">{currentPrize.points}</p>
-                                    <Badge variant="outline" className="mt-4 border-white/20 text-[8px] font-black uppercase tracking-widest text-white/40">Digital Bonus</Badge>
+                                <div className="relative w-full h-full rounded-xl overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+                                    <RandomPlayerCard rarity={currentPrize.rarity} />
                                 </div>
                             )
                         )}

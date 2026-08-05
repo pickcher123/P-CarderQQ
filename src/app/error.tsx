@@ -1,11 +1,15 @@
 'use client';
 
 export default function Error({
+  error,
   reset,
 }: {
   error: Error & { digest?: string }
   reset: () => void
 }) {
+  if (process.env.NODE_ENV !== 'production' && error) {
+    console.error(error);
+  }
   return (
     <div className="flex flex-col items-center justify-center min-h-screen text-center p-4">
       <h1 className="text-4xl font-bold mb-4">500 - 伺服器錯誤</h1>

@@ -1,40 +1,111 @@
 import { DrawnPrize, CardPool, Rarity } from '@/types/draw';
 
+export interface CardMapItem {
+  id: string;
+  name: string;
+  category?: string;
+  imageUrl?: string;
+  sellPrice?: number;
+  rarity?: Rarity;
+}
+
 /**
  * Perform a draw from a card pool based on remaining quantities.
- * This function handles the probability logic based on current stock.
+ * Handles probability logic based on current stock of both card prizes and point prizes.
  */
 export function drawFromPool(
   poolData: Partial<CardPool>,
-  count: number
-): { drawn: DrawnPrize[]; updatedCards: { cardId: string; quantity: number }[] } {
+  count: number,
+  cardsMap?: Map<string, CardMapItem> | Record<string, CardMapItem>
+): { 
+  drawn: DrawnPrize[]; 
+  updatedCards: { cardId: string; quantity: number }[];
+  updatedPointPrizes: { prizeId: string; points: number; quantity: number; rarity: Rarity }[];
+} {
   const drawn: DrawnPrize[] = [];
   const updatedCards = poolData.cards ? JSON.parse(JSON.stringify(poolData.cards)) : [];
+  const updatedPointPrizes = poolData.pointPrizes ? JSON.parse(JSON.stringify(poolData.pointPrizes)) : [];
 
   for (let i = 0; i < count; i++) {
-    const totalCards = updatedCards.reduce((acc: number, c: any) => acc + (c.quantity || 0), 0);
-    
-    if (totalCards <= 0) break;
+    // 1) Sum up available card quantities
+    const totalCardQty = updatedCards.reduce((acc: number, c: any) => acc + Math.max(0, c.quantity || 0), 0);
+    // 2) Sum up available point prize quantities
+    const totalPointQty = updatedPointPrizes.reduce((acc: number, p: any) => acc + Math.max(0, p.quantity || 0), 0);
+    const totalPoolQty = totalCardQty + totalPointQty;
 
-    let rand = Math.random() * totalCards;
+    if (totalPoolQty <= 0) break;
 
+    let rand = Math.random() * totalPoolQty;
+    let drawnFound = false;
+
+    // Check cards array first
     for (const card of updatedCards) {
-      if (rand < (card.quantity || 0)) {
-        card.quantity = (card.quantity || 0) - 1;
+      const q = Math.max(0, card.quantity || 0);
+      if (q <= 0) continue;
+
+      if (rand < q) {
+        card.quantity = q - 1;
+        drawnFound = true;
+
+        const cardDetails = cardsMap instanceof Map 
+          ? cardsMap.get(card.cardId) 
+          : (cardsMap ? (cardsMap as Record<string, CardMapItem>)[card.cardId] : undefined);
+
+        const cardRarity = (poolData.cardRarities?.[card.cardId] as Rarity) || cardDetails?.rarity || 'common';
+
         drawn.push({
           id: card.cardId,
-          name: "獲得卡片",
-          imageUrl: `https://picsum.photos/seed/${card.cardId}/400/600`, // Default for missing images
+          name: cardDetails?.name || "精選卡片",
+          imageUrl: cardDetails?.imageUrl || `https://picsum.photos/seed/${card.cardId}/400/600`,
           imageHint: "幸運獲獎",
-          category: "抽賞",
-          rarity: (poolData.cardRarities?.[card.cardId] as Rarity) || 'common',
+          category: cardDetails?.category || "抽賞",
+          rarity: cardRarity,
           type: 'card'
         } as any);
         break;
       }
-      rand -= (card.quantity || 0);
+      rand -= q;
+    }
+
+    if (!drawnFound) {
+      // Check pointPrizes array
+      for (const pPrize of updatedPointPrizes) {
+        const q = Math.max(0, pPrize.quantity || 0);
+        if (q <= 0) continue;
+
+        if (rand < q) {
+          pPrize.quantity = q - 1;
+          drawnFound = true;
+
+          if (pPrize.name === '隨機球員 普/特 卡') {
+            drawn.push({
+              id: `random-player-${pPrize.prizeId}`,
+              name: pPrize.name,
+              imageUrl: `https://picsum.photos/seed/${pPrize.prizeId}/400/600`,
+              imageHint: '幸運獲獎',
+              category: '抽賞',
+              rarity: pPrize.rarity || 'common',
+              type: 'card'
+            } as any);
+          } else {
+            drawn.push({
+              id: pPrize.prizeId || `point-${pPrize.points}`,
+              name: `${pPrize.points} 紅利點數`,
+              points: pPrize.points,
+              imageUrl: '',
+              imageHint: '紅利賞',
+              category: '紅利',
+              rarity: pPrize.rarity || 'common',
+              type: 'points'
+            } as any);
+          }
+          break;
+        }
+        rand -= q;
+      }
     }
   }
 
-  return { drawn, updatedCards };
+  return { drawn, updatedCards, updatedPointPrizes };
 }
+

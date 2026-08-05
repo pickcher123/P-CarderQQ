@@ -36,8 +36,9 @@ interface GroupBreak {
   teams?: { userId?: string }[];
   spots?: { userId?: string }[];
   breakType: BreakType;
-  status: 'draft' | 'published' | 'completed';
+  status: 'draft' | 'published' | 'in_progress' | 'completed';
   createdAt: { seconds: number };
+  isAdult?: boolean;
 }
 
 const defaultBreak: Omit<GroupBreak, 'id' | 'createdAt'> = {
@@ -274,16 +275,23 @@ export default function GroupBreaksAdminPage() {
                 : (b.totalSpots || 0);
 
               const isFull = totalSpots > 0 && participantCount >= totalSpots;
-              const statusText = b.status === 'completed' ? '已完成' : isFull ? '已滿團' : '進行中';
 
               return (
                 <TableRow key={b.id}>
                   <TableCell className="font-medium">{b.title}</TableCell>
                   <TableCell><Badge variant="outline">{b.breakType === 'team' ? '隊伍' : '號碼'}</Badge></TableCell>
                   <TableCell>
-                    <Badge variant={b.status === 'completed' ? 'secondary' : isFull ? 'destructive' : 'default'}>
-                      {statusText}
-                    </Badge>
+                    {b.status === 'completed' ? (
+                      <Badge className="bg-purple-600 text-white font-black">派發完成</Badge>
+                    ) : b.status === 'in_progress' ? (
+                      <Badge className="bg-amber-500 text-slate-950 font-black animate-pulse">進行中</Badge>
+                    ) : isFull ? (
+                      <Badge variant="destructive" className="font-black">已滿團</Badge>
+                    ) : b.status === 'published' ? (
+                      <Badge className="bg-emerald-600 text-white font-black">開團中</Badge>
+                    ) : (
+                      <Badge variant="outline">草稿</Badge>
+                    )}
                   </TableCell>
                   <TableCell>{b.breakType === 'spot' ? `$${b.pricePerSpot}` : '按隊伍'}</TableCell>
                   <TableCell>{b.createdAt ? format(b.createdAt.seconds * 1000, 'yyyy-MM-dd') : 'N/A'}</TableCell>

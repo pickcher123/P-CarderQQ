@@ -51,28 +51,7 @@ export async function performDrawAction(userId: string, poolId: string, count: n
       }, { merge: true });
 
       // 抽卡邏輯
-      const drawn = [];
-      let remainingCards = [...(poolData.cards || [])];
-      
-      for (let i = 0; i < count; i++) {
-        const total = remainingCards.reduce((acc, c) => acc + (c.quantity || 0), 0);
-        if (total <= 0) break;
-
-        let rand = Math.random() * total;
-        for (const card of remainingCards) {
-          if (rand < card.quantity) {
-            card.quantity--;
-            drawn.push({
-              id: card.cardId,
-              name: '卡片名稱', // 此處應根據卡片庫獲取，暫時模擬
-              rarity: poolData.cardRarities?.[card.cardId] || 'common',
-              type: 'card'
-            });
-            break;
-          }
-          rand -= card.quantity;
-        }
-      }
+      const { drawn, updatedCards, updatedPointPrizes } = drawFromPool(poolData, count);
 
       // 寫入抽卡日誌
       const logRef = adminDb.collection('drawnCardLogs').doc();
@@ -85,14 +64,18 @@ export async function performDrawAction(userId: string, poolId: string, count: n
         count
       });
 
-      // 更新
+      // 更新使用者與卡池
       transaction.update(userRef, {
         [currencyField]: admin.firestore.FieldValue.increment(-cost)
       });
-      transaction.update(poolRef, {
-        remainingPacks: admin.firestore.FieldValue.increment(-count),
-        cards: remainingCards
-      });
+      const poolUpdates: any = {
+        remainingPacks: admin.firestore.FieldValue.increment(-drawn.length),
+        cards: updatedCards
+      };
+      if (updatedPointPrizes && updatedPointPrizes.length > 0) {
+        poolUpdates.pointPrizes = updatedPointPrizes;
+      }
+      transaction.update(poolRef, poolUpdates);
 
       return { drawn, userData: userSnap.data()! };
     });

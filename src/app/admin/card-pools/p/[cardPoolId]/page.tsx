@@ -627,8 +627,10 @@ export default function CardPoolDetailPage() {
     const prizeToAdd: PointPrize = { 
         ...newPointPrize, 
         prizeId: uuidv4(),
-        points: Number(newPointPrize.points),
-        quantity: Number(newPointPrize.quantity)
+        points: 0, // 設定為0，表示這不是點數賞，是卡片賞
+        quantity: Number(newPointPrize.quantity),
+        name: '隨機球員 普/特 卡',
+        rarity: 'common'
     };
 
     try {
@@ -1103,7 +1105,7 @@ export default function CardPoolDetailPage() {
                         <div className="flex flex-col sm:flex-row items-end gap-4 p-5 border border-amber-100 rounded-2xl bg-amber-50/30">
                            <div className="space-y-1.5 flex-grow w-full">
                                 <Label htmlFor="points-prize" className="text-[10px] font-black uppercase text-amber-700 tracking-widest">小賞 Buy Back 價值 (P點)</Label>
-                                <Input id="points-prize" type="number" value={newPointPrize.points} onChange={e => setNewPointPrize({...newPointPrize, points: Number(e.target.value)})} className="h-11 border-slate-200 font-code font-black text-slate-900 bg-white" placeholder="例如: 100" />
+                                <Input disabled value="300" className="h-11 border-slate-200 font-code font-black text-slate-500 bg-slate-100" />
                            </div>
                            <div className="space-y-1.5 flex-grow w-full">
                                 <Label htmlFor="points-quantity" className="text-[10px] font-black uppercase text-amber-700 tracking-widest">配置數量 (包)</Label>

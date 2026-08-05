@@ -16,6 +16,7 @@ export interface PointPrize {
     points: number;
     quantity: number;
     rarity: Rarity;
+    name?: string;
 }
 
 export interface CardPool {

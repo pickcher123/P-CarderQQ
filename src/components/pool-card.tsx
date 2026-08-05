@@ -394,6 +394,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                     : drawCount === 3 ? (pool.price3Draws || (pool.price || 0) * 3) 
                                     : (pool.price10Draws || (pool.price || 0) * 10);
                         const label = drawCount === 1 ? '抽 1 次' : `抽 ${drawCount} 次`;
+                        const isPPoint = pool.currency === 'p-point';
                         
                         return (
                             <Button 
@@ -407,7 +408,11 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                 <span className="text-white font-bold text-xs sm:text-sm whitespace-nowrap">{label}</span>
                                 <span className="flex items-center justify-center text-cyan-100 font-mono font-bold text-xs sm:text-base md:text-lg tracking-tight max-w-full truncate mt-0.5">
                                     <span className="truncate">{price.toLocaleString()}</span>
-                                    <Gem className="w-3 h-3 sm:w-4 sm:h-4 ml-0.5 sm:ml-1 shrink-0" />
+                                    {isPPoint ? (
+                                        <PPlusIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-0.5 sm:ml-1 shrink-0 text-amber-400" />
+                                    ) : (
+                                        <Gem className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-0.5 sm:ml-1 shrink-0 text-cyan-400" />
+                                    )}
                                 </span>
                             </Button>
                         )
