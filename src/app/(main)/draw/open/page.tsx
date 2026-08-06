@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { CardItem } from '@/components/card-item';
+import { RandomPlayerCard } from '@/components/random-player-card';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import {
@@ -195,7 +196,20 @@ export default function OpenPackPage() {
         if (!user) { setError("請先登入帳戶。"); setStep('error'); return; }
         getDoc(doc(firestore, 'cardPools', poolId)).then(snap => {
             if (!snap.exists()) throw new Error("找不到指定的卡池。");
-            setCardPool({ id: snap.id, ...snap.data() } as CardPool);
+            const poolData = { id: snap.id, ...snap.data() } as CardPool;
+            
+            // 檢查是否處於 120 秒開獎保護鎖定狀態
+            if (poolData.hasProtection !== false && poolData.lockedAt && poolData.lockedBy && poolData.lockedBy !== user.uid) {
+                const lockSecs = typeof (poolData.lockedAt as any).seconds === 'number'
+                    ? (poolData.lockedAt as any).seconds
+                    : Math.floor(new Date(poolData.lockedAt as any).getTime() / 1000);
+                const diff = Math.floor(Date.now() / 1000 - lockSecs);
+                if (diff < LOCK_DURATION) {
+                    throw new Error(`此卡池正處於 120 秒開獎保護中（由其他玩家鎖定中，剩餘 ${LOCK_DURATION - diff} 秒），請稍後再試。`);
+                }
+            }
+
+            setCardPool(poolData);
             setStep('waiting-to-start');
         }).catch(e => { 
             console.error(e);
@@ -241,6 +255,18 @@ export default function OpenPackPage() {
                 }
 
                 const poolData = poolSnap.data() as CardPool;
+
+                // 驗證 120 秒開獎保護鎖定
+                if (poolData.hasProtection !== false && poolData.lockedAt && poolData.lockedBy && poolData.lockedBy !== user.uid) {
+                    const lockSecs = typeof (poolData.lockedAt as any).seconds === 'number'
+                        ? (poolData.lockedAt as any).seconds
+                        : Math.floor(new Date(poolData.lockedAt as any).getTime() / 1000);
+                    const diff = Math.floor(Date.now() / 1000 - lockSecs);
+                    if (diff < LOCK_DURATION) {
+                        throw new Error(`開獎保護中：其他玩家正在開獎，請稍等 ${LOCK_DURATION - diff} 秒。`);
+                    }
+                }
+
                 const cost = count === 3 && cardPool.price3Draws ? cardPool.price3Draws : (cardPool.price || 0) * count;
                 const currencyField = cardPool.currency === 'p-point' ? 'bonusPoints' : 'points';
                 const balance = (userData as any)[currencyField] || 0;
@@ -577,22 +603,13 @@ export default function OpenPackPage() {
                         )}>
                             {sessionPrizes.map((p, i) => (
                                 <div key={i} className="animate-fade-in-up snap-center w-[160px] md:w-[200px] flex-shrink-0" style={{ animationDelay: `${i * 80}ms` }}>
-                                    {p.type === 'points' ? (
-                                        <div 
-                                            className={cn(
-                                                "w-full aspect-[2.5/4] rounded-3xl flex flex-col items-center justify-center p-4 border shadow-2xl transition-all hover:scale-105 group cursor-pointer",
-                                                pointPrizeRarityStyles[p.rarity].bg,
-                                                pointPrizeRarityStyles[p.rarity].border
-                                            )}
-                                            onClick={() => setPreviewCard({ ...p, isPoints: true })}
-                                        >
-                                            <div className="relative mb-2">
-                                                <div className="absolute inset-0 blur-2xl opacity-40 group-hover:opacity-80 transition-opacity bg-current" style={{ color: 'hsl(var(--accent))' }} />
-                                                <PPlusIcon className={cn("w-12 h-12 md:w-16 md:h-16 relative z-10", pointPrizeRarityStyles[p.rarity].text)} />
-                                            </div>
-                                            <p className="font-code text-2xl md:text-3xl font-black text-white drop-shadow-md">{p.points}</p>
-                                            <Badge variant="outline" className="mt-3 border-white/5 bg-black/20 text-[8px] font-black uppercase text-white/30">Bonus Reward</Badge>
-                                        </div>
+                                    {p.type === 'points' || p.isPoints || p.name?.includes('隨機球員') ? (
+                                        <RandomPlayerCard 
+                                            rarity={p.rarity} 
+                                            points={p.points}
+                                            title={p.name}
+                                            onClick={() => setPreviewCard({ ...p, isPoints: true })} 
+                                        />
                                     ) : (
                                         <div 
                                             className="w-full aspect-[2.5/4] rounded-3xl overflow-hidden shadow-2xl transition-all hover:scale-105 group border border-white/5 h-full cursor-zoom-in"
@@ -714,11 +731,14 @@ export default function OpenPackPage() {
                         <div className="w-full flex flex-col items-center gap-4 sm:gap-6">
                             <h2 className="text-[11px] sm:text-sm font-black text-white text-center px-4 uppercase">{previewCard.name}</h2>
                             <div className="w-[85%] sm:w-full max-w-[360px]">
-                                {previewCard.isPoints ? (
-                                    <div className={cn("w-full aspect-[2.5/4] rounded-3xl flex flex-col items-center justify-center p-4 border shadow-2xl", pointPrizeRarityStyles[previewCard.rarity as Rarity].bg, pointPrizeRarityStyles[previewCard.rarity as Rarity].border)}>
-                                        <PPlusIcon className={cn("w-20 h-20 mb-4", pointPrizeRarityStyles[previewCard.rarity as Rarity].text)} />
-                                        <p className="font-headline text-5xl font-black text-white">{previewCard.points}</p>
-                                        <Badge variant="outline" className="mt-6 border-white/20 text-[10px] font-black uppercase tracking-widest text-white/40">Bonus Reward</Badge>
+                                {previewCard.isPoints || previewCard.type === 'points' || previewCard.name?.includes('隨機球員') ? (
+                                    <div className="w-full aspect-[2.5/4] max-w-[280px]">
+                                        <RandomPlayerCard 
+                                            rarity={previewCard.rarity} 
+                                            points={previewCard.points} 
+                                            title={previewCard.name}
+                                            showBuybackHint={false} 
+                                        />
                                     </div>
                                 ) : (
                                     <CardItem name={previewCard.name} imageUrl={previewCard.imageUrl} backImageUrl={previewCard.backImageUrl} imageHint={previewCard.name} rarity={previewCard.rarity} isFlippable={true}/>

@@ -12,6 +12,7 @@ import { PPlusIcon } from '@/components/icons';
 import { SafeImage } from '@/components/safe-image';
 import { format } from 'date-fns';
 import { CardItem } from '@/components/card-item';
+import { RandomPlayerCard } from '@/components/random-player-card';
 import { userLevels } from '@/components/member-level-crown';
 import { VerifyAgeModal } from '@/components/verify-age-modal';
 
@@ -47,8 +48,30 @@ const rarityStyles: Record<Rarity, { text: string, bg: string, border: string, s
     badgeBg: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
   },
 };
+
+const pointPrizeStyles: Record<Rarity, { text: string, bg: string, border: string, glow: string }> = {
+  legendary: { 
+    text: 'text-amber-400', 
+    bg: 'bg-gradient-to-br from-amber-500/30 via-slate-900 to-slate-950', 
+    border: 'border-amber-400/60', 
+    glow: 'shadow-[0_0_30px_rgba(245,158,11,0.3)]' 
+  },
+  rare: { 
+    text: 'text-purple-400', 
+    bg: 'bg-gradient-to-br from-purple-500/30 via-slate-900 to-slate-950', 
+    border: 'border-purple-400/60', 
+    glow: 'shadow-[0_0_30px_rgba(168,85,247,0.3)]' 
+  },
+  common: { 
+    text: 'text-cyan-400', 
+    bg: 'bg-gradient-to-br from-cyan-500/25 via-slate-900 to-slate-950', 
+    border: 'border-cyan-400/50', 
+    glow: 'shadow-[0_0_25px_rgba(34,211,238,0.25)]' 
+  },
+};
+
 interface CardData { id: string; name: string; imageUrl: string; backImageUrl?: string; imageHint: string; isSold?: boolean; }
-interface CardPool { id: string; name: string; description: string; price?: number; price3Draws?: number; price10Draws?: number; totalPacks?: number; remainingPacks?: number; hasProtection?: boolean; isFeatured?: boolean; currency?: 'diamond' | 'p-point'; cardRarities?: { [cardId: string]: Rarity }; cards?: { cardId: string; quantity: number }[]; lastPrizeCardId?: string; imageUrl?: string; startsAt?: { seconds: number; nanoseconds: number; }; expiresAt?: { seconds: number; nanoseconds: number; }; pointMultiplier?: number; pointMultiplierExpiresAt?: { seconds: number; nanoseconds: number; }; lockedBy?: string; lockedAt?: { seconds: number; nanoseconds: number; }; categoryId?: string; dailyLimit?: number; minLevel?: string; isAdult?: boolean; }
+interface CardPool { id: string; name: string; description: string; price?: number; price3Draws?: number; price10Draws?: number; totalPacks?: number; remainingPacks?: number; hasProtection?: boolean; isFeatured?: boolean; currency?: 'diamond' | 'p-point'; cardRarities?: { [cardId: string]: Rarity }; cards?: { cardId: string; quantity: number }[]; pointPrizes?: { prizeId: string; points: number; quantity: number; rarity: Rarity; name?: string }[]; lastPrizeCardId?: string; imageUrl?: string; startsAt?: { seconds: number; nanoseconds: number; }; expiresAt?: { seconds: number; nanoseconds: number; }; pointMultiplier?: number; pointMultiplierExpiresAt?: { seconds: number; nanoseconds: number; }; lockedBy?: string; lockedAt?: { seconds: number; nanoseconds: number; }; categoryId?: string; dailyLimit?: number; minLevel?: string; isAdult?: boolean; }
 const LOCK_DURATION = 120;
 
 export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, allCardsMap: Map<string, CardData>, userProfile: any }) {
@@ -96,7 +119,9 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
             if (currentTime < start) return { status: 'not-started', disabled: true, message: format(start, "MM-dd HH:mm") + ' 開放' };
         }
         if (pool.hasProtection !== false && pool.lockedAt) {
-            const lockTime = new Date(pool.lockedAt.seconds * 1000);
+            const lockTime = typeof (pool.lockedAt as any).seconds === 'number'
+                ? new Date((pool.lockedAt as any).seconds * 1000)
+                : ((pool.lockedAt as any) instanceof Date ? (pool.lockedAt as any) : new Date());
             const diff = Math.floor((currentTime.getTime() - lockTime.getTime()) / 1000);
             if (diff < LOCK_DURATION) {
                 return { status: pool.lockedBy === user?.uid ? 'locked-by-me' : 'locked', disabled: pool.lockedBy !== user?.uid, message: `${LOCK_DURATION - diff}秒` };
@@ -162,6 +187,20 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                         isPoints: false,
                     });
                 }
+            });
+        }
+        if (pool.pointPrizes) {
+            pool.pointPrizes.forEach((p, idx) => {
+                list.push({
+                    id: p.prizeId || `pp-${idx}`,
+                    name: p.name || '隨機球員 普/特 卡',
+                    imageUrl: '',
+                    rarity: p.rarity || 'common',
+                    quantity: p.quantity,
+                    isSoldOut: p.quantity <= 0,
+                    isPoints: true,
+                    points: p.points,
+                });
             });
         }
         return list;
@@ -540,11 +579,20 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                                         "relative w-full aspect-[2.5/4] mb-2 rounded-lg overflow-hidden border p-1 bg-slate-950 flex flex-col items-center justify-center shadow-md",
                                                         c.isSoldOut ? "border-slate-800" : style.border
                                                     )}>
-                                                        <SafeImage src={c.imageUrl} alt={c.name} sizes="140px" fill className="object-contain p-0.5" />
+                                                        {c.isPoints ? (
+                                                            <RandomPlayerCard 
+                                                                rarity={c.rarity} 
+                                                                points={c.points} 
+                                                                title={c.name}
+                                                                showBuybackHint={false} 
+                                                            />
+                                                        ) : (
+                                                            <SafeImage src={c.imageUrl} alt={c.name} sizes="140px" fill className="object-contain p-0.5" />
+                                                        )}
 
                                                         {/* 已售罄水印印章 */}
                                                         {c.isSoldOut && (
-                                                            <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-[1px] flex items-center justify-center">
+                                                            <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-[1px] flex items-center justify-center z-10">
                                                                 <span className="px-2 py-1 bg-rose-600/90 text-white font-black text-[10px] uppercase tracking-wider rounded border border-rose-400/50 shadow-lg">
                                                                     已完售
                                                                 </span>
@@ -603,13 +651,12 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
 
                         <div className="w-[85%] sm:w-full max-w-[300px] my-1">
                             {previewCard.isPoints ? (
-                                <div className={cn("w-full aspect-[2.5/4] rounded-2xl flex flex-col items-center justify-center p-6 border shadow-2xl relative overflow-hidden", pointPrizeStyles[previewCard.rarity as Rarity].bg, pointPrizeStyles[previewCard.rarity as Rarity].border, pointPrizeStyles[previewCard.rarity as Rarity].glow)}>
-                                    <div className="absolute inset-0 opacity-10 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,#fff_2px,#fff_4px)]" />
-                                    <PPlusIcon className={cn("w-20 h-20 mb-3 drop-shadow-[0_0_15px_rgba(34,211,238,0.5)]", pointPrizeStyles[previewCard.rarity as Rarity].text)} />
-                                    <p className="font-headline text-5xl font-black text-white tracking-tight">{previewCard.points}</p>
-                                    <span className="text-sm font-bold text-cyan-200 mt-1">P+ 紅利點數獎勵</span>
-                                    <Badge variant="outline" className="mt-5 border-cyan-400/30 text-[10px] font-black uppercase tracking-widest text-cyan-300">Bonus Reward</Badge>
-                                </div>
+                                <RandomPlayerCard 
+                                    rarity={previewCard.rarity} 
+                                    points={previewCard.points} 
+                                    title={previewCard.name}
+                                    showBuybackHint={false} 
+                                />
                             ) : (
                                 <CardItem name={previewCard.name} imageUrl={previewCard.imageUrl} backImageUrl={previewCard.backImageUrl} imageHint={previewCard.name} rarity={previewCard.rarity} isFlippable={true}/>
                             )}

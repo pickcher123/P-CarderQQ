@@ -12,6 +12,8 @@ interface RandomPlayerCardProps {
   className?: string;
   onClick?: () => void;
   showBuybackHint?: boolean;
+  points?: number;
+  title?: string;
 }
 
 export function RandomPlayerCard({
@@ -20,31 +22,33 @@ export function RandomPlayerCard({
   className,
   onClick,
   showBuybackHint = true,
+  points,
+  title
 }: RandomPlayerCardProps) {
   const isSpecial = rarity === 'rare' || rarity === 'legendary';
-  const titleText = isSpecial ? '隨機球員 特卡' : '隨機球員 普卡';
+  const titleText = title || '隨機球員 普/特 卡';
 
   return (
     <div
       onClick={onClick}
       className={cn(
-        "relative w-full aspect-[2.5/4] rounded-2xl md:rounded-3xl overflow-hidden flex flex-col justify-between p-3 sm:p-4 select-none cursor-pointer transition-all duration-300 hover:scale-[1.03] group shadow-2xl border-2",
+        "relative w-full aspect-[2.5/4] rounded-2xl overflow-hidden flex flex-col justify-between p-3 sm:p-4 select-none cursor-pointer transition-all duration-300 hover:scale-[1.03] group shadow-2xl border-2",
         isSpecial
-          ? "bg-gradient-to-br from-amber-950/80 via-slate-900 to-amber-900/60 border-amber-500/50 shadow-[0_0_25px_rgba(245,158,11,0.25)]"
-          : "bg-gradient-to-br from-slate-900 via-slate-950 to-blue-950/70 border-cyan-500/40 shadow-[0_0_20px_rgba(6,182,212,0.2)]",
+          ? "bg-gradient-to-br from-amber-950/90 via-slate-900 to-amber-900/70 border-amber-500/60 shadow-[0_0_25px_rgba(245,158,11,0.3)]"
+          : "bg-gradient-to-br from-slate-900 via-slate-950 to-blue-950/80 border-cyan-500/50 shadow-[0_0_20px_rgba(6,182,212,0.25)]",
         className
       )}
     >
       {/* Background ambient glow effect */}
       <div
         className={cn(
-          "absolute -inset-10 rounded-full blur-2xl opacity-20 group-hover:opacity-40 transition-opacity pointer-events-none",
+          "absolute -inset-10 rounded-full blur-2xl opacity-25 group-hover:opacity-40 transition-opacity pointer-events-none",
           isSpecial ? "bg-amber-500" : "bg-cyan-500"
         )}
       />
 
       {/* Grid line texture overlay */}
-      <div className="absolute inset-0 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:12px_12px] opacity-10 pointer-events-none" />
+      <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,#fff_2px,#fff_4px)] opacity-5 pointer-events-none" />
 
       {/* Card Header: Category & PPlus logo */}
       <div className="relative z-10 flex items-center justify-between w-full">
@@ -55,27 +59,27 @@ export function RandomPlayerCard({
             isSpecial ? "bg-amber-500/20 text-amber-400" : "bg-cyan-500/20 text-cyan-400"
           )}
         >
-          {isSpecial ? 'SPECIAL' : 'COMMON'}
+          {isSpecial ? '特卡' : '普/特卡'}
         </Badge>
         <div className="flex items-center gap-1">
           <PPlusIcon className={cn("w-4 h-4 sm:w-5 sm:h-5", isSpecial ? "text-amber-400" : "text-cyan-400")} />
         </div>
       </div>
 
-      {/* Card Center: Main Title */}
-      <div className="relative z-10 my-auto flex flex-col items-center justify-center text-center px-1 py-2">
-        <div className="relative mb-1">
+      {/* Card Center: Main Icon & Title */}
+      <div className="relative z-10 my-auto flex flex-col items-center justify-center text-center px-1 py-1">
+        <div className="relative mb-1.5 flex flex-col items-center justify-center">
           <div
             className={cn(
-              "absolute inset-0 blur-lg opacity-50",
+              "absolute inset-0 blur-lg opacity-60",
               isSpecial ? "bg-amber-500" : "bg-cyan-400"
             )}
           />
-          <Sparkles className={cn("w-5 h-5 relative z-10 animate-pulse", isSpecial ? "text-amber-300" : "text-cyan-300")} />
+          <PPlusIcon className={cn("w-10 h-10 sm:w-12 sm:h-12 relative z-10 drop-shadow-[0_0_12px_rgba(34,211,238,0.7)]", isSpecial ? "text-amber-300" : "text-cyan-300")} />
         </div>
         <h3
           className={cn(
-            "font-headline font-black text-lg sm:text-xl md:text-2xl tracking-tight drop-shadow-md leading-tight",
+            "font-headline font-black text-xs sm:text-sm md:text-base tracking-tight drop-shadow-md leading-snug",
             isSpecial
               ? "bg-gradient-to-r from-amber-200 via-amber-400 to-yellow-100 bg-clip-text text-transparent"
               : "bg-gradient-to-r from-cyan-100 via-white to-sky-300 bg-clip-text text-transparent"
@@ -83,8 +87,8 @@ export function RandomPlayerCard({
         >
           {titleText}
         </h3>
-        <span className="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">
-          CARDER COLLECTION
+        <span className="text-[9px] sm:text-[10px] text-cyan-300/80 font-bold uppercase tracking-widest mt-0.5">
+          {points ? `${points} P+ 點數` : '隨機球員卡'}
         </span>
       </div>
 
@@ -93,11 +97,11 @@ export function RandomPlayerCard({
         {showBuybackHint && (
           <div className="flex items-center gap-1 text-[9px] sm:text-[10px] font-black text-amber-400/90">
             <RefreshCw className="w-3 h-3" />
-            <span>可兌換 300P</span>
+            <span>{points ? `可獲 ${points}P` : '可兌換 300P'}</span>
           </div>
         )}
         <span className="text-[8px] text-slate-500 font-code tracking-widest uppercase ml-auto">
-          P+ CARD
+          P+ 隨機賞
         </span>
       </div>
 

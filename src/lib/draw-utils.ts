@@ -77,26 +77,29 @@ export function drawFromPool(
           pPrize.quantity = q - 1;
           drawnFound = true;
 
-          if (pPrize.name === '隨機球員 普/特 卡') {
+          if (pPrize.name === '隨機球員 普/特 卡' || pPrize.name?.includes('隨機球員')) {
             drawn.push({
               id: `random-player-${pPrize.prizeId}`,
-              name: pPrize.name,
-              imageUrl: `https://picsum.photos/seed/${pPrize.prizeId}/400/600`,
-              imageHint: '幸運獲獎',
+              name: pPrize.name || '隨機球員 普/特 卡',
+              points: pPrize.points || 300,
+              imageUrl: '',
+              imageHint: '隨機球員賞',
               category: '抽賞',
               rarity: pPrize.rarity || 'common',
-              type: 'card'
+              type: 'points',
+              isPoints: true
             } as any);
           } else {
             drawn.push({
               id: pPrize.prizeId || `point-${pPrize.points}`,
-              name: `${pPrize.points} 紅利點數`,
+              name: pPrize.name || `${pPrize.points} 紅利點數`,
               points: pPrize.points,
               imageUrl: '',
               imageHint: '紅利賞',
               category: '紅利',
               rarity: pPrize.rarity || 'common',
-              type: 'points'
+              type: 'points',
+              isPoints: true
             } as any);
           }
           break;

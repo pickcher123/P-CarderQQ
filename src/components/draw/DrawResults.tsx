@@ -17,9 +17,11 @@ export function DrawResults({
                 <div id="prize-scroll-container" className="flex flex-row gap-4 py-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide scroll-smooth">
                     {sessionPrizes.map((p, i) => (
                         <div key={i} className="animate-fade-in-up snap-center w-[160px] md:w-[200px] flex-shrink-0" style={{ animationDelay: `${i * 80}ms` }}>
-                            {p.type === 'points' ? (
+                            {p.type === 'points' || p.isPoints || p.name?.includes('隨機球員') ? (
                                 <RandomPlayerCard 
                                     rarity={p.rarity} 
+                                    points={p.points}
+                                    title={p.name}
                                     onClick={() => setPreviewCard({ ...p, isPoints: true })} 
                                 />
                             ) : (

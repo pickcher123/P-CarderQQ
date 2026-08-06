@@ -62,7 +62,7 @@ export function RevealComponent({
                         isChanging ? "opacity-0" : "opacity-100"
                     )}>
                         {currentPrize && (
-                            (currentPrize.type === 'card' || currentPrize.type === 'last-prize') ? (
+                            (currentPrize.type === 'card' || currentPrize.type === 'last-prize') && !currentPrize.name?.includes('隨機球員') && !currentPrize.isPoints ? (
                                 <div className="relative w-full h-full rounded-xl overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)]">
                                     <CardItem 
                                         name={currentPrize.name} 
@@ -77,7 +77,12 @@ export function RevealComponent({
                                 </div>
                             ) : (
                                 <div className="relative w-full h-full rounded-xl overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)]">
-                                    <RandomPlayerCard rarity={currentPrize.rarity} />
+                                    <RandomPlayerCard 
+                                        rarity={currentPrize.rarity} 
+                                        points={currentPrize.points} 
+                                        title={currentPrize.name}
+                                        showBuybackHint={false}
+                                    />
                                 </div>
                             )
                         )}
