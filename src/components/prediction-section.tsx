@@ -87,40 +87,40 @@ export function PredictionSection() {
                 const userWon = isFinished && userChoice && winningList.includes(userChoice);
 
                 return (
-                    <Card key={event.id} className="bg-slate-950/60 backdrop-blur-md border-white/10 rounded-2xl p-6 hover:border-primary/50 transition-all">
-                        <CardContent className="p-0 space-y-6">
+                    <Card key={event.id} className="bg-slate-950/60 backdrop-blur-md border-white/10 rounded-2xl p-4 sm:p-5 hover:border-primary/50 transition-all shadow-md">
+                        <CardContent className="p-0 space-y-4">
                             <div className="flex justify-between items-center flex-wrap gap-2">
-                                <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                                    <Trophy className="w-5 h-5 text-amber-400" />
-                                    {event.matchName}
+                                <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                                    <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 shrink-0" />
+                                    <span>{event.matchName}</span>
                                 </h3>
                                 <div className="flex items-center gap-2">
                                     {isFinished ? (
-                                        <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30 text-xs">
-                                            🏆 已開獎結算
+                                        <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30 text-[10px] sm:text-xs">
+                                            🏆 已結算
                                         </Badge>
                                     ) : (
-                                        <Badge variant="outline" className={cn("text-xs border-slate-700", isClosed ? "text-red-400" : "text-slate-400")}>
+                                        <Badge variant="outline" className={cn("text-[10px] sm:text-xs border-slate-700", isClosed ? "text-red-400" : "text-slate-400")}>
                                             <Clock className="w-3 h-3 mr-1" /> {isClosed ? "已截止" : `截止: ${event.bettingEndTime}`}
                                         </Badge>
                                     )}
                                 </div>
                             </div>
 
-                            <div className="space-y-3">
-                                <p className="text-sm text-slate-300 font-bold flex items-center gap-2">
-                                    <Target className="w-4 h-4 text-primary" />
+                            <div className="space-y-2.5">
+                                <p className="text-xs sm:text-sm text-slate-300 font-bold flex items-center gap-1.5">
+                                    <Target className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary shrink-0" />
                                     {event.question}
                                 </p>
 
                                 {winningList.length > 0 && (
-                                    <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold flex items-center gap-2">
-                                        <Sparkles className="w-4 h-4 text-amber-400 shrink-0 animate-pulse" />
+                                    <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold flex items-center gap-2">
+                                        <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0 animate-pulse" />
                                         <span>獲勝答案：<strong className="text-amber-200">{winningList.join(' / ')}</strong></span>
                                     </div>
                                 )}
 
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
                                     {event.options?.map((option: string) => {
                                         const isSelected = userChoice === option;
                                         const isWinnerOpt = winningList.includes(option);
@@ -130,17 +130,17 @@ export function PredictionSection() {
                                                 key={option}
                                                 variant={isSelected ? 'default' : 'outline'}
                                                 className={cn(
-                                                    "rounded-xl transition-all relative font-bold h-12 text-sm",
+                                                    "rounded-xl transition-all relative font-bold h-10 sm:h-11 text-xs sm:text-sm px-2.5",
                                                     isSelected && "bg-primary text-white border-primary shadow-md",
                                                     isWinnerOpt && "border-amber-400/80 bg-amber-500/15 text-amber-200 hover:bg-amber-500/20 shadow-amber-500/10"
                                                 )}
                                                 onClick={() => handlePredict(event.id, option)}
                                                 disabled={isClosed || isConfirmed}
                                             >
-                                                {isWinnerOpt && <Trophy className="w-4 h-4 text-amber-400 mr-1.5 shrink-0" />}
-                                                {option}
+                                                {isWinnerOpt && <Trophy className="w-3.5 h-3.5 text-amber-400 mr-1 shrink-0" />}
+                                                <span className="truncate">{option}</span>
                                                 {isSelected && isConfirmed && (
-                                                    <CheckCircle2 className="w-4 h-4 text-emerald-400 ml-1.5 shrink-0" />
+                                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 ml-1 shrink-0" />
                                                 )}
                                             </Button>
                                         );

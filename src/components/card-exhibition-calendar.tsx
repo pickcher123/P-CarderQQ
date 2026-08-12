@@ -50,7 +50,7 @@ export function CardExhibitionCalendar({ hideHeader = false }: { hideHeader?: bo
                 </div>
             )}
             
-            <div className="max-w-4xl mx-auto space-y-8 px-1">
+            <div className={cn("space-y-6 px-1", !hideHeader ? "max-w-4xl mx-auto" : "w-full")}>
                 {exhibitionsByMonth.length > 0 ? (
                     exhibitionsByMonth.map(([month, exhList]) => (
                         <div key={month} className="space-y-3">

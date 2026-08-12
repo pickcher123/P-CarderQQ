@@ -49,7 +49,7 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
   
   return (
-    <div className="sticky top-0 z-40 w-full border-b border-border/40 bg-background/95 backdrop-blur-sm">
+    <div className="sticky top-0 z-40 w-full border-b border-white/5 bg-slate-950/15 backdrop-blur-xl">
       <div className="container flex h-16 items-center px-4 md:px-8">
         <div className="mr-auto flex items-center ml-1">
           <Logo className="text-primary" />

@@ -46,8 +46,8 @@ export function NewsMarquee({ isDrawing }: NewsMarqueeProps) {
 
     return (
         <div className={cn(
-            "backdrop-blur-md border-b border-white/10 h-8 md:h-9 overflow-hidden relative flex items-center justify-between shadow-xl shadow-black/40 transition-colors duration-500",
-            isDrawing ? "bg-black/80" : "bg-background/60"
+            "backdrop-blur-md border-b border-white/5 h-8 md:h-9 overflow-hidden relative flex items-center justify-between shadow-sm transition-colors duration-500",
+            isDrawing ? "bg-black/10" : "bg-black/10"
         )}>
             <div className="flex items-center flex-1 overflow-hidden">
                 {/* 品牌標籤 - 移至左側，增加左邊距以對齊 Logo */}

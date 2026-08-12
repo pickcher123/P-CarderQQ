@@ -34,7 +34,7 @@ export function MobileBottomNav({ systemConfig }: { systemConfig: SystemConfig |
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/40 bg-background/95 backdrop-blur-sm md:hidden">
+    <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/5 bg-slate-950/15 backdrop-blur-xl md:hidden">
       <nav
         className="container grid h-16 items-center justify-between px-1"
         style={{ gridTemplateColumns: `repeat(${navLinks.length}, minmax(0, 1fr))` }}

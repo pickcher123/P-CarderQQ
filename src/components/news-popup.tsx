@@ -101,7 +101,7 @@ export function NewsPopup() {
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
         <DialogContent className={cn(
-            "p-0 bg-card/95 backdrop-blur-xl border-primary/20 overflow-hidden shadow-2xl transition-all duration-300 rounded-3xl",
+            "p-0 bg-slate-950/70 backdrop-blur-2xl border-primary/30 overflow-hidden shadow-2xl transition-all duration-300 rounded-3xl",
             isImageMode 
                 ? "w-[92vw] md:w-[80vw] max-w-[450px] md:max-w-[900px]" 
                 : "w-[92vw] md:w-[70vw] max-w-[400px] md:max-w-[750px]"

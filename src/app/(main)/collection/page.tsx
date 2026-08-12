@@ -34,11 +34,12 @@ import {
 } from "@/components/ui/dialog"
 import { Checkbox } from '@/components/ui/checkbox';
 import * as VisuallyHiddenPrimitive from "@radix-ui/react-visually-hidden";
-import { Ship, RefreshCw, Gem, Loader2, CheckSquare, Square, Shield, LayoutGrid, Users, Users2, MapPin, SearchCode, X, Sparkles, ChevronRight, Package, Library, Hash, Info, AlertTriangle, RotateCcw, Filter, ArrowUpDown, RotateCw } from 'lucide-react';
+import { Ship, RefreshCw, Gem, Loader2, CheckSquare, Square, Shield, LayoutGrid, Users, Users2, MapPin, SearchCode, X, Sparkles, ChevronRight, Package, Library, Hash, Info, AlertTriangle, RotateCcw, Filter, ArrowUpDown, RotateCw, ArrowLeft } from 'lucide-react';
 import { useCollection, useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, doc, writeBatch, serverTimestamp, getDoc, increment, updateDoc, getDocs, arrayRemove } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
@@ -85,6 +86,7 @@ const SHIPPING_FEE = 60;
 const PICKUP_ADDRESS = "台北市中山區林森北路50號3樓之4";
 
 export default function CollectionPage() {
+  const router = useRouter();
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -400,20 +402,31 @@ export default function CollectionPage() {
 
   return (
     <TooltipProvider>
-      <div className="min-h-screen bg-slate-950/20 text-white">
-        <div className="container py-12 md:py-24 relative">
+      <div className="min-h-screen bg-transparent text-white">
+        <div className="container py-2 sm:py-4 relative">
           {/* Futuristic Background Elements */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] bg-primary/10 blur-[120px] pointer-events-none opacity-50" />
           <div className="absolute top-[20%] right-[10%] w-64 h-64 bg-accent/20 blur-[100px] pointer-events-none opacity-30 animate-pulse" />
           <div className="absolute top-[40%] left-[5%] w-48 h-48 bg-primary/20 blur-[80px] pointer-events-none opacity-30" />
           
           {/* Header Section */}
-          <div className="text-center mb-8 relative z-20">
+          <div className="relative z-20 mb-3">
+            <div className="flex items-center justify-between mb-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => router.back()}
+                className="inline-flex items-center gap-1.5 text-slate-300 hover:text-white bg-slate-900/80 hover:bg-slate-800 border border-white/10 rounded-xl px-3 py-1.5 text-xs font-bold transition-all shadow-md active:scale-95"
+              >
+                <ArrowLeft className="w-4 h-4 text-cyan-400" />
+                <span>返回</span>
+              </Button>
+            </div>
             <motion.h1 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="font-headline text-3xl font-black tracking-[0.2em] sm:text-6xl text-white drop-shadow-[0_0_15px_rgba(6,182,212,0.4)] mb-2 px-4 break-words text-center"
+              className="font-headline text-2xl font-black tracking-[0.2em] sm:text-5xl text-white drop-shadow-[0_0_15px_rgba(6,182,212,0.4)] mb-1 px-4 break-words text-center"
             >
               我的<span className="text-transparent bg-clip-text bg-gradient-to-br from-white via-white to-white/30">收藏</span>
             </motion.h1>
@@ -428,7 +441,7 @@ export default function CollectionPage() {
                     exit={{ y: 100, opacity: 0, x: '-50%' }}
                     className="fixed bottom-[75px] md:bottom-6 left-1/2 -translate-x-1/2 z-50 w-[95vw] max-w-5xl"
                 >
-                    <div className="bg-slate-900/80 backdrop-blur-3xl border border-white/10 rounded-[2rem] p-4 md:p-6 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] flex flex-wrap items-center gap-4 justify-between w-full">
+                    <div className="bg-slate-950/40 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-4 md:p-6 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] flex flex-wrap items-center gap-4 justify-between w-full">
                         <div className="flex items-center gap-4 flex-1 min-w-[200px]">
                             <div className="relative shrink-0">
                                 <div className="absolute inset-0 bg-primary/20 blur-md rounded-xl" />
@@ -750,14 +763,14 @@ export default function CollectionPage() {
           </div>
         </div>
 
-      <div className="space-y-24 relative z-10 pt-12 pb-24">
+      <div className="space-y-6 relative z-10 pt-2 pb-12">
         {standardCards.length > 0 && (
             <motion.section 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
             >
-                <div className="flex items-center gap-6 mb-12">
+                <div className="flex items-center gap-3 mb-4">
                     <div className="relative group">
                         <div className="absolute -inset-2 bg-primary/20 blur-lg rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
                         <div className="relative p-3.5 rounded-2xl bg-slate-900 border border-white/5 shadow-2xl">
@@ -770,7 +783,7 @@ export default function CollectionPage() {
                     </div>
                 </div>
                 
-                <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3 md:gap-4">
+                <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2.5 sm:gap-3 md:gap-4">
                     {standardCards.map((card, index) => (
                         <motion.div 
                             key={card.id} 
@@ -778,7 +791,7 @@ export default function CollectionPage() {
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ delay: 0.1 + index * 0.02 }}
                             className={cn(
-                                "group relative rounded-xl transition-all duration-300 cursor-pointer p-2 bg-slate-900/50 hover:bg-slate-800/50 border border-white/5",
+                                "group relative rounded-xl transition-all duration-300 cursor-pointer p-1 sm:p-2 bg-slate-900/50 hover:bg-slate-800/50 border border-white/5",
                                 selectedCardIds.has(card.id) ? "ring-2 ring-primary bg-primary/5" : ""
                             )}
                             onClick={() => setPreviewCard(card)}
@@ -822,7 +835,7 @@ export default function CollectionPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
             >
-                <div className="flex items-center gap-6 mb-12">
+                <div className="flex items-center gap-3 mb-4">
                     <div className="relative group">
                         <div className="absolute -inset-2 bg-orange-500/20 blur-lg rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
                         <div className="relative p-3.5 rounded-2xl bg-slate-900 border border-white/5 shadow-2xl">
@@ -836,7 +849,7 @@ export default function CollectionPage() {
                     <div className="h-[2px] flex-1 bg-gradient-to-r from-orange-500/20 to-transparent ml-4" />
                 </div>
 
-                <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4 md:gap-6">
+                <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2.5 sm:gap-3 md:gap-4">
                     {groupBreakCards.map((card, index) => (
                         <motion.div 
                             key={card.id} 

@@ -26,7 +26,7 @@ export function DrawResults({
                                 />
                             ) : (
                                 <div 
-                                    className="w-full aspect-[2.5/4] rounded-3xl overflow-hidden shadow-2xl transition-all hover:scale-105 group border border-white/5 h-full cursor-zoom-in"
+                                    className="w-full aspect-[2.5/3.5] rounded-3xl overflow-hidden shadow-2xl transition-all hover:scale-105 group border border-white/5 h-full cursor-zoom-in"
                                     onClick={() => setPreviewCard({ ...p, rarity: p.rarity })}
                                 >
                                     <CardItem 

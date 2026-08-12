@@ -47,9 +47,9 @@ export function AnimatedBackground({ backgroundUrl, backgroundOpacity }: { backg
           sizes="100vw"
         />
       ) : (
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-background to-background" />
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-background/20 to-background/40" />
       )}
-      <div className="absolute inset-0 bg-black/40 z-[-1]" />
+      <div className="absolute inset-0 bg-black/10 z-[-1]" />
     </div>
   );
 }

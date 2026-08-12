@@ -116,28 +116,28 @@ export default function Home() {
       </section>
 
       {/* 賽事預測與卡展行事曆 */}
-      <section className="py-12 md:py-16 container px-4 relative">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-7xl mx-auto">
-          {/* 賽事預測 */}
-          <div className="space-y-6">
-            <div className="flex items-center justify-center animate-fade-in-up">
-              <h2 className="font-headline text-3xl font-black tracking-widest text-white drop-shadow-[0_0_15px_rgba(6,182,212,0.4)]">
-                賽事預測
+      <section className="py-10 md:py-16 container px-4 relative">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 max-w-[1400px] mx-auto items-start">
+          {/* 賽事預測 (電腦版比例縮小至 4-5 欄) */}
+          <div className="lg:col-span-5 xl:col-span-4 space-y-4">
+            <div className="flex items-center justify-center lg:justify-start animate-fade-in-up">
+              <h2 className="font-headline text-2xl md:text-3xl font-black tracking-widest text-white drop-shadow-[0_0_15px_rgba(6,182,212,0.4)] flex items-center gap-2">
+                <span>賽事預測</span>
               </h2>
             </div>
             <PredictionSection />
           </div>
 
-          {/* 卡展行事曆 */}
-          <div className="space-y-6">
-            <div className="flex items-center justify-center animate-fade-in-up">
-                <h2 className="font-headline text-3xl font-black tracking-widest text-white drop-shadow-[0_0_15px_rgba(6,182,212,0.4)]">
-                    卡展行事曆
+          {/* 卡展行事曆 (電腦版比例擴大至 7-8 欄，讓行事曆更寬敞好看) */}
+          <div className="lg:col-span-7 xl:col-span-8 space-y-4">
+            <div className="flex items-center justify-center lg:justify-start animate-fade-in-up">
+                <h2 className="font-headline text-2xl md:text-3xl font-black tracking-widest text-white drop-shadow-[0_0_15px_rgba(6,182,212,0.4)] flex items-center gap-2">
+                    <span>卡展行事曆</span>
                 </h2>
             </div>
-            <Card className="bg-slate-950/60 backdrop-blur-md border-white/10 rounded-2xl p-6 h-full">
+            <Card className="bg-slate-950/60 backdrop-blur-md border-white/10 rounded-2xl p-4 sm:p-5 h-full">
                 <CardContent className="p-0">
-                    <ScrollArea className="h-[500px]">
+                    <ScrollArea className="h-[520px] sm:h-[560px]">
                         <CardExhibitionCalendar hideHeader />
                     </ScrollArea>
                 </CardContent>

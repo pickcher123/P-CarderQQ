@@ -32,7 +32,7 @@ export function RandomPlayerCard({
     <div
       onClick={onClick}
       className={cn(
-        "relative w-full aspect-[2.5/4] rounded-2xl overflow-hidden flex flex-col justify-between p-3 sm:p-4 select-none cursor-pointer transition-all duration-300 hover:scale-[1.03] group shadow-2xl border-2",
+        "relative w-full aspect-[2.5/3.5] rounded-2xl overflow-hidden flex flex-col justify-between p-2.5 sm:p-3 select-none cursor-pointer transition-all duration-300 hover:scale-[1.03] group shadow-2xl border-2",
         isSpecial
           ? "bg-gradient-to-br from-amber-950/90 via-slate-900 to-amber-900/70 border-amber-500/60 shadow-[0_0_25px_rgba(245,158,11,0.3)]"
           : "bg-gradient-to-br from-slate-900 via-slate-950 to-blue-950/80 border-cyan-500/50 shadow-[0_0_20px_rgba(6,182,212,0.25)]",

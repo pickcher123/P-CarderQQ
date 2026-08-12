@@ -79,7 +79,7 @@ export function CardItem({ name, imageUrl, backImageUrl, imageHint, rarity, isFl
 
   return (
     <div
-      className="group w-full aspect-[2.5/4] [perspective:1200px] transition-transform duration-300 hover:scale-[1.02]"
+      className="group w-full aspect-[2.5/3.5] [perspective:1200px] transition-transform duration-300 hover:scale-[1.02]"
       onClick={handleCardClick}
       ref={containerRef}
     >
@@ -99,14 +99,14 @@ export function CardItem({ name, imageUrl, backImageUrl, imageHint, rarity, isFl
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
         >
-          <div className="absolute inset-0 flex items-center justify-center p-1">
+          <div className="absolute inset-0 flex items-center justify-center">
             <SafeImage
                 src={imageUrl}
                 alt={name}
                 fill
                 sizes="(max-width: 640px) 40vw, (max-width: 1024px) 25vw, 15vw"
                 className={cn(
-                    "object-contain transition-all duration-300",
+                    "object-cover rounded-xl transition-all duration-300",
                     (zoomPos && !isFlipped) ? "opacity-0" : "opacity-100"
                 )}
                 data-ai-hint={imageHint}
@@ -167,13 +167,13 @@ export function CardItem({ name, imageUrl, backImageUrl, imageHint, rarity, isFl
           onMouseLeave={handleMouseLeave}
         >
            {backImageUrl ? (
-             <div className="w-full h-full relative flex items-center justify-center p-1">
+             <div className="w-full h-full relative flex items-center justify-center">
                 <SafeImage
                     src={backImageUrl!}
                     alt={`${name} back`}
                     fill
                     className={cn(
-                      "object-contain transition-all duration-300",
+                      "object-cover rounded-xl transition-all duration-300",
                       (zoomPos && isFlipped) ? "opacity-0" : "opacity-100"
                     )}
                     sizes="(max-width: 640px) 40vw, (max-width: 1024px) 25vw, 15vw"
