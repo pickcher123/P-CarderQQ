@@ -137,14 +137,34 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
         return { status: 'open', disabled: false, message: '' };
     }, [pool, currentTime, user, isDailyLimitReached, isLoadingStats, isAuthReady, userProfile]);
     
-    const rarityProbabilities = useMemo(() => {
-        if ((pool.remainingPacks ?? 0) <= 0) return { legendary: 0, rare: 0, common: 0 };
+    const rarityDetails = useMemo(() => {
         const counts = { legendary: 0, rare: 0, common: 0 };
         let total = 0;
-        pool.cards?.forEach(c => { const r = pool.cardRarities?.[c.cardId]; const cardData = allCardsMap.get(c.cardId); if (r && c.quantity > 0 && cardData && !cardData.isSold) { counts[r] += c.quantity; total += c.quantity; } });
-        pool.pointPrizes?.forEach(p => { if (p.rarity && p.quantity > 0) { counts[p.rarity] += p.quantity; total += p.quantity; } });
-        if (total === 0) return { legendary: 0, rare: 0, common: 0 };
-        return { legendary: (counts.legendary / total) * 100, rare: (counts.rare / total) * 100, common: (counts.common / total) * 100 };
+        
+        if ((pool.remainingPacks ?? 0) > 0) {
+            pool.cards?.forEach(c => {
+                const r = pool.cardRarities?.[c.cardId] || 'common';
+                const cardData = allCardsMap.get(c.cardId);
+                if (c.quantity > 0 && cardData && !cardData.isSold) {
+                    if (r in counts) counts[r as Rarity] += c.quantity;
+                    total += c.quantity;
+                }
+            });
+            pool.pointPrizes?.forEach(p => {
+                const r = p.rarity || 'common';
+                if (p.quantity > 0) {
+                    if (r in counts) counts[r as Rarity] += p.quantity;
+                    total += p.quantity;
+                }
+            });
+        }
+
+        return {
+            legendary: { count: counts.legendary, prob: total > 0 ? (counts.legendary / total) * 100 : 0 },
+            rare: { count: counts.rare, prob: total > 0 ? (counts.rare / total) * 100 : 0 },
+            common: { count: counts.common, prob: total > 0 ? (counts.common / total) * 100 : 0 },
+            total
+        };
     }, [pool, allCardsMap]);
 
     const lastPrizeCard = pool.lastPrizeCardId ? allCardsMap.get(pool.lastPrizeCardId) : null;
@@ -260,6 +280,13 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
         }
     };
 
+    const handleTrialDraw = () => {
+        setIsDrawing(true);
+        setTimeout(() => {
+            router.push(`/draw/open?poolId=${pool.id}&draws=1&trial=true`);
+        }, 300);
+    };
+
     return (
         <div className="relative font-sans text-slate-100">
             <VerifyAgeModal 
@@ -276,51 +303,78 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
 
                 {/* 標題與簡介 */}
                 <div className="text-center mb-4 sm:mb-6">
-                    <h1 className="text-lg sm:text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-blue-500 tracking-wider flex items-center justify-center gap-2 break-words flex-wrap">
-                        <span>{pool.name}</span>
-                        {isMultiplierActive && (
-                            <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/50 hover:bg-amber-500/30 shrink-0">
-                                <Zap className="w-3 h-3 mr-1" /> {pool.pointMultiplier}x P點
+                    {isMultiplierActive && (
+                        <div className="flex items-center justify-center gap-2 mb-1.5 flex-wrap">
+                            <Badge className="bg-amber-500/20 text-amber-300 border border-amber-500/50 hover:bg-amber-500/30 shrink-0 font-bold text-xs">
+                                <Zap className="w-3 h-3 mr-1 text-amber-400" /> {pool.pointMultiplier}x P點加倍
                             </Badge>
-                        )}
+                        </div>
+                    )}
+                    <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-blue-400 to-indigo-300 tracking-wider break-words">
+                        {pool.name}
                     </h1>
                     {pool.description && (
-                        <p className="text-slate-400 text-xs sm:text-sm mt-1.5 break-words max-w-xl mx-auto">{pool.description}</p>
+                        <p className="text-slate-400 text-xs sm:text-sm mt-1.5 break-words max-w-xl mx-auto leading-relaxed">{pool.description}</p>
                     )}
                 </div>
 
                 {/* 即時存量條 */}
-                <div className="mb-4 sm:mb-6 bg-slate-950/50 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-800">
-                    <div className="flex justify-between items-end mb-1.5">
+                <div className="mb-4 sm:mb-6 bg-slate-950/60 p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-800/80 shadow-inner">
+                    <div className="flex justify-between items-center mb-2 flex-wrap gap-1">
                         <span className="text-cyan-400 font-bold tracking-wide flex items-center text-xs sm:text-sm">
-                            <Zap className="w-4 h-4 mr-1" /> 即時存量
+                            <Zap className="w-4 h-4 mr-1.5 text-cyan-400 animate-pulse" /> 卡池剩餘包數
                         </span>
-                        <span className="text-lg sm:text-2xl font-black text-white">
-                            {pool.remainingPacks} <span className="text-slate-500 text-sm sm:text-lg">/ {pool.totalPacks}</span>
-                        </span>
+                        <div className="flex items-baseline gap-1.5">
+                            <span className="text-lg sm:text-2xl font-black text-white font-mono">
+                                {pool.remainingPacks}
+                            </span>
+                            <span className="text-slate-500 text-xs sm:text-sm font-bold">
+                                / {pool.totalPacks} 包
+                            </span>
+                            <span className="text-[11px] sm:text-xs font-bold text-cyan-400/90 bg-cyan-950/60 border border-cyan-800/50 px-2 py-0.5 rounded-md ml-1">
+                                剩 {((pool.remainingPacks || 0) / (pool.totalPacks || 1) * 100).toFixed(1)}%
+                            </span>
+                        </div>
                     </div>
-                    <div className="h-2.5 sm:h-3 w-full bg-slate-800 rounded-full overflow-hidden shadow-inner">
+                    <div className="h-2.5 sm:h-3 w-full bg-slate-800/90 rounded-full overflow-hidden shadow-inner p-0.5 border border-slate-700/50">
                         <div 
-                            className="h-full bg-gradient-to-r from-cyan-400 to-blue-600 rounded-full shadow-[0_0_10px_rgba(34,211,238,0.6)] transition-all duration-500"
-                            style={{ width: `${(pool.remainingPacks || 0) / (pool.totalPacks || 1) * 100}%` }}
+                            className="h-full bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-500 rounded-full shadow-[0_0_12px_rgba(34,211,238,0.7)] transition-all duration-500"
+                            style={{ width: `${Math.max(0, Math.min(100, (pool.remainingPacks || 0) / (pool.totalPacks || 1) * 100))}%` }}
                         />
                     </div>
                 </div>
 
-                {/* 機率分佈膠囊 */}
+                {/* 賞別剩餘張數與當前機率 */}
                 <div className="grid grid-cols-3 gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-6">
-                    {RARITIES.map(r => (
-                        <div key={r} className={cn("flex flex-col items-center justify-center p-2 sm:p-3 rounded-xl border relative overflow-hidden", 
-                            r === 'legendary' ? "bg-gradient-to-b from-amber-500/10 to-slate-900 border-amber-500/30" : 
-                            r === 'rare' ? "bg-gradient-to-b from-purple-500/10 to-slate-900 border-purple-500/30" :
-                            "bg-gradient-to-b from-slate-500/10 to-slate-900 border-slate-600/30"
-                        )}>
-                            <span className={cn("text-[11px] sm:text-xs font-bold tracking-widest mb-0.5", 
-                                r === 'legendary' ? "text-amber-400" : r === 'rare' ? "text-purple-400" : "text-slate-400"
-                            )}>{rarityStyles[r].label}</span>
-                            <span className="text-white font-mono text-xs sm:text-sm md:text-base font-bold">{rarityProbabilities[r].toFixed(1)}%</span>
-                        </div>
-                    ))}
+                    {RARITIES.map(r => {
+                        const detail = rarityDetails[r];
+                        const isLegendary = r === 'legendary';
+                        const isRare = r === 'rare';
+                        return (
+                            <div key={r} className={cn(
+                                "flex flex-col items-center justify-center p-2.5 sm:p-3.5 rounded-xl border relative overflow-hidden transition-all shadow-sm",
+                                isLegendary ? "bg-gradient-to-b from-amber-500/15 via-amber-950/20 to-slate-900/90 border-amber-500/40" : 
+                                isRare ? "bg-gradient-to-b from-purple-500/15 via-purple-950/20 to-slate-900/90 border-purple-500/40" :
+                                "bg-gradient-to-b from-slate-700/15 via-slate-800/20 to-slate-900/90 border-slate-700/50"
+                            )}>
+                                <span className={cn("text-[11px] sm:text-xs font-black tracking-widest mb-0.5", 
+                                    isLegendary ? "text-amber-400" : isRare ? "text-purple-300" : "text-slate-300"
+                                )}>
+                                    {rarityStyles[r].label}
+                                </span>
+
+                                <div className="text-white font-mono text-base sm:text-lg md:text-xl font-extrabold flex items-baseline gap-0.5">
+                                    <span>{detail.count}</span>
+                                    <span className="text-[10px] sm:text-xs font-normal text-slate-400">張</span>
+                                </div>
+
+                                <div className="mt-0.5 text-[10px] sm:text-xs font-medium text-slate-400 flex items-center gap-1">
+                                    <span>機率</span>
+                                    <span className="font-mono font-bold text-slate-200">{detail.prob.toFixed(1)}%</span>
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
 
                 {/* 👑 本池焦點頭獎 HERO SHOWCASE (僅顯示頭獎，不顯示次要大獎列表) */}
@@ -424,9 +478,11 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
 
                     {[1, 3, 10].map((drawCount) => {
                         const canDraw = !poolStatus.disabled;
+                        const baseCost = (pool.price || 0) * drawCount;
                         const price = drawCount === 1 ? (pool.price || 0) 
-                                    : drawCount === 3 ? (pool.price3Draws || (pool.price || 0) * 3) 
-                                    : (pool.price10Draws || (pool.price || 0) * 10);
+                                    : drawCount === 3 ? (pool.price3Draws || baseCost) 
+                                    : (pool.price10Draws || baseCost);
+                        const savings = baseCost - price;
                         const label = drawCount === 1 ? '抽 1 次' : `抽 ${drawCount} 次`;
                         const isPPoint = pool.currency === 'p-point';
                         
@@ -434,24 +490,54 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                             <Button 
                                 key={drawCount}
                                 disabled={!canDraw || isDrawing}
-                                className={cn("h-auto py-2 sm:py-3.5 px-1 flex flex-col items-center justify-center rounded-xl transition-all active:scale-95 overflow-hidden",
-                                    drawCount === 10 ? "bg-gradient-to-b from-blue-600 to-indigo-800 border-2 border-cyan-400/50" : "bg-slate-800 border border-slate-600"
+                                className={cn(
+                                    "relative h-auto py-2.5 sm:py-3.5 px-1 flex flex-col items-center justify-center rounded-xl transition-all active:scale-95 overflow-hidden border shadow-lg group",
+                                    drawCount === 10
+                                        ? "bg-gradient-to-b from-blue-600 via-indigo-700 to-indigo-900 border-2 border-cyan-400/80 shadow-cyan-500/25 hover:brightness-110 hover:border-cyan-300"
+                                        : drawCount === 3
+                                        ? "bg-gradient-to-b from-slate-800 via-indigo-950 to-slate-900 border-indigo-500/50 hover:border-indigo-400 hover:from-slate-750"
+                                        : "bg-gradient-to-b from-slate-800 to-slate-900 border-slate-700/80 hover:border-slate-500"
                                 )}
                                 onClick={() => handleDraw(drawCount)}
                             >
-                                <span className="text-white font-bold text-xs sm:text-sm whitespace-nowrap">{label}</span>
-                                <span className="flex items-center justify-center text-cyan-100 font-mono font-bold text-xs sm:text-base md:text-lg tracking-tight max-w-full truncate mt-0.5">
+                                {/* Savings Badge for multi-draws */}
+                                {savings > 0 && (
+                                    <span className="absolute top-0 right-0 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black text-[9px] px-1.5 py-0.5 rounded-bl-lg shadow-sm leading-none tracking-tight">
+                                        省{savings >= 10000 ? `${(savings / 1000).toFixed(0)}k` : savings.toLocaleString()}
+                                    </span>
+                                )}
+
+                                <span className={cn(
+                                    "font-bold text-xs sm:text-sm whitespace-nowrap tracking-wide",
+                                    drawCount === 10 ? "text-cyan-100 drop-shadow-sm font-black" : "text-slate-200"
+                                )}>
+                                    {label}
+                                </span>
+                                
+                                <span className="flex items-center justify-center text-white font-mono font-black text-xs sm:text-base md:text-lg tracking-tight max-w-full truncate mt-0.5">
                                     <span className="truncate">{price.toLocaleString()}</span>
                                     {isPPoint ? (
                                         <PPlusIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-0.5 sm:ml-1 shrink-0 text-amber-400" />
                                     ) : (
-                                        <Gem className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-0.5 sm:ml-1 shrink-0 text-cyan-400" />
+                                        <Gem className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4 ml-0.5 sm:ml-1 shrink-0", drawCount === 10 ? "text-cyan-300" : "text-cyan-400")} />
                                     )}
                                 </span>
                             </Button>
                         )
                     })}
                 </div>
+
+                <Button 
+                    variant="outline" 
+                    className="w-full mt-2.5 h-11 text-xs sm:text-sm font-black rounded-xl border-2 border-purple-500/60 bg-gradient-to-r from-purple-950/90 via-fuchsia-950/80 to-indigo-950/90 text-purple-100 hover:text-white hover:border-fuchsia-400 hover:from-purple-900 hover:to-indigo-900 shadow-[0_0_20px_rgba(168,85,247,0.25)] hover:shadow-[0_0_25px_rgba(168,85,247,0.45)] flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-[0.99] group"
+                    onClick={handleTrialDraw}
+                    disabled={isDrawing}
+                >
+                    <div className="p-1 rounded-full bg-purple-500/20 text-purple-300 group-hover:scale-110 transition-transform">
+                        <Sparkles className="w-4 h-4 text-fuchsia-300 animate-pulse" />
+                    </div>
+                    <span className="tracking-wide">🎲 免費試手氣 <span className="text-[11px] font-normal text-purple-300 opacity-90">（純模擬體驗，不扣點）</span></span>
+                </Button>
             </div>
             
             {isInventoryOpen && (

@@ -14,14 +14,16 @@ export function PackPreview({
     isLevelMet,
     isLimitReachedForInitial,
     isLoadingStats,
-    performDraw
+    performDraw,
+    performTrialDraw
 }: {
     cardPool: CardPool,
     initialDrawCount: number,
     isLevelMet: boolean,
     isLimitReachedForInitial: boolean,
     isLoadingStats: boolean,
-    performDraw: (_count: number) => void
+    performDraw: (_count: number) => void,
+    performTrialDraw?: (_count: number) => void
 }) {
     const cost = initialDrawCount === 3 && cardPool.price3Draws ? cardPool.price3Draws : (cardPool.price || 0) * initialDrawCount;
     const canStart = isLevelMet && !isLimitReachedForInitial && !isLoadingStats;
@@ -184,28 +186,42 @@ export function PackPreview({
                         </ul>
                     </div>
 
-                    {/* CTA Action Button */}
-                    <Button
-                        size="lg"
-                        className={cn(
-                            "w-full h-14 text-lg sm:text-xl font-black rounded-2xl shadow-2xl transition-all border-b-4 active:translate-y-1 active:border-b-0",
-                            canStart 
-                                ? "bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-slate-950 border-amber-800 hover:brightness-110 shadow-amber-500/20" 
-                                : "bg-slate-800 text-slate-500 border-slate-950 cursor-not-allowed opacity-60"
+                    {/* CTA Action Buttons */}
+                    <div className="space-y-2">
+                        <Button
+                            size="lg"
+                            className={cn(
+                                "w-full h-14 text-lg sm:text-xl font-black rounded-2xl shadow-2xl transition-all border-b-4 active:translate-y-1 active:border-b-0",
+                                canStart 
+                                    ? "bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-slate-950 border-amber-800 hover:brightness-110 shadow-amber-500/20" 
+                                    : "bg-slate-800 text-slate-500 border-slate-950 cursor-not-allowed opacity-60"
+                            )}
+                            onClick={() => canStart && performDraw(initialDrawCount)}
+                            disabled={!canStart}
+                        >
+                            {isLoadingStats ? (
+                                <><Loader2 className="animate-spin mr-2 h-6 w-6" /> 驗證紀錄中...</>
+                            ) : isLimitReachedForInitial ? (
+                                <><Ban className="mr-2 h-6 w-6 text-rose-400" /> 今日次數已用完</>
+                            ) : !isLevelMet ? (
+                                <><Ban className="mr-2 h-6 w-6 text-rose-400" /> 權限不足 ({cardPool.minLevel})</>
+                            ) : (
+                                <><Zap className="mr-2 h-6 w-6 fill-slate-950" /> 啟動正式開獎 ({cost.toLocaleString()} 點)</>
+                            )}
+                        </Button>
+
+                        {performTrialDraw && (
+                            <Button
+                                size="lg"
+                                variant="outline"
+                                className="w-full h-11 text-xs sm:text-sm font-black rounded-2xl border-purple-500/50 bg-purple-950/40 text-purple-200 hover:bg-purple-900/60 hover:border-purple-400 shadow-lg shadow-purple-950/40 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                                onClick={() => performTrialDraw(initialDrawCount)}
+                            >
+                                <Sparkles className="w-4 h-4 text-purple-300 animate-pulse" />
+                                <span>🎲 免費試手氣（純模擬體驗，完全不扣點）</span>
+                            </Button>
                         )}
-                        onClick={() => canStart && performDraw(initialDrawCount)}
-                        disabled={!canStart}
-                    >
-                        {isLoadingStats ? (
-                            <><Loader2 className="animate-spin mr-2 h-6 w-6" /> 驗證紀錄中...</>
-                        ) : isLimitReachedForInitial ? (
-                            <><Ban className="mr-2 h-6 w-6 text-rose-400" /> 今日次數已用完</>
-                        ) : !isLevelMet ? (
-                            <><Ban className="mr-2 h-6 w-6 text-rose-400" /> 權限不足 ({cardPool.minLevel})</>
-                        ) : (
-                            <><Zap className="mr-2 h-6 w-6 fill-slate-950" /> 啟動開獎</>
-                        )}
-                    </Button>
+                    </div>
                 </div>
 
                 {/* Return link */}

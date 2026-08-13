@@ -119,6 +119,7 @@ export default function OpenPackPage() {
     const { toast } = useToast();
     
     const [step, setStep] = useState<Step>('init-loading');
+    const [isTrialMode, setIsTrialMode] = useState(false);
     const [drawnPrizes, setDrawnPrizes] = useState<DrawnPrize[]>([]);
     const [sessionPrizes, setSessionPrizes] = useState<DrawnPrize[]>([]); 
     const [revealedIndex, setRevealedIndex] = useState(-1);
@@ -192,14 +193,13 @@ export default function OpenPackPage() {
     }, [isMounted, step]);
 
     useEffect(() => {
-        if (isUserLoading || !firestore || !poolId) return;
-        if (!user) { setError("請先登入帳戶。"); setStep('error'); return; }
+        if (!firestore || !poolId) return;
         getDoc(doc(firestore, 'cardPools', poolId)).then(snap => {
             if (!snap.exists()) throw new Error("找不到指定的卡池。");
             const poolData = { id: snap.id, ...snap.data() } as CardPool;
             
-            // 檢查是否處於 120 秒開獎保護鎖定狀態
-            if (poolData.hasProtection !== false && poolData.lockedAt && poolData.lockedBy && poolData.lockedBy !== user.uid) {
+            // 檢查是否處於 120 秒開獎保護鎖定狀態 (僅對已登入且非鎖定者進行提示)
+            if (user && poolData.hasProtection !== false && poolData.lockedAt && poolData.lockedBy && poolData.lockedBy !== user.uid) {
                 const lockSecs = typeof (poolData.lockedAt as any).seconds === 'number'
                     ? (poolData.lockedAt as any).seconds
                     : Math.floor(new Date(poolData.lockedAt as any).getTime() / 1000);
@@ -216,11 +216,52 @@ export default function OpenPackPage() {
             setError(e.message); 
             setStep('error'); 
         });
-    }, [isUserLoading, user, firestore, poolId]);
+    }, [firestore, poolId, user]);
+
+    const cardsRef = useMemoFirebase(() => (firestore ? collection(firestore, 'cards') : null), [firestore]);
+    const { data: allCards } = useCollection<Card>(cardsRef);
+    const allCardsMap = useMemo(() => {
+        const map = new Map<string, Card>();
+        allCards?.forEach(c => map.set(c.id, c));
+        return map;
+    }, [allCards]);
+
+    const performTrialDraw = useCallback((count: number) => {
+        if (!cardPool) return;
+        setIsTrialMode(true);
+        const { drawn } = drawFromPool(cardPool, count, allCardsMap);
+        if (drawn.length === 0) {
+            toast({ variant: 'destructive', title: '告示', description: '卡池目前已無獎項可供試手氣。' });
+            return;
+        }
+        setDrawnPrizes(drawn);
+        setSessionPrizes(prev => [...prev, ...drawn]);
+        setRevealedIndex(0);
+        setRevealPercent(0);
+        setIsSqueezing(false);
+        setShowCelebration('none');
+        setLandingVFX('none');
+        setStep('ready-to-reveal');
+        toast({
+            title: '🧪 免費試手氣模式啟動',
+            description: '此為純模擬開獎體驗，完全未扣除點數，亦不會派發卡牌與扣減庫存！',
+        });
+    }, [cardPool, allCardsMap, toast]);
+
+    // Auto-trigger trial if URL param has trial=true
+    useEffect(() => {
+        if (cardPool && searchParams.get('trial') === 'true' && step === 'waiting-to-start') {
+            performTrialDraw(initialDrawCount);
+        }
+    }, [cardPool, searchParams, step, initialDrawCount, performTrialDraw]);
 
     const performDraw = useCallback(async (count: number) => {
-        if (!user || !firestore || !cardPool) {
-            toast({ variant: 'destructive', title: '錯誤', description: '系統尚未就緒或您尚未登入。' });
+        if (!user) {
+            toast({ variant: 'destructive', title: '請先登入', description: '正式開獎需要登入帳戶以扣除點數與發放卡牌。' });
+            return;
+        }
+        if (!firestore || !cardPool) {
+            toast({ variant: 'destructive', title: '錯誤', description: '系統尚未就緒，請重試。' });
             return;
         }
         if (!poolId) return;
