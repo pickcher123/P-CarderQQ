@@ -1,7 +1,7 @@
 'use client';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Users, Gem, Trophy, Package, ChevronDown, ChevronUp, Sparkles, ChevronRight, Settings, Disc3, Info } from 'lucide-react';
+import { Users, Gem, Trophy, Package, ChevronDown, ChevronUp, Sparkles, ChevronRight, Settings, Disc3, Info, Flame, ShieldCheck, ArrowRight, Zap, Target } from 'lucide-react';
 import { LuckyBagIcon, PPlusIcon } from '@/components/icons';
 import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, getDocs, orderBy, doc, getCountFromServer } from 'firebase/firestore';
@@ -68,117 +68,168 @@ export interface LuckBagWithCount extends LuckBag {
 const LuckBagCard = ({ bag, priority = false, index }: { bag: LuckBagWithCount, priority?: boolean, index: number }) => {
     const isDone = bag.status === '已開獎';
     const currency = bag.currency || 'p-point';
-    const progress = (bag.participantCount / (bag.totalParticipants || 1)) * 100;
+    const progress = Math.min(100, Math.round((bag.participantCount / (bag.totalParticipants || 1)) * 100));
 
     return (
-         <Link 
+        <Link 
             href={`/lucky-bags/${bag.id}`}
             className={cn(
-                "group relative flex flex-col md:flex-row p-3 md:p-5 bg-slate-200 border-b-[8px] border-r-[8px] border-slate-400 rounded-[2rem] shadow-[0_20px_40px_rgba(0,0,0,0.4)] transition-all duration-500 hover:-translate-y-2 cursor-pointer overflow-hidden",
+                "group relative flex flex-col lg:flex-row p-4 sm:p-6 bg-slate-950/80 border rounded-3xl backdrop-blur-xl shadow-2xl transition-all duration-500 hover:-translate-y-1.5 cursor-pointer overflow-hidden select-none",
+                isDone 
+                    ? "border-slate-800/80 hover:border-slate-700 opacity-85" 
+                    : progress >= 80 
+                        ? "border-amber-500/50 hover:border-amber-400 shadow-[0_0_35px_rgba(245,158,11,0.15)]" 
+                        : "border-slate-800/80 hover:border-amber-400/60 hover:shadow-[0_12px_40px_rgba(0,0,0,0.6)]",
                 "animate-fade-in-up"
             )}>
-                
-                {/* 參與狀態徽章 */}
-                <div className="absolute top-4 left-4 z-30">
-                    <Badge className={cn("text-[9px] font-black shadow-lg", false ? "bg-primary text-white" : "bg-white/20 text-white/50")}>
-                        {false ? "參與中" : "未參與"}
-                    </Badge>
-                </div>
-                
-                {/* 左側：寬螢幕區塊 (顯示獎項) */}
-                <div className="relative flex-[1.4] flex flex-col bg-slate-600 rounded-2xl p-3 md:p-4 shadow-inner border-b-4 border-white/10">
-                    <div className="relative flex-1 flex bg-[#f0f4f7] rounded-lg overflow-hidden border-4 border-[#ccd6d9] items-center p-4">
-                        <div className="absolute inset-0 pointer-events-none z-20 opacity-[0.05] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,2px_100%]" />
-                        
-                        <div className={cn(
-                            "relative w-24 md:w-32 aspect-[2.5/4] shrink-0 transition-all duration-700 rounded-sm overflow-hidden border border-black/5 shadow-md",
-                            isDone && "opacity-40 grayscale-[50%]"
-                        )}>
-                            {bag.prizeCards.first && (
-                                <SafeImage 
-                                    src={bag.prizeCards.first.imageUrl} 
-                                    alt={bag.prizeCards.first.name}
-                                    fill
-                                    className="object-contain"
-                                    priority={priority}
-                                    sizes="128px"
-                                />
-                            )}
-                        </div>
+            
+            {/* 背景科技流光 */}
+            <div className="absolute top-0 right-1/4 w-72 h-72 bg-amber-500/5 rounded-full blur-[100px] pointer-events-none group-hover:bg-amber-500/10 transition-colors" />
+            <div className="absolute -bottom-10 -left-10 w-60 h-60 bg-purple-500/5 rounded-full blur-[90px] pointer-events-none" />
 
-                        <div className="ml-4 md:ml-8 flex-1 flex flex-col justify-center overflow-hidden">
-                            <h3 className="text-base md:text-2xl font-black text-slate-900 uppercase tracking-tighter line-clamp-2 leading-tight mb-2">
-                                {bag.name}
-                            </h3>
-                            <div className="flex flex-wrap items-center gap-2">
-                                <Badge variant={isDone ? "secondary" : bag.revealLottery ? "destructive" : "default"} className="font-black text-[9px] md:text-[10px] uppercase h-5 px-2 border-none">
-                                    {isDone ? '已開獎' : bag.revealLottery ? '開獎中' : '募集進行中'}
-                                </Badge>
-                                {isDone && bag.winners?.first && (
-                                    <span className="text-[10px] font-black text-primary italic uppercase tracking-widest">
-                                        Jackpot: #{bag.winners.first}
-                                    </span>
-                                )}
-                            </div>
+            {/* 左側：大獎展示櫥窗 */}
+            <div className="relative flex-[1.2] flex flex-col sm:flex-row items-center gap-5 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-slate-900/90 via-slate-950/90 to-slate-900/90 border border-slate-800/80 shadow-inner overflow-hidden">
+                {/* 狀態角標 */}
+                <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5">
+                    <Badge className={cn(
+                        "text-[10px] font-black px-2.5 py-0.5 rounded-md border shadow-md font-mono",
+                        isDone 
+                            ? "bg-slate-800/90 text-slate-300 border-slate-700" 
+                            : bag.revealLottery 
+                                ? "bg-rose-500 text-white border-rose-400 animate-pulse" 
+                                : "bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 border-amber-400 font-bold"
+                    )}>
+                        {isDone ? '已開獎結案' : bag.revealLottery ? '🔥 開獎中' : '✨ 募集進行中'}
+                    </Badge>
+                    {progress >= 80 && !isDone && (
+                        <Badge className="bg-rose-500/20 text-rose-300 border-rose-500/40 text-[10px] font-bold animate-pulse">
+                            即將滿額
+                        </Badge>
+                    )}
+                </div>
+
+                {/* 卡片封面 */}
+                <div className={cn(
+                    "relative w-28 sm:w-36 aspect-[2.5/4] shrink-0 rounded-xl overflow-hidden border border-slate-700/80 bg-slate-950 shadow-2xl mt-6 sm:mt-0 transition-transform duration-500 group-hover:scale-105",
+                    isDone && "opacity-60 grayscale-[40%]"
+                )}>
+                    {bag.prizeCards.first ? (
+                        <SafeImage 
+                            src={bag.prizeCards.first.imageUrl} 
+                            alt={bag.prizeCards.first.name}
+                            fill
+                            className="object-contain"
+                            priority={priority}
+                            sizes="160px"
+                        />
+                    ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center p-3 text-center bg-slate-900">
+                            <LuckyBagIcon className="w-10 h-10 text-amber-400/40 mb-2" />
+                            <span className="text-[10px] text-slate-500 font-mono">頂級頭獎</span>
                         </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                    <div className="absolute bottom-1.5 inset-x-1.5 text-center">
+                        <span className="text-[9px] font-mono font-black text-amber-300 bg-black/80 px-2 py-0.5 rounded border border-amber-500/30 backdrop-blur-sm">
+                            TOP JACKPOT
+                        </span>
                     </div>
                 </div>
 
-                {/* 右側：操作與狀態區塊 (控制面板) */}
-                <div className="flex-1 flex flex-col justify-between p-3 md:p-6 text-slate-900">
-                    <div className="space-y-5">
-                        <div className="flex justify-between items-end">
-                            <div className="space-y-1">
-                                <p className="text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">每格參與價格</p>
-                                <div className="flex items-center gap-2">
-                                    <p className="text-2xl md:text-4xl font-black text-accent font-code leading-none">
-                                        {(bag.price || 0).toLocaleString()}
-                                    </p>
-                                    {currency === 'diamond' ? <Gem className="w-5 h-5 md:w-6 md:h-6 text-primary" /> : <PPlusIcon className="w-5 h-5 md:w-6 md:h-6" />}
-                                </div>
-                            </div>
-                            <div className="text-right space-y-1">
-                                <p className="text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">當前募集</p>
-                                <p className="text-base md:text-xl font-black text-slate-900 font-code">{bag.participantCount} <span className="text-slate-400 font-normal">/ {bag.totalParticipants}</span></p>
+                {/* 福袋標題與大獎資訊 */}
+                <div className="flex-1 flex flex-col justify-center text-center sm:text-left overflow-hidden space-y-2">
+                    <div>
+                        <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest block mb-1">
+                            LIMITED EDITION LUCKY BAG
+                        </span>
+                        <h3 className="text-lg sm:text-2xl font-black font-headline text-white group-hover:text-amber-300 transition-colors line-clamp-2 leading-tight">
+                            {bag.name}
+                        </h3>
+                    </div>
+
+                    {bag.prizeCards.first && (
+                        <div className="inline-flex items-center gap-1.5 text-xs text-slate-300 font-medium bg-slate-950/60 p-2 rounded-xl border border-slate-800/80">
+                            <Trophy className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                            <span className="truncate">頭獎：{bag.prizeCards.first.name}</span>
+                        </div>
+                    )}
+
+                    {isDone && bag.winners?.first && (
+                        <div className="text-[11px] font-mono font-black text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/30 inline-flex items-center gap-1.5 w-fit">
+                            <Sparkles className="w-3 h-3 text-amber-400" />
+                            <span>頭獎幸運兒：#{bag.winners.first} 號位</span>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* 右側：參與進度與控制面板 */}
+            <div className="flex-1 flex flex-col justify-between p-4 sm:p-6 text-white mt-4 lg:mt-0 space-y-5">
+                <div className="space-y-4">
+                    {/* 價格與當前募集 */}
+                    <div className="flex justify-between items-end border-b border-slate-800/80 pb-4">
+                        <div className="space-y-1">
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] font-mono">
+                                ENTRY PRICE / 格
+                            </p>
+                            <div className="flex items-center gap-2">
+                                <p className="text-2xl sm:text-4xl font-black text-amber-400 font-code tracking-tight">
+                                    {(bag.price || 0).toLocaleString()}
+                                </p>
+                                {currency === 'diamond' ? (
+                                    <Gem className="w-5 h-5 sm:w-6 sm:h-6 text-cyan-400 drop-shadow-[0_0_8px_rgba(6,182,212,0.6)]" />
+                                ) : (
+                                    <PPlusIcon className="w-5 h-5 sm:w-6 sm:h-6 text-amber-400 drop-shadow-[0_0_8px_rgba(245,158,11,0.6)]" />
+                                )}
                             </div>
                         </div>
-
-                        <div className="space-y-2">
-                            <div className="w-full bg-slate-300 h-3 rounded-full overflow-hidden border-2 border-slate-400 shadow-inner">
-                                <div 
-                                    className={cn(
-                                        "h-full bg-slate-800 transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(0,0,0,0.2)]",
-                                        progress >= 80 && "bg-rose-500 animate-pulse"
-                                    )} 
-                                    style={{ width: `${progress}%` }} 
-                                />
-                            </div>
-                            <p className="text-[8px] font-black text-slate-400 uppercase text-right tracking-widest">
-                                {progress >= 80 ? "🔥 即將額滿" : "Crowdfunding Progress"}
+                        <div className="text-right space-y-1">
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] font-mono">
+                                PARTICIPATION
+                            </p>
+                            <p className="text-base sm:text-xl font-black text-white font-code">
+                                <span className="text-amber-400">{bag.participantCount}</span> 
+                                <span className="text-slate-500 font-normal"> / {bag.totalParticipants} 格</span>
                             </p>
                         </div>
                     </div>
 
-                    <div className="flex justify-between items-end mt-6">
-                        {/* 模擬搖桿十字鍵 (橫向裝飾) */}
-                        <div className="relative w-12 h-12 opacity-30 group-hover:opacity-60 transition-opacity">
-                            <div className="absolute top-1/2 left-0 right-0 h-4 -translate-y-1/2 bg-slate-400 rounded-sm shadow-sm" />
-                            <div className="absolute left-1/2 top-0 bottom-0 w-4 -translate-x-1/2 bg-slate-400 rounded-sm shadow-sm" />
+                    {/* 進度條 */}
+                    <div className="space-y-2">
+                        <div className="flex justify-between text-xs font-mono font-bold">
+                            <span className="text-slate-400">募集進度</span>
+                            <span className={progress >= 80 ? "text-rose-400" : "text-amber-400"}>{progress}%</span>
                         </div>
-                        
-                        {/* 模擬按鈕 (功能提示) */}
-                        <div className="flex gap-3 rotate-[-10deg] pr-2">
-                            <div className="w-8 h-8 rounded-full bg-slate-300 border-b-4 border-slate-400" />
-                            <div className="relative">
-                                <div className="absolute inset-0 bg-accent rounded-full blur-md opacity-0 group-hover:opacity-40 transition-opacity animate-pulse" />
-                                <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-accent border-b-4 border-amber-700 shadow-lg flex items-center justify-center relative z-10">
-                                    <ChevronRight className="w-5 h-5 md:w-6 md:h-6 text-amber-900 group-hover:translate-x-0.5 transition-transform" />
-                                </div>
-                            </div>
+                        <div className="w-full bg-slate-900 h-3 rounded-full overflow-hidden border border-slate-800 p-0.5 shadow-inner">
+                            <div 
+                                className={cn(
+                                    "h-full rounded-full transition-all duration-1000 ease-out",
+                                    isDone 
+                                        ? "bg-slate-700" 
+                                        : progress >= 80 
+                                            ? "bg-gradient-to-r from-orange-500 to-rose-500 animate-pulse shadow-[0_0_12px_rgba(244,63,94,0.5)]" 
+                                            : "bg-gradient-to-r from-amber-500 to-yellow-400 shadow-[0_0_12px_rgba(245,158,11,0.4)]"
+                                )} 
+                                style={{ width: `${progress}%` }} 
+                            />
                         </div>
                     </div>
                 </div>
-            </Link>
+
+                {/* 底部行動按鈕提示 */}
+                <div className="pt-2 flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs text-slate-400 font-mono">
+                        <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                        <span>公平亂數配獎 • 即時存證</span>
+                    </div>
+
+                    <div className="flex items-center gap-2 font-bold text-xs sm:text-sm text-slate-950 bg-gradient-to-r from-amber-400 to-yellow-500 px-4 sm:px-5 py-2.5 rounded-xl shadow-lg shadow-amber-500/20 group-hover:from-amber-300 group-hover:to-yellow-400 group-hover:shadow-amber-500/40 transition-all font-headline">
+                        <span>{isDone ? '查看開獎結果' : '立即選位參與'}</span>
+                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                </div>
+            </div>
+        </Link>
     );
 }
 
@@ -265,92 +316,150 @@ export default function LuckyBagsPage() {
     const finalIsLoading = isLoadingBags || isLoadingCards || isLoading;
 
     return (
-      <div className="container py-12 md:py-20 relative overflow-hidden px-4">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-accent/5 blur-[120px] pointer-events-none" />
+      <div className="min-h-screen bg-slate-950 pb-20 relative overflow-hidden">
+          {/* 背景光暈效果 */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] bg-amber-500/5 blur-[140px] pointer-events-none" />
+          <div className="absolute top-1/3 right-10 w-96 h-96 bg-purple-500/5 blur-[120px] pointer-events-none" />
 
-          {/* 右上角規則按鈕 */}
-          <div className="absolute top-4 right-4 md:top-10 md:right-10 z-30">
-              <Dialog>
-                  <DialogTrigger asChild>
-                      <Button variant="outline" size="sm" className="h-9 w-9 md:w-auto px-0 md:px-4 rounded-full border-white/10 bg-white/5 backdrop-blur-md hover:bg-accent/10 hover:border-accent/30 text-white font-bold transition-all gap-2">
-                          <Info className="h-4 w-4 text-accent" />
-                          <span className="text-xs uppercase tracking-widest hidden md:inline">遊戲規則</span>
-                      </Button>
-                  </DialogTrigger>
-                  <DialogContent className="rounded-[2.5rem] bg-background/95 backdrop-blur-2xl border-accent/20 shadow-2xl">
-                      <DialogHeader>
-                          <DialogTitle className="text-2xl font-black font-headline text-accent italic tracking-tighter uppercase">LUCKY BAG RULES</DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-5 text-sm text-white/80 leading-relaxed py-2">
-                          <div className="p-5 rounded-3xl bg-white/5 border border-white/10 space-y-4">
-                              <p className="flex items-start gap-4"><span className="text-accent font-black font-code text-lg">01.</span> 福袋採「募集制」，達到指定參與人數後即開獎。</p>
-                              <p className="flex items-start gap-4"><span className="text-accent font-black font-code text-lg">02.</span> 每個位置的中獎機率均等，保證包含所列之大獎。</p>
-                              <p className="flex items-start gap-4"><span className="text-accent font-black font-code text-lg">03.</span> 系統將隨機配對中獎號碼，獲獎卡片將直接發放至您的收藏庫。</p>
-                              <p className="flex items-start gap-4"><span className="text-accent font-black font-code text-lg">04.</span> 使用紅利 P+ 點或鑽石參與，中獎價值通常高於參與成本。</p>
-                          </div>
-                      </div>
-                  </DialogContent>
-              </Dialog>
-          </div>
+          {/* 頂部 Header Section */}
+          <section className="relative pt-8 pb-10 sm:py-14 border-b border-slate-800/80 bg-gradient-to-b from-slate-900/60 via-slate-950/80 to-slate-950">
+            <div className="container px-4 max-w-7xl mx-auto relative z-10">
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                    <div className="space-y-3">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-mono font-bold tracking-widest uppercase backdrop-blur-md">
+                            <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                            <span>LIMITED EDITION LUCKY BAGS</span>
+                        </div>
 
+                        <h1 className="font-headline text-3xl sm:text-5xl font-black tracking-tight text-white flex items-center gap-3">
+                            <span className="p-2.5 rounded-2xl bg-gradient-to-br from-amber-400/20 to-amber-600/20 border border-amber-500/30 text-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.2)]">
+                                <LuckyBagIcon className="h-6 w-6 sm:h-8 sm:w-8" />
+                            </span>
+                            <span className="bg-clip-text text-transparent bg-gradient-to-b from-white via-slate-100 to-amber-200/80">
+                                幸運福袋專區
+                            </span>
+                        </h1>
 
+                        <p className="text-sm sm:text-base text-slate-400 max-w-xl font-medium">
+                            採募集制公平抽獎，每格中獎機率完全均等，滿額即時自動開獎入庫。
+                        </p>
+                    </div>
 
-          <div className="space-y-16 max-w-6xl mx-auto">
-            <section>
-                <div className="mb-8 flex items-center justify-between animate-fade-in-up">
-                    <h2 className="flex items-center text-lg md:text-xl font-bold font-headline text-white tracking-widest uppercase">
-                        <LuckyBagIcon className="w-5 h-5 md:w-6 md:h-6 mr-3 text-accent animate-bounce" />
-                        正在募集
-                    </h2>
-                    <div className="h-px flex-1 mx-6 bg-gradient-to-r from-accent/30 to-transparent hidden sm:block" />
+                    {/* 右側規則按鈕 */}
+                    <div>
+                        <Dialog>
+                            <DialogTrigger asChild>
+                                <Button variant="outline" className="h-11 px-5 rounded-xl border-slate-800 bg-slate-900/90 hover:bg-slate-800 hover:border-amber-400/50 text-slate-200 font-bold transition-all gap-2 text-xs sm:text-sm">
+                                    <Info className="h-4 w-4 text-amber-400" />
+                                    <span>福袋玩法規則</span>
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="rounded-2xl bg-slate-950 border-slate-800 shadow-2xl text-white">
+                                <DialogHeader>
+                                    <DialogTitle className="text-xl font-black font-headline text-amber-400 flex items-center gap-2">
+                                        <LuckyBagIcon className="w-5 h-5 text-amber-400" />
+                                        <span>幸運福袋玩法說明</span>
+                                    </DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-4 text-sm text-slate-300 leading-relaxed py-2">
+                                    <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-3 font-medium">
+                                        <p className="flex items-start gap-3">
+                                            <span className="text-amber-400 font-black font-mono">01.</span>
+                                            <span>福袋採「募集制」，達到指定參與人數與格數後系統自動開獎。</span>
+                                        </p>
+                                        <p className="flex items-start gap-3">
+                                            <span className="text-amber-400 font-black font-mono">02.</span>
+                                            <span>每個號碼位置的中獎機率完全均等，保證包含展示之大獎。</span>
+                                        </p>
+                                        <p className="flex items-start gap-3">
+                                            <span className="text-amber-400 font-black font-mono">03.</span>
+                                            <span>開獎後系統隨機配對中獎號碼，獲獎卡片與點數將直接入庫至「收藏庫」。</span>
+                                        </p>
+                                        <p className="flex items-start gap-3">
+                                            <span className="text-amber-400 font-black font-mono">04.</span>
+                                            <span>支援使用紅利 P+ 點或鑽石參與，具備極高性價比。</span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </DialogContent>
+                        </Dialog>
+                    </div>
                 </div>
-                <div className="grid grid-cols-1 gap-8 md:gap-10">
+            </div>
+          </section>
+
+          {/* 內容區塊 */}
+          <div className="container px-4 max-w-7xl mx-auto pt-8 space-y-12">
+            {/* 正在募集中的福袋 */}
+            <section>
+                <div className="mb-6 flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                        <div className="p-2 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+                            <Flame className="w-5 h-5 text-amber-400 animate-pulse" />
+                        </div>
+                        <h2 className="text-lg sm:text-xl font-black font-headline text-white tracking-wide">
+                            正在募集熱門福袋
+                        </h2>
+                        <span className="text-xs font-mono font-bold text-amber-300 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/30">
+                            {inProgressBags.length} 個進行中
+                        </span>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-6">
                     {finalIsLoading ? (
                         Array.from({length: 2}).map((_, i) => (
-                            <div key={i} className="aspect-[21/9] rounded-3xl overflow-hidden">
+                            <div key={i} className="aspect-[21/9] rounded-2xl overflow-hidden bg-slate-900/80">
                                 <Skeleton className="w-full h-full" />
                             </div>
                         ))
-                    ) : (
+                    ) : inProgressBags.length > 0 ? (
                         inProgressBags.map((bag, index) => (
                             <LuckBagCard key={bag.id} bag={bag} priority={index < 3} index={index} />
                         ))
+                    ) : (
+                        <div className="py-16 text-center rounded-2xl bg-slate-950/80 border border-dashed border-slate-800 p-8">
+                            <LuckyBagIcon className="h-12 w-12 mx-auto mb-3 text-slate-600" />
+                            <h3 className="text-base font-bold text-slate-300 mb-1">目前尚無進行中的福袋</h3>
+                            <p className="text-xs text-slate-500">新福袋即將上線，敬請期待官方消息公告</p>
+                        </div>
                     )}
                 </div>
             </section>
 
+            {/* 精彩回顧（已開獎） */}
             {completedBags.length > 0 && (
-                <section className="opacity-80">
-                    <div className="mb-8 flex items-center justify-between animate-fade-in-up">
-                        <h2 className="flex items-center text-lg md:text-xl font-bold font-headline text-muted-foreground tracking-widest uppercase">
-                            <Trophy className="w-5 h-5 md:w-6 md:h-6 mr-3" />
-                            精彩回顧
-                        </h2>
-                        <div className="h-px flex-1 mx-6 bg-gradient-to-r from-white/10 to-transparent hidden sm:block" />
+                <section>
+                    <div className="mb-6 flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                            <div className="p-2 rounded-xl bg-slate-800/80 border border-slate-700 text-slate-300">
+                                <Trophy className="w-5 h-5 text-amber-400" />
+                            </div>
+                            <h2 className="text-lg sm:text-xl font-black font-headline text-slate-300 tracking-wide">
+                                歷史精彩回顧
+                            </h2>
+                        </div>
                     </div>
-                    <div className="grid grid-cols-1 gap-8 md:gap-10">
-                        {completedBags.slice(0, showAllCompleted ? undefined : 2).map((bag, index) => (
+
+                    <div className="grid grid-cols-1 gap-6">
+                        {completedBags.slice(0, showAllCompleted ? undefined : 3).map((bag, index) => (
                             <LuckBagCard key={bag.id} bag={bag} index={index} />
                         ))}
                     </div>
                     
-                    {!showAllCompleted && completedBags.length > 2 && (
-                        <div className="mt-10 flex justify-center">
+                    {!showAllCompleted && completedBags.length > 3 && (
+                        <div className="mt-8 flex justify-center">
                             <Button 
                                 variant="outline" 
                                 onClick={() => setShowAllCompleted(true)}
-                                className="rounded-full px-10 h-12 border-white/10 hover:bg-white/5 font-bold"
+                                className="rounded-xl px-8 h-11 border-slate-800 bg-slate-900/80 hover:bg-slate-800 hover:border-slate-700 text-slate-300 font-bold text-xs"
                             >
-                                <ChevronDown className="mr-2 h-4 w-4" /> 查看更多已結束福袋
+                                <ChevronDown className="mr-2 h-4 w-4 text-amber-400" /> 查看更多已開獎福袋 ({completedBags.length - 3})
                             </Button>
                         </div>
                     )}
                 </section>
             )}
-          </div>
-
-          <div className="mt-20 text-center flex flex-col items-center opacity-20">
-            <p className="text-[10px] md:text-[12px] text-muted-foreground font-headline uppercase tracking-[0.5em] origin-center scale-[0.2]">P+Carder Official Security Protocol • Verified Asset</p>
           </div>
       </div>
     );

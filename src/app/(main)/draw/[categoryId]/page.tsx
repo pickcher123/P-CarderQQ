@@ -144,77 +144,87 @@ export default function DrawCategoryPage() {
             </div>
 
             {/* 置中標題區塊 */}
-            <div className="text-center mb-12 md:mb-16 relative z-10 space-y-4">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold tracking-[0.3em] uppercase animate-fade-in-up">
-                    <Sparkles className="w-3 h-3 text-primary animate-pulse" /> Select Your Destiny
+            <div className="text-center mb-8 md:mb-12 relative z-10 space-y-3">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-bold tracking-[0.3em] uppercase animate-fade-in-up">
+                    <Sparkles className="w-3 h-3 text-amber-400 animate-pulse" /> THEME POOLS
                 </div>
                 
                 <div className="flex items-center justify-center animate-fade-in-up">
-                    <h1 className="font-headline text-4xl font-black tracking-[0.2em] sm:text-6xl text-white drop-shadow-[0_0_15px_rgba(6,182,212,0.4)]">
+                    <h1 className="font-headline text-3xl sm:text-5xl md:text-6xl font-black tracking-wider text-white drop-shadow-[0_0_20px_rgba(245,158,11,0.3)]">
                         {isLoadingCategory ? <Skeleton className="h-12 w-48 mx-auto" /> : (categoryData?.name || decodeURIComponent(categoryId))}
                     </h1>
                 </div>
             </div>
 
             {/* 過濾與功能列 */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-12 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
-                <div className="flex flex-wrap items-center gap-4">
-                    <Button variant="ghost" asChild className="hover:bg-white/5 font-bold">
-                        <Link href="/draw"><ArrowLeft className="mr-2 h-4 w-4" /> 返回分類列表</Link>
+            <div className="p-3 sm:p-4 rounded-2xl bg-gradient-to-r from-slate-900/90 via-slate-950/90 to-slate-900/90 border border-slate-800/80 backdrop-blur-xl flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-8 sm:mb-10 shadow-lg animate-fade-in-up">
+                {/* 返回按鈕 & 搜尋欄 */}
+                <div className="flex items-center gap-2 flex-1">
+                    <Button variant="ghost" size="sm" asChild className="hover:bg-white/5 font-bold text-slate-300 rounded-xl shrink-0 px-2.5">
+                        <Link href="/draw"><ArrowLeft className="mr-1.5 h-4 w-4" /> 回分類</Link>
                     </Button>
-                    
-                    <div className="w-full sm:w-64">
-                        <Select 
-                            value={decodeURIComponent(categoryId)} 
-                            onValueChange={(val) => router.push(`/draw/${encodeURIComponent(val)}`)}
-                        >
-                            <SelectTrigger className="h-12 bg-card/50 backdrop-blur-xl border-primary/30 rounded-2xl font-black uppercase tracking-widest text-white shadow-[0_0_20px_rgba(6,182,212,0.2)]">
-                                <div className="flex items-center gap-2">
-                                    <Disc3 className="h-4 w-4 animate-spin-slow text-primary" />
-                                    <SelectValue placeholder="切換主題分類" />
-                                </div>
-                            </SelectTrigger>
-                            <SelectContent className="bg-card/95 backdrop-blur-3xl border-primary/20 rounded-2xl shadow-2xl">
-                                {allCategories?.sort((a,b) => (a.order ?? 0) - (b.order ?? 0)).map(cat => (
-                                    <SelectItem key={cat.id} value={cat.id} className="font-bold py-3 rounded-xl focus:bg-primary/20 cursor-pointer">
-                                        {cat.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <Input
+                            type="text"
+                            placeholder="搜尋卡池名稱..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-9 pr-9 bg-slate-900/90 border-slate-700/80 rounded-xl text-xs sm:text-sm placeholder:text-slate-500 focus-visible:ring-amber-500/50"
+                        />
+                        {searchTerm && (
+                            <button 
+                                onClick={() => setSearchTerm('')}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                            >
+                                <XCircle className="w-4 h-4" />
+                            </button>
+                        )}
                     </div>
                 </div>
 
-                <div className="flex flex-wrap gap-4 w-full lg:w-auto">
-                    <div className="relative w-full lg:w-48">
-                        <Select 
-                            value={sortOption} 
-                            onValueChange={(val) => setSortOption(val as any)}
+                {/* 排序與分類切換 */}
+                <div className="flex items-center gap-2 sm:gap-3">
+                    {/* 分類切換下拉 */}
+                    {allCategories && allCategories.length > 0 && (
+                        <div className="relative flex-1 sm:flex-initial">
+                            <select
+                                className="w-full sm:w-auto appearance-none bg-slate-900 text-xs font-bold text-slate-200 pl-3 pr-8 py-2 rounded-xl border border-slate-700/80 hover:border-amber-400/60 focus:border-amber-400 focus:outline-none transition-colors cursor-pointer"
+                                value={decodeURIComponent(categoryId)}
+                                onChange={(e) => router.push(`/draw/${encodeURIComponent(e.target.value)}`)}
+                            >
+                                {allCategories.map(cat => (
+                                    <option key={cat.id} value={cat.id}>
+                                        📁 {cat.name}
+                                    </option>
+                                ))}
+                            </select>
+                            <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-xs">
+                                ▼
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 排序 */}
+                    <div className="relative flex-1 sm:flex-initial">
+                        <select
+                            className="w-full sm:w-auto appearance-none bg-slate-900 text-xs font-bold text-slate-200 pl-3 pr-8 py-2 rounded-xl border border-slate-700/80 hover:border-amber-400/60 focus:border-amber-400 focus:outline-none transition-colors cursor-pointer"
+                            value={sortOption}
+                            onChange={(e) => setSortOption(e.target.value as any)}
                         >
-                            <SelectTrigger className="h-12 bg-background/40 backdrop-blur-sm border-white/10 rounded-2xl font-black uppercase tracking-widest text-white">
-                                <SelectValue placeholder="排序方式" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-card/95 backdrop-blur-3xl border-primary/20 rounded-2xl shadow-2xl">
-                                <SelectItem value="latest" className="font-bold cursor-pointer">最新</SelectItem>
-                                <SelectItem value="price-high" className="font-bold cursor-pointer">價格高至低</SelectItem>
-                                <SelectItem value="price-low" className="font-bold cursor-pointer">價格低至高</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="relative w-full lg:w-80">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-50" />
-                        <Input 
-                            placeholder="搜尋此分類下的卡池..." 
-                            className="pl-12 h-12 bg-background/40 backdrop-blur-sm text-sm border-white/10 rounded-2xl focus:border-primary transition-all" 
-                            value={searchTerm} 
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
+                            <option value="latest">⚡ 最新上架</option>
+                            <option value="price-high">💎 點數：由高至低</option>
+                            <option value="price-low">🪙 點數：由低至高</option>
+                        </select>
+                        <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-xs">
+                            ▼
+                        </div>
                     </div>
                 </div>
             </div>
 
             {/* 卡池列表：調整為 1 行 2 個 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 max-w-6xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 max-w-7xl mx-auto">
                 {isLoading ? (
                     Array.from({ length: 4 }).map((_, i) => (
                         <div key={i} className="aspect-[4/5] rounded-[2.5rem] overflow-hidden">

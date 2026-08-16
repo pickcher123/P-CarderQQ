@@ -62,12 +62,12 @@ interface RedemptionItem {
 
 function StatCard({ label, value, icon: Icon, color }: { label: string, value: number, icon: any, color: string }) {
     return (
-        <div className="p-4 rounded-2xl bg-[#1c222d] border border-white/5 shadow-xl hover:border-white/10 transition-all group">
-            <div className={cn("mb-3 flex items-center justify-center", color)}>
-                <Icon className="w-8 h-8 opacity-80" />
+        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-b from-[#13192a]/95 via-[#0c101d]/95 to-[#080b14]/95 border border-white/10 shadow-[0_8px_25px_rgba(0,0,0,0.4)] hover:border-amber-500/40 hover:shadow-[0_0_20px_rgba(245,158,11,0.15)] transition-all group">
+            <div className={cn("mb-2 sm:mb-3 flex items-center justify-center p-2.5 rounded-xl bg-white/5 border border-white/5 w-fit mx-auto group-hover:scale-110 transition-transform", color)}>
+                <Icon className="w-6 h-6 sm:w-7 sm:h-7 opacity-90" />
             </div>
-            <p className="text-xs text-white/50 mb-1">{label}</p>
-            <p className="text-xl font-black text-white">{value.toLocaleString()}</p>
+            <p className="text-[11px] sm:text-xs text-center font-bold text-slate-400 mb-1">{label}</p>
+            <p className="text-lg sm:text-2xl font-black font-code text-center text-white">{value.toLocaleString()}</p>
         </div>
     );
 }
@@ -320,24 +320,24 @@ function CompactDailyCheckIn() {
 function AchievementItem({ item }: { item: any }) {
     return (
         <div className={cn(
-            "flex flex-col items-center p-5 rounded-3xl border transition-all duration-500 relative overflow-hidden h-full group",
+            "flex flex-col items-center p-4 sm:p-5 rounded-2xl border transition-all duration-300 relative overflow-hidden h-full group",
             item.unlocked 
-                ? "bg-card/60 border-white/10 shadow-lg hover:border-primary/50" 
-                : "bg-black/60 border-white/5 grayscale hover:border-white/10"
+                ? "bg-gradient-to-b from-[#13192a]/95 via-[#0c101d]/95 to-[#080b14]/95 border-cyan-500/30 shadow-[0_4px_20px_rgba(6,182,212,0.15)] hover:border-cyan-400 hover:shadow-[0_0_25px_rgba(6,182,212,0.3)]" 
+                : "bg-slate-950/70 border-white/5 grayscale opacity-60 hover:opacity-80"
         )}>
             <div className={cn(
-                "p-4 rounded-2xl mb-4 transition-all duration-300", 
+                "p-3.5 rounded-xl mb-3 transition-all duration-300", 
                 item.unlocked 
-                    ? "bg-primary/10 text-primary group-hover:scale-105" 
-                    : "bg-white/5 text-white/10"
+                    ? "bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 group-hover:scale-110 shadow-[0_0_15px_rgba(6,182,212,0.2)]" 
+                    : "bg-white/5 text-white/20 border border-white/5"
             )}>
-                {item.unlocked ? <item.icon className="w-8 h-8" /> : <Lock className="w-6 h-6" />}
+                {item.unlocked ? <item.icon className="w-6 h-6 sm:w-7 sm:h-7" /> : <Lock className="w-5 h-5" />}
             </div>
-            <h4 className={cn("font-black text-xs text-center line-clamp-1 mb-1 transition-colors", item.unlocked ? "text-white" : "text-white/30")}>{item.title}</h4>
-            <p className={cn("text-[10px] text-center line-clamp-2 mb-4", item.unlocked ? "text-white/50" : "text-white/20")}>{item.condition}</p>
+            <h4 className={cn("font-black text-xs text-center line-clamp-1 mb-1 transition-colors tracking-wide", item.unlocked ? "text-white" : "text-white/40")}>{item.title}</h4>
+            <p className={cn("text-[10px] text-center line-clamp-2 mb-3 leading-relaxed", item.unlocked ? "text-slate-400" : "text-white/20")}>{item.condition}</p>
             <Badge variant="outline" className={cn(
-                "text-[9px] h-6 font-black uppercase tracking-widest px-4 mt-auto rounded-full transition-colors", 
-                item.unlocked ? "border-primary/20 text-primary bg-primary/5" : "border-white/5 text-white/10 bg-black/40"
+                "text-[9px] h-5 font-black uppercase tracking-wider px-2.5 mt-auto rounded-full transition-colors", 
+                item.unlocked ? "border-cyan-500/30 text-cyan-300 bg-cyan-500/10" : "border-white/5 text-white/20 bg-black/40"
             )}>{item.category}</Badge>
         </div>
     );
@@ -490,89 +490,102 @@ export default function VIPZonePage() {
             </div>
 
 
-            <section className="space-y-10 mb-20 relative z-10 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
-                <div className="flex items-center gap-4 mb-10">
-                    <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
-                        <Crown className="text-amber-500 w-6 h-6" />
+            <section className="space-y-8 mb-20 relative z-10 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+                            <Crown className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h2 className="text-base sm:text-xl font-black font-headline text-white tracking-widest flex items-center gap-2">
+                                <span>榮耀階級圖譜</span>
+                                <span className="text-[9px] sm:text-[10px] font-mono font-bold text-amber-300 bg-amber-500/15 px-2 py-0.5 rounded-full border border-amber-500/30">
+                                    TIERS
+                                </span>
+                            </h2>
+                        </div>
                     </div>
-                    <div>
-                        <h2 className="text-2xl md:text-3xl font-black font-headline text-white tracking-widest uppercase italic">榮耀階級圖譜</h2>
-                        <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold mt-1 opacity-60"></p>
-                    </div>
-                    <div className="h-px flex-1 bg-gradient-to-r from-amber-500/30 to-transparent ml-4 hidden sm:block" />
+                    <div className="h-px flex-1 mx-4 sm:mx-6 bg-gradient-to-r from-amber-500/30 via-slate-700/40 to-transparent hidden sm:block" />
                 </div>
 
-                <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                     {userLevels.map((lvl, index) => {
                         const isCurrent = userProfile.userLevel === lvl.level;
                         const userSpend = userProfile.totalSpent || 0;
                         const isUnlocked = userSpend >= lvl.threshold;
                         const b = currentLevelBenefits[index];
-                        const progress = Math.min(100, (userSpend / lvl.threshold) * 100);
                         
                         return (
                             <div 
                                 key={lvl.level} 
                                 className={cn(
-                                    "relative flex items-center p-5 md:p-6 rounded-3xl border transition-all duration-300 group",
-                                    isCurrent ? "bg-primary/10 border-primary shadow-[0_0_20px_rgba(6,182,212,0.2)]" : 
-                                    isUnlocked ? "bg-card border-border hover:border-primary/50" : "bg-slate-950 border-white/10 opacity-70 grayscale hover:opacity-100 hover:grayscale-0"
+                                    "relative flex items-center p-4 sm:p-5 rounded-2xl border transition-all duration-300 group",
+                                    isCurrent ? "bg-gradient-to-r from-cyan-950/40 to-slate-900/80 border-cyan-400/80 shadow-[0_0_25px_rgba(6,182,212,0.2)] ring-1 ring-cyan-400/40" : 
+                                    isUnlocked ? "bg-gradient-to-b from-[#13192a]/90 via-[#0c101d]/90 to-[#080b14]/90 border-white/10 hover:border-amber-500/40 hover:shadow-[0_0_20px_rgba(245,158,11,0.15)]" : "bg-slate-950/60 border-white/5 opacity-60 grayscale hover:opacity-90 hover:grayscale-0"
                                 )}
                             >
-                                <div className="mr-6 shrink-0">
+                                <div className="mr-4 shrink-0">
                                     <MemberLevelCrown level={lvl.level} size="sm" />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <h3 className={cn("text-lg font-black font-headline tracking-wide truncate", lvl.color)}>{lvl.level}</h3>
-                                    <div className="flex items-center gap-4 text-xs font-bold font-code mt-1 text-white/60">
+                                    <h3 className={cn("text-base font-black font-headline tracking-wide truncate", lvl.color)}>{lvl.level}</h3>
+                                    <div className="flex items-center gap-3 text-xs font-bold font-code mt-1 text-slate-400">
                                         <span>門檻: {lvl.threshold.toLocaleString()} 💎</span>
-                                        {b.rate > 0 && <span className="text-primary">● {b.rate}% 回饋</span>}
+                                        {b.rate > 0 && <span className="text-cyan-400">● {b.rate}% 回饋</span>}
                                     </div>
                                 </div>
-                                {isCurrent && <Badge className="bg-primary text-primary-foreground font-black px-4 py-1 ml-4 shadow-lg shadow-primary/20">當前等級</Badge>}
-                                {isUnlocked && !isCurrent && <CheckCircle2 className="text-emerald-500 w-6 h-6 ml-4" />}
-                                {!isUnlocked && <Lock className="text-white/20 w-6 h-6 ml-4" />}
+                                {isCurrent && <Badge className="bg-cyan-400 text-slate-950 font-black px-3 py-0.5 ml-3 text-xs shadow-lg shadow-cyan-400/20">當前等級</Badge>}
+                                {isUnlocked && !isCurrent && <CheckCircle2 className="text-emerald-400 w-5 h-5 ml-3" />}
+                                {!isUnlocked && <Lock className="text-white/20 w-5 h-5 ml-3" />}
                             </div>
                         )
                     })}
                 </div>
             </section>
 
-            <section className="space-y-16 relative z-10 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
+            <section className="space-y-10 relative z-10 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
                 <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                        <h2 className="text-2xl md:text-3xl font-black font-headline tracking-widest flex items-center gap-3 italic">
-                            <MedalIcon className="text-primary h-8 w-8 animate-pulse" /> 榮譽成就牆
-                        </h2>
+                    <div className="flex items-center gap-3">
+                        <div className="p-2.5 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.2)]">
+                            <MedalIcon className="w-5 h-5 animate-pulse" />
+                        </div>
+                        <div>
+                            <h2 className="text-base sm:text-xl font-black font-headline text-white tracking-widest flex items-center gap-2">
+                                <span>榮譽成就牆</span>
+                                <span className="text-[9px] sm:text-[10px] font-mono font-bold text-cyan-300 bg-cyan-500/15 px-2 py-0.5 rounded-full border border-cyan-500/30">
+                                    HALL OF FAME
+                                </span>
+                            </h2>
+                        </div>
                     </div>
-                    <Badge variant="outline" className="border-primary/30 text-primary font-code bg-primary/5 px-4 h-8 text-sm">
+                    <Badge variant="outline" className="border-cyan-500/30 text-cyan-300 font-code bg-cyan-500/10 px-3 h-7 text-xs font-bold">
                         {unlockedAchievements.length} / {achievements.length} 已解鎖
                     </Badge>
                 </div>
                 
-                <div className="space-y-8">
+                <div className="space-y-6">
                     <div className="flex items-center gap-3">
-                        <Badge className="bg-emerald-500 text-white font-black px-3 py-0.5">已解鎖</Badge>
+                        <Badge className="bg-emerald-500 text-slate-950 font-black px-3 py-0.5 text-xs shadow-md">已解鎖成就</Badge>
                         <div className="h-px flex-1 bg-emerald-500/20" />
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
                         {unlockedAchievements.map((item) => (
                             <AchievementItem key={item.id} item={item} />
                         ))}
                         {unlockedAchievements.length === 0 && (
-                            <div className="col-span-full py-10 text-center text-white/20 italic font-bold">
+                            <div className="col-span-full py-10 text-center text-white/30 italic font-bold">
                                 尚未解鎖任何成就，快去體驗吧！
                             </div>
                         )}
                     </div>
                 </div>
 
-                <div className="space-y-8">
+                <div className="space-y-6">
                     <div className="flex items-center gap-3">
-                        <Badge variant="outline" className="border-white/20 text-white/40 font-black px-3 py-0.5">未解鎖</Badge>
+                        <Badge variant="outline" className="border-white/20 text-slate-400 font-black px-3 py-0.5 text-xs">未解鎖成就</Badge>
                         <div className="h-px flex-1 bg-white/5" />
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
                         {lockedAchievements.map((item) => (
                             <AchievementItem key={item.id} item={item} />
                         ))}

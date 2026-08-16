@@ -31,8 +31,24 @@ export function CardExhibitionCalendar({ hideHeader = false }: { hideHeader?: bo
 
     const exhibitionsByMonth = useMemo(() => {
         if (!exhibitions) return [];
+        
+        // 取得今日開始時間（當天 00:00:00）的 timestamp
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+        const todaySeconds = Math.floor(startOfToday.getTime() / 1000);
+
         const groups: Record<string, Exhibition[]> = {};
         exhibitions.forEach(exh => {
+            // 如果有結束日期則以結束日期的當日 23:59:59 為準；否則以開始日期的 23:59:59 為準
+            const effectiveEndSeconds = exh.endDate?.seconds 
+                ? exh.endDate.seconds + 86399 
+                : (exh.date.seconds ? exh.date.seconds + 86399 : 0);
+
+            // 過濾掉已經結束的活動 (小於今日開始時間者隱藏)
+            if (effectiveEndSeconds < todaySeconds) {
+                return;
+            }
+
             const date = new Date(exh.date.seconds * 1000);
             const monthKey = format(date, 'yyyy年MM月');
             if (!groups[monthKey]) groups[monthKey] = [];

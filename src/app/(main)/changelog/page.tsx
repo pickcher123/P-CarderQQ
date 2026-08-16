@@ -145,41 +145,41 @@ export default function ChangeLogPage() {
         </Badge>
       </div>
 
-      <div className="space-y-10 relative z-10">
+      <div className="space-y-6 md:space-y-8 relative z-10">
         <div className="absolute left-[19px] top-4 bottom-4 w-px bg-white/10 hidden md:block" />
 
         {changelogData.map((item, index) => {
           const Icon = typeIcons[item.type as keyof typeof typeIcons] || Bug;
           return (
-            <div key={item.version} className="relative md:pl-12 group animate-fade-in-up" style={{ animationDelay: `${index * 100}ms` }}>
-              <div className="absolute left-0 top-1.5 w-10 h-10 rounded-full bg-background border-2 border-primary/20 items-center justify-center hidden md:flex group-hover:border-primary group-hover:shadow-[0_0_15px_rgba(6,182,212,0.4)] transition-all z-10">
+            <div key={item.version} className="relative md:pl-12 group animate-fade-in-up" style={{ animationDelay: `${index * 80}ms` }}>
+              <div className="absolute left-0 top-2 w-10 h-10 rounded-full bg-slate-950 border-2 border-cyan-500/30 items-center justify-center hidden md:flex group-hover:border-cyan-400 group-hover:shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-all z-10">
                 <Icon className={cn("h-5 w-5", 
-                    item.type === 'feature' ? 'text-blue-400' : 
-                    item.type === 'fix' ? 'text-green-400' : 
+                    item.type === 'feature' ? 'text-cyan-400' : 
+                    item.type === 'fix' ? 'text-emerald-400' : 
                     item.type === 'ui' ? 'text-purple-400' : 
                     item.type === 'seo' ? 'text-amber-400' : 'text-red-400')} />
               </div>
 
-              <Card className="bg-card/30 backdrop-blur-xl border-white/5 hover:border-primary/20 transition-all duration-500 rounded-[2rem] shadow-2xl overflow-hidden">
-                <CardHeader className="p-6 md:p-8 pb-4">
+              <Card className="bg-gradient-to-b from-[#13192a]/90 via-[#0c101d]/90 to-[#080b14]/90 backdrop-blur-2xl border-white/10 hover:border-cyan-500/40 hover:shadow-[0_0_25px_rgba(6,182,212,0.15)] transition-all duration-300 rounded-3xl shadow-xl overflow-hidden">
+                <CardHeader className="p-5 sm:p-6 md:p-7 pb-3">
                   <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                     <div className="flex items-center gap-3">
-                      <Badge className={cn("px-2 py-0.5 font-black uppercase tracking-widest text-[10px]", typeStyles[item.type as keyof typeof typeStyles])}>
+                      <Badge className={cn("px-2.5 py-0.5 font-black uppercase tracking-widest text-[10px] rounded-full border", typeStyles[item.type as keyof typeof typeStyles])}>
                         {item.type === 'seo' ? 'Search Engine' : item.type}
                       </Badge>
                     </div>
-                    <span className="text-xl font-black font-headline text-white/20 group-hover:text-primary/40 transition-colors">
+                    <span className="text-sm sm:text-base font-black font-code text-cyan-400/80 group-hover:text-cyan-300 transition-colors">
                       VER {item.version}
                     </span>
                   </div>
-                  <CardTitle className="text-xl md:text-2xl font-black text-white">{item.title}</CardTitle>
+                  <CardTitle className="text-lg sm:text-xl font-black text-white font-headline tracking-wide">{item.title}</CardTitle>
                 </CardHeader>
-                <CardContent className="p-6 md:p-8 pt-0">
-                  <ul className="space-y-3">
+                <CardContent className="p-5 sm:p-6 md:p-7 pt-0">
+                  <ul className="space-y-2.5">
                     {item.changes.map((change, i) => (
-                      <li key={i} className="flex items-start gap-3 text-muted-foreground leading-relaxed font-medium">
-                        <div className="h-1.5 w-1.5 rounded-full bg-primary mt-2 shrink-0 shadow-[0_0_5px_rgba(6,182,212,1)]" />
-                        <span className="text-sm md:text-base">{change}</span>
+                      <li key={i} className="flex items-start gap-3 text-slate-300 leading-relaxed text-sm font-medium">
+                        <div className="h-1.5 w-1.5 rounded-full bg-cyan-400 mt-2 shrink-0 shadow-[0_0_8px_rgba(6,182,212,1)]" />
+                        <span>{change}</span>
                       </li>
                     ))}
                   </ul>

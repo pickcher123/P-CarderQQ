@@ -2,18 +2,16 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Trophy, Sparkles, Newspaper, Calendar, ShieldCheck, Zap, Target, Crown, Gem, Megaphone, Users2 } from 'lucide-react';
-import { Logo, CrossedCardsIcon, LuckyBagIcon } from '@/components/icons';
+import { ChevronRight, Trophy, Sparkles, Newspaper, Calendar, ShieldCheck, Zap, Target, Megaphone, Users2, Disc3, ArrowRight, Flame } from 'lucide-react';
+import { LuckyBagIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, limit, doc } from 'firebase/firestore';
 import { format } from 'date-fns';
-import Image from 'next/image';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { NewsPopup } from '@/components/news-popup';
@@ -22,6 +20,9 @@ import { FloatingCardsBackground } from '@/components/floating-cards-background'
 import { CardExhibitionCalendar } from '@/components/card-exhibition-calendar';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { PredictionSection } from '@/components/prediction-section';
+import { HallOfFameMarquee } from '@/components/hall-of-fame-marquee';
+import { PoolCard } from '@/components/pool-card';
+import type { CardPool, CardItem } from '@/types';
 
 interface NewsItem {
     id: string;
@@ -48,10 +49,28 @@ export default function Home() {
 
   const newsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'news'), orderBy('createdAt', 'desc'), limit(3));
+    return query(collection(firestore, 'news'), orderBy('createdAt', 'desc'), limit(4));
+  }, [firestore]);
+
+  const poolsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'pools'), orderBy('createdAt', 'desc'), limit(4));
+  }, [firestore]);
+
+  const cardsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'cards');
+  }, [firestore]);
+
+  const categoriesQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'categories'), orderBy('order', 'asc'));
   }, [firestore]);
 
   const { data: newsItems, isLoading: isLoadingNews } = useCollection<NewsItem>(newsQuery);
+  const { data: featuredPools, isLoading: isLoadingPools } = useCollection<CardPool>(poolsQuery);
+  const { data: cardsList } = useCollection<CardItem>(cardsQuery);
+  const { data: categories } = useCollection<{ id: string; name: string; imageUrl?: string; linkUrl?: string; order?: number }>(categoriesQuery);
 
   const partnersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -66,341 +85,466 @@ export default function Home() {
   }, [firestore]);
   const { data: systemConfig } = useDoc<any>(systemConfigRef);
 
+  const allCardsMap = useMemo(() => {
+    const map = new Map<string, CardItem>();
+    if (cardsList) {
+      cardsList.forEach(c => map.set(c.id, c));
+    }
+    return map;
+  }, [cardsList]);
+
   return (
     <div className="flex flex-col min-h-screen">
       <NewsPopup />
       
-      {/* Hero Section */}
-      <section className="relative min-h-[85vh] md:min-h-[95vh] flex items-center justify-center overflow-hidden py-4 md:py-8">
+      {/* 英雄區塊 (Hero Section) */}
+      <section className="relative min-h-[75vh] md:min-h-[85vh] flex items-center justify-center overflow-hidden py-6 md:py-12">
         {(systemConfig?.showFloatingBackground !== false) && <FloatingCardsBackground />}
 
-        <div className="container relative z-10 text-center space-y-6 md:space-y-10 px-4">
+        {/* Ambient Top Glow */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-amber-500/10 rounded-full blur-[140px] pointer-events-none" />
+        <div className="absolute top-1/3 left-1/3 w-[400px] h-[250px] bg-cyan-500/10 rounded-full blur-[120px] pointer-events-none" />
+
+        <div className="container relative z-10 text-center space-y-5 md:space-y-8 px-4 max-w-5xl mx-auto">
           {systemConfig?.announcement && (
-            <div className="max-w-3xl mx-auto mb-8 animate-bounce-slow">
-              <div className="bg-primary/20 backdrop-blur-md border border-primary/30 rounded-2xl p-4 md:p-6 flex items-center gap-4 text-left shadow-[0_0_30px_rgba(6,182,212,0.2)]">
-                <div className="p-3 bg-primary rounded-xl shrink-0">
-                  <Megaphone className="w-6 h-6 text-black" />
+            <div className="max-w-2xl mx-auto mb-4 animate-fade-in-up">
+              <div className="bg-gradient-to-r from-slate-900/95 via-slate-950/95 to-slate-900/95 backdrop-blur-xl border border-amber-500/30 rounded-2xl p-3.5 sm:p-4 flex items-center gap-3 text-left shadow-[0_4px_25px_rgba(245,158,11,0.15)] ring-1 ring-white/5">
+                <div className="p-2.5 bg-gradient-to-br from-amber-400 to-amber-600 rounded-xl shrink-0 text-slate-950 shadow-md">
+                  <Megaphone className="w-5 h-5" />
                 </div>
-                <div>
-                  <h3 className="text-primary font-black text-sm uppercase tracking-widest mb-1">系統公告</h3>
-                  <p className="text-white font-bold text-sm md:text-base leading-relaxed">{systemConfig.announcement}</p>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="text-[10px] font-black text-amber-300 bg-amber-500/15 px-2 py-0.5 rounded-md border border-amber-500/30 tracking-widest uppercase font-mono">
+                      SYSTEM ANNOUNCEMENT
+                    </span>
+                  </div>
+                  <p className="text-slate-200 font-bold text-xs sm:text-sm leading-snug truncate">{systemConfig.announcement}</p>
                 </div>
               </div>
             </div>
           )}
           
-          <div className="space-y-3 md:space-y-4 animate-fade-in-up">
-            <h1 className="font-headline text-5xl sm:text-7xl md:text-[12rem] font-black tracking-tighter leading-none relative">
-                <span className="bg-clip-text text-transparent bg-gradient-to-b from-white via-white/90 to-primary/40 drop-shadow-[0_0_25px_rgba(6,182,212,0.5)]">
+          <div className="space-y-3 sm:space-y-4 animate-fade-in-up">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-bold tracking-widest uppercase backdrop-blur-md shadow-[0_0_15px_rgba(245,158,11,0.15)]">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+              <span>THE ULTIMATE CARD EXPERIENCE</span>
+            </div>
+
+            <h1 className="font-headline text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-black tracking-tight leading-none relative">
+                <span className="bg-clip-text text-transparent bg-gradient-to-b from-white via-slate-100 to-amber-200/90 drop-shadow-[0_4px_30px_rgba(245,158,11,0.3)]">
                     P+CARDER
                 </span>
-                <span className="absolute inset-0 text-white blur-[20px] md:blur-[30px] opacity-30 pointer-events-none select-none">P+CARDER</span>
+                <span className="absolute inset-0 text-amber-400/15 blur-[30px] pointer-events-none select-none">P+CARDER</span>
             </h1>
-            <p className="text-lg md:text-3xl text-muted-foreground max-w-2xl mx-auto font-body font-bold tracking-widest leading-relaxed opacity-80 [image-rendering:pixelated] font-mono">
-                頂級球員卡福袋平台<br />
-                <span className="text-primary/80">打造屬於你的玩卡體驗</span>
+            
+            <p className="text-sm sm:text-base md:text-xl text-slate-300 max-w-xl mx-auto font-medium tracking-wider leading-relaxed">
+                頂級球員卡福袋平台 · 即時連線公平抽取<br />
+                <span className="text-amber-400 font-bold drop-shadow-[0_0_12px_rgba(245,158,11,0.4)]">打造屬於你的極致玩卡與收藏體驗</span>
             </p>
           </div>
           
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 md:gap-6 animate-fade-in-up pt-8 md:pt-12">
-            <Button size="lg" asChild className="w-full sm:w-auto h-14 md:h-16 px-8 md:px-12 text-lg md:text-xl font-black rounded-2xl group shadow-[0_0_30px_rgba(6,182,212,0.4)] relative overflow-hidden transition-all hover:scale-105 active:scale-95 border-none">
-              <Link href="/draw">
-                <span className="relative z-10 flex items-center gap-3">
-                    立即開啟卡包 <ChevronRight className="w-5 h-5 md:w-6 md:h-6 group-hover:translate-x-2 transition-transform" />
-                </span>
-                <div className="absolute inset-0 bg-white/10 animate-shimmer pointer-events-none" />
+          {/* 快捷操作按鈕組 */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 animate-fade-in-up pt-4 sm:pt-6 max-w-md mx-auto">
+            <Button size="lg" asChild className="w-full sm:w-auto h-12 sm:h-14 px-8 text-base sm:text-lg font-black rounded-2xl group bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-slate-950 shadow-[0_0_30px_rgba(245,158,11,0.4)] hover:shadow-[0_0_40px_rgba(245,158,11,0.6)] border border-amber-300/60 relative overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98]">
+              <Link href="/draw" className="flex items-center justify-center gap-2.5">
+                <LuckyBagIcon className="w-5 h-5 fill-slate-950" />
+                <span className="tracking-wide">立即前往卡池</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform" />
+              </Link>
+            </Button>
+
+            <Button size="lg" variant="outline" asChild className="w-full sm:w-auto h-12 sm:h-14 px-6 text-sm sm:text-base font-bold rounded-2xl bg-gradient-to-b from-[#13192a]/90 via-[#0c101d]/90 to-[#080b14]/90 backdrop-blur-md border-white/10 hover:border-amber-400/60 text-slate-200 hover:text-white transition-all shadow-lg hover:shadow-[0_0_20px_rgba(245,158,11,0.2)]">
+              <Link href="/news" className="flex items-center justify-center gap-2">
+                <Newspaper className="w-4 h-4 text-amber-400" />
+                <span>最新活動消息</span>
               </Link>
             </Button>
           </div>
         </div>
       </section>
 
+      {/* 首頁熱門推薦卡池 */}
+      {featuredPools && featuredPools.length > 0 && (
+        <section className="py-4 sm:py-8 container px-3 sm:px-4 max-w-7xl mx-auto">
+          <div className="p-3 sm:p-4 rounded-2xl bg-gradient-to-r from-slate-900/90 via-slate-950/90 to-slate-900/90 border border-slate-800/80 backdrop-blur-xl flex items-center justify-between gap-3 mb-6 sm:mb-8 shadow-lg">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30 text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+                <Flame className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 animate-pulse" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base sm:text-lg font-black font-headline text-white tracking-widest">
+                    熱門推薦卡池
+                  </h2>
+                  <span className="text-[10px] font-mono font-bold text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/30">
+                    HOT PICKS
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400 hidden sm:block">頂級球員卡即時開包 · 公平公正透明</p>
+              </div>
+            </div>
+
+            <Button variant="ghost" asChild className="hover:bg-slate-800 h-9 px-3.5 rounded-xl font-bold text-amber-400 hover:text-amber-300 text-xs">
+              <Link href="/draw" className="flex items-center gap-1.5">
+                <span>查看全部卡池</span>
+                <ChevronRight className="h-3.5 w-3.5" />
+              </Link>
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+            {featuredPools.map((pool) => (
+              <PoolCard key={pool.id} pool={pool} allCardsMap={allCardsMap} />
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* 賽事預測與卡展行事曆 */}
-      <section className="py-10 md:py-16 container px-4 relative">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 max-w-[1400px] mx-auto items-start">
-          {/* 賽事預測 (電腦版比例縮小至 4-5 欄) */}
-          <div className="lg:col-span-5 xl:col-span-4 space-y-4">
-            <div className="flex items-center justify-center lg:justify-start animate-fade-in-up">
-              <h2 className="font-headline text-2xl md:text-3xl font-black tracking-widest text-white drop-shadow-[0_0_15px_rgba(6,182,212,0.4)] flex items-center gap-2">
-                <span>賽事預測</span>
-              </h2>
+      <section className="py-6 sm:py-10 container px-3 sm:px-4 relative">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-7 max-w-[1400px] mx-auto items-start">
+          
+          {/* 賽事預測 */}
+          <div className="lg:col-span-5 xl:col-span-4 space-y-3 sm:space-y-4">
+            <div className="p-3 sm:p-3.5 rounded-2xl bg-gradient-to-r from-slate-900/90 via-slate-950/90 to-slate-900/90 border border-slate-800/80 backdrop-blur-xl flex items-center justify-between shadow-lg">
+              <div className="flex items-center gap-2.5">
+                <div className="p-1.5 sm:p-2 rounded-xl bg-orange-500/15 border border-orange-500/30 text-orange-400 shadow-[0_0_12px_rgba(249,115,22,0.2)]">
+                  <Target className="w-4 h-4 sm:w-5 sm:h-5" />
+                </div>
+                <div>
+                  <h2 className="text-sm sm:text-base font-black font-headline text-white tracking-wider flex items-center gap-2">
+                    <span>賽事預測專區</span>
+                    <span className="text-[9px] font-mono text-orange-300 bg-orange-500/10 px-2 py-0.5 rounded-full border border-orange-500/20">
+                      LIVE
+                    </span>
+                  </h2>
+                </div>
+              </div>
             </div>
             <PredictionSection />
           </div>
 
-          {/* 卡展行事曆 (電腦版比例擴大至 7-8 欄，讓行事曆更寬敞好看) */}
-          <div className="lg:col-span-7 xl:col-span-8 space-y-4">
-            <div className="flex items-center justify-center lg:justify-start animate-fade-in-up">
-                <h2 className="font-headline text-2xl md:text-3xl font-black tracking-widest text-white drop-shadow-[0_0_15px_rgba(6,182,212,0.4)] flex items-center gap-2">
+          {/* 卡展行事曆 */}
+          <div className="lg:col-span-7 xl:col-span-8 space-y-3 sm:space-y-4">
+            <div className="p-3 sm:p-3.5 rounded-2xl bg-gradient-to-r from-slate-900/90 via-slate-950/90 to-slate-900/90 border border-slate-800/80 backdrop-blur-xl flex items-center justify-between shadow-lg">
+              <div className="flex items-center gap-2.5">
+                <div className="p-1.5 sm:p-2 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.2)]">
+                  <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
+                </div>
+                <div>
+                  <h2 className="text-sm sm:text-base font-black font-headline text-white tracking-wider flex items-center gap-2">
                     <span>卡展行事曆</span>
-                </h2>
+                    <span className="text-[9px] font-mono text-cyan-300 bg-cyan-500/10 px-2 py-0.5 rounded-full border border-cyan-500/20">
+                      EVENTS
+                    </span>
+                  </h2>
+                </div>
+              </div>
             </div>
-            <Card className="bg-slate-950/60 backdrop-blur-md border-white/10 rounded-2xl p-4 sm:p-5 h-full">
-                <CardContent className="p-0">
-                    <ScrollArea className="h-[520px] sm:h-[560px]">
-                        <CardExhibitionCalendar hideHeader />
-                    </ScrollArea>
-                </CardContent>
-            </Card>
+            
+            <div className="bg-slate-950/90 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-3 sm:p-5 shadow-xl">
+              <ScrollArea className="h-[480px] sm:h-[540px]">
+                <CardExhibitionCalendar hideHeader />
+              </ScrollArea>
+            </div>
           </div>
         </div>
       </section>
 
       {/* 最新消息中心 */}
-      <section className="relative py-12 md:py-16 bg-card/10 border-y border-white/5 overflow-hidden">
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] -mr-80 -mt-80 pointer-events-none" />
-        <div className="container relative z-10 transition-transform duration-700">
-            <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 md:mb-10 gap-4">
-                <div className="space-y-1 md:space-y-2">
-                    <div className="inline-flex items-center gap-2 text-primary font-bold font-headline tracking-[0.4em] text-[10px] md:text-xs">
-                        保持最新資訊
+      <section className="relative py-10 sm:py-14 bg-gradient-to-b from-slate-950/60 via-slate-900/40 to-slate-950/60 border-y border-slate-800/80 overflow-hidden">
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-amber-500/5 rounded-full blur-[140px] pointer-events-none" />
+        <div className="container relative z-10 px-3 sm:px-4 max-w-7xl mx-auto">
+            
+            {/* Header */}
+            <div className="p-3 sm:p-4 rounded-2xl bg-gradient-to-r from-slate-900/90 via-slate-950/90 to-slate-900/90 border border-slate-800/80 backdrop-blur-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 shadow-lg">
+                <div className="flex items-center gap-2.5">
+                    <div className="p-2 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+                        <Newspaper className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
                     </div>
-                    <h2 className="text-2xl md:text-5xl font-black font-headline flex items-center gap-3 md:gap-4 tracking-tight text-left text-white">
-                        <Newspaper className="text-primary h-8 w-8 md:h-12 md:w-12" />
-                        最新消息中心
-                    </h2>
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <h2 className="text-base sm:text-lg font-black font-headline text-white tracking-widest">
+                                最新消息中心
+                            </h2>
+                            <span className="text-[10px] font-mono font-bold text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/30">
+                                NEWS
+                            </span>
+                        </div>
+                        <p className="text-[11px] text-slate-400 hidden sm:block">官方即時資訊 · 活動快訊與公告</p>
+                    </div>
                 </div>
-                <Button variant="ghost" asChild className="hover:bg-primary/10 h-10 md:h-12 px-4 md:px-6 rounded-xl font-bold group w-fit text-white">
-                    <Link href="/news" className="flex items-center gap-2 text-sm md:text-base">查看完整消息庫 <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform"/></Link>
+
+                <Button variant="ghost" asChild className="hover:bg-slate-800 h-9 px-3.5 rounded-xl font-bold text-slate-300 hover:text-white self-end sm:self-auto text-xs">
+                    <Link href="/news" className="flex items-center gap-1.5">
+                        <span>查看完整消息庫</span>
+                        <ChevronRight className="h-3.5 w-3.5" />
+                    </Link>
                 </Button>
             </div>
             
             <Carousel opts={{ align: "start", loop: true }} className="w-full">
-                <CarouselContent>
+                <CarouselContent className="-ml-3 sm:-ml-4">
                     {isLoadingNews ? (
                         Array.from({ length: 3 }).map((_, i) => (
-                            <CarouselItem key={i} className="md:basis-1/2 lg:basis-1/3">
-                                <div className="space-y-4">
-                                    <Skeleton className="aspect-video w-full rounded-2xl" />
+                            <CarouselItem key={i} className="pl-3 sm:pl-4 basis-full sm:basis-1/2 lg:basis-1/3">
+                                <div className="aspect-video w-full rounded-2xl overflow-hidden bg-slate-900">
+                                    <Skeleton className="w-full h-full" />
                                 </div>
                             </CarouselItem>
                         ))
                     ) : (
                         newsItems?.map((item) => (
-                            <CarouselItem key={item.id} className="md:basis-1/2 lg:basis-1/3">
+                            <CarouselItem key={item.id} className="pl-3 sm:pl-4 basis-full sm:basis-1/2 lg:basis-1/3">
                                 <Link 
                                   href={`/news?id=${item.id}`}
                                   className="group block h-full animate-fade-in-up"
                                 >
-                                    <Card className="h-full overflow-hidden bg-card/40 border border-white/5 transition-all duration-500 hover:border-primary/50 hover:bg-card/60 hover:-translate-y-2 shadow-2xl rounded-3xl">
-                                        <CardContent className="p-0 flex flex-col h-full text-white">
-                                            <div className="aspect-video relative overflow-hidden">
-                                                {item.type === 'image' ? (
-                                                    <SafeImage 
-                                                        src={item.imageUrl || 'https://picsum.photos/seed/news/800/450'} 
-                                                        alt={item.title} 
-                                                        width={800}
-                                                        height={450}
-                                                        className="object-cover transition-transform duration-700 group-hover:scale-110"
-                                                    />
-                                                ) : (
-                                                    <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-background" />
+                                    <div className="h-full overflow-hidden bg-slate-950/90 border border-slate-800/80 hover:border-amber-400/60 transition-all duration-300 rounded-2xl shadow-lg group-hover:-translate-y-1">
+                                        <div className="aspect-video relative overflow-hidden">
+                                            {item.type === 'image' ? (
+                                                <SafeImage 
+                                                    src={item.imageUrl || 'https://picsum.photos/seed/news/800/450'} 
+                                                    alt={item.title} 
+                                                    width={800}
+                                                    height={450}
+                                                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                                />
+                                            ) : (
+                                                <div className="absolute inset-0 bg-gradient-to-br from-amber-950/40 via-slate-950 to-slate-900" />
+                                            )}
+                                            
+                                            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+
+                                            <div className="absolute top-2.5 left-2.5 flex gap-1.5">
+                                                {item.isPinned && (
+                                                  <span className="bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-black text-[9px] px-2 py-0.5 rounded-md shadow-md">
+                                                    置頂
+                                                  </span>
                                                 )}
-                                                
-                                                <div className="absolute inset-0 bg-black/50 group-hover:bg-black/30 transition-colors duration-500" />
-
-                                                <div className="absolute top-3 left-3 md:top-4 md:left-4 flex gap-2">
-                                                    {item.isPinned && <Badge className="bg-primary font-black shadow-lg text-[10px] border-none">置頂</Badge>}
-                                                    <Badge variant="secondary" className="bg-black/60 backdrop-blur-md border-white/10 font-bold text-[10px]">{item.category}</Badge>
-                                                </div>
-
-                                                <div className="absolute inset-0 flex items-center justify-center p-6 md:p-8 text-center">
-                                                    <h3 className="font-bold text-lg md:text-2xl text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)] line-clamp-2 leading-tight group-hover:text-primary transition-colors duration-500">
-                                                        {item.title}
-                                                    </h3>
-                                                </div>
-
-                                                <div className="absolute bottom-3 left-3 md:bottom-4 md:left-4 flex items-center gap-2 text-[9px] md:text-[10px] text-white/80 font-code font-bold bg-black/40 px-2 py-1 md:px-3 md:py-1.5 rounded-full backdrop-blur-sm border border-white/5">
-                                                    <Calendar className="h-3 w-3 md:h-3.5 md:w-3.5 text-primary" />
-                                                    {item.createdAt ? format(new Date(item.createdAt.seconds * 1000), 'yyyy-MM-dd') : '---'}
-                                                </div>
+                                                <span className="bg-black/70 backdrop-blur-md border border-white/10 text-slate-300 font-bold text-[9px] px-2 py-0.5 rounded-md">
+                                                  {item.category}
+                                                </span>
                                             </div>
-                                        </CardContent>
-                                    </Card>
+
+                                            <div className="absolute inset-x-3 bottom-8">
+                                                <h3 className="font-bold text-sm sm:text-base text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] line-clamp-2 leading-snug group-hover:text-amber-300 transition-colors">
+                                                    {item.title}
+                                                </h3>
+                                            </div>
+
+                                            <div className="absolute bottom-2.5 left-3 flex items-center gap-1.5 text-[9px] text-slate-400 font-mono">
+                                                <Calendar className="h-3 w-3 text-amber-400" />
+                                                <span>{item.createdAt ? format(new Date(item.createdAt.seconds * 1000), 'yyyy-MM-dd') : '---'}</span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </Link>
                             </CarouselItem>
                         ))
                     )}
                 </CarouselContent>
-                <CarouselPrevious className="flex -left-2 md:-left-12 h-8 w-8 md:h-10 md:w-10" />
-                <CarouselNext className="flex -right-2 md:-right-12 h-8 w-8 md:h-10 md:w-10" />
+                <CarouselPrevious className="hidden sm:flex -left-4 h-9 w-9 bg-slate-900 border-slate-700 text-slate-200 hover:bg-amber-500 hover:text-slate-950" />
+                <CarouselNext className="hidden sm:flex -right-4 h-9 w-9 bg-slate-900 border-slate-700 text-slate-200 hover:bg-amber-500 hover:text-slate-950" />
             </Carousel>
         </div>
       </section>
 
       {/* 為什麼選擇我們 */}
-      <section className="py-12 md:py-16 bg-card/5 border-y border-white/5 relative overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[300px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
-        <div className="container relative z-10">
-            <div className="text-center mb-8 md:mb-12 space-y-2 animate-fade-in-up">
-                <div className="inline-flex items-center gap-2 text-primary font-bold font-headline tracking-[0.4em] text-[10px] md:text-xs uppercase">
-                    我們的核心優勢
-                </div>
-                <h2 className="text-3xl md:text-5xl font-black font-headline tracking-tight text-white">為什麼選擇我們</h2>
-                <div className="w-16 h-1 bg-primary mx-auto rounded-full shadow-[0_0_15px_rgba(6,182,212,0.6)]" />
-            </div>
+      <section className="py-12 sm:py-18 container px-3 sm:px-4 max-w-7xl mx-auto relative">
+        <div className="relative p-6 sm:p-10 rounded-3xl bg-slate-950/70 border border-slate-800/80 backdrop-blur-2xl overflow-hidden shadow-2xl">
+          {/* 背景環境流光 */}
+          <div className="absolute -top-24 -right-24 w-80 h-80 bg-amber-500/10 rounded-full blur-[100px] pointer-events-none" />
+          <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-blue-500/10 rounded-full blur-[100px] pointer-events-none" />
 
-            <Carousel opts={{ align: "start", loop: true }} className="w-full">
-                <CarouselContent>
-                    {[
-                        { 
-                            title: '公開透明存證', 
-                            desc: '每一張核心卡片皆經數位存證，確保來源真實、所有權明確，打造最讓人放心的收藏環境。', 
-                            icon: ShieldCheck, 
-                            color: 'text-primary',
-                            bg: 'bg-primary/10'
-                        },
-                        { 
-                            title: '公平機率披露', 
-                            desc: '絕不隱藏真實資訊，所有卡池機率完全公開披露，讓每一次抽卡都憑實力與運氣，回歸遊玩初衷。', 
-                            icon: Target, 
-                            color: 'text-yellow-400',
-                            bg: 'bg-yellow-400/10'
-                        },
-                        { 
-                            title: '即時互動體驗', 
-                            desc: '打破實體卡片的侷限，隨時隨地享受極具張力的數位開包效果，將收藏熱忱轉化為指尖的極致快感。', 
-                            icon: Zap, 
-                            color: 'text-pink-400',
-                            bg: 'bg-pink-400/10'
-                        },
-                        { 
-                            title: '專屬藏友社群', 
-                            desc: '透過團拆與互動競技，與志同道合的藏友並肩遊玩，交流珍稀卡片，建立屬於你的球員卡核心交友圈。', 
-                            icon: Users2, 
-                            color: 'text-green-400',
-                            bg: 'bg-green-400/10'
-                        },
-                    ].map((item, i) => (
-                        <CarouselItem key={i} className="md:basis-1/2 lg:basis-1/4">
-                            <div 
-                                className="p-8 h-full rounded-3xl bg-card/40 border border-white/5 flex flex-col items-center text-center hover:border-primary/50 transition-all duration-300 hover:shadow-2xl hover:bg-card/60 hover:-translate-y-2"
-                            >
-                                <div className={cn("p-4 rounded-full mb-6", item.bg, item.color)}>
-                                    <item.icon className="w-8 h-8" />
-                                </div>
-                                <h3 className="text-xl font-black mb-3">{item.title}</h3>
-                                <p className="text-sm text-muted-foreground font-medium leading-relaxed">{item.desc}</p>
-                            </div>
-                        </CarouselItem>
-                    ))}
-                </CarouselContent>
-                <CarouselPrevious className="flex -left-2 md:-left-12 h-8 w-8 md:h-10 md:w-10" />
-                <CarouselNext className="flex -right-2 md:-right-12 h-8 w-8 md:h-10 md:w-10" />
-            </Carousel>
-        </div>
-      </section>
-
-      {/* 合作夥伴 Section */}
-      <section className="container pb-8 md:pb-16 px-4 text-white">
-        <div className="mb-8 md:mb-12">
-            <div className="text-center mb-8 space-y-3">
-                <div className="inline-flex items-center gap-2 text-primary font-bold font-headline tracking-[0.4em] text-[10px] md:text-xs uppercase">
-                    PARTNERS
-                </div>
-                <h2 className="text-2xl md:text-4xl font-black font-headline tracking-tight text-white">我們的合作夥伴</h2>
-                <div className="w-12 h-1 bg-gradient-to-r from-transparent via-cyan-500 to-transparent mx-auto rounded-full" />
+          <div className="text-center mb-10 sm:mb-12 space-y-3 relative z-10">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-mono font-bold tracking-[0.25em] uppercase backdrop-blur-md">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <span>OUR ADVANTAGES & COMMITMENT</span>
             </div>
-            
-            <div className="flex flex-wrap justify-center items-center gap-4 md:gap-6">
-                {isLoadingPartners ? (
-                    Array.from({ length: 4 }).map((_, i) => (
-                        <Skeleton key={i} className="h-24 w-52 rounded-2xl bg-white/10" />
-                    ))
-                ) : (
-                    partners?.map((partner) => (
-                        <div 
-                            key={partner.id} 
-                            className="w-44 sm:w-56 h-24 flex flex-col items-center justify-center p-3.5 rounded-2xl bg-slate-900/80 backdrop-blur-md border border-white/10 hover:border-cyan-400/50 shadow-lg shadow-black/50 hover:shadow-cyan-500/15 hover:scale-105 transition-all duration-300 group relative overflow-hidden"
-                        >
-                            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-                            <div className="w-full h-full relative flex items-center justify-center">
-                                <SafeImage 
-                                    src={partner.logoUrl} 
-                                    alt={partner.name} 
-                                    className="object-contain max-h-full max-w-full drop-shadow-md group-hover:scale-105 transition-transform duration-300" 
-                                    width={200} 
-                                    height={100} 
-                                />
-                            </div>
-                        </div>
-                    ))
+            <h2 className="text-2xl sm:text-4xl font-black font-headline tracking-tight text-white">
+              為什麼選擇 <span className="bg-clip-text text-transparent bg-gradient-to-r from-amber-300 via-amber-400 to-yellow-500">P+Carder</span>
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-400 max-w-lg mx-auto font-medium">
+              專為真實球卡愛好者打造的次世代數位開包與藏友社交平台
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 relative z-10">
+            {[
+              { 
+                title: '公開透明存證', 
+                desc: '每一張核心卡片皆經數位存證，確保來源真實、所有權明確，打造最讓人放心的收藏環境。', 
+                icon: ShieldCheck, 
+                tag: 'VERIFIED',
+                color: 'text-amber-400',
+                border: 'group-hover:border-amber-500/50',
+                iconBg: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+                glow: 'group-hover:shadow-[0_0_30px_rgba(245,158,11,0.15)]'
+              },
+              { 
+                title: '公平機率披露', 
+                desc: '絕不隱藏真實資訊，所有卡池機率完全公開披露，讓每一次抽卡都憑實力與運氣，回歸遊玩初衷。', 
+                icon: Target, 
+                tag: 'FAIR PLAY',
+                color: 'text-cyan-400',
+                border: 'group-hover:border-cyan-500/50',
+                iconBg: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
+                glow: 'group-hover:shadow-[0_0_30px_rgba(6,182,212,0.15)]'
+              },
+              { 
+                title: '即時互動體驗', 
+                desc: '打破實體卡片的侷限，隨時隨地享受極具張力的數位開包效果，將收藏熱忱轉化為指尖的極致快感。', 
+                icon: Zap, 
+                tag: 'REAL-TIME',
+                color: 'text-pink-400',
+                border: 'group-hover:border-pink-500/50',
+                iconBg: 'bg-pink-500/10 text-pink-400 border-pink-500/20',
+                glow: 'group-hover:shadow-[0_0_30px_rgba(244,114,182,0.15)]'
+              },
+              { 
+                title: '專屬藏友社群', 
+                desc: '透過團拆與互動競技，與志同道合的藏友並肩遊玩，交流珍稀卡片，建立屬於你的球員卡核心交友圈。', 
+                icon: Users2, 
+                tag: 'COMMUNITY',
+                color: 'text-emerald-400',
+                border: 'group-hover:border-emerald-500/50',
+                iconBg: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+                glow: 'group-hover:shadow-[0_0_30px_rgba(16,185,129,0.15)]'
+              },
+            ].map((item, i) => (
+              <div 
+                key={i}
+                className={cn(
+                  "p-6 rounded-2xl bg-slate-900/60 border border-slate-800/80 flex flex-col justify-between transition-all duration-300 group shadow-lg hover:-translate-y-1 backdrop-blur-md",
+                  item.border,
+                  item.glow
                 )}
-            </div>
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-5">
+                    <div className={cn("p-3 rounded-xl border shadow-inner transition-transform duration-300 group-hover:scale-110", item.iconBg)}>
+                      <item.icon className="w-5 h-5" />
+                    </div>
+                    <span className="text-[9px] font-mono font-bold tracking-widest text-slate-400 bg-slate-950/80 border border-slate-800 px-2 py-0.5 rounded-full">
+                      {item.tag}
+                    </span>
+                  </div>
+                  <h3 className="text-base sm:text-lg font-black text-white mb-2.5 group-hover:text-amber-300 transition-colors font-headline tracking-wide">
+                    {item.title}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-400 leading-relaxed font-medium">
+                    {item.desc}
+                  </p>
+                </div>
+
+                <div className="pt-4 mt-4 border-t border-slate-800/50 flex items-center gap-1.5 text-[10px] font-mono text-slate-400 group-hover:text-slate-200 transition-colors">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400/80 animate-pulse" />
+                  <span>核心保障機制</span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* Calendar Dialog */}
-      <Dialog open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-        <DialogContent className="max-w-4xl bg-card border-white/10">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-black text-white text-center">卡展行事曆</DialogTitle>
-            <DialogDescription className="text-center text-muted-foreground">追蹤最新的卡片展覽與活動資訊</DialogDescription>
-          </DialogHeader>
-          <ScrollArea className="max-h-[70vh]">
-            <CardExhibitionCalendar hideHeader />
-          </ScrollArea>
-        </DialogContent>
-      </Dialog>
+      {/* 合作夥伴 */}
+      <section className="container pb-12 sm:pb-20 px-3 sm:px-4 max-w-7xl mx-auto text-white">
+        <div className="relative p-6 sm:p-10 rounded-3xl bg-slate-950/50 border border-slate-800/60 backdrop-blur-xl overflow-hidden">
+          <div className="text-center mb-8 space-y-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-mono font-bold tracking-[0.25em] uppercase">
+              <span>TRUSTED BY INDUSTRY LEADERS</span>
+            </div>
+            <h2 className="text-xl sm:text-3xl font-black font-headline tracking-tight text-white">我們的合作夥伴</h2>
+            <p className="text-xs text-slate-400 font-medium">與頂級卡牌品牌與知名同好團隊攜手合作</p>
+          </div>
+          
+          <div className="flex flex-wrap justify-center items-center gap-4 sm:gap-6">
+            {isLoadingPartners ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-24 w-56 rounded-2xl bg-slate-900/80 border border-slate-800" />
+              ))
+            ) : partners && partners.length > 0 ? (
+              partners.map((partner) => (
+                <div 
+                  key={partner.id} 
+                  className="w-48 sm:w-64 h-24 sm:h-28 flex flex-col items-center justify-center p-4 rounded-2xl bg-slate-900/70 border border-slate-800/80 hover:border-amber-400/50 shadow-xl hover:shadow-[0_8px_30px_rgba(245,158,11,0.15)] transition-all duration-300 group relative overflow-hidden backdrop-blur-md"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="w-full h-full relative flex items-center justify-center z-10">
+                    <SafeImage 
+                      src={partner.logoUrl} 
+                      alt={partner.name} 
+                      className="object-contain max-h-full max-w-full drop-shadow-md group-hover:scale-108 transition-transform duration-300 filter group-hover:brightness-110" 
+                      width={200} 
+                      height={90} 
+                    />
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="py-6 text-center text-xs text-slate-500 font-mono">
+                夥伴品牌陸續入駐中...
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
 
-      {/* News Details Dialog (Fallback for cards if URL change isn't needed) */}
+      {/* News Details Dialog */}
       <Dialog open={!!selectedNews} onOpenChange={(open) => !open && setSelectedNews(null)}>
         <DialogContent className={cn(
-            "bg-card/95 backdrop-blur-2xl border-white/10 p-0 overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)]",
+            "bg-slate-950/95 backdrop-blur-2xl border-slate-800 p-0 overflow-hidden shadow-2xl",
             selectedNews?.type === 'image' ? "max-w-4xl" : "max-w-2xl"
         )}>
           <DialogHeader className="sr-only">
-            <DialogTitle>{selectedNews?.title || '最新消息'}</DialogTitle>
-            <DialogDescription>最新消息詳情</DialogDescription>
+            <DialogTitle>{selectedNews?.title}</DialogTitle>
+            <DialogDescription>{selectedNews?.category}</DialogDescription>
           </DialogHeader>
-          
-          <ScrollArea className="max-h-[90vh]">
+          <ScrollArea className="max-h-[85vh]">
             {selectedNews?.type === 'image' ? (
                 <div className="flex flex-col text-white">
-                    <div className="relative w-full aspect-auto min-h-[250px] md:min-h-[300px]">
+                    <div className="relative aspect-video w-full bg-black/80 flex items-center justify-center overflow-hidden">
                         {selectedNews.imageUrl && (
-                            <Image 
+                            <SafeImage 
                                 src={selectedNews.imageUrl} 
                                 alt={selectedNews.title} 
-                                width={800}
-                                height={450}
-                                className="w-full h-auto object-contain block"
-                                onError={(e) => {
-                                    (e.target as HTMLImageElement).src = 'https://picsum.photos/seed/news-fallback/800/450';
-                                }}
+                                width={1200}
+                                height={675}
+                                className="object-contain w-full h-full max-h-[70vh]"
                             />
                         )}
                     </div>
-                    <div className="p-6 md:p-8 bg-black/40 flex flex-col md:flex-row md:items-center justify-between border-t border-white/5 gap-4">
-                        <div className="flex items-center gap-3 md:gap-4">
-                            <Badge className="bg-primary font-black px-2 md:px-3 py-1 shadow-lg text-[10px] md:text-xs border-none">
+                    <div className="p-5 sm:p-6 bg-slate-900/90 flex flex-col md:flex-row md:items-center justify-between border-t border-slate-800 gap-4">
+                        <div className="flex items-center gap-3">
+                            <Badge className="bg-amber-500 text-slate-950 font-black px-2.5 py-0.5 text-xs border-none">
                                 {selectedNews.category}
                             </Badge>
-                            <span className="text-[10px] md:text-xs text-muted-foreground font-code font-bold">
+                            <span className="text-xs text-slate-400 font-mono">
                                 {selectedNews.createdAt ? format(new Date(selectedNews.createdAt.seconds * 1000), 'yyyy-MM-dd HH:mm') : '---'}
                             </span>
                         </div>
-                        <h2 className="text-lg md:text-xl font-black truncate">{selectedNews.title}</h2>
+                        <h2 className="text-base sm:text-lg font-black truncate">{selectedNews.title}</h2>
                     </div>
                 </div>
             ) : (
-                <div className="p-6 md:p-10 space-y-6 md:space-y-8 text-white">
+                <div className="p-6 md:p-8 space-y-5 text-white">
                     <div className="flex items-center justify-between">
-                        <div className="flex flex-wrap items-center gap-3 md:gap-4">
-                            <Badge className="bg-primary px-3 md:px-4 py-1 text-xs md:sm font-black shadow-lg border-none">
+                        <div className="flex flex-wrap items-center gap-3">
+                            <Badge className="bg-amber-500 text-slate-950 px-3 py-1 text-xs font-black border-none">
                                 {selectedNews?.category}
                             </Badge>
-                            <div className="flex items-center gap-2 text-muted-foreground text-[10px] md:text-sm font-code font-bold">
-                            <Calendar className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary" />
-                            {selectedNews?.createdAt ? format(new Date(selectedNews.createdAt.seconds * 1000), 'yyyy-MM-dd HH:mm') : '---'}
+                            <div className="flex items-center gap-2 text-slate-400 text-xs font-mono">
+                              <Calendar className="h-3.5 w-3.5 text-amber-400" />
+                              {selectedNews?.createdAt ? format(new Date(selectedNews.createdAt.seconds * 1000), 'yyyy-MM-dd HH:mm') : '---'}
                             </div>
                         </div>
                     </div>
-                    <div className="space-y-4 md:space-y-6">
-                        <h2 className="text-2xl md:text-5xl font-black font-body leading-tight tracking-tight text-left">{selectedNews?.title}</h2>
-                        <Separator className="bg-white/10" />
+                    <div className="space-y-4">
+                        <h2 className="text-xl sm:text-3xl font-black leading-tight text-left text-white">{selectedNews?.title}</h2>
+                        <Separator className="bg-slate-800" />
                         <div 
-                            className="prose prose-invert max-w-none text-white/80 leading-relaxed text-sm md:text-lg whitespace-pre-wrap font-body font-medium text-left"
+                            className="prose prose-invert max-w-none text-slate-300 leading-relaxed text-sm md:text-base whitespace-pre-wrap font-medium text-left"
                             dangerouslySetInnerHTML={{ __html: selectedNews?.content || '' }}
                         />
                     </div>

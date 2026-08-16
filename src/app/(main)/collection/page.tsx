@@ -410,8 +410,8 @@ export default function CollectionPage() {
           <div className="absolute top-[40%] left-[5%] w-48 h-48 bg-primary/20 blur-[80px] pointer-events-none opacity-30" />
           
           {/* Header Section */}
-          <div className="relative z-20 mb-3">
-            <div className="flex items-center justify-between mb-2">
+          <div className="relative z-20 mb-4 sm:mb-6">
+            <div className="flex items-center justify-between mb-3">
               <Button
                 variant="ghost"
                 size="sm"
@@ -421,15 +421,25 @@ export default function CollectionPage() {
                 <ArrowLeft className="w-4 h-4 text-cyan-400" />
                 <span>返回</span>
               </Button>
+              <div className="flex items-center gap-2 bg-slate-900/80 border border-white/10 px-3 py-1 rounded-full text-xs font-bold text-slate-300">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span>數位保險庫</span>
+              </div>
             </div>
-            <motion.h1 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="font-headline text-2xl font-black tracking-[0.2em] sm:text-5xl text-white drop-shadow-[0_0_15px_rgba(6,182,212,0.4)] mb-1 px-4 break-words text-center"
-            >
-              我的<span className="text-transparent bg-clip-text bg-gradient-to-br from-white via-white to-white/30">收藏</span>
-            </motion.h1>
+            
+            <div className="text-center space-y-1">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold tracking-[0.3em] uppercase mb-1 animate-fade-in-up">
+                <Library className="w-3 h-3" /> VAULT & ASSETS
+              </div>
+              <motion.h1 
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="font-headline text-3xl font-black tracking-[0.15em] sm:text-5xl text-white drop-shadow-[0_0_20px_rgba(6,182,212,0.35)]"
+              >
+                我的<span className="text-transparent bg-clip-text bg-gradient-to-br from-cyan-400 via-white to-amber-300">收藏庫</span>
+              </motion.h1>
+            </div>
           </div>
 
         {/* Selection & Actions Bar - Fixed at bottom when active */}
@@ -763,24 +773,28 @@ export default function CollectionPage() {
           </div>
         </div>
 
-      <div className="space-y-6 relative z-10 pt-2 pb-12">
+      <div className="space-y-8 relative z-10 pt-2 pb-12">
         {standardCards.length > 0 && (
             <motion.section 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
             >
-                <div className="flex items-center gap-3 mb-4">
-                    <div className="relative group">
-                        <div className="absolute -inset-2 bg-primary/20 blur-lg rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
-                        <div className="relative p-3.5 rounded-2xl bg-slate-900 border border-white/5 shadow-2xl">
-                            <Library className="text-primary w-6 h-6" />
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2.5">
+                        <div className="p-2 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.2)]">
+                            <Library className="w-4 h-4 sm:w-5 sm:h-5" />
+                        </div>
+                        <div>
+                            <h2 className="text-sm sm:text-lg font-black font-headline text-white tracking-widest flex items-center gap-2">
+                                <span>個人卡片藏品</span>
+                                <span className="text-[9px] sm:text-[10px] font-mono font-bold text-cyan-300 bg-cyan-500/15 px-2 py-0.5 rounded-full border border-cyan-500/30">
+                                    {standardCards.length} CARDS
+                                </span>
+                            </h2>
                         </div>
                     </div>
-                    <div className="flex-1">
-                        <h2 className="text-3xl md:text-4xl font-black italic text-white tracking-tighter">我的卡片</h2>
-                        <div className="h-[2px] w-12 bg-primary mt-2"></div>
-                    </div>
+                    <div className="h-px flex-1 mx-3 sm:mx-6 bg-gradient-to-r from-cyan-500/30 via-slate-700/40 to-transparent hidden sm:block" />
                 </div>
                 
                 <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2.5 sm:gap-3 md:gap-4">
@@ -791,8 +805,8 @@ export default function CollectionPage() {
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ delay: 0.1 + index * 0.02 }}
                             className={cn(
-                                "group relative rounded-xl transition-all duration-300 cursor-pointer p-1 sm:p-2 bg-slate-900/50 hover:bg-slate-800/50 border border-white/5",
-                                selectedCardIds.has(card.id) ? "ring-2 ring-primary bg-primary/5" : ""
+                                "group relative rounded-2xl transition-all duration-300 cursor-pointer p-1.5 sm:p-2 bg-gradient-to-b from-[#13192a]/90 via-[#0c101d]/90 to-[#080b14]/90 border border-white/10 hover:border-cyan-500/50 hover:shadow-[0_0_20px_rgba(6,182,212,0.2)]",
+                                selectedCardIds.has(card.id) ? "ring-2 ring-cyan-400 bg-cyan-500/10 border-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.3)]" : ""
                             )}
                             onClick={() => setPreviewCard(card)}
                         >
@@ -815,10 +829,10 @@ export default function CollectionPage() {
                                 }}
                             >
                                 <div className={cn(
-                                    "w-5 h-5 rounded-md border transition-all flex items-center justify-center",
+                                    "w-5 h-5 rounded-md border transition-all flex items-center justify-center backdrop-blur-md",
                                     selectedCardIds.has(card.id) 
-                                        ? "bg-primary border-primary text-black" 
-                                        : "bg-black/40 border-white/20 hover:border-white/40"
+                                        ? "bg-cyan-400 border-cyan-400 text-black shadow-[0_0_10px_rgba(6,182,212,0.6)]" 
+                                        : "bg-black/60 border-white/25 hover:border-white/50"
                                 )}>
                                     {selectedCardIds.has(card.id) && <CheckSquare className="w-3 h-3 stroke-[3]" />}
                                 </div>
@@ -835,18 +849,21 @@ export default function CollectionPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
             >
-                <div className="flex items-center gap-3 mb-4">
-                    <div className="relative group">
-                        <div className="absolute -inset-2 bg-orange-500/20 blur-lg rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
-                        <div className="relative p-3.5 rounded-2xl bg-slate-900 border border-white/5 shadow-2xl">
-                            <Users2 className="text-orange-500 w-6 h-6" />
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2.5">
+                        <div className="p-2 rounded-xl bg-orange-500/15 border border-orange-500/30 text-orange-400 shadow-[0_0_15px_rgba(249,115,22,0.2)]">
+                            <Users2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                        </div>
+                        <div>
+                            <h2 className="text-sm sm:text-lg font-black font-headline text-white tracking-widest flex items-center gap-2">
+                                <span>團拆精選專區</span>
+                                <span className="text-[9px] sm:text-[10px] font-mono font-bold text-orange-300 bg-orange-500/15 px-2 py-0.5 rounded-full border border-orange-500/30">
+                                    {groupBreakCards.length} BREAKS
+                                </span>
+                            </h2>
                         </div>
                     </div>
-                    <div className="flex-1">
-                        <h2 className="text-3xl md:text-4xl font-black italic text-orange-400 tracking-tighter">團拆精選</h2>
-                        <div className="h-[2px] w-12 bg-orange-400 mt-2"></div>
-                    </div>
-                    <div className="h-[2px] flex-1 bg-gradient-to-r from-orange-500/20 to-transparent ml-4" />
+                    <div className="h-px flex-1 mx-3 sm:mx-6 bg-gradient-to-r from-orange-500/30 via-slate-700/40 to-transparent hidden sm:block" />
                 </div>
 
                 <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2.5 sm:gap-3 md:gap-4">
@@ -857,8 +874,8 @@ export default function CollectionPage() {
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ delay: 0.2 + index * 0.02 }}
                             className={cn(
-                                "group relative rounded-2xl transition-all duration-500 cursor-pointer",
-                                selectedCardIds.has(card.id) ? "ring-2 ring-orange-500 ring-offset-4 ring-offset-slate-950 scale-[0.98]" : "hover:scale-[1.02]"
+                                "group relative rounded-2xl transition-all duration-500 cursor-pointer p-1.5 sm:p-2 bg-gradient-to-b from-[#1a1410]/90 via-[#100d0a]/90 to-[#080705]/90 border border-white/10 hover:border-orange-500/50 hover:shadow-[0_0_20px_rgba(249,115,22,0.2)]",
+                                selectedCardIds.has(card.id) ? "ring-2 ring-orange-500 ring-offset-2 ring-offset-slate-950 bg-orange-500/10 border-orange-400" : ""
                             )}
                             onClick={() => setPreviewCard(card)}
                         >
@@ -872,29 +889,25 @@ export default function CollectionPage() {
                                 rarity={card.rarity} 
                                 priority={index < 12} 
                             />
-                            
-                            {/* <div className="absolute top-3 left-16 bg-slate-900/80 backdrop-blur-md text-[9px] font-black tracking-widest text-primary px-2 py-0.5 rounded-lg border border-primary/20 pointer-events-none z-20">
-                                {card.sellPrice ? `${card.sellPrice}💎` : 'N/A'}
-                            </div> */}
 
-                            <div className="absolute top-3 right-3 z-30">
+                            <div className="absolute top-2.5 right-2.5 z-30">
                                 <Badge className="bg-orange-500 text-black text-[9px] px-2 py-0.5 font-bold italic tracking-tighter shadow-lg border-none animate-pulse">BREAK</Badge>
                             </div>
 
                             <div 
-                                className="absolute top-3 left-3 z-30" 
+                                className="absolute top-2.5 left-2.5 z-30" 
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     handleSelectCard(card.id, !selectedCardIds.has(card.id));
                                 }}
                             >
                                 <div className={cn(
-                                    "w-6 h-6 rounded-lg border-2 transition-all flex items-center justify-center backdrop-blur-md",
+                                    "w-5 h-5 rounded-md border transition-all flex items-center justify-center backdrop-blur-md",
                                     selectedCardIds.has(card.id) 
-                                        ? "bg-orange-500 border-orange-500 text-black shadow-[0_0_15px_rgba(249,115,22,0.5)]" 
-                                        : "bg-black/40 border-white/20 hover:border-white/40"
+                                        ? "bg-orange-500 border-orange-500 text-black shadow-[0_0_10px_rgba(249,115,22,0.6)]" 
+                                        : "bg-black/60 border-white/25 hover:border-white/50"
                                 )}>
-                                    {selectedCardIds.has(card.id) && <CheckSquare className="w-4 h-4 stroke-[3]" />}
+                                    {selectedCardIds.has(card.id) && <CheckSquare className="w-3 h-3 stroke-[3]" />}
                                 </div>
                             </div>
                         </motion.div>

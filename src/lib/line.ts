@@ -1,13 +1,23 @@
 import { messagingApi } from '@line/bot-sdk';
 
-const channelAccessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN || '';
+let lineClient: messagingApi.MessagingApiClient | null = null;
 
-const client = new messagingApi.MessagingApiClient({
-  channelAccessToken,
-});
+function getLineClient() {
+  const channelAccessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN || '';
+  if (!channelAccessToken) {
+    return null;
+  }
+  if (!lineClient) {
+    lineClient = new messagingApi.MessagingApiClient({
+      channelAccessToken,
+    });
+  }
+  return lineClient;
+}
 
 export async function pushLineMessage(userId: string, message: string) {
-  if (!channelAccessToken) {
+  const client = getLineClient();
+  if (!client) {
     console.warn('LINE_CHANNEL_ACCESS_TOKEN is not set');
     return;
   }
@@ -26,3 +36,4 @@ export async function pushLineMessage(userId: string, message: string) {
     console.error('Error pushing LINE message:', error);
   }
 }
+
