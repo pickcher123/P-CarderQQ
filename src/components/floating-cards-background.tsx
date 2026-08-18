@@ -72,8 +72,8 @@ export function FloatingCardsBackground() {
 
   return (
     <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none" style={{ perspective: '1200px' }}>
-      {/* Background Gradients for depth */}
-      <div className="absolute inset-0 bg-gradient-to-b from-primary/20 via-background/60 to-background z-[1]" />
+      {/* Background Gradients for subtle depth without obscuring bottom floor details */}
+      <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-transparent to-transparent z-[1]" />
       
       {/* Floating Cards Container */}
       <div className="absolute inset-0 z-0 overflow-hidden">
@@ -91,8 +91,8 @@ export function FloatingCardsBackground() {
       <div className="absolute top-1/4 -left-20 w-[600px] h-[600px] bg-primary/20 rounded-full blur-[120px] mix-blend-screen animate-pulse-slow" />
       <div className="absolute bottom-1/4 -right-20 w-[500px] h-[500px] bg-accent/10 rounded-full blur-[100px] mix-blend-screen animate-blob" />
 
-      {/* Subtle overlay to keep UI readable */}
-      <div className="absolute inset-0 bg-background/20 backdrop-blur-[1.5px] z-[2]" />
+      {/* Subtle bottom soft blend that doesn't abruptly cut the floor platform */}
+      <div className="absolute bottom-0 inset-x-0 h-28 bg-gradient-to-t from-slate-950/60 via-slate-950/20 to-transparent pointer-events-none z-[2]" />
     </div>
   );
 }

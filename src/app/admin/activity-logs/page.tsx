@@ -40,7 +40,7 @@ export default function ActivityLogsPage() {
                                 </TableCell>
                                 <TableCell className="text-sm font-bold text-slate-700">{log.action}</TableCell>
                                 <TableCell className="text-xs text-slate-600 font-mono break-all max-w-[300px]">
-                                    {typeof log.details === 'string' ? log.details : JSON.stringify(log.details)}
+                                    {typeof log.details === 'string' ? log.details : String(log.details ?? '')}
                                 </TableCell>
                             </TableRow>
                         ))}

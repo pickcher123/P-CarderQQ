@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Crown, Sparkles, Flame, Trophy, Clock, User, ShieldCheck, Gem, Coins, ExternalLink } from 'lucide-react';
+import { Crown, Sparkles, Trophy, Clock, User, ShieldCheck } from 'lucide-react';
 import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -196,30 +196,14 @@ export function HallOfFameMarquee() {
 
     return (
         <section className="py-2 sm:py-4 relative overflow-hidden">
-            {/* 標題與裝飾 Header（專屬黑金奢華暗底與柔光，不干擾背景） */}
-            <div className="container max-w-6xl mx-auto mb-2 sm:mb-3.5 px-4 relative z-10">
-                <div className="flex flex-col items-center text-center">
-                    
-                    {/* 頂部殿堂徽章 */}
-                    <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-slate-900/80 backdrop-blur-md border border-amber-500/40 text-amber-400 text-[11px] font-bold tracking-widest uppercase mb-1 shadow-[0_0_15px_rgba(245,158,11,0.15)]">
-                        <Flame className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-                        <span>殿堂級神卡喜訊 · 全服注目</span>
-                    </div>
-
-                    {/* 主標題 */}
-                    <div className="flex items-center justify-center gap-2 sm:gap-3 my-0.5">
-                        <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 animate-pulse" />
-                        <h2 className="text-xl sm:text-3xl font-black font-headline tracking-[0.2em] italic uppercase relative group">
-                            <span className="bg-clip-text text-transparent bg-gradient-to-r from-amber-100 via-amber-300 to-yellow-400 drop-shadow-[0_2px_15px_rgba(245,158,11,0.5)]">
-                                傳奇大獎牆
-                            </span>
-                        </h2>
-                        <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 animate-pulse" />
-                    </div>
-
-                    <p className="text-[11px] sm:text-xs text-amber-200/60 font-medium tracking-wide">
-                        懸停可暫停賞析 · 點擊卡片查看大獎詳情
-                    </p>
+            {/* 標題與裝飾 Header */}
+            <div className="container max-w-6xl mx-auto mb-2 px-4 relative z-10">
+                <div className="flex items-center justify-center gap-2 text-center">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                    <h2 className="text-sm sm:text-base font-black font-headline tracking-widest uppercase bg-clip-text text-transparent bg-gradient-to-r from-amber-200 via-amber-300 to-yellow-400">
+                        傳奇大獎牆
+                    </h2>
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                 </div>
             </div>
 

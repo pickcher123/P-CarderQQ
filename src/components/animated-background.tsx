@@ -14,16 +14,28 @@ export function AnimatedBackground({ backgroundUrl, backgroundOpacity }: { backg
   });
 
   useEffect(() => {
-    // 解決行動裝置因網址列隱藏造成的背景閃爍與跳動
+    // 解決行動裝置因網址列隱藏造成的背景閃爍與跳動，同時確保桌面端完整展示底座
     const stabilizeViewportHeight = () => {
-      // 使用固定視窗高度並加上溢出空間，防止網址列伸縮時的抖動
-      setContainerStyle({
-        height: '120vh', 
-        top: '-10vh',
-        position: 'fixed',
-        left: 0,
-        width: '100%',
-      });
+      const isMobile = window.innerWidth < 768;
+      if (isMobile) {
+        // 行動端使用適度溢出防止網址列收合時白邊
+        setContainerStyle({
+          height: '112vh', 
+          top: '-6vh',
+          position: 'fixed',
+          left: 0,
+          width: '100%',
+        });
+      } else {
+        // 桌面端維持 100vh 完美貼齊視窗，完整顯示底部科技地台
+        setContainerStyle({
+          height: '100vh', 
+          top: 0,
+          position: 'fixed',
+          left: 0,
+          width: '100%',
+        });
+      }
     };
 
     stabilizeViewportHeight();

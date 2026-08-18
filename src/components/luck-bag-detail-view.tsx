@@ -210,9 +210,12 @@ export function LuckBagDetailView({ luckBag }: { luckBag: LuckBagWithCount }) {
     const progress = (participantCount / (luckBag.totalParticipants || 1)) * 100;
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-2 relative bg-slate-950 text-slate-100 rounded-3xl overflow-hidden border border-white/10 shadow-2xl my-4">
+        <div className="relative grid grid-cols-1 lg:grid-cols-2 bg-gradient-to-b from-slate-900/95 via-[#0a0f1d]/95 to-[#050811] text-slate-100 rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] overflow-hidden border border-amber-500/20 shadow-[0_20px_60px_rgba(0,0,0,0.8)] backdrop-blur-2xl">
+            {/* Top Glow Accent Bar */}
+            <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_15px_#f59e0b] z-20" />
+
             {/* 左側獎項展示區 */}
-            <div className="p-4 md:p-8 flex flex-col items-center border-b lg:border-b-0 lg:border-r border-white/10 bg-slate-900/40 backdrop-blur-xl">
+            <div className="p-4 sm:p-6 md:p-8 flex flex-col items-center border-b lg:border-b-0 lg:border-r border-white/10 bg-slate-900/30 backdrop-blur-xl">
                 <div className="relative w-full aspect-[4/5] bg-slate-900/80 rounded-2xl p-4 md:p-6 border border-white/10 shadow-2xl flex flex-col">
                     <div className="relative flex-1 flex flex-col bg-slate-950/80 rounded-xl overflow-hidden p-4 md:p-6 border border-amber-500/20 shadow-inner">
                         <div className="mb-4 md:mb-6 pb-4 border-b border-white/10">

@@ -23,8 +23,8 @@ export function drawFromPool(
   updatedPointPrizes: { prizeId: string; points: number; quantity: number; rarity: Rarity }[];
 } {
   const drawn: DrawnPrize[] = [];
-  const updatedCards = poolData.cards ? JSON.parse(JSON.stringify(poolData.cards)) : [];
-  const updatedPointPrizes = poolData.pointPrizes ? JSON.parse(JSON.stringify(poolData.pointPrizes)) : [];
+  const updatedCards = poolData.cards ? poolData.cards.map((c: any) => ({ ...c })) : [];
+  const updatedPointPrizes = poolData.pointPrizes ? poolData.pointPrizes.map((p: any) => ({ ...p })) : [];
 
   for (let i = 0; i < count; i++) {
     // 1) Sum up available card quantities

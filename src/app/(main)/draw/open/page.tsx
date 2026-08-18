@@ -88,7 +88,7 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
     operationType,
     path
   };
-  console.error('Firestore Error Info: ', JSON.stringify(errInfo));
+  console.error('Firestore Error Info: ', errInfo.error, errInfo.path, errInfo.authInfo);
 
   // 轉換為親切提示
   let userFriendlyMessage = '系統發生異常，請稍後再試。';
@@ -508,47 +508,74 @@ export default function OpenPackPage() {
     const canDraw10 = !isLoadingStats && (!cardPool?.dailyLimit || cardPool.dailyLimit === 0 || (todayDrawCount + 10 <= cardPool.dailyLimit));
 
     return (
-        <div className="flex flex-col items-center h-screen p-2 pt-2 relative overflow-hidden select-none touch-none justify-start md:justify-center" style={{ backgroundImage: 'url("/draw_background.png")', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}>
+        <div 
+            className="flex flex-col justify-between items-center h-[100dvh] min-h-[100dvh] w-full p-2 sm:p-4 relative overflow-hidden select-none" 
+            style={{ backgroundImage: 'url("/draw_background.png")', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
+        >
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-[5]" />
             <CelebrationVFX type={landingVFX !== 'none' ? landingVFX : showCelebration} />
-            <Button variant="ghost" onClick={() => router.back()} className="absolute top-2 left-2 font-bold text-white/40 z-[20] text-xs"><ArrowLeft className="mr-1 h-3 w-3" /> 返回</Button>
             
-            <div className="w-full flex flex-col items-center justify-end pb-1 min-h-[40px] z-[15] select-none mt-2 md:mt-0">
+            {/* Top Navigation Bar */}
+            <div className="w-full flex items-center justify-between z-[25] shrink-0 px-1 pt-1">
+                <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => router.back()} 
+                    className="font-bold text-white/60 hover:text-white hover:bg-white/10 text-xs h-8 px-2 rounded-xl transition-all"
+                >
+                    <ArrowLeft className="mr-1 h-3.5 w-3.5" /> 返回
+                </Button>
+
                 {step !== 'done' && step !== 'waiting-to-start' && step !== 'init-loading' && (
-                    <div className="flex justify-center mb-1">
-                        <div className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-500 text-[8px] font-black uppercase shadow-xl backdrop-blur-md">
-                            <ShieldCheck className="h-2.5 w-2.5" /> 保護時間剩餘 {lockCountdown} 秒
-                        </div>
+                    <div className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400 text-[10px] font-black uppercase shadow-lg backdrop-blur-md">
+                        <ShieldCheck className="h-3 w-3" /> 保護時間剩餘 {lockCountdown}s
                     </div>
                 )}
+
+                <div className="w-12" /> {/* Spacer for balance */}
+            </div>
+            
+            {/* Status & Title Header */}
+            <div className="w-full flex flex-col items-center justify-center shrink-0 z-[15] select-none py-1 min-h-[48px]">
                 {(step === 'ready-to-reveal' || step === 'revealing') && currentPrize && revealPercent === 100 && (
-                    <div className="text-center animate-fade-in-up select-none">
-                        <p className="text-[9px] text-white/40 uppercase font-black tracking-[0.2em]">{currentPrize.type === 'last-prize' ? '最後賞限定' : `第 ${revealedIndex + 1} 項結果`}</p>
-                        <div className="flex items-center justify-center gap-1.5">
+                    <div className="text-center animate-fade-in-up select-none max-w-xs px-2">
+                        <p className="text-[10px] text-white/50 uppercase font-black tracking-[0.2em]">
+                            {currentPrize.type === 'last-prize' ? '🎉 最後賞限定' : `第 ${revealedIndex + 1} / ${drawnPrizes.length} 項`}
+                        </p>
+                        <div className="flex items-center justify-center gap-1.5 mt-0.5">
                             {(currentPrize.type === 'points') ? (
                                 <div className="flex items-center gap-1.5">
-                                    <PPlusIcon className="w-6 h-6" />
-                                    <span className="text-2xl md:text-3xl font-black font-headline text-white">+{currentPrize.points}</span>
+                                    <PPlusIcon className="w-5 h-5 text-sky-400" />
+                                    <span className="text-xl sm:text-2xl font-black font-headline text-white">+{currentPrize.points}</span>
                                 </div>
                             ) : (
-                                <h2 className="text-lg md:text-2xl font-headline font-black text-white uppercase drop-shadow-lg truncate max-w-[280px]">{currentPrize.name}</h2>
+                                <h2 className="text-base sm:text-xl font-headline font-black text-white uppercase drop-shadow-lg truncate max-w-[260px]">
+                                    {currentPrize.name}
+                                </h2>
                             )}
                         </div>
-                        <p className={cn("text-[9px] font-black uppercase tracking-[0.3em] mt-0.5", visual.color)}>{visual.label}</p>
+                        <p className={cn("text-[10px] font-black uppercase tracking-[0.25em] mt-0.5", visual.color)}>
+                            {visual.label}
+                        </p>
                     </div>
                 )}
                 {step === 'done' && (
-                    <div className="text-center animate-fade-in-up mb-1 select-none">
-                        <h2 className="text-2xl md:text-4xl font-headline font-black text-white uppercase italic drop-shadow-[0_0_20px_rgba(6,182,212,0.4)]">開獎結算</h2>
-                        <p className="text-[9px] text-primary font-bold mt-1 uppercase tracking-[0.2em]">本次遊玩共獲得 {sessionPrizes.length} 項戰利品</p>
+                    <div className="text-center animate-fade-in-up select-none">
+                        <h2 className="text-xl sm:text-3xl font-headline font-black text-white uppercase italic drop-shadow-[0_0_20px_rgba(6,182,212,0.4)]">
+                            開獎結算
+                        </h2>
+                        <p className="text-[10px] sm:text-xs text-primary font-bold mt-0.5 uppercase tracking-wider">
+                            本次共獲得 {sessionPrizes.length} 項戰利品
+                        </p>
                     </div>
                 )}
             </div>
 
+            {/* Central Stage: Scratch / Reveal OR Result Shelf */}
             {step !== 'done' ? (
-                <div className="flex flex-col items-center justify-center pt-2 w-full relative transition-all duration-500 select-none z-[20]">
+                <div className="flex-1 flex flex-col items-center justify-center w-full relative z-[20] min-h-0 py-1">
                     <motion.div 
-                        initial={{ y: -800, opacity: 0, scale: 0.2, rotate: -45, filter: 'blur(50px)' }}
+                        initial={{ y: -600, opacity: 0, scale: 0.3, rotate: -30, filter: 'blur(30px)' }}
                         animate={{ y: 0, opacity: 1, scale: 1, rotate: 0, filter: 'blur(0px)' }}
                         onAnimationComplete={() => {
                             if (topRarityCelebration !== 'none' && landingVFX === 'none') {
@@ -558,30 +585,32 @@ export default function OpenPackPage() {
                         }}
                         transition={{ 
                             type: 'spring', 
-                            stiffness: 120, 
-                            damping: 10,
-                            mass: 1.5,
-                            duration: 1.2
+                            stiffness: 140, 
+                            damping: 12,
+                            mass: 1.2
                         }}
-                        className="flex flex-col items-center w-full max-w-[170px] md:max-w-[220px] relative"
+                        className="flex flex-col items-center w-[min(60vw,200px)] sm:w-[220px] relative max-h-[46dvh] aspect-[2.5/4]"
                     >
-                        <div className={cn("relative p-1 bg-slate-900 border-[5px] border-slate-950 rounded-[2.2rem] shadow-2xl overflow-hidden w-full transition-all duration-700", step === 'revealing' && revealPercent === 100 && visual.glow)}>
+                        <div className={cn(
+                            "relative p-1 bg-slate-900 border-[4px] sm:border-[5px] border-slate-950 rounded-[1.8rem] sm:rounded-[2.2rem] shadow-2xl overflow-hidden w-full h-full transition-all duration-700", 
+                            step === 'revealing' && revealPercent === 100 && visual.glow
+                        )}>
                             <div 
                                 ref={squeezeRef} 
-                                className="relative bg-transparent rounded-[1.1rem] border-[5px] border-slate-950 overflow-hidden aspect-[2.5/4] flex items-center justify-center touch-none cursor-pointer select-none transition-transform duration-100"
-                                style={{ transform: isSqueezing ? `perspective(1000px) rotateX(${revealPercent * 0.2}deg) rotateY(-${revealPercent * 0.1}deg) scale(1.05)` : 'none' }}
+                                className="relative bg-transparent rounded-[1rem] border-[3px] sm:border-[4px] border-slate-950 overflow-hidden w-full h-full flex items-center justify-center touch-none cursor-pointer select-none transition-transform duration-100"
+                                style={{ transform: isSqueezing ? `perspective(1000px) rotateX(${revealPercent * 0.2}deg) rotateY(-${revealPercent * 0.1}deg) scale(1.03)` : 'none' }}
                                 onPointerDown={handleSqueezeStart} 
                                 onPointerMove={handleSqueezeMove} 
                                 onPointerUp={handleSqueezeEnd} 
                                 onPointerCancel={handleSqueezeEnd}
                             >
                                 <div className={cn(
-                                    "relative w-full h-full z-10 flex items-center justify-center pointer-events-none p-1.5 select-none transition-opacity duration-200",
+                                    "relative w-full h-full z-10 flex items-center justify-center pointer-events-none p-1 select-none transition-opacity duration-200",
                                     isChanging ? "opacity-0" : "opacity-100"
                                 )}>
                                     {currentPrize && (
                                         (currentPrize.type === 'card' || currentPrize.type === 'last-prize') ? (
-                                            <div className="relative w-full h-full rounded-xl overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+                                            <div className="relative w-full h-full rounded-lg sm:rounded-xl overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)]">
                                                 <CardItem 
                                                     name={currentPrize.name} 
                                                     imageUrl={currentPrize.imageUrl} 
@@ -594,10 +623,10 @@ export default function OpenPackPage() {
                                                 />
                                             </div>
                                         ) : (
-                                            <div className={cn("w-full h-full flex flex-col items-center justify-center p-3 rounded-xl shadow-inner border-2", pointPrizeRarityStyles[currentPrize.rarity].bg, pointPrizeRarityStyles[currentPrize.rarity].border)}>
-                                                <PPlusIcon className={cn("w-16 h-16 mb-4 drop-shadow-[0_0_20px_currentColor]", pointPrizeRarityStyles[currentPrize.rarity].text)} />
-                                                <p className="font-headline text-4xl font-black text-white drop-shadow-lg">{currentPrize.points}</p>
-                                                <Badge variant="outline" className="mt-4 border-white/20 text-[8px] font-black uppercase tracking-widest text-white/40">Digital Bonus</Badge>
+                                            <div className={cn("w-full h-full flex flex-col items-center justify-center p-2 rounded-lg sm:rounded-xl shadow-inner border-2", pointPrizeRarityStyles[currentPrize.rarity].bg, pointPrizeRarityStyles[currentPrize.rarity].border)}>
+                                                <PPlusIcon className={cn("w-12 h-12 sm:w-16 sm:h-16 mb-2 sm:mb-4 drop-shadow-[0_0_20px_currentColor]", pointPrizeRarityStyles[currentPrize.rarity].text)} />
+                                                <p className="font-headline text-2xl sm:text-4xl font-black text-white drop-shadow-lg">{currentPrize.points}</p>
+                                                <Badge variant="outline" className="mt-2 border-white/20 text-[7px] sm:text-[8px] font-black uppercase tracking-widest text-white/40">Digital Bonus</Badge>
                                             </div>
                                         )
                                     )}
@@ -605,106 +634,116 @@ export default function OpenPackPage() {
                                 
                                 <div 
                                     className={cn(
-                                        "absolute inset-0 z-30 bg-slate-900 rounded-xl border-4 border-primary/50 flex flex-col items-center justify-center pointer-events-none select-none shadow-[inset_0_0_20px_rgba(6,182,212,0.3)]",
+                                        "absolute inset-0 z-30 bg-slate-900 rounded-lg sm:rounded-xl border-2 sm:border-4 border-primary/50 flex flex-col items-center justify-center pointer-events-none select-none shadow-[inset_0_0_20px_rgba(6,182,212,0.3)]",
                                         (!isSqueezing && (revealPercent === 0 || isChanging)) ? "" : "transition-all duration-500 ease-out",
                                         (revealPercent >= 100) ? "opacity-0" : "opacity-100"
                                     )} 
                                     style={{ transform: `translateY(-${revealPercent}%)` }} 
                                 >
-                                    {/* 3D Side Edge */}
-                                    <div className="absolute -right-2 top-2 bottom-2 w-2 bg-primary/20 rounded-r-lg shadow-lg" />
-                                    <div className="absolute -bottom-2 left-2 right-2 h-2 bg-primary/20 rounded-b-lg shadow-lg" />
-                                    
                                     <div className="relative">
                                         <div className="absolute inset-0 bg-primary blur-xl opacity-30 animate-pulse" />
-                                        <Disc3 className="w-12 h-12 text-primary animate-spin-slow mb-3 relative z-10" />
+                                        <Disc3 className="w-10 h-10 sm:w-12 sm:h-12 text-primary animate-spin-slow mb-2 sm:mb-3 relative z-10" />
                                     </div>
-                                    <span className="font-headline text-sm font-black text-primary tracking-[0.3em] italic drop-shadow-md">P+ CARDER</span>
-                                    <p className="text-[9px] text-primary/60 mt-4 animate-pulse uppercase font-black tracking-widest">往上掀開</p>
+                                    <span className="font-headline text-xs sm:text-sm font-black text-primary tracking-[0.25em] italic drop-shadow-md">P+ CARDER</span>
+                                    <p className="text-[9px] text-primary/60 mt-2 sm:mt-3 animate-pulse uppercase font-black tracking-widest">往上掀開</p>
                                 </div>
                             </div>
                         </div>
+
                         {step === 'ready-to-reveal' && (
                             <Button 
                                 variant="ghost" 
                                 size="sm" 
                                 onClick={completeReveal}
-                                className="mt-4 h-8 px-6 rounded-full bg-white/10 border border-white/20 text-[10px] font-black text-primary uppercase tracking-[0.2em] hover:bg-primary/20 transition-all shadow-xl"
+                                className="mt-2 sm:mt-3 h-7 sm:h-8 px-4 sm:px-6 rounded-full bg-white/10 border border-white/20 text-[9px] sm:text-[10px] font-black text-primary uppercase tracking-wider hover:bg-primary/20 transition-all shadow-lg shrink-0"
                             >
-                                <FastForward className="w-3 h-3 mr-1.5 animate-pulse" /> 快速開獎 SKIP
+                                <FastForward className="w-3 h-3 mr-1 animate-pulse" /> 快速開獎 SKIP
                             </Button>
                         )}
                     </motion.div>
                 </div>
             ) : (
-                <div className="w-full max-w-6xl px-4 z-20 mt-0 flex flex-col relative select-none">
-                    {/* Prize scroll container */}
-                        <div id="prize-scroll-container" className={cn(
-                            "flex flex-row gap-4 py-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide scroll-smooth"
-                        )}>
-                            {sessionPrizes.map((p, i) => (
-                                <div key={i} className="animate-fade-in-up snap-center w-[160px] md:w-[200px] flex-shrink-0" style={{ animationDelay: `${i * 80}ms` }}>
-                                    {p.type === 'points' || p.isPoints || p.name?.includes('隨機球員') ? (
+                <div className="flex-1 w-full max-w-4xl px-2 sm:px-4 z-20 min-h-0 flex flex-col justify-center relative select-none py-1">
+                    {/* Horizontal swipeable prize shelf */}
+                    <div 
+                        id="prize-scroll-container" 
+                        className="flex flex-row gap-3 sm:gap-4 py-2 px-2 overflow-x-auto snap-x snap-mandatory scrollbar-hide scroll-smooth items-center min-h-0"
+                    >
+                        {sessionPrizes.map((p, i) => (
+                            <div 
+                                key={i} 
+                                className="animate-fade-in-up snap-center w-[125px] sm:w-[170px] md:w-[200px] flex-shrink-0" 
+                                style={{ animationDelay: `${i * 70}ms` }}
+                            >
+                                {p.type === 'points' || p.isPoints || p.name?.includes('隨機球員') ? (
+                                    <div className="w-full aspect-[2.5/4]">
                                         <RandomPlayerCard 
                                             rarity={p.rarity} 
                                             points={p.points}
                                             title={p.name}
                                             onClick={() => setPreviewCard({ ...p, isPoints: true })} 
                                         />
-                                    ) : (
-                                        <div 
-                                            className="w-full aspect-[2.5/4] rounded-3xl overflow-hidden shadow-2xl transition-all hover:scale-105 group border border-white/5 h-full cursor-zoom-in"
-                                            onClick={() => setPreviewCard({ ...p, rarity: p.rarity })}
-                                        >
-                                            <CardItem 
-                                                name={p.name} 
-                                                imageUrl={p.imageUrl}
-                                                backImageUrl={p.backImageUrl} 
-                                                imageHint={p.name} 
-                                                rarity={p.rarity} 
-                                                className="h-full"
-                                                isFlippable={false}
-                                            />
+                                    </div>
+                                ) : (
+                                    <div 
+                                        className="w-full aspect-[2.5/4] rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl transition-all hover:scale-105 group border border-white/10 h-full cursor-zoom-in relative"
+                                        onClick={() => setPreviewCard({ ...p, rarity: p.rarity })}
+                                    >
+                                        <CardItem 
+                                            name={p.name} 
+                                            imageUrl={p.imageUrl}
+                                            backImageUrl={p.backImageUrl} 
+                                            imageHint={p.name} 
+                                            rarity={p.rarity} 
+                                            className="h-full"
+                                            isFlippable={false}
+                                        />
+                                        <div className="absolute inset-x-0 bottom-0 p-1.5 bg-gradient-to-t from-black/80 to-transparent flex items-center justify-center">
+                                            <span className="text-[9px] text-white/70 font-bold truncate max-w-full">{p.name}</span>
                                         </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* 電腦版點擊箭頭 */}
-                        {sessionPrizes.length > 2 && (
-                            <>
-                                <button 
-                                    className="absolute left-0 top-1/2 -translate-y-1/2 z-50 bg-black/60 backdrop-blur-md p-4 rounded-r-full border border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.5)] hover:bg-red-500/20 transition-all hidden md:block"
-                                    onClick={() => {
-                                        const container = document.getElementById('prize-scroll-container');
-                                        if (container) container.scrollBy({ left: -300, behavior: 'smooth' });
-                                    }}
-                                >
-                                    <ChevronRight className="w-8 h-8 text-red-500 rotate-180" />
-                                </button>
-
-                                <button 
-                                    className="absolute right-0 top-1/2 -translate-y-1/2 z-50 bg-black/60 backdrop-blur-md p-4 rounded-l-full border border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.5)] hover:bg-red-500/20 transition-all hidden md:block"
-                                    onClick={() => {
-                                        const container = document.getElementById('prize-scroll-container');
-                                        if (container) container.scrollBy({ left: 300, behavior: 'smooth' });
-                                    }}
-                                >
-                                    <ChevronRight className="w-8 h-8 text-red-500" />
-                                </button>
-                            </>
-                        )}
+                                    </div>
+                                )}
+                            </div>
+                        ))}
                     </div>
+
+                    {/* Left / Right Scroll Buttons on Desktop */}
+                    {sessionPrizes.length > 2 && (
+                        <>
+                            <button 
+                                className="absolute left-1 top-1/2 -translate-y-1/2 z-50 bg-black/70 backdrop-blur-md p-2.5 rounded-full border border-white/20 shadow-xl hover:bg-white/10 transition-all hidden md:flex items-center justify-center cursor-pointer text-white"
+                                onClick={() => {
+                                    const container = document.getElementById('prize-scroll-container');
+                                    if (container) container.scrollBy({ left: -260, behavior: 'smooth' });
+                                }}
+                            >
+                                <ChevronRight className="w-5 h-5 rotate-180" />
+                            </button>
+
+                            <button 
+                                className="absolute right-1 top-1/2 -translate-y-1/2 z-50 bg-black/70 backdrop-blur-md p-2.5 rounded-full border border-white/20 shadow-xl hover:bg-white/10 transition-all hidden md:flex items-center justify-center cursor-pointer text-white"
+                                onClick={() => {
+                                    const container = document.getElementById('prize-scroll-container');
+                                    if (container) container.scrollBy({ left: 260, behavior: 'smooth' });
+                                }}
+                            >
+                                <ChevronRight className="w-5 h-5" />
+                            </button>
+                        </>
+                    )}
+
+                    <p className="text-center text-[10px] text-white/40 font-bold mt-1">
+                        👉 左右滑動瀏覽戰利品 • 點擊卡片放大查看
+                    </p>
+                </div>
             )}
 
-            <div className="w-full flex flex-col items-center gap-1 z-30 pt-2 pb-2 select-none -mt-4 mb-8">
+            {/* Bottom Action Area: Strictly Anchored, Compact & Mobile-Safe */}
+            <div className="w-full max-w-sm shrink-0 z-30 pb-2 sm:pb-3 px-2">
                  {(step === 'revealing' || step === 'done') && (
-                    <div className={cn(
-                        "bg-black/85 backdrop-blur-3xl border border-white/10 p-3 rounded-[2rem] w-full max-w-[340px] shadow-[0_20px_50px_rgba(0,0,0,0.8)] animate-fade-in-up transition-all"
-                    )}>
+                    <div className="bg-slate-950/90 backdrop-blur-2xl border border-white/15 p-2.5 sm:p-3.5 rounded-2xl sm:rounded-3xl w-full shadow-[0_10px_40px_rgba(0,0,0,0.85)] animate-fade-in-up transition-all space-y-2">
                         {cashbackPPoints > 0 && (
-                            <div className="flex items-center justify-center gap-2 font-black text-[9px] uppercase mb-1 text-accent animate-pulse">
+                            <div className="flex items-center justify-center gap-1.5 font-black text-[10px] uppercase text-accent animate-pulse">
                                 <Sparkles className="w-3 h-3" />
                                 <span>VIP回饋: +{cashbackPPoints}</span>
                                 <PPlusIcon className="w-3 h-3" />
@@ -714,15 +753,15 @@ export default function OpenPackPage() {
                         {step === 'revealing' && revealedIndex < drawnPrizes.length - 1 ? (
                             <Button 
                                 onClick={nextPrize} 
-                                className="w-full h-9 font-black bg-primary text-primary-foreground rounded-xl shadow-xl text-sm hover:scale-105 active:scale-95 transition-all"
+                                className="w-full h-11 sm:h-12 font-black bg-primary text-primary-foreground rounded-xl sm:rounded-2xl shadow-xl text-xs sm:text-sm hover:brightness-110 active:scale-95 transition-all cursor-pointer"
                             >
                                 {drawnPrizes[revealedIndex+1]?.type === 'last-prize' ? '🎉 揭曉最後賞限定！' : `揭曉下一項 (${revealedIndex+1}/${drawnPrizes.length})`}
                             </Button>
                         ) : (step === 'done' || (step === 'revealing' && revealedIndex === drawnPrizes.length - 1)) && (
-                            <>
-                                <div className="flex gap-2 w-full">
+                            <div className="space-y-1.5">
+                                <div className="flex gap-1.5 w-full">
                                     {isLimitReachedForSingle ? (
-                                        <Button disabled className="flex-1 h-14 text-sm font-black rounded-2xl bg-slate-800 text-slate-500 border border-slate-700 opacity-50 italic">
+                                        <Button disabled className="flex-1 h-12 text-xs font-black rounded-xl bg-slate-800 text-slate-500 border border-slate-700 opacity-50 italic">
                                             今日次數已用完
                                         </Button>
                                     ) : (
@@ -736,60 +775,55 @@ export default function OpenPackPage() {
                                         />
                                     )}
                                 </div>
-                                <div className="grid grid-cols-2 gap-2 mt-2">
-                                    <Button asChild variant="outline" className="h-10 text-[11px] font-bold border-white/5 rounded-xl bg-white/5 hover:bg-white/10">
+                                <div className="grid grid-cols-2 gap-1.5 pt-0.5">
+                                    <Button asChild variant="outline" className="h-9 text-[11px] font-bold border-white/10 rounded-xl bg-white/5 hover:bg-white/10 text-slate-200">
                                         <Link href="/draw">返回卡池</Link>
                                     </Button>
                                     
-                                    <div className="grid grid-cols-2 gap-1 w-full relative">
-                                        {step === 'done' ? (
-                                            <>
-                                                <Button asChild variant="outline" className="col-span-2 h-10 text-[11px] font-bold border-primary/40 text-primary rounded-xl bg-primary/5 shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:bg-primary/10">
-                                                    <Link href="/collection">前往收藏</Link>
-                                                </Button>
-                                            </>
-                                        ) : (
-                                            <Button 
-                                                onClick={() => setStep('done')} 
-                                                variant="outline" 
-                                                className="col-span-2 h-10 text-[11px] font-bold border-primary/40 text-primary rounded-xl bg-primary/5 shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:bg-primary/10"
-                                            >
-                                                查看本次總結
-                                            </Button>
-                                        )}
-                                    </div>
+                                    {step === 'done' ? (
+                                        <Button asChild variant="outline" className="h-9 text-[11px] font-bold border-primary/50 text-primary rounded-xl bg-primary/10 shadow-[0_0_15px_rgba(6,182,212,0.25)] hover:bg-primary/20">
+                                            <Link href="/collection">前往收藏庫</Link>
+                                        </Button>
+                                    ) : (
+                                        <Button 
+                                            onClick={() => setStep('done')} 
+                                            variant="outline" 
+                                            className="h-9 text-[11px] font-bold border-primary/50 text-primary rounded-xl bg-primary/10 shadow-[0_0_15px_rgba(6,182,212,0.25)] hover:bg-primary/20 cursor-pointer"
+                                        >
+                                            查看本次總結
+                                        </Button>
+                                    )}
                                 </div>
-                            </>
+                            </div>
                         )}
                     </div>
                 )}
             </div>
             
+            {/* Full Screen Card Zoom Dialog */}
             <Dialog open={!!previewCard} onOpenChange={(open) => !open && setPreviewCard(null)}>
-                <DialogContent className="max-w-[min(95vw,420px)] bg-transparent border-none p-0 flex flex-col items-center justify-center gap-4 sm:gap-6 [&>button:last-child]:hidden z-[200]">
+                <DialogContent className="max-w-[min(92vw,400px)] bg-slate-950/95 backdrop-blur-2xl border border-white/20 rounded-3xl p-4 flex flex-col items-center justify-center gap-3 [&>button:last-child]:hidden z-[200]">
                     <DialogTitle><VisuallyHiddenPrimitive.Root>卡片預覽</VisuallyHiddenPrimitive.Root></DialogTitle>
                     {previewCard && (
-                        <div className="w-full flex flex-col items-center gap-4 sm:gap-6">
-                            <h2 className="text-[11px] sm:text-sm font-black text-white text-center px-4 uppercase">{previewCard.name}</h2>
-                            <div className="w-[85%] sm:w-full max-w-[360px]">
+                        <div className="w-full flex flex-col items-center gap-2">
+                            <h2 className="text-xs sm:text-sm font-black text-white text-center px-2 uppercase truncate max-w-full">{previewCard.name}</h2>
+                            <div className="w-full max-w-[260px] aspect-[2.5/4]">
                                 {previewCard.isPoints || previewCard.type === 'points' || previewCard.name?.includes('隨機球員') ? (
-                                    <div className="w-full aspect-[2.5/4] max-w-[280px]">
-                                        <RandomPlayerCard 
-                                            rarity={previewCard.rarity} 
-                                            points={previewCard.points} 
-                                            title={previewCard.name}
-                                            showBuybackHint={false} 
-                                        />
-                                    </div>
+                                    <RandomPlayerCard 
+                                        rarity={previewCard.rarity} 
+                                        points={previewCard.points} 
+                                        title={previewCard.name}
+                                        showBuybackHint={false} 
+                                    />
                                 ) : (
                                     <CardItem name={previewCard.name} imageUrl={previewCard.imageUrl} backImageUrl={previewCard.backImageUrl} imageHint={previewCard.name} rarity={previewCard.rarity} isFlippable={true}/>
                                 )}
                             </div>
-                            {!previewCard.isPoints && <p className="text-[9px] text-primary font-bold uppercase animate-pulse">點擊翻轉</p>}
+                            {!previewCard.isPoints && <p className="text-[10px] text-primary font-bold uppercase animate-pulse">點擊翻轉卡片</p>}
                         </div>
                     )}
-                    <Button variant="ghost" size="icon" className="mt-2 sm:mt-4 rounded-full bg-black/80 h-10 w-10 sm:h-12 sm:w-12 text-white" onClick={() => setPreviewCard(null)}>
-                        <X className="h-5 w-5 sm:h-6 sm:w-6" />
+                    <Button variant="ghost" size="icon" className="rounded-full bg-white/10 h-9 w-9 text-white hover:bg-white/20" onClick={() => setPreviewCard(null)}>
+                        <X className="h-4 w-4" />
                     </Button>
                 </DialogContent>
             </Dialog>

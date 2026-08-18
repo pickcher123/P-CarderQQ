@@ -8,9 +8,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Users, Users2, Info, ChevronDown, ChevronUp, Sparkles, Gem, ChevronRight, Package, Trophy, Settings, Disc3, Monitor, Radio } from 'lucide-react';
+import { 
+  Users, Users2, Info, ChevronDown, ChevronUp, Sparkles, Gem, ChevronRight, 
+  Package, Trophy, Settings, Disc3, Monitor, Radio, ShieldCheck, Target, 
+  Dices, Percent, Award, Coins 
+} from 'lucide-react';
+import { PPlusIcon } from '@/components/icons';
 import { useMemo, useState } from 'react';
-import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -24,8 +28,9 @@ interface GroupBreak {
   totalSpots?: number;
   breakType: 'spot' | 'team';
   spots?: { userId?: string }[];
-  teams?: { userId?: string }[];
+  teams?: { userId?: string; price?: number }[];
   status: 'draft' | 'published' | 'in_progress' | 'completed';
+  currency?: 'diamond' | 'p-point';
   createdAt: { seconds: number, nanoseconds: number };
 }
 
@@ -39,102 +44,96 @@ const GroupBreakCard = ({ groupBreak, index, cardOpacity }: { groupBreak: GroupB
     ? (b.teams?.length || 0)
     : (b.totalSpots || 0);
 
-  const progress = totalSpots > 0 ? (participantCount / totalSpots) * 100 : 0;
+  const progress = totalSpots > 0 ? Math.min(100, Math.round((participantCount / totalSpots) * 100)) : 0;
   const isFull = totalSpots > 0 && participantCount >= totalSpots;
   const isCompleted = b.status === 'completed';
   const isInProgress = b.status === 'in_progress';
+  const currency = b.currency || 'p-point';
+
+  const minTeamPrice = useMemo(() => {
+    if (b.breakType !== 'team' || !b.teams?.length) return 0;
+    const prices = b.teams.map(t => t.price || 0).filter(p => p > 0);
+    return prices.length ? Math.min(...prices) : 0;
+  }, [b]);
 
   return (
     <Link 
         href={`/group-break/${b.id}`} 
         className={cn(
-            "group relative flex flex-col p-4 bg-gradient-to-b from-[#13192a]/95 via-[#0c101d]/95 to-[#080b14]/95 border border-white/10 rounded-2xl shadow-[0_10px_35px_rgba(0,0,0,0.4)] transition-all duration-500 hover:border-primary/50 hover:shadow-[0_0_30px_rgba(6,182,212,0.2)]",
+            "group relative flex flex-col p-3.5 sm:p-5 bg-gradient-to-b from-[#13192a]/90 via-[#0c101d]/95 to-[#080b14]/95 border border-white/10 rounded-2xl sm:rounded-3xl shadow-[0_10px_35px_rgba(0,0,0,0.4)] transition-all duration-300 hover:border-cyan-500/50 hover:shadow-[0_0_30px_rgba(6,182,212,0.25)] hover:-translate-y-1 select-none",
             "animate-fade-in-up"
         )}
     >
-        <div className="relative flex-1 flex flex-col bg-slate-950/50 rounded-xl p-3 md:p-5 border border-white/5 shadow-inner overflow-hidden">
-            <div className="relative flex-1 aspect-video rounded-xl overflow-hidden bg-black shadow-[inset:0_0_20px_rgba(0,0,0,1)] border border-white/10">
-                <SafeImage 
-                    src={b.imageUrl} 
-                    alt={b.title} 
-                    fill 
-                    className={cn(
-                        "object-cover transition-all duration-1000 group-hover:scale-110 opacity-80",
-                        isCompleted && "grayscale brightness-50"
-                    )} 
-                />
-                
-                <div className="absolute inset-0 pointer-events-none z-10 opacity-[0.08] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_3px,4px_100%]" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-10" />
+        {/* 上方封面圖片容器 */}
+        <div className="relative aspect-[16/10] sm:aspect-[4/3] rounded-xl sm:rounded-2xl overflow-hidden bg-slate-950 border border-white/10 shadow-inner">
+            {b.imageUrl && (
+              <div 
+                className="absolute inset-0 bg-cover bg-center blur-xl scale-125 opacity-20 pointer-events-none"
+                style={{ backgroundImage: `url(${b.imageUrl})` }}
+              />
+            )}
+            <SafeImage 
+                src={b.imageUrl} 
+                alt={b.title} 
+                fill 
+                className={cn(
+                    "object-contain sm:object-cover transition-all duration-500 group-hover:scale-105",
+                    isCompleted && "grayscale brightness-60"
+                )} 
+            />
 
-                <div className="absolute top-2 right-2 z-20">
-                    {isCompleted ? (
-                      <Badge className="bg-slate-700/80 text-slate-300 font-black text-xs tracking-widest uppercase border-none shadow-xl px-3 py-1">
-                        已結束
-                      </Badge>
-                    ) : isInProgress ? (
-                      <Badge className="bg-amber-500 text-slate-950 font-black text-xs tracking-widest uppercase border-none shadow-xl px-3 py-1 animate-pulse">
-                        直播中
-                      </Badge>
-                    ) : isFull ? (
-                      <Badge className="bg-rose-600 text-white font-black text-xs tracking-widest uppercase border-none shadow-xl px-3 py-1">
-                        已滿團
-                      </Badge>
-                    ) : (
-                      <Badge className="bg-emerald-600 text-white font-black text-xs tracking-widest uppercase border-none shadow-xl px-3 py-1">
-                        開團中
-                      </Badge>
-                    )}
-                </div>
-
-                <div className="absolute inset-0 flex flex-col justify-end p-4 md:p-6 z-20">
-                    <h3 className="font-headline text-lg md:text-2xl font-black text-white tracking-tighter drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)] group-hover:text-primary transition-colors line-clamp-1">
-                        {b.title}
-                    </h3>
-                </div>
+            {/* 狀態標籤 */}
+            <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1.5">
+                {isCompleted ? (
+                  <Badge className="bg-slate-900/90 text-slate-300 font-bold text-[10px] sm:text-xs px-2.5 py-0.5 rounded-md border border-slate-700 shadow-md backdrop-blur-xs">
+                    已結束
+                  </Badge>
+                ) : isInProgress ? (
+                  <Badge className="bg-rose-500 text-white font-bold text-[10px] sm:text-xs px-2.5 py-0.5 rounded-md shadow-md animate-pulse">
+                    🔥 直播中
+                  </Badge>
+                ) : isFull ? (
+                  <Badge className="bg-amber-500/90 text-slate-950 border border-amber-300 font-bold text-[10px] sm:text-xs px-2.5 py-0.5 rounded-md shadow-md backdrop-blur-xs">
+                    已滿團
+                  </Badge>
+                ) : (
+                  <Badge className="bg-emerald-500/90 text-slate-950 border border-emerald-300 font-bold text-[10px] sm:text-xs px-2.5 py-0.5 rounded-md shadow-md backdrop-blur-xs">
+                    ✨ 開團中
+                  </Badge>
+                )}
             </div>
         </div>
 
-        <div className="mt-5 px-2 space-y-4">
-            <div className="flex justify-between items-end">
-                <div className="space-y-1.5">
-                    <div className="flex items-center gap-2">
-                        {isCompleted ? (
-                          <>
-                            <span className="w-2 h-2 rounded-full bg-slate-500" />
-                            <p className="text-xs font-black text-white/40 uppercase tracking-[0.2em]">活動已結束</p>
-                          </>
-                        ) : isInProgress ? (
-                          <>
-                            <span className="w-2 h-2 rounded-full bg-red-600 shadow-[0_0_8px_red] animate-pulse" />
-                            <p className="text-xs font-black text-red-400 uppercase tracking-[0.2em]">直播拆卡中</p>
-                          </>
-                        ) : isFull ? (
-                          <>
-                            <span className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_5px_amber]" />
-                            <p className="text-xs font-black text-amber-300/80 uppercase tracking-[0.2em]">滿團備拆中</p>
-                          </>
+        {/* 下方標題與資訊欄 */}
+        <div className="mt-3 space-y-2.5">
+            <h3 className="font-headline text-base sm:text-lg font-black text-white tracking-tight group-hover:text-cyan-400 transition-colors line-clamp-1">
+                {b.title}
+            </h3>
+            <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">參與金額</span>
+                    <div className="flex items-center gap-1.5">
+                        {currency === 'diamond' ? (
+                            <Gem className="w-4 h-4 text-cyan-400 shrink-0" />
                         ) : (
-                          <>
-                            <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_5px_emerald]" />
-                            <p className="text-xs font-black text-emerald-400/80 uppercase tracking-[0.2em]">熱烈開團募集中</p>
-                          </>
+                            <PPlusIcon className="w-4 h-4 text-amber-400 shrink-0" />
                         )}
-                    </div>
-                    <div className="flex items-baseline gap-2">
-                        <span className="font-code text-2xl md:text-3xl font-black text-primary drop-shadow-[0_0_10px_rgba(6,182,212,0.4)]">
-                            {b.breakType === 'spot' ? b.pricePerSpot?.toLocaleString() : '依隊伍定價'}
+                        <span className="font-code text-xl sm:text-2xl font-black text-cyan-400 drop-shadow-[0_0_10px_rgba(6,182,212,0.3)]">
+                            {b.breakType === 'spot' 
+                              ? `${b.pricePerSpot?.toLocaleString()}` 
+                              : minTeamPrice > 0 ? `${minTeamPrice.toLocaleString()} 起` : '依隊伍定價'}
                         </span>
-                        <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest">參與金額</span>
+                        {b.breakType === 'spot' && <span className="text-[10px] font-bold text-slate-400">/ 位置</span>}
                     </div>
                 </div>
-                <div className="text-right">
-                    <div className="flex justify-between text-xs font-black uppercase tracking-widest text-white/60 mb-2">
+
+                <div className="text-right space-y-1">
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-end gap-2">
                         <span>募集進度</span>
-                        <span className="font-code ml-4">{participantCount} / {totalSpots}</span>
+                        <span className="font-code text-white text-xs font-black">{participantCount} / {totalSpots}</span>
                     </div>
-                    <div className="w-40 h-2 bg-black/40 rounded-full overflow-hidden border border-white/5 shadow-inner">
-                        <div className="h-full bg-primary shadow-[0_0_10px_rgba(6,182,212,0.6)] transition-all duration-1000" style={{ width: `${progress}%` }} />
+                    <div className="w-28 sm:w-36 h-2 bg-slate-900 rounded-full overflow-hidden border border-white/10">
+                        <div className="h-full bg-gradient-to-r from-cyan-500 to-sky-400 shadow-[0_0_8px_rgba(6,182,212,0.6)] transition-all duration-700" style={{ width: `${progress}%` }} />
                     </div>
                 </div>
             </div>
@@ -171,8 +170,8 @@ export default function GroupBreakPage() {
   if (!isLoading && systemConfig?.featureFlags?.isGroupBreakEnabled === false) {
     return (
         <div className="container py-32 flex flex-col items-center justify-center min-h-[60vh] text-center space-y-8 animate-fade-in-up">
-            <div className="p-10 rounded-full bg-primary/10 border border-primary/20 animate-pulse shadow-[0_0_50px_rgba(6,182,212,0.2)]">
-                <Settings className="w-20 h-20 text-primary" />
+            <div className="p-10 rounded-full bg-cyan-500/10 border border-cyan-500/20 animate-pulse shadow-[0_0_50px_rgba(6,182,212,0.2)]">
+                <Settings className="w-20 h-20 text-cyan-400" />
             </div>
             <div className="space-y-3">
                 <h2 className="text-4xl font-black font-headline tracking-widest text-white italic">維護中</h2>
@@ -180,7 +179,7 @@ export default function GroupBreakPage() {
                     團拆正在調整直播串流配置與獎品派發系統，請各位藏友耐心等候。
                 </p>
             </div>
-            <Button asChild variant="outline" className="h-12 px-10 rounded-xl border-primary/30 hover:bg-primary/5 text-primary font-bold transition-all">
+            <Button asChild variant="outline" className="h-12 px-10 rounded-xl border-cyan-500/30 hover:bg-cyan-500/5 text-cyan-400 font-bold transition-all">
                 <Link href="/">返回榮耀大廳</Link>
             </Button>
         </div>
@@ -190,100 +189,190 @@ export default function GroupBreakPage() {
   const cardOpacity = systemConfig?.cardOpacity ?? 0.85;
 
   return (
-    <div className="container py-12 md:py-20 relative overflow-hidden px-4 md:px-8">
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-primary/5 blur-[120px] pointer-events-none" />
+    <div className="min-h-screen relative overflow-hidden pb-24 text-white">
+      {/* Background Glow */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1100px] h-[450px] bg-gradient-to-b from-cyan-500/15 via-purple-500/10 to-transparent blur-[140px] pointer-events-none -z-10" />
 
-      {/* 右上角規則按鈕 */}
-      <div className="absolute top-4 right-4 md:top-10 md:right-10 z-30">
-          <Dialog>
-              <DialogTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-9 w-9 md:w-auto px-0 md:px-4 rounded-full border-white/10 bg-white/5 backdrop-blur-md hover:bg-primary/10 hover:border-primary/30 text-white font-bold transition-all gap-2">
-                      <Info className="h-4 w-4 text-primary" />
-                      <span className="text-xs uppercase tracking-widest hidden md:inline">遊戲規則</span>
-                  </Button>
-              </DialogTrigger>
-              <DialogContent className="rounded-[2.5rem] bg-background/95 backdrop-blur-2xl border-primary/20 shadow-2xl">
-                  <DialogHeader>
-                      <DialogTitle className="text-2xl font-black font-headline text-primary italic tracking-tighter uppercase">團拆模式規則說明</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-5 text-sm text-white/80 leading-relaxed py-2">
-                      <div className="p-5 rounded-3xl bg-white/5 border border-white/10 space-y-4">
-                          <p className="flex items-start gap-4"><span className="text-primary font-black font-code text-lg">01.</span> 玩家購買「團拆活動」中的特定位置或隊伍。</p>
-                          <p className="flex items-start gap-4"><span className="text-primary font-black font-code text-lg">02.</span> 當所有名額售出後，此活動狀態會變為「已滿團」。</p>
-                          <p className="flex items-start gap-4"><span className="text-primary font-black font-code text-lg">03.</span> 平台會安排線上直播，現場開封實體卡盒並分配獎項。</p>
-                          <p className="flex items-start gap-4"><span className="text-primary font-black font-code text-lg">04.</span> 活動結束後，可於頁面查看最終的開獎配對結果。</p>
-                      </div>
-                  </div>
-              </DialogContent>
-          </Dialog>
-      </div>
+      <div className="container px-3 sm:px-6 py-3 sm:py-8 max-w-7xl mx-auto space-y-5 sm:space-y-10">
 
+        {/* === HERO SECTION: 賽博直播團拆 === */}
+        <div className="relative rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] p-3.5 sm:p-6 md:p-8 overflow-hidden border border-cyan-500/20 bg-gradient-to-b from-slate-900/90 via-[#0a0f1d]/95 to-[#050811] shadow-[0_20px_60px_rgba(0,0,0,0.8)] backdrop-blur-2xl">
+            {/* Background Grid Pattern */}
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#06b6d410_1px,transparent_1px),linear-gradient(to_bottom,#06b6d410_1px,transparent_1px)] bg-[size:32px_32px] opacity-60 pointer-events-none" />
+            
+            {/* Top Glow Accent Bar */}
+            <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_15px_#22d3ee]" />
+            
+            <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-3 sm:gap-6 md:gap-12">
+                <div className="space-y-2 sm:space-y-3 text-center lg:text-left max-w-2xl">
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-cyan-500/15 border border-cyan-500/40 backdrop-blur-md shadow-[0_0_15px_rgba(6,182,212,0.2)]">
+                        <Sparkles className="w-3 h-3 text-cyan-400 animate-pulse" />
+                        <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.15em] text-cyan-300">
+                            直播團拆 專區
+                        </span>
+                    </div>
 
+                    <h1 className="font-headline text-2xl sm:text-4xl md:text-6xl font-black text-white tracking-tight leading-none uppercase">
+                        直播團拆
+                    </h1>
 
-      <div className="space-y-16 md:space-y-24 max-w-5xl mx-auto">
-        <section>
-          <div className="mb-8 md:mb-10 flex items-center justify-between animate-fade-in-up">
-            <h2 className="flex items-center text-lg md:text-xl font-bold font-headline text-white tracking-widest uppercase text-left">
-                <Radio className="w-5 h-5 md:w-6 md:h-6 mr-3 text-red-500 animate-pulse" />
+                    <p className="text-xs sm:text-sm md:text-base text-slate-300 font-medium leading-normal">
+                        線上實體拆盒直播，公開公正分配熱門球星卡。
+                    </p>
+
+                    {/* Rules Quick Dialog Button */}
+                    <div className="pt-1 flex flex-wrap items-center justify-center lg:justify-start gap-2">
+                        <Dialog>
+                            <DialogTrigger asChild>
+                                <Button className="h-8 sm:h-10 px-4 sm:px-5 rounded-lg sm:rounded-xl bg-gradient-to-r from-cyan-500 to-cyan-400 hover:from-cyan-400 hover:to-cyan-300 text-slate-950 text-xs sm:text-sm font-black shadow-[0_0_20px_rgba(6,182,212,0.3)] transition-all gap-1.5 group cursor-pointer">
+                                    <Dices className="w-3.5 h-3.5 text-slate-950 group-hover:rotate-45 transition-transform" />
+                                    <span>玩法說明</span>
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="rounded-[2rem] bg-slate-950 border border-cyan-500/30 text-white max-w-2xl backdrop-blur-2xl shadow-2xl">
+                                <DialogHeader>
+                                    <DialogTitle className="text-xl md:text-2xl font-black text-cyan-400 flex items-center gap-2 font-headline">
+                                        <Target className="w-6 h-6 text-cyan-400" />
+                                        團拆模式規則說明
+                                    </DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-4 py-3 text-sm text-slate-300">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
+                                            <div className="flex items-center gap-2 text-cyan-400 font-bold">
+                                                <Users className="w-4 h-4" /> 自由認購位置
+                                            </div>
+                                            <p className="text-xs text-slate-400">購買「團拆活動」中的特定位置或隊伍名額。</p>
+                                        </div>
+                                        <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
+                                            <div className="flex items-center gap-2 text-purple-400 font-bold">
+                                                <Award className="w-4 h-4" /> 滿團即安排拆卡
+                                            </div>
+                                            <p className="text-xs text-slate-400">當所有名額售出後，活動狀態轉為「已滿團」備拆。</p>
+                                        </div>
+                                        <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
+                                            <div className="flex items-center gap-2 text-rose-400 font-bold">
+                                                <Radio className="w-4 h-4" /> 線上直播拆盒
+                                            </div>
+                                            <p className="text-xs text-slate-400">平台安排線上直播，現場開封實體卡盒配對分配。</p>
+                                        </div>
+                                        <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
+                                            <div className="flex items-center gap-2 text-emerald-400 font-bold">
+                                                <ShieldCheck className="w-4 h-4" /> 開獎紀錄查驗
+                                            </div>
+                                            <p className="text-xs text-slate-400">活動結束後可隨時於頁面回放查看最終配對結果。</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </DialogContent>
+                        </Dialog>
+
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg sm:rounded-xl bg-white/5 border border-white/10 text-[11px] text-slate-300">
+                            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                            <span>即時直播保護</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Live Stats Widget */}
+                <div className="grid grid-cols-2 gap-2 sm:gap-3 w-full lg:w-auto shrink-0">
+                    <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-[#0b1329] border border-cyan-500/30 flex flex-col items-center justify-center text-center shadow-[0_4px_20px_rgba(6,182,212,0.15)]">
+                        <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">開團中場次</span>
+                        <span className="text-xl sm:text-3xl font-black font-headline text-cyan-400 mt-0.5 sm:mt-1">
+                            {isLoading ? '--' : publishedBreaks.length}
+                        </span>
+                        <span className="text-[9px] sm:text-[10px] text-slate-400 mt-0.5">熱烈募集中</span>
+                    </div>
+
+                    <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-[#0b1329] border border-purple-500/30 flex flex-col items-center justify-center text-center shadow-[0_4px_20px_rgba(168,85,247,0.15)]">
+                        <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">歷史團拆</span>
+                        <span className="text-xl sm:text-3xl font-black font-headline text-purple-400 mt-0.5 sm:mt-1">
+                            {isLoading ? '--' : completedBreaks.length}
+                        </span>
+                        <span className="text-[9px] sm:text-[10px] text-slate-400 mt-0.5">精彩回顧</span>
+                    </div>
+
+                    <div className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-[#0b1329] border border-amber-500/30 flex flex-col items-center justify-center text-center shadow-lg col-span-2">
+                        <div className="flex items-center gap-1.5">
+                            <Gem className="w-3.5 h-3.5 text-amber-400 animate-bounce" />
+                            <span className="text-[11px] sm:text-xs font-bold text-amber-300">線上直播 • 公平拆卡</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {/* === 正在播映場次 === */}
+        <div className="space-y-4 sm:space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5 sm:gap-3">
+              <div className="p-1.5 sm:p-2 rounded-xl bg-rose-500/15 border border-rose-500/30 shadow-[0_0_15px_rgba(244,63,94,0.3)]">
+                <Radio className="w-4 h-4 sm:w-5 sm:h-5 text-rose-500 animate-pulse" />
+              </div>
+              <h2 className="text-base sm:text-xl font-black text-white tracking-wide font-headline">
                 正在播映場次
-            </h2>
-            <div className="h-px flex-1 mx-4 md:mx-6 bg-gradient-to-r from-primary/30 to-transparent hidden md:block" />
+              </h2>
+            </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-6">
             {isLoading && Array.from({ length: 2 }).map((_, i) => (
-              <div key={i} className="aspect-video rounded-[2.5rem] overflow-hidden bg-card/20"><Skeleton className="h-full w-full" /></div>
+              <div key={i} className="aspect-video rounded-2xl overflow-hidden bg-slate-900/50 border border-white/10"><Skeleton className="h-full w-full" /></div>
             ))}
             {!isLoading && publishedBreaks.map((b, i) => (
               <GroupBreakCard key={b.id} groupBreak={b} index={i} cardOpacity={cardOpacity} />
             ))}
             {!isLoading && publishedBreaks.length === 0 && (
-                <div className="col-span-full text-center py-20 md:py-24 text-muted-foreground border border-dashed border-white/5 rounded-[2.5rem] bg-card/20 backdrop-blur-md">
-                    <p className="font-bold tracking-widest uppercase opacity-40">目前沒有正在播映的場次</p>
+                <div className="col-span-full text-center py-12 sm:py-16 text-slate-400 border border-dashed border-white/10 rounded-2xl bg-slate-900/40 backdrop-blur-md space-y-1">
+                    <p className="font-bold text-sm tracking-wide">目前沒有正在開團或播映的場次</p>
+                    <p className="text-xs text-slate-500">請關注官方發布訊息，下一波團拆即將上架！</p>
                 </div>
             )}
           </div>
-        </section>
+        </div>
 
-        <section>
-          <div className="mb-8 md:mb-10 flex items-center justify-between animate-fade-in-up">
-            <h2 className="flex items-center text-lg md:text-xl font-bold font-headline text-muted-foreground tracking-widest uppercase text-left">
-                <Trophy className="w-5 h-5 md:w-6 md:h-6 mr-3" />
+        {/* === 精彩回顧紀錄 === */}
+        <div className="space-y-4 sm:space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5 sm:gap-3">
+              <div className="p-1.5 sm:p-2 rounded-xl bg-amber-500/15 border border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+                <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
+              </div>
+              <h2 className="text-base sm:text-xl font-black text-slate-200 tracking-wide font-headline">
                 精彩回顧紀錄
-            </h2>
-            <div className="h-px flex-1 mx-4 md:mx-6 bg-gradient-to-r from-white/10 to-transparent hidden md:block" />
+              </h2>
+            </div>
           </div>
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 opacity-80">
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-6 opacity-90">
             {!isLoading && displayedCompletedBreaks.map((b, i) => (
               <GroupBreakCard key={b.id} groupBreak={b} index={i} cardOpacity={cardOpacity} />
             ))}
             {!isLoading && completedBreaks.length === 0 && (
-                <div className="col-span-full text-center py-20 text-muted-foreground italic">
+                <div className="col-span-full text-center py-12 text-slate-500 italic text-xs">
                     <p>目前沒有已完成的團拆紀錄。</p>
                 </div>
             )}
           </div>
 
           {!isLoading && completedBreaks.length > 4 && (
-            <div className="mt-10 md:mt-12 flex justify-center">
+            <div className="pt-2 flex justify-center">
               <Button 
                 variant="outline" 
-                size="lg" 
+                size="sm" 
                 onClick={() => setShowAllCompleted(!showAllCompleted)}
-                className="rounded-full px-8 md:px-10 h-12 md:h-14 border-primary/20 bg-primary/5 hover:bg-primary/10 font-black shadow-xl transition-all"
+                className="rounded-xl px-6 h-10 border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 font-bold shadow-lg transition-all"
               >
                 {showAllCompleted ? (
-                  <><ChevronUp className="mr-2 h-5 w-5" /> 收合名單</>
+                  <><ChevronUp className="mr-1.5 h-4 w-4" /> 收合紀錄</>
                 ) : (
-                  <><ChevronDown className="mr-2 h-5 w-5" /> 查看更多紀錄 ({completedBreaks.length - 4})</>
+                  <><ChevronDown className="mr-1.5 h-4 w-4" /> 查看更多紀錄 ({completedBreaks.length - 4})</>
                 )}
               </Button>
             </div>
           )}
-        </section>
-      </div>
+        </div>
 
-      <div className="mt-20 text-center flex flex-col items-center opacity-20">
-        <p className="text-[10px] md:text-[12px] text-muted-foreground font-headline uppercase tracking-[0.5em] origin-center scale-[0.2]">P+Carder Official Transmission Channel • Link Stable</p>
       </div>
     </div>
   );

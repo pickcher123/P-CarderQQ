@@ -98,14 +98,14 @@ export default function Home() {
       <NewsPopup />
       
       {/* 英雄區塊 (Hero Section) */}
-      <section className="relative min-h-[75vh] md:min-h-[85vh] flex items-center justify-center overflow-hidden py-6 md:py-12">
+      <section className="relative min-h-[80vh] md:min-h-[calc(100vh-4.5rem)] flex items-center justify-center overflow-hidden py-8 md:py-16">
         {(systemConfig?.showFloatingBackground !== false) && <FloatingCardsBackground />}
 
         {/* Ambient Top Glow */}
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-amber-500/10 rounded-full blur-[140px] pointer-events-none" />
         <div className="absolute top-1/3 left-1/3 w-[400px] h-[250px] bg-cyan-500/10 rounded-full blur-[120px] pointer-events-none" />
 
-        <div className="container relative z-10 text-center space-y-5 md:space-y-8 px-4 max-w-5xl mx-auto">
+        <div className="container relative z-10 text-center space-y-5 md:space-y-8 px-4 max-w-5xl mx-auto my-auto">
           {systemConfig?.announcement && (
             <div className="max-w-2xl mx-auto mb-4 animate-fade-in-up">
               <div className="bg-gradient-to-r from-slate-900/95 via-slate-950/95 to-slate-900/95 backdrop-blur-xl border border-amber-500/30 rounded-2xl p-3.5 sm:p-4 flex items-center gap-3 text-left shadow-[0_4px_25px_rgba(245,158,11,0.15)] ring-1 ring-white/5">
@@ -125,11 +125,6 @@ export default function Home() {
           )}
           
           <div className="space-y-3 sm:space-y-4 animate-fade-in-up">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-bold tracking-widest uppercase backdrop-blur-md shadow-[0_0_15px_rgba(245,158,11,0.15)]">
-              <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-              <span>THE ULTIMATE CARD EXPERIENCE</span>
-            </div>
-
             <h1 className="font-headline text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-black tracking-tight leading-none relative">
                 <span className="bg-clip-text text-transparent bg-gradient-to-b from-white via-slate-100 to-amber-200/90 drop-shadow-[0_4px_30px_rgba(245,158,11,0.3)]">
                     P+CARDER
@@ -152,15 +147,11 @@ export default function Home() {
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform" />
               </Link>
             </Button>
-
-            <Button size="lg" variant="outline" asChild className="w-full sm:w-auto h-12 sm:h-14 px-6 text-sm sm:text-base font-bold rounded-2xl bg-gradient-to-b from-[#13192a]/90 via-[#0c101d]/90 to-[#080b14]/90 backdrop-blur-md border-white/10 hover:border-amber-400/60 text-slate-200 hover:text-white transition-all shadow-lg hover:shadow-[0_0_20px_rgba(245,158,11,0.2)]">
-              <Link href="/news" className="flex items-center justify-center gap-2">
-                <Newspaper className="w-4 h-4 text-amber-400" />
-                <span>最新活動消息</span>
-              </Link>
-            </Button>
           </div>
         </div>
+
+        {/* 底部平滑過渡流光帶 */}
+        <div className="absolute bottom-0 inset-x-0 h-16 bg-gradient-to-t from-background/90 to-transparent pointer-events-none z-[5]" />
       </section>
 
       {/* 首頁熱門推薦卡池 */}

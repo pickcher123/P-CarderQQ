@@ -1,4 +1,5 @@
 'use client';
+
 import { useState, useMemo, useEffect } from 'react';
 import { CardItem } from '@/components/card-item';
 import { CardReportDialog } from '@/components/card-report-dialog';
@@ -19,22 +20,27 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { Checkbox } from '@/components/ui/checkbox';
+} from "@/components/ui/dialog";
 import * as VisuallyHiddenPrimitive from "@radix-ui/react-visually-hidden";
-import { Ship, RefreshCw, Gem, Loader2, CheckSquare, Square, Shield, LayoutGrid, Users, Users2, MapPin, SearchCode, X, Sparkles, ChevronRight, Package, Library, Hash, Info, AlertTriangle, RotateCcw, Filter, ArrowUpDown, RotateCw, ArrowLeft } from 'lucide-react';
+import { 
+  Ship, RefreshCw, Gem, Loader2, CheckSquare, Square, Shield, LayoutGrid, 
+  Users, Users2, MapPin, SearchCode, X, Sparkles, ChevronRight, Package, 
+  Library, Hash, Info, AlertTriangle, RotateCcw, Filter, ArrowUpDown, 
+  RotateCw, ArrowLeft, Search, Check, Flame, SlidersHorizontal, Layers, Eye,
+  Coins, Truck, ShieldCheck, HelpCircle
+} from 'lucide-react';
 import { useCollection, useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, doc, writeBatch, serverTimestamp, getDoc, increment, updateDoc, getDocs, arrayRemove } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -76,8 +82,8 @@ interface AllCards {
     imageHint: string;
     sellPrice?: number;
     isSold?: boolean;
-    category?: string; // Add this
-    teamName?: string; // Maybe add this too
+    category?: string;
+    teamName?: string;
 }
 
 type MergedCard = UserCard & AllCards & { serialNumber: string };
@@ -100,8 +106,10 @@ export default function CollectionPage() {
   const [shippingName, setShippingName] = useState('');
   const [shippingPhone, setShippingPhone] = useState('');
   const [shippingAddress, setShippingAddress] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
-  const [sortOption, setSortOption] = useState<'price' | 'unsold' | 'latest'>('latest');
+  const [activeTab, setActiveTab] = useState<'all' | 'standard' | 'break' | 'random'>('all');
+  const [sortOption, setSortOption] = useState<'price_desc' | 'price_asc' | 'unsold' | 'latest'>('latest');
 
   const userProfileRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -140,7 +148,7 @@ export default function CollectionPage() {
           category: (userCard.category && userCard.category !== 'all') ? userCard.category : (cardDetails.category || userCard.category || 'general'),
           serialNumber: userCard.serialNumber || '0000'
         }
-      } else if (userCard.cardId.startsWith('random-player-')) {
+      } else if (userCard.cardId?.startsWith('random-player-')) {
           return {
               ...userCard,
               name: '隨機球員 普/特 卡',
@@ -156,22 +164,85 @@ export default function CollectionPage() {
     }).filter((c): c is MergedCard => c !== null);
   }, [userCards, allCards]);
 
-  const sortedMergedCards = useMemo(() => {
-      let sorted = [...mergedCards];
-      if (sortOption === 'price') sorted.sort((a,b) => (b.sellPrice || 0) - (a.sellPrice || 0));
-      else if (sortOption === 'unsold') sorted.sort((a,b) => (a.isSold ? 1 : -1) - (b.isSold ? 1 : -1));
-      // latest increase is hard to know without timestamp on userCards, assuming index order is okay
-      return sorted;
-  }, [mergedCards, sortOption]);
+  // Categories list
+  const allCategories = useMemo(() => {
+    const cats = new Set<string>();
+    mergedCards.forEach(c => {
+      if (c.category && c.category !== 'all') cats.add(c.category);
+    });
+    return Array.from(cats);
+  }, [mergedCards]);
 
+  // Filter & Search Logic
   const filteredMergedCards = useMemo(() => {
-      if (!filterCategory) return sortedMergedCards;
-      return sortedMergedCards.filter(c => c.category === filterCategory);
-  }, [sortedMergedCards, filterCategory]);
+    return mergedCards.filter(card => {
+      // Tab filter
+      if (activeTab === 'standard' && card.source === 'group-break') return false;
+      if (activeTab === 'break' && card.source !== 'group-break') return false;
+      if (activeTab === 'random' && !(card.name.includes('隨機球員') || card.category === '抽賞')) return false;
+
+      // Category filter
+      if (filterCategory && card.category !== filterCategory) return false;
+
+      // Search filter
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase().trim();
+        const matchName = card.name?.toLowerCase().includes(query);
+        const matchCategory = card.category?.toLowerCase().includes(query);
+        const matchTeam = card.teamName?.toLowerCase().includes(query);
+        const matchSerial = card.serialNumber?.toLowerCase().includes(query);
+        if (!matchName && !matchCategory && !matchTeam && !matchSerial) return false;
+      }
+
+      return true;
+    });
+  }, [mergedCards, activeTab, filterCategory, searchQuery]);
+
+  // Sort Logic
+  const sortedMergedCards = useMemo(() => {
+    const list = [...filteredMergedCards];
+    if (sortOption === 'price_desc') {
+      list.sort((a, b) => (b.sellPrice || 0) - (a.sellPrice || 0));
+    } else if (sortOption === 'price_asc') {
+      list.sort((a, b) => (a.sellPrice || 0) - (b.sellPrice || 0));
+    } else if (sortOption === 'unsold') {
+      list.sort((a, b) => (a.isSold ? 1 : -1) - (b.isSold ? 1 : -1));
+    }
+    return list;
+  }, [filteredMergedCards, sortOption]);
 
   const randomPlayerCards = useMemo(() => {
     return mergedCards.filter(c => c.name.includes('隨機球員') || c.category === '抽賞');
   }, [mergedCards]);
+
+  const standardCards = useMemo(() => sortedMergedCards.filter(c => c.source !== 'group-break'), [sortedMergedCards]);
+  const groupBreakCards = useMemo(() => sortedMergedCards.filter(c => c.source === 'group-break'), [sortedMergedCards]);
+
+  // Total Portfolio Valuation
+  const portfolioStats = useMemo(() => {
+    let totalEstimatedDiamonds = 0;
+    let totalEstimatedPPoints = 0;
+
+    mergedCards.forEach(card => {
+      if (card.source === 'group-break') return;
+      if (card.name.includes('隨機球員')) {
+        totalEstimatedPPoints += 300;
+      } else {
+        const basePrice = card.sellPrice || 10;
+        totalEstimatedDiamonds += basePrice * 0.7;
+        totalEstimatedPPoints += basePrice * 0.1 * 10;
+      }
+    });
+
+    return {
+      totalCards: mergedCards.length,
+      standardCount: mergedCards.filter(c => c.source !== 'group-break').length,
+      breakCount: mergedCards.filter(c => c.source === 'group-break').length,
+      randomCount: randomPlayerCards.length,
+      totalDiamonds: Math.round(totalEstimatedDiamonds),
+      totalPPoints: Math.round(totalEstimatedPPoints)
+    };
+  }, [mergedCards, randomPlayerCards]);
 
   const handleSelectRandomCards = () => {
     const randomCardIds = randomPlayerCards.map(c => c.id);
@@ -188,9 +259,6 @@ export default function CollectionPage() {
     });
   };
 
-  const standardCards = useMemo(() => filteredMergedCards.filter(c => c.source !== 'group-break'), [filteredMergedCards]);
-  const groupBreakCards = useMemo(() => filteredMergedCards.filter(c => c.source === 'group-break'), [filteredMergedCards]);
-
   const hasFreeShipping = useMemo(() => {
       if (!userProfile || !systemConfig?.levelBenefits) return false;
       const benefit = systemConfig.levelBenefits.find(b => b.level === userProfile.userLevel);
@@ -206,11 +274,21 @@ export default function CollectionPage() {
     });
   };
 
-  const handleSelectAll = () => {
-    if (selectedCardIds.size === mergedCards.length) {
-        setSelectedCardIds(new Set());
+  const handleSelectAllVisible = () => {
+    if (sortedMergedCards.every(c => selectedCardIds.has(c.id))) {
+      // Deselect all visible
+      setSelectedCardIds(prev => {
+        const next = new Set(prev);
+        sortedMergedCards.forEach(c => next.delete(c.id));
+        return next;
+      });
     } else {
-        setSelectedCardIds(new Set(mergedCards.map(card => card.id)));
+      // Select all visible
+      setSelectedCardIds(prev => {
+        const next = new Set(prev);
+        sortedMergedCards.forEach(c => next.add(c.id));
+        return next;
+      });
     }
   };
 
@@ -235,7 +313,9 @@ export default function CollectionPage() {
 
     return {
         diamonds: Math.round(diamonds),
-        pPoints: Math.round(pPoints)
+        pPoints: Math.round(pPoints),
+        eligibleCount: cardsToSell.length,
+        ineligibleCount: selectedCardIds.size - cardsToSell.length
     };
   }, [mergedCards, selectedCardIds]);
 
@@ -253,9 +333,8 @@ export default function CollectionPage() {
       const soldCardNames = cardsToSell.map(c => c.name).join(', ');
 
       const existingAllCardIds = new Set((allCards || []).map(c => c.id));
-      const autoRelistBetting = systemConfig?.bettingAutoRelistOnBuyBack !== false; // 預設開啟自動重新上架
+      const autoRelistBetting = systemConfig?.bettingAutoRelistOnBuyBack !== false;
 
-      // 若有開啟拼卡自動重新上架，預先取得 betting-items 資料庫內容
       let bettingItemDocs: any[] = [];
       if (autoRelistBetting) {
         try {
@@ -272,12 +351,10 @@ export default function CollectionPage() {
           const isBettingCard = card.source === 'betting' || card.source === 'direct-buy' || bettingItemDocs.some(d => d.data().allCardIds?.includes(card.cardId));
 
           if (isBettingCard && autoRelistBetting) {
-            // 重置卡片狀態為未售出，自動重新上架到拼卡專區
             batch.update(doc(firestore, 'allCards', card.cardId), { 
                 isSold: false,
                 isRecycled: false 
             });
-            // 從包含此卡片之 betting-items 的 soldCardIds 中移除
             for (const itemDoc of bettingItemDocs) {
               const itemData = itemDoc.data();
               if (itemData.soldCardIds?.includes(card.cardId)) {
@@ -336,7 +413,7 @@ export default function CollectionPage() {
     const finalAddress = shippingMethod === '面交自取' ? `${PICKUP_ADDRESS} (自取)` : shippingAddress;
 
     if (selectedCardIds.size === 0 || !user || !firestore || !finalAddress || !shippingName || !shippingPhone) {
-        toast({ variant: 'destructive', title: '錯誤', description: '所有資訊皆為必填。'});
+        toast({ variant: 'destructive', title: '錯誤', description: '所有收件資訊皆為必填。'});
         return;
     }
     setIsProcessing(true);
@@ -345,7 +422,7 @@ export default function CollectionPage() {
         const userRef = doc(firestore, 'users', user.uid);
         const userSnap = await getDoc(userRef);
         if (fee > 0 && (userSnap.data()?.points || 0) < fee) {
-            toast({ variant: "destructive", title: "點數不足", description: `手續費需要 ${fee} 點。` });
+            toast({ variant: "destructive", title: "點數不足", description: `出貨手續費需要 ${fee} 點數。` });
             setIsProcessing(false);
             return;
         }
@@ -367,12 +444,12 @@ export default function CollectionPage() {
         for (const card of cardsToShip) batch.delete(doc(firestore, 'users', user.uid, 'userCards', card.id));
         if (fee > 0) {
             batch.set(doc(collection(firestore, 'transactions')), {
-                userId: user.uid, transactionType: 'Purchase', section: 'shipping', amount: -fee, details: `運單手續費`, transactionDate: serverTimestamp(),
+                userId: user.uid, transactionType: 'Purchase', section: 'shipping', amount: -fee, details: `運單手續費 (${cardsToShip.length}張)`, transactionDate: serverTimestamp(),
             });
             batch.update(userRef, { points: increment(-fee) });
         }
         await batch.commit();
-        toast({ title: "出貨請求已提交！", description: "請至會員中心追蹤進度。" });
+        toast({ title: "出貨請求已提交！", description: "我們將盡快為您備貨出貨，請至會員中心追蹤物流進度。" });
         setSelectedCardIds(new Set());
         if(forceRefetch) forceRefetch();
     } catch (e) {
@@ -382,623 +459,965 @@ export default function CollectionPage() {
   };
 
   if (!isUserLoading && !user) return (
-    <div className="container py-20 text-center animate-fade-in-up">
-      <h2 className="text-2xl font-bold mb-4 text-white font-headline">請先登入以查看收藏庫</h2>
-      <Button asChild className="rounded-xl"><Link href="/login">前往登入</Link></Button>
+    <div className="min-h-[70vh] flex flex-col items-center justify-center p-6 text-center space-y-6 animate-fade-in-up">
+      <div className="w-20 h-20 rounded-3xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center shadow-[0_0_50px_rgba(6,182,212,0.2)]">
+        <Library className="w-10 h-10 text-cyan-400" />
+      </div>
+      <div className="space-y-2 max-w-sm">
+        <h2 className="text-2xl font-black font-headline text-white tracking-wide">請先登入以開啟收藏庫</h2>
+        <p className="text-sm text-slate-400 leading-relaxed">
+          登入後即可隨時檢視您的珍稀卡牌、數位資產、申請實體出貨與快速轉點。
+        </p>
+      </div>
+      <Button asChild className="h-12 px-8 rounded-xl bg-gradient-to-r from-cyan-500 to-sky-400 hover:from-cyan-400 hover:to-sky-300 text-slate-950 font-black shadow-lg shadow-cyan-500/20">
+        <Link href="/login">前往會員登入</Link>
+      </Button>
     </div>
   );
 
   if (isUserLoading) return (
-    <div className="container py-20 text-center animate-fade-in-up">
-        <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto" />
+    <div className="min-h-[70vh] flex flex-col items-center justify-center gap-3 animate-fade-in-up">
+        <Loader2 className="w-10 h-10 animate-spin text-cyan-400" />
+        <p className="text-xs font-bold text-slate-400 tracking-wider">正在解鎖數位保險庫...</p>
     </div>
   );
 
-  const isAllSelected = mergedCards.length > 0 && selectedCardIds.size === mergedCards.length;
+  const isAllVisibleSelected = sortedMergedCards.length > 0 && sortedMergedCards.every(c => selectedCardIds.has(c.id));
 
   const addressLabel = 
-    shippingMethod === '7-11' ? '出貨門市' : 
-    shippingMethod === '郵寄' ? '寄送地址' : '自取地點';
+    shippingMethod === '7-11' ? '7-11 門市名稱或店號' : 
+    shippingMethod === '郵寄' ? '收件地址' : '自取提貨門市';
 
   return (
     <TooltipProvider>
-      <div className="min-h-screen bg-transparent text-white">
-        <div className="container py-2 sm:py-4 relative">
-          {/* Futuristic Background Elements */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] bg-primary/10 blur-[120px] pointer-events-none opacity-50" />
-          <div className="absolute top-[20%] right-[10%] w-64 h-64 bg-accent/20 blur-[100px] pointer-events-none opacity-30 animate-pulse" />
-          <div className="absolute top-[40%] left-[5%] w-48 h-48 bg-primary/20 blur-[80px] pointer-events-none opacity-30" />
+      <div className="min-h-screen bg-transparent text-white pb-32">
+        {/* Glow Effects */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[400px] bg-gradient-to-b from-cyan-500/10 via-purple-500/5 to-transparent blur-[140px] pointer-events-none -z-10" />
+
+        <div className="container px-3.5 sm:px-6 py-4 max-w-7xl mx-auto space-y-5 sm:space-y-7">
           
-          {/* Header Section */}
-          <div className="relative z-20 mb-4 sm:mb-6">
-            <div className="flex items-center justify-between mb-3">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.back()}
-                className="inline-flex items-center gap-1.5 text-slate-300 hover:text-white bg-slate-900/80 hover:bg-slate-800 border border-white/10 rounded-xl px-3 py-1.5 text-xs font-bold transition-all shadow-md active:scale-95"
-              >
-                <ArrowLeft className="w-4 h-4 text-cyan-400" />
-                <span>返回</span>
-              </Button>
-              <div className="flex items-center gap-2 bg-slate-900/80 border border-white/10 px-3 py-1 rounded-full text-xs font-bold text-slate-300">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span>數位保險庫</span>
+          {/* === TOP HERO / STATS HEADER === */}
+          <div className="relative rounded-2xl sm:rounded-3xl p-4 sm:p-7 overflow-hidden border border-cyan-500/20 bg-gradient-to-b from-slate-900/95 via-[#0b101f]/95 to-[#060913] shadow-[0_20px_50px_rgba(0,0,0,0.8)] backdrop-blur-2xl">
+            {/* Grid pattern background */}
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#06b6d408_1px,transparent_1px),linear-gradient(to_bottom,#06b6d408_1px,transparent_1px)] bg-[size:28px_28px] opacity-70 pointer-events-none" />
+            <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_15px_#22d3ee]" />
+
+            <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5">
+              
+              {/* Left Title & Status */}
+              <div className="space-y-2 max-w-xl">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => router.back()}
+                    className="h-7 px-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 text-xs font-bold gap-1 active:scale-95 transition-all"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>返回</span>
+                  </Button>
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 text-[10px] font-black uppercase tracking-wider">
+                    <Library className="w-3 h-3" />
+                    <span>DIGITAL VAULT • 數位保險庫</span>
+                  </div>
+                  {hasFreeShipping && (
+                    <Badge className="bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black text-[10px] px-2 py-0.5 border-none shadow-sm">
+                      ✨ VIP 免運尊榮特權
+                    </Badge>
+                  )}
+                </div>
+
+                <h1 className="font-headline text-2xl sm:text-4xl font-black text-white tracking-tight leading-none">
+                  我的<span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-200 to-amber-300">卡牌收藏庫</span>
+                </h1>
+
+                <p className="text-xs sm:text-sm text-slate-400 font-medium leading-relaxed">
+                  管理您的數位藏品與實體球員卡。支援 3D 鑑賞、AI 報告、一鍵批量出貨或極速轉點變現。
+                </p>
+              </div>
+
+              {/* Right: Portfolio Live Stats */}
+              <div className="grid grid-cols-3 gap-2 sm:gap-3 w-full lg:w-auto shrink-0">
+                {/* Total Cards Stat */}
+                <div className="p-3 rounded-xl sm:rounded-2xl bg-slate-900/90 border border-white/10 flex flex-col items-center justify-center text-center shadow-lg min-w-[95px] sm:min-w-[120px]">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">持有藏品</span>
+                  <span className="font-code text-xl sm:text-3xl font-black text-white mt-0.5">
+                    {isLoadingUserCards ? '--' : portfolioStats.totalCards}
+                  </span>
+                  <span className="text-[9px] text-cyan-400/90 font-bold mt-0.5">
+                    {portfolioStats.breakCount > 0 ? `含 ${portfolioStats.breakCount} 張團拆` : '張卡片'}
+                  </span>
+                </div>
+
+                {/* Diamonds Recycle Value */}
+                <div className="p-3 rounded-xl sm:rounded-2xl bg-cyan-950/40 border border-cyan-500/30 flex flex-col items-center justify-center text-center shadow-lg min-w-[95px] sm:min-w-[120px]">
+                  <div className="flex items-center gap-1">
+                    <Gem className="w-3 h-3 text-cyan-400" />
+                    <span className="text-[10px] font-bold text-cyan-300 uppercase tracking-wider">預估鑽石</span>
+                  </div>
+                  <span className="font-code text-xl sm:text-3xl font-black text-cyan-400 mt-0.5 drop-shadow-[0_0_10px_rgba(6,182,212,0.3)]">
+                    {isLoadingUserCards ? '--' : portfolioStats.totalDiamonds.toLocaleString()}
+                  </span>
+                  <span className="text-[9px] text-slate-400 font-bold mt-0.5">變現回收值</span>
+                </div>
+
+                {/* P+ Points Recycle Value */}
+                <div className="p-3 rounded-xl sm:rounded-2xl bg-amber-950/40 border border-amber-500/30 flex flex-col items-center justify-center text-center shadow-lg min-w-[95px] sm:min-w-[120px]">
+                  <div className="flex items-center gap-1">
+                    <PPlusIcon className="w-3 h-3 text-amber-400" />
+                    <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wider">紅利點數</span>
+                  </div>
+                  <span className="font-code text-xl sm:text-3xl font-black text-amber-400 mt-0.5 drop-shadow-[0_0_10px_rgba(245,158,11,0.3)]">
+                    {isLoadingUserCards ? '--' : portfolioStats.totalPPoints.toLocaleString()}
+                  </span>
+                  <span className="text-[9px] text-slate-400 font-bold mt-0.5">紅利收益</span>
+                </div>
               </div>
             </div>
-            
-            <div className="text-center space-y-1">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold tracking-[0.3em] uppercase mb-1 animate-fade-in-up">
-                <Library className="w-3 h-3" /> VAULT & ASSETS
+          </div>
+
+          {/* === INTERACTIVE FILTER & TOOLBAR === */}
+          <div className="space-y-3">
+            {/* Top Row: Search, Tabs & Quick Actions */}
+            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+              
+              {/* Main Category Tabs */}
+              <div className="flex items-center gap-1.5 p-1 bg-slate-900/90 border border-white/10 rounded-xl overflow-x-auto no-scrollbar shrink-0">
+                <button
+                  onClick={() => { setActiveTab('all'); setFilterCategory(null); }}
+                  className={cn(
+                    "px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 whitespace-nowrap",
+                    activeTab === 'all' && !filterCategory
+                      ? "bg-gradient-to-r from-cyan-500 to-sky-400 text-slate-950 shadow-md shadow-cyan-500/20" 
+                      : "text-slate-400 hover:text-white hover:bg-white/5"
+                  )}
+                >
+                  <Layers className="w-3.5 h-3.5" />
+                  <span>全部藏品</span>
+                  <span className={cn(
+                    "text-[10px] px-1.5 py-0.2 rounded-md font-code",
+                    activeTab === 'all' && !filterCategory ? "bg-slate-950/30 text-slate-950 font-black" : "bg-white/10 text-slate-400"
+                  )}>
+                    {mergedCards.length}
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => { setActiveTab('standard'); setFilterCategory(null); }}
+                  className={cn(
+                    "px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 whitespace-nowrap",
+                    activeTab === 'standard' 
+                      ? "bg-gradient-to-r from-cyan-500 to-sky-400 text-slate-950 shadow-md shadow-cyan-500/20" 
+                      : "text-slate-400 hover:text-white hover:bg-white/5"
+                  )}
+                >
+                  <Library className="w-3.5 h-3.5" />
+                  <span>個人藏品</span>
+                  <span className={cn(
+                    "text-[10px] px-1.5 py-0.2 rounded-md font-code",
+                    activeTab === 'standard' ? "bg-slate-950/30 text-slate-950 font-black" : "bg-white/10 text-slate-400"
+                  )}>
+                    {portfolioStats.standardCount}
+                  </span>
+                </button>
+
+                {portfolioStats.breakCount > 0 && (
+                  <button
+                    onClick={() => { setActiveTab('break'); setFilterCategory(null); }}
+                    className={cn(
+                      "px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 whitespace-nowrap",
+                      activeTab === 'break' 
+                        ? "bg-gradient-to-r from-orange-500 to-amber-400 text-slate-950 shadow-md shadow-orange-500/20" 
+                        : "text-slate-400 hover:text-white hover:bg-white/5"
+                    )}
+                  >
+                    <Users2 className="w-3.5 h-3.5" />
+                    <span>團拆專區</span>
+                    <span className={cn(
+                      "text-[10px] px-1.5 py-0.2 rounded-md font-code",
+                      activeTab === 'break' ? "bg-slate-950/30 text-slate-950 font-black" : "bg-white/10 text-slate-400"
+                    )}>
+                      {portfolioStats.breakCount}
+                    </span>
+                  </button>
+                )}
+
+                {portfolioStats.randomCount > 0 && (
+                  <button
+                    onClick={() => { setActiveTab('random'); setFilterCategory(null); }}
+                    className={cn(
+                      "px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 whitespace-nowrap",
+                      activeTab === 'random' 
+                        ? "bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 shadow-md shadow-amber-500/20" 
+                        : "text-slate-400 hover:text-white hover:bg-white/5"
+                    )}
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                    <span>普特卡 ({portfolioStats.randomCount})</span>
+                  </button>
+                )}
               </div>
-              <motion.h1 
+
+              {/* Search & Sort Controls */}
+              <div className="flex items-center gap-2">
+                {/* Search Bar */}
+                <div className="relative flex-1 md:w-60">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <Input 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="搜尋卡名、球隊、編號..."
+                    className="h-9 pl-9 pr-7 bg-slate-900/80 border-white/10 rounded-xl text-xs text-white placeholder:text-slate-500 focus:border-cyan-400"
+                  />
+                  {searchQuery && (
+                    <button 
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Sort Dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-9 px-3 rounded-xl bg-slate-900/80 border-white/10 hover:bg-slate-800 text-slate-200 text-xs font-bold gap-1.5 shrink-0">
+                      <ArrowUpDown className="w-3.5 h-3.5 text-cyan-400" />
+                      <span className="hidden sm:inline">排序：</span>
+                      <span>
+                        {sortOption === 'price_desc' ? '價值 高→低' :
+                         sortOption === 'price_asc' ? '價值 低→高' :
+                         sortOption === 'unsold' ? '在庫優先' : '最新加入'}
+                      </span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="bg-slate-950 border border-white/10 text-slate-200 text-xs rounded-xl shadow-xl">
+                    <DropdownMenuItem onClick={() => setSortOption('latest')} className="cursor-pointer font-bold">
+                      最新加入
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setSortOption('price_desc')} className="cursor-pointer font-bold">
+                      價值由高到低
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setSortOption('price_asc')} className="cursor-pointer font-bold">
+                      價值由低到高
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setSortOption('unsold')} className="cursor-pointer font-bold">
+                      在庫優先
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
+
+            {/* Bottom Row: Category Sub-filters & Bulk Checkbox Shortcuts */}
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-white/5">
+              
+              {/* Category Pills */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mr-1 flex items-center gap-1">
+                  <Filter className="w-3 h-3 text-slate-400" /> 標籤：
+                </span>
+                
+                <button
+                  onClick={() => setFilterCategory(null)}
+                  className={cn(
+                    "px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all",
+                    !filterCategory ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40" : "bg-white/5 text-slate-400 hover:text-white border border-transparent"
+                  )}
+                >
+                  全部
+                </button>
+
+                {allCategories.map(cat => (
+                  <button
+                    key={cat}
+                    onClick={() => setFilterCategory(filterCategory === cat ? null : cat)}
+                    className={cn(
+                      "px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all",
+                      filterCategory === cat 
+                        ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40" 
+                        : "bg-white/5 text-slate-400 hover:text-white border border-transparent"
+                    )}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+
+              {/* Bulk Selection Actions */}
+              <div className="flex items-center gap-2 ml-auto">
+                {portfolioStats.randomCount > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSelectRandomCards}
+                    className="h-8 px-2.5 rounded-lg text-[11px] font-bold bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/30 gap-1.5 transition-all shadow-sm"
+                  >
+                    <Sparkles className="w-3 h-3 text-amber-400" />
+                    <span>{randomPlayerCards.every(c => selectedCardIds.has(c.id)) ? '取消勾選普特卡' : '全選普特卡'}</span>
+                  </Button>
+                )}
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleSelectAllVisible}
+                  disabled={sortedMergedCards.length === 0}
+                  className="h-8 px-2.5 rounded-lg text-[11px] font-bold text-slate-300 hover:text-white bg-slate-900/80 hover:bg-slate-800 border border-white/10 gap-1.5 transition-all"
+                >
+                  <CheckSquare className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>{isAllVisibleSelected ? '取消全選' : `全選目前 (${sortedMergedCards.length})`}</span>
+                </Button>
+              </div>
+
+            </div>
+          </div>
+
+          {/* === CARDS GALLERY SECTION === */}
+          <div className="space-y-8 pt-2">
+            {/* Standard Collection Section */}
+            {standardCards.length > 0 && (
+              <motion.section
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="font-headline text-3xl font-black tracking-[0.15em] sm:text-5xl text-white drop-shadow-[0_0_20px_rgba(6,182,212,0.35)]"
+                transition={{ duration: 0.3 }}
+                className="space-y-3.5"
               >
-                我的<span className="text-transparent bg-clip-text bg-gradient-to-br from-cyan-400 via-white to-amber-300">收藏庫</span>
-              </motion.h1>
-            </div>
-          </div>
-
-        {/* Selection & Actions Bar - Fixed at bottom when active */}
-        <AnimatePresence>
-            {selectedCardIds.size > 0 && (
-                <motion.div 
-                    initial={{ y: 100, opacity: 0, x: '-50%' }}
-                    animate={{ y: 0, opacity: 1, x: '-50%' }}
-                    exit={{ y: 100, opacity: 0, x: '-50%' }}
-                    className="fixed bottom-[75px] md:bottom-6 left-1/2 -translate-x-1/2 z-50 w-[95vw] max-w-5xl"
-                >
-                    <div className="bg-slate-950/40 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-4 md:p-6 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] flex flex-wrap items-center gap-4 justify-between w-full">
-                        <div className="flex items-center gap-4 flex-1 min-w-[200px]">
-                            <div className="relative shrink-0">
-                                <div className="absolute inset-0 bg-primary/20 blur-md rounded-xl" />
-                                <div className="relative bg-slate-950 p-3 md:p-4 rounded-xl border border-primary/30">
-                                    <Package className="w-5 h-5 md:w-6 md:h-6 text-primary" />
-                                </div>
-                                <div className="absolute -top-1 -right-1 md:-top-2 md:-right-2 bg-primary text-black text-[9px] md:text-[10px] font-black w-5 h-5 md:w-6 md:h-6 rounded-full flex items-center justify-center shadow-lg">
-                                    {selectedCardIds.size}
-                                </div>
-                            </div>
-                            
-                            <div className="space-y-0.5">
-                                <p className="text-white font-black text-sm md:text-lg tracking-tight">已選擇卡片</p>
-                                <div className="flex items-center gap-3">
-                                    <div className="flex items-center gap-1.5 group">
-                                        <Gem className="w-3 h-3 text-primary" />
-                                        <span className="text-xs font-code font-black text-white">{conversionValues.diamonds.toLocaleString()}</span>
-                                    </div>
-                                    <div className="flex items-center gap-1.5 group">
-                                        <PPlusIcon className="w-3 h-3 text-accent" />
-                                        <span className="text-xs font-code font-black text-white">{conversionValues.pPoints.toLocaleString()}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-2 w-full md:w-auto mt-1 md:mt-0">
-                            <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                onClick={handleClearSelection}
-                                className="h-10 md:h-12 rounded-xl hover:bg-white/5 text-slate-400 font-bold px-3 md:px-6 text-xs md:text-sm"
-                            >
-                                <RotateCcw className="mr-1.5 h-3.5 w-3.5" /> 清除
-                            </Button>
-                            
-                            <div className="flex gap-2 flex-1">
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                        <Button className="flex-1 h-10 md:h-12 rounded-xl bg-white text-black hover:bg-slate-200 font-black transition-all active:scale-95 shadow-xl text-xs md:text-sm">
-                                            <Ship className="mr-1 h-4 w-4" /> 批量出貨
-                                        </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent className="rounded-2xl md:rounded-3xl bg-slate-950 border border-white/10 shadow-2xl text-white p-0 overflow-hidden max-w-[95vw] sm:max-w-lg md:max-w-2xl max-h-[90vh] flex flex-col">
-                                        <div className="absolute top-0 right-0 p-6 md:p-8 opacity-5 pointer-events-none z-0">
-                                            <Ship className="w-24 h-24 md:w-48 md:h-48 text-primary" />
-                                        </div>
-                                        <AlertDialogHeader className="p-5 md:p-6 pb-4 border-b border-white/10 bg-slate-900/80 relative z-10 flex-shrink-0">
-                                            <AlertDialogTitle className="text-xl md:text-2xl font-black italic tracking-tight text-white flex flex-wrap items-center gap-2">
-                                                DELIVERY REQUEST
-                                            </AlertDialogTitle>
-                                            <AlertDialogDescription className="text-slate-400 font-medium text-xs md:text-sm mt-1">
-                                                請填寫您的收件資訊，我們將盡速為您安排配送。
-                                            </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <div className="p-5 md:p-6 space-y-5 md:space-y-6 overflow-y-auto flex-1 relative z-10">
-                                            <RadioGroup defaultValue="7-11" onValueChange={(value: ShippingMethod) => setShippingMethod(value)} className="grid grid-cols-3 gap-2 md:gap-4">
-                                                <div className={cn("flex flex-col gap-1.5 border p-3 md:p-4 rounded-xl md:rounded-2xl transition-all cursor-pointer relative", shippingMethod === '7-11' ? 'bg-primary/10 border-primary/60 ring-1 ring-primary/60 text-white shadow-lg shadow-primary/10' : 'bg-slate-900/80 border-white/10 text-slate-300 hover:bg-slate-800')}
-                                                     onClick={() => setShippingMethod('7-11')}>
-                                                    <div className="flex justify-between items-center">
-                                                        <RadioGroupItem value="7-11" id="r1" className="border-white/30 text-primary" />
-                                                        <Package className="w-4 h-4 md:w-5 md:h-5 text-primary" />
-                                                    </div>
-                                                    <Label htmlFor="r1" className="cursor-pointer font-black text-xs md:text-sm text-white mt-1">7-11</Label>
-                                                    <p className="text-[10px] md:text-xs text-slate-400 font-bold uppercase truncate">{SHIPPING_FEE} 點數</p>
-                                                </div>
-                                                <div className={cn("flex flex-col gap-1.5 border p-3 md:p-4 rounded-xl md:rounded-2xl transition-all cursor-pointer relative", shippingMethod === '郵寄' ? 'bg-primary/10 border-primary/60 ring-1 ring-primary/60 text-white shadow-lg shadow-primary/10' : 'bg-slate-900/80 border-white/10 text-slate-300 hover:bg-slate-800')}
-                                                     onClick={() => setShippingMethod('郵寄')}>
-                                                    <div className="flex justify-between items-center">
-                                                        <RadioGroupItem value="郵寄" id="r2" className="border-white/30 text-primary" />
-                                                        <MapPin className="w-4 h-4 md:w-5 md:h-5 text-primary" />
-                                                    </div>
-                                                    <Label htmlFor="r2" className="cursor-pointer font-black text-xs md:text-sm text-white mt-1">郵寄</Label>
-                                                    <p className="text-[10px] md:text-xs text-slate-400 font-bold uppercase truncate">{SHIPPING_FEE} 點數</p>
-                                                </div>
-                                                <div className={cn("flex flex-col gap-1.5 border p-3 md:p-4 rounded-xl md:rounded-2xl transition-all cursor-pointer relative", shippingMethod === '面交自取' ? 'bg-primary/10 border-primary/60 ring-1 ring-primary/60 text-white shadow-lg shadow-primary/10' : 'bg-slate-900/80 border-white/10 text-slate-300 hover:bg-slate-800')}
-                                                     onClick={() => setShippingMethod('面交自取')}>
-                                                    <div className="flex justify-between items-center">
-                                                        <RadioGroupItem value="面交自取" id="r3" className="border-white/30 text-primary" />
-                                                        <Users className="w-4 h-4 md:w-5 md:h-5 text-primary" />
-                                                    </div>
-                                                    <Label htmlFor="r3" className="cursor-pointer font-black text-xs md:text-sm text-white mt-1">自取</Label>
-                                                    <p className="text-[10px] md:text-xs text-slate-400 font-bold uppercase truncate">免運費</p>
-                                                </div>
-                                            </RadioGroup>
-                                            
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
-                                                <div className="space-y-1.5">
-                                                    <Label className="text-xs font-bold text-slate-300 flex items-center gap-1">
-                                                        收件人姓名 <span className="text-rose-400">*</span>
-                                                    </Label>
-                                                    <Input 
-                                                        value={shippingName} 
-                                                        onChange={(e) => setShippingName(e.target.value)} 
-                                                        className="h-11 bg-slate-900/90 rounded-xl text-white border-white/10 focus:border-primary focus:ring-1 focus:ring-primary transition-all font-medium text-sm px-3.5"
-                                                        placeholder="例如：王小明"
-                                                    />
-                                                </div>
-                                                <div className="space-y-1.5">
-                                                    <Label className="text-xs font-bold text-slate-300 flex items-center gap-1">
-                                                        聯絡電話 <span className="text-rose-400">*</span>
-                                                    </Label>
-                                                    <Input 
-                                                        value={shippingPhone} 
-                                                        onChange={(e) => setShippingPhone(e.target.value)} 
-                                                        className="h-11 bg-slate-900/90 rounded-xl text-white border-white/10 focus:border-primary focus:ring-1 focus:ring-primary transition-all font-medium text-sm px-3.5"
-                                                        placeholder="例如：0912345678"
-                                                    />
-                                                </div>
-                                            </div>
-                                            
-                                            <div className="space-y-1.5">
-                                                <Label className="text-xs font-bold text-slate-300 flex items-center gap-1">
-                                                    {addressLabel} <span className="text-rose-400">*</span>
-                                                </Label>
-                                                {shippingMethod === '面交自取' ? (
-                                                    <div className="p-4 bg-primary/10 rounded-xl border border-dashed border-primary/40 space-y-1">
-                                                        <p className="text-sm font-bold text-primary flex items-center gap-2">
-                                                            <MapPin className="w-4 h-4 flex-shrink-0" />
-                                                            {PICKUP_ADDRESS}
-                                                        </p>
-                                                        <p className="text-xs text-slate-400 font-medium leading-relaxed">
-                                                            * 注意：面交自取需事先與客服人員聯繫完成預約。
-                                                        </p>
-                                                    </div>
-                                                ) : (
-                                                    <div className="relative">
-                                                        <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                                                            <SearchCode className="w-4 h-4" />
-                                                        </div>
-                                                        <Input 
-                                                            value={shippingAddress} 
-                                                            onChange={(e) => setShippingAddress(e.target.value)} 
-                                                            placeholder={shippingMethod === '7-11' ? "例如：長津門市 或 店號123456" : "例如：台北市信義區信義路五段7號"}
-                                                            className="h-11 pl-10 bg-slate-900/90 rounded-xl text-white border-white/10 focus:border-primary focus:ring-1 focus:ring-primary transition-all font-medium text-sm"
-                                                        />
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            <div className="p-3.5 md:p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-start gap-3">
-                                                <div className="p-2 bg-amber-500/20 rounded-lg flex-shrink-0 mt-0.5">
-                                                    <AlertTriangle className="w-4 h-4 text-amber-400" />
-                                                </div>
-                                                <div className="space-y-0.5">
-                                                    <p className="text-xs font-bold text-amber-400 uppercase tracking-wider">重要安全提醒</p>
-                                                    <p className="text-xs font-medium text-amber-200/80 leading-relaxed">
-                                                        包裹出貨均有錄影存證。收到包裹後請務必【全程開箱錄影】，否則退換貨將不受理。
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <AlertDialogFooter className="p-4 md:p-6 border-t border-white/10 bg-slate-900/90 flex-row justify-end gap-3 flex-shrink-0 relative z-10 m-0">
-                                            <AlertDialogCancel className="h-11 rounded-xl font-bold bg-slate-800/80 border-white/10 text-slate-300 hover:bg-slate-700 hover:text-white px-5 text-sm m-0">取消</AlertDialogCancel>
-                                            <AlertDialogAction onClick={handleShipping} disabled={isProcessing} className="h-11 rounded-xl font-bold bg-primary text-slate-950 hover:bg-primary/90 shadow-lg shadow-primary/20 px-6 text-sm m-0">
-                                                {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : '確認申請與支付'}
-                                            </AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-
-                                </AlertDialog>
-
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                        <Button variant="outline" className="flex-1 h-10 md:h-12 rounded-xl border-white/10 bg-slate-950/50 text-white hover:bg-white/5 font-bold transition-all active:scale-95 shadow-xl text-xs md:text-sm">
-                                            <RefreshCw className="mr-1 h-4 w-4 text-primary" /> 快速轉點
-                                        </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent className="rounded-[2rem] md:rounded-[3rem] bg-slate-950 border-white/5 shadow-3xl text-white p-4 md:p-12 overflow-hidden max-w-[90vw] md:max-w-xl">
-                                        <div className="absolute top-0 right-0 p-6 md:p-12 opacity-5 pointer-events-none">
-                                            <RefreshCw className="w-32 h-32 md:w-64 md:h-64 text-destructive" />
-                                        </div>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle className="text-xl md:text-3xl font-black italic tracking-tighter text-white flex items-center gap-2 md:gap-4">
-                                                ASSET RECOVERY
-                                            </AlertDialogTitle>
-                                            <AlertDialogDescription className="text-slate-400 font-medium text-sm md:text-lg mt-1 md:mt-2">
-                                                將卡片資產轉換為數位代幣。此操作具有不可逆性。
-                                            </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <div className="space-y-4 md:space-y-8 my-4 md:my-8 relative z-10">
-                                            <div className="bg-slate-900 border border-white/5 p-4 md:p-8 rounded-2xl md:rounded-[2.5rem] space-y-3 md:space-y-6 shadow-2xl">
-                                                <div className="flex justify-between items-center border-b border-white/5 pb-3 md:pb-6">
-                                                    <div className="space-y-0.5">
-                                                        <p className="text-[9px] md:text-[11px] font-black text-slate-500 uppercase tracking-widest leading-none">獲得鑽石獲取</p>
-                                                        <p className="text-[10px] md:text-xs text-slate-600 font-bold">💎 鑽石資產</p>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <span className="font-code text-xl md:text-4xl font-black text-primary flex items-center gap-1.5 md:gap-3 drop-shadow-md">
-                                                            +{conversionValues.diamonds.toLocaleString()} <Gem className="w-4 h-4 md:w-6 md:h-6"/>
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                                <div className="flex justify-between items-center">
-                                                    <div className="space-y-0.5">
-                                                        <p className="text-[9px] md:text-[11px] font-black text-slate-500 uppercase tracking-widest leading-none">獲得紅利P點</p>
-                                                        <p className="text-[10px] md:text-xs text-slate-600 font-bold">✨ 紅利資產</p>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <span className="font-code text-xl md:text-4xl font-black text-accent flex items-center gap-1.5 md:gap-3 drop-shadow-md">
-                                                            +{conversionValues.pPoints.toLocaleString()} <PPlusIcon className="w-4 h-4 md:w-6 md:h-6"/>
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="p-3 md:p-6 rounded-2xl md:rounded-[2rem] bg-rose-500/5 border border-rose-500/20 flex items-start gap-2 md:gap-4">
-                                                <div className="p-2 md:p-3 bg-rose-500/10 rounded-xl md:rounded-2xl">
-                                                    <Info className="w-4 h-4 md:w-5 md:h-5 text-rose-500" />
-                                                </div>
-                                                <p className="text-[9px] md:text-[11px] font-bold text-rose-200/60 leading-relaxed">
-                                                    警告：快速轉點完成後，所選的 {selectedCardIds.size} 張卡片將立即從您的收藏中永久移除並銷毀，相關權益將無法恢復。
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <AlertDialogFooter className="gap-2 md:gap-4">
-                                            <AlertDialogCancel className="h-10 md:h-16 rounded-xl md:rounded-[2rem] font-bold bg-white/5 border-white/5 text-white hover:bg-white/10 px-4 md:px-8 text-sm">放棄轉點</AlertDialogCancel>
-                                            <AlertDialogAction onClick={handleQuickSell} disabled={isProcessing} className="h-10 md:h-16 rounded-xl md:rounded-[2rem] font-black bg-rose-600 text-white hover:bg-rose-700 shadow-[0_0_30px_rgba(225,29,72,0.3)] px-6 md:px-12 border-none text-sm">
-                                                確認資產變現
-                                            </AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
-                            </div>
-                        </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-1.5 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.2)]">
+                      <Library className="w-4 h-4" />
                     </div>
-                </motion.div>
+                    <h2 className="text-base sm:text-lg font-black font-headline text-white tracking-wide flex items-center gap-2">
+                      <span>個人卡片藏品</span>
+                      <span className="text-[10px] font-code font-black text-cyan-300 bg-cyan-500/15 px-2 py-0.5 rounded-full border border-cyan-500/30">
+                        {standardCards.length} 張
+                      </span>
+                    </h2>
+                  </div>
+                  <div className="h-px flex-1 mx-4 bg-gradient-to-r from-cyan-500/20 to-transparent hidden sm:block" />
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3 sm:gap-4">
+                  {standardCards.map((card, index) => {
+                    const isSelected = selectedCardIds.has(card.id);
+                    return (
+                      <motion.div
+                        key={card.id}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: Math.min(index * 0.02, 0.3) }}
+                        onClick={() => setPreviewCard(card)}
+                        className={cn(
+                          "group relative flex flex-col rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 p-2",
+                          "bg-gradient-to-b from-[#13192a]/95 via-[#0c101d]/95 to-[#080b14]/95 border",
+                          isSelected 
+                            ? "border-cyan-400 ring-2 ring-cyan-400/80 shadow-[0_0_20px_rgba(6,182,212,0.4)] bg-cyan-950/30 scale-[1.02]" 
+                            : "border-white/10 hover:border-cyan-500/50 hover:shadow-[0_0_20px_rgba(6,182,212,0.2)] hover:-translate-y-0.5"
+                        )}
+                      >
+                        {/* Card Image Wrapper */}
+                        <div className="relative w-full aspect-[2.5/3.5] rounded-xl overflow-hidden bg-black/50">
+                          <CardItem 
+                            name={card.name} 
+                            imageUrl={card.imageUrl} 
+                            backImageUrl={card.backImageUrl}
+                            imageHint={card.imageHint} 
+                            isFlippable={false} 
+                            rarity={card.rarity} 
+                            priority={index < 12} 
+                          />
+
+                          {/* Quick Selection Checkbox on Upper-Left */}
+                          <div 
+                            className="absolute top-2 left-2 z-30" 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSelectCard(card.id, !isSelected);
+                            }}
+                          >
+                            <div className={cn(
+                              "w-6 h-6 rounded-lg border transition-all flex items-center justify-center backdrop-blur-md cursor-pointer",
+                              isSelected 
+                                ? "bg-cyan-400 border-cyan-400 text-slate-950 shadow-[0_0_12px_rgba(6,182,212,0.8)]" 
+                                : "bg-black/60 border-white/30 hover:border-white/70 text-transparent"
+                            )}>
+                              <Check className="w-3.5 h-3.5 stroke-[3]" />
+                            </div>
+                          </div>
+
+                          {/* Card Serial Number Badge */}
+                          {card.serialNumber && card.serialNumber !== '0000' && (
+                            <div className="absolute top-2 right-2 z-20">
+                              <Badge className="bg-slate-950/80 backdrop-blur-md text-cyan-300 border border-cyan-500/30 font-mono text-[9px] px-1.5 py-0.2 shadow">
+                                #{card.serialNumber}
+                              </Badge>
+                            </div>
+                          )}
+
+                          {/* Hover Action Hint */}
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none z-20">
+                            <div className="px-2.5 py-1 rounded-full bg-slate-900/90 border border-white/20 text-[10px] font-black text-white flex items-center gap-1 shadow-lg">
+                              <Eye className="w-3 h-3 text-cyan-400" /> 鑑賞卡片
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Card Info Footer */}
+                        <div className="mt-2 space-y-1">
+                          <h4 className="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors line-clamp-1">
+                            {card.name}
+                          </h4>
+                          
+                          <div className="flex items-center justify-between pt-0.5 text-[10px]">
+                            <span className="text-slate-400 truncate max-w-[70px]">
+                              {card.category || '一般卡'}
+                            </span>
+                            <div className="flex items-center gap-1 font-code font-black text-cyan-400">
+                              <Gem className="w-2.5 h-2.5" />
+                              <span>{card.sellPrice || 10}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </motion.section>
             )}
-        </AnimatePresence>
 
-        {/* Filters & Sorting */}
-        <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-3 relative z-10 px-2 lg:px-4 text-[10px] sm:text-[11px]">
-          <div className="flex items-center gap-2 flex-wrap">
-              <div className="flex items-center gap-1.5 text-slate-400 bg-slate-900/80 px-3 py-1.5 rounded-xl border border-white/10">
-                  <LayoutGrid className="w-3.5 h-3.5 text-primary" />
-                  <span className="font-bold tracking-wider text-slate-300">
-                      持有總數：<span className="font-code font-black text-white">{mergedCards.length}</span> 張
-                  </span>
-              </div>
-
-              {/* 隨機球員 普/特 卡 篩選與勾選按鈕 */}
-              <Button
-                variant={filterCategory === '抽賞' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setFilterCategory(filterCategory === '抽賞' ? null : '抽賞')}
-                className={cn(
-                  "rounded-xl text-[11px] font-bold px-3 py-1.5 h-auto transition-all border shadow-sm",
-                  filterCategory === '抽賞' 
-                    ? "bg-amber-500 text-black border-amber-400 hover:bg-amber-400" 
-                    : "bg-slate-900/80 text-amber-300 border-amber-500/30 hover:bg-amber-500/20"
-                )}
+            {/* Group Break Collection Section */}
+            {groupBreakCards.length > 0 && (
+              <motion.section
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.1 }}
+                className="space-y-3.5"
               >
-                <Sparkles className="mr-1.5 h-3.5 w-3.5 text-amber-400" />
-                隨機球員 普/特 卡：<span className="font-code font-black ml-1">{randomPlayerCards.length}</span> 張
-              </Button>
-
-              {randomPlayerCards.length > 0 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleSelectRandomCards}
-                  className="rounded-xl text-[11px] font-bold px-3 py-1.5 h-auto bg-amber-500/10 text-amber-300 border-amber-500/40 hover:bg-amber-500/20"
-                >
-                  <CheckSquare className="mr-1.5 h-3.5 w-3.5" />
-                  {randomPlayerCards.every(c => selectedCardIds.has(c.id)) ? '取消勾選所有普特卡' : '勾選所有普特卡'}
-                </Button>
-              )}
-          </div>
-          <div className="flex items-center gap-1.5 flex-wrap">
-              <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="sm" onClick={handleSelectAll} disabled={mergedCards.length === 0} className="rounded-lg hover:bg-white/5 text-slate-300 font-bold text-[11px] px-2.5 h-8 border border-white/5">
-                        <CheckSquare className="mr-1.5 h-3.5 w-3.5 text-primary" /> 
-                        {isAllSelected ? '取消全選' : '全選卡片'}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {isAllSelected ? '取消全選' : '勾選頁面上所有卡片'}
-                  </TooltipContent>
-              </Tooltip>
-              <Separator orientation="vertical" className="h-4 bg-white/10 hidden sm:block" />
-              <DropdownMenu>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                      <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="rounded-lg hover:bg-white/5 text-slate-300 font-bold text-[11px] px-2.5 h-8 border border-white/5">
-                              <Filter className="mr-1.5 h-3.5 w-3.5 text-amber-400" /> 分類：{filterCategory || '全部分類'}
-                          </Button>
-                      </DropdownMenuTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent>按分類篩選卡片</TooltipContent>
-                </Tooltip>
-                <DropdownMenuContent className="bg-slate-900 border-white/10 text-white min-w-[130px]">
-                    <DropdownMenuItem onClick={() => setFilterCategory(null)}>全部分類</DropdownMenuItem>
-                    {Array.from(new Set(mergedCards.map(c => c.category))).filter(Boolean).map(cat => (
-                        <DropdownMenuItem key={cat} onClick={() => setFilterCategory(cat!)}>{cat}</DropdownMenuItem>
-                    ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <DropdownMenu>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                      <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="rounded-lg hover:bg-white/5 text-slate-300 font-bold text-[11px] px-2.5 h-8 border border-white/5">
-                              <ArrowUpDown className="mr-1.5 h-3.5 w-3.5 text-sky-400" /> 排序：{
-                                sortOption === 'price' ? '價值 (高到低)' :
-                                sortOption === 'unsold' ? '在庫卡片優先' : '最新加入'
-                              }
-                          </Button>
-                      </DropdownMenuTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent>選擇卡片排序方式</TooltipContent>
-                </Tooltip>
-                <DropdownMenuContent className="bg-slate-900 border-white/10 text-white min-w-[140px]">
-                    <DropdownMenuItem onClick={() => setSortOption('latest')}>最新加入</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setSortOption('price')}>價值 (高到低)</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setSortOption('unsold')}>在庫卡片優先</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-          </div>
-        </div>
-
-      <div className="space-y-8 relative z-10 pt-2 pb-12">
-        {standardCards.length > 0 && (
-            <motion.section 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-            >
-                <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2.5">
-                        <div className="p-2 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.2)]">
-                            <Library className="w-4 h-4 sm:w-5 sm:h-5" />
-                        </div>
-                        <div>
-                            <h2 className="text-sm sm:text-lg font-black font-headline text-white tracking-widest flex items-center gap-2">
-                                <span>個人卡片藏品</span>
-                                <span className="text-[9px] sm:text-[10px] font-mono font-bold text-cyan-300 bg-cyan-500/15 px-2 py-0.5 rounded-full border border-cyan-500/30">
-                                    {standardCards.length} CARDS
-                                </span>
-                            </h2>
-                        </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-1.5 rounded-xl bg-orange-500/15 border border-orange-500/30 text-orange-400 shadow-[0_0_15px_rgba(249,115,22,0.2)]">
+                      <Users2 className="w-4 h-4" />
                     </div>
-                    <div className="h-px flex-1 mx-3 sm:mx-6 bg-gradient-to-r from-cyan-500/30 via-slate-700/40 to-transparent hidden sm:block" />
+                    <h2 className="text-base sm:text-lg font-black font-headline text-white tracking-wide flex items-center gap-2">
+                      <span>團拆精選專區</span>
+                      <span className="text-[10px] font-code font-black text-orange-300 bg-orange-500/15 px-2 py-0.5 rounded-full border border-orange-500/30">
+                        {groupBreakCards.length} 張
+                      </span>
+                    </h2>
+                  </div>
+                  <div className="h-px flex-1 mx-4 bg-gradient-to-r from-orange-500/20 to-transparent hidden sm:block" />
                 </div>
-                
-                <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2.5 sm:gap-3 md:gap-4">
-                    {standardCards.map((card, index) => (
-                        <motion.div 
-                            key={card.id} 
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: 0.1 + index * 0.02 }}
-                            className={cn(
-                                "group relative rounded-2xl transition-all duration-300 cursor-pointer p-1.5 sm:p-2 bg-gradient-to-b from-[#13192a]/90 via-[#0c101d]/90 to-[#080b14]/90 border border-white/10 hover:border-cyan-500/50 hover:shadow-[0_0_20px_rgba(6,182,212,0.2)]",
-                                selectedCardIds.has(card.id) ? "ring-2 ring-cyan-400 bg-cyan-500/10 border-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.3)]" : ""
-                            )}
-                            onClick={() => setPreviewCard(card)}
-                        >
-                            <CardItem 
-                                name={card.name} 
-                                imageUrl={card.imageUrl} 
-                                backImageUrl={card.backImageUrl}
-                                imageHint={card.imageHint} 
-                                isFlippable={false} 
-                                rarity={card.rarity} 
-                                priority={index < 12} 
-                            />
-                            
-                            {/* Selection Overlay */}
-                            <div 
-                                className="absolute top-2 left-2 z-30" 
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleSelectCard(card.id, !selectedCardIds.has(card.id));
-                                }}
-                            >
-                                <div className={cn(
-                                    "w-5 h-5 rounded-md border transition-all flex items-center justify-center backdrop-blur-md",
-                                    selectedCardIds.has(card.id) 
-                                        ? "bg-cyan-400 border-cyan-400 text-black shadow-[0_0_10px_rgba(6,182,212,0.6)]" 
-                                        : "bg-black/60 border-white/25 hover:border-white/50"
-                                )}>
-                                    {selectedCardIds.has(card.id) && <CheckSquare className="w-3 h-3 stroke-[3]" />}
-                                </div>
-                            </div>
-                        </motion.div>
-                    ))}
-                </div>
-            </motion.section>
-        )}
 
-        {groupBreakCards.length > 0 && (
-            <motion.section
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-            >
-                <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2.5">
-                        <div className="p-2 rounded-xl bg-orange-500/15 border border-orange-500/30 text-orange-400 shadow-[0_0_15px_rgba(249,115,22,0.2)]">
-                            <Users2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3 sm:gap-4">
+                  {groupBreakCards.map((card, index) => {
+                    const isSelected = selectedCardIds.has(card.id);
+                    return (
+                      <motion.div
+                        key={card.id}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: Math.min(index * 0.02, 0.3) }}
+                        onClick={() => setPreviewCard(card)}
+                        className={cn(
+                          "group relative flex flex-col rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 p-2",
+                          "bg-gradient-to-b from-[#1c140e]/95 via-[#120d09]/95 to-[#0a0705]/95 border",
+                          isSelected 
+                            ? "border-orange-400 ring-2 ring-orange-400/80 shadow-[0_0_20px_rgba(249,115,22,0.4)] bg-orange-950/30 scale-[1.02]" 
+                            : "border-white/10 hover:border-orange-500/50 hover:shadow-[0_0_20px_rgba(249,115,22,0.2)] hover:-translate-y-0.5"
+                        )}
+                      >
+                        {/* Card Image Wrapper */}
+                        <div className="relative w-full aspect-[2.5/3.5] rounded-xl overflow-hidden bg-black/50">
+                          <CardItem 
+                            name={card.name} 
+                            imageUrl={card.imageUrl} 
+                            backImageUrl={card.backImageUrl}
+                            imageHint={card.imageHint} 
+                            serialNumber={card.serialNumber} 
+                            isFlippable={false} 
+                            rarity={card.rarity} 
+                            priority={index < 12} 
+                          />
+
+                          {/* Quick Selection Checkbox on Upper-Left */}
+                          <div 
+                            className="absolute top-2 left-2 z-30" 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSelectCard(card.id, !isSelected);
+                            }}
+                          >
+                            <div className={cn(
+                              "w-6 h-6 rounded-lg border transition-all flex items-center justify-center backdrop-blur-md cursor-pointer",
+                              isSelected 
+                                ? "bg-orange-500 border-orange-500 text-slate-950 shadow-[0_0_12px_rgba(249,115,22,0.8)]" 
+                                : "bg-black/60 border-white/30 hover:border-white/70 text-transparent"
+                            )}>
+                              <Check className="w-3.5 h-3.5 stroke-[3]" />
+                            </div>
+                          </div>
+
+                          {/* BREAK BADGE */}
+                          <div className="absolute top-2 right-2 z-20">
+                            <Badge className="bg-orange-500 text-slate-950 text-[9px] font-black px-1.5 py-0.2 shadow-md border-none">
+                              BREAK
+                            </Badge>
+                          </div>
+
+                          {/* Hover Action Hint */}
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none z-20">
+                            <div className="px-2.5 py-1 rounded-full bg-slate-900/90 border border-white/20 text-[10px] font-black text-white flex items-center gap-1 shadow-lg">
+                              <Eye className="w-3 h-3 text-orange-400" /> 鑑賞卡片
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                            <h2 className="text-sm sm:text-lg font-black font-headline text-white tracking-widest flex items-center gap-2">
-                                <span>團拆精選專區</span>
-                                <span className="text-[9px] sm:text-[10px] font-mono font-bold text-orange-300 bg-orange-500/15 px-2 py-0.5 rounded-full border border-orange-500/30">
-                                    {groupBreakCards.length} BREAKS
-                                </span>
-                            </h2>
+
+                        {/* Card Info Footer */}
+                        <div className="mt-2 space-y-1">
+                          <h4 className="text-xs font-bold text-white group-hover:text-orange-300 transition-colors line-clamp-1">
+                            {card.name}
+                          </h4>
+                          
+                          <div className="flex items-center justify-between pt-0.5 text-[10px]">
+                            <span className="text-orange-400/90 font-bold truncate max-w-[70px]">
+                              {card.teamName || card.breakTitle || '團拆球星卡'}
+                            </span>
+                            <span className="text-[9px] text-slate-400 font-mono">
+                              #{card.serialNumber || '0000'}
+                            </span>
+                          </div>
                         </div>
-                    </div>
-                    <div className="h-px flex-1 mx-3 sm:mx-6 bg-gradient-to-r from-orange-500/30 via-slate-700/40 to-transparent hidden sm:block" />
+                      </motion.div>
+                    );
+                  })}
                 </div>
+              </motion.section>
+            )}
 
-                <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2.5 sm:gap-3 md:gap-4">
-                    {groupBreakCards.map((card, index) => (
-                        <motion.div 
-                            key={card.id} 
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: 0.2 + index * 0.02 }}
-                            className={cn(
-                                "group relative rounded-2xl transition-all duration-500 cursor-pointer p-1.5 sm:p-2 bg-gradient-to-b from-[#1a1410]/90 via-[#100d0a]/90 to-[#080705]/90 border border-white/10 hover:border-orange-500/50 hover:shadow-[0_0_20px_rgba(249,115,22,0.2)]",
-                                selectedCardIds.has(card.id) ? "ring-2 ring-orange-500 ring-offset-2 ring-offset-slate-950 bg-orange-500/10 border-orange-400" : ""
-                            )}
-                            onClick={() => setPreviewCard(card)}
-                        >
-                            <CardItem 
-                                name={card.name} 
-                                imageUrl={card.imageUrl} 
-                                backImageUrl={card.backImageUrl}
-                                imageHint={card.imageHint} 
-                                serialNumber={card.serialNumber} 
-                                isFlippable={false} 
-                                rarity={card.rarity} 
-                                priority={index < 12} 
-                            />
+            {/* Skeletons Loading State */}
+            {(isLoadingUserCards || isLoadingCards) && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3 sm:gap-4">
+                {Array.from({ length: 12 }).map((_, i) => (
+                  <div key={i} className="aspect-[2.5/4] rounded-2xl bg-slate-900/60 border border-white/5 p-2 space-y-2 animate-pulse">
+                    <Skeleton className="w-full h-4/5 rounded-xl bg-white/5" />
+                    <Skeleton className="w-3/4 h-3 rounded bg-white/5" />
+                    <Skeleton className="w-1/2 h-3 rounded bg-white/5" />
+                  </div>
+                ))}
+              </div>
+            )}
 
-                            <div className="absolute top-2.5 right-2.5 z-30">
-                                <Badge className="bg-orange-500 text-black text-[9px] px-2 py-0.5 font-bold italic tracking-tighter shadow-lg border-none animate-pulse">BREAK</Badge>
-                            </div>
-
-                            <div 
-                                className="absolute top-2.5 left-2.5 z-30" 
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleSelectCard(card.id, !selectedCardIds.has(card.id));
-                                }}
-                            >
-                                <div className={cn(
-                                    "w-5 h-5 rounded-md border transition-all flex items-center justify-center backdrop-blur-md",
-                                    selectedCardIds.has(card.id) 
-                                        ? "bg-orange-500 border-orange-500 text-black shadow-[0_0_10px_rgba(249,115,22,0.6)]" 
-                                        : "bg-black/60 border-white/25 hover:border-white/50"
-                                )}>
-                                    {selectedCardIds.has(card.id) && <CheckSquare className="w-3 h-3 stroke-[3]" />}
-                                </div>
-                            </div>
-                        </motion.div>
-                    ))}
-                </div>
-            </motion.section>
-        )}
-
-        {(isLoadingUserCards || isLoadingCards) && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-6">
-                {Array.from({length: 16}).map((_, i) => <div key={i} className="aspect-[2.5/4]"><Skeleton className="h-full w-full rounded-2xl bg-white/5" /></div>)}
-            </div>
-        )}
-
-        {!isLoadingUserCards && !isLoadingCards && mergedCards.length === 0 && (
-            <motion.div 
+            {/* Empty Collection State */}
+            {!isLoadingUserCards && !isLoadingCards && mergedCards.length === 0 && (
+              <motion.div 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="text-center py-40 bg-slate-900/20 backdrop-blur-sm rounded-[4rem] border border-white/5 relative overflow-hidden"
-            >
-                <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
-                <div className="relative z-10 flex flex-col items-center">
-                    <div className="p-12 rounded-full bg-slate-950 border border-white/5 shadow-inner mb-8 group">
-                        <Library className="w-20 h-20 text-slate-700 group-hover:text-primary transition-colors duration-500" />
-                    </div>
-                    <h3 className="text-3xl font-black italic text-white tracking-widest mb-4">收藏庫為空</h3>
-                    <p className="text-slate-500 font-medium max-w-sm mb-12">您目前的數位收藏庫尚無卡片。立即前往商城，開啟您的第一包珍稀收藏。</p>
-                    <Button asChild size="lg" className="h-16 px-12 rounded-[2rem] font-black text-lg bg-primary text-black hover:bg-primary/90 shadow-[0_20px_40px_-10px_rgba(6,182,212,0.5)] transition-all active:scale-95 border-none">
-                        <Link href="/draw">
-                            START COLLECTION <ChevronRight className="ml-2 h-6 w-6" />
-                        </Link>
-                    </Button>
+                className="text-center py-20 px-4 bg-slate-900/40 backdrop-blur-md rounded-3xl border border-white/10 relative overflow-hidden"
+              >
+                <div className="w-20 h-20 mx-auto rounded-3xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center mb-5 shadow-[0_0_50px_rgba(6,182,212,0.2)]">
+                  <Library className="w-10 h-10 text-cyan-400" />
                 </div>
-            </motion.div>
-        )}
-      </div>
-
-      {/* Showroom Preview Dialog */}
-      <Dialog open={!!previewCard} onOpenChange={(open) => !open && setPreviewCard(null)}>
-        <DialogContent className="max-w-[min(90vw,360px)] bg-slate-950/90 backdrop-blur-2xl border-white/15 shadow-2xl p-5 overflow-hidden flex flex-col items-center justify-center gap-4 rounded-3xl">
-            <DialogTitle><VisuallyHiddenPrimitive.Root>Card Showroom</VisuallyHiddenPrimitive.Root></DialogTitle>
-            {previewCard && (
-                <div className="w-full flex flex-col items-center gap-4">
-                    <div className="flex flex-col items-center text-center gap-1">
-                        <Badge variant="outline" className="border-primary/40 text-primary bg-primary/10 px-3 py-0.5 font-bold tracking-wider uppercase text-[10px] rounded-full">
-                            {previewCard.category ? previewCard.category.toUpperCase() : 'GENERAL ASSET'}
-                            {previewCard.teamName ? ` | ${previewCard.teamName.toUpperCase()}` : ''}
-                        </Badge>
-                        <h2 className="text-base sm:text-lg font-black italic tracking-tight text-white uppercase drop-shadow-md max-w-[260px] truncate">{previewCard.name}</h2>
-                    </div>
-
-                    <div className="w-full max-w-[160px] sm:max-w-[190px] perspective-1000 my-1">
-                        <motion.div 
-                            initial={{ rotateX: 15, y: 10, opacity: 0 }}
-                            animate={{ rotateX: 0, y: 0, opacity: 1 }}
-                            className="relative group cursor-grab active:cursor-grabbing"
-                        >
-                            <div className="absolute -inset-4 bg-primary/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                            <CardItem 
-                                name={previewCard.name} 
-                                imageUrl={previewCard.imageUrl} 
-                                backImageUrl={previewCard.backImageUrl}
-                                imageHint={previewCard.imageHint} 
-                                rarity={previewCard.rarity} 
-                                isFlippable={true}
-                                priority={true}
-                            />
-                        </motion.div>
-                    </div>
-
-                    <div className="flex flex-col items-center gap-3 w-full pt-1">
-                        <div className="flex items-center gap-1.5 bg-slate-900/90 border border-white/10 px-4 py-1.5 rounded-xl text-xs font-code font-black text-white shadow-md tracking-wider">
-                            <Gem className="w-3.5 h-3.5 text-primary" />
-                            {previewCard.sellPrice || 10}
-                        </div>
-
-                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-                           <RotateCw className="w-3 h-3 text-primary animate-spin-slow" /> 點擊卡片可翻面觀看
-                        </div>
-                        <Button onClick={() => setIsReportOpen(true)} className="bg-primary text-black font-bold h-9 w-full rounded-xl text-xs hover:bg-primary/90 transition-all shadow-md">
-                            生成鑑定報告
-                        </Button>
-                    </div>
+                <h3 className="text-xl sm:text-2xl font-black font-headline text-white tracking-wide mb-2">
+                  收藏庫目前尚無卡片
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-400 font-medium max-w-sm mx-auto mb-6 leading-relaxed">
+                  立即前往【一番賞】、【團拆專區】或【直購商城】，抽取您的首張限量球星卡！
+                </p>
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  <Button asChild className="h-11 px-6 rounded-xl font-black text-xs bg-gradient-to-r from-cyan-500 to-sky-400 hover:from-cyan-400 text-slate-950 shadow-lg shadow-cyan-500/20">
+                    <Link href="/draw">
+                      前往抽卡專區 <ChevronRight className="w-4 h-4 ml-1" />
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" className="h-11 px-6 rounded-xl font-bold text-xs bg-slate-900/80 border-white/10 hover:bg-slate-800 text-white">
+                    <Link href="/group-break">
+                      參與團拆開箱
+                    </Link>
+                  </Button>
                 </div>
+              </motion.div>
             )}
-            
-        </DialogContent>
-      </Dialog>
-      <CardReportDialog card={previewCard} open={isReportOpen} onOpenChange={setIsReportOpen} />
-    </div>
-  </div>
-</TooltipProvider>
-);
+
+            {/* Filtered Empty Results */}
+            {!isLoadingUserCards && !isLoadingCards && mergedCards.length > 0 && sortedMergedCards.length === 0 && (
+              <div className="text-center py-16 px-4 bg-slate-900/30 rounded-2xl border border-white/5 space-y-3">
+                <SearchCode className="w-10 h-10 text-slate-500 mx-auto" />
+                <p className="text-sm font-bold text-slate-300">查無符合條件的卡片</p>
+                <p className="text-xs text-slate-500">請嘗試更換篩選分類或清除搜尋關鍵字</p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => { setSearchQuery(''); setFilterCategory(null); setActiveTab('all'); }}
+                  className="rounded-xl text-xs font-bold border-white/10 bg-slate-800 text-slate-200"
+                >
+                  清除所有篩選
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* === FLOATING SELECTION & BATCH ACTION DOCK === */}
+          <AnimatePresence>
+            {selectedCardIds.size > 0 && (
+              <motion.div 
+                initial={{ y: 80, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 80, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                className="fixed bottom-[74px] sm:bottom-6 inset-x-0 mx-auto z-[60] w-[calc(100%-20px)] sm:w-[92vw] max-w-4xl pointer-events-none"
+              >
+                <div className="relative pointer-events-auto bg-slate-950/95 backdrop-blur-2xl border border-cyan-500/40 rounded-2xl sm:rounded-3xl p-3 sm:p-5 shadow-[0_20px_50px_rgba(0,0,0,0.95),0_0_30px_rgba(6,182,212,0.35)] flex flex-col sm:flex-row items-center justify-between gap-2.5 sm:gap-4 overflow-hidden">
+                  
+                  {/* Top Ambient Glow Bar */}
+                  <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_15px_#22d3ee] pointer-events-none" />
+
+                  {/* Left / Top Selected Info */}
+                  <div className="flex items-center justify-between sm:justify-start gap-2.5 w-full sm:w-auto">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 font-code font-black text-sm sm:text-base shrink-0 shadow-inner">
+                        {selectedCardIds.size}
+                      </div>
+
+                      <div className="space-y-0.5 min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-xs sm:text-sm font-black text-white whitespace-nowrap">已選取卡片</span>
+                          {conversionValues.ineligibleCount > 0 && (
+                            <Badge className="bg-orange-500/20 text-orange-400 border border-orange-500/30 text-[9px] px-1.5 py-0 whitespace-nowrap">
+                              含 {conversionValues.ineligibleCount} 張團拆(僅出貨)
+                            </Badge>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2 sm:gap-3 text-[11px] font-code">
+                          <span className="text-cyan-400 flex items-center gap-1 font-bold whitespace-nowrap">
+                            <Gem className="w-3 h-3" /> +{conversionValues.diamonds.toLocaleString()} 鑽
+                          </span>
+                          <span className="text-amber-400 flex items-center gap-1 font-bold whitespace-nowrap">
+                            <PPlusIcon className="w-3 h-3" /> +{conversionValues.pPoints.toLocaleString()} P點
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Mobile Cancel Button in Top Row */}
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={handleClearSelection}
+                      className="h-8 px-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 text-xs font-bold gap-1 sm:hidden shrink-0"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>取消</span>
+                    </Button>
+                  </div>
+
+                  {/* Right / Bottom Actions */}
+                  <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                    
+                    {/* Desktop Clear selection */}
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={handleClearSelection}
+                      className="h-10 px-3 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 text-xs font-bold gap-1 hidden sm:inline-flex"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>取消</span>
+                    </Button>
+
+                    {/* Quick Sell Modal */}
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          disabled={conversionValues.eligibleCount === 0}
+                          className="h-10 flex-1 sm:flex-initial px-3 sm:px-4 rounded-xl border-cyan-500/30 bg-cyan-950/40 hover:bg-cyan-900/50 text-cyan-300 text-xs font-black gap-1 sm:gap-1.5 transition-all shadow-sm active:scale-95 disabled:opacity-50 justify-center whitespace-nowrap"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                          <span>快速轉點 ({conversionValues.eligibleCount})</span>
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent className="w-[94vw] max-w-md bg-slate-950 border border-cyan-500/30 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl text-white flex flex-col gap-3 max-h-[85vh] overflow-y-auto">
+                        <AlertDialogHeader className="space-y-1.5 text-left">
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 text-[10px] font-black uppercase w-fit">
+                            <RefreshCw className="w-3 h-3 animate-spin-slow" />
+                            <span>ASSET RECYCLE • 資產變現轉點</span>
+                          </div>
+                          <AlertDialogTitle className="text-lg sm:text-xl font-black text-white tracking-tight">
+                            確認將 {conversionValues.eligibleCount} 張卡片轉換為點數？
+                          </AlertDialogTitle>
+                          <AlertDialogDescription className="text-xs text-slate-400 leading-relaxed">
+                            轉點完成後，卡片將從您的收藏庫扣除並回收，點數與鑽石將立即入帳。此操作無法撤回。
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+
+                        <div className="flex flex-row gap-2.5 my-2 w-full">
+                          <div className="flex-1 p-3 rounded-2xl bg-cyan-950/40 border border-cyan-500/30 flex flex-col items-center justify-center text-center min-w-0">
+                            <span className="text-[10px] font-bold text-cyan-300 uppercase whitespace-nowrap">預計獲得鑽石</span>
+                            <span className="font-code text-lg sm:text-2xl font-black text-cyan-400 mt-1 flex items-center gap-1 truncate">
+                              +{conversionValues.diamonds.toLocaleString()} <Gem className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                            </span>
+                          </div>
+
+                          <div className="flex-1 p-3 rounded-2xl bg-amber-950/40 border border-amber-500/30 flex flex-col items-center justify-center text-center min-w-0">
+                            <span className="text-[10px] font-bold text-amber-300 uppercase whitespace-nowrap">預計獲得紅利 P點</span>
+                            <span className="font-code text-lg sm:text-2xl font-black text-amber-400 mt-1 flex items-center gap-1 truncate">
+                              +{conversionValues.pPoints.toLocaleString()} <PPlusIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                            </span>
+                          </div>
+                        </div>
+
+                        {conversionValues.ineligibleCount > 0 && (
+                          <div className="p-2.5 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-300 text-xs font-medium flex items-center gap-2">
+                            <Info className="w-4 h-4 shrink-0 text-orange-400" />
+                            <span className="leading-snug">所選之 {conversionValues.ineligibleCount} 張團拆卡片不支援轉點，將自動予以保留。</span>
+                          </div>
+                        )}
+
+                        <AlertDialogFooter className="mt-3 flex flex-row items-center justify-end gap-2 w-full">
+                          <AlertDialogCancel className="flex-1 sm:flex-initial h-10 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 border-white/10 font-bold text-xs">
+                            取消
+                          </AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={handleQuickSell}
+                            disabled={isProcessing}
+                            className="flex-1 sm:flex-initial h-10 rounded-xl bg-gradient-to-r from-cyan-500 to-sky-400 hover:from-cyan-400 text-slate-950 font-black text-xs shadow-lg shadow-cyan-500/20 whitespace-nowrap"
+                          >
+                            {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : '確認立即變現轉點'}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+
+                    {/* Batch Shipping Modal */}
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button 
+                          className="h-10 flex-1 sm:flex-initial px-3.5 sm:px-5 rounded-xl bg-gradient-to-r from-cyan-500 to-sky-400 hover:from-cyan-400 text-slate-950 text-xs font-black gap-1 sm:gap-1.5 transition-all shadow-lg shadow-cyan-500/20 active:scale-95 justify-center whitespace-nowrap"
+                        >
+                          <Ship className="w-3.5 h-3.5 shrink-0" />
+                          <span>申請出貨 ({selectedCardIds.size})</span>
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent className="w-[95vw] max-w-xl bg-slate-950 border border-cyan-500/30 rounded-2xl sm:rounded-3xl p-0 overflow-hidden shadow-2xl text-white max-h-[88vh] flex flex-col">
+                        
+                        <div className="p-4 sm:p-6 pb-3 border-b border-white/10 bg-slate-900/90 flex-shrink-0 flex flex-col gap-1">
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 text-[10px] font-black uppercase w-fit">
+                            <Ship className="w-3 h-3 text-cyan-400" />
+                            <span>SHIPPING LOGISTICS • 實體卡牌出貨</span>
+                          </div>
+                          <AlertDialogTitle className="text-lg sm:text-xl font-black text-white tracking-tight">
+                            申請寄送 {selectedCardIds.size} 張實體卡牌
+                          </AlertDialogTitle>
+                          <AlertDialogDescription className="text-xs text-slate-400">
+                            請選擇物流方式並填妥收件人資料，專人將於審核後進行防護包裝與寄出。
+                          </AlertDialogDescription>
+                        </div>
+
+                        <div className="p-4 sm:p-6 space-y-3.5 overflow-y-auto flex-1 flex flex-col">
+                          {/* Shipping Methods */}
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-bold text-slate-300">配送方式選擇</Label>
+                            <RadioGroup 
+                              value={shippingMethod} 
+                              onValueChange={(val: ShippingMethod) => setShippingMethod(val)} 
+                              className="flex flex-row gap-2 w-full"
+                            >
+                              <div 
+                                onClick={() => setShippingMethod('7-11')}
+                                className={cn(
+                                  "flex-1 p-2 sm:p-3 rounded-xl border flex flex-col items-center justify-center text-center cursor-pointer transition-all gap-0.5 sm:gap-1 min-w-0",
+                                  shippingMethod === '7-11' ? "bg-cyan-500/15 border-cyan-400 text-white shadow-md shadow-cyan-500/10" : "bg-slate-900/80 border-white/10 text-slate-400 hover:bg-slate-800"
+                                )}
+                              >
+                                <Package className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />
+                                <span className="text-[11px] sm:text-xs font-black text-white mt-0.5 whitespace-nowrap">7-11 超商</span>
+                                <span className="text-[9px] sm:text-[10px] font-bold text-cyan-300 font-code whitespace-nowrap">
+                                  {hasFreeShipping ? '免運特權' : `${SHIPPING_FEE} 點`}
+                                </span>
+                              </div>
+
+                              <div 
+                                onClick={() => setShippingMethod('郵寄')}
+                                className={cn(
+                                  "flex-1 p-2 sm:p-3 rounded-xl border flex flex-col items-center justify-center text-center cursor-pointer transition-all gap-0.5 sm:gap-1 min-w-0",
+                                  shippingMethod === '郵寄' ? "bg-cyan-500/15 border-cyan-400 text-white shadow-md shadow-cyan-500/10" : "bg-slate-900/80 border-white/10 text-slate-400 hover:bg-slate-800"
+                                )}
+                              >
+                                <Truck className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />
+                                <span className="text-[11px] sm:text-xs font-black text-white mt-0.5 whitespace-nowrap">掛號郵寄</span>
+                                <span className="text-[9px] sm:text-[10px] font-bold text-cyan-300 font-code whitespace-nowrap">
+                                  {hasFreeShipping ? '免運特權' : `${SHIPPING_FEE} 點`}
+                                </span>
+                              </div>
+
+                              <div 
+                                onClick={() => setShippingMethod('面交自取')}
+                                className={cn(
+                                  "flex-1 p-2 sm:p-3 rounded-xl border flex flex-col items-center justify-center text-center cursor-pointer transition-all gap-0.5 sm:gap-1 min-w-0",
+                                  shippingMethod === '面交自取' ? "bg-cyan-500/15 border-cyan-400 text-white shadow-md shadow-cyan-500/10" : "bg-slate-900/80 border-white/10 text-slate-400 hover:bg-slate-800"
+                                )}
+                              >
+                                <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />
+                                <span className="text-[11px] sm:text-xs font-black text-white mt-0.5 whitespace-nowrap">門市自取</span>
+                                <span className="text-[9px] sm:text-[10px] font-bold text-emerald-400 whitespace-nowrap">免手續費</span>
+                              </div>
+                            </RadioGroup>
+                          </div>
+
+                          {/* Inputs */}
+                          <div className="flex flex-col sm:flex-row gap-2.5 w-full">
+                            <div className="flex-1 space-y-1">
+                              <Label className="text-xs font-bold text-slate-300">收件人姓名 *</Label>
+                              <Input 
+                                value={shippingName} 
+                                onChange={(e) => setShippingName(e.target.value)} 
+                                placeholder="請輸入收件人真實姓名"
+                                className="h-9 sm:h-10 bg-slate-900 border-white/10 rounded-xl text-xs text-white"
+                              />
+                            </div>
+
+                            <div className="flex-1 space-y-1">
+                              <Label className="text-xs font-bold text-slate-300">聯絡電話 *</Label>
+                              <Input 
+                                value={shippingPhone} 
+                                onChange={(e) => setShippingPhone(e.target.value)} 
+                                placeholder="例如：0912345678"
+                                className="h-9 sm:h-10 bg-slate-900 border-white/10 rounded-xl text-xs text-white"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="space-y-1 w-full">
+                            <Label className="text-xs font-bold text-slate-300">{addressLabel} *</Label>
+                            {shippingMethod === '面交自取' ? (
+                              <div className="p-3 bg-cyan-500/10 rounded-xl border border-cyan-500/30 text-xs text-cyan-300 space-y-1">
+                                <p className="font-bold flex items-center gap-1.5">
+                                  <MapPin className="w-4 h-4 text-cyan-400 shrink-0" />
+                                  <span>{PICKUP_ADDRESS}</span>
+                                </p>
+                                <p className="text-[11px] text-slate-400">
+                                  ※ 面交自取請於下單後聯繫官方 LINE 客服預約取件時段。
+                                </p>
+                              </div>
+                            ) : (
+                              <Input 
+                                value={shippingAddress} 
+                                onChange={(e) => setShippingAddress(e.target.value)} 
+                                placeholder={shippingMethod === '7-11' ? "例如：長津門市 或 店號123456" : "例如：台北市信義區信義路五段7號"}
+                                className="h-9 sm:h-10 bg-slate-900 border-white/10 rounded-xl text-xs text-white"
+                              />
+                            )}
+                          </div>
+
+                          {/* Notice */}
+                          <div className="p-2.5 sm:p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-200/90 space-y-1">
+                            <div className="flex items-center gap-1.5 font-bold text-amber-400">
+                              <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
+                              <span>保險與開箱須知</span>
+                            </div>
+                            <p className="leading-relaxed text-slate-300 text-[10.5px] sm:text-[11px]">
+                              卡牌出貨前均經過嚴格品檢並附保護套。收到包裹後請務必【全程開箱錄影】以維護售後權益。
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="p-3.5 sm:p-4 border-t border-white/10 bg-slate-900/90 flex flex-row items-center justify-end gap-2.5 flex-shrink-0">
+                          <AlertDialogCancel className="flex-1 sm:flex-initial h-10 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 border-white/10 text-xs font-bold">
+                            取消
+                          </AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={handleShipping}
+                            disabled={isProcessing}
+                            className="flex-1 sm:flex-initial h-10 px-5 sm:px-6 rounded-xl bg-gradient-to-r from-cyan-500 to-sky-400 hover:from-cyan-400 text-slate-950 font-black text-xs shadow-lg shadow-cyan-500/20 whitespace-nowrap"
+                          >
+                            {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : '確認並提交出貨單'}
+                          </AlertDialogAction>
+                        </div>
+                      </AlertDialogContent>
+                    </AlertDialog>
+
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* === 3D SHOWROOM PREVIEW DIALOG === */}
+          <Dialog open={!!previewCard} onOpenChange={(open) => !open && setPreviewCard(null)}>
+            <DialogContent className="max-w-[min(92vw,380px)] bg-slate-950/95 backdrop-blur-2xl border border-cyan-500/30 shadow-2xl p-5 overflow-hidden flex flex-col items-center justify-center gap-4 rounded-3xl text-white">
+              <DialogTitle><VisuallyHiddenPrimitive.Root>Card Showroom</VisuallyHiddenPrimitive.Root></DialogTitle>
+              {previewCard && (
+                <div className="w-full flex flex-col items-center gap-4">
+                  
+                  {/* Card Title & Badges */}
+                  <div className="flex flex-col items-center text-center gap-1">
+                    <div className="flex items-center gap-1.5 flex-wrap justify-center">
+                      <Badge variant="outline" className="border-cyan-500/40 text-cyan-300 bg-cyan-500/10 px-2.5 py-0.5 font-bold tracking-wider uppercase text-[10px] rounded-full">
+                        {previewCard.category ? previewCard.category.toUpperCase() : 'GENERAL ASSET'}
+                      </Badge>
+                      {previewCard.serialNumber && previewCard.serialNumber !== '0000' && (
+                        <Badge className="bg-slate-900 text-cyan-300 border border-cyan-500/30 text-[10px] font-mono px-2 py-0.5">
+                          #{previewCard.serialNumber}
+                        </Badge>
+                      )}
+                    </div>
+                    <h2 className="text-lg font-black font-headline tracking-tight text-white uppercase max-w-[280px] truncate mt-1">
+                      {previewCard.name}
+                    </h2>
+                  </div>
+
+                  {/* 3D Flip Card Container */}
+                  <div className="w-full max-w-[190px] aspect-[2.5/3.5] perspective-1000 my-1">
+                    <motion.div 
+                      initial={{ scale: 0.9, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className="relative w-full h-full group"
+                    >
+                      <div className="absolute -inset-4 bg-cyan-500/20 blur-xl opacity-70 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                      <CardItem 
+                        name={previewCard.name} 
+                        imageUrl={previewCard.imageUrl} 
+                        backImageUrl={previewCard.backImageUrl}
+                        imageHint={previewCard.imageHint} 
+                        rarity={previewCard.rarity} 
+                        isFlippable={true}
+                        priority={true}
+                      />
+                    </motion.div>
+                  </div>
+
+                  {/* Valuation & Inspection Buttons */}
+                  <div className="flex flex-col items-center gap-2.5 w-full pt-1">
+                    <div className="flex items-center gap-2 bg-slate-900 border border-white/10 px-4 py-1.5 rounded-xl text-xs font-code font-black text-white shadow-md">
+                      <span className="text-slate-400 font-sans text-[11px]">估值:</span>
+                      <Gem className="w-3.5 h-3.5 text-cyan-400" />
+                      <span className="text-cyan-300">{previewCard.sellPrice || 10} 鑽石</span>
+                    </div>
+
+                    <p className="text-[10px] font-bold text-slate-400 flex items-center gap-1">
+                      <RotateCw className="w-3 h-3 text-cyan-400 animate-spin-slow" /> 點擊卡片即可 3D 翻面觀看背卡
+                    </p>
+
+                    <Button 
+                      onClick={() => setIsReportOpen(true)} 
+                      className="h-10 w-full rounded-xl text-xs font-black bg-gradient-to-r from-cyan-500 to-sky-400 hover:from-cyan-400 text-slate-950 shadow-lg shadow-cyan-500/20 transition-all mt-1"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 mr-1" /> 生成 AI 智能鑑定報告
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
+
+          {/* AI Report Dialog */}
+          <CardReportDialog card={previewCard} open={isReportOpen} onOpenChange={setIsReportOpen} />
+
+        </div>
+      </div>
+    </TooltipProvider>
+  );
 }

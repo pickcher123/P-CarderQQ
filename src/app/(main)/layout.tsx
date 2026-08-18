@@ -23,7 +23,19 @@ export default function MainLayout({
   const { data: systemConfig } = useDoc<SystemConfig>(systemConfigRef);
   
   const isMarqueeVisible = systemConfig?.featureFlags?.isMarqueeEnabled !== false;
+  const isOpenPackPage = pathname.startsWith('/draw/open');
   const isDrawing = pathname.startsWith('/draw');
+  
+  if (isOpenPackPage) {
+    return (
+      <div className="relative min-h-[100dvh] w-full overflow-hidden bg-slate-950">
+        <AnimatedBackground backgroundUrl={systemConfig?.backgroundUrl} backgroundOpacity={systemConfig?.backgroundOpacity} />
+        <main className="w-full h-full min-h-[100dvh]">
+          {children}
+        </main>
+      </div>
+    );
+  }
   
   return (
     <div className="relative flex min-h-screen flex-col">

@@ -567,11 +567,10 @@ export default function CardPoolDetailPage() {
         setIsAddCardDialogOpen(false);
     } catch (error) {
         console.error("Error adding cards to pool:", error);
-        console.log("Full error object:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
         toast({ 
             variant: "destructive", 
             title: "錯誤", 
-            description: `加入卡片時發生錯誤: ${error instanceof Error ? error.message : JSON.stringify(error)}` 
+            description: `加入卡片時發生錯誤: ${error instanceof Error ? error.message : '未知錯誤'}` 
         });
     }
   }

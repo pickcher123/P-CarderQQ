@@ -97,13 +97,94 @@ function buildRequestObject(context: SecurityRuleContext): SecurityRuleRequest {
 }
 
 /**
+ * Helper to safely clean objects for JSON serialization, handling circular references,
+ * Firestore sentinels, DOM objects, and non-plain instances safely.
+ */
+function deepCleanForJSON(obj: any, seen = new WeakSet()): any {
+  if (obj === null || obj === undefined) return obj;
+  if (typeof obj !== 'object' && typeof obj !== 'function') return obj;
+  
+  if (typeof obj === 'function') return '[Function]';
+
+  if (typeof window !== 'undefined') {
+    if (obj instanceof Node || obj instanceof Event || obj instanceof Window) {
+      return `[${obj.constructor?.name || 'DOMObject'}]`;
+    }
+  }
+
+  if (seen.has(obj)) {
+    return '[Circular]';
+  }
+  seen.add(obj);
+
+  if (obj instanceof Date) {
+    return obj.toISOString();
+  }
+
+  if (obj instanceof Error) {
+    return {
+      name: obj.name,
+      message: obj.message,
+      stack: obj.stack
+    };
+  }
+
+  // Handle non-plain object instances (like Firestore DocumentReference, Timestamp, FieldValue)
+  if (obj.constructor && obj.constructor.name !== 'Object' && obj.constructor.name !== 'Array') {
+    if (typeof obj.path === 'string') {
+      return `[DocumentReference: ${obj.path}]`;
+    }
+    if (typeof obj.toDate === 'function') {
+      try { return obj.toDate().toISOString(); } catch { return '[Timestamp]'; }
+    }
+    if (obj.isEqual || obj._delegate || obj.type) {
+      return `[${obj.constructor.name || 'FirestoreSentinel'}]`;
+    }
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(item => deepCleanForJSON(item, seen));
+  }
+
+  const result: Record<string, any> = {};
+  try {
+    const keys = Object.keys(obj);
+    for (const key of keys) {
+      if (key.startsWith('_')) continue; // Skip internal hidden properties
+      try {
+        result[key] = deepCleanForJSON(obj[key], seen);
+      } catch {
+        result[key] = '[Unserializable]';
+      }
+    }
+  } catch {
+    return String(obj);
+  }
+
+  return result;
+}
+
+function safeStringify(obj: any, indent = 2): string {
+  try {
+    const cleaned = deepCleanForJSON(obj);
+    return JSON.stringify(cleaned, null, indent);
+  } catch {
+    try {
+      return String(obj);
+    } catch {
+      return '[Unserializable Object]';
+    }
+  }
+}
+
+/**
  * Builds the final, formatted error message for the LLM.
  * @param requestObject The simulated request object.
  * @returns A string containing the error message and the JSON payload.
  */
 function buildErrorMessage(requestObject: SecurityRuleRequest): string {
   return `Missing or insufficient permissions: The following request was denied by Firestore Security Rules:
-${JSON.stringify(requestObject, null, 2)}`;
+${safeStringify(requestObject, 2)}`;
 }
 
 /**

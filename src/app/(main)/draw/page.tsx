@@ -191,12 +191,9 @@ export default function DrawPage() {
             </Dialog>
           </div>
 
-          <div className="text-center space-y-1">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-bold tracking-[0.3em] uppercase mb-1 animate-fade-in-up">
-              <Sparkles className="w-3 h-3 text-amber-400 animate-pulse" /> DRAW & REVEAL TERMINAL
-            </div>
-            <h1 className="font-headline text-3xl font-black tracking-[0.15em] sm:text-5xl text-white drop-shadow-[0_0_20px_rgba(245,158,11,0.35)]">
-              頂級<span className="text-transparent bg-clip-text bg-gradient-to-br from-amber-300 via-white to-cyan-400">抽卡專區</span>
+          <div className="text-center">
+            <h1 className="font-headline text-2xl sm:text-4xl font-black tracking-wider text-white">
+              頂級<span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-100 to-cyan-400">抽卡專區</span>
             </h1>
           </div>
         </div>

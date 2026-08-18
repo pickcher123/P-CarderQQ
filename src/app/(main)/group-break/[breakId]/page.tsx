@@ -1,17 +1,21 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
+import Link from 'next/link';
 import { SafeImage } from '@/components/safe-image';
 import { useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { doc, collection, serverTimestamp, increment, runTransaction, writeBatch } from 'firebase/firestore';
 import { useParams, useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 import { 
   ArrowLeft, Gem, Loader2, Dices, 
   CheckCircle2, 
   Radio, Zap, SearchCode, X, Hash,
-  TicketCheck, AlertCircle, User
+  TicketCheck, AlertCircle, User, Tv, Sparkles,
+  Flame, Check, Play, ShieldAlert, Award,
+  ZoomIn, Maximize2
 } from 'lucide-react';
 import { useCollection } from '@/firebase';
 import { query } from 'firebase/firestore';
@@ -91,6 +95,7 @@ export default function GroupBreakDetailPage() {
   const [isRandomPickOpen, setIsRandomPickOpen] = useState(false);
   const [randomPickCount, setRandomPickCount] = useState(1);
   const [previewCard, setPreviewCard] = useState<Winnings | null>(null);
+  const [isFullscreenImageOpen, setIsFullscreenImageOpen] = useState(false);
 
 
   const groupBreakRef = useMemoFirebase(() => {
@@ -277,8 +282,35 @@ export default function GroupBreakDetailPage() {
     } finally { setIsSubmitting(false); }
   };
 
-  if (isLoadingBreak) return <div className="container py-32 text-center text-slate-900"><Loader2 className="animate-spin h-12 w-12 text-primary mx-auto" /><p className="mt-4 font-headline tracking-widest animate-pulse">正在搜尋電視頻道...</p></div>;
-  if (!groupBreak) return <div className="container py-20 text-center font-bold">頻道收訊中斷：找不到此活動。</div>;
+  if (isLoadingBreak) {
+    return (
+      <div className="container min-h-[60vh] flex flex-col items-center justify-center text-center">
+        <div className="relative">
+          <div className="w-16 h-16 rounded-3xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center animate-pulse">
+            <Radio className="h-8 w-8 text-cyan-400 animate-spin-slow" />
+          </div>
+          <div className="absolute -inset-2 bg-cyan-500/20 rounded-full blur-xl animate-pulse" />
+        </div>
+        <p className="mt-6 font-headline tracking-widest text-cyan-300 font-bold text-sm uppercase">正在連線至實況終端...</p>
+        <p className="text-xs text-slate-500 mt-1">Connecting to live group break channel</p>
+      </div>
+    );
+  }
+
+  if (!groupBreak) {
+    return (
+      <div className="container py-24 text-center">
+        <div className="inline-flex p-4 rounded-3xl bg-rose-500/10 border border-rose-500/20 text-rose-400 mb-4">
+          <AlertCircle className="w-8 h-8" />
+        </div>
+        <h2 className="text-xl font-black text-white">頻道訊號中斷</h2>
+        <p className="text-slate-400 text-sm mt-1 mb-6">找不到此團拆活動或已被下架。</p>
+        <Button onClick={() => router.push('/group-break')} className="bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl">
+          返回頻道列表
+        </Button>
+      </div>
+    );
+  }
 
   const isTeamBreak = groupBreak.breakType === 'team';
   const totalCost = isTeamBreak 
@@ -287,339 +319,561 @@ export default function GroupBreakDetailPage() {
   const selectionCount = isTeamBreak ? selectedTeams.size : selectedSpots.size;
   const currency = groupBreak.currency || 'diamond';
 
-  return (
-    <div className="container py-8 md:py-12 relative overflow-hidden">
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[400px] bg-primary/5 blur-[100px] pointer-events-none" />
-      
-      <Button variant="ghost" onClick={() => router.back()} className="mb-8 hover:bg-white/5 font-bold animate-fade-in-up">
-        <ArrowLeft className="mr-2 h-4 w-4" /> 返回頻道列表
-      </Button>
+  const participantCount = isTeamBreak ? takenTeams.size : takenSpots.size;
+  const totalSpotsCount = isTeamBreak ? (groupBreak.teams?.length || 0) : (groupBreak.totalSpots || 0);
+  const progressPercent = totalSpotsCount > 0 ? Math.min(100, Math.round((participantCount / totalSpotsCount) * 100)) : 0;
+  const remainingSpotsCount = Math.max(0, totalSpotsCount - participantCount);
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-10">
-        <div className="lg:col-span-2 space-y-4 px-2">
-          <div className="relative flex flex-col p-4 bg-slate-800 border-b-[12px] border-r-[12px] border-slate-950 rounded-[2.5rem] shadow-[0_30px_60px_rgba(0,0,0,0.6)]">
-            <div className="relative flex-1 bg-slate-900 rounded-[2rem] p-4 md:p-6 shadow-inner border-b-4 border-white/5">
-                <div className="relative aspect-video bg-black rounded-xl overflow-hidden border-4 border-slate-950 shadow-[inset:0_0_30px_rgba(0,0,0,1)]">
-                    <SafeImage src={groupBreak.imageUrl} alt={groupBreak.title} fill className="object-cover opacity-80" />
-                    <div className="absolute inset-0 pointer-events-none z-10 opacity-[0.05] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,2px_100%]" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-10" />
-                    
-                    {(isFull || groupBreak.status === 'completed' || groupBreak.status === 'in_progress') && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-20">
-                            <Badge className={cn(
-                              "text-xl font-black px-8 py-2 rounded-full rotate-[-12deg] shadow-2xl border-4 border-white/20 uppercase tracking-widest",
-                              groupBreak.status === 'completed' ? "bg-slate-800 text-slate-300" :
-                              groupBreak.status === 'in_progress' ? "bg-amber-500 text-slate-950 animate-pulse border-amber-300" :
-                              "bg-destructive text-white"
-                            )}>
-                                {groupBreak.status === 'completed' ? '活動已結束' : groupBreak.status === 'in_progress' ? '● 直播拆卡中' : '已全數售罄'}
-                            </Badge>
-                        </div>
-                    )}
+  return (
+    <div className="container max-w-7xl py-6 md:py-10 relative">
+      {/* Background Cyber Ambient Glows */}
+      <div className="absolute top-0 left-1/4 -translate-x-1/2 w-96 h-96 bg-cyan-500/10 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute top-1/3 right-10 w-96 h-96 bg-indigo-500/10 rounded-full blur-[140px] pointer-events-none" />
+      
+      {/* Top Breadcrumb & Status Header */}
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+        <Button 
+          variant="ghost" 
+          onClick={() => router.back()} 
+          className="h-10 px-3.5 rounded-xl text-slate-300 hover:text-white hover:bg-white/5 font-bold gap-2 text-xs border border-white/5 transition-all"
+        >
+          <ArrowLeft className="h-4 w-4 text-cyan-400" />
+          <span>返回頻道列表</span>
+        </Button>
+
+        <div className="flex items-center gap-2">
+          <Badge className="bg-slate-900/90 text-cyan-300 border border-cyan-500/30 text-[11px] px-3 py-1 font-bold rounded-xl gap-1.5 shadow-sm">
+            <Radio className="w-3 h-3 text-cyan-400 animate-pulse" />
+            <span>{isTeamBreak ? '球隊模式團拆' : '隨機位置團拆'}</span>
+          </Badge>
+          
+          <Badge className={cn(
+            "text-[11px] px-3 py-1 font-bold rounded-xl shadow-sm border",
+            groupBreak.status === 'completed' ? "bg-slate-800 text-slate-400 border-slate-700" :
+            groupBreak.status === 'in_progress' ? "bg-rose-500/20 text-rose-400 border-rose-500/40 animate-pulse" :
+            isFull ? "bg-amber-500/20 text-amber-300 border-amber-500/40" :
+            "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
+          )}>
+            {groupBreak.status === 'completed' ? '已結束' :
+             groupBreak.status === 'in_progress' ? '🔥 直播拆卡中' :
+             isFull ? '已滿團' : '✨ 開團熱搶中'}
+          </Badge>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+        
+        {/* === LEFT COLUMN: LIVE STREAM / POSTER DECK (5 cols on lg) === */}
+        <div className="lg:col-span-5 space-y-4">
+          
+          {/* Main Large Image Frame (Unobstructed & Crystal Clear) */}
+          <div className="relative bg-gradient-to-b from-[#13192a]/95 via-[#0d1220]/95 to-[#090c15]/95 border border-cyan-500/30 rounded-3xl p-2.5 sm:p-3.5 shadow-[0_20px_50px_rgba(0,0,0,0.8),0_0_25px_rgba(6,182,212,0.15)] overflow-hidden group">
+            
+            {/* Top Floating Badges (Floating on top, no header bar squeezing the image) */}
+            <div className="relative aspect-[4/3] sm:aspect-[16/11] w-full bg-slate-950 rounded-2xl overflow-hidden border border-white/10 shadow-inner group/poster">
+              {/* Blur backdrop for wide/tall ratios */}
+              {groupBreak.imageUrl && (
+                <div 
+                  className="absolute inset-0 bg-cover bg-center blur-2xl scale-125 opacity-30 pointer-events-none"
+                  style={{ backgroundImage: `url(${groupBreak.imageUrl})` }}
+                />
+              )}
+
+              {/* Main Crisp Foreground Image */}
+              <SafeImage 
+                src={groupBreak.imageUrl} 
+                alt={groupBreak.title} 
+                fill 
+                className={cn(
+                  "object-contain sm:object-cover transition-transform duration-500 group-hover/poster:scale-105",
+                  groupBreak.status === 'completed' && "grayscale brightness-75"
+                )} 
+              />
+
+              {/* Floating Top Header Badges */}
+              <div className="absolute top-2.5 inset-x-2.5 flex items-center justify-between pointer-events-none z-20">
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-cyan-400/30 text-[10px] font-bold text-cyan-300 font-code pointer-events-auto">
+                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_6px_#22d3ee]" />
+                  <span>CH #{breakId?.slice(0, 4).toUpperCase()}</span>
                 </div>
-                
-                <div className="mt-4 flex justify-between items-center">
-                    <div className="flex items-center gap-3">
-                        <div className="flex flex-col items-center gap-1">
-                            <div className={cn("w-2 h-2 rounded-full shadow-[0_0_10px_red]", groupBreak.status === 'completed' ? "bg-red-900" : "bg-red-600 animate-pulse")} />
-                            <span className="text-[6px] font-black text-white/40 uppercase">電源</span>
-                        </div>
-                        <div className="flex flex-col items-center gap-1">
-                            <div className={cn("w-2 h-2 rounded-full shadow-[0_0_10px_rgba(6,182,212,1)]", groupBreak.status === 'completed' ? "bg-cyan-900" : "bg-primary animate-pulse")} />
-                            <span className="text-[6px] font-black text-white/40 uppercase">訊號</span>
-                        </div>
-                    </div>
+
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setIsFullscreenImageOpen(true)}
+                  className="h-7 w-7 p-0 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-md border border-white/20 text-white pointer-events-auto shadow-md"
+                  title="點擊放大查看大圖"
+                >
+                  <Maximize2 className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+
+              {/* Status Overlay Banner if Full / In Progress / Completed */}
+              {(isFull || groupBreak.status === 'completed' || groupBreak.status === 'in_progress') && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-[2px] z-20">
+                  <Badge className={cn(
+                    "text-xs sm:text-sm font-black px-5 py-1.5 rounded-full shadow-2xl border-2 uppercase tracking-wider backdrop-blur-md",
+                    groupBreak.status === 'completed' ? "bg-slate-900/90 text-slate-300 border-slate-700" :
+                    groupBreak.status === 'in_progress' ? "bg-rose-500 text-white animate-pulse border-rose-300 shadow-[0_0_20px_rgba(244,63,94,0.6)]" :
+                    "bg-amber-500/95 text-slate-950 border-amber-300 font-extrabold"
+                  )}>
+                    {groupBreak.status === 'completed' ? '活動已結束' : groupBreak.status === 'in_progress' ? '● 直播拆卡進行中' : '已全數售罄 (滿團)'}
+                  </Badge>
                 </div>
+              )}
             </div>
+
+            {/* Click to Zoom Tip */}
+            <button 
+              type="button" 
+              onClick={() => setIsFullscreenImageOpen(true)}
+              className="w-full mt-2 py-1 flex items-center justify-center gap-1.5 text-[11px] font-bold text-cyan-400/80 hover:text-cyan-300 transition-colors"
+            >
+              <ZoomIn className="w-3.5 h-3.5" />
+              <span>點擊圖片可放大檢視卡盒高清海報</span>
+            </button>
           </div>
 
-          <div className="space-y-4 px-2">
-            
-            <h1 className="font-headline text-3xl md:text-4xl font-black text-white leading-tight tracking-tighter italic drop-shadow-md">{groupBreak.title}</h1>
-            <p className="text-muted-foreground leading-relaxed font-medium opacity-80">{groupBreak.description}</p>
+          {/* Progress & Slots Bar (Dedicated Card, Separated from Image) */}
+          <div className="p-4 rounded-3xl bg-slate-900/80 border border-white/10 space-y-2.5 shadow-lg">
+            <div className="flex items-center justify-between text-xs font-bold">
+              <span className="text-slate-300 flex items-center gap-1.5">
+                <Flame className="w-4 h-4 text-cyan-400" />
+                席次鎖定進度
+              </span>
+              <span className="font-code text-cyan-300 text-sm font-black">
+                {participantCount} / {totalSpotsCount} 席 ({progressPercent}%)
+              </span>
+            </div>
+            <Progress value={progressPercent} className="h-2.5 bg-slate-950" />
+            <div className="flex items-center justify-between text-xs text-slate-400 pt-0.5">
+              <span>剩餘名額: <strong className="text-white font-code text-sm">{remainingSpotsCount}</strong> 個</span>
+              <span className={cn("font-bold text-xs", isFull ? "text-slate-400" : remainingSpotsCount <= 3 ? "text-amber-400" : "text-emerald-400")}>
+                {isFull ? '已搶購一空' : remainingSpotsCount <= 3 ? '即將滿團！' : '開放選購中'}
+              </span>
+            </div>
+
+            {/* YouTube Live Stream External Button */}
             {groupBreak.youtubeUrl && (
-                <div className="mt-6">
-                    <p className="text-[10px] font-black text-white/50 uppercase tracking-[0.2em] mb-2">
-                        {groupBreak.status === 'completed' ? '直播檔案回顧' : '實況傳輸頻道'}
-                    </p>
-                    <Button asChild variant="outline" className="w-full h-14 rounded-2xl border-red-500/30 bg-red-500/5 text-red-500 hover:bg-red-500/10 font-black shadow-lg text-lg">
-                        <Link href={groupBreak.youtubeUrl.includes('youtube.com') ? groupBreak.youtubeUrl : `https://youtube.com/watch?v=${groupBreak.youtubeUrl}`} target="_blank">
-                            {groupBreak.status === 'completed' ? '▶ 點擊觀看回顧' : '前往收看實況頻道'}
-                        </Link>
-                    </Button>
-                </div>
+              <div className="pt-2 border-t border-white/10">
+                <Button asChild className="w-full h-11 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-black shadow-lg shadow-red-600/20 text-xs gap-2">
+                  <Link href={groupBreak.youtubeUrl.includes('youtube.com') ? groupBreak.youtubeUrl : `https://youtube.com/watch?v=${groupBreak.youtubeUrl}`} target="_blank">
+                    <Play className="w-4 h-4 fill-white" />
+                    {groupBreak.status === 'completed' ? '點擊觀看直播檔案回顧' : '前往 YouTube 收看實況直播'}
+                  </Link>
+                </Button>
+              </div>
             )}
+          </div>
+
+          {/* Title & Description Box */}
+          <div className="p-4 sm:p-5 rounded-3xl bg-slate-900/60 border border-white/10 space-y-2">
+            <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-snug">
+              {groupBreak.title}
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-medium">
+              {groupBreak.description || '官方實體球員卡團拆活動，拆出之所屬球隊卡片將全數歸屬於該席次持有者。'}
+            </p>
           </div>
         </div>
 
-        <div className="lg:col-span-3 animate-fade-in-up">
-          <div className="sticky top-24 bg-slate-200 p-6 md:p-10 rounded-[2.5rem] border-b-[12px] border-r-[12px] border-slate-400 shadow-[0_30px_60px_rgba(0,0,0,0.4)]">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-8 text-slate-900">
-                  <div>
-                    <h2 className="font-headline text-xl font-black flex items-center gap-3 text-slate-900 tracking-tighter uppercase italic">
-                        <TicketCheck className="h-6 w-6"/> {isTeamBreak ? '選擇隊伍' : '選擇位置'}
-                    </h2>
-                    <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mt-1">控制器連接埠已啟動</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                      <Button variant="outline" size="sm" onClick={() => setIsRandomPickOpen(true)} disabled={isFull || groupBreak.status === 'completed'} className="h-10 rounded-xl bg-slate-300 border-none text-slate-700 font-black shadow-inner">
-                        <Dices className="mr-2 h-4 w-4 text-slate-600"/> 自動選號
-                      </Button>
-                  </div>
+        {/* === RIGHT COLUMN: SPOT / TEAM SELECTION MATRIX (7 cols on lg) === */}
+        <div className="lg:col-span-7 space-y-6">
+          <div className="bg-gradient-to-b from-[#13192a]/95 via-[#0d1220]/95 to-[#090c15]/95 border border-white/10 rounded-3xl p-4 sm:p-7 shadow-2xl backdrop-blur-xl">
+            
+            {/* Header / Selection Control */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-4 mb-4 border-b border-white/10">
+              <div className="space-y-0.5">
+                <h2 className="text-base sm:text-lg font-black text-white flex items-center gap-2 tracking-tight">
+                  <TicketCheck className="h-5 w-5 text-cyan-400" />
+                  <span>{isTeamBreak ? '選擇球隊席位' : '選擇號碼位置'}</span>
+                </h2>
+                <p className="text-[11px] text-slate-400">點擊下方卡片即可加入選購清單</p>
               </div>
 
-              <ScrollArea className="h-[420px] rounded-3xl border-4 border-slate-400 bg-slate-300 p-4 shadow-inner custom-scrollbar text-slate-900">
-                  {isTeamBreak ? (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                          {(groupBreak.teams || []).map(team => {
-                              const isTaken = takenTeams.has(team.teamId);
-                              const isSelected = selectedTeams.has(team.teamId);
-                              const logoUrl = getTeamLogoUrl(team.name, team.logoUrl);
-                              const buyerName = getBuyerName(team.userId, team.userName);
+              {/* Random Pick Tool Button */}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setIsRandomPickOpen(true)} 
+                disabled={isFull || groupBreak.status === 'completed'} 
+                className="h-9 px-3 rounded-xl bg-slate-900/90 border-cyan-500/30 text-cyan-300 hover:bg-cyan-950/40 hover:text-white font-bold text-xs gap-1.5 shadow-sm transition-all active:scale-95"
+              >
+                <Dices className="h-3.5 w-3.5 text-cyan-400" />
+                <span>自動快速選號</span>
+              </Button>
+            </div>
 
-                              return (
-                                <button
-                                    key={team.teamId}
-                                    disabled={isTaken || isFull || groupBreak.status === 'completed'}
-                                    onClick={() => handleTeamClick(team.teamId)}
-                                    className={cn(
-                                        "relative min-h-[108px] rounded-2xl flex flex-col items-center justify-between p-2.5 text-center font-bold transition-all border-b-[4px] active:translate-y-0.5 active:border-b-0 group overflow-hidden",
-                                        isTaken ? "bg-slate-200/90 border-slate-300 text-slate-800 shadow-sm cursor-not-allowed" :
-                                        isSelected ? "bg-slate-800 text-white border-black shadow-[0_0_15px_rgba(0,0,0,0.4)] z-10" :
-                                        "bg-slate-100 border-slate-400 text-slate-800 hover:bg-white hover:scale-[1.02]"
-                                    )}
-                                >
-                                    {logoUrl ? (
-                                        <img 
-                                            src={logoUrl} 
-                                            alt={team.name} 
-                                            className={cn("w-9 h-9 object-contain mb-0.5 transition-transform drop-shadow-sm flex-shrink-0", isTaken ? "opacity-75" : "group-hover:scale-110")} 
-                                        />
-                                    ) : (
-                                        <div className="w-8 h-8 rounded-full bg-slate-300 text-slate-700 text-xs font-black flex items-center justify-center mb-0.5 flex-shrink-0">
-                                            {team.name.slice(0, 1)}
-                                        </div>
-                                    )}
-                                    
-                                    <span className={cn("text-xs font-black uppercase tracking-tight line-clamp-1 leading-tight", isTaken && "text-slate-700")}>
-                                        {team.name}
-                                    </span>
+            {/* Matrix Scroll Area */}
+            <ScrollArea className="h-[380px] sm:h-[420px] pr-2 custom-scrollbar">
+              {isTeamBreak ? (
+                /* === TEAM BREAK GRID === */
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-2.5 pb-2">
+                  {(groupBreak.teams || []).map(team => {
+                    const isTaken = takenTeams.has(team.teamId);
+                    const isSelected = selectedTeams.has(team.teamId);
+                    const logoUrl = getTeamLogoUrl(team.name, team.logoUrl);
+                    const buyerName = getBuyerName(team.userId, team.userName);
 
-                                    {isTaken ? (
-                                        <div className="w-full bg-slate-900 text-amber-300 rounded-xl py-1 px-1.5 text-[11px] font-black flex items-center justify-center gap-1 shadow-md mt-1 truncate border border-slate-700">
-                                            <User className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                                            <span className="truncate">{buyerName || '已售出'}</span>
-                                        </div>
-                                    ) : (
-                                        <div className={cn("font-code flex items-center gap-1 mt-0.5 text-xs font-bold", isSelected ? "text-primary" : "text-primary/70")}>
-                                            <span className="text-sm font-black">{team.price.toLocaleString()}</span>
-                                            {currency === 'diamond' ? <Gem className="w-3 h-3"/> : <PPlusIcon className="w-3 h-3" />}
-                                        </div>
-                                    )}
-                                </button>
-                          )})}
-                      </div>
-                  ) : (
-                      <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2.5">
-                        {Array.from({ length: groupBreak.totalSpots || 0 }).map((_, i) => {
-                          const spotNumber = i + 1;
-                          const spotObj = groupBreak.spots?.find(s => s.spotNumber === spotNumber);
-                          const isTaken = takenSpots.has(spotNumber);
-                          const isSelected = selectedSpots.has(spotNumber);
-                          const buyerName = getBuyerName(spotObj?.userId, spotObj?.userName);
+                    return (
+                      <button
+                        key={team.teamId}
+                        type="button"
+                        disabled={isTaken || isFull || groupBreak.status === 'completed'}
+                        onClick={() => handleTeamClick(team.teamId)}
+                        className={cn(
+                          "relative min-h-[116px] rounded-2xl flex flex-col items-center justify-between p-3 text-center transition-all duration-200 border text-left group overflow-hidden select-none",
+                          isTaken 
+                            ? "bg-black/40 border-white/5 opacity-65 cursor-not-allowed" 
+                            : isSelected 
+                              ? "bg-gradient-to-b from-cyan-950/90 to-sky-950/90 border-2 border-cyan-400 text-white shadow-[0_0_20px_rgba(6,182,212,0.35)] ring-2 ring-cyan-400/20" 
+                              : "bg-slate-900/80 border-white/10 text-slate-200 hover:border-cyan-500/50 hover:bg-slate-800/80 hover:shadow-lg active:scale-98"
+                        )}
+                      >
+                        {/* Selected Indicator Badge */}
+                        {isSelected && (
+                          <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-cyan-400 text-slate-950 flex items-center justify-center shadow-md">
+                            <Check className="w-3.5 h-3.5 stroke-[3]" />
+                          </div>
+                        )}
 
-                          return (
-                            <button
-                              key={spotNumber}
-                              disabled={isTaken || isFull || groupBreak.status === 'completed'}
-                              onClick={() => handleSpotClick(spotNumber)}
-                              title={isTaken ? `買家: ${buyerName}` : `號碼 ${spotNumber}`}
+                        {/* Team Logo */}
+                        <div className="relative w-10 h-10 my-0.5 flex items-center justify-center flex-shrink-0">
+                          {logoUrl ? (
+                            <img 
+                              src={logoUrl} 
+                              alt={team.name} 
                               className={cn(
-                                "relative min-h-[64px] rounded-2xl flex flex-col items-center justify-center p-1.5 font-black text-xs transition-all border-b-4 active:translate-y-1 active:border-b-0",
-                                isTaken ? "bg-slate-200 border-slate-300 text-slate-800 cursor-not-allowed" :
-                                isSelected ? "bg-slate-800 text-white border-black shadow-[0_0_15px_rgba(0,0,0,0.4)]" :
-                                "bg-slate-100 text-slate-800 border-slate-400 hover:border-slate-800"
-                              )}
-                            >
-                                <span className="font-code text-sm font-black">#{spotNumber}</span>
-                                {isTaken && (
-                                  <span className="w-full text-[10px] font-extrabold text-amber-900 bg-amber-300/90 py-0.5 px-1 rounded-md truncate mt-1 border border-amber-400 flex items-center justify-center gap-0.5 shadow-sm">
-                                    <User className="w-2.5 h-2.5 shrink-0" />
-                                    <span className="truncate">{buyerName || '已卡位'}</span>
-                                  </span>
-                                )}
-                            </button>
-                          );
-                        })}
-                      </div>
-                  )}
-              </ScrollArea>
-
-              <div className="mt-8 space-y-6">
-                <div className="flex justify-between items-end px-2">
-                    <div className="space-y-1">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">訂單明細摘要</p>
-                        <p className="font-black text-slate-800 text-xl italic">已選數量: {selectionCount} 單位</p>
-                    </div>
-                    <div className="text-right space-y-1">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-primary/80">總計需支付</p>
-                        <div className={cn("flex items-center justify-end gap-2 text-xl sm:text-3xl font-black font-code text-slate-900 drop-shadow-sm")}>
-                            {totalCost.toLocaleString()} {currency === 'diamond' ? <Gem className="h-5 w-5 text-primary"/> : <PPlusIcon className="h-5 w-5" />}
+                                "w-10 h-10 object-contain transition-transform drop-shadow-md",
+                                isTaken ? "opacity-60" : "group-hover:scale-110"
+                              )} 
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-xl bg-slate-800 border border-white/10 text-cyan-300 text-sm font-black flex items-center justify-center shadow-inner">
+                              {team.name.slice(0, 2)}
+                            </div>
+                          )}
                         </div>
-                    </div>
+                        
+                        {/* Team Name */}
+                        <span className="text-xs font-black uppercase tracking-tight text-white line-clamp-1 w-full mt-1">
+                          {team.name}
+                        </span>
+
+                        {/* Bottom Status / Price Badge */}
+                        {isTaken ? (
+                          <div className="w-full bg-slate-950/90 text-amber-300 rounded-lg py-1 px-1.5 text-[10.5px] font-bold flex items-center justify-center gap-1 mt-1.5 border border-amber-500/20 truncate">
+                            <User className="w-3 h-3 text-amber-400 shrink-0" />
+                            <span className="truncate">{buyerName || '已售出'}</span>
+                          </div>
+                        ) : (
+                          <div className={cn(
+                            "w-full py-1 px-2 rounded-lg font-code flex items-center justify-center gap-1 mt-1.5 text-xs font-black transition-colors",
+                            isSelected ? "bg-cyan-400 text-slate-950" : "bg-white/5 text-cyan-300 border border-white/5"
+                          )}>
+                            <span>{team.price.toLocaleString()}</span>
+                            {currency === 'diamond' ? <Gem className="w-3 h-3"/> : <PPlusIcon className="w-3 h-3" />}
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                /* === SPOT BREAK NUMBER GRID === */
+                <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 pb-2">
+                  {Array.from({ length: groupBreak.totalSpots || 0 }).map((_, i) => {
+                    const spotNumber = i + 1;
+                    const spotObj = groupBreak.spots?.find(s => s.spotNumber === spotNumber);
+                    const isTaken = takenSpots.has(spotNumber);
+                    const isSelected = selectedSpots.has(spotNumber);
+                    const buyerName = getBuyerName(spotObj?.userId, spotObj?.userName);
+
+                    return (
+                      <button
+                        key={spotNumber}
+                        type="button"
+                        disabled={isTaken || isFull || groupBreak.status === 'completed'}
+                        onClick={() => handleSpotClick(spotNumber)}
+                        title={isTaken ? `買家: ${buyerName}` : `號碼 ${spotNumber}`}
+                        className={cn(
+                          "relative min-h-[64px] rounded-xl flex flex-col items-center justify-center p-1.5 font-black text-xs transition-all border select-none",
+                          isTaken 
+                            ? "bg-black/40 border-white/5 text-slate-500 opacity-65 cursor-not-allowed" 
+                            : isSelected 
+                              ? "bg-gradient-to-b from-cyan-950 to-sky-950 border-2 border-cyan-400 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)] ring-1 ring-cyan-400/30" 
+                              : "bg-slate-900/80 border-white/10 text-slate-200 hover:border-cyan-500/50 hover:bg-slate-800"
+                        )}
+                      >
+                        <span className="font-code text-sm font-black">#{spotNumber}</span>
+                        {isTaken && (
+                          <span className="w-full text-[9px] font-bold text-amber-300 bg-amber-500/10 py-0.5 px-0.5 rounded truncate mt-1 border border-amber-500/20 flex items-center justify-center gap-0.5">
+                            <span className="truncate">{buyerName || '已售'}</span>
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </ScrollArea>
+
+            {/* === ORDER CHECKOUT SUMMARY BAR === */}
+            <div className="mt-6 pt-5 border-t border-white/10 space-y-4">
+              <div className="flex items-center justify-between p-3.5 rounded-2xl bg-black/40 border border-white/5">
+                <div className="space-y-0.5">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">已選取席位</span>
+                  <p className="font-bold text-white text-sm">
+                    共 <span className="text-cyan-400 font-code font-black text-base">{selectionCount}</span> 個席次
+                  </p>
                 </div>
                 
-                <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                        <Button size="lg" className="w-full h-16 text-xl font-black rounded-2xl bg-slate-800 text-white hover:bg-slate-950 shadow-xl active:scale-95 group transition-all" disabled={selectionCount === 0 || isSubmitting || isFull || groupBreak.status === 'completed'}>
-                            <Zap className="mr-3 h-6 w-6 fill-white group-hover:scale-110 transition-transform" />
-                            {isFull ? '頻道名額已滿' : '啟動連線並確認購買'}
-                        </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent className="rounded-[2.5rem] bg-slate-200 border-slate-400 border-[10px] p-10 text-slate-900">
-                        <AlertDialogHeader>
-                            <AlertDialogTitle className="font-headline font-black text-slate-800 uppercase text-2xl italic tracking-tighter">系統交易確認</AlertDialogTitle>
-                            <AlertDialogDescription asChild>
-                                <div className="text-slate-600 font-bold space-y-4">
-                                    <p>確定要參與此團拆活動嗎？</p>
-                                    <div className="p-4 rounded-xl border border-destructive/20 bg-destructive/5 text-left text-[11px] leading-relaxed space-y-1.5">
-                                        <p className="font-black text-destructive flex items-center gap-2"><AlertCircle className="w-3.5 h-3.5" /> 購買條款告知：</p>
-                                        <ul className="list-none pl-0 space-y-1 font-bold">
-                                            <li>● 本站商品屬機率型抽選及數位內容，購買後即視為參與活動。</li>
-                                            <li>● 本服務經提供即完成，依《消保法》不適用七日鑑賞期。</li>
-                                            <li>● 請確認商品描述，並確保網路連線狀態穩定。</li>
-                                            <li>● 在進行購買前,您需要完全同意本站的購買規則。一旦完成購買,即視同您已同意所有相關條款,不得以規則內容為由要求退換貨。</li>
-                                            <li>● 請避免短時間內頻繁購買,否則可能因金流或銀行風險控管導致該帳戶暫時性凍結,建議您於消費前一次性購買足量點數。</li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter className="gap-4 mt-6">
-                            <AlertDialogCancel className="h-14 rounded-xl font-black bg-slate-400 border-none text-white">考慮一下</AlertDialogCancel>
-                            <AlertDialogAction onClick={handlePurchase} disabled={isSubmitting} className="h-14 rounded-xl font-black bg-slate-800 text-white shadow-xl uppercase">
-                                {isSubmitting ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : null}
-                                確定參與
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
+                <div className="text-right space-y-0.5">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-300">總計需支付</span>
+                  <div className="flex items-center justify-end gap-1.5 text-xl sm:text-2xl font-black font-code text-white">
+                    <span className="text-cyan-400">{totalCost.toLocaleString()}</span>
+                    {currency === 'diamond' ? <Gem className="h-4 w-4 text-cyan-400"/> : <PPlusIcon className="h-4 w-4 text-amber-400" />}
+                  </div>
+                </div>
               </div>
+              
+              {/* Purchase Trigger Dialog */}
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button 
+                    size="lg" 
+                    className="w-full h-14 text-base font-black rounded-2xl bg-gradient-to-r from-cyan-500 via-sky-400 to-cyan-500 hover:from-cyan-400 text-slate-950 shadow-xl shadow-cyan-500/25 active:scale-98 group transition-all" 
+                    disabled={selectionCount === 0 || isSubmitting || isFull || groupBreak.status === 'completed'}
+                  >
+                    <Zap className="mr-2 h-5 w-5 fill-slate-950 group-hover:scale-110 transition-transform" />
+                    {isFull ? '本場活動名額已全數售罄' : selectionCount === 0 ? '請點選上方席次進行購買' : `立即確認連線購買 (${selectionCount} 席)`}
+                  </Button>
+                </AlertDialogTrigger>
+                
+                <AlertDialogContent className="w-[94vw] max-w-md bg-slate-950 border border-cyan-500/30 rounded-3xl p-5 sm:p-6 shadow-2xl text-white">
+                  <AlertDialogHeader className="space-y-2 text-left">
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 text-[10px] font-black uppercase w-fit">
+                      <Zap className="w-3 h-3 text-cyan-400" />
+                      <span>TRANSACTION ORDER • 團拆席次訂單</span>
+                    </div>
+                    <AlertDialogTitle className="text-xl font-black text-white tracking-tight">
+                      確認購買 {selectionCount} 個團拆席次？
+                    </AlertDialogTitle>
+                    <AlertDialogDescription asChild>
+                      <div className="text-slate-400 text-xs space-y-3 pt-1">
+                        <div className="p-3.5 rounded-xl bg-cyan-950/40 border border-cyan-500/30 flex items-center justify-between text-white font-bold">
+                          <span>預計扣除費用:</span>
+                          <span className="text-cyan-400 font-code text-base font-black flex items-center gap-1">
+                            {totalCost.toLocaleString()} {currency === 'diamond' ? '鑽石' : 'P點'}
+                          </span>
+                        </div>
+
+                        <div className="p-3 rounded-xl border border-destructive/20 bg-destructive/5 text-[11px] text-slate-300 space-y-1">
+                          <p className="font-bold text-destructive flex items-center gap-1.5">
+                            <ShieldAlert className="w-3.5 h-3.5" /> 購買規則須知：
+                          </p>
+                          <p className="leading-relaxed text-slate-400">
+                            本服務屬機率型卡牌團拆，購買後將直接鎖定所選席次。拆卡過程將於官方頻道公開直播進行。
+                          </p>
+                        </div>
+                      </div>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter className="gap-2.5 mt-5">
+                    <AlertDialogCancel className="h-11 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 border-white/10 font-bold text-xs">
+                      取消
+                    </AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={handlePurchase} 
+                      disabled={isSubmitting} 
+                      className="h-11 rounded-xl bg-gradient-to-r from-cyan-500 to-sky-400 hover:from-cyan-400 text-slate-950 font-black text-xs shadow-lg shadow-cyan-500/20 uppercase"
+                    >
+                      {isSubmitting ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : null}
+                      確認扣款購買
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           </div>
         </div>
       </div>
 
+      {/* === COMPLETED WINNINGS RESULTS SECTION === */}
       {groupBreak.status === 'completed' && groupBreak.winnings && (
-         <section className="mt-20 animate-fade-in-up">
-            <div className="flex items-center gap-4 mb-10">
-                <div className="p-3 rounded-2xl bg-slate-800 border border-slate-950 shadow-xl">
-                    <Badge className="bg-primary text-primary-foreground">RESULT</Badge>
-                </div>
-                <div>
-                    <h2 className="text-2xl md:text-3xl font-black font-headline text-white tracking-widest uppercase italic">官方開獎結果頻道</h2>
-                    <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold mt-1 opacity-60">Session Completion Registry</p>
-                </div>
-                <div className="h-px flex-1 bg-gradient-to-r from-primary/30 to-transparent ml-4 hidden sm:block" />
+        <section className="mt-16 animate-fade-in-up">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2.5 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 shadow-lg">
+              <Award className="w-5 h-5" />
             </div>
+            <div>
+              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">官方開獎結果清單</h2>
+              <p className="text-xs text-slate-400">Session Completion & Prize Registry</p>
+            </div>
+          </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {groupBreak.winnings.map((winning, index) => (
-                    <div 
-                        key={index} 
-                        className="flex items-center justify-between p-5 rounded-3xl bg-card/30 backdrop-blur-md border border-white/5 hover:border-primary/30 transition-all group shadow-xl cursor-zoom-in"
-                        onClick={() => winning.cardId && setPreviewCard(winning)}
-                    >
-                        <div className="flex flex-col gap-1 overflow-hidden">
-                            <div className="flex items-center gap-2">
-                                <span className="text-[10px] text-muted-foreground font-black uppercase tracking-widest truncate">{winning.teamName}</span>
-                                {winning.cardId && <SearchCode className="w-3.5 h-3.5 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />}
-                            </div>
-                            <span className="text-base font-bold truncate group-hover:text-primary transition-colors">{winning.username}</span>
-                        </div>
-                        {winning.cardId ? (
-                            <div className="relative w-10 h-14 rounded-lg overflow-hidden border border-white/10 shadow-lg group-hover:scale-110 transition-transform">
-                                <SafeImage src={winning.cardImageUrl!} alt={winning.cardName!} fill className="object-cover" />
-                            </div>
-                        ) : (
-                            <CheckCircle2 className="h-5 w-5 text-green-500 opacity-20" />
-                        )}
-                    </div>
-                ))}
-            </div>
-         </section>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            {groupBreak.winnings.map((winning, index) => (
+              <div 
+                key={index} 
+                className="flex items-center justify-between p-4 rounded-2xl bg-slate-900/70 backdrop-blur-md border border-white/10 hover:border-cyan-500/40 transition-all group shadow-lg cursor-pointer"
+                onClick={() => winning.cardId && setPreviewCard(winning)}
+              >
+                <div className="flex flex-col gap-0.5 overflow-hidden">
+                  <span className="text-[10px] text-cyan-300 font-bold uppercase tracking-wider truncate">{winning.teamName}</span>
+                  <span className="text-sm font-bold text-white truncate group-hover:text-cyan-400 transition-colors">{winning.username}</span>
+                </div>
+                {winning.cardId ? (
+                  <div className="relative w-10 h-14 rounded-lg overflow-hidden border border-white/10 shadow-md group-hover:scale-110 transition-transform">
+                    <SafeImage src={winning.cardImageUrl!} alt={winning.cardName!} fill className="object-cover" />
+                  </div>
+                ) : (
+                  <CheckCircle2 className="h-5 w-5 text-emerald-400/40" />
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
       )}
 
-      <div className="mt-12 text-center flex flex-col items-center opacity-20">
-          <p className="text-[10px] md:text-[12px] text-muted-foreground font-headline uppercase tracking-[0.5em] origin-center scale-[0.2]">P+Carder Official Transmission Terminal • Verified Asset</p>
-      </div>
-
+      {/* Card 3D Preview Dialog */}
       <Dialog open={!!previewCard} onOpenChange={(open) => !open && setPreviewCard(null)}>
         <DialogContent className="max-w-[min(95vw,420px)] sm:max-w-md bg-transparent border-none shadow-none p-0 overflow-visible flex flex-col items-center gap-6 [&>button:last-child]:hidden">
-            {previewCard && (
-                <div className="w-full flex flex-col items-center gap-6 animate-in zoom-in-95 duration-300">
-                    <h2 className="text-sm md:text-base font-black font-headline text-white drop-shadow-2xl tracking-tight leading-tight uppercase px-6 text-center max-w-[280px]">{previewCard.cardName}</h2>
-                    
-                    <div className="w-full max-w-[200px] sm:max-w-[230px] mx-auto relative group">
-                        <div className="absolute -inset-4 bg-primary/20 rounded-[2rem] blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
-                        <CardItem 
-                            name={previewCard.cardName!} 
-                            imageUrl={previewCard.cardImageUrl!} 
-                            backImageUrl={previewCard.cardBackImageUrl}
-                            imageHint={previewCard.cardName!} 
-                            rarity="rare" 
-                            isFlippable={true}
-                        />
-                    </div>
-                    <div className="flex flex-col items-center text-center gap-3">
-                        <div className="flex items-center gap-3 mt-4">
-                            <Badge className="bg-primary text-primary-foreground font-black tracking-widest px-4 py-1 text-[10px]">{previewCard.teamName}</Badge>
-                            <div className="flex items-center gap-1.5 bg-black/60 backdrop-blur-md border border-white/10 px-4 py-1 rounded-full text-[10px] font-code font-black text-white shadow-lg tracking-widest uppercase">
-                                <Hash className="w-3 h-3 text-primary" />
-                                {previewCard.userId.substring(0,4).toUpperCase()}
-                            </div>
-                        </div>
-                        <p className="text-[9px] text-primary font-bold uppercase tracking-[0.2em] animate-pulse mt-2">獲獎藏家: {previewCard.username}</p>
-                    </div>
-                </div>
-            )}
-            <button 
-                className="mt-4 rounded-full bg-black/60 hover:bg-black/80 text-white border border-white/20 h-12 w-12 shadow-2xl transition-all flex items-center justify-center"
-                onClick={() => setPreviewCard(null)}
-            >
-                <X className="h-6 w-6" />
-            </button>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isRandomPickOpen} onOpenChange={setIsRandomPickOpen}>
-        <DialogContent className="sm:max-w-xs rounded-[2.5rem] bg-slate-200 border-slate-400 border-[10px] p-10 text-slate-900">
-            <DialogHeader>
-                <DialogTitle className="font-headline font-black text-xl tracking-tighter text-slate-900 italic uppercase">輸入選號訊號</DialogTitle>
-                <DialogDescription className="text-slate-700">請輸入欲自動選取的數量。</DialogDescription>
-            </DialogHeader>
-            <div className="py-6 space-y-4">
-                <Input 
-                    type="number" 
-                    value={randomPickCount} 
-                    onChange={(e) => setRandomPickCount(Math.max(1, Number(e.target.value)))} 
-                    className="h-14 bg-black/10 border-none rounded-2xl font-code text-3xl font-black text-center text-slate-900"
+          {previewCard && (
+            <div className="w-full flex flex-col items-center gap-4 animate-in zoom-in-95 duration-300">
+              <h2 className="text-base font-black text-white drop-shadow-2xl tracking-tight leading-tight uppercase px-6 text-center max-w-[280px]">
+                {previewCard.cardName}
+              </h2>
+              
+              <div className="w-full max-w-[220px] mx-auto relative group">
+                <div className="absolute -inset-4 bg-cyan-500/20 rounded-[2rem] blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                <CardItem 
+                  name={previewCard.cardName!} 
+                  imageUrl={previewCard.cardImageUrl!} 
+                  backImageUrl={previewCard.cardBackImageUrl}
+                  imageHint={previewCard.cardName!} 
+                  rarity="rare" 
+                  isFlippable={true}
                 />
+              </div>
+
+              <div className="flex flex-col items-center text-center gap-2">
+                <div className="flex items-center gap-2 mt-2">
+                  <Badge className="bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold px-3 py-0.5 text-xs">
+                    {previewCard.teamName}
+                  </Badge>
+                  <div className="flex items-center gap-1 bg-black/60 backdrop-blur-md border border-white/10 px-3 py-0.5 rounded-full text-xs font-code font-bold text-white shadow-lg">
+                    <Hash className="w-3 h-3 text-cyan-400" />
+                    {previewCard.userId.substring(0,4).toUpperCase()}
+                  </div>
+                </div>
+                <p className="text-xs text-cyan-300 font-bold mt-1">獲獎藏家: {previewCard.username}</p>
+              </div>
             </div>
-            <DialogFooter className="sm:flex-col gap-2">
-                <Button onClick={handleConfirmRandomPick} className="w-full h-14 font-black rounded-2xl bg-slate-800 text-white shadow-xl">執行自動分配</Button>
-                <Button variant="ghost" onClick={() => setIsRandomPickOpen(false)} className="w-full h-10 font-bold text-slate-600">取消</Button>
-            </DialogFooter>
+          )}
+          <button 
+            type="button"
+            className="mt-2 rounded-full bg-slate-900/80 hover:bg-slate-800 text-white border border-white/20 h-10 w-10 shadow-2xl transition-all flex items-center justify-center"
+            onClick={() => setPreviewCard(null)}
+          >
+            <X className="h-5 w-5" />
+          </button>
         </DialogContent>
       </Dialog>
 
+      {/* Random Pick Dialog */}
+      <Dialog open={isRandomPickOpen} onOpenChange={setIsRandomPickOpen}>
+        <DialogContent className="w-[92vw] max-w-xs rounded-3xl bg-slate-950 border border-cyan-500/30 p-6 text-white shadow-2xl">
+          <DialogHeader className="space-y-1 text-left">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 text-[10px] font-black uppercase w-fit">
+              <Dices className="w-3 h-3 text-cyan-400" />
+              <span>AUTO SELECTION • 自動隨機選號</span>
+            </div>
+            <DialogTitle className="text-lg font-black text-white tracking-tight">設定欲選取的數量</DialogTitle>
+            <DialogDescription className="text-xs text-slate-400">
+              系統將為您自動於尚未被認領的席位中隨機抽選分配。
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4 space-y-3">
+            <div className="flex items-center justify-center gap-3">
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={() => setRandomPickCount(Math.max(1, randomPickCount - 1))}
+                className="h-11 w-11 rounded-xl bg-white/5 border-white/10 text-white hover:bg-white/10 text-lg font-bold"
+              >
+                -
+              </Button>
+              <Input 
+                type="number" 
+                value={randomPickCount} 
+                onChange={(e) => setRandomPickCount(Math.max(1, Math.min(remainingSpotsCount || 10, Number(e.target.value))))} 
+                className="h-12 w-24 bg-slate-900 border-white/10 rounded-xl font-code text-2xl font-black text-center text-cyan-400"
+              />
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={() => setRandomPickCount(Math.min(remainingSpotsCount || 10, randomPickCount + 1))}
+                className="h-11 w-11 rounded-xl bg-white/5 border-white/10 text-white hover:bg-white/10 text-lg font-bold"
+              >
+                +
+              </Button>
+            </div>
+          </div>
+
+          <DialogFooter className="flex flex-col gap-2">
+            <Button onClick={handleConfirmRandomPick} className="w-full h-11 font-black rounded-xl bg-gradient-to-r from-cyan-500 to-sky-400 hover:from-cyan-400 text-slate-950 shadow-lg shadow-cyan-500/20 text-xs">
+              執行自動選位
+            </Button>
+            <Button variant="ghost" onClick={() => setIsRandomPickOpen(false)} className="w-full h-9 font-bold text-slate-400 text-xs hover:text-white">
+              取消
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Fullscreen Poster / Card Box Zoom Modal */}
+      <Dialog open={isFullscreenImageOpen} onOpenChange={setIsFullscreenImageOpen}>
+        <DialogContent className="max-w-[min(96vw,720px)] bg-slate-950/95 border border-cyan-500/30 rounded-3xl p-4 sm:p-6 shadow-2xl backdrop-blur-xl">
+          <DialogHeader className="flex flex-row items-center justify-between pb-3 border-b border-white/10">
+            <div className="space-y-0.5 text-left">
+              <DialogTitle className="text-base sm:text-lg font-black text-white tracking-tight">
+                {groupBreak.title}
+              </DialogTitle>
+              <p className="text-xs text-cyan-300 font-bold">官方卡盒高解析海報預覽</p>
+            </div>
+          </DialogHeader>
+
+          <div className="relative w-full aspect-[4/3] sm:aspect-[16/10] max-h-[70vh] bg-black rounded-2xl overflow-hidden border border-white/10 my-2 flex items-center justify-center">
+            <SafeImage 
+              src={groupBreak.imageUrl} 
+              alt={groupBreak.title} 
+              fill 
+              className="object-contain" 
+            />
+          </div>
+
+          <DialogFooter>
+            <Button 
+              onClick={() => setIsFullscreenImageOpen(false)}
+              className="w-full h-11 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs"
+            >
+              關閉預覽
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Age Verification Modal */}
       <VerifyAgeModal 
-          isOpen={isAgeModalOpen}
-          onClose={() => setIsAgeModalOpen(false)}
-          onConfirm={() => {
-              setIsAgeModalOpen(false);
-              setIsVerified(true);
-              handlePurchase();
-          }}
+        isOpen={isAgeModalOpen}
+        onClose={() => setIsAgeModalOpen(false)}
+        onConfirm={() => {
+          setIsAgeModalOpen(false);
+          setIsVerified(true);
+          handlePurchase();
+        }}
       />
     </div>
   );

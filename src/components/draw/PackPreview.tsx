@@ -29,45 +29,45 @@ export function PackPreview({
     const canStart = isLevelMet && !isLimitReachedForInitial && !isLoadingStats;
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-60px)] p-4 py-8 relative select-none w-full max-w-md mx-auto">
+        <div className="flex flex-col items-center justify-center min-h-[100dvh] p-3 sm:p-4 py-4 sm:py-8 relative select-none w-full max-w-md mx-auto">
             {/* Background ambient glow */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none -z-10">
-                <div className="w-72 h-72 bg-amber-500/10 rounded-full blur-3xl animate-pulse" />
+                <div className="w-64 h-64 sm:w-72 sm:h-72 bg-amber-500/10 rounded-full blur-3xl animate-pulse" />
             </div>
 
-            <div className="w-full space-y-4 animate-fade-in-up my-auto">
+            <div className="w-full space-y-3 sm:space-y-4 animate-fade-in-up my-auto">
                 {/* Main Card Container */}
-                <div className="relative p-6 sm:p-7 bg-slate-900/95 backdrop-blur-xl border-2 border-amber-500/30 rounded-[2.5rem] shadow-[0_20px_60px_rgba(0,0,0,0.85)] overflow-hidden space-y-5">
+                <div className="relative p-4 sm:p-7 bg-slate-900/95 backdrop-blur-xl border-2 border-amber-500/30 rounded-3xl sm:rounded-[2.5rem] shadow-[0_20px_60px_rgba(0,0,0,0.85)] overflow-hidden space-y-3 sm:space-y-4">
                     {/* Header */}
-                    <div className="text-center space-y-3">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-950/80 border border-slate-800 shadow-inner">
+                    <div className="text-center space-y-1.5 sm:space-y-2">
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-950/80 border border-slate-800 shadow-inner">
                             <Logo className="scale-75 opacity-90" asStatic />
                         </div>
                         
-                        <div className="space-y-1">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-amber-400/80 flex items-center justify-center gap-1">
+                        <div className="space-y-0.5">
+                            <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-amber-400/80 flex items-center justify-center gap-1">
                                 <Sparkles className="w-3 h-3 text-amber-400" />
                                 拆卡抽賞確認
                             </p>
-                            <h2 className="text-lg sm:text-xl font-headline font-black text-white italic tracking-tight line-clamp-2 px-2">
+                            <h2 className="text-base sm:text-xl font-headline font-black text-white italic tracking-tight line-clamp-2 px-1">
                                 {cardPool.name}
                             </h2>
                         </div>
                     </div>
 
                     {/* Stats Grid */}
-                    <div className="grid grid-cols-2 gap-3 p-3 bg-slate-950/90 rounded-2xl border border-slate-800/80 shadow-inner">
-                        <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800 text-center space-y-0.5">
-                            <span className="text-[10px] text-slate-400 font-extrabold block uppercase tracking-wider">本次抽數</span>
-                            <span className="text-lg font-black text-white font-code">{initialDrawCount} 包</span>
+                    <div className="grid grid-cols-2 gap-2 sm:gap-3 p-2.5 sm:p-3 bg-slate-950/90 rounded-2xl border border-slate-800/80 shadow-inner">
+                        <div className="p-2 sm:p-3 bg-slate-900/80 rounded-xl border border-slate-800 text-center space-y-0.5">
+                            <span className="text-[9px] sm:text-[10px] text-slate-400 font-extrabold block uppercase tracking-wider">本次抽數</span>
+                            <span className="text-base sm:text-lg font-black text-white font-code">{initialDrawCount} 包</span>
                         </div>
-                        <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800 text-center space-y-0.5">
-                            <span className="text-[10px] text-slate-400 font-extrabold block uppercase tracking-wider">花費金額</span>
-                            <div className="flex items-center justify-center gap-1.5 text-lg font-black text-amber-400 font-code">
+                        <div className="p-2 sm:p-3 bg-slate-900/80 rounded-xl border border-slate-800 text-center space-y-0.5">
+                            <span className="text-[9px] sm:text-[10px] text-slate-400 font-extrabold block uppercase tracking-wider">花費金額</span>
+                            <div className="flex items-center justify-center gap-1 text-base sm:text-lg font-black text-amber-400 font-code">
                                 {cardPool.currency === 'p-point' ? (
-                                    <><PPlusIcon className="w-4 h-4 text-sky-400 shrink-0" />{cost.toLocaleString()}</>
+                                    <><PPlusIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-400 shrink-0" />{cost.toLocaleString()}</>
                                 ) : (
-                                    <><Gem className="w-4 h-4 text-sky-400 shrink-0" /> {cost.toLocaleString()}</>
+                                    <><Gem className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-400 shrink-0" /> {cost.toLocaleString()}</>
                                 )}
                             </div>
                         </div>
@@ -76,53 +76,53 @@ export function PackPreview({
                     {/* Level requirement if any */}
                     {cardPool.minLevel && cardPool.minLevel !== '新手收藏家' && (
                         <div className={cn(
-                            "p-2.5 rounded-xl border flex items-center justify-center gap-2 font-black text-xs",
+                            "p-2 rounded-xl border flex items-center justify-center gap-1.5 font-black text-xs",
                             isLevelMet ? "bg-emerald-950/40 border-emerald-800/60 text-emerald-400" : "bg-rose-950/40 border-rose-800/60 text-rose-400"
                         )}>
-                            <ShieldCheck className="w-4 h-4 shrink-0" />
+                            <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
                             <span>等級限制: {cardPool.minLevel}</span>
                         </div>
                     )}
 
                     {/* Terms Notice */}
-                    <div className="p-3.5 rounded-2xl border border-slate-800 bg-slate-950/80 space-y-2">
-                        <div className="flex items-center gap-1.5 text-amber-400">
-                            <Info className="w-4 h-4 shrink-0" />
-                            <p className="text-xs font-black uppercase tracking-wider">購買條款告知</p>
+                    <div className="p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl border border-slate-800 bg-slate-950/80 space-y-1.5">
+                        <div className="flex items-center gap-1 text-amber-400">
+                            <Info className="w-3.5 h-3.5 shrink-0" />
+                            <p className="text-[11px] sm:text-xs font-black uppercase tracking-wider">購買條款告知</p>
                         </div>
-                        <ul className="text-[11px] text-slate-400 font-medium space-y-1 pl-1 leading-relaxed">
-                            <li className="flex items-start gap-1.5">
+                        <ul className="text-[10px] sm:text-[11px] text-slate-400 font-medium space-y-1 pl-1 leading-relaxed">
+                            <li className="flex items-start gap-1">
                                 <span className="text-amber-500/80">•</span>
                                 <span>本站商品屬機率型抽選及數位機率內容。</span>
                             </li>
-                            <li className="flex items-start gap-1.5">
+                            <li className="flex items-start gap-1">
                                 <span className="text-amber-500/80">•</span>
-                                <span>本服務一經啟動即完成交付，依《消保法》不適用鑑賞期。</span>
+                                <span>一經啟動即完成交付，依《消保法》不適用鑑賞期。</span>
                             </li>
-                            <li className="flex items-start gap-1.5">
+                            <li className="flex items-start gap-1">
                                 <span className="text-amber-500/80">•</span>
                                 <span>
-                                    點擊啟動開獎即視為完全同意購買與
+                                    點擊啟動即同意
                                     <Dialog>
                                         <DialogTrigger asChild>
                                             <button 
                                                 type="button" 
                                                 className="text-amber-400 font-bold underline underline-offset-2 hover:text-amber-300 transition-colors mx-1 cursor-pointer inline-flex items-center gap-0.5"
                                             >
-                                                交易規則 <ExternalLink className="w-3 h-3 inline" />
+                                                交易規則 <ExternalLink className="w-2.5 h-2.5 inline" />
                                             </button>
                                         </DialogTrigger>
-                                        <DialogContent className="max-w-2xl bg-slate-950/95 backdrop-blur-2xl border-amber-500/30 text-white rounded-[2rem] p-6 shadow-2xl">
-                                            <DialogHeader className="space-y-2">
-                                                <DialogTitle className="text-xl font-black text-amber-400 flex items-center gap-2">
+                                        <DialogContent className="max-w-2xl max-h-[85vh] bg-slate-950/95 backdrop-blur-2xl border-amber-500/30 text-white rounded-3xl p-4 sm:p-6 shadow-2xl">
+                                            <DialogHeader className="space-y-1 sm:space-y-2">
+                                                <DialogTitle className="text-lg sm:text-xl font-black text-amber-400 flex items-center gap-2">
                                                     <Scale className="w-5 h-5 text-amber-400" /> P+CARDER 購買與交易規則
                                                 </DialogTitle>
                                                 <DialogDescription className="text-slate-400 text-xs">
                                                     請詳細閱讀以下交易條款與消費須知以保障您的權益。
                                                 </DialogDescription>
                                             </DialogHeader>
-                                            <ScrollArea className="h-[55vh] pr-3 mt-4">
-                                                <div className="space-y-4 text-xs text-slate-300 leading-relaxed">
+                                            <ScrollArea className="h-[45vh] sm:h-[55vh] pr-3 mt-3 sm:mt-4">
+                                                <div className="space-y-3 sm:space-y-4 text-xs text-slate-300 leading-relaxed">
                                                     <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl space-y-1 text-amber-200">
                                                         <p className="font-bold text-amber-400 flex items-center gap-1.5">
                                                             <Info className="w-4 h-4 shrink-0" /> 重要聲明
@@ -170,7 +170,7 @@ export function PackPreview({
                                                     </section>
                                                 </div>
                                             </ScrollArea>
-                                            <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between">
+                                            <div className="mt-3 pt-3 border-t border-slate-800 flex items-center justify-between">
                                                 <Link 
                                                     href="/about" 
                                                     target="_blank" 
@@ -191,7 +191,7 @@ export function PackPreview({
                         <Button
                             size="lg"
                             className={cn(
-                                "w-full h-14 text-lg sm:text-xl font-black rounded-2xl shadow-2xl transition-all border-b-4 active:translate-y-1 active:border-b-0",
+                                "w-full h-12 sm:h-14 text-base sm:text-lg font-black rounded-2xl shadow-2xl transition-all border-b-4 active:translate-y-1 active:border-b-0",
                                 canStart 
                                     ? "bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-slate-950 border-amber-800 hover:brightness-110 shadow-amber-500/20" 
                                     : "bg-slate-800 text-slate-500 border-slate-950 cursor-not-allowed opacity-60"
@@ -200,13 +200,13 @@ export function PackPreview({
                             disabled={!canStart}
                         >
                             {isLoadingStats ? (
-                                <><Loader2 className="animate-spin mr-2 h-6 w-6" /> 驗證紀錄中...</>
+                                <><Loader2 className="animate-spin mr-2 h-5 w-5 sm:h-6 sm:w-6" /> 驗證中...</>
                             ) : isLimitReachedForInitial ? (
-                                <><Ban className="mr-2 h-6 w-6 text-rose-400" /> 今日次數已用完</>
+                                <><Ban className="mr-2 h-5 w-5 sm:h-6 sm:w-6 text-rose-400" /> 今日次數已用完</>
                             ) : !isLevelMet ? (
-                                <><Ban className="mr-2 h-6 w-6 text-rose-400" /> 權限不足 ({cardPool.minLevel})</>
+                                <><Ban className="mr-2 h-5 w-5 sm:h-6 sm:w-6 text-rose-400" /> 權限不足 ({cardPool.minLevel})</>
                             ) : (
-                                <><Zap className="mr-2 h-6 w-6 fill-slate-950" /> 啟動正式開獎 ({cost.toLocaleString()} 點)</>
+                                <><Zap className="mr-2 h-5 w-5 sm:h-6 sm:w-6 fill-slate-950" /> 啟動正式開獎 ({cost.toLocaleString()} 點)</>
                             )}
                         </Button>
 
@@ -214,19 +214,19 @@ export function PackPreview({
                             <Button
                                 size="lg"
                                 variant="outline"
-                                className="w-full h-11 text-xs sm:text-sm font-black rounded-2xl border-purple-500/50 bg-purple-950/40 text-purple-200 hover:bg-purple-900/60 hover:border-purple-400 shadow-lg shadow-purple-950/40 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                                className="w-full h-10 sm:h-11 text-xs sm:text-sm font-black rounded-2xl border-purple-500/50 bg-purple-950/40 text-purple-200 hover:bg-purple-900/60 hover:border-purple-400 shadow-lg shadow-purple-950/40 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                                 onClick={() => performTrialDraw(initialDrawCount)}
                             >
-                                <Sparkles className="w-4 h-4 text-purple-300 animate-pulse" />
-                                <span>🎲 免費試手氣（純模擬體驗，完全不扣點）</span>
+                                <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-300 animate-pulse" />
+                                <span>🎲 免費試手氣（純模擬不扣點）</span>
                             </Button>
                         )}
                     </div>
                 </div>
 
                 {/* Return link */}
-                <div className="text-center pt-1">
-                    <Button asChild variant="ghost" className="text-slate-400 hover:text-white font-bold text-xs rounded-xl">
+                <div className="text-center pt-0.5">
+                    <Button asChild variant="ghost" className="text-slate-400 hover:text-white font-bold text-xs rounded-xl h-8">
                         <Link href="/draw">
                             <ArrowLeft className="w-3.5 h-3.5 mr-1" /> 取消並返回卡池列表
                         </Link>

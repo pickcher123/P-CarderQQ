@@ -22,8 +22,8 @@ export function FloatingLineButton({ systemConfig }: { systemConfig: SystemConfi
 
   return (
     <div className={cn(
-      "fixed right-4 bottom-20 md:right-8 md:bottom-8 z-50",
-      "flex flex-col gap-4 items-end"
+      "fixed right-3 bottom-20 md:right-8 md:bottom-8 z-40",
+      "flex flex-col gap-3 md:gap-4 items-end pointer-events-auto"
     )}>
       {/* Live 直播跳球 */}
       {systemConfig?.isLiveEnabled && systemConfig.liveYoutubeUrl && isLiveVisible && (
