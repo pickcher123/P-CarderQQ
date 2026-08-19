@@ -369,7 +369,7 @@ export default function GroupBreakDetailPage() {
           {/* Main Large Image Frame (Unobstructed & Crystal Clear) */}
           <div className="relative bg-gradient-to-b from-[#13192a]/95 via-[#0d1220]/95 to-[#090c15]/95 border border-cyan-500/30 rounded-3xl p-2.5 sm:p-3.5 shadow-[0_20px_50px_rgba(0,0,0,0.8),0_0_25px_rgba(6,182,212,0.15)] overflow-hidden group">
             
-            {/* Top Floating Badges (Floating on top, no header bar squeezing the image) */}
+            {/* Poster Aspect Ratio Display (Large, Uncropped & Unobstructed) */}
             <div className="relative aspect-[4/3] sm:aspect-[16/11] w-full bg-slate-950 rounded-2xl overflow-hidden border border-white/10 shadow-inner group/poster">
               {/* Blur backdrop for wide/tall ratios */}
               {groupBreak.imageUrl && (
@@ -390,7 +390,7 @@ export default function GroupBreakDetailPage() {
                 )} 
               />
 
-              {/* Floating Top Header Badges */}
+              {/* Floating Top Header Badges (No space taken from image) */}
               <div className="absolute top-2.5 inset-x-2.5 flex items-center justify-between pointer-events-none z-20">
                 <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-cyan-400/30 text-[10px] font-bold text-cyan-300 font-code pointer-events-auto">
                   <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_6px_#22d3ee]" />
