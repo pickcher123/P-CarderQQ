@@ -4,8 +4,8 @@ FROM node:20-alpine AS base
 # 安裝依賴
 FROM base AS deps
 WORKDIR /app
-COPY package.json package-lock.json* ./
-RUN npm ci
+COPY package.json package-lock.json* .npmrc* ./
+RUN npm ci || npm install --legacy-peer-deps
 
 # 建置專案
 FROM base AS builder
