@@ -3,6 +3,9 @@ schemaVersion: v1
 buildConfig:
   runtime: nodejs20
   buildCommand: npm run build
+  env:
+    - variable: NPM_CONFIG_LEGACY_PEER_DEPS
+      value: "true"
 runConfig:
   minInstances: 0
   maxInstances: 5
