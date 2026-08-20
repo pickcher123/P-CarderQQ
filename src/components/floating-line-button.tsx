@@ -22,7 +22,7 @@ export function FloatingLineButton({ systemConfig }: { systemConfig: SystemConfi
 
   return (
     <div className={cn(
-      "fixed right-3 bottom-20 md:right-8 md:bottom-8 z-40",
+      "fixed right-3 bottom-[calc(max(env(safe-area-inset-bottom),0px)+4.75rem)] md:right-8 md:bottom-8 z-40",
       "flex flex-col gap-3 md:gap-4 items-end pointer-events-auto"
     )}>
       {/* Live 直播跳球 */}

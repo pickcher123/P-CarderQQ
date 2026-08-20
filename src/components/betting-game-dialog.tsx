@@ -5,11 +5,11 @@ import { useFirestore, useMemoFirebase, useUser, useDoc } from '@/firebase';
 import { collection, doc, serverTimestamp, increment, runTransaction, arrayUnion } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { 
-    Gem, AlertCircle, Sparkles, X, Play, CheckCircle2, 
+    AlertCircle, Sparkles, X, Play, CheckCircle2, 
     RotateCcw, Dices, Trophy, Wallet, ShieldCheck, 
     Award, Percent
 } from 'lucide-react';
-import { PPlusIcon } from '@/components/icons';
+import { PPlusIcon, DiamondIcon } from '@/components/icons';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -401,12 +401,14 @@ export function BettingGameDialog({
                         <div className="mt-5 text-center space-y-2 z-10 w-full">
                             <h2 className="text-base sm:text-lg font-black tracking-wide text-white line-clamp-1">{card.name}</h2>
                             <div className="flex items-center justify-center gap-3 text-xs bg-slate-900/80 border border-slate-800/90 rounded-xl py-2 px-3">
-                                <div className="text-slate-400">
-                                    卡片原值: <span className="text-slate-200 font-mono font-bold">{card.sellPrice ? card.sellPrice.toLocaleString() : '---'} 💎</span>
+                                <div className="text-slate-400 flex items-center gap-1">
+                                    卡片原值: <span className="text-slate-200 font-mono font-bold">{card.sellPrice ? card.sellPrice.toLocaleString() : '---'}</span>
+                                    <DiamondIcon className="w-3.5 h-3.5" />
                                 </div>
                                 <div className="h-3 w-px bg-slate-700" />
                                 <div className="text-cyan-300 font-bold flex items-center gap-1">
-                                    單注僅: <span className="font-mono font-black text-cyan-400">{diamondUnitPrice.toLocaleString()} 💎</span>
+                                    單注僅: <span className="font-mono font-black text-cyan-400">{diamondUnitPrice.toLocaleString()}</span>
+                                    <DiamondIcon className="w-3.5 h-3.5" />
                                 </div>
                             </div>
                         </div>
@@ -429,7 +431,7 @@ export function BettingGameDialog({
                             </div>
                             <div className="flex items-center gap-4 text-xs font-mono font-black">
                                 <div className="flex items-center gap-1.5 text-cyan-300 bg-cyan-950/50 px-2.5 py-1 rounded-lg border border-cyan-500/20">
-                                    <Gem className="w-3.5 h-3.5 text-cyan-400" />
+                                    <DiamondIcon className="w-3.5 h-3.5" />
                                     <span>{diamondBalance.toLocaleString()}</span>
                                 </div>
                                 <div className="flex items-center gap-1.5 text-amber-300 bg-amber-950/50 px-2.5 py-1 rounded-lg border border-amber-500/20">
@@ -448,7 +450,7 @@ export function BettingGameDialog({
                                     </span>
                                     <span className="text-cyan-300 font-bold text-sm">選擇支付幣別</span>
                                 </div>
-                                <span className="text-[11px] text-slate-400">1 鑽石 = 10 P+ 點</span>
+                                <span className="text-[11px] text-slate-400 flex items-center gap-1">1 <DiamondIcon className="w-3 h-3" /> = 10 P+ 點</span>
                             </div>
                             
                             <div className="grid grid-cols-2 gap-3">
@@ -460,17 +462,19 @@ export function BettingGameDialog({
                                         "relative flex items-center justify-between p-3 rounded-2xl border transition-all duration-300 cursor-pointer text-left",
                                         paymentCurrency === 'diamond' 
                                             ? 'bg-cyan-950/60 border-cyan-400 text-cyan-100 shadow-[0_0_25px_rgba(6,182,212,0.25)] ring-1 ring-cyan-400/40' 
-                                            : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:bg-slate-800/80 hover:text-slate-200',
+                                             : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:bg-slate-800/80 hover:text-slate-200',
                                         (isOutOfStock || isSpinning) && 'opacity-50 cursor-not-allowed'
                                     )}
                                 >
                                     <div className="flex items-center gap-2.5">
                                         <div className={cn("p-2 rounded-xl border", paymentCurrency === 'diamond' ? 'bg-cyan-500/20 border-cyan-500/40 text-cyan-300' : 'bg-slate-800 border-slate-700 text-slate-400')}>
-                                            <Gem className="w-5 h-5" />
+                                            <DiamondIcon className="w-5 h-5" />
                                         </div>
                                         <div>
                                             <div className="font-black text-sm text-slate-100">鑽石支付</div>
-                                            <div className="text-xs font-mono text-cyan-400 font-bold">{diamondUnitPrice.toLocaleString()} 💎 / 注</div>
+                                            <div className="text-xs font-mono text-cyan-400 font-bold flex items-center gap-1">
+                                                {diamondUnitPrice.toLocaleString()} <DiamondIcon className="w-3 h-3" /> / 注
+                                            </div>
                                         </div>
                                     </div>
                                     {paymentCurrency === 'diamond' && <CheckCircle2 className="w-5 h-5 text-cyan-400 shrink-0" />}
@@ -630,7 +634,7 @@ export function BettingGameDialog({
                                         "font-mono font-black text-base flex items-center gap-1",
                                         isInsufficientFunds ? "text-rose-400" : "text-amber-300"
                                     )}>
-                                        {paymentCurrency === 'diamond' ? <Gem className="w-4 h-4 text-cyan-400" /> : <PPlusIcon className="w-4 h-4 text-amber-400" />}
+                                        {paymentCurrency === 'diamond' ? <DiamondIcon className="w-4 h-4" /> : <PPlusIcon className="w-4 h-4 text-amber-400" />}
                                         {totalPrice.toLocaleString()}
                                     </span>
                                 </div>

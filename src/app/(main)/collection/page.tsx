@@ -102,13 +102,19 @@ export default function CollectionPage() {
   const [previewCard, setPreviewCard] = useState<MergedCard | null>(null);
   const [isReportOpen, setIsReportOpen] = useState(false);
   
+  // Random Player Card Bulk Management States
+  const [randomSellQty, setRandomSellQty] = useState<number>(1);
+  const [randomShipQty, setRandomShipQty] = useState<number>(1);
+  const [isRandomCardsExpanded, setIsRandomCardsExpanded] = useState<boolean>(false);
+  const [isRandomSellDialogOpen, setIsRandomSellDialogOpen] = useState<boolean>(false);
+
   const [shippingMethod, setShippingMethod] = useState<ShippingMethod>('7-11');
   const [shippingName, setShippingName] = useState('');
   const [shippingPhone, setShippingPhone] = useState('');
   const [shippingAddress, setShippingAddress] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'all' | 'standard' | 'break' | 'random'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'standard' | 'break'>('all');
   const [sortOption, setSortOption] = useState<'price_desc' | 'price_asc' | 'unsold' | 'latest'>('latest');
 
   const userProfileRef = useMemoFirebase(() => {
@@ -173,13 +179,21 @@ export default function CollectionPage() {
     return Array.from(cats);
   }, [mergedCards]);
 
+  const isRandomPlayerCard = (card: MergedCard) => {
+    return (
+      card.name?.includes('隨機球員') ||
+      card.name?.includes('普/特') ||
+      card.category === '抽賞' ||
+      card.cardId?.startsWith('random-player-')
+    );
+  };
+
   // Filter & Search Logic
   const filteredMergedCards = useMemo(() => {
     return mergedCards.filter(card => {
       // Tab filter
-      if (activeTab === 'standard' && card.source === 'group-break') return false;
+      if (activeTab === 'standard' && (card.source === 'group-break' || isRandomPlayerCard(card))) return false;
       if (activeTab === 'break' && card.source !== 'group-break') return false;
-      if (activeTab === 'random' && !(card.name.includes('隨機球員') || card.category === '抽賞')) return false;
 
       // Category filter
       if (filterCategory && card.category !== filterCategory) return false;
@@ -212,10 +226,19 @@ export default function CollectionPage() {
   }, [filteredMergedCards, sortOption]);
 
   const randomPlayerCards = useMemo(() => {
-    return mergedCards.filter(c => c.name.includes('隨機球員') || c.category === '抽賞');
+    return mergedCards.filter(isRandomPlayerCard);
   }, [mergedCards]);
 
+  // Keep randomSellQty and randomShipQty within bounds
+  useEffect(() => {
+    if (randomPlayerCards.length > 0) {
+      setRandomSellQty(prev => Math.min(Math.max(1, prev), randomPlayerCards.length));
+      setRandomShipQty(prev => Math.min(Math.max(1, prev), randomPlayerCards.length));
+    }
+  }, [randomPlayerCards.length]);
+
   const standardCards = useMemo(() => sortedMergedCards.filter(c => c.source !== 'group-break'), [sortedMergedCards]);
+  const uniqueStandardCards = useMemo(() => sortedMergedCards.filter(c => c.source !== 'group-break' && !isRandomPlayerCard(c)), [sortedMergedCards]);
   const groupBreakCards = useMemo(() => sortedMergedCards.filter(c => c.source === 'group-break'), [sortedMergedCards]);
 
   // Total Portfolio Valuation
@@ -225,8 +248,9 @@ export default function CollectionPage() {
 
     mergedCards.forEach(card => {
       if (card.source === 'group-break') return;
-      if (card.name.includes('隨機球員')) {
+      if (isRandomPlayerCard(card)) {
         totalEstimatedPPoints += 300;
+        totalEstimatedDiamonds += 10;
       } else {
         const basePrice = card.sellPrice || 10;
         totalEstimatedDiamonds += basePrice * 0.7;
@@ -237,6 +261,7 @@ export default function CollectionPage() {
     return {
       totalCards: mergedCards.length,
       standardCount: mergedCards.filter(c => c.source !== 'group-break').length,
+      uniqueCount: mergedCards.filter(c => c.source !== 'group-break' && !isRandomPlayerCard(c)).length,
       breakCount: mergedCards.filter(c => c.source === 'group-break').length,
       randomCount: randomPlayerCards.length,
       totalDiamonds: Math.round(totalEstimatedDiamonds),
@@ -256,6 +281,77 @@ export default function CollectionPage() {
         randomCardIds.forEach(id => next.add(id));
       }
       return next;
+    });
+  };
+
+  const handleQuickSellRandomCount = async (count: number) => {
+    if (count <= 0 || !user || !firestore || randomPlayerCards.length === 0) return;
+    const actualCount = Math.min(count, randomPlayerCards.length);
+    const cardsToSell = randomPlayerCards.slice(0, actualCount);
+    setIsProcessing(true);
+    try {
+      const batch = writeBatch(firestore);
+      const pPointsGained = actualCount * 300;
+      const diamondsGained = actualCount * 10;
+      const soldCardNames = `隨機球員 普/特 卡 x ${actualCount}`;
+
+      for (const card of cardsToSell) {
+        batch.delete(doc(firestore, 'users', user.uid, 'userCards', card.id));
+      }
+
+      batch.set(doc(collection(firestore, 'transactions')), {
+        userId: user.uid,
+        transactionType: 'QuickSell',
+        currency: 'diamond',
+        amount: diamondsGained,
+        details: `普特卡批量轉點 ${actualCount} 張 (獲得鑽石)。卡片內容: [${soldCardNames}]`,
+        transactionDate: serverTimestamp(),
+        section: 'admin'
+      });
+
+      batch.set(doc(collection(firestore, 'transactions')), {
+        userId: user.uid,
+        transactionType: 'QuickSell',
+        currency: 'p-point',
+        amount: pPointsGained,
+        details: `普特卡批量轉點 ${actualCount} 張 (獲得紅利P點)。卡片內容: [${soldCardNames}]`,
+        transactionDate: serverTimestamp(),
+        section: 'admin'
+      });
+
+      batch.update(doc(firestore, 'users', user.uid), { 
+        points: increment(diamondsGained),
+        bonusPoints: increment(pPointsGained)
+      });
+
+      await batch.commit();
+      toast({ 
+        title: "普特卡轉點成功！", 
+        description: `已成功將 ${actualCount} 張普特卡變現，獲得 +${diamondsGained} 鑽石 與 +${pPointsGained.toLocaleString()} 紅利P點！` 
+      });
+      setIsRandomSellDialogOpen(false);
+      setSelectedCardIds(prev => {
+        const next = new Set(prev);
+        cardsToSell.forEach(c => next.delete(c.id));
+        return next;
+      });
+      if (forceRefetch) forceRefetch();
+    } catch (e) {
+      console.error(e);
+      toast({ variant: "destructive", title: "轉點失敗", description: "處理請求時發生錯誤。" });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleSelectRandomForShipping = (count: number) => {
+    if (count <= 0 || randomPlayerCards.length === 0) return;
+    const actualCount = Math.min(count, randomPlayerCards.length);
+    const cardsToShip = randomPlayerCards.slice(0, actualCount);
+    setSelectedCardIds(new Set(cardsToShip.map(c => c.id)));
+    toast({ 
+      title: `已選取 ${actualCount} 張普特卡`, 
+      description: "請點擊右下方浮動按鈕【申請出貨】填寫物流資料寄送。" 
     });
   };
 
@@ -492,7 +588,7 @@ export default function CollectionPage() {
     <TooltipProvider>
       <div className="min-h-screen bg-transparent text-white pb-32">
         {/* Glow Effects */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[400px] bg-gradient-to-b from-cyan-500/10 via-purple-500/5 to-transparent blur-[140px] pointer-events-none -z-10" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-[350px] bg-gradient-to-b from-cyan-500/10 via-purple-500/5 to-transparent blur-[120px] pointer-events-none -z-10" />
 
         <div className="container px-3.5 sm:px-6 py-4 max-w-7xl mx-auto space-y-5 sm:space-y-7">
           
@@ -617,7 +713,7 @@ export default function CollectionPage() {
                     "text-[10px] px-1.5 py-0.2 rounded-md font-code",
                     activeTab === 'standard' ? "bg-slate-950/30 text-slate-950 font-black" : "bg-white/10 text-slate-400"
                   )}>
-                    {portfolioStats.standardCount}
+                    {portfolioStats.uniqueCount}
                   </span>
                 </button>
 
@@ -639,21 +735,6 @@ export default function CollectionPage() {
                     )}>
                       {portfolioStats.breakCount}
                     </span>
-                  </button>
-                )}
-
-                {portfolioStats.randomCount > 0 && (
-                  <button
-                    onClick={() => { setActiveTab('random'); setFilterCategory(null); }}
-                    className={cn(
-                      "px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 whitespace-nowrap",
-                      activeTab === 'random' 
-                        ? "bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 shadow-md shadow-amber-500/20" 
-                        : "text-slate-400 hover:text-white hover:bg-white/5"
-                    )}
-                  >
-                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                    <span>普特卡 ({portfolioStats.randomCount})</span>
                   </button>
                 )}
               </div>
@@ -747,18 +828,6 @@ export default function CollectionPage() {
 
               {/* Bulk Selection Actions */}
               <div className="flex items-center gap-2 ml-auto">
-                {portfolioStats.randomCount > 0 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleSelectRandomCards}
-                    className="h-8 px-2.5 rounded-lg text-[11px] font-bold bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/30 gap-1.5 transition-all shadow-sm"
-                  >
-                    <Sparkles className="w-3 h-3 text-amber-400" />
-                    <span>{randomPlayerCards.every(c => selectedCardIds.has(c.id)) ? '取消勾選普特卡' : '全選普特卡'}</span>
-                  </Button>
-                )}
-
                 <Button
                   variant="ghost"
                   size="sm"
@@ -776,8 +845,9 @@ export default function CollectionPage() {
 
           {/* === CARDS GALLERY SECTION === */}
           <div className="space-y-8 pt-2">
-            {/* Standard Collection Section */}
-            {standardCards.length > 0 && (
+
+            {/* 1. Standard Collection Section (一般卡片 / 個人精選卡片藏品) */}
+            {uniqueStandardCards.length > 0 && (activeTab === 'all' || activeTab === 'standard') && (
               <motion.section
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -790,9 +860,9 @@ export default function CollectionPage() {
                       <Library className="w-4 h-4" />
                     </div>
                     <h2 className="text-base sm:text-lg font-black font-headline text-white tracking-wide flex items-center gap-2">
-                      <span>個人卡片藏品</span>
+                      <span>個人精選卡片藏品</span>
                       <span className="text-[10px] font-code font-black text-cyan-300 bg-cyan-500/15 px-2 py-0.5 rounded-full border border-cyan-500/30">
-                        {standardCards.length} 張
+                        {uniqueStandardCards.length} 張
                       </span>
                     </h2>
                   </div>
@@ -800,7 +870,7 @@ export default function CollectionPage() {
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3 sm:gap-4">
-                  {standardCards.map((card, index) => {
+                  {uniqueStandardCards.map((card, index) => {
                     const isSelected = selectedCardIds.has(card.id);
                     return (
                       <motion.div
@@ -883,6 +953,271 @@ export default function CollectionPage() {
                       </motion.div>
                     );
                   })}
+                </div>
+              </motion.section>
+            )}
+
+            {/* 2. RANDOM PLAYER CARDS TEXT VAULT (普特卡 文字聚合獨立專區 - 與一般卡片完全分開) */}
+            {randomPlayerCards.length > 0 && activeTab === 'all' && (
+              <motion.section
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className="space-y-4"
+              >
+                {/* Clean Section Divider if there are also standard cards */}
+                {uniqueStandardCards.length > 0 && (
+                  <div className="relative py-2 flex items-center justify-center">
+                    <div className="w-full h-px bg-gradient-to-r from-transparent via-amber-500/30 to-transparent" />
+                    <div className="absolute px-3 py-0.5 bg-[#0a0e1a] text-[10px] font-black text-amber-400 uppercase tracking-widest border border-amber-500/30 rounded-full flex items-center gap-1.5 shadow-md">
+                      <Sparkles className="w-3 h-3 text-amber-400" />
+                      <span>普特卡專區 ({randomPlayerCards.length} 張)</span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="relative rounded-2xl sm:rounded-3xl p-4 sm:p-5 bg-gradient-to-b from-amber-950/40 via-slate-900/95 to-[#0c101d] border border-amber-500/30 shadow-[0_10px_35px_rgba(245,158,11,0.15)] overflow-hidden space-y-4">
+                  {/* Ambient Glow */}
+                  <div className="absolute -top-10 -right-10 w-48 h-48 bg-amber-500/10 blur-3xl pointer-events-none" />
+                  
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    {/* Left: Card Identity & Stats */}
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-14 h-20 sm:w-16 sm:h-22 rounded-xl overflow-hidden bg-gradient-to-br from-slate-900 via-slate-950 to-amber-950/90 border-2 border-amber-500/50 shrink-0 shadow-[0_0_15px_rgba(245,158,11,0.25)] relative flex flex-col items-center justify-between p-1.5 select-none">
+                        {/* Ambient glow */}
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.2),transparent_70%)] pointer-events-none" />
+                        <div className="w-full flex justify-between items-center relative z-10">
+                          <span className="text-[7px] font-black text-amber-400 bg-amber-500/20 px-1 py-0.2 rounded">P+</span>
+                          <span className="text-[7px] font-bold text-amber-300/80 font-code">普/特</span>
+                        </div>
+                        {/* Center Logo */}
+                        <div className="relative z-10 flex flex-col items-center justify-center my-auto">
+                          <PPlusIcon className="w-7 h-7 sm:w-8 sm:h-8 text-amber-400 drop-shadow-[0_0_10px_rgba(245,158,11,0.6)]" />
+                        </div>
+                        <div className="w-full flex justify-center relative z-10">
+                          <span className="text-[6px] font-black text-amber-300/90 tracking-wider uppercase font-headline">P+ CARDER</span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <h3 className="text-lg sm:text-xl font-black text-white flex items-center gap-2 tracking-tight">
+                          <span>隨機球員 普/特 卡</span>
+                          <span className="font-code font-black text-amber-400 bg-amber-500/20 px-2.5 py-0.5 rounded-lg border border-amber-500/40 text-base sm:text-lg">
+                            x {randomPlayerCards.length} 張
+                          </span>
+                        </h3>
+
+                        <div className="flex items-center gap-3 text-xs font-code pt-0.5 flex-wrap">
+                          <span className="text-cyan-400 font-bold flex items-center gap-1">
+                            <Gem className="w-3.5 h-3.5" /> 總值 {randomPlayerCards.length * 10} 鑽石
+                          </span>
+                          <span className="text-slate-500 hidden sm:inline">•</span>
+                          <span className="text-amber-400 font-bold flex items-center gap-1">
+                            <PPlusIcon className="w-3.5 h-3.5" /> 總值 {(randomPlayerCards.length * 300).toLocaleString()} P點
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right: Quick Action Controls */}
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                      {/* Quick Sell Dialog Trigger */}
+                      <AlertDialog open={isRandomSellDialogOpen} onOpenChange={setIsRandomSellDialogOpen}>
+                        <AlertDialogTrigger asChild>
+                          <Button 
+                            className="h-10 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs gap-1.5 shadow-lg shadow-amber-500/20 active:scale-95 transition-all"
+                          >
+                            <RefreshCw className="w-3.5 h-3.5" />
+                            <span>快速轉點變現</span>
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent className="w-[94vw] max-w-md bg-slate-950 border border-amber-500/30 rounded-2xl p-5 sm:p-6 text-white space-y-4">
+                          <AlertDialogHeader className="space-y-1 text-left">
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[10px] font-black uppercase w-fit">
+                              <RefreshCw className="w-3 h-3 animate-spin-slow" />
+                              <span>普特卡批量變現</span>
+                            </div>
+                            <AlertDialogTitle className="text-lg sm:text-xl font-black text-white">
+                              選擇要轉點的普特卡數量
+                            </AlertDialogTitle>
+                            <AlertDialogDescription className="text-xs text-slate-400">
+                              目前持有總計 {randomPlayerCards.length} 張普特卡。可自訂轉換數量，點數即刻入帳。
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+
+                          <div className="space-y-3 p-4 rounded-xl bg-slate-900/90 border border-white/10">
+                            <div className="flex items-center justify-between text-xs font-bold text-slate-300">
+                              <span>欲轉點數量：</span>
+                              <span className="text-amber-400 font-code font-black text-base">{randomSellQty} / {randomPlayerCards.length} 張</span>
+                            </div>
+
+                            {/* Quantity Stepper & Quick Pills */}
+                            <div className="flex items-center gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => setRandomSellQty(q => Math.max(1, q - 1))}
+                                className="h-9 w-9 rounded-lg bg-slate-800 border-white/10 text-white font-bold"
+                              >
+                                -1
+                              </Button>
+                              <Input 
+                                type="number" 
+                                min={1} 
+                                max={randomPlayerCards.length} 
+                                value={randomSellQty} 
+                                onChange={(e) => {
+                                  const val = parseInt(e.target.value) || 1;
+                                  setRandomSellQty(Math.min(Math.max(1, val), randomPlayerCards.length));
+                                }}
+                                className="h-9 text-center font-code font-black text-sm bg-slate-950 border-white/20 text-white rounded-lg"
+                              />
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => setRandomSellQty(q => Math.min(randomPlayerCards.length, q + 1))}
+                                className="h-9 w-9 rounded-lg bg-slate-800 border-white/10 text-white font-bold"
+                              >
+                                +1
+                              </Button>
+                            </div>
+
+                            <div className="grid grid-cols-4 gap-1.5 pt-1">
+                              {[1, 5, 10, randomPlayerCards.length].map((num, idx) => (
+                                <button
+                                  key={idx}
+                                  type="button"
+                                  onClick={() => setRandomSellQty(Math.min(num, randomPlayerCards.length))}
+                                  className={cn(
+                                    "py-1 rounded-lg text-xs font-bold font-code transition-all border",
+                                    randomSellQty === Math.min(num, randomPlayerCards.length)
+                                      ? "bg-amber-500/20 border-amber-400 text-amber-300 font-black"
+                                      : "bg-white/5 border-white/10 text-slate-400 hover:text-white"
+                                  )}
+                                >
+                                  {idx === 3 ? `全部(${randomPlayerCards.length})` : `${num}張`}
+                                </button>
+                              ))}
+                            </div>
+
+                            {/* Reward Preview */}
+                            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/10 text-center">
+                              <div className="p-2 rounded-lg bg-cyan-950/40 border border-cyan-500/30">
+                                <span className="text-[10px] text-slate-400 block font-bold">獲得鑽石</span>
+                                <span className="text-cyan-400 font-code font-black text-sm sm:text-base">+{randomSellQty * 10} 💎</span>
+                              </div>
+                              <div className="p-2 rounded-lg bg-amber-950/40 border border-amber-500/30">
+                                <span className="text-[10px] text-slate-400 block font-bold">獲得紅利P點</span>
+                                <span className="text-amber-400 font-code font-black text-sm sm:text-base">+{(randomSellQty * 300).toLocaleString()} 🎁</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <AlertDialogFooter className="flex flex-row items-center justify-end gap-2 w-full">
+                            <AlertDialogCancel className="flex-1 h-10 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 border-white/10 font-bold text-xs">
+                              取消
+                            </AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleQuickSellRandomCount(randomSellQty)}
+                              disabled={isProcessing || randomSellQty <= 0}
+                              className="flex-1 h-10 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/20"
+                            >
+                              {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : `確認轉點 ${randomSellQty} 張`}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+
+                      {/* Quick Ship Action */}
+                      <div className="flex items-center gap-1.5">
+                        <Input 
+                          type="number"
+                          min={1}
+                          max={randomPlayerCards.length}
+                          value={randomShipQty}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value) || 1;
+                            setRandomShipQty(Math.min(Math.max(1, val), randomPlayerCards.length));
+                          }}
+                          className="w-16 h-10 text-center font-code font-black text-xs bg-slate-900 border-white/20 text-white rounded-xl"
+                          title="出貨張數"
+                        />
+                        <Button 
+                          onClick={() => handleSelectRandomForShipping(randomShipQty)}
+                          variant="outline"
+                          className="h-10 px-3.5 rounded-xl border-cyan-500/40 bg-cyan-950/40 hover:bg-cyan-900/50 text-cyan-300 font-black text-xs gap-1.5 shadow-sm active:scale-95 transition-all"
+                        >
+                          <Ship className="w-3.5 h-3.5 text-cyan-400" />
+                          <span>選取出貨 ({randomShipQty}張)</span>
+                        </Button>
+                      </div>
+
+                      {/* Toggle Detailed View */}
+                      <Button 
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setIsRandomCardsExpanded(!isRandomCardsExpanded)}
+                        className="h-10 px-2.5 rounded-xl text-slate-400 hover:text-white bg-white/5 border border-white/10 text-xs font-bold gap-1"
+                        title="展開或收起每張卡片"
+                      >
+                        <Layers className="w-3.5 h-3.5 text-amber-400" />
+                        <span>{isRandomCardsExpanded ? '收起卡片清單' : '展開單張序號'}</span>
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Expanded Individual Random Cards Grid */}
+                  {isRandomCardsExpanded && (
+                    <motion.div 
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="pt-3 border-t border-white/10 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2.5"
+                    >
+                      {randomPlayerCards.map((card, idx) => {
+                        const isSelected = selectedCardIds.has(card.id);
+                        return (
+                          <div 
+                            key={card.id}
+                            onClick={() => handleSelectCard(card.id, !isSelected)}
+                            className={cn(
+                              "p-2 rounded-xl border flex flex-col items-center gap-1 cursor-pointer transition-all",
+                              isSelected 
+                                ? "bg-amber-500/20 border-amber-400 text-white shadow-md shadow-amber-500/20 scale-[1.02]" 
+                                : "bg-slate-900/80 border-white/10 text-slate-300 hover:bg-slate-800"
+                            )}
+                          >
+                            <div className="w-full aspect-[2.5/3.5] rounded-lg overflow-hidden relative bg-gradient-to-br from-slate-900 via-slate-950 to-amber-950/80 border border-amber-500/40 flex flex-col items-center justify-between p-1.5 shadow-inner">
+                              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.15),transparent_70%)] pointer-events-none" />
+                              <div className="absolute top-1 left-1 z-20">
+                                <div className={cn(
+                                  "w-4 h-4 rounded border flex items-center justify-center text-[10px]",
+                                  isSelected ? "bg-amber-400 text-slate-950 border-amber-400 font-black" : "bg-black/60 border-white/30 text-transparent"
+                                )}>
+                                  ✓
+                                </div>
+                              </div>
+                              <div className="absolute top-1 right-1 z-10">
+                                <span className="text-[7px] font-black text-amber-400/90 bg-amber-500/20 px-1 rounded font-code">普/特</span>
+                              </div>
+
+                              {/* Centered Logo */}
+                              <div className="my-auto relative z-10 flex flex-col items-center justify-center py-2">
+                                <PPlusIcon className="w-6 h-6 text-amber-400 drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
+                                <span className="text-[7px] font-black text-amber-300/90 font-headline tracking-tighter mt-0.5">P+ CARD</span>
+                              </div>
+
+                              <div className="w-full flex justify-between items-center relative z-10 text-[7px] font-mono text-slate-400 border-t border-white/10 pt-0.5">
+                                <span>卡號</span>
+                                <span className="text-amber-300 font-bold">#{card.serialNumber}</span>
+                              </div>
+                            </div>
+                            <span className="text-[10px] font-bold truncate max-w-full text-center">#{idx + 1} 普特卡</span>
+                          </div>
+                        );
+                      })}
+                    </motion.div>
+                  )}
                 </div>
               </motion.section>
             )}

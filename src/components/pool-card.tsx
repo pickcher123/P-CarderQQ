@@ -7,8 +7,8 @@ import { doc } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Gem, Trophy, Clock, Zap, Star, Diamond, Layers, X, Package, Sparkles, Eye, ChevronRight } from 'lucide-react';
-import { PPlusIcon } from '@/components/icons';
+import { Trophy, Clock, Zap, Star, Diamond, Layers, X, Package, Sparkles, Eye, ChevronRight } from 'lucide-react';
+import { PPlusIcon, DiamondIcon } from '@/components/icons';
 import { SafeImage } from '@/components/safe-image';
 import { format } from 'date-fns';
 import { CardItem } from '@/components/card-item';
@@ -548,7 +548,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                     {isPPoint ? (
                                         <PPlusIcon className="w-3.5 h-3.5 ml-0.5 shrink-0 text-amber-400" />
                                     ) : (
-                                        <Gem className={cn("w-3.5 h-3.5 ml-0.5 shrink-0", drawCount === 10 ? "text-cyan-300" : "text-cyan-400")} />
+                                        <DiamondIcon className={cn("w-3.5 h-3.5 ml-0.5 shrink-0", drawCount === 10 ? "text-cyan-300" : "text-cyan-400")} />
                                     )}
                                 </span>
                             </Button>

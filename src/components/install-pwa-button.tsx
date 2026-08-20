@@ -44,7 +44,7 @@ export function InstallPWAButton() {
   if (!isAvailable || !isVisible) return null;
 
   return (
-    <div className="fixed bottom-20 left-4 z-[9999] flex items-center gap-2">
+    <div className="fixed bottom-[calc(max(env(safe-area-inset-bottom),0px)+4.75rem)] left-4 z-[9999] flex items-center gap-2">
       <Button 
         onClick={handleInstallClick}
         className="rounded-full shadow-lg bg-primary text-primary-foreground font-black"

@@ -99,20 +99,25 @@ export default function LuckyBagPage() {
     }
 
     return (
-        <div className="min-h-screen bg-slate-900/50 pb-20">
-            <div className="container py-8">
+        <div className="min-h-[calc(100vh-4rem)] w-full py-4 sm:py-8 px-3 sm:px-6 lg:px-8 max-w-7xl mx-auto animate-fade-in">
+            <div className="mb-6 flex items-center justify-between">
                 <Button 
                     variant="ghost" 
                     onClick={() => router.push('/lucky-bags')} 
-                    className="mb-8 hover:bg-white/5 font-bold text-white group"
+                    className="hover:bg-white/10 font-bold text-slate-200 hover:text-white group rounded-xl px-4 py-2 text-sm bg-slate-900/60 border border-white/10 backdrop-blur-md shadow-sm transition-all"
                 >
-                    <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform" /> 
+                    <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform text-amber-400" /> 
                     返回福袋清單
                 </Button>
-
-                <div className="max-w-6xl mx-auto rounded-[3rem] overflow-hidden bg-white border-2 border-slate-300 shadow-lg animate-fade-in-up">
-                    <LuckBagDetailView luckBag={luckBagWithData} />
+                
+                <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-slate-400 hidden sm:inline-block">公平募集制福袋</span>
+                    <div className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
                 </div>
+            </div>
+
+            <div className="w-full">
+                <LuckBagDetailView luckBag={luckBagWithData} />
             </div>
         </div>
     );

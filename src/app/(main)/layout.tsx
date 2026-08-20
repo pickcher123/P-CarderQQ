@@ -38,7 +38,7 @@ export default function MainLayout({
   }
   
   return (
-    <div className="relative flex min-h-screen flex-col">
+    <div className="relative flex min-h-screen flex-col overflow-x-hidden max-w-full w-full">
       <AnimatedBackground backgroundUrl={systemConfig?.backgroundUrl} backgroundOpacity={systemConfig?.backgroundOpacity} />
       <Header systemConfig={systemConfig} />
       {isMarqueeVisible && <NewsMarquee isDrawing={isDrawing} />}
@@ -46,7 +46,7 @@ export default function MainLayout({
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
-        className="flex-1 pb-20 md:pb-0"
+        className="flex-1 pb-24 sm:pb-28 md:pb-0 overflow-x-hidden max-w-full w-full"
       >
         {children}
       </motion.main>

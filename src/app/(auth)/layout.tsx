@@ -9,7 +9,7 @@ export default function AuthLayout({
   return (
     <div className="relative flex min-h-screen flex-col">
       <Header />
-      <main className="flex-1 pb-20 md:pb-0">{children}</main>
+      <main className="flex-1 pb-24 sm:pb-28 md:pb-0">{children}</main>
        <MobileBottomNav />
     </div>
   );

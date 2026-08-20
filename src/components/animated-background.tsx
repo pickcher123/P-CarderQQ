@@ -45,7 +45,7 @@ export function AnimatedBackground({ backgroundUrl, backgroundOpacity }: { backg
 
   return (
     <div 
-      className="fixed inset-0 -z-50 overflow-hidden bg-background pointer-events-none"
+      className="fixed inset-0 -z-50 overflow-hidden bg-[#070b14] pointer-events-none w-screen min-h-screen"
       style={containerStyle}
     >
       {backgroundUrl ? (

@@ -166,14 +166,38 @@ function deepCleanForJSON(obj: any, seen = new WeakSet()): any {
 
 function safeStringify(obj: any, indent = 2): string {
   try {
-    const cleaned = deepCleanForJSON(obj);
-    return JSON.stringify(cleaned, null, indent);
+    const seen = new WeakSet();
+    return JSON.stringify(
+      obj,
+      (key, value) => {
+        if (key.startsWith('_')) return undefined;
+        if (typeof value === 'function') return '[Function]';
+        if (typeof value === 'object' && value !== null) {
+          if (typeof window !== 'undefined') {
+            if (value instanceof Node || value instanceof Event || value instanceof Window) {
+              return `[${value.constructor?.name || 'DOMObject'}]`;
+            }
+          }
+          if (value instanceof Error) {
+            return { name: value.name, message: value.message, stack: value.stack };
+          }
+          if (typeof value.toDate === 'function') {
+            try { return value.toDate().toISOString(); } catch { return '[Timestamp]'; }
+          }
+          if (typeof value.path === 'string' && value.firestore) {
+            return `[DocumentReference: ${value.path}]`;
+          }
+          if (seen.has(value)) {
+            return '[Circular]';
+          }
+          seen.add(value);
+        }
+        return value;
+      },
+      indent
+    );
   } catch {
-    try {
-      return String(obj);
-    } catch {
-      return '[Unserializable Object]';
-    }
+    return '[Unserializable Object]';
   }
 }
 
@@ -199,6 +223,16 @@ export class FirestorePermissionError extends Error {
     const requestObject = buildRequestObject(context);
     super(buildErrorMessage(requestObject));
     this.name = 'FirebaseError';
-    this.request = requestObject;
+    
+    // Clean requestObject to ensure it contains no circular or DOM references for Next.js error serialization
+    try {
+      this.request = JSON.parse(safeStringify(requestObject));
+    } catch {
+      this.request = {
+        auth: null,
+        method: context.operation,
+        path: `/databases/(default)/documents/${context.path}`
+      };
+    }
   }
 }

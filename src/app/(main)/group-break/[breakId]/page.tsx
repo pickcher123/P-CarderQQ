@@ -15,7 +15,7 @@ import {
   Radio, Zap, SearchCode, X, Hash,
   TicketCheck, AlertCircle, User, Tv, Sparkles,
   Flame, Check, Play, ShieldAlert, Award,
-  ZoomIn, Maximize2
+  ZoomIn, Maximize2, ChevronDown, ChevronUp, ExternalLink
 } from 'lucide-react';
 import { useCollection } from '@/firebase';
 import { query } from 'firebase/firestore';
@@ -96,6 +96,32 @@ export default function GroupBreakDetailPage() {
   const [randomPickCount, setRandomPickCount] = useState(1);
   const [previewCard, setPreviewCard] = useState<Winnings | null>(null);
   const [isFullscreenImageOpen, setIsFullscreenImageOpen] = useState(false);
+  const [isStreamExpanded, setIsStreamExpanded] = useState(true);
+
+  const getYouTubeEmbedUrl = (url?: string): string | null => {
+    if (!url) return null;
+    const trimmed = url.trim();
+    if (!trimmed) return null;
+    if (trimmed.includes('youtube.com/embed/')) {
+      return trimmed.includes('autoplay') ? trimmed : `${trimmed}${trimmed.includes('?') ? '&' : '?'}autoplay=1&rel=0`;
+    }
+    const watchMatch = trimmed.match(/[?&]v=([^&]+)/);
+    if (watchMatch && watchMatch[1]) {
+      return `https://www.youtube.com/embed/${watchMatch[1]}?autoplay=1&rel=0`;
+    }
+    const shortMatch = trimmed.match(/youtu\.be\/([^?&]+)/);
+    if (shortMatch && shortMatch[1]) {
+      return `https://www.youtube.com/embed/${shortMatch[1]}?autoplay=1&rel=0`;
+    }
+    const liveMatch = trimmed.match(/youtube\.com\/live\/([^?&]+)/);
+    if (liveMatch && liveMatch[1]) {
+      return `https://www.youtube.com/embed/${liveMatch[1]}?autoplay=1&rel=0`;
+    }
+    if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) {
+      return `https://www.youtube.com/embed/${trimmed}?autoplay=1&rel=0`;
+    }
+    return trimmed;
+  };
 
 
   const groupBreakRef = useMemoFirebase(() => {
@@ -361,6 +387,99 @@ export default function GroupBreakDetailPage() {
         </div>
       </div>
 
+      {/* === TOP PINNED LIVE STREAM CONSOLE === */}
+      {(groupBreak.status === 'in_progress' || groupBreak.youtubeUrl) && (
+        <div className="mb-8 relative rounded-3xl border border-rose-500/40 bg-gradient-to-b from-[#1c0d16]/95 via-[#120810]/95 to-[#090508]/95 p-3.5 sm:p-5 shadow-[0_15px_40px_rgba(244,63,94,0.15),0_0_30px_rgba(0,0,0,0.8)] overflow-hidden">
+          {/* Ambient red/pink glow for live feel */}
+          <div className="absolute top-0 right-1/4 w-80 h-32 bg-rose-500/15 blur-3xl pointer-events-none" />
+          
+          <div className="flex items-center justify-between gap-3 mb-3 relative z-10 flex-wrap">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-3 w-3 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-500"></span>
+              </span>
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs sm:text-sm font-black text-rose-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <Tv className="w-4 h-4" /> 
+                    {groupBreak.status === 'in_progress' ? '官方即時拆卡直播中 • LIVE STREAM' : '官方拆卡實況回放 • BROADCAST'}
+                  </span>
+                  <Badge className="bg-rose-500/20 text-rose-300 border-rose-500/40 text-[10px] font-mono px-2 py-0.5">
+                    PINNED TOP
+                  </Badge>
+                </div>
+                <span className="text-[11px] text-slate-400 font-medium line-clamp-1">
+                  正在即時開箱拆盒【{groupBreak.title}】，請鎖定您的幸運席位！
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 ml-auto">
+              {groupBreak.youtubeUrl && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  asChild
+                  className="h-8 px-2.5 rounded-xl border-white/10 bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-bold gap-1.5"
+                >
+                  <a href={groupBreak.youtubeUrl} target="_blank" rel="noreferrer">
+                    <ExternalLink className="w-3.5 h-3.5 text-rose-400" />
+                    <span className="hidden sm:inline">新視窗觀看</span>
+                  </a>
+                </Button>
+              )}
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsStreamExpanded(!isStreamExpanded)}
+                className="h-8 px-3 rounded-xl border-rose-500/30 bg-rose-950/40 hover:bg-rose-900/50 text-rose-300 text-xs font-bold gap-1.5 transition-all"
+              >
+                {isStreamExpanded ? (
+                  <>
+                    <ChevronUp className="w-3.5 h-3.5 text-rose-400" />
+                    <span>收合直播視窗</span>
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="w-3.5 h-3.5 text-rose-400" />
+                    <span>展開直播視窗</span>
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+
+          {/* Embedded Player */}
+          {isStreamExpanded && (
+            <div className="relative w-full aspect-video sm:aspect-[21/9] max-h-[480px] bg-slate-950 rounded-2xl overflow-hidden border border-rose-500/30 shadow-2xl mt-1">
+              {groupBreak.youtubeUrl && getYouTubeEmbedUrl(groupBreak.youtubeUrl) ? (
+                <iframe
+                  src={getYouTubeEmbedUrl(groupBreak.youtubeUrl)!}
+                  title="團拆官方現場直播"
+                  className="w-full h-full border-0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center gap-3 p-6 text-center bg-slate-950/80">
+                  <div className="p-4 rounded-full bg-rose-500/10 border border-rose-500/30">
+                    <Radio className="w-8 h-8 text-rose-400 animate-pulse" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-black text-white">直播訊號連線中</p>
+                    <p className="text-xs text-slate-400 max-w-sm">
+                      官方主播即將開啟現場拆卡串流，請保持此頁面開啟，即時觀看您的戰利品開出！
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
         
         {/* === LEFT COLUMN: LIVE STREAM / POSTER DECK (5 cols on lg) === */}
@@ -370,7 +489,7 @@ export default function GroupBreakDetailPage() {
           <div className="relative bg-gradient-to-b from-[#13192a]/95 via-[#0d1220]/95 to-[#090c15]/95 border border-cyan-500/30 rounded-3xl p-2.5 sm:p-3.5 shadow-[0_20px_50px_rgba(0,0,0,0.8),0_0_25px_rgba(6,182,212,0.15)] overflow-hidden group">
             
             {/* Poster Aspect Ratio Display (Large, Uncropped & Unobstructed) */}
-            <div className="relative aspect-[4/3] sm:aspect-[16/11] w-full bg-slate-950 rounded-2xl overflow-hidden border border-white/10 shadow-inner group/poster">
+            <div className="relative aspect-[4/3] sm:aspect-[16/10] w-full bg-slate-950/90 rounded-2xl overflow-hidden border border-white/10 shadow-inner group/poster flex items-center justify-center p-2">
               {/* Blur backdrop for wide/tall ratios */}
               {groupBreak.imageUrl && (
                 <div 
@@ -385,7 +504,7 @@ export default function GroupBreakDetailPage() {
                 alt={groupBreak.title} 
                 fill 
                 className={cn(
-                  "object-contain sm:object-cover transition-transform duration-500 group-hover/poster:scale-105",
+                  "object-contain p-1 transition-transform duration-500 group-hover/poster:scale-105",
                   groupBreak.status === 'completed' && "grayscale brightness-75"
                 )} 
               />

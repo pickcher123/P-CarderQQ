@@ -65,10 +65,10 @@ const GroupBreakCard = ({ groupBreak, index, cardOpacity }: { groupBreak: GroupB
         )}
     >
         {/* 上方封面圖片容器 */}
-        <div className="relative aspect-[16/10] sm:aspect-[4/3] rounded-xl sm:rounded-2xl overflow-hidden bg-slate-950 border border-white/10 shadow-inner">
+        <div className="relative aspect-[16/10] sm:aspect-[16/10] rounded-xl sm:rounded-2xl overflow-hidden bg-slate-950/90 border border-white/10 shadow-inner flex items-center justify-center p-1.5 sm:p-2">
             {b.imageUrl && (
               <div 
-                className="absolute inset-0 bg-cover bg-center blur-xl scale-125 opacity-20 pointer-events-none"
+                className="absolute inset-0 bg-cover bg-center blur-2xl scale-125 opacity-30 pointer-events-none"
                 style={{ backgroundImage: `url(${b.imageUrl})` }}
               />
             )}
@@ -77,7 +77,7 @@ const GroupBreakCard = ({ groupBreak, index, cardOpacity }: { groupBreak: GroupB
                 alt={b.title} 
                 fill 
                 className={cn(
-                    "object-contain sm:object-cover transition-all duration-500 group-hover:scale-105",
+                    "object-contain p-1 transition-all duration-500 group-hover:scale-105",
                     isCompleted && "grayscale brightness-60"
                 )} 
             />

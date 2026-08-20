@@ -76,8 +76,14 @@
   * {
     @apply border-border;
   }
+  html {
+    background-color: #070b14;
+    color-scheme: dark;
+  }
   body {
-    @apply bg-background text-foreground overflow-x-hidden;
+    background-color: #070b14;
+    color: hsl(var(--foreground));
+    overflow-x: hidden;
   }
 }
 

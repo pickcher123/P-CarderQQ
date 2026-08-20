@@ -7,11 +7,11 @@ import { collection, doc, serverTimestamp, increment, runTransaction, arrayUnion
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { 
-    Gem, ArrowLeft, Search, Loader2, Info, Sparkles, XCircle, 
+    ArrowLeft, Search, Loader2, Info, Sparkles, XCircle, 
     X, ShieldCheck, Eye, ShoppingCart, Target, Flame, Dices, 
     Percent, Coins, Award, Layers, Package
 } from 'lucide-react';
-import { PPlusIcon } from '@/components/icons';
+import { PPlusIcon, DiamondIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { VisuallyHidden } from '@/components/ui/visually-hidden';
 import {
@@ -201,9 +201,11 @@ function DirectPurchaseDialog({ card, children, categoryName }: { card: CardData
                                         : 'border-white/10 bg-white/5 opacity-60 hover:opacity-100'
                                 )}
                             >
-                                <Gem className="w-6 h-6 mb-1 text-cyan-400"/>
+                                <DiamondIcon className="w-6 h-6 mb-1"/>
                                 <span className="text-xs font-bold text-slate-200">鑽石支付</span>
-                                <p className="text-sm font-black font-mono mt-1 text-cyan-300">{diamondPrice.toLocaleString()} 💎</p>
+                                <p className="text-sm font-black font-mono mt-1 text-cyan-300 flex items-center justify-center gap-1">
+                                    {diamondPrice.toLocaleString()} <DiamondIcon className="w-3.5 h-3.5" />
+                                </p>
                             </div>
                             <div 
                                 onClick={() => setPaymentCurrency('p-point')} 
@@ -577,7 +579,11 @@ export default function BettingCategoryPage() {
                                                             : "bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-[0_0_12px_rgba(6,182,212,0.3)]"
                                                     )}
                                                 >
-                                                    {isSold ? '已售出' : `拼卡 ${singleBetPrice} 💎`}
+                                                    {isSold ? '已售出' : (
+                                                        <span className="flex items-center justify-center gap-1">
+                                                            拼卡 {singleBetPrice} <DiamondIcon className="w-3.5 h-3.5" />
+                                                        </span>
+                                                    )}
                                                 </Button>
                                             </BettingGameDialog>
 
@@ -586,10 +592,11 @@ export default function BettingCategoryPage() {
                                                     <Button 
                                                         variant="outline" 
                                                         size="sm" 
-                                                        className="w-full h-7 text-[10px] font-bold rounded-lg border-white/10 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white cursor-pointer"
+                                                        className="w-full h-7 text-[10px] font-bold rounded-lg border-white/10 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white cursor-pointer flex items-center justify-center"
                                                     >
                                                         <ShoppingCart className="w-3 h-3 mr-1 text-slate-400" />
-                                                        直購 {card.sellPrice ? `${card.sellPrice.toLocaleString()} 💎` : ''}
+                                                        <span>直購 {card.sellPrice ? card.sellPrice.toLocaleString() : ''}</span>
+                                                        {card.sellPrice ? <DiamondIcon className="w-3 h-3 ml-1" /> : null}
                                                     </Button>
                                                 </DirectPurchaseDialog>
                                             )}

@@ -469,6 +469,16 @@ export default function OpenPackPage() {
         }, 400);
     };
 
+    const skipAllToDone = () => {
+        window.getSelection()?.removeAllRanges();
+        setIsChanging(false);
+        setIsSqueezing(false);
+        setRevealPercent(100);
+        setShowCelebration('none');
+        setRevealedIndex(drawnPrizes.length - 1);
+        setStep('done');
+    };
+
     if (step === 'init-loading' || !isMounted) {
         return <div className="flex h-screen items-center justify-center bg-background"><Loader2 className="animate-spin text-primary w-12 h-12" /></div>;
     }
@@ -532,7 +542,19 @@ export default function OpenPackPage() {
                     </div>
                 )}
 
-                <div className="w-12" /> {/* Spacer for balance */}
+                {/* Top-Right Quick Skip & Settlement Button */}
+                {step !== 'done' && step !== 'waiting-to-start' && step !== 'init-loading' && drawnPrizes.length > 0 ? (
+                    <Button
+                        size="sm"
+                        onClick={skipAllToDone}
+                        className="h-8 px-3 rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-[10px] sm:text-xs shadow-[0_0_15px_rgba(245,158,11,0.4)] border border-amber-300/40 gap-1 active:scale-95 transition-all"
+                    >
+                        <Zap className="w-3 h-3 fill-slate-950" />
+                        <span>一鍵跳過結算</span>
+                    </Button>
+                ) : (
+                    <div className="w-12" />
+                )}
             </div>
             
             {/* Status & Title Header */}
@@ -651,14 +673,26 @@ export default function OpenPackPage() {
                         </div>
 
                         {step === 'ready-to-reveal' && (
-                            <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                onClick={completeReveal}
-                                className="mt-2 sm:mt-3 h-7 sm:h-8 px-4 sm:px-6 rounded-full bg-white/10 border border-white/20 text-[9px] sm:text-[10px] font-black text-primary uppercase tracking-wider hover:bg-primary/20 transition-all shadow-lg shrink-0"
-                            >
-                                <FastForward className="w-3 h-3 mr-1 animate-pulse" /> 快速開獎 SKIP
-                            </Button>
+                            <div className="flex items-center gap-2 mt-2 sm:mt-3">
+                                <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    onClick={completeReveal}
+                                    className="h-7 sm:h-8 px-3 sm:px-4 rounded-full bg-white/10 border border-white/20 text-[9px] sm:text-[10px] font-black text-primary uppercase tracking-wider hover:bg-primary/20 transition-all shadow-lg shrink-0"
+                                >
+                                    <FastForward className="w-3 h-3 mr-1 animate-pulse" /> 翻開本張
+                                </Button>
+                                {drawnPrizes.length > 1 && (
+                                    <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        onClick={skipAllToDone}
+                                        className="h-7 sm:h-8 px-3 sm:px-4 rounded-full bg-amber-500/20 border border-amber-500/40 text-[9px] sm:text-[10px] font-black text-amber-300 uppercase tracking-wider hover:bg-amber-500/30 transition-all shadow-lg shrink-0"
+                                    >
+                                        <Zap className="w-3 h-3 mr-1 text-amber-400 fill-amber-400" /> 全部跳過結算
+                                    </Button>
+                                )}
+                            </div>
                         )}
                     </motion.div>
                 </div>
@@ -751,12 +785,22 @@ export default function OpenPackPage() {
                         )}
                         
                         {step === 'revealing' && revealedIndex < drawnPrizes.length - 1 ? (
-                            <Button 
-                                onClick={nextPrize} 
-                                className="w-full h-11 sm:h-12 font-black bg-primary text-primary-foreground rounded-xl sm:rounded-2xl shadow-xl text-xs sm:text-sm hover:brightness-110 active:scale-95 transition-all cursor-pointer"
-                            >
-                                {drawnPrizes[revealedIndex+1]?.type === 'last-prize' ? '🎉 揭曉最後賞限定！' : `揭曉下一項 (${revealedIndex+1}/${drawnPrizes.length})`}
-                            </Button>
+                            <div className="space-y-1.5">
+                                <Button 
+                                    onClick={nextPrize} 
+                                    className="w-full h-11 sm:h-12 font-black bg-primary text-primary-foreground rounded-xl sm:rounded-2xl shadow-xl text-xs sm:text-sm hover:brightness-110 active:scale-95 transition-all cursor-pointer"
+                                >
+                                    {drawnPrizes[revealedIndex+1]?.type === 'last-prize' ? '🎉 揭曉最後賞限定！' : `揭曉下一項 (${revealedIndex+1}/${drawnPrizes.length})`}
+                                </Button>
+                                <Button 
+                                    variant="outline"
+                                    onClick={skipAllToDone} 
+                                    className="w-full h-8 font-black bg-amber-500/10 border-amber-500/30 text-amber-300 rounded-xl text-[11px] hover:bg-amber-500/20 active:scale-95 transition-all cursor-pointer gap-1"
+                                >
+                                    <Zap className="w-3 h-3 text-amber-400 fill-amber-400" />
+                                    <span>跳過剩餘動畫，直接結算全部</span>
+                                </Button>
+                            </div>
                         ) : (step === 'done' || (step === 'revealing' && revealedIndex === drawnPrizes.length - 1)) && (
                             <div className="space-y-1.5">
                                 <div className="flex gap-1.5 w-full">

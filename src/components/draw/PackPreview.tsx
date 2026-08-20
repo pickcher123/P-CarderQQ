@@ -1,7 +1,6 @@
 import { Button } from '@/components/ui/button';
-import { Logo } from '@/components/icons';
-import { Gem, ShieldCheck, Ban, Loader2, Zap, Sparkles, ArrowLeft, Info, Scale, ChevronRight, ExternalLink, FileText } from 'lucide-react';
-import { PPlusIcon } from '@/components/icons';
+import { Logo, PPlusIcon, DiamondIcon } from '@/components/icons';
+import { ShieldCheck, Ban, Loader2, Zap, Sparkles, ArrowLeft, Info, Scale, ChevronRight, ExternalLink, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CardPool } from '@/types/draw';
 import Link from 'next/link';
@@ -67,7 +66,7 @@ export function PackPreview({
                                 {cardPool.currency === 'p-point' ? (
                                     <><PPlusIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-400 shrink-0" />{cost.toLocaleString()}</>
                                 ) : (
-                                    <><Gem className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-400 shrink-0" /> {cost.toLocaleString()}</>
+                                    <><DiamondIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" /> {cost.toLocaleString()}</>
                                 )}
                             </div>
                         </div>

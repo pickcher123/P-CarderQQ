@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Loader2, Gem, Sparkles } from 'lucide-react';
+import { Loader2, Sparkles } from 'lucide-react';
+import { DiamondIcon } from '@/components/icons';
 
 import { CardPool } from '@/types/draw';
 
@@ -59,7 +60,7 @@ export function DrawButtons({
                         <>
                             <span className="text-[10px] sm:text-xs opacity-90 whitespace-nowrap">{isTrialMode ? '試 1抽' : '1抽'}</span>
                             <span className="text-[11px] sm:text-xs flex items-center font-headline truncate font-bold">
-                                {isTrialMode ? <Sparkles className="w-2.5 h-2.5 mr-0.5 text-purple-300"/> : <Gem className="w-2.5 h-2.5 mr-0.5 text-sky-400"/>}
+                                {isTrialMode ? <Sparkles className="w-2.5 h-2.5 mr-0.5 text-purple-300"/> : <DiamondIcon className="w-2.5 h-2.5 mr-0.5"/>}
                                 {isTrialMode ? '免費' : cardPool?.price}
                             </span>
                         </>
@@ -79,7 +80,7 @@ export function DrawButtons({
                         <>
                             <span className="text-[10px] sm:text-xs opacity-90 whitespace-nowrap">{isTrialMode ? '試 3連' : '3 連抽'}</span>
                             <span className="text-[11px] sm:text-xs flex items-center font-headline truncate font-bold">
-                                {isTrialMode ? <Sparkles className="w-2.5 h-2.5 mr-0.5 text-purple-300"/> : <Gem className="w-2.5 h-2.5 mr-0.5"/>}
+                                {isTrialMode ? <Sparkles className="w-2.5 h-2.5 mr-0.5 text-purple-300"/> : <DiamondIcon className="w-2.5 h-2.5 mr-0.5"/>}
                                 {isTrialMode ? '免費' : cardPool?.price3Draws}
                             </span>
                         </>
@@ -99,7 +100,7 @@ export function DrawButtons({
                         <>
                             <span className="text-[10px] sm:text-xs opacity-90 whitespace-nowrap">{isTrialMode ? '試 10連' : '10 連抽'}</span>
                             <span className="text-[11px] sm:text-xs flex items-center font-headline truncate font-bold">
-                                {isTrialMode ? <Sparkles className="w-2.5 h-2.5 mr-0.5 text-purple-300"/> : <Gem className="w-2.5 h-2.5 mr-0.5"/>}
+                                {isTrialMode ? <Sparkles className="w-2.5 h-2.5 mr-0.5 text-purple-300"/> : <DiamondIcon className="w-2.5 h-2.5 mr-0.5"/>}
                                 {isTrialMode ? '免費' : ((cardPool as any)?.price10Draws || (cardPool?.price || 0) * 10)}
                             </span>
                         </>

@@ -7,9 +7,9 @@ import { SafeImage } from '@/components/safe-image';
 import { useCollection, useFirestore, useMemoFirebase, useUser, useDoc } from '@/firebase';
 import { collection, query, orderBy, doc, getDoc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CrossedCardsIcon } from '@/components/icons';
+import { CrossedCardsIcon, DiamondIcon } from '@/components/icons';
 import { 
-    Sparkles, Gem, ShoppingBag, Truck, Check, Package, 
+    Sparkles, ShoppingBag, Truck, Check, Package, 
     Settings, ChevronRight, Swords, Target, RefreshCcw, ShieldCheck, 
     XCircle, Search, Flame, Eye, Zap, Layers, Trophy, ArrowRight, 
     Percent, Coins, Dices, Award, X, SlidersHorizontal
@@ -547,8 +547,8 @@ export default function BetLandingPage() {
                                             
                                             <div className="flex items-center justify-between text-[11px] mt-1">
                                                 <span className="text-slate-400">市值:</span>
-                                                <span className="font-bold text-amber-400 flex items-center gap-1 font-mono">
-                                                    <Gem className="w-3 h-3 text-amber-400" />
+                                                <span className="font-bold text-cyan-400 flex items-center gap-1 font-mono">
+                                                    <DiamondIcon className="w-3.5 h-3.5" />
                                                     {card.sellPrice ? card.sellPrice.toLocaleString() : '---'}
                                                 </span>
                                             </div>
@@ -563,11 +563,15 @@ export default function BetLandingPage() {
                                                     className={cn(
                                                         "w-full h-8 text-xs font-black rounded-lg transition-all cursor-pointer",
                                                         isSold 
-                                                            ? "bg-white/5 text-slate-500 border border-white/5" 
+                                                             ? "bg-white/5 text-slate-500 border border-white/5" 
                                                             : "bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-[0_0_12px_rgba(6,182,212,0.3)]"
                                                     )}
                                                 >
-                                                    {isSold ? '已售出' : `拼卡 ${singleBetPrice} 💎`}
+                                                    {isSold ? '已售出' : (
+                                                        <span className="flex items-center justify-center gap-1">
+                                                            拼卡 {singleBetPrice} <DiamondIcon className="w-3.5 h-3.5" />
+                                                        </span>
+                                                    )}
                                                 </Button>
                                             </BettingGameDialog>
                                         </div>

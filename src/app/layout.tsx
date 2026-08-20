@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { cn } from "@/lib/utils";
@@ -6,6 +6,14 @@ import { FirebaseClientProvider } from '@/firebase/client-provider';
 import Script from 'next/script';
 
 export const dynamic = 'force-dynamic';
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: 'cover',
+  themeColor: '#070b14',
+};
 
 export const metadata: Metadata = {
   title: 'P+Carder 玩卡人｜球員卡線上抽卡、福袋、團拆平台',
@@ -81,13 +89,13 @@ export default function RootLayout({
   };
 
   return (
-    <html lang="zh-Hant" suppressHydrationWarning>
+    <html lang="zh-Hant" suppressHydrationWarning className="bg-[#070b14] text-foreground min-h-screen min-h-[100dvh] w-full overflow-x-hidden m-0 p-0">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&family=Rajdhani:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet" />
       </head>
-      <body className={cn("min-h-screen bg-background font-body antialiased")} suppressHydrationWarning>
+      <body className={cn("min-h-screen min-h-[100dvh] bg-[#070b14] text-foreground font-body antialiased overflow-x-hidden max-w-full w-full m-0 p-0")} suppressHydrationWarning>
         <FirebaseClientProvider>
           {children}
         </FirebaseClientProvider>
