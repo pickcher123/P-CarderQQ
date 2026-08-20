@@ -44,21 +44,24 @@ function buildAuthObject(currentUser: User | null): FirebaseAuthObject | null {
     return null;
   }
 
+  const providerData = Array.isArray(currentUser.providerData) ? currentUser.providerData : [];
+  const identities: Record<string, string[]> = {};
+  for (const p of providerData) {
+    if (p && p.providerId && p.uid) {
+      identities[p.providerId] = [String(p.uid)];
+    }
+  }
+
   const token: FirebaseAuthToken = {
-    name: currentUser.displayName,
-    email: currentUser.email,
-    email_verified: currentUser.emailVerified,
-    phone_number: currentUser.phoneNumber,
-    sub: currentUser.uid,
+    name: currentUser.displayName || null,
+    email: currentUser.email || null,
+    email_verified: Boolean(currentUser.emailVerified),
+    phone_number: currentUser.phoneNumber || null,
+    sub: currentUser.uid || '',
     firebase: {
-      identities: currentUser.providerData.reduce((acc, p) => {
-        if (p.providerId) {
-          acc[p.providerId] = [p.uid];
-        }
-        return acc;
-      }, {} as Record<string, string[]>),
-      sign_in_provider: currentUser.providerData[0]?.providerId || 'custom',
-      tenant: currentUser.tenantId,
+      identities,
+      sign_in_provider: providerData[0]?.providerId || 'custom',
+      tenant: currentUser.tenantId || null,
     },
   };
 
@@ -103,7 +106,6 @@ function buildRequestObject(context: SecurityRuleContext): SecurityRuleRequest {
 function deepCleanForJSON(obj: any, seen = new WeakSet()): any {
   if (obj === null || obj === undefined) return obj;
   if (typeof obj !== 'object' && typeof obj !== 'function') return obj;
-  
   if (typeof obj === 'function') return '[Function]';
 
   if (typeof window !== 'undefined') {
@@ -129,8 +131,12 @@ function deepCleanForJSON(obj: any, seen = new WeakSet()): any {
     };
   }
 
+  if (Array.isArray(obj)) {
+    return obj.map(item => deepCleanForJSON(item, seen));
+  }
+
   // Handle non-plain object instances (like Firestore DocumentReference, Timestamp, FieldValue)
-  if (obj.constructor && obj.constructor.name !== 'Object' && obj.constructor.name !== 'Array') {
+  if (obj.constructor && obj.constructor.name !== 'Object') {
     if (typeof obj.path === 'string') {
       return `[DocumentReference: ${obj.path}]`;
     }
@@ -138,12 +144,8 @@ function deepCleanForJSON(obj: any, seen = new WeakSet()): any {
       try { return obj.toDate().toISOString(); } catch { return '[Timestamp]'; }
     }
     if (obj.isEqual || obj._delegate || obj.type) {
-      return `[${obj.constructor.name || 'FirestoreSentinel'}]`;
+      return `[${obj.constructor?.name || 'FirestoreSentinel'}]`;
     }
-  }
-
-  if (Array.isArray(obj)) {
-    return obj.map(item => deepCleanForJSON(item, seen));
   }
 
   const result: Record<string, any> = {};
@@ -170,7 +172,7 @@ function safeStringify(obj: any, indent = 2): string {
     return JSON.stringify(
       obj,
       (key, value) => {
-        if (key.startsWith('_')) return undefined;
+        if (key && key.startsWith('_')) return undefined;
         if (typeof value === 'function') return '[Function]';
         if (typeof value === 'object' && value !== null) {
           if (typeof window !== 'undefined') {
@@ -195,9 +197,14 @@ function safeStringify(obj: any, indent = 2): string {
         return value;
       },
       indent
-    );
+    ) || '{}';
   } catch {
-    return '[Unserializable Object]';
+    try {
+      const cleaned = deepCleanForJSON(obj);
+      return JSON.stringify(cleaned, null, indent) || '{}';
+    } catch {
+      return '[Unserializable Object]';
+    }
   }
 }
 
@@ -220,13 +227,30 @@ export class FirestorePermissionError extends Error {
   public readonly request: SecurityRuleRequest;
 
   constructor(context: SecurityRuleContext) {
-    const requestObject = buildRequestObject(context);
-    super(buildErrorMessage(requestObject));
+    let requestObject: SecurityRuleRequest;
+    try {
+      requestObject = buildRequestObject(context);
+    } catch {
+      requestObject = {
+        auth: null,
+        method: context.operation,
+        path: `/databases/(default)/documents/${context.path}`
+      };
+    }
+
+    let errorMessage = 'Missing or insufficient permissions: The request was denied by Firestore Security Rules.';
+    try {
+      errorMessage = buildErrorMessage(requestObject);
+    } catch {
+      // Keep default message
+    }
+
+    super(errorMessage);
     this.name = 'FirebaseError';
     
-    // Clean requestObject to ensure it contains no circular or DOM references for Next.js error serialization
+    // Ensure this.request is a plain object safe from circular references
     try {
-      this.request = JSON.parse(safeStringify(requestObject));
+      this.request = deepCleanForJSON(requestObject);
     } catch {
       this.request = {
         auth: null,

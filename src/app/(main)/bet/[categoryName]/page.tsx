@@ -560,7 +560,7 @@ export default function BettingCategoryPage() {
                                             <div className="flex items-center justify-between text-[11px] mt-1">
                                                 <span className="text-slate-400">市值:</span>
                                                 <span className="font-bold text-amber-400 flex items-center gap-1 font-mono">
-                                                    <Gem className="w-3 h-3 text-amber-400" />
+                                                    <DiamondIcon className="w-3 h-3 text-amber-400" />
                                                     {card.sellPrice ? card.sellPrice.toLocaleString() : '---'}
                                                 </span>
                                             </div>

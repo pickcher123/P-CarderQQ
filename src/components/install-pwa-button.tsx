@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Download, X } from 'lucide-react';
 
@@ -10,14 +10,14 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export function InstallPWAButton() {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const promptRef = useRef<BeforeInstallPromptEvent | null>(null);
   const [isAvailable, setIsAvailable] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
+      promptRef.current = e as BeforeInstallPromptEvent;
       setIsAvailable(true);
     };
 
@@ -29,15 +29,16 @@ export function InstallPWAButton() {
   }, []);
 
   const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
+    const prompt = promptRef.current;
+    if (!prompt) return;
 
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
+    prompt.prompt();
+    const { outcome } = await prompt.userChoice;
     
     if (outcome === 'accepted') {
       console.log('User accepted the A2HS prompt');
     }
-    setDeferredPrompt(null);
+    promptRef.current = null;
     setIsAvailable(false);
   };
 

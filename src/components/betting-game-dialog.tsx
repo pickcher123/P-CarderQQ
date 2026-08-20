@@ -267,7 +267,7 @@ export function BettingGameDialog({
                 };
             });
 
-            // 構建老虎機滾輪帶動畫
+            // 構建老虎機滾輪帶動畫：嚴格按照 1 -> 2 -> 3 ... -> 10 依序連續滾動，最後順序滾至中獎號碼
             const totalRounds = 4;
             const strip: number[] = [];
             for (let r = 0; r < totalRounds; r++) {
@@ -275,7 +275,10 @@ export function BettingGameDialog({
                     strip.push(n);
                 }
             }
-            strip.push(transactionResult.spot);
+            // 最後一輪依序由 1 轉至中獎號碼，保證數字完全連續不跳號
+            for (let n = 1; n <= transactionResult.spot; n++) {
+                strip.push(n);
+            }
 
             setWheelStrip(strip);
             const targetIndex = strip.length - 1;
@@ -301,11 +304,11 @@ export function BettingGameDialog({
                         } else {
                             toast({
                                 title: '😅 差一點點！',
-                                description: `開出幸運號碼【${transactionResult.spot}】，未命中您的投注 [${selectedNumbers.join(', ')}]，再接再厲！`,
+                                description: `開出幸運號碼【${transactionResult.spot}】，未命中您的投注 [${selectedNumbers.join(', ')}]，再接再載！`,
                                 variant: 'destructive',
                             });
                         }
-                    }, 3200);
+                    }, 3500);
                 }, 50);
             });
 
@@ -663,7 +666,7 @@ export function BettingGameDialog({
                                     <div 
                                         className="flex flex-col w-full text-white font-mono font-black"
                                         style={{
-                                            transition: spinActive ? 'transform 3.2s cubic-bezier(0.1, 0.85, 0.25, 1)' : 'none',
+                                            transition: spinActive ? 'transform 3.5s cubic-bezier(0.1, 0.85, 0.25, 1)' : 'none',
                                             transform: `translateY(${spinTranslateY}px)`
                                         }}
                                     >

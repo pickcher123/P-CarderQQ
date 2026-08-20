@@ -321,7 +321,7 @@ export default function BetLandingPage() {
 
                             <div className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-[#0b1329] border border-amber-500/30 flex flex-col items-center justify-center text-center shadow-lg col-span-2">
                                 <div className="flex items-center gap-1.5">
-                                    <Gem className="w-3.5 h-3.5 text-amber-400 animate-bounce" />
+                                    <DiamondIcon className="w-3.5 h-3.5 text-amber-400" />
                                     <span className="text-[11px] sm:text-xs font-bold text-amber-300">單注卡價 10% • 隨機公平</span>
                                 </div>
                             </div>
