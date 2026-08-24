@@ -66,8 +66,9 @@
     "typescript": "^5"
   },
   "overrides": {
-    "react-day-picker": {
-      "date-fns": "$date-fns"
-    }
+    "date-fns": "^4.1.0"
+  },
+  "resolutions": {
+    "date-fns": "^4.1.0"
   }
 }

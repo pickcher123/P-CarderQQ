@@ -230,15 +230,15 @@ const LuckBagCard = ({ bag, priority = false, index }: { bag: LuckBagWithCount, 
                 </div>
 
                 {/* 底部行動按鈕提示 */}
-                <div className="pt-2 flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-xs text-slate-400 font-mono">
-                        <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                <div className="pt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="flex items-center gap-1.5 text-[11px] sm:text-xs text-slate-400 font-mono shrink-0">
+                        <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400 shrink-0" />
                         <span>公平亂數配獎 • 即時存證</span>
                     </div>
 
-                    <div className="flex items-center gap-2 font-bold text-xs sm:text-sm text-slate-950 bg-gradient-to-r from-amber-400 to-yellow-500 px-4 sm:px-5 py-2.5 rounded-xl shadow-lg shadow-amber-500/20 group-hover:from-amber-300 group-hover:to-yellow-400 group-hover:shadow-amber-500/40 transition-all font-headline">
+                    <div className="w-full sm:w-auto flex items-center justify-center gap-2 font-bold text-xs sm:text-sm text-slate-950 bg-gradient-to-r from-amber-400 to-yellow-500 px-4 sm:px-5 py-2.5 rounded-xl shadow-lg shadow-amber-500/20 group-hover:from-amber-300 group-hover:to-yellow-400 group-hover:shadow-amber-500/40 transition-all font-headline whitespace-nowrap shrink-0">
                         <span>{isDone ? '查看開獎結果' : '立即選位參與'}</span>
-                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform shrink-0" />
                     </div>
                 </div>
             </div>
@@ -346,14 +346,7 @@ export default function LuckyBagsPage() {
                   
                   <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-3 sm:gap-6 md:gap-12">
                       <div className="space-y-2 sm:space-y-3 text-center lg:text-left max-w-2xl">
-                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/40 backdrop-blur-md shadow-[0_0_15px_rgba(245,158,11,0.2)]">
-                              <Sparkles className="w-3 h-3 text-amber-400 animate-pulse" />
-                              <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.15em] text-amber-300">
-                                  限定幸運福袋 專區
-                              </span>
-                          </div>
-
-                          <h1 className="font-headline text-2xl sm:text-4xl md:text-6xl font-black text-white tracking-tight leading-none uppercase">
+                          <h1 className="font-headline text-2xl sm:text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-yellow-200 to-orange-400 drop-shadow-[0_0_20px_rgba(245,158,11,0.4)] tracking-tight leading-none uppercase">
                               幸運福袋
                           </h1>
 
@@ -445,7 +438,7 @@ export default function LuckyBagsPage() {
                               <div className="p-1.5 sm:p-2 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
                                   <Flame className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 animate-pulse" />
                               </div>
-                              <h2 className="text-base sm:text-xl font-black font-headline text-white tracking-wide">
+                              <h2 className="text-base sm:text-xl font-black font-headline tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-amber-200 to-yellow-400 drop-shadow-[0_0_12px_rgba(245,158,11,0.3)]">
                                   正在募集熱門福袋
                               </h2>
                               <span className="text-[10px] sm:text-xs font-mono font-bold text-amber-300 bg-amber-500/10 px-2 sm:px-2.5 py-0.5 rounded-full border border-amber-500/30">
@@ -483,7 +476,7 @@ export default function LuckyBagsPage() {
                                   <div className="p-1.5 sm:p-2 rounded-xl bg-slate-800/80 border border-slate-700 text-slate-300">
                                       <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
                                   </div>
-                                  <h2 className="text-base sm:text-xl font-black font-headline text-slate-300 tracking-wide">
+                                  <h2 className="text-base sm:text-xl font-black font-headline tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-200 to-indigo-300 drop-shadow-[0_0_12px_rgba(168,85,247,0.3)]">
                                       歷史精彩回顧
                                   </h2>
                               </div>

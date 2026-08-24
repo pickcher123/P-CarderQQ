@@ -232,14 +232,7 @@ export default function BetLandingPage() {
                     
                     <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-3 sm:gap-6 md:gap-12">
                         <div className="space-y-2 sm:space-y-3 text-center lg:text-left max-w-2xl">
-                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-cyan-500/15 border border-cyan-500/40 backdrop-blur-md shadow-[0_0_15px_rgba(6,182,212,0.2)]">
-                                <Sparkles className="w-3 h-3 text-cyan-400 animate-pulse" />
-                                <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.15em] text-cyan-300">
-                                    1/10 幸運拼卡
-                                </span>
-                            </div>
-
-                            <h1 className="font-headline text-2xl sm:text-4xl md:text-6xl font-black text-white tracking-tight leading-none uppercase">
+                            <h1 className="font-headline text-2xl sm:text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-200 to-amber-300 drop-shadow-[0_0_20px_rgba(6,182,212,0.4)] tracking-tight leading-none uppercase">
                                 幸運拼卡
                             </h1>
 
@@ -337,7 +330,7 @@ export default function BetLandingPage() {
                                 <CrossedCardsIcon className="w-5 h-5 text-destructive" />
                             </div>
                             <div>
-                                <h2 className="text-lg md:text-2xl font-black text-white tracking-wide font-headline flex items-center gap-2">
+                                <h2 className="text-lg md:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-rose-400 via-pink-200 to-amber-300 drop-shadow-[0_0_12px_rgba(244,63,94,0.3)] tracking-wide font-headline flex items-center gap-2">
                                     選擇主題卡池
                                 </h2>
                                 <p className="text-xs text-slate-400">點擊進入各專屬卡池查看即時卡片與挑戰拼卡</p>

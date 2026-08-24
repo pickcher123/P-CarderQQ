@@ -81,22 +81,13 @@ export default function AboutPage() {
 
       {/* Hero 標題區 */}
       <div className="text-center space-y-5 relative z-10 max-w-3xl mx-auto">
-        <motion.div 
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold tracking-widest uppercase shadow-sm backdrop-blur-md"
-        >
-          <Sparkles className="w-3.5 h-3.5 text-primary animate-pulse" />
-          <span>P+CARDER • 數位球員卡典藏平台</span>
-        </motion.div>
-
         <motion.h1 
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="font-headline text-4xl sm:text-5xl md:text-6xl font-black tracking-tight text-white"
+          className="font-headline text-4xl sm:text-5xl md:text-6xl font-black tracking-tight text-white drop-shadow-[0_0_25px_rgba(6,182,212,0.35)]"
         >
-          關於 <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-primary to-blue-500">P+CARDER</span>
+          關於 <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-200 to-amber-300">P+CARDER</span>
         </motion.h1>
 
         <motion.p 
@@ -189,7 +180,7 @@ export default function AboutPage() {
         <CardHeader className="p-6 md:p-10 pb-2 border-b border-white/5">
           <CardTitle className="font-headline text-2xl sm:text-3xl text-primary flex items-center gap-3">
             <Sparkles className="w-6 h-6 text-amber-400" />
-            我們的品牌願景 <span className="text-slate-500 text-sm font-normal tracking-wider">/ BRAND VISION</span>
+            我們的品牌願景
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6 md:p-10 space-y-6 text-slate-300 leading-relaxed text-sm sm:text-base">

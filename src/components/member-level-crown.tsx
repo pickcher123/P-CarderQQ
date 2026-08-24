@@ -89,14 +89,14 @@ export function MemberLevelCrown({ level, showLabel = false, className, size = '
     
     const sizeClasses = {
         sm: 'w-10 h-10 border-[1.5px]',
-        md: 'w-20 h-20 border-2',
-        lg: 'w-52 h-52 border-4'
+        md: 'w-16 h-16 sm:w-20 sm:h-20 border-2',
+        lg: 'w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 border-2 sm:border-[3px]'
     };
 
     const iconSizeClasses = {
         sm: 'w-5 h-5',
-        md: 'w-10 h-10',
-        lg: 'w-28 h-28'
+        md: 'w-8 h-8 sm:w-10 sm:h-10',
+        lg: 'w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14'
     };
 
     const isHighLevel = level === '傳奇收藏家' || level === 'P+卡神' || level === '卡牌大師';

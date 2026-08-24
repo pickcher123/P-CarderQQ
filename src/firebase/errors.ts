@@ -100,24 +100,42 @@ function buildRequestObject(context: SecurityRuleContext): SecurityRuleRequest {
 }
 
 /**
+ * Helper to determine if an object is a pure plain JavaScript object.
+ */
+function isPlainObject(obj: any): boolean {
+  if (typeof obj !== 'object' || obj === null) return false;
+  const proto = Object.getPrototypeOf(obj);
+  return proto === null || proto === Object.prototype;
+}
+
+/**
  * Helper to safely clean objects for JSON serialization, handling circular references,
  * Firestore sentinels, DOM objects, and non-plain instances safely.
  */
-function deepCleanForJSON(obj: any, seen = new WeakSet()): any {
+function deepCleanForJSON(obj: any, seen = new WeakSet(), depth = 0): any {
   if (obj === null || obj === undefined) return obj;
   if (typeof obj !== 'object' && typeof obj !== 'function') return obj;
   if (typeof obj === 'function') return '[Function]';
+  if (depth > 5) return '[DepthLimit]';
 
   if (typeof window !== 'undefined') {
-    if (obj instanceof Node || obj instanceof Event || obj instanceof Window) {
-      return `[${obj.constructor?.name || 'DOMObject'}]`;
+    try {
+      if (obj instanceof Node || obj instanceof Event || obj instanceof Window) {
+        return `[${obj.constructor?.name || 'DOMObject'}]`;
+      }
+    } catch {
+      return '[DOMObject]';
     }
   }
 
   if (seen.has(obj)) {
     return '[Circular]';
   }
-  seen.add(obj);
+  try {
+    seen.add(obj);
+  } catch {
+    // In case object cannot be added to WeakSet
+  }
 
   if (obj instanceof Date) {
     return obj.toISOString();
@@ -127,25 +145,30 @@ function deepCleanForJSON(obj: any, seen = new WeakSet()): any {
     return {
       name: obj.name,
       message: obj.message,
-      stack: obj.stack
+      stack: typeof obj.stack === 'string' ? obj.stack.slice(0, 300) : undefined,
     };
   }
 
   if (Array.isArray(obj)) {
-    return obj.map(item => deepCleanForJSON(item, seen));
+    return obj.map(item => deepCleanForJSON(item, seen, depth + 1));
   }
 
-  // Handle non-plain object instances (like Firestore DocumentReference, Timestamp, FieldValue)
-  if (obj.constructor && obj.constructor.name !== 'Object') {
-    if (typeof obj.path === 'string') {
+  // Handle Firebase and special objects
+  try {
+    if (typeof obj.path === 'string' && (obj.firestore || obj.id)) {
       return `[DocumentReference: ${obj.path}]`;
     }
     if (typeof obj.toDate === 'function') {
-      try { return obj.toDate().toISOString(); } catch { return '[Timestamp]'; }
+      return obj.toDate().toISOString();
     }
-    if (obj.isEqual || obj._delegate || obj.type) {
-      return `[${obj.constructor?.name || 'FirestoreSentinel'}]`;
-    }
+  } catch {
+    // ignore
+  }
+
+  // If this is a complex class instance or minified constructor (not a plain Object), do not deeply inspect internal engine fields
+  if (!isPlainObject(obj)) {
+    const ctorName = obj.constructor?.name || 'Instance';
+    return `[${ctorName}]`;
   }
 
   const result: Record<string, any> = {};
@@ -154,13 +177,13 @@ function deepCleanForJSON(obj: any, seen = new WeakSet()): any {
     for (const key of keys) {
       if (key.startsWith('_')) continue; // Skip internal hidden properties
       try {
-        result[key] = deepCleanForJSON(obj[key], seen);
+        result[key] = deepCleanForJSON(obj[key], seen, depth + 1);
       } catch {
         result[key] = '[Unserializable]';
       }
     }
   } catch {
-    return String(obj);
+    return '[ComplexObject]';
   }
 
   return result;
@@ -168,43 +191,25 @@ function deepCleanForJSON(obj: any, seen = new WeakSet()): any {
 
 function safeStringify(obj: any, indent = 2): string {
   try {
-    const seen = new WeakSet();
-    return JSON.stringify(
-      obj,
-      (key, value) => {
-        if (key && key.startsWith('_')) return undefined;
-        if (typeof value === 'function') return '[Function]';
-        if (typeof value === 'object' && value !== null) {
-          if (typeof window !== 'undefined') {
-            if (value instanceof Node || value instanceof Event || value instanceof Window) {
-              return `[${value.constructor?.name || 'DOMObject'}]`;
+    const stringifySeen = new WeakSet();
+    const cleaned = deepCleanForJSON(obj);
+    return (
+      JSON.stringify(
+        cleaned,
+        (_key, value) => {
+          if (typeof value === 'object' && value !== null) {
+            if (stringifySeen.has(value)) {
+              return '[Circular]';
             }
+            stringifySeen.add(value);
           }
-          if (value instanceof Error) {
-            return { name: value.name, message: value.message, stack: value.stack };
-          }
-          if (typeof value.toDate === 'function') {
-            try { return value.toDate().toISOString(); } catch { return '[Timestamp]'; }
-          }
-          if (typeof value.path === 'string' && value.firestore) {
-            return `[DocumentReference: ${value.path}]`;
-          }
-          if (seen.has(value)) {
-            return '[Circular]';
-          }
-          seen.add(value);
-        }
-        return value;
-      },
-      indent
-    ) || '{}';
+          return value;
+        },
+        indent
+      ) || '{}'
+    );
   } catch {
-    try {
-      const cleaned = deepCleanForJSON(obj);
-      return JSON.stringify(cleaned, null, indent) || '{}';
-    } catch {
-      return '[Unserializable Object]';
-    }
+    return '{}';
   }
 }
 
@@ -229,12 +234,17 @@ export class FirestorePermissionError extends Error {
   constructor(context: SecurityRuleContext) {
     let requestObject: SecurityRuleRequest;
     try {
-      requestObject = buildRequestObject(context);
+      const sanitizedContext: SecurityRuleContext = {
+        path: String(context.path || ''),
+        operation: context.operation,
+        requestResourceData: context.requestResourceData ? deepCleanForJSON(context.requestResourceData) : undefined,
+      };
+      requestObject = buildRequestObject(sanitizedContext);
     } catch {
       requestObject = {
         auth: null,
         method: context.operation,
-        path: `/databases/(default)/documents/${context.path}`
+        path: `/databases/(default)/documents/${context.path || ''}`
       };
     }
 
@@ -248,15 +258,23 @@ export class FirestorePermissionError extends Error {
     super(errorMessage);
     this.name = 'FirebaseError';
     
-    // Ensure this.request is a plain object safe from circular references
+    // Ensure this.request is a completely plain, safe object
     try {
       this.request = deepCleanForJSON(requestObject);
     } catch {
       this.request = {
         auth: null,
         method: context.operation,
-        path: `/databases/(default)/documents/${context.path}`
+        path: `/databases/(default)/documents/${context.path || ''}`
       };
     }
+  }
+
+  toJSON() {
+    return {
+      name: this.name,
+      message: this.message,
+      request: this.request,
+    };
   }
 }

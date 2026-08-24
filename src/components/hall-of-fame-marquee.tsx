@@ -142,7 +142,7 @@ export function HallOfFameMarquee() {
                                     <div className="p-1.5 rounded-full bg-amber-500/20 border border-amber-400/60 mb-1">
                                         <PPlusIcon className="w-6 h-6 text-amber-300" />
                                     </div>
-                                    <span className="text-[9px] font-black text-amber-300 font-mono tracking-tight leading-none">P+ BONUS</span>
+                                    <span className="text-[9px] font-black text-amber-300 font-mono tracking-tight leading-none">P+ 點數大獎</span>
                                 </div>
                             ) : (
                                 <>
@@ -164,7 +164,7 @@ export function HallOfFameMarquee() {
                             {/* 上列：稀有標籤 + 時間 */}
                             <div className="flex items-center justify-between gap-1 mb-1">
                                 <Badge className="bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 text-slate-950 font-black text-[9px] h-4 px-1.5 uppercase tracking-wider border-none shadow-sm flex items-center gap-0.5 shrink-0">
-                                    <Trophy className="w-2.5 h-2.5" /> LEGENDARY
+                                    <Trophy className="w-2.5 h-2.5" /> 傳奇大獎
                                 </Badge>
                                 <span className="text-[10px] text-amber-200/70 font-mono flex items-center gap-1 shrink-0">
                                     <Clock className="w-2.5 h-2.5 text-amber-400" />
@@ -224,7 +224,7 @@ export function HallOfFameMarquee() {
                 <DialogContent className="bg-slate-950/95 backdrop-blur-2xl border-amber-500/40 text-white rounded-3xl p-5 sm:p-6 max-w-md w-11/12 mx-auto shadow-[0_0_60px_rgba(245,158,11,0.25)]">
                     <DialogHeader className="space-y-2 text-left border-b border-amber-500/20 pb-3">
                         <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-300 text-xs font-black w-fit">
-                            <Crown className="w-3.5 h-3.5 text-amber-400" /> LEGENDARY HALL OF FAME
+                            <Crown className="w-3.5 h-3.5 text-amber-400" /> 傳奇名人堂認證
                         </div>
                         <DialogTitle className="text-lg sm:text-xl font-black text-amber-200 leading-snug">
                             {selectedItem?.prize}

@@ -113,11 +113,6 @@ export default function Home() {
                   <Megaphone className="w-5 h-5" />
                 </div>
                 <div className="min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span className="text-[10px] font-black text-amber-300 bg-amber-500/15 px-2 py-0.5 rounded-md border border-amber-500/30 tracking-widest uppercase font-mono">
-                      SYSTEM ANNOUNCEMENT
-                    </span>
-                  </div>
                   <p className="text-slate-200 font-bold text-xs sm:text-sm leading-snug truncate">{systemConfig.announcement}</p>
                 </div>
               </div>
@@ -163,14 +158,9 @@ export default function Home() {
                 <Flame className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 animate-pulse" />
               </div>
               <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-base sm:text-lg font-black font-headline text-white tracking-widest">
-                    熱門推薦卡池
-                  </h2>
-                  <span className="text-[10px] font-mono font-bold text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/30">
-                    HOT PICKS
-                  </span>
-                </div>
+                <h2 className="text-base sm:text-lg font-black font-headline tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-100 to-yellow-400 drop-shadow-[0_0_12px_rgba(245,158,11,0.3)]">
+                  熱門推薦卡池
+                </h2>
                 <p className="text-[11px] text-slate-400 hidden sm:block">頂級球員卡即時開包 · 公平公正透明</p>
               </div>
             </div>
@@ -203,11 +193,8 @@ export default function Home() {
                   <Target className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
                 <div>
-                  <h2 className="text-sm sm:text-base font-black font-headline text-white tracking-wider flex items-center gap-2">
-                    <span>賽事預測專區</span>
-                    <span className="text-[9px] font-mono text-orange-300 bg-orange-500/10 px-2 py-0.5 rounded-full border border-orange-500/20">
-                      LIVE
-                    </span>
+                  <h2 className="text-sm sm:text-base font-black font-headline tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-amber-200 to-yellow-400 drop-shadow-[0_0_10px_rgba(249,115,22,0.3)]">
+                    賽事預測專區
                   </h2>
                 </div>
               </div>
@@ -223,11 +210,8 @@ export default function Home() {
                   <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
                 <div>
-                  <h2 className="text-sm sm:text-base font-black font-headline text-white tracking-wider flex items-center gap-2">
-                    <span>卡展行事曆</span>
-                    <span className="text-[9px] font-mono text-cyan-300 bg-cyan-500/10 px-2 py-0.5 rounded-full border border-cyan-500/20">
-                      EVENTS
-                    </span>
+                  <h2 className="text-sm sm:text-base font-black font-headline tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-200 to-blue-400 drop-shadow-[0_0_10px_rgba(6,182,212,0.3)]">
+                    卡展行事曆
                   </h2>
                 </div>
               </div>
@@ -254,14 +238,9 @@ export default function Home() {
                         <Newspaper className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
                     </div>
                     <div>
-                        <div className="flex items-center gap-2">
-                            <h2 className="text-base sm:text-lg font-black font-headline text-white tracking-widest">
-                                最新消息中心
-                            </h2>
-                            <span className="text-[10px] font-mono font-bold text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/30">
-                                NEWS
-                            </span>
-                        </div>
+                        <h2 className="text-base sm:text-lg font-black font-headline tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-100 to-yellow-400 drop-shadow-[0_0_12px_rgba(245,158,11,0.3)]">
+                            最新消息中心
+                        </h2>
                         <p className="text-[11px] text-slate-400 hidden sm:block">官方即時資訊 · 活動快訊與公告</p>
                     </div>
                 </div>
@@ -349,10 +328,6 @@ export default function Home() {
           <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-blue-500/10 rounded-full blur-[100px] pointer-events-none" />
 
           <div className="text-center mb-10 sm:mb-12 space-y-3 relative z-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-mono font-bold tracking-[0.25em] uppercase backdrop-blur-md">
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              <span>OUR ADVANTAGES & COMMITMENT</span>
-            </div>
             <h2 className="text-2xl sm:text-4xl font-black font-headline tracking-tight text-white">
               為什麼選擇 <span className="bg-clip-text text-transparent bg-gradient-to-r from-amber-300 via-amber-400 to-yellow-500">P+Carder</span>
             </h2>
@@ -367,7 +342,6 @@ export default function Home() {
                 title: '公開透明存證', 
                 desc: '每一張核心卡片皆經數位存證，確保來源真實、所有權明確，打造最讓人放心的收藏環境。', 
                 icon: ShieldCheck, 
-                tag: 'VERIFIED',
                 color: 'text-amber-400',
                 border: 'group-hover:border-amber-500/50',
                 iconBg: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
@@ -377,7 +351,6 @@ export default function Home() {
                 title: '公平機率披露', 
                 desc: '絕不隱藏真實資訊，所有卡池機率完全公開披露，讓每一次抽卡都憑實力與運氣，回歸遊玩初衷。', 
                 icon: Target, 
-                tag: 'FAIR PLAY',
                 color: 'text-cyan-400',
                 border: 'group-hover:border-cyan-500/50',
                 iconBg: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
@@ -387,7 +360,6 @@ export default function Home() {
                 title: '即時互動體驗', 
                 desc: '打破實體卡片的侷限，隨時隨地享受極具張力的數位開包效果，將收藏熱忱轉化為指尖的極致快感。', 
                 icon: Zap, 
-                tag: 'REAL-TIME',
                 color: 'text-pink-400',
                 border: 'group-hover:border-pink-500/50',
                 iconBg: 'bg-pink-500/10 text-pink-400 border-pink-500/20',
@@ -397,7 +369,6 @@ export default function Home() {
                 title: '專屬藏友社群', 
                 desc: '透過團拆與互動競技，與志同道合的藏友並肩遊玩，交流珍稀卡片，建立屬於你的球員卡核心交友圈。', 
                 icon: Users2, 
-                tag: 'COMMUNITY',
                 color: 'text-emerald-400',
                 border: 'group-hover:border-emerald-500/50',
                 iconBg: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
@@ -417,9 +388,6 @@ export default function Home() {
                     <div className={cn("p-3 rounded-xl border shadow-inner transition-transform duration-300 group-hover:scale-110", item.iconBg)}>
                       <item.icon className="w-5 h-5" />
                     </div>
-                    <span className="text-[9px] font-mono font-bold tracking-widest text-slate-400 bg-slate-950/80 border border-slate-800 px-2 py-0.5 rounded-full">
-                      {item.tag}
-                    </span>
                   </div>
                   <h3 className="text-base sm:text-lg font-black text-white mb-2.5 group-hover:text-amber-300 transition-colors font-headline tracking-wide">
                     {item.title}
@@ -443,10 +411,9 @@ export default function Home() {
       <section className="container pb-12 sm:pb-20 px-3 sm:px-4 max-w-7xl mx-auto text-white">
         <div className="relative p-6 sm:p-10 rounded-3xl bg-slate-950/50 border border-slate-800/60 backdrop-blur-xl overflow-hidden">
           <div className="text-center mb-8 space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-mono font-bold tracking-[0.25em] uppercase">
-              <span>TRUSTED BY INDUSTRY LEADERS</span>
-            </div>
-            <h2 className="text-xl sm:text-3xl font-black font-headline tracking-tight text-white">我們的合作夥伴</h2>
+            <h2 className="text-xl sm:text-3xl font-black font-headline tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-100 to-yellow-400 drop-shadow-[0_0_15px_rgba(245,158,11,0.25)]">
+              我們的合作夥伴
+            </h2>
             <p className="text-xs text-slate-400 font-medium">與頂級卡牌品牌與知名同好團隊攜手合作</p>
           </div>
           

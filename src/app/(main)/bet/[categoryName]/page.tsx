@@ -372,13 +372,6 @@ export default function BettingCategoryPage() {
                     
                     <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
                         <div className="space-y-3 text-center md:text-left">
-                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/15 border border-cyan-500/30">
-                                <Sparkles className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
-                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-300">
-                                    THEME POOL
-                                </span>
-                            </div>
-
                             <h1 className="font-headline text-2xl sm:text-4xl md:text-5xl font-black text-white tracking-tight">
                                 {currentCategoryInfo?.name || decodedCategory}
                             </h1>

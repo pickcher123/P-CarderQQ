@@ -8,8 +8,7 @@ import {
   NavBetIcon, 
   NavLuckyBagIcon, 
   NavGroupBreakIcon, 
-  NavCollectionIcon, 
-  NavVipIcon 
+  NavCollectionIcon 
 } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from 'react';
@@ -58,15 +57,6 @@ const navLinks = [
     activeColor: "text-sky-300 drop-shadow-[0_0_10px_rgba(125,211,252,0.7)]", 
     activeBg: "bg-sky-500/15 border-sky-400/30 text-sky-200 shadow-[0_0_12px_rgba(14,165,233,0.25)]",
     dotColor: "bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,0.9)]" 
-  },
-  { 
-    href: '/vip', 
-    label: 'VIP', 
-    icon: NavVipIcon, 
-    activeColor: "text-amber-300 drop-shadow-[0_0_12px_rgba(253,224,71,0.9)]", 
-    activeBg: "bg-gradient-to-b from-amber-500/20 to-yellow-500/10 border-amber-400/40 text-amber-200 shadow-[0_0_14px_rgba(251,191,36,0.35)]",
-    dotColor: "bg-gradient-to-r from-amber-400 to-yellow-300 shadow-[0_0_10px_rgba(251,191,36,1)]",
-    isVip: true 
   },
 ];
 

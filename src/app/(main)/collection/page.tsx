@@ -612,19 +612,10 @@ export default function CollectionPage() {
                     <ArrowLeft className="w-3.5 h-3.5 text-cyan-400" />
                     <span>返回</span>
                   </Button>
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 text-[10px] font-black uppercase tracking-wider">
-                    <Library className="w-3 h-3" />
-                    <span>DIGITAL VAULT • 數位保險庫</span>
-                  </div>
-                  {hasFreeShipping && (
-                    <Badge className="bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black text-[10px] px-2 py-0.5 border-none shadow-sm">
-                      ✨ VIP 免運尊榮特權
-                    </Badge>
-                  )}
                 </div>
 
-                <h1 className="font-headline text-2xl sm:text-4xl font-black text-white tracking-tight leading-none">
-                  我的<span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-200 to-amber-300">卡牌收藏庫</span>
+                <h1 className="font-headline text-2xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-200 to-amber-300 drop-shadow-[0_0_20px_rgba(6,182,212,0.4)] tracking-tight leading-none">
+                  我的卡牌收藏庫
                 </h1>
 
                 <p className="text-xs sm:text-sm text-slate-400 font-medium leading-relaxed">

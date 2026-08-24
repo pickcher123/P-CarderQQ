@@ -141,12 +141,7 @@ export default function DrawPage() {
         
         {/* 頂部 Header & 規則按鈕 */}
         <div className="relative z-20 mb-4 sm:mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2 bg-slate-900/80 border border-white/10 px-3 py-1 rounded-full text-xs font-bold text-slate-300">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>機台在線 · 公平開包</span>
-            </div>
-
+          <div className="flex items-center justify-end mb-3">
             <Dialog>
                 <DialogTrigger asChild>
                     <Button variant="outline" size="sm" className="h-8 sm:h-9 px-3 sm:px-4 rounded-full border-white/10 bg-slate-900/80 backdrop-blur-md hover:bg-amber-500/15 hover:border-amber-500/40 text-slate-200 hover:text-white font-bold transition-all gap-1.5 text-xs shadow-md">
@@ -157,8 +152,8 @@ export default function DrawPage() {
                 <DialogContent className="rounded-3xl bg-[#0b0f19]/95 backdrop-blur-2xl border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.8)] max-w-lg">
                     <DialogHeader>
                         <DialogTitle className="text-xl sm:text-2xl font-black font-headline text-white tracking-widest flex items-center gap-2">
-                          <span className="text-amber-400">RULES</span>
-                          <span>OF ENGAGEMENT</span>
+                          <span className="text-amber-400">抽卡</span>
+                          <span>遊戲規則說明</span>
                         </DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4 text-sm text-slate-300 leading-relaxed py-2">
@@ -192,8 +187,8 @@ export default function DrawPage() {
           </div>
 
           <div className="text-center">
-            <h1 className="font-headline text-2xl sm:text-4xl font-black tracking-wider text-white">
-              頂級<span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-100 to-cyan-400">抽卡專區</span>
+            <h1 className="font-headline text-2xl sm:text-4xl md:text-5xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-100 to-cyan-400 drop-shadow-[0_0_25px_rgba(245,158,11,0.35)]">
+              頂級抽卡專區
             </h1>
           </div>
         </div>
@@ -210,11 +205,8 @@ export default function DrawPage() {
                     <Disc3 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin-slow" />
                 </div>
                 <div>
-                    <h2 className="text-sm sm:text-lg font-black font-headline text-white tracking-widest flex items-center gap-2">
+                    <h2 className="text-sm sm:text-lg font-black font-headline tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-100 to-yellow-400 drop-shadow-[0_0_12px_rgba(245,158,11,0.3)] flex items-center gap-2">
                         <span>選擇主題卡池</span>
-                        <span className="text-[9px] sm:text-[10px] font-mono font-bold text-amber-300/90 bg-amber-500/15 px-2 py-0.5 rounded-full border border-amber-500/30">
-                            THEMES
-                        </span>
                     </h2>
                 </div>
             </div>
@@ -235,59 +227,44 @@ export default function DrawPage() {
             {!finalIsLoading && categoriesWithCounts.map((category, index) => {
                 const name = category.name || '';
                 let theme = {
-                    en: 'SPECIAL',
                     glow: 'hover:shadow-[0_8px_25px_rgba(168,85,247,0.25)]',
                     border: 'border-purple-500/30 hover:border-purple-400/80',
-                    badgeBg: 'bg-purple-950/80 text-purple-300 border-purple-500/40',
                     accentText: 'group-hover:text-purple-300',
                     gradient: 'from-purple-950/60 via-slate-950/40 to-transparent',
                     ringColor: 'from-purple-500/40 to-indigo-500/10',
-                    icon: '✨',
                 };
 
                 if (name.includes('籃球') || name.toLowerCase().includes('nba')) {
                     theme = {
-                        en: 'BASKETBALL',
                         glow: 'hover:shadow-[0_8px_25px_rgba(249,115,22,0.25)]',
                         border: 'border-orange-500/30 hover:border-orange-400/80',
-                        badgeBg: 'bg-orange-950/80 text-orange-300 border-orange-500/40',
                         accentText: 'group-hover:text-orange-400',
                         gradient: 'from-orange-950/60 via-slate-950/40 to-transparent',
                         ringColor: 'from-orange-500/40 to-amber-500/10',
-                        icon: '🏀',
                     };
                 } else if (name.includes('足球') || name.toLowerCase().includes('fifa')) {
                     theme = {
-                        en: 'FOOTBALL',
                         glow: 'hover:shadow-[0_8px_25px_rgba(16,185,129,0.25)]',
                         border: 'border-emerald-500/30 hover:border-emerald-400/80',
-                        badgeBg: 'bg-emerald-950/80 text-emerald-300 border-emerald-500/40',
                         accentText: 'group-hover:text-emerald-400',
                         gradient: 'from-emerald-950/60 via-slate-950/40 to-transparent',
                         ringColor: 'from-emerald-500/40 to-teal-500/10',
-                        icon: '⚽',
                     };
                 } else if (name.includes('棒球') || name.toLowerCase().includes('mlb')) {
                     theme = {
-                        en: 'BASEBALL',
                         glow: 'hover:shadow-[0_8px_25px_rgba(59,130,246,0.25)]',
                         border: 'border-blue-500/30 hover:border-blue-400/80',
-                        badgeBg: 'bg-blue-950/80 text-blue-300 border-blue-500/40',
                         accentText: 'group-hover:text-cyan-300',
                         gradient: 'from-blue-950/60 via-slate-950/40 to-transparent',
                         ringColor: 'from-blue-500/40 to-cyan-500/10',
-                        icon: '⚾',
                     };
                 } else if (name.includes('寶可夢') || name.toLowerCase().includes('pokemon') || name.toLowerCase().includes('ptcg')) {
                     theme = {
-                        en: 'POKÉMON',
                         glow: 'hover:shadow-[0_8px_25px_rgba(234,179,8,0.25)]',
                         border: 'border-yellow-500/30 hover:border-yellow-400/80',
-                        badgeBg: 'bg-yellow-950/80 text-yellow-300 border-yellow-500/40',
                         accentText: 'group-hover:text-yellow-300',
                         gradient: 'from-yellow-950/60 via-slate-950/40 to-transparent',
                         ringColor: 'from-yellow-500/40 to-amber-500/10',
-                        icon: '⚡',
                     };
                 }
 
@@ -318,17 +295,9 @@ export default function DrawPage() {
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-slate-950/20 group-hover:via-slate-950/40 transition-colors duration-300" />
                         <div className={cn("absolute inset-0 bg-gradient-to-tr opacity-20 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none", theme.gradient)} />
 
-                        {/* 頂部標籤列 */}
-                        <div className="absolute top-2 sm:top-2.5 inset-x-2 sm:inset-x-2.5 flex items-center justify-between z-10 gap-1">
-                            <span className={cn(
-                                "text-[9px] sm:text-[10px] font-black tracking-wider px-1.5 sm:px-2 py-0.5 rounded-md border backdrop-blur-md flex items-center gap-1 shrink-0",
-                                theme.badgeBg
-                            )}>
-                                <span>{theme.icon}</span>
-                                <span className="font-mono">{theme.en}</span>
-                            </span>
-
-                            <span className="text-[9px] sm:text-[10px] font-mono text-slate-300 bg-black/70 backdrop-blur-md px-1.5 sm:px-2 py-0.5 rounded-md border border-white/10 shrink-0">
+                        {/* 頂部標籤列 (顯示卡池數量) */}
+                        <div className="absolute top-2 sm:top-2.5 inset-x-2 sm:inset-x-2.5 flex items-center justify-end z-10">
+                            <span className="text-[9px] sm:text-[10px] font-mono font-bold text-slate-300 bg-black/75 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/15 shrink-0 shadow-sm">
                                 {category.poolCount} 款
                             </span>
                         </div>
@@ -371,8 +340,8 @@ export default function DrawPage() {
                                 <h2 className="text-base sm:text-lg font-black font-headline text-white tracking-widest">
                                     全部卡池
                                 </h2>
-                                <span className="text-[10px] font-mono font-bold text-cyan-300 bg-cyan-500/10 px-2 py-0.5 rounded-full border border-cyan-500/30">
-                                    {allPools.length} POOLS
+                                <span className="text-[10px] font-bold text-cyan-300 bg-cyan-500/10 px-2 py-0.5 rounded-full border border-cyan-500/30">
+                                    共 {allPools.length} 款
                                 </span>
                             </div>
                             <p className="text-[11px] text-slate-400 hidden sm:block">即時連線機台 · 公平公正透明抽取</p>

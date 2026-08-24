@@ -145,12 +145,8 @@ export default function DrawCategoryPage() {
 
             {/* 置中標題區塊 */}
             <div className="text-center mb-8 md:mb-12 relative z-10 space-y-3">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-bold tracking-[0.3em] uppercase animate-fade-in-up">
-                    <Sparkles className="w-3 h-3 text-amber-400 animate-pulse" /> THEME POOLS
-                </div>
-                
                 <div className="flex items-center justify-center animate-fade-in-up">
-                    <h1 className="font-headline text-3xl sm:text-5xl md:text-6xl font-black tracking-wider text-white drop-shadow-[0_0_20px_rgba(245,158,11,0.3)]">
+                    <h1 className="font-headline text-3xl sm:text-5xl md:text-6xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-100 to-amber-400 drop-shadow-[0_0_25px_rgba(245,158,11,0.35)]">
                         {isLoadingCategory ? <Skeleton className="h-12 w-48 mx-auto" /> : (categoryData?.name || decodeURIComponent(categoryId))}
                     </h1>
                 </div>

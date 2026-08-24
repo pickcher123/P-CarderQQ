@@ -108,16 +108,11 @@ function NewsPageContent() {
 
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div className="space-y-3">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-mono font-bold tracking-widest uppercase backdrop-blur-md">
-                <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-                <span>OFFICIAL ANNOUNCEMENTS & UPDATES</span>
-              </div>
-
               <h1 className="font-headline text-3xl sm:text-5xl font-black tracking-tight text-white flex items-center gap-3">
                 <span className="p-2.5 rounded-2xl bg-gradient-to-br from-amber-400/20 to-amber-600/20 border border-amber-500/30 text-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.2)]">
                   <Newspaper className="h-6 w-6 sm:h-8 sm:w-8" />
                 </span>
-                <span className="bg-clip-text text-transparent bg-gradient-to-b from-white via-slate-100 to-amber-200/80">
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-amber-300 via-yellow-100 to-amber-400 drop-shadow-[0_0_20px_rgba(245,158,11,0.35)]">
                   最新消息中心
                 </span>
               </h1>

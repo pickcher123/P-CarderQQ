@@ -23,7 +23,7 @@ const navLinks = [
   { href: '/lucky-bags', label: '福袋', icon: LuckyBagIcon, color: "text-accent" },
   { href: '/group-break', label: '團拆', icon: Users2, color: "text-green-400" },
   { href: '/collection', label: '收藏庫', icon: Library, color: "text-primary/70" },
-  { href: '/vip', label: 'VIP', icon: Crown, color: "text-accent" },
+  { href: '/profile', label: '會員中心', icon: Crown, color: "text-accent" },
   { href: '/about', label: '關於我們', icon: Info, color: "text-slate-400" },
 ];
 
@@ -82,7 +82,7 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                   <Icon className={cn(
                     "h-4 w-4 transition-all duration-300", 
                     isActive ? link.color : "text-muted-foreground",
-                    link.href === '/vip' && isActive && "fill-accent/20"
+                    link.href === '/profile' && isActive && "fill-accent/20"
                   )} />
                   {link.label}
                 </Link>
@@ -242,7 +242,7 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
 
                     <DropdownMenuContent className="min-w-[220px] p-2 bg-[#090d19]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.85)]" align="end" sideOffset={8}>
                       {/* 用戶資訊 Header */}
-                      <DropdownMenuLabel className="font-normal p-2.5 pb-3">
+                      <DropdownMenuLabel className="font-normal p-2.5 pb-2">
                           <div className="flex items-center gap-3">
                               <div className={cn(
                                 "w-10 h-10 rounded-full flex items-center justify-center border p-0.5 shrink-0",
@@ -268,18 +268,6 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                                   </div>
                               </div>
                           </div>
-
-                          {/* 餘額快覽 */}
-                          <div className="mt-2.5 grid grid-cols-2 gap-1.5 p-1.5 rounded-xl bg-slate-900/60 border border-white/[0.06] text-center">
-                            <div className="flex flex-col items-center">
-                              <span className="text-[9px] text-slate-400 flex items-center gap-0.5"><DiamondIcon className="w-2.5 h-2.5" /> 鑽石</span>
-                              <span className="text-[11px] font-mono font-bold text-cyan-300">{(userProfile?.points ?? 0).toLocaleString()}</span>
-                            </div>
-                            <div className="flex flex-col items-center border-l border-white/10">
-                              <span className="text-[9px] text-slate-400 flex items-center gap-0.5"><PPlusIcon className="w-2.5 h-2.5 text-amber-400" /> P+ 點</span>
-                              <span className="text-[11px] font-mono font-bold text-amber-300">{(userProfile?.bonusPoints ?? 0).toLocaleString()}</span>
-                            </div>
-                          </div>
                       </DropdownMenuLabel>
 
                       <DropdownMenuSeparator className="bg-white/10" />
@@ -295,12 +283,6 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                           )}
                           <DropdownMenuItem asChild className="rounded-xl cursor-pointer text-slate-200 focus:bg-white/10">
                               <Link href="/profile" className="font-medium"><User className="mr-2.5 h-4 w-4 text-cyan-400" />會員中心</Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild className="rounded-xl cursor-pointer text-slate-200 focus:bg-white/10">
-                              <Link href="/collection" className="font-medium"><Library className="mr-2.5 h-4 w-4 text-sky-400" />我的收藏庫</Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild className="rounded-xl cursor-pointer text-slate-200 focus:bg-white/10">
-                              <Link href="/lucky-bags" className="font-medium"><LuckyBagIcon className="mr-2.5 h-4 w-4 text-amber-400" />福袋中心</Link>
                           </DropdownMenuItem>
                           <DropdownMenuItem asChild className="rounded-xl cursor-pointer text-slate-200 focus:bg-white/10 md:hidden">
                               <Link href="/about" className="font-medium"><Info className="mr-2.5 h-4 w-4 text-slate-400" />關於 P+Carder</Link>
