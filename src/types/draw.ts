@@ -43,4 +43,4 @@ export interface CardPool {
 
 export type DrawnPrize = (Card & { rarity: Rarity; type: 'card' | 'last-prize'; serialNumber?: string }) | (PointPrize & { type: 'points'; rarity: Rarity });
 
-export type Step = 'init-loading' | 'waiting-to-start' | 'loading' | 'ready-to-reveal' | 'revealing' | 'done' | 'error';
+export type Step = 'init-loading' | 'waiting-to-start' | 'loading' | 'summoning' | 'ready-to-reveal' | 'revealing' | 'done' | 'error';

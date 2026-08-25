@@ -23,8 +23,6 @@ const navLinks = [
   { href: '/lucky-bags', label: '福袋', icon: LuckyBagIcon, color: "text-accent" },
   { href: '/group-break', label: '團拆', icon: Users2, color: "text-green-400" },
   { href: '/collection', label: '收藏庫', icon: Library, color: "text-primary/70" },
-  { href: '/profile', label: '會員中心', icon: Crown, color: "text-accent" },
-  { href: '/about', label: '關於我們', icon: Info, color: "text-slate-400" },
 ];
 
 export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) {
@@ -284,8 +282,8 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                           <DropdownMenuItem asChild className="rounded-xl cursor-pointer text-slate-200 focus:bg-white/10">
                               <Link href="/profile" className="font-medium"><User className="mr-2.5 h-4 w-4 text-cyan-400" />會員中心</Link>
                           </DropdownMenuItem>
-                          <DropdownMenuItem asChild className="rounded-xl cursor-pointer text-slate-200 focus:bg-white/10 md:hidden">
-                              <Link href="/about" className="font-medium"><Info className="mr-2.5 h-4 w-4 text-slate-400" />關於 P+Carder</Link>
+                          <DropdownMenuItem asChild className="rounded-xl cursor-pointer text-slate-200 focus:bg-white/10">
+                              <Link href="/about" className="font-medium"><Info className="mr-2.5 h-4 w-4 text-slate-400" />關於我們</Link>
                           </DropdownMenuItem>
                       </div>
 

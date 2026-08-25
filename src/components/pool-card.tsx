@@ -586,9 +586,6 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                     <h2 className="text-base sm:text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-sky-200 to-fuchsia-300 tracking-wider font-headline">
                                         卡池完整清冊
                                     </h2>
-                                    <span className="text-[11px] font-mono text-cyan-300 bg-cyan-950/80 px-2.5 py-0.5 rounded-full border border-cyan-500/30">
-                                        剩餘 {pool.remainingPacks ?? 0} / {pool.totalPacks ?? 0} 包
-                                    </span>
                                 </div>
                             </div>
                             <Button 
@@ -609,10 +606,6 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                     className="relative overflow-hidden border-2 p-3 sm:p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-purple-500/10 to-slate-950 border-amber-400/60 shadow-[0_0_25px_rgba(245,158,11,0.2)] flex flex-col sm:flex-row items-center gap-3 sm:gap-5 cursor-pointer hover:scale-[1.01] transition-all group/last"
                                     onClick={() => setPreviewCard({ ...lastPrizeCard, rarity: 'legendary' })}
                                 >
-                                    <div className="absolute top-2 right-2 z-20 px-2.5 py-0.5 rounded-full bg-slate-950/90 border border-amber-400/80 text-amber-300 text-[9px] sm:text-[10px] font-black uppercase tracking-widest flex items-center gap-1 shadow-lg backdrop-blur-md">
-                                        <Trophy className="w-3 h-3 text-amber-400 shrink-0" />
-                                        <span>LAST PRIZE</span>
-                                    </div>
                                     <div className="relative z-10 w-20 sm:w-24 aspect-[2.5/3.5] rounded-xl overflow-hidden border-2 border-amber-400/60 p-0 bg-slate-950 shrink-0 shadow-lg group-hover/last:border-amber-300 mt-1 sm:mt-0">
                                         <SafeImage src={lastPrizeCard.imageUrl} alt="lp" sizes="120px" fill className="object-cover rounded-lg" />
                                     </div>

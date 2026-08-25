@@ -18,8 +18,10 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { FirebaseError } from 'firebase/app';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Loader2, Sparkles, ShieldCheck, LogIn, CheckCircle2, Terminal } from 'lucide-react';
+import { Loader2, Sparkles, ShieldCheck, LogIn, CheckCircle2, Terminal, Mail, Lock, ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Logo } from '@/components/icons';
+import Link from 'next/link';
 
 // Simple Google Icon SVG
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -244,104 +246,227 @@ export default function LoginPage() {
   const [isRegistering, setIsRegistering] = useState(false);
 
   return (
-    <div className="relative min-h-screen flex flex-col items-center pt-8 px-4 bg-background text-foreground font-mono overflow-hidden">
-      {/* 掃描線效果 */}
-      <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,255,255,0.06),rgba(0,255,255,0.02),rgba(255,0,255,0.06))] z-50 bg-[length:100%_4px,3px_100%] opacity-20" />
-      
-      {/* 背景光暈 */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/20 rounded-full blur-[150px] pointer-events-none animate-pulse" />
+    <div className="min-h-[100dvh] w-full flex flex-col justify-center items-center p-3.5 sm:p-6 relative overflow-hidden bg-[#060913] text-white">
+      {/* Background Ambience */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#06b6d408_1px,transparent_1px),linear-gradient(to_bottom,#06b6d408_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none opacity-60" />
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 sm:w-96 h-72 sm:h-96 bg-cyan-500/15 rounded-full blur-[100px] pointer-events-none" />
 
-      <div className="w-full max-w-[400px] relative z-10 space-y-8 animate-in fade-in zoom-in duration-500 pt-16">
-        <div className="text-center space-y-1">
-            <h1 className="text-6xl font-black tracking-tighter text-primary drop-shadow-[0_0_15px_rgba(6,182,212,0.8)]">P+Carder</h1>
-            <p className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase">初始化收藏協議</p>
+      {/* Main Container - Compact Single Screen */}
+      <div className="w-full max-w-[380px] relative z-10 my-auto flex flex-col items-center">
+        
+        {/* Brand Header */}
+        <div className="text-center space-y-1 mb-4 sm:mb-5">
+          <div className="inline-flex items-center justify-center hover:opacity-90 transition-opacity">
+            <Logo className="h-9 sm:h-11 w-auto" />
+          </div>
+          <p className="text-[11px] sm:text-xs text-slate-400 font-medium tracking-wide">
+            登入以存取您的收藏庫與即時資產
+          </p>
         </div>
 
-        <Card className="bg-card/80 border-border rounded-none shadow-md p-6">
-            <CardContent className="p-0 space-y-6">
-                <Button 
-                    variant="outline" 
-                    className="w-full h-14 rounded-none border-primary/50 text-primary hover:bg-primary/20 transition-all font-mono font-bold text-sm" 
-                    onClick={handleGoogleLogin} 
-                    disabled={isLoading}
-                >
-                    <GoogleIcon className="mr-3 h-6 w-6"/>
-                    使用 Google 登入
-                </Button>
+        {/* Auth Card */}
+        <Card className="w-full border-cyan-500/25 bg-slate-900/90 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.85)] rounded-2xl overflow-hidden border">
+          <CardContent className="p-4 sm:p-5 space-y-3 sm:space-y-3.5">
+            
+            {/* Google Sign-in Button */}
+            <Button 
+              variant="outline" 
+              className="w-full h-10.5 sm:h-11 rounded-xl bg-white text-slate-950 hover:bg-slate-100 border-none font-bold text-xs sm:text-sm shadow-md flex items-center justify-center gap-2.5 transition-all active:scale-[0.98] cursor-pointer"
+              onClick={handleGoogleLogin} 
+              disabled={isLoading}
+            >
+              <GoogleIcon className="h-4 w-4 shrink-0" />
+              <span>使用 Google 快速登入</span>
+            </Button>
 
-                <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t border-white/20" />
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-card px-3 text-muted-foreground font-mono tracking-widest">
-                            或
-                        </span>
-                    </div>
+            {/* Divider */}
+            <div className="relative flex items-center justify-center py-0.5">
+              <div className="w-full border-t border-white/10" />
+              <span className="bg-slate-900 px-3 text-[10px] uppercase font-mono tracking-widest text-slate-500 shrink-0">
+                或使用帳號密碼
+              </span>
+            </div>
+
+            {isRegistering ? (
+              <form onSubmit={handleRegister} className="space-y-2.5">
+                <div className="space-y-1">
+                  <Input 
+                    placeholder="使用者暱稱" 
+                    value={registerUsername} 
+                    onChange={(e) => setRegisterUsername(e.target.value)} 
+                    disabled={isLoading} 
+                    className="h-9.5 bg-slate-950/60 border-white/10 text-white placeholder:text-slate-500 rounded-xl text-xs sm:text-sm focus:border-cyan-400" 
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Input 
+                    type="email" 
+                    placeholder="電子郵件信箱" 
+                    value={registerEmail} 
+                    onChange={(e) => setRegisterEmail(e.target.value)} 
+                    disabled={isLoading} 
+                    className="h-9.5 bg-slate-950/60 border-white/10 text-white placeholder:text-slate-500 rounded-xl text-xs sm:text-sm focus:border-cyan-400" 
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Input 
+                    type="password" 
+                    placeholder="設定密碼 (至少6位)" 
+                    value={registerPassword} 
+                    onChange={(e) => setRegisterPassword(e.target.value)} 
+                    disabled={isLoading} 
+                    className="h-9.5 bg-slate-950/60 border-white/10 text-white placeholder:text-slate-500 rounded-xl text-xs sm:text-sm focus:border-cyan-400" 
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Input 
+                    type="password" 
+                    placeholder="再次確認密碼" 
+                    value={registerConfirmPassword} 
+                    onChange={(e) => setRegisterConfirmPassword(e.target.value)} 
+                    disabled={isLoading} 
+                    className="h-9.5 bg-slate-950/60 border-white/10 text-white placeholder:text-slate-500 rounded-xl text-xs sm:text-sm focus:border-cyan-400" 
+                  />
+                </div>
+                <Button 
+                  className="w-full h-10 rounded-xl font-black text-xs sm:text-sm bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 shadow-[0_0_20px_rgba(6,182,212,0.3)] transition-all active:scale-[0.98] cursor-pointer mt-1" 
+                  type="submit" 
+                  disabled={isLoading}
+                >
+                  {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <span>註冊新帳號</span>}
+                </Button>
+                <div className="text-center pt-1">
+                  <button 
+                    type="button" 
+                    onClick={() => setIsRegistering(false)} 
+                    className="text-xs text-slate-400 hover:text-white transition-colors cursor-pointer"
+                  >
+                    已有帳號？ <strong className="text-cyan-400 hover:underline">立即登入</strong>
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={handleLogin} className="space-y-2.5">
+                <div className="space-y-1">
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+                    <Input 
+                      type="email" 
+                      placeholder="電子郵件信箱" 
+                      value={loginEmail} 
+                      onChange={(e) => setLoginEmail(e.target.value)} 
+                      disabled={isLoading} 
+                      className="h-10 pl-9 bg-slate-950/60 border-white/10 text-white placeholder:text-slate-500 rounded-xl text-xs sm:text-sm focus:border-cyan-400" 
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+                    <Input 
+                      type="password" 
+                      placeholder="登入密碼" 
+                      value={loginPassword} 
+                      onChange={(e) => setLoginPassword(e.target.value)} 
+                      disabled={isLoading} 
+                      className="h-10 pl-9 bg-slate-950/60 border-white/10 text-white placeholder:text-slate-500 rounded-xl text-xs sm:text-sm focus:border-cyan-400" 
+                    />
+                  </div>
                 </div>
 
-                {isRegistering ? (
-                    <form onSubmit={handleRegister} className="space-y-4">
-                        <Input placeholder="使用者名稱" value={registerUsername} onChange={(e) => setRegisterUsername(e.target.value)} disabled={isLoading} className="h-12 bg-background border-input rounded-none text-sm" />
-                        <Input type="email" placeholder="電子郵件" value={registerEmail} onChange={(e) => setRegisterEmail(e.target.value)} disabled={isLoading} className="h-12 bg-background border-input rounded-none text-sm" />
-                        <Input type="password" placeholder="密碼" value={registerPassword} onChange={(e) => setRegisterPassword(e.target.value)} disabled={isLoading} className="h-12 bg-background border-input rounded-none text-sm" />
-                        <Input type="password" placeholder="確認密碼" value={registerConfirmPassword} onChange={(e) => setRegisterConfirmPassword(e.target.value)} disabled={isLoading} className="h-12 bg-background border-input rounded-none text-sm" />
-                        <Button className="w-full h-12 rounded-none font-black text-sm bg-primary text-primary-foreground hover:bg-primary/90" type="submit" disabled={isLoading}>註冊</Button>
-                        <p className="text-xs text-center text-muted-foreground">已有帳戶？ <button type="button" onClick={() => setIsRegistering(false)} className="text-primary hover:underline">立即登入</button></p>
-                    </form>
-                ) : (
-                    <form onSubmit={handleLogin} className="space-y-4">
-                        <Input type="email" placeholder="電子郵件" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} disabled={isLoading} className="h-12 bg-background border-input rounded-none text-sm" />
-                        <Input type="password" placeholder="密碼" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} disabled={isLoading} className="h-12 bg-background border-input rounded-none text-sm" />
-                        <Button className="w-full h-12 rounded-none font-black text-sm bg-primary text-primary-foreground hover:bg-primary/90" type="submit" disabled={isLoading}>登入</Button>
-                        <div className="flex justify-between items-center text-xs">
-                            <button type="button" onClick={() => setResetDialogOpen(true)} className="text-muted-foreground hover:text-primary">忘記密碼？</button>
-                            <button type="button" onClick={() => setIsRegistering(true)} className="text-primary hover:underline">註冊新帳戶</button>
-                        </div>
-                    </form>
-                )}
-            </CardContent>
+                <div className="flex justify-between items-center text-[11px] px-0.5 pt-0.5">
+                  <button 
+                    type="button" 
+                    onClick={() => setResetDialogOpen(true)} 
+                    className="text-slate-400 hover:text-cyan-400 transition-colors cursor-pointer"
+                  >
+                    忘記密碼？
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={() => setIsRegistering(true)} 
+                    className="text-cyan-400 hover:underline font-bold transition-colors cursor-pointer"
+                  >
+                    註冊新帳號
+                  </button>
+                </div>
+
+                <Button 
+                  className="w-full h-10 rounded-xl font-black text-xs sm:text-sm bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 shadow-[0_0_20px_rgba(6,182,212,0.3)] transition-all active:scale-[0.98] cursor-pointer mt-1" 
+                  type="submit" 
+                  disabled={isLoading}
+                >
+                  {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <span>登入帳號</span>}
+                </Button>
+              </form>
+            )}
+          </CardContent>
         </Card>
+
+        {/* Back to Home Link */}
+        <div className="mt-3.5 text-center">
+          <Link 
+            href="/"
+            className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition-colors"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>返回首頁</span>
+          </Link>
+        </div>
+
       </div>
 
-       <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
-        {/* Dialog content ... same as before ... */}
-        <DialogContent className="rounded-none bg-background border border-border p-8">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-black font-mono italic text-primary">重設安全金鑰</DialogTitle>
+      {/* Forgot Password Dialog */}
+      <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
+        <DialogContent className="max-w-[min(90vw,360px)] rounded-2xl bg-[#080d1a] border border-cyan-500/30 p-5 text-white">
+          <DialogHeader className="space-y-1 text-left pr-6">
+            <DialogTitle className="text-lg font-black font-headline text-white">重設密碼</DialogTitle>
+            <DialogDescription className="text-slate-400 text-xs">
+              輸入註冊時使用的電子郵件信箱，我們將寄送密碼重設連結給您。
+            </DialogDescription>
           </DialogHeader>
+
           {resetSent ? (
-            <div className="py-6 text-center space-y-4">
-              <div className="p-4 rounded-full bg-primary/20 border border-primary inline-block">
-                <CheckCircle2 className="h-12 w-12 text-primary" />
+            <div className="py-4 text-center space-y-3">
+              <div className="p-3 rounded-full bg-cyan-500/10 border border-cyan-500/30 inline-block text-cyan-400">
+                <CheckCircle2 className="h-8 w-8" />
               </div>
-              <p className="text-muted-foreground font-mono text-sm">重設密碼的郵件已寄至 <span className="font-bold text-foreground">{resetEmail}</span>，請檢查您的信箱。</p>
-              <Button variant="outline" onClick={() => setResetDialogOpen(false)} className="w-full h-12 rounded-none border-border bg-background text-muted-foreground hover:bg-muted">我知道了</Button>
+              <p className="text-slate-300 text-xs">
+                重設信件已發送至 <span className="font-bold text-cyan-300">{resetEmail}</span>，請前往您的信箱查看。
+              </p>
+              <Button 
+                variant="outline" 
+                onClick={() => setResetDialogOpen(false)} 
+                className="w-full h-10 rounded-xl border-white/10 bg-slate-900 text-white hover:bg-slate-800 text-xs"
+              >
+                我知道了
+              </Button>
             </div>
           ) : (
-            <form onSubmit={handlePasswordReset} className="space-y-6">
-              <DialogDescription className="text-muted-foreground font-mono text-xs">
-                請輸入您註冊時使用的電子郵件地址，我們會寄送一封包含重設連結的郵件給您。
-              </DialogDescription>
-              <div className="space-y-2">
-                <Label htmlFor="reset-email" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">
-                  電子郵件
+            <form onSubmit={handlePasswordReset} className="space-y-4 pt-1">
+              <div className="space-y-1.5">
+                <Label htmlFor="reset-email" className="text-xs font-semibold text-slate-300">
+                  電子信箱
                 </Label>
                 <Input
                   id="reset-email"
-                  placeholder="USER@DOMAIN.COM"
+                  placeholder="name@example.com"
                   type="email"
                   required
                   value={resetEmail}
                   onChange={(e) => setResetEmail(e.target.value)}
                   disabled={isResetting}
-                  className="h-12 bg-background border-input rounded-none focus:border-primary"
+                  className="h-10 bg-slate-950/60 border-white/10 text-white rounded-xl focus:border-cyan-400 text-sm"
                 />
               </div>
               <DialogFooter>
-                <Button type="submit" disabled={isResetting || !resetEmail} className="w-full h-14 rounded-none font-black bg-primary text-primary-foreground hover:bg-primary/90 border border-primary">
-                   {isResetting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  傳送重設金鑰
+                <Button 
+                  type="submit" 
+                  disabled={isResetting || !resetEmail} 
+                  className="w-full h-10.5 rounded-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 text-xs shadow-md"
+                >
+                  {isResetting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  發送重設密碼信件
                 </Button>
               </DialogFooter>
             </form>

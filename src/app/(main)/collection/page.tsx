@@ -593,27 +593,15 @@ export default function CollectionPage() {
         <div className="container px-3.5 sm:px-6 py-4 max-w-7xl mx-auto space-y-5 sm:space-y-7">
           
           {/* === TOP HERO / STATS HEADER === */}
-          <div className="relative rounded-2xl sm:rounded-3xl p-4 sm:p-7 overflow-hidden border border-cyan-500/20 bg-gradient-to-b from-slate-900/95 via-[#0b101f]/95 to-[#060913] shadow-[0_20px_50px_rgba(0,0,0,0.8)] backdrop-blur-2xl">
+          <div className="relative rounded-2xl sm:rounded-3xl p-5 sm:p-8 overflow-hidden border border-cyan-500/20 bg-gradient-to-b from-slate-900/95 via-[#0b101f]/95 to-[#060913] shadow-[0_20px_50px_rgba(0,0,0,0.8)] backdrop-blur-2xl">
             {/* Grid pattern background */}
             <div className="absolute inset-0 bg-[linear-gradient(to_right,#06b6d408_1px,transparent_1px),linear-gradient(to_bottom,#06b6d408_1px,transparent_1px)] bg-[size:28px_28px] opacity-70 pointer-events-none" />
             <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_15px_#22d3ee]" />
 
-            <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5">
+            <div className="relative z-10 flex flex-col items-center text-center justify-center gap-6">
               
-              {/* Left Title & Status */}
-              <div className="space-y-2 max-w-xl">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => router.back()}
-                    className="h-7 px-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 text-xs font-bold gap-1 active:scale-95 transition-all"
-                  >
-                    <ArrowLeft className="w-3.5 h-3.5 text-cyan-400" />
-                    <span>返回</span>
-                  </Button>
-                </div>
-
+              {/* Centered Title & Subtitle */}
+              <div className="space-y-2 max-w-2xl mx-auto text-center">
                 <h1 className="font-headline text-2xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-200 to-amber-300 drop-shadow-[0_0_20px_rgba(6,182,212,0.4)] tracking-tight leading-none">
                   我的卡牌收藏庫
                 </h1>
@@ -623,8 +611,8 @@ export default function CollectionPage() {
                 </p>
               </div>
 
-              {/* Right: Portfolio Live Stats */}
-              <div className="grid grid-cols-3 gap-2 sm:gap-3 w-full lg:w-auto shrink-0">
+              {/* Centered Portfolio Live Stats */}
+              <div className="grid grid-cols-3 gap-2.5 sm:gap-4 w-full max-w-lg mx-auto shrink-0">
                 {/* Total Cards Stat */}
                 <div className="p-3 rounded-xl sm:rounded-2xl bg-slate-900/90 border border-white/10 flex flex-col items-center justify-center text-center shadow-lg min-w-[95px] sm:min-w-[120px]">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">持有藏品</span>

@@ -2,6 +2,7 @@
 
 import { SafeImage } from '@/components/safe-image';
 import { useEffect, useState } from 'react';
+import { StarrySky } from '@/components/starry-sky';
 
 export function AnimatedBackground({ backgroundUrl, backgroundOpacity }: { backgroundUrl?: string | null, backgroundOpacity?: number }) {
   const opacity = backgroundOpacity ?? 1;
@@ -45,9 +46,12 @@ export function AnimatedBackground({ backgroundUrl, backgroundOpacity }: { backg
 
   return (
     <div 
-      className="fixed inset-0 -z-50 overflow-hidden bg-[#070b14] pointer-events-none w-screen min-h-screen"
+      className="fixed inset-0 -z-50 overflow-hidden bg-[#050811] pointer-events-none w-screen min-h-screen"
       style={containerStyle}
     >
+      {/* 夢幻星空粒子與星雲基底 */}
+      <StarrySky />
+
       {backgroundUrl ? (
         <SafeImage
           src={backgroundUrl}
@@ -59,9 +63,9 @@ export function AnimatedBackground({ backgroundUrl, backgroundOpacity }: { backg
           sizes="100vw"
         />
       ) : (
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-background/20 to-background/40" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#050811]/40 to-[#070b14]/80" />
       )}
-      <div className="absolute inset-0 bg-black/10 z-[-1]" />
+      <div className="absolute inset-0 bg-black/20 z-[-1]" />
     </div>
   );
 }

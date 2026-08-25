@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import * as VisuallyHiddenPrimitive from "@radix-ui/react-visually-hidden";
 import { Gem, Sparkles, Loader2, RotateCcw, ArrowLeft, PlayCircle, FastForward, Check, Disc3, RotateCw, Clock, ChevronsUp, X, ShieldCheck, Star, Trophy, Layers, Zap, AlertCircle, Ban, ChevronRight, Hash, Download } from 'lucide-react';
-import { PackPreview, RevealComponent, DrawResults, CelebrationVFX } from '@/components/draw';
+import { PackPreview, RevealComponent, DrawResults, CelebrationVFX, CloveSummoningAnimation } from '@/components/draw';
 import { rarityVisuals, pointPrizeRarityStyles } from '@/lib/draw-constants';
 import { drawFromPool } from '@/lib/draw-utils';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -241,7 +241,7 @@ export default function OpenPackPage() {
         setIsSqueezing(false);
         setShowCelebration('none');
         setLandingVFX('none');
-        setStep('ready-to-reveal');
+        setStep('summoning');
         toast({
             title: '🧪 免費試手氣模式啟動',
             description: '此為純模擬開獎體驗，完全未扣除點數，亦不會派發卡牌與扣減庫存！',
@@ -398,7 +398,7 @@ export default function OpenPackPage() {
                 setIsSqueezing(false);
                 setShowCelebration('none');
                 setLandingVFX('none');
-                setStep('ready-to-reveal');
+                setStep('summoning');
             }
 
         } catch (error: any) {
@@ -508,6 +508,19 @@ export default function OpenPackPage() {
                 <p className="text-muted-foreground">{step === 'loading' ? '正在從資料庫讀取卡包...' : error}</p>
                 {step === 'error' && <Button className="mt-6 rounded-xl font-bold px-10" asChild><Link href="/draw">返回抽卡</Link></Button>}
             </div>
+        );
+    }
+
+    if (step === 'summoning' && drawnPrizes.length > 0) {
+        return (
+            <CloveSummoningAnimation
+                highestRarity={topRarityCelebration}
+                drawCount={drawnPrizes.length}
+                poolName={cardPool?.name || '頂級卡包'}
+                onAnimationComplete={() => {
+                    setStep('ready-to-reveal');
+                }}
+            />
         );
     }
 

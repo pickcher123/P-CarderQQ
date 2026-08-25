@@ -112,11 +112,14 @@ function isPlainObject(obj: any): boolean {
  * Helper to safely clean objects for JSON serialization, handling circular references,
  * Firestore sentinels, DOM objects, and non-plain instances safely.
  */
-function deepCleanForJSON(obj: any, seen = new WeakSet(), depth = 0): any {
+function deepCleanForJSON(obj: any, seen = new Set(), depth = 0): any {
   if (obj === null || obj === undefined) return obj;
-  if (typeof obj !== 'object' && typeof obj !== 'function') return obj;
-  if (typeof obj === 'function') return '[Function]';
-  if (depth > 5) return '[DepthLimit]';
+  const t = typeof obj;
+  if (t === 'string' || t === 'number' || t === 'boolean') return obj;
+  if (t === 'bigint') return obj.toString();
+  if (t === 'symbol') return obj.toString();
+  if (t === 'function') return '[Function]';
+  if (depth > 4) return '[DepthLimit]';
 
   if (typeof window !== 'undefined') {
     try {
@@ -128,32 +131,37 @@ function deepCleanForJSON(obj: any, seen = new WeakSet(), depth = 0): any {
     }
   }
 
+  // Handle circular references using Set (supporting object identity)
   if (seen.has(obj)) {
     return '[Circular]';
   }
   try {
     seen.add(obj);
   } catch {
-    // In case object cannot be added to WeakSet
+    // If obj cannot be added to Set
   }
 
   if (obj instanceof Date) {
-    return obj.toISOString();
+    try {
+      return obj.toISOString();
+    } catch {
+      return String(obj);
+    }
   }
 
   if (obj instanceof Error) {
     return {
-      name: obj.name,
-      message: obj.message,
-      stack: typeof obj.stack === 'string' ? obj.stack.slice(0, 300) : undefined,
+      name: String(obj.name || 'Error'),
+      message: String(obj.message || ''),
+      stack: typeof obj.stack === 'string' ? obj.stack.slice(0, 200) : undefined,
     };
   }
 
   if (Array.isArray(obj)) {
-    return obj.map(item => deepCleanForJSON(item, seen, depth + 1));
+    return obj.slice(0, 50).map(item => deepCleanForJSON(item, seen, depth + 1));
   }
 
-  // Handle Firebase and special objects
+  // Handle Firebase DocumentReference, Timestamp, FieldValue sentinels
   try {
     if (typeof obj.path === 'string' && (obj.firestore || obj.id)) {
       return `[DocumentReference: ${obj.path}]`;
@@ -167,7 +175,16 @@ function deepCleanForJSON(obj: any, seen = new WeakSet(), depth = 0): any {
 
   // If this is a complex class instance or minified constructor (not a plain Object), do not deeply inspect internal engine fields
   if (!isPlainObject(obj)) {
-    const ctorName = obj.constructor?.name || 'Instance';
+    const ctorName = obj?.constructor?.name || 'Instance';
+    // If it has basic ID/name properties, extract only those
+    if (obj && typeof obj === 'object') {
+      const basicSummary: Record<string, any> = { _type: ctorName };
+      if (obj.id) basicSummary.id = String(obj.id);
+      if (obj.name) basicSummary.name = String(obj.name);
+      if (obj.code) basicSummary.code = String(obj.code);
+      if (obj.message) basicSummary.message = String(obj.message);
+      return basicSummary;
+    }
     return `[${ctorName}]`;
   }
 
@@ -191,7 +208,7 @@ function deepCleanForJSON(obj: any, seen = new WeakSet(), depth = 0): any {
 
 function safeStringify(obj: any, indent = 2): string {
   try {
-    const stringifySeen = new WeakSet();
+    const stringifySeen = new Set();
     const cleaned = deepCleanForJSON(obj);
     return (
       JSON.stringify(
@@ -201,7 +218,11 @@ function safeStringify(obj: any, indent = 2): string {
             if (stringifySeen.has(value)) {
               return '[Circular]';
             }
-            stringifySeen.add(value);
+            try {
+              stringifySeen.add(value);
+            } catch {
+              // ignore
+            }
           }
           return value;
         },
@@ -209,7 +230,7 @@ function safeStringify(obj: any, indent = 2): string {
       ) || '{}'
     );
   } catch {
-    return '{}';
+    return '{"error": "[SerializationFailed]"}';
   }
 }
 
