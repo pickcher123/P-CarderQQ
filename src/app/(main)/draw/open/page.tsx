@@ -479,8 +479,20 @@ export default function OpenPackPage() {
         setStep('done');
     };
 
+    const activeBackgroundUrl = '/draw_background.png';
+
     if (step === 'init-loading' || !isMounted) {
-        return <div className="flex h-screen items-center justify-center bg-background"><Loader2 className="animate-spin text-primary w-12 h-12" /></div>;
+        return (
+            <div 
+                className="flex h-screen items-center justify-center bg-background relative overflow-hidden"
+                style={{ backgroundImage: `url("${activeBackgroundUrl}")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
+            >
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-[5]" />
+                <div className="relative z-10">
+                    <Loader2 className="animate-spin text-primary w-12 h-12" />
+                </div>
+            </div>
+        );
     }
 
     if (step === 'waiting-to-start' && cardPool) {
@@ -490,23 +502,37 @@ export default function OpenPackPage() {
         const isLevelMet = userLevelIdx >= minLevelIdx;
         
         return (
-            <PackPreview 
-                cardPool={cardPool}
-                initialDrawCount={initialDrawCount}
-                isLevelMet={isLevelMet}
-                isLimitReachedForInitial={isLimitReachedForInitial}
-                isLoadingStats={isLoadingStats}
-                performDraw={(count) => performDraw(count)}
-            />
+            <div 
+                className="flex flex-col justify-between items-center h-[100dvh] min-h-[100dvh] w-full p-2 sm:p-4 relative overflow-hidden select-none" 
+                style={{ backgroundImage: `url("${activeBackgroundUrl}")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
+            >
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-[5]" />
+                <div className="relative z-10 w-full h-full flex flex-col justify-center items-center">
+                    <PackPreview 
+                        cardPool={cardPool}
+                        initialDrawCount={initialDrawCount}
+                        isLevelMet={isLevelMet}
+                        isLimitReachedForInitial={isLimitReachedForInitial}
+                        isLoadingStats={isLoadingStats}
+                        performDraw={(count) => performDraw(count)}
+                    />
+                </div>
+            </div>
         );
     }
 
     if (step === 'loading' || step === 'error') {
         return (
-            <div className="flex flex-col h-screen items-center justify-center p-6 text-white select-none">
-                <Loader2 className="animate-spin text-primary w-12 h-12 mb-4" />
-                <p className="text-muted-foreground">{step === 'loading' ? '正在從資料庫讀取卡包...' : error}</p>
-                {step === 'error' && <Button className="mt-6 rounded-xl font-bold px-10" asChild><Link href="/draw">返回抽卡</Link></Button>}
+            <div 
+                className="flex flex-col h-screen items-center justify-center p-6 text-white select-none relative overflow-hidden"
+                style={{ backgroundImage: `url("${activeBackgroundUrl}")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
+            >
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-[5]" />
+                <div className="relative z-10 flex flex-col items-center justify-center">
+                    <Loader2 className="animate-spin text-primary w-12 h-12 mb-4" />
+                    <p className="text-muted-foreground">{step === 'loading' ? '正在從資料庫讀取卡包...' : error}</p>
+                    {step === 'error' && <Button className="mt-6 rounded-xl font-bold px-10" asChild><Link href="/draw">返回抽卡</Link></Button>}
+                </div>
             </div>
         );
     }
@@ -517,6 +543,7 @@ export default function OpenPackPage() {
                 highestRarity={topRarityCelebration}
                 drawCount={drawnPrizes.length}
                 poolName={cardPool?.name || '頂級卡包'}
+                backgroundUrl={activeBackgroundUrl}
                 onAnimationComplete={() => {
                     setStep('ready-to-reveal');
                 }}
@@ -533,7 +560,7 @@ export default function OpenPackPage() {
     return (
         <div 
             className="flex flex-col justify-between items-center h-[100dvh] min-h-[100dvh] w-full p-2 sm:p-4 relative overflow-hidden select-none" 
-            style={{ backgroundImage: 'url("/draw_background.png")', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
+            style={{ backgroundImage: `url("${activeBackgroundUrl}")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
         >
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-[5]" />
             <CelebrationVFX type={landingVFX !== 'none' ? landingVFX : showCelebration} />

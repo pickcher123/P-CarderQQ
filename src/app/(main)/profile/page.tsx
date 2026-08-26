@@ -789,18 +789,22 @@ export default function UnifiedMemberCenterPage() {
 
             {/* 會員中心整合導覽分頁 */}
             <Tabs defaultValue="vip" className="space-y-6 sm:space-y-8 relative z-10">
-                <TabsList className="grid w-full grid-cols-4 bg-slate-900/80 p-1.5 rounded-2xl h-14 border border-white/10 backdrop-blur-xl">
-                    <TabsTrigger value="vip" className="rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500/30 data-[state=active]:to-yellow-500/20 data-[state=active]:text-amber-300 font-black text-xs sm:text-sm tracking-wide transition-all">
-                        <Crown className="mr-1.5 sm:mr-2 h-4 w-4 text-amber-400" /> VIP 特權
+                <TabsList className="grid w-full grid-cols-4 bg-slate-900/80 p-1 sm:p-1.5 rounded-2xl h-12 sm:h-14 border border-white/10 backdrop-blur-xl">
+                    <TabsTrigger value="vip" className="rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500/30 data-[state=active]:to-yellow-500/20 data-[state=active]:text-amber-300 font-black text-[11px] sm:text-sm tracking-tight sm:tracking-wide transition-all px-1 sm:px-3 flex items-center justify-center gap-1 sm:gap-1.5">
+                        <Crown className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-amber-400 shrink-0" />
+                        <span className="truncate">VIP 特權</span>
                     </TabsTrigger>
-                    <TabsTrigger value="profile" className="rounded-xl data-[state=active]:bg-primary/20 data-[state=active]:text-cyan-300 font-black text-xs sm:text-sm tracking-wide transition-all">
-                        <UserIcon className="mr-1.5 sm:mr-2 h-4 w-4 text-cyan-400" /> 基本資料
+                    <TabsTrigger value="profile" className="rounded-xl data-[state=active]:bg-primary/20 data-[state=active]:text-cyan-300 font-black text-[11px] sm:text-sm tracking-tight sm:tracking-wide transition-all px-1 sm:px-3 flex items-center justify-center gap-1 sm:gap-1.5">
+                        <UserIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-cyan-400 shrink-0" />
+                        <span className="truncate">基本資料</span>
                     </TabsTrigger>
-                    <TabsTrigger value="transactions" className="rounded-xl data-[state=active]:bg-primary/20 data-[state=active]:text-cyan-300 font-black text-xs sm:text-sm tracking-wide transition-all">
-                        <History className="mr-1.5 sm:mr-2 h-4 w-4 text-cyan-400" /> 帳務紀錄
+                    <TabsTrigger value="transactions" className="rounded-xl data-[state=active]:bg-primary/20 data-[state=active]:text-cyan-300 font-black text-[11px] sm:text-sm tracking-tight sm:tracking-wide transition-all px-1 sm:px-3 flex items-center justify-center gap-1 sm:gap-1.5">
+                        <History className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-cyan-400 shrink-0" />
+                        <span className="truncate">帳務紀錄</span>
                     </TabsTrigger>
-                    <TabsTrigger value="shipping" className="rounded-xl data-[state=active]:bg-primary/20 data-[state=active]:text-cyan-300 font-black text-xs sm:text-sm tracking-wide transition-all">
-                        <Truck className="mr-1.5 sm:mr-2 h-4 w-4 text-cyan-400" /> 出貨管理
+                    <TabsTrigger value="shipping" className="rounded-xl data-[state=active]:bg-primary/20 data-[state=active]:text-cyan-300 font-black text-[11px] sm:text-sm tracking-tight sm:tracking-wide transition-all px-1 sm:px-3 flex items-center justify-center gap-1 sm:gap-1.5">
+                        <Truck className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-cyan-400 shrink-0" />
+                        <span className="truncate">出貨管理</span>
                     </TabsTrigger>
                 </TabsList>
 

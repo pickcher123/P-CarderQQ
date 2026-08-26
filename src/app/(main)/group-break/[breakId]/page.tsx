@@ -353,8 +353,8 @@ export default function GroupBreakDetailPage() {
   return (
     <div className="container max-w-7xl py-6 md:py-10 relative">
       {/* Background Cyber Ambient Glows */}
-      <div className="absolute top-0 left-1/4 -translate-x-1/2 w-96 h-96 bg-cyan-500/10 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute top-1/3 right-10 w-96 h-96 bg-indigo-500/10 rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute top-0 left-1/4 -translate-x-1/2 w-96 h-96 bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute top-1/3 right-10 w-96 h-96 bg-teal-500/10 rounded-full blur-[140px] pointer-events-none" />
       
       {/* Top Breadcrumb & Status Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
@@ -363,13 +363,13 @@ export default function GroupBreakDetailPage() {
           onClick={() => router.back()} 
           className="h-10 px-3.5 rounded-xl text-slate-300 hover:text-white hover:bg-white/5 font-bold gap-2 text-xs border border-white/5 transition-all"
         >
-          <ArrowLeft className="h-4 w-4 text-cyan-400" />
+          <ArrowLeft className="h-4 w-4 text-emerald-400" />
           <span>返回頻道列表</span>
         </Button>
 
         <div className="flex items-center gap-2">
-          <Badge className="bg-slate-900/90 text-cyan-300 border border-cyan-500/30 text-[11px] px-3 py-1 font-bold rounded-xl gap-1.5 shadow-sm">
-            <Radio className="w-3 h-3 text-cyan-400 animate-pulse" />
+          <Badge className="bg-slate-900/90 text-emerald-300 border border-emerald-500/30 text-[11px] px-3 py-1 font-bold rounded-xl gap-1.5 shadow-sm">
+            <Radio className="w-3 h-3 text-emerald-400 animate-pulse" />
             <span>{isTeamBreak ? '球隊模式團拆' : '隨機位置團拆'}</span>
           </Badge>
           
@@ -486,10 +486,10 @@ export default function GroupBreakDetailPage() {
         <div className="lg:col-span-5 space-y-4">
           
           {/* Main Large Image Frame (Unobstructed & Crystal Clear) */}
-          <div className="relative bg-gradient-to-b from-[#13192a]/95 via-[#0d1220]/95 to-[#090c15]/95 border border-cyan-500/30 rounded-3xl p-2.5 sm:p-3.5 shadow-[0_20px_50px_rgba(0,0,0,0.8),0_0_25px_rgba(6,182,212,0.15)] overflow-hidden group">
+          <div className="relative bg-gradient-to-b from-[#0e1f1a]/95 via-[#0a1514]/95 to-[#050b0a]/95 border border-emerald-500/30 rounded-3xl p-2.5 sm:p-3.5 shadow-[0_20px_50px_rgba(0,0,0,0.8),0_0_25px_rgba(16,185,129,0.15)] overflow-hidden group">
             
             {/* Poster Aspect Ratio Display (Large, Uncropped & Unobstructed) */}
-            <div className="relative aspect-[4/3] sm:aspect-[16/10] w-full bg-slate-950/90 rounded-2xl overflow-hidden border border-white/10 shadow-inner group/poster flex items-center justify-center p-2">
+            <div className="relative aspect-[4/3] sm:aspect-[16/10] w-full bg-slate-950/90 rounded-2xl overflow-hidden border border-emerald-500/20 shadow-inner group/poster flex items-center justify-center p-2">
               {/* Blur backdrop for wide/tall ratios */}
               {groupBreak.imageUrl && (
                 <div 
@@ -511,8 +511,8 @@ export default function GroupBreakDetailPage() {
 
               {/* Floating Top Header Badges (No space taken from image) */}
               <div className="absolute top-2.5 inset-x-2.5 flex items-center justify-between pointer-events-none z-20">
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-cyan-400/30 text-[10px] font-bold text-cyan-300 font-code pointer-events-auto">
-                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_6px_#22d3ee]" />
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-emerald-400/30 text-[10px] font-bold text-emerald-300 font-code pointer-events-auto">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_6px_#34d399]" />
                   <span>CH #{breakId?.slice(0, 4).toUpperCase()}</span>
                 </div>
 
@@ -546,7 +546,7 @@ export default function GroupBreakDetailPage() {
             <button 
               type="button" 
               onClick={() => setIsFullscreenImageOpen(true)}
-              className="w-full mt-2 py-1 flex items-center justify-center gap-1.5 text-[11px] font-bold text-cyan-400/80 hover:text-cyan-300 transition-colors"
+              className="w-full mt-2 py-1 flex items-center justify-center gap-1.5 text-[11px] font-bold text-emerald-400/80 hover:text-emerald-300 transition-colors"
             >
               <ZoomIn className="w-3.5 h-3.5" />
               <span>點擊圖片可放大檢視卡盒高清海報</span>
@@ -554,17 +554,19 @@ export default function GroupBreakDetailPage() {
           </div>
 
           {/* Progress & Slots Bar (Dedicated Card, Separated from Image) */}
-          <div className="p-4 rounded-3xl bg-slate-900/80 border border-white/10 space-y-2.5 shadow-lg">
+          <div className="p-4 rounded-3xl bg-[#091512]/90 border border-emerald-500/20 space-y-2.5 shadow-lg">
             <div className="flex items-center justify-between text-xs font-bold">
               <span className="text-slate-300 flex items-center gap-1.5">
-                <Flame className="w-4 h-4 text-cyan-400" />
+                <Flame className="w-4 h-4 text-emerald-400" />
                 席次鎖定進度
               </span>
-              <span className="font-code text-cyan-300 text-sm font-black">
+              <span className="font-code text-emerald-300 text-sm font-black">
                 {participantCount} / {totalSpotsCount} 席 ({progressPercent}%)
               </span>
             </div>
-            <Progress value={progressPercent} className="h-2.5 bg-slate-950" />
+            <div className="h-2.5 w-full bg-slate-950 rounded-full overflow-hidden border border-emerald-500/20">
+              <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 shadow-[0_0_8px_rgba(16,185,129,0.6)] transition-all duration-500" style={{ width: `${progressPercent}%` }} />
+            </div>
             <div className="flex items-center justify-between text-xs text-slate-400 pt-0.5">
               <span>剩餘名額: <strong className="text-white font-code text-sm">{remainingSpotsCount}</strong> 個</span>
               <span className={cn("font-bold text-xs", isFull ? "text-slate-400" : remainingSpotsCount <= 3 ? "text-amber-400" : "text-emerald-400")}>
@@ -586,7 +588,7 @@ export default function GroupBreakDetailPage() {
           </div>
 
           {/* Title & Description Box */}
-          <div className="p-4 sm:p-5 rounded-3xl bg-slate-900/60 border border-white/10 space-y-2">
+          <div className="p-4 sm:p-5 rounded-3xl bg-[#091512]/60 border border-emerald-500/20 space-y-2">
             <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-snug">
               {groupBreak.title}
             </h1>
@@ -598,13 +600,13 @@ export default function GroupBreakDetailPage() {
 
         {/* === RIGHT COLUMN: SPOT / TEAM SELECTION MATRIX (7 cols on lg) === */}
         <div className="lg:col-span-7 space-y-6">
-          <div className="bg-gradient-to-b from-[#13192a]/95 via-[#0d1220]/95 to-[#090c15]/95 border border-white/10 rounded-3xl p-4 sm:p-7 shadow-2xl backdrop-blur-xl">
+          <div className="bg-gradient-to-b from-[#0e1f1a]/95 via-[#0a1514]/95 to-[#050b0a]/95 border border-emerald-500/25 rounded-3xl p-4 sm:p-7 shadow-2xl backdrop-blur-xl">
             
             {/* Header / Selection Control */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-4 mb-4 border-b border-white/10">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-4 mb-4 border-b border-emerald-500/20">
               <div className="space-y-0.5">
                 <h2 className="text-base sm:text-lg font-black text-white flex items-center gap-2 tracking-tight">
-                  <TicketCheck className="h-5 w-5 text-cyan-400" />
+                  <TicketCheck className="h-5 w-5 text-emerald-400" />
                   <span>{isTeamBreak ? '選擇球隊席位' : '選擇號碼位置'}</span>
                 </h2>
                 <p className="text-[11px] text-slate-400">點擊下方卡片即可加入選購清單</p>
@@ -616,9 +618,9 @@ export default function GroupBreakDetailPage() {
                 size="sm" 
                 onClick={() => setIsRandomPickOpen(true)} 
                 disabled={isFull || groupBreak.status === 'completed'} 
-                className="h-9 px-3 rounded-xl bg-slate-900/90 border-cyan-500/30 text-cyan-300 hover:bg-cyan-950/40 hover:text-white font-bold text-xs gap-1.5 shadow-sm transition-all active:scale-95"
+                className="h-9 px-3 rounded-xl bg-emerald-950/40 border-emerald-500/30 text-emerald-300 hover:bg-emerald-900/50 hover:text-white font-bold text-xs gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
               >
-                <Dices className="h-3.5 w-3.5 text-cyan-400" />
+                <Dices className="h-3.5 w-3.5 text-emerald-400" />
                 <span>自動快速選號</span>
               </Button>
             </div>
@@ -645,13 +647,13 @@ export default function GroupBreakDetailPage() {
                           isTaken 
                             ? "bg-black/40 border-white/5 opacity-65 cursor-not-allowed" 
                             : isSelected 
-                              ? "bg-gradient-to-b from-cyan-950/90 to-sky-950/90 border-2 border-cyan-400 text-white shadow-[0_0_20px_rgba(6,182,212,0.35)] ring-2 ring-cyan-400/20" 
-                              : "bg-slate-900/80 border-white/10 text-slate-200 hover:border-cyan-500/50 hover:bg-slate-800/80 hover:shadow-lg active:scale-98"
+                              ? "bg-gradient-to-b from-emerald-950/90 to-teal-950/90 border-2 border-emerald-400 text-white shadow-[0_0_20px_rgba(16,185,129,0.35)] ring-2 ring-emerald-400/20" 
+                              : "bg-[#091512]/80 border-emerald-500/20 text-slate-200 hover:border-emerald-400/50 hover:bg-[#0f241f] hover:shadow-lg active:scale-98"
                         )}
                       >
                         {/* Selected Indicator Badge */}
                         {isSelected && (
-                          <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-cyan-400 text-slate-950 flex items-center justify-center shadow-md">
+                          <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-emerald-400 text-slate-950 flex items-center justify-center shadow-md">
                             <Check className="w-3.5 h-3.5 stroke-[3]" />
                           </div>
                         )}
@@ -668,7 +670,7 @@ export default function GroupBreakDetailPage() {
                               )} 
                             />
                           ) : (
-                            <div className="w-10 h-10 rounded-xl bg-slate-800 border border-white/10 text-cyan-300 text-sm font-black flex items-center justify-center shadow-inner">
+                            <div className="w-10 h-10 rounded-xl bg-slate-800 border border-emerald-500/20 text-emerald-300 text-sm font-black flex items-center justify-center shadow-inner">
                               {team.name.slice(0, 2)}
                             </div>
                           )}
@@ -688,7 +690,7 @@ export default function GroupBreakDetailPage() {
                         ) : (
                           <div className={cn(
                             "w-full py-1 px-2 rounded-lg font-code flex items-center justify-center gap-1 mt-1.5 text-xs font-black transition-colors",
-                            isSelected ? "bg-cyan-400 text-slate-950" : "bg-white/5 text-cyan-300 border border-white/5"
+                            isSelected ? "bg-emerald-400 text-slate-950" : "bg-white/5 text-emerald-300 border border-emerald-500/20"
                           )}>
                             <span>{team.price.toLocaleString()}</span>
                             {currency === 'diamond' ? <Gem className="w-3 h-3"/> : <PPlusIcon className="w-3 h-3" />}
@@ -720,8 +722,8 @@ export default function GroupBreakDetailPage() {
                           isTaken 
                             ? "bg-black/40 border-white/5 text-slate-500 opacity-65 cursor-not-allowed" 
                             : isSelected 
-                              ? "bg-gradient-to-b from-cyan-950 to-sky-950 border-2 border-cyan-400 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)] ring-1 ring-cyan-400/30" 
-                              : "bg-slate-900/80 border-white/10 text-slate-200 hover:border-cyan-500/50 hover:bg-slate-800"
+                              ? "bg-gradient-to-b from-emerald-950 to-teal-950 border-2 border-emerald-400 text-white shadow-[0_0_15px_rgba(16,185,129,0.4)] ring-1 ring-emerald-400/30" 
+                              : "bg-[#091512]/80 border-emerald-500/20 text-slate-200 hover:border-emerald-400/50 hover:bg-[#0f241f]"
                         )}
                       >
                         <span className="font-code text-sm font-black">#{spotNumber}</span>
@@ -738,19 +740,19 @@ export default function GroupBreakDetailPage() {
             </ScrollArea>
 
             {/* === ORDER CHECKOUT SUMMARY BAR === */}
-            <div className="mt-6 pt-5 border-t border-white/10 space-y-4">
-              <div className="flex items-center justify-between p-3.5 rounded-2xl bg-black/40 border border-white/5">
+            <div className="mt-6 pt-5 border-t border-emerald-500/20 space-y-4">
+              <div className="flex items-center justify-between p-3.5 rounded-2xl bg-black/40 border border-emerald-500/20">
                 <div className="space-y-0.5">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">已選取席位</span>
                   <p className="font-bold text-white text-sm">
-                    共 <span className="text-cyan-400 font-code font-black text-base">{selectionCount}</span> 個席次
+                    共 <span className="text-emerald-400 font-code font-black text-base">{selectionCount}</span> 個席次
                   </p>
                 </div>
                 
                 <div className="text-right space-y-0.5">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-300">總計需支付</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">總計需支付</span>
                   <div className="flex items-center justify-end gap-1.5 text-xl sm:text-2xl font-black font-code text-white">
-                    <span className="text-cyan-400">{totalCost.toLocaleString()}</span>
+                    <span className="text-emerald-400 drop-shadow-[0_0_10px_rgba(16,185,129,0.4)]">{totalCost.toLocaleString()}</span>
                     {currency === 'diamond' ? <Gem className="h-4 w-4 text-cyan-400"/> : <PPlusIcon className="h-4 w-4 text-amber-400" />}
                   </div>
                 </div>
@@ -761,7 +763,7 @@ export default function GroupBreakDetailPage() {
                 <AlertDialogTrigger asChild>
                   <Button 
                     size="lg" 
-                    className="w-full h-14 text-base font-black rounded-2xl bg-gradient-to-r from-cyan-500 via-sky-400 to-cyan-500 hover:from-cyan-400 text-slate-950 shadow-xl shadow-cyan-500/25 active:scale-98 group transition-all" 
+                    className="w-full h-14 text-base font-black rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 hover:from-emerald-400 text-slate-950 shadow-xl shadow-emerald-500/25 active:scale-98 group transition-all cursor-pointer" 
                     disabled={selectionCount === 0 || isSubmitting || isFull || groupBreak.status === 'completed'}
                   >
                     <Zap className="mr-2 h-5 w-5 fill-slate-950 group-hover:scale-110 transition-transform" />
@@ -769,10 +771,10 @@ export default function GroupBreakDetailPage() {
                   </Button>
                 </AlertDialogTrigger>
                 
-                <AlertDialogContent className="w-[94vw] max-w-md bg-slate-950 border border-cyan-500/30 rounded-3xl p-5 sm:p-6 shadow-2xl text-white">
+                <AlertDialogContent className="w-[94vw] max-w-md bg-slate-950 border border-emerald-500/30 rounded-3xl p-5 sm:p-6 shadow-2xl text-white">
                   <AlertDialogHeader className="space-y-2 text-left">
-                    <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 text-[10px] font-black uppercase w-fit">
-                      <Zap className="w-3 h-3 text-cyan-400" />
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[10px] font-black uppercase w-fit">
+                      <Zap className="w-3 h-3 text-emerald-400" />
                       <span>TRANSACTION ORDER • 團拆席次訂單</span>
                     </div>
                     <AlertDialogTitle className="text-xl font-black text-white tracking-tight">
@@ -780,9 +782,9 @@ export default function GroupBreakDetailPage() {
                     </AlertDialogTitle>
                     <AlertDialogDescription asChild>
                       <div className="text-slate-400 text-xs space-y-3 pt-1">
-                        <div className="p-3.5 rounded-xl bg-cyan-950/40 border border-cyan-500/30 flex items-center justify-between text-white font-bold">
+                        <div className="p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-between text-white font-bold">
                           <span>預計扣除費用:</span>
-                          <span className="text-cyan-400 font-code text-base font-black flex items-center gap-1">
+                          <span className="text-emerald-400 font-code text-base font-black flex items-center gap-1">
                             {totalCost.toLocaleString()} {currency === 'diamond' ? '鑽石' : 'P點'}
                           </span>
                         </div>

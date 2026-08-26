@@ -356,15 +356,15 @@ export function BettingGameDialog({
                     </button>
 
                     {/* 左側：商品展示與獎勵卡牌 */}
-                    <div className="w-full lg:w-5/12 p-6 lg:p-8 flex flex-col items-center justify-between relative bg-gradient-to-b from-slate-900/90 via-[#0a0f1e] to-[#050811] border-b lg:border-b-0 lg:border-r border-cyan-500/20">
+                    <div className="w-full lg:w-5/12 p-6 lg:p-8 flex flex-col items-center justify-between relative bg-gradient-to-b from-[#180a14]/90 via-[#0e070d] to-[#060408] border-b lg:border-b-0 lg:border-r border-rose-500/20">
                         {/* 氛圍背景光暈 */}
-                        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-56 h-56 bg-cyan-500/15 blur-[100px] rounded-full pointer-events-none" />
+                        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-56 h-56 bg-rose-500/15 blur-[100px] rounded-full pointer-events-none" />
                         <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-48 h-48 bg-amber-500/10 blur-[80px] rounded-full pointer-events-none" />
 
                         {/* 頂部徽章 */}
                         <div className="w-full flex items-center justify-between mb-4 z-10">
-                            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-950/90 border border-cyan-500/40 text-cyan-300 text-xs font-black tracking-widest uppercase shadow-[0_0_15px_rgba(6,182,212,0.2)]">
-                                <Sparkles className="w-3.5 h-3.5 text-cyan-400 animate-spin-slow" />
+                            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-950/90 border border-rose-500/40 text-rose-300 text-xs font-black tracking-widest uppercase shadow-[0_0_15px_rgba(244,63,94,0.2)]">
+                                <Sparkles className="w-3.5 h-3.5 text-rose-400 animate-spin-slow" />
                                 1/10 機率挑戰
                             </div>
                             {card.minLevel && (
@@ -377,7 +377,7 @@ export function BettingGameDialog({
 
                         {/* 卡片主體展示 */}
                         <div className={cn(
-                            "relative w-full max-w-[240px] sm:max-w-[265px] aspect-[2.5/3.6] rounded-2xl transition-all duration-500 p-1 bg-gradient-to-b from-slate-700 via-slate-800 to-slate-950 border-2 border-cyan-500/50 shadow-[0_0_35px_rgba(6,182,212,0.25)] flex flex-col justify-between overflow-hidden group",
+                            "relative w-full max-w-[240px] sm:max-w-[265px] aspect-[2.5/3.6] rounded-2xl transition-all duration-500 p-1 bg-gradient-to-b from-slate-700 via-slate-800 to-slate-950 border-2 border-rose-500/50 shadow-[0_0_35px_rgba(244,63,94,0.25)] flex flex-col justify-between overflow-hidden group",
                             isOutOfStock && "grayscale-[0.9] opacity-60 border-slate-800"
                         )}>
                             <CardItem 
@@ -409,8 +409,8 @@ export function BettingGameDialog({
                                     <DiamondIcon className="w-3.5 h-3.5" />
                                 </div>
                                 <div className="h-3 w-px bg-slate-700" />
-                                <div className="text-cyan-300 font-bold flex items-center gap-1">
-                                    單注僅: <span className="font-mono font-black text-cyan-400">{diamondUnitPrice.toLocaleString()}</span>
+                                <div className="text-rose-300 font-bold flex items-center gap-1">
+                                    單注僅: <span className="font-mono font-black text-rose-400">{diamondUnitPrice.toLocaleString()}</span>
                                     <DiamondIcon className="w-3.5 h-3.5" />
                                 </div>
                             </div>
@@ -424,12 +424,12 @@ export function BettingGameDialog({
                     </div>
 
                     {/* 右側：操作面板與老虎機轉盤區 */}
-                    <div className="w-full lg:w-7/12 p-6 lg:p-8 flex flex-col justify-between relative space-y-5 bg-[#080d1a]">
+                    <div className="w-full lg:w-7/12 p-6 lg:p-8 flex flex-col justify-between relative space-y-5 bg-[#0e070d]">
                         
                         {/* 頂部：錢包餘額資訊列 */}
                         <div className="p-3.5 rounded-2xl bg-gradient-to-r from-slate-900/90 via-slate-950/90 to-slate-900/90 border border-slate-800/90 flex items-center justify-between shadow-inner">
                             <div className="flex items-center gap-2 text-xs text-slate-300 font-bold">
-                                <Wallet className="w-4 h-4 text-cyan-400" />
+                                <Wallet className="w-4 h-4 text-rose-400" />
                                 <span>我的錢包餘額</span>
                             </div>
                             <div className="flex items-center gap-4 text-xs font-mono font-black">
@@ -533,7 +533,7 @@ export function BettingGameDialog({
                             {/* 勝率進度條 */}
                             <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-800 p-0.5">
                                 <div 
-                                    className="h-full bg-gradient-to-r from-cyan-500 via-emerald-400 to-amber-400 rounded-full transition-all duration-300 shadow-[0_0_10px_rgba(34,211,238,0.5)]" 
+                                    className="h-full bg-gradient-to-r from-rose-500 via-pink-400 to-amber-400 rounded-full transition-all duration-300 shadow-[0_0_10px_rgba(244,63,94,0.5)]" 
                                     style={{ width: `${winProbability}%` }}
                                 />
                             </div>
@@ -576,7 +576,7 @@ export function BettingGameDialog({
                                     disabled={isOutOfStock || isSpinning}
                                     className="px-2.5 py-1 rounded-lg bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer"
                                 >
-                                    <Dices className="w-3 h-3 text-cyan-400" />
+                                    <Dices className="w-3 h-3 text-rose-400" />
                                     隨機 1 注
                                 </button>
                                 {selectedNumbers.length > 0 && (
@@ -607,8 +607,8 @@ export function BettingGameDialog({
                                                 isOutOfStock || isSpinning 
                                                     ? 'bg-slate-900/40 border-slate-800 text-slate-600 cursor-not-allowed' 
                                                     : isSelected 
-                                                    ? 'bg-gradient-to-b from-cyan-400 to-cyan-500 border-cyan-300 text-slate-950 shadow-[0_0_20px_rgba(6,182,212,0.6)] scale-[1.03] z-10' 
-                                                    : 'bg-slate-900/90 border-slate-800/90 text-slate-300 hover:bg-slate-800 hover:border-cyan-500/40 hover:text-white'
+                                                    ? 'bg-gradient-to-b from-rose-500 to-pink-500 border-rose-300 text-white shadow-[0_0_20px_rgba(244,63,94,0.6)] scale-[1.03] z-10' 
+                                                    : 'bg-slate-900/90 border-slate-800/90 text-slate-300 hover:bg-slate-800 hover:border-rose-500/40 hover:text-white'
                                             )}
                                         >
                                             <span>{num}</span>
@@ -650,16 +650,16 @@ export function BettingGameDialog({
 
                                 {/* 兩側金屬導軌 */}
                                 <div className="absolute left-0 top-0 bottom-0 w-10 bg-gradient-to-r from-slate-900 via-slate-900/80 to-transparent border-r border-slate-800/80 z-20 flex items-center justify-center">
-                                    <div className="w-1.5 h-12 bg-cyan-500/40 rounded-full" />
+                                    <div className="w-1.5 h-12 bg-rose-500/40 rounded-full" />
                                 </div>
                                 <div className="absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-slate-900 via-slate-900/80 to-transparent border-l border-slate-800/80 z-20 flex items-center justify-center">
-                                    <div className="w-1.5 h-12 bg-cyan-500/40 rounded-full" />
+                                    <div className="w-1.5 h-12 bg-rose-500/40 rounded-full" />
                                 </div>
 
                                 {/* 中間指針雷射標線 */}
-                                <div className="absolute left-8 right-8 top-1/2 -translate-y-1/2 h-[2px] bg-cyan-400 z-30 shadow-[0_0_15px_rgba(34,211,238,1)]" />
-                                <div className="absolute left-4 top-1/2 -translate-y-1/2 w-0 h-0 border-t-[7px] border-t-transparent border-b-[7px] border-b-transparent border-l-[10px] border-l-cyan-400 z-30 drop-shadow-[0_0_8px_rgba(34,211,238,1)]" />
-                                <div className="absolute right-4 top-1/2 -translate-y-1/2 w-0 h-0 border-t-[7px] border-t-transparent border-b-[7px] border-b-transparent border-r-[10px] border-r-cyan-400 z-30 drop-shadow-[0_0_8px_rgba(34,211,238,1)]" />
+                                <div className="absolute left-8 right-8 top-1/2 -translate-y-1/2 h-[2px] bg-rose-400 z-30 shadow-[0_0_15px_rgba(244,63,94,1)]" />
+                                <div className="absolute left-4 top-1/2 -translate-y-1/2 w-0 h-0 border-t-[7px] border-t-transparent border-b-[7px] border-b-transparent border-l-[10px] border-l-rose-400 z-30 drop-shadow-[0_0_8px_rgba(244,63,94,1)]" />
+                                <div className="absolute right-4 top-1/2 -translate-y-1/2 w-0 h-0 border-t-[7px] border-t-transparent border-b-[7px] border-b-transparent border-r-[10px] border-r-rose-400 z-30 drop-shadow-[0_0_8px_rgba(244,63,94,1)]" />
 
                                 {/* 滾輪帶 */}
                                 <div className="w-36 h-full bg-slate-900/90 relative z-10 flex flex-col items-center border-x-2 border-slate-800 overflow-hidden shadow-inner">
@@ -675,7 +675,7 @@ export function BettingGameDialog({
                                                 <div 
                                                     key={i} 
                                                     style={{ height: `${ITEM_HEIGHT}px` }} 
-                                                    className="flex-shrink-0 flex items-center justify-center text-5xl font-black text-cyan-300 drop-shadow-[0_0_15px_rgba(6,182,212,0.9)]"
+                                                    className="flex-shrink-0 flex items-center justify-center text-5xl font-black text-rose-300 drop-shadow-[0_0_15px_rgba(244,63,94,0.9)]"
                                                 >
                                                     {num}
                                                 </div>
@@ -744,19 +744,19 @@ export function BettingGameDialog({
                                 <AlertDialog>
                                     <AlertDialogTrigger asChild>
                                         <button 
-                                            type="button"
+                                            type="button" 
                                             disabled={selectedNumbers.length === 0 || isSpinning || isInsufficientFunds}
                                             className={cn(
                                                 "w-full py-4 rounded-2xl font-black tracking-widest flex items-center justify-center gap-2 transition-all duration-300 relative overflow-hidden group text-sm cursor-pointer select-none",
                                                 isInsufficientFunds 
                                                     ? 'bg-rose-950/60 border border-rose-500/40 text-rose-300 cursor-not-allowed'
                                                     : selectedNumbers.length > 0 && !isSpinning 
-                                                    ? 'bg-gradient-to-r from-cyan-500 via-blue-600 to-cyan-500 hover:brightness-110 text-slate-950 font-black shadow-[0_0_35px_rgba(6,182,212,0.4)] border border-cyan-300' 
+                                                    ? 'bg-gradient-to-r from-rose-500 via-pink-500 to-rose-500 hover:brightness-110 text-white font-black shadow-[0_0_35px_rgba(244,63,94,0.4)] border border-rose-300' 
                                                     : 'bg-slate-900 text-slate-500 border border-slate-800 cursor-not-allowed'
                                             )}
                                         >
                                             {isSpinning ? (
-                                                <><Sparkles className="w-5 h-5 animate-spin text-slate-950" /> 命運轉盤旋轉中...</>
+                                                <><Sparkles className="w-5 h-5 animate-spin text-white" /> 命運轉盤旋轉中...</>
                                             ) : isInsufficientFunds ? (
                                                 <><AlertCircle className="w-5 h-5 text-rose-400" /> 點數餘額不足 (尚差 {(totalPrice - currentBalance).toLocaleString()} 點)</>
                                             ) : selectedNumbers.length === 0 ? (
@@ -766,20 +766,20 @@ export function BettingGameDialog({
                                             )}
                                         </button>
                                     </AlertDialogTrigger>
-                                    <AlertDialogContent className="rounded-3xl bg-slate-950 border-cyan-500/30 border-2 text-slate-100 max-w-md shadow-2xl">
+                                    <AlertDialogContent className="rounded-3xl bg-slate-950 border-rose-500/30 border-2 text-slate-100 max-w-md shadow-2xl">
                                         <AlertDialogHeader>
-                                            <AlertDialogTitle className="font-headline font-black text-cyan-400 text-lg flex items-center gap-2">
-                                                <Sparkles className="w-5 h-5 text-cyan-400" /> 拼卡下注確認
+                                            <AlertDialogTitle className="font-headline font-black text-rose-400 text-lg flex items-center gap-2">
+                                                <Sparkles className="w-5 h-5 text-rose-400" /> 拼卡下注確認
                                             </AlertDialogTitle>
                                         </AlertDialogHeader>
-                                        <div className="p-4 rounded-2xl border border-cyan-500/20 bg-cyan-950/20 text-xs text-slate-300 space-y-3">
+                                        <div className="p-4 rounded-2xl border border-rose-500/20 bg-rose-950/20 text-xs text-slate-300 space-y-3">
                                             <div className="flex justify-between border-b border-slate-800/80 pb-2">
                                                 <span className="text-slate-400">挑戰卡片：</span>
                                                 <span className="font-bold text-white truncate max-w-[200px]">{card.name}</span>
                                             </div>
                                             <div className="flex justify-between border-b border-slate-800/80 pb-2">
                                                 <span className="text-slate-400">選擇號碼：</span>
-                                                <span className="font-mono font-black text-cyan-300">[{selectedNumbers.join(', ')}] ({selectedNumbers.length} 注)</span>
+                                                <span className="font-mono font-black text-rose-300">[{selectedNumbers.join(', ')}] ({selectedNumbers.length} 注)</span>
                                             </div>
                                             <div className="flex justify-between border-b border-slate-800/80 pb-2">
                                                 <span className="text-slate-400">中獎勝率：</span>
@@ -792,7 +792,7 @@ export function BettingGameDialog({
                                                 </span>
                                             </div>
                                             <div className="space-y-1 text-[11px] text-slate-400 pt-1">
-                                                <p className="font-bold text-cyan-400 flex items-center gap-1">
+                                                <p className="font-bold text-rose-400 flex items-center gap-1">
                                                     <ShieldCheck className="w-3.5 h-3.5" /> 遊戲規則提示：
                                                 </p>
                                                 <p>1. 本系統隨機開出 1~10 號碼，命中即 100% 獲得該卡片並放入個人收藏庫。</p>
@@ -801,11 +801,11 @@ export function BettingGameDialog({
                                         </div>
                                         <AlertDialogFooter className="gap-2">
                                             <AlertDialogCancel className="h-11 rounded-xl font-bold bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-800">
-                                                再想想
+                                                 再想想
                                             </AlertDialogCancel>
                                             <AlertDialogAction 
                                                 onClick={handleSpin} 
-                                                className="h-11 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black border-none shadow-[0_0_20px_rgba(6,182,212,0.4)]"
+                                                className="h-11 rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-400 hover:to-pink-400 text-white font-black border-none shadow-[0_0_20px_rgba(244,63,94,0.4)]"
                                             >
                                                 確認下注並開獎
                                             </AlertDialogAction>

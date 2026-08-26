@@ -18,9 +18,12 @@ export function Logo({
   }
 
   const content = (
-    <span className="font-headline text-xl sm:text-2xl font-bold text-primary tracking-tighter">
-      P+Carder
-    </span>
+    <div className="flex items-center group cursor-pointer select-none">
+      {/* 品牌純文字 LOGO */}
+      <span className="font-headline font-black text-lg sm:text-2xl tracking-tighter text-cyan-400 drop-shadow-[0_0_12px_rgba(34,211,238,0.4)] group-hover:drop-shadow-[0_0_18px_rgba(34,211,238,0.7)] transition-all">
+        P+CARDER
+      </span>
+    </div>
   );
 
   if (asStatic) {

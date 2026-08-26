@@ -217,22 +217,22 @@ export default function BetLandingPage() {
     return (
         <div className="min-h-screen relative overflow-hidden pb-24 text-white">
             {/* Ambient Background Lighting */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1100px] h-[450px] bg-gradient-to-b from-cyan-500/15 via-rose-500/10 to-transparent blur-[140px] pointer-events-none -z-10" />
-            <div className="absolute top-[600px] right-0 w-[600px] h-[600px] bg-purple-500/10 blur-[160px] pointer-events-none -z-10" />
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1100px] h-[450px] bg-gradient-to-b from-rose-500/15 via-pink-500/10 to-transparent blur-[140px] pointer-events-none -z-10" />
+            <div className="absolute top-[600px] right-0 w-[600px] h-[600px] bg-rose-500/10 blur-[160px] pointer-events-none -z-10" />
 
             <div className="container px-3 sm:px-6 py-3 sm:py-8 max-w-7xl mx-auto space-y-5 sm:space-y-10">
                 
                 {/* === HERO SECTION: 頂級賽博拼卡殿堂 === */}
-                <div className="relative rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] p-3.5 sm:p-6 md:p-8 overflow-hidden border border-cyan-500/20 bg-gradient-to-b from-slate-900/90 via-[#0a0f1d]/95 to-[#050811] shadow-[0_20px_60px_rgba(0,0,0,0.8)] backdrop-blur-2xl">
+                <div className="relative rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] p-3.5 sm:p-6 md:p-8 overflow-hidden border border-rose-500/25 bg-gradient-to-b from-[#180a14]/90 via-[#0f070e]/95 to-[#080408] shadow-[0_20px_60px_rgba(0,0,0,0.8)] backdrop-blur-2xl">
                     {/* Background Grid Pattern */}
-                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#06b6d410_1px,transparent_1px),linear-gradient(to_bottom,#06b6d410_1px,transparent_1px)] bg-[size:32px_32px] opacity-60 pointer-events-none" />
+                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#f43f5e10_1px,transparent_1px),linear-gradient(to_bottom,#f43f5e10_1px,transparent_1px)] bg-[size:32px_32px] opacity-60 pointer-events-none" />
                     
                     {/* Top Glow Accent Bar */}
-                    <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_15px_#22d3ee]" />
+                    <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-rose-400 to-transparent shadow-[0_0_15px_#fb7185]" />
                     
                     <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-3 sm:gap-6 md:gap-12">
                         <div className="space-y-2 sm:space-y-3 text-center lg:text-left max-w-2xl">
-                            <h1 className="font-headline text-2xl sm:text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-200 to-amber-300 drop-shadow-[0_0_20px_rgba(6,182,212,0.4)] tracking-tight leading-none uppercase">
+                            <h1 className="font-headline text-2xl sm:text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-rose-400 via-pink-200 to-amber-300 drop-shadow-[0_0_20px_rgba(244,63,94,0.4)] tracking-tight leading-none uppercase">
                                 幸運拼卡
                             </h1>
 
@@ -244,22 +244,22 @@ export default function BetLandingPage() {
                             <div className="pt-1 flex flex-wrap items-center justify-center lg:justify-start gap-2">
                                 <Dialog>
                                     <DialogTrigger asChild>
-                                        <Button className="h-8 sm:h-10 px-4 sm:px-5 rounded-lg sm:rounded-xl bg-gradient-to-r from-cyan-500 to-cyan-400 hover:from-cyan-400 hover:to-cyan-300 text-slate-950 text-xs sm:text-sm font-black shadow-[0_0_20px_rgba(6,182,212,0.3)] transition-all gap-1.5 group cursor-pointer">
-                                            <Dices className="w-3.5 h-3.5 text-slate-950 group-hover:rotate-45 transition-transform" />
+                                        <Button className="h-8 sm:h-10 px-4 sm:px-5 rounded-lg sm:rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-400 hover:to-pink-400 text-white text-xs sm:text-sm font-black shadow-[0_0_20px_rgba(244,63,94,0.3)] transition-all gap-1.5 group cursor-pointer">
+                                            <Dices className="w-3.5 h-3.5 text-white group-hover:rotate-45 transition-transform" />
                                             <span>玩法說明</span>
                                         </Button>
                                     </DialogTrigger>
-                                    <DialogContent className="rounded-[2rem] bg-slate-950 border border-cyan-500/30 text-white max-w-2xl backdrop-blur-2xl shadow-2xl">
+                                    <DialogContent className="rounded-[2rem] bg-slate-950 border border-rose-500/30 text-white max-w-2xl backdrop-blur-2xl shadow-2xl">
                                         <DialogHeader>
-                                            <DialogTitle className="text-xl md:text-2xl font-black text-cyan-400 flex items-center gap-2 font-headline">
-                                                <Target className="w-6 h-6 text-cyan-400" />
+                                            <DialogTitle className="text-xl md:text-2xl font-black text-rose-400 flex items-center gap-2 font-headline">
+                                                <Target className="w-6 h-6 text-rose-400" />
                                                 拼卡機制
                                             </DialogTitle>
                                         </DialogHeader>
                                         <div className="space-y-4 py-3 text-sm text-slate-300">
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                                 <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
-                                                    <div className="flex items-center gap-2 text-cyan-400 font-bold">
+                                                    <div className="flex items-center gap-2 text-rose-400 font-bold">
                                                         <Percent className="w-4 h-4" /> 1/10 命中率
                                                     </div>
                                                     <p className="text-xs text-slate-400">每次 1~10 隨機搖號，命中直接帶走卡片。</p>
@@ -296,23 +296,23 @@ export default function BetLandingPage() {
 
                         {/* Live Pool Quick Stats Widget */}
                         <div className="grid grid-cols-2 gap-2 sm:gap-3 w-full lg:w-auto shrink-0">
-                            <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-[#0b1329] border border-cyan-500/30 flex flex-col items-center justify-center text-center shadow-[0_4px_20px_rgba(6,182,212,0.15)]">
+                            <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-[#1a0c16] border border-rose-500/30 flex flex-col items-center justify-center text-center shadow-[0_4px_20px_rgba(244,63,94,0.15)]">
                                 <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">主題卡池</span>
-                                <span className="text-xl sm:text-3xl font-black font-headline text-cyan-400 mt-0.5 sm:mt-1">
+                                <span className="text-xl sm:text-3xl font-black font-headline text-rose-400 mt-0.5 sm:mt-1">
                                     {finalIsLoading ? '--' : stats.totalCategories}
                                 </span>
                                 <span className="text-[9px] sm:text-[10px] text-slate-400 mt-0.5">專屬主題池</span>
                             </div>
 
-                            <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-[#0b1329] border border-primary/30 flex flex-col items-center justify-center text-center shadow-[0_4px_20px_rgba(244,63,94,0.15)]">
+                            <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-[#1a0c16] border border-pink-500/30 flex flex-col items-center justify-center text-center shadow-[0_4px_20px_rgba(244,63,94,0.15)]">
                                 <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">剩餘可拼</span>
-                                <span className="text-xl sm:text-3xl font-black font-headline text-primary mt-0.5 sm:mt-1">
+                                <span className="text-xl sm:text-3xl font-black font-headline text-pink-300 mt-0.5 sm:mt-1">
                                     {finalIsLoading ? '--' : stats.availableItems}
                                 </span>
                                 <span className="text-[9px] sm:text-[10px] text-slate-400 mt-0.5">球員卡</span>
                             </div>
 
-                            <div className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-[#0b1329] border border-amber-500/30 flex flex-col items-center justify-center text-center shadow-lg col-span-2">
+                            <div className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-[#1a0c16] border border-amber-500/30 flex flex-col items-center justify-center text-center shadow-lg col-span-2">
                                 <div className="flex items-center gap-1.5">
                                     <DiamondIcon className="w-3.5 h-3.5 text-amber-400" />
                                     <span className="text-[11px] sm:text-xs font-bold text-amber-300">單注卡價 10% • 隨機公平</span>
@@ -350,8 +350,8 @@ export default function BetLandingPage() {
                                 href={`/bet/${encodeURIComponent(category.id)}`} 
                                 key={category.id} 
                                 className={cn(
-                                    "group relative aspect-[16/10] rounded-2xl overflow-hidden block border border-white/10 transition-all duration-500",
-                                    "hover:border-cyan-400/80 hover:shadow-[0_0_40px_rgba(6,182,212,0.3)] hover:-translate-y-1.5",
+                                    "group relative aspect-[16/10] rounded-2xl overflow-hidden block border border-rose-500/20 transition-all duration-500",
+                                    "hover:border-rose-400/80 hover:shadow-[0_0_40px_rgba(244,63,94,0.3)] hover:-translate-y-1.5",
                                     "bg-slate-900"
                                 )}
                             >
@@ -369,22 +369,22 @@ export default function BetLandingPage() {
 
                                 {/* Top Badges */}
                                 <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10">
-                                    <Badge className="bg-slate-900/90 backdrop-blur-md text-cyan-400 border border-cyan-400/40 text-[10px] font-black px-2.5 py-0.5 shadow-md">
+                                    <Badge className="bg-[#180a14]/90 backdrop-blur-md text-rose-300 border border-rose-500/40 text-[10px] font-black px-2.5 py-0.5 shadow-md">
                                         剩餘 {category.itemCount} 張
                                     </Badge>
-                                    <div className="w-7 h-7 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center group-hover:bg-cyan-400 group-hover:text-slate-950 transition-all shadow-md">
+                                    <div className="w-7 h-7 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center group-hover:bg-rose-500 group-hover:text-white transition-all shadow-md">
                                         <ArrowRight className="w-4 h-4" />
                                     </div>
                                 </div>
 
                                 {/* Bottom Info */}
                                 <div className="absolute bottom-0 inset-x-0 p-4 z-10">
-                                    <h3 className="font-headline text-lg sm:text-2xl font-black text-white tracking-tight group-hover:text-cyan-300 transition-colors drop-shadow-md truncate">
+                                    <h3 className="font-headline text-lg sm:text-2xl font-black text-white tracking-tight group-hover:text-rose-300 transition-colors drop-shadow-md truncate">
                                         {category.name}
                                     </h3>
                                     <div className="flex items-center justify-between mt-1 text-[11px] text-slate-300">
                                         <span>總卡量 {category.totalCount} 張</span>
-                                        <span className="text-cyan-400 font-bold group-hover:underline">進入卡池 →</span>
+                                        <span className="text-rose-400 font-bold group-hover:underline">進入卡池 →</span>
                                     </div>
                                 </div>
                             </Link>
@@ -397,13 +397,12 @@ export default function BetLandingPage() {
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-4">
                         <div>
                             <h2 className="text-lg md:text-2xl font-black text-white tracking-wide font-headline flex items-center gap-2">
-                                <Package className="w-6 h-6 text-primary" />
-                                全部拼卡卡池
-                                <span className="text-xs px-2.5 py-0.5 rounded-full bg-white/10 text-slate-300 font-normal">
-                                    {cardsInBetting.length} 張
-                                </span>
+                                <Sparkles className="w-5 h-5 text-rose-400" />
+                                焦點拼卡獎品
                             </h2>
-                            <p className="text-xs text-slate-400 mt-0.5">直接點擊卡片即可快速開啟 1/10 機率拼卡拉霸機</p>
+                            <p className="text-xs text-slate-400 mt-1">
+                                挑選心儀卡牌 · 1/10 命運機率挑戰入庫
+                            </p>
                         </div>
 
                         {/* Filters & Search */}
@@ -414,7 +413,7 @@ export default function BetLandingPage() {
                                     onClick={() => setFilterTab('all')}
                                     className={cn(
                                         "px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer",
-                                        filterTab === 'all' ? "bg-cyan-500 text-slate-950 shadow-sm" : "text-slate-400 hover:text-white"
+                                        filterTab === 'all' ? "bg-rose-500 text-white shadow-sm" : "text-slate-400 hover:text-white"
                                     )}
                                 >
                                     全部
@@ -423,7 +422,7 @@ export default function BetLandingPage() {
                                     onClick={() => setFilterTab('available')}
                                     className={cn(
                                         "px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer",
-                                        filterTab === 'available' ? "bg-cyan-500 text-slate-950 shadow-sm" : "text-slate-400 hover:text-white"
+                                        filterTab === 'available' ? "bg-rose-500 text-white shadow-sm" : "text-slate-400 hover:text-white"
                                     )}
                                 >
                                     未抽出
@@ -432,7 +431,7 @@ export default function BetLandingPage() {
                                     onClick={() => setFilterTab('featured')}
                                     className={cn(
                                         "px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer",
-                                        filterTab === 'featured' ? "bg-cyan-500 text-slate-950 shadow-sm" : "text-slate-400 hover:text-white"
+                                        filterTab === 'featured' ? "bg-rose-500 text-white shadow-sm" : "text-slate-400 hover:text-white"
                                     )}
                                 >
                                     🔥 HOT
@@ -460,7 +459,7 @@ export default function BetLandingPage() {
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
                                 <Input 
                                     placeholder="搜尋球員/卡名..." 
-                                    className="pl-8 h-9 bg-white/5 rounded-xl border-white/10 text-xs text-white placeholder:text-slate-500 focus-visible:ring-cyan-500" 
+                                    className="pl-8 h-9 bg-white/5 rounded-xl border-white/10 text-xs text-white placeholder:text-slate-500 focus-visible:ring-rose-500" 
                                     value={searchTerm} 
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
@@ -484,8 +483,8 @@ export default function BetLandingPage() {
                                 <div 
                                     key={card.id} 
                                     className={cn(
-                                        "group relative flex flex-col rounded-2xl overflow-hidden border border-white/10 bg-gradient-to-b from-slate-900/90 to-slate-950 p-2.5 transition-all duration-300",
-                                        "hover:border-cyan-400/60 hover:shadow-[0_10px_25px_-5px_rgba(6,182,212,0.3)] hover:-translate-y-1.5",
+                                        "group relative flex flex-col rounded-2xl overflow-hidden border border-rose-500/15 bg-gradient-to-b from-[#180a14]/80 via-[#0e070d]/90 to-slate-950 p-2.5 transition-all duration-300",
+                                        "hover:border-rose-400/60 hover:shadow-[0_10px_25px_-5px_rgba(244,63,94,0.3)] hover:-translate-y-1.5",
                                         isSold && "opacity-60 grayscale-[40%]"
                                     )}
                                 >
@@ -502,7 +501,7 @@ export default function BetLandingPage() {
                                                 e.stopPropagation();
                                                 setPreviewCard(card);
                                             }}
-                                            className="pointer-events-auto p-1.5 rounded-lg bg-black/60 backdrop-blur-md text-white/80 hover:text-cyan-400 hover:bg-black/80 transition-all cursor-pointer"
+                                            className="pointer-events-auto p-1.5 rounded-lg bg-black/60 backdrop-blur-md text-white/80 hover:text-rose-400 hover:bg-black/80 transition-all cursor-pointer"
                                             title="預覽卡片正面/背面"
                                         >
                                             <Eye className="w-3.5 h-3.5" />
@@ -534,13 +533,13 @@ export default function BetLandingPage() {
                                     {/* Card Meta */}
                                     <div className="mt-2.5 flex flex-col flex-1 justify-between space-y-2">
                                         <div>
-                                            <h4 className="text-xs font-bold text-white truncate group-hover:text-cyan-300 transition-colors" title={card.name}>
+                                            <h4 className="text-xs font-bold text-white truncate group-hover:text-rose-300 transition-colors" title={card.name}>
                                                 {card.name}
                                             </h4>
                                             
                                             <div className="flex items-center justify-between text-[11px] mt-1">
                                                 <span className="text-slate-400">市值:</span>
-                                                <span className="font-bold text-cyan-400 flex items-center gap-1 font-mono">
+                                                <span className="font-bold text-amber-300 flex items-center gap-1 font-mono">
                                                     <DiamondIcon className="w-3.5 h-3.5" />
                                                     {card.sellPrice ? card.sellPrice.toLocaleString() : '---'}
                                                 </span>
@@ -557,7 +556,7 @@ export default function BetLandingPage() {
                                                         "w-full h-8 text-xs font-black rounded-lg transition-all cursor-pointer",
                                                         isSold 
                                                              ? "bg-white/5 text-slate-500 border border-white/5" 
-                                                            : "bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-[0_0_12px_rgba(6,182,212,0.3)]"
+                                                             : "bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-400 hover:to-pink-400 text-white shadow-[0_0_12px_rgba(244,63,94,0.3)]"
                                                     )}
                                                 >
                                                     {isSold ? '已售出' : (

@@ -18,11 +18,11 @@ import { Badge } from '@/components/ui/badge';
 import { PurchasePointsDialog } from '@/components/purchase-points-dialog';
 
 const navLinks = [
-  { href: '/draw', label: '抽卡', icon: Package, color: "text-primary" },
-  { href: '/bet', label: '拼卡', icon: CrossedCardsIcon, color: "text-destructive" },
-  { href: '/lucky-bags', label: '福袋', icon: LuckyBagIcon, color: "text-accent" },
-  { href: '/group-break', label: '團拆', icon: Users2, color: "text-green-400" },
-  { href: '/collection', label: '收藏庫', icon: Library, color: "text-primary/70" },
+  { href: '/draw', label: '抽卡', icon: Package, color: "text-cyan-400" },
+  { href: '/bet', label: '拼卡', icon: CrossedCardsIcon, color: "text-rose-400" },
+  { href: '/lucky-bags', label: '福袋', icon: LuckyBagIcon, color: "text-amber-400" },
+  { href: '/group-break', label: '團拆', icon: Users2, color: "text-emerald-400" },
+  { href: '/collection', label: '收藏庫', icon: Library, color: "text-cyan-300/80" },
 ];
 
 export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) {
@@ -52,9 +52,15 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
   const isHighTier = currentLevel === '傳奇收藏家' || currentLevel === 'P+卡神' || currentLevel === '殿堂級玩家' || currentLevel === '卡牌大師';
 
   return (
-    <div className="sticky top-0 z-40 w-full border-b border-white/[0.08] bg-[#070b14]/90 backdrop-blur-2xl">
-      <div className="container flex h-16 items-center px-3 sm:px-4 md:px-8">
-        <div className="mr-auto flex items-center ml-1">
+    <div className="sticky top-0 z-40 w-full border-b border-white/[0.08] bg-[#070b14]/85 backdrop-blur-2xl relative">
+      {/* 頂部極光微光氛圍 */}
+      <div className="absolute top-0 left-10 sm:left-1/4 w-48 sm:w-80 h-10 bg-cyan-500/10 blur-2xl pointer-events-none -z-10" />
+      <div className="absolute top-0 right-10 sm:right-1/4 w-36 sm:w-64 h-10 bg-amber-500/10 blur-2xl pointer-events-none -z-10" />
+      {/* 底部高科技細微霓虹線 */}
+      <div className="absolute bottom-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/40 to-transparent pointer-events-none" />
+
+      <div className="container flex h-14 sm:h-16 items-center px-3 sm:px-4 md:px-8">
+        <div className="mr-auto flex items-center ml-0.5 sm:ml-1">
           <Logo className="text-primary" />
           <nav className="ml-6 hidden items-center space-x-6 text-sm font-medium md:flex">
             {navLinks
@@ -89,7 +95,7 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
           </nav>
         </div>
         
-        <div className="flex flex-1 items-center justify-end gap-2.5 sm:gap-4">
+        <div className="flex flex-1 items-center justify-end gap-2 sm:gap-3.5">
             {user && userProfile?.role === 'admin' && (
               <Button variant="outline" size="sm" asChild className="hidden lg:flex h-8 px-3 rounded-xl border-destructive/40 text-destructive bg-destructive/5 hover:bg-destructive/15">
                 <Link href="/admin">
@@ -99,10 +105,10 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
               </Button>
             )}
 
-            {/* 點數區塊 (優化版) */}
+            {/* 點數區塊 (電競晶鑽膠囊) */}
             {user && (
               <div className="flex items-center">
-                <div className="flex items-center h-8 sm:h-9 bg-slate-900/90 rounded-full border border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.15)] ring-1 ring-cyan-500/10 backdrop-blur-xl overflow-hidden">
+                <div className="flex items-center h-8 sm:h-9 bg-gradient-to-b from-slate-900/95 via-[#0b1324]/95 to-slate-950/95 rounded-full border border-cyan-500/40 shadow-[0_0_18px_rgba(6,182,212,0.22)] ring-1 ring-cyan-500/20 backdrop-blur-xl overflow-hidden group/capsule hover:border-cyan-400 hover:shadow-[0_0_22px_rgba(6,182,212,0.4)] transition-all duration-300">
                   <Popover>
                     <PopoverTrigger asChild>
                       <button 
@@ -110,13 +116,13 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                         className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 h-full hover:bg-cyan-500/10 active:bg-cyan-500/20 transition-all duration-200 group outline-none"
                       >
                         <div className="relative flex items-center justify-center">
-                          <DiamondIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)] group-hover:scale-110 transition-transform" />
-                          <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping opacity-60 pointer-events-none" />
+                          <DiamondIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 drop-shadow-[0_0_10px_rgba(34,211,238,0.9)] group-hover:scale-110 transition-transform duration-300" />
+                          <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-cyan-300 animate-ping opacity-75 pointer-events-none" />
                         </div>
-                        <span className="font-mono font-extrabold text-[11px] sm:text-xs text-white tracking-tight drop-shadow truncate max-w-[75px] sm:max-w-none">
+                        <span className="font-mono font-black text-xs sm:text-sm text-cyan-200 tracking-tight drop-shadow truncate max-w-[70px] sm:max-w-none">
                           {isProfileLoading ? '...' : (userProfile?.points ?? 0).toLocaleString()}
                         </span>
-                        <ChevronDown className="h-2.5 w-2.5 text-cyan-400/60 group-hover:text-cyan-400 group-hover:translate-y-0.5 transition-all" />
+                        <ChevronDown className="h-3 w-3 text-cyan-400/70 group-hover:text-cyan-300 group-hover:translate-y-0.5 transition-all duration-200" />
                       </button>
                     </PopoverTrigger>
                     
@@ -172,14 +178,14 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                   </Popover>
 
                   {/* 快捷加值按鈕 (+) */}
-                  <div className="border-l border-cyan-500/20 h-full flex items-center">
+                  <div className="border-l border-cyan-500/30 h-full flex items-center">
                     <PurchasePointsDialog>
                       <button 
                         id="header-add-points-btn"
                         title="立即加值"
-                        className="h-full px-2 sm:px-2.5 flex items-center justify-center bg-cyan-500/10 hover:bg-cyan-500/25 active:bg-cyan-500/35 text-cyan-400 hover:text-cyan-200 transition-all group outline-none"
+                        className="h-full px-2.5 sm:px-3 flex items-center justify-center bg-gradient-to-r from-cyan-500/20 to-blue-600/25 hover:from-cyan-500/40 hover:to-blue-600/45 active:bg-cyan-500/50 text-cyan-300 hover:text-white transition-all group outline-none"
                       >
-                        <Plus className="h-3.5 w-3.5 group-hover:scale-125 transition-transform" />
+                        <Plus className="h-3.5 w-3.5 group-hover:scale-125 transition-transform stroke-[2.5]" />
                       </button>
                     </PurchasePointsDialog>
                   </div>
@@ -187,7 +193,7 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
               </div>
             )}
 
-          {/* 頭像區塊 (優化版) */}
+          {/* 頭像區塊 (立體尊爵版) */}
           <div className="flex items-center">
               {isUserLoading ? (
                 <div className="h-8 w-8 flex items-center justify-center">
@@ -198,18 +204,18 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                     <DropdownMenuTrigger asChild>
                     <button 
                       id="header-avatar-trigger"
-                      className="relative flex items-center justify-center p-0.5 rounded-full hover:scale-105 active:scale-95 transition-all duration-200 outline-none group ml-1"
+                      className="relative flex items-center justify-center p-0.5 rounded-full hover:scale-105 active:scale-95 transition-all duration-200 outline-none group ml-0.5 sm:ml-1"
                     >
-                      {/* 頭像光暈外圈 */}
+                      {/* 頭像外圈霓虹光環 */}
                       <div className={cn(
-                        "relative flex items-center justify-center rounded-full p-[1.5px] transition-all duration-300",
+                        "relative flex items-center justify-center rounded-full p-[2px] transition-all duration-300 shadow-[0_0_14px_rgba(6,182,212,0.25)] group-hover:shadow-[0_0_20px_rgba(6,182,212,0.5)]",
                         levelInfo.border,
                         levelInfo.glow,
-                        "bg-gradient-to-br from-white/20 via-transparent to-black/60"
+                        "bg-gradient-to-br from-cyan-400/40 via-white/10 to-blue-900/60"
                       )}>
                         {/* 頭像主體 */}
                         <div className={cn(
-                          "w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center overflow-hidden border border-black/50 shadow-inner",
+                          "w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center overflow-hidden border border-black/60 shadow-inner bg-slate-900",
                           levelInfo.bg
                         )}>
                           {userProfile?.photoURL ? (
@@ -227,11 +233,11 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                           )}
                         </div>
 
-                        {/* 右下角等級微型角標 */}
-                        <div className="absolute -bottom-0.5 -right-0.5 flex items-center justify-center w-4 h-4 rounded-full bg-[#080d19] border border-white/20 shadow-md">
+                        {/* 右下角等級微型皇冠角標 */}
+                        <div className="absolute -bottom-0.5 -right-0.5 flex items-center justify-center w-4 h-4 rounded-full bg-[#080d19] border border-cyan-500/40 shadow-[0_0_8px_rgba(0,0,0,0.8)]">
                           <Crown className={cn(
                             "w-2.5 h-2.5",
-                            isHighTier ? "text-amber-400 fill-amber-400/40 animate-pulse" : "text-slate-400"
+                            isHighTier ? "text-amber-400 fill-amber-400/40 animate-pulse" : "text-cyan-400"
                           )} />
                         </div>
                       </div>

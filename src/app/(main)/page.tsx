@@ -137,7 +137,7 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 animate-fade-in-up pt-4 sm:pt-6 max-w-md mx-auto">
             <Button size="lg" asChild className="w-full sm:w-auto h-12 sm:h-14 px-8 text-base sm:text-lg font-black rounded-2xl group bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-slate-950 shadow-[0_0_30px_rgba(245,158,11,0.4)] hover:shadow-[0_0_40px_rgba(245,158,11,0.6)] border border-amber-300/60 relative overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98]">
               <Link href="/draw" className="flex items-center justify-center gap-2.5">
-                <LuckyBagIcon className="w-5 h-5 fill-slate-950" />
+                <Sparkles className="w-5 h-5 text-slate-950 fill-slate-950 animate-pulse" />
                 <span className="tracking-wide">立即前往卡池</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform" />
               </Link>
