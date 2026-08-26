@@ -20,7 +20,6 @@ import { FirebaseError } from 'firebase/app';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Loader2, Sparkles, ShieldCheck, LogIn, CheckCircle2, Terminal, Mail, Lock, ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Logo } from '@/components/icons';
 import Link from 'next/link';
 
 // Simple Google Icon SVG
@@ -246,22 +245,19 @@ export default function LoginPage() {
   const [isRegistering, setIsRegistering] = useState(false);
 
   return (
-    <div className="min-h-[100dvh] w-full flex flex-col justify-center items-center p-3.5 sm:p-6 relative overflow-hidden bg-[#060913] text-white">
+    <div className="min-h-[100dvh] w-full flex flex-col justify-start items-center pt-10 sm:pt-16 p-4 sm:p-6 relative overflow-hidden bg-[#060913] text-white">
       {/* Background Ambience */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#06b6d408_1px,transparent_1px),linear-gradient(to_bottom,#06b6d408_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none opacity-60" />
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 sm:w-96 h-72 sm:h-96 bg-cyan-500/15 rounded-full blur-[100px] pointer-events-none" />
 
-      {/* Main Container - Compact Single Screen */}
-      <div className="w-full max-w-[380px] relative z-10 my-auto flex flex-col items-center">
+      {/* Main Container - Lifted Upwards */}
+      <div className="w-full max-w-[380px] relative z-10 flex flex-col items-center">
         
-        {/* Brand Header */}
-        <div className="text-center space-y-1 mb-4 sm:mb-5">
-          <div className="inline-flex items-center justify-center hover:opacity-90 transition-opacity">
-            <Logo className="h-9 sm:h-11 w-auto" />
-          </div>
-          <p className="text-[11px] sm:text-xs text-slate-400 font-medium tracking-wide">
-            登入以存取您的收藏庫與即時資產
-          </p>
+        {/* Title Only */}
+        <div className="text-center mb-4 sm:mb-5">
+          <h1 className="text-xl sm:text-2xl font-black font-headline tracking-tight text-white">
+            {isRegistering ? '會員註冊' : '會員登入'}
+          </h1>
         </div>
 
         {/* Auth Card */}

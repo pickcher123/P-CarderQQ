@@ -219,17 +219,56 @@ export default function OpenPackPage() {
     }, [firestore, poolId, user]);
 
     const cardsRef = useMemoFirebase(() => (firestore ? collection(firestore, 'cards') : null), [firestore]);
-    const { data: allCards } = useCollection<Card>(cardsRef);
+    const { data: allCards, isLoading: isLoadingCards } = useCollection<Card>(cardsRef);
     const allCardsMap = useMemo(() => {
         const map = new Map<string, Card>();
         allCards?.forEach(c => map.set(c.id, c));
         return map;
     }, [allCards]);
 
+    // Dynamically enrich drawn prizes if allCardsMap loads or updates
+    useEffect(() => {
+        if (!allCardsMap || allCardsMap.size === 0) return;
+        setDrawnPrizes(prev => prev.map(p => {
+            if (p.type === 'card' || p.type === 'last-prize') {
+                const card = allCardsMap.get(p.id);
+                if (card) {
+                    return {
+                        ...p,
+                        name: card.name || p.name,
+                        imageUrl: card.imageUrl || p.imageUrl,
+                        backImageUrl: card.backImageUrl || (p as any).backImageUrl,
+                        category: card.category || p.category,
+                        rarity: p.rarity || card.rarity || 'common',
+                        serialNumber: (card as any).serialNumber || (p as any).serialNumber || '',
+                    };
+                }
+            }
+            return p;
+        }));
+        setSessionPrizes(prev => prev.map(p => {
+            if (p.type === 'card' || p.type === 'last-prize') {
+                const card = allCardsMap.get(p.id);
+                if (card) {
+                    return {
+                        ...p,
+                        name: card.name || p.name,
+                        imageUrl: card.imageUrl || p.imageUrl,
+                        backImageUrl: card.backImageUrl || (p as any).backImageUrl,
+                        category: card.category || p.category,
+                        rarity: p.rarity || card.rarity || 'common',
+                        serialNumber: (card as any).serialNumber || (p as any).serialNumber || '',
+                    };
+                }
+            }
+            return p;
+        }));
+    }, [allCardsMap]);
+
     const performTrialDraw = useCallback((count: number) => {
         if (!cardPool) return;
         setIsTrialMode(true);
-        const { drawn } = drawFromPool(cardPool, count, allCardsMap);
+        const { drawn } = drawFromPool(cardPool, count, allCardsMap, true);
         if (drawn.length === 0) {
             toast({ variant: 'destructive', title: '告示', description: '卡池目前已無獎項可供試手氣。' });
             return;
@@ -248,12 +287,12 @@ export default function OpenPackPage() {
         });
     }, [cardPool, allCardsMap, toast]);
 
-    // Auto-trigger trial if URL param has trial=true
+    // Auto-trigger trial if URL param has trial=true (only after cardPool and allCards are ready)
     useEffect(() => {
-        if (cardPool && searchParams.get('trial') === 'true' && step === 'waiting-to-start') {
+        if (cardPool && !isLoadingCards && (allCards?.length || 0) >= 0 && searchParams.get('trial') === 'true' && step === 'waiting-to-start') {
             performTrialDraw(initialDrawCount);
         }
-    }, [cardPool, searchParams, step, initialDrawCount, performTrialDraw]);
+    }, [cardPool, isLoadingCards, allCards, searchParams, step, initialDrawCount, performTrialDraw]);
 
     const performDraw = useCallback(async (count: number) => {
         if (!user) {

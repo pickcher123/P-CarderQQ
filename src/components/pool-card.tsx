@@ -688,7 +688,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                                     </div>
 
                                                     {/* 品項名稱 */}
-                                                    <h4 className="w-full text-center text-[11px] font-bold text-slate-100 truncate mb-1 px-0.5 group-hover/item:text-cyan-300 transition-colors">
+                                                    <h4 className="w-full text-center text-[11px] font-bold text-slate-100 line-clamp-2 leading-tight min-h-[1.75rem] mb-1 px-0.5 group-hover/item:text-cyan-300 transition-colors" title={c.name}>
                                                         {c.name}
                                                     </h4>
 

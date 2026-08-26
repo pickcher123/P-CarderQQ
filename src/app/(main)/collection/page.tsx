@@ -915,7 +915,7 @@ export default function CollectionPage() {
 
                         {/* Card Info Footer */}
                         <div className="mt-2 space-y-1">
-                          <h4 className="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors line-clamp-1">
+                          <h4 className="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors line-clamp-2 leading-tight min-h-[2rem]" title={card.name}>
                             {card.name}
                           </h4>
                           
@@ -1678,7 +1678,7 @@ export default function CollectionPage() {
                         </Badge>
                       )}
                     </div>
-                    <h2 className="text-lg font-black font-headline tracking-tight text-white uppercase max-w-[280px] truncate mt-1">
+                    <h2 className="text-base sm:text-lg font-black font-headline tracking-tight text-white uppercase max-w-xs text-center leading-snug mt-1">
                       {previewCard.name}
                     </h2>
                   </div>
