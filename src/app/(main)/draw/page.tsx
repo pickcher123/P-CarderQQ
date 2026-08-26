@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { SafeImage } from '@/components/safe-image';
 import { Button } from '@/components/ui/button';
-import { Layers, Gem, Package, Disc3, Info, Sparkles, ChevronRight, Star, Trophy, Clock, Settings } from 'lucide-react';
+import { Layers, Gem, Package, Disc3, Info, Sparkles, ChevronRight, Star, Trophy, Clock, Settings, Dices, Target } from 'lucide-react';
 import { useCollection, useRequest, useFirestore, useMemoFirebase, useDoc, useUser } from "@/firebase";
 import { collection, query, orderBy, doc } from "firebase/firestore";
 import { Skeleton } from '@/components/ui/skeleton';
@@ -139,58 +139,95 @@ export default function DrawPage() {
     <div className="container py-4 sm:py-8 md:py-10 relative overflow-hidden px-3 sm:px-4 md:px-8 max-w-7xl mx-auto">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-gradient-to-b from-amber-500/10 via-cyan-500/5 to-transparent blur-[120px] pointer-events-none" />
         
-        {/* 頂部 Header & 規則按鈕 */}
-        <div className="relative z-20 mb-4 sm:mb-6">
-          <div className="flex items-center justify-end mb-3">
-            <Dialog>
-                <DialogTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-8 sm:h-9 px-3 sm:px-4 rounded-full border-white/10 bg-slate-900/80 backdrop-blur-md hover:bg-amber-500/15 hover:border-amber-500/40 text-slate-200 hover:text-white font-bold transition-all gap-1.5 text-xs shadow-md">
-                        <Info className="h-3.5 w-3.5 text-amber-400" />
-                        <span className="tracking-wider">遊戲規則</span>
-                    </Button>
-                </DialogTrigger>
-                <DialogContent className="rounded-3xl bg-[#0b0f19]/95 backdrop-blur-2xl border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.8)] max-w-lg">
-                    <DialogHeader>
-                        <DialogTitle className="text-xl sm:text-2xl font-black font-headline text-white tracking-widest flex items-center gap-2">
-                          <span className="text-amber-400">抽卡</span>
-                          <span>遊戲規則說明</span>
-                        </DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4 text-sm text-slate-300 leading-relaxed py-2">
-                        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-b from-[#13192a]/90 via-[#0c101d]/90 to-[#080b14]/90 border border-white/10 space-y-3.5">
-                            <p className="flex items-start gap-3">
-                                <span className="text-amber-400 font-black font-code text-base shrink-0 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">01</span>
-                                <span className="text-xs sm:text-sm text-slate-200">玩家消耗點數從卡池中抽取獎品。</span>
-                            </p>
-                            <p className="flex items-start gap-3">
-                                <span className="text-amber-400 font-black font-code text-base shrink-0 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">02</span>
-                                <span className="text-xs sm:text-sm text-slate-200">每個卡池包含一組特定的卡片和點數獎項，每個獎項都有不同的稀有度。</span>
-                            </p>
-                            <p className="flex items-start gap-3">
-                                <span className="text-amber-400 font-black font-code text-base shrink-0 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">03</span>
-                                <span className="text-xs sm:text-sm text-slate-200">每個稀有度的中獎機率都會在卡池資訊中明確列出，公平透明。</span>
-                            </p>
-                            <p className="flex items-start gap-3">
-                                <span className="text-amber-400 font-black font-code text-base shrink-0 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">04</span>
-                                <span className="text-xs sm:text-sm text-slate-200">抽出的卡片會自動加入您的「數位收藏庫」。</span>
-                            </p>
-                            <p className="flex items-start gap-3">
-                                <span className="text-amber-400 font-black font-code text-base shrink-0 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">05</span>
-                                <span className="text-xs sm:text-sm text-slate-200">
-                                    <span className="text-cyan-400 font-bold mr-1">保護機制</span>：具備 120s 鎖定期，保障開獎流暢度與公平性。
-                                </span>
-                            </p>
+        {/* === HERO SECTION: 頂級抽卡專區 === */}
+        <div className="relative rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] p-3.5 sm:p-6 md:p-8 overflow-hidden border border-amber-500/25 bg-gradient-to-b from-[#19150d]/90 via-[#120f0a]/95 to-[#080604] shadow-[0_20px_60px_rgba(0,0,0,0.8)] backdrop-blur-2xl mb-5 sm:mb-8">
+            {/* Background Grid Pattern */}
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#f59e0b10_1px,transparent_1px),linear-gradient(to_bottom,#f59e0b10_1px,transparent_1px)] bg-[size:32px_32px] opacity-60 pointer-events-none" />
+            
+            {/* Top Glow Accent Bar */}
+            <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_15px_#f59e0b]" />
+            
+            <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-3 sm:gap-6 md:gap-12">
+                <div className="space-y-2 sm:space-y-3 text-center lg:text-left max-w-2xl">
+                    <h1 className="font-headline text-2xl sm:text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-100 to-cyan-300 drop-shadow-[0_0_20px_rgba(245,158,11,0.4)] tracking-tight leading-none uppercase">
+                        頂級抽卡專區
+                    </h1>
+
+                    <p className="text-xs sm:text-sm md:text-base text-slate-300 font-medium leading-normal">
+                        精選稀有頂級球員卡池，透明機率機制，開出大獎直接入庫或折現。
+                    </p>
+
+                    {/* Rules Quick Dialog Button */}
+                    <div className="pt-1 flex flex-wrap items-center justify-center lg:justify-start gap-2">
+                        <Dialog>
+                            <DialogTrigger asChild>
+                                <Button className="h-8 sm:h-10 px-4 sm:px-5 rounded-lg sm:rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 text-xs sm:text-sm font-black shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all gap-1.5 group cursor-pointer">
+                                    <Dices className="w-3.5 h-3.5 text-slate-950 group-hover:rotate-45 transition-transform" />
+                                    <span>遊戲規則</span>
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="rounded-[2rem] bg-slate-950 border border-amber-500/30 text-white max-w-2xl backdrop-blur-2xl shadow-2xl">
+                                <DialogHeader>
+                                    <DialogTitle className="text-xl md:text-2xl font-black text-amber-400 flex items-center gap-2 font-headline">
+                                        <Target className="w-6 h-6 text-amber-400" />
+                                        抽卡遊戲規則說明
+                                    </DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-4 text-xs md:text-sm text-slate-300 leading-relaxed py-2">
+                                    <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/80 border border-amber-500/20 space-y-3.5">
+                                        <p className="flex items-start gap-3">
+                                            <span className="text-amber-400 font-black font-mono text-base shrink-0 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">01</span>
+                                            <span className="text-xs sm:text-sm text-slate-200">玩家消耗點數或鑽石從主題卡池中抽取獎品。</span>
+                                        </p>
+                                        <p className="flex items-start gap-3">
+                                            <span className="text-amber-400 font-black font-mono text-base shrink-0 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">02</span>
+                                            <span className="text-xs sm:text-sm text-slate-200">每個卡池包含一組特定的卡片和點數獎項，每個獎項都有不同的稀有度與大獎配置。</span>
+                                        </p>
+                                        <p className="flex items-start gap-3">
+                                            <span className="text-amber-400 font-black font-mono text-base shrink-0 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">03</span>
+                                            <span className="text-xs sm:text-sm text-slate-200">每個稀有度與大賞的中獎機率都會在卡池資訊中明確標示，公開透明。</span>
+                                        </p>
+                                        <p className="flex items-start gap-3">
+                                            <span className="text-amber-400 font-black font-mono text-base shrink-0 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">04</span>
+                                            <span className="text-xs sm:text-sm text-slate-200">抽出的卡片會即時存入您的「數位收藏庫」，可申請寄送到府或直接折現轉換紅利。</span>
+                                        </p>
+                                        <p className="flex items-start gap-3">
+                                            <span className="text-amber-400 font-black font-mono text-base shrink-0 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">05</span>
+                                            <span className="text-xs sm:text-sm text-slate-200">
+                                                <span className="text-cyan-400 font-bold mr-1">公平開獎保護</span>：具備開獎防衝撞鎖定機制，保障全體玩家操作流暢度。
+                                            </span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </DialogContent>
+                        </Dialog>
+
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg sm:rounded-xl bg-white/5 border border-amber-500/20 text-[11px] text-slate-300">
+                            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                            <span>即時開獎入庫</span>
                         </div>
                     </div>
-                </DialogContent>
-            </Dialog>
-          </div>
+                </div>
 
-          <div className="text-center">
-            <h1 className="font-headline text-2xl sm:text-4xl md:text-5xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-100 to-cyan-400 drop-shadow-[0_0_25px_rgba(245,158,11,0.35)]">
-              頂級抽卡專區
-            </h1>
-          </div>
+                {/* Live Stats Widget */}
+                <div className="grid grid-cols-2 gap-2 sm:gap-3 w-full lg:w-auto shrink-0">
+                    <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-[#0b1329] border border-amber-500/30 flex flex-col items-center justify-center text-center shadow-[0_4px_20px_rgba(245,158,11,0.15)] min-w-[100px] sm:min-w-[130px]">
+                        <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">開放中卡池</span>
+                        <span className="text-xl sm:text-3xl font-black font-headline text-amber-400 mt-0.5 sm:mt-1">
+                            {finalIsLoading ? '--' : allPools.length}
+                        </span>
+                        <span className="text-[9px] sm:text-[10px] text-slate-400 mt-0.5">熱門主題專區</span>
+                    </div>
+
+                    <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-[#0b1329] border border-cyan-500/30 flex flex-col items-center justify-center text-center shadow-[0_4px_20px_rgba(6,182,212,0.15)] min-w-[100px] sm:min-w-[130px]">
+                        <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">卡池總類別</span>
+                        <span className="text-xl sm:text-3xl font-black font-headline text-cyan-400 mt-0.5 sm:mt-1">
+                            {finalIsLoading ? '--' : categoriesWithCounts.length}
+                        </span>
+                        <span className="text-[9px] sm:text-[10px] text-slate-400 mt-0.5">球星分類主題</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
         {/* 傳奇大獎牆區塊 */}

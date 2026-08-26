@@ -114,7 +114,7 @@ export default function CollectionPage() {
   const [shippingAddress, setShippingAddress] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'all' | 'standard' | 'break'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'standard' | 'break' | 'random'>('all');
   const [sortOption, setSortOption] = useState<'price_desc' | 'price_asc' | 'unsold' | 'latest'>('latest');
 
   const userProfileRef = useMemoFirebase(() => {
@@ -194,6 +194,7 @@ export default function CollectionPage() {
       // Tab filter
       if (activeTab === 'standard' && (card.source === 'group-break' || isRandomPlayerCard(card))) return false;
       if (activeTab === 'break' && card.source !== 'group-break') return false;
+      if (activeTab === 'random' && !isRandomPlayerCard(card)) return false;
 
       // Category filter
       if (filterCategory && card.category !== filterCategory) return false;
@@ -696,26 +697,43 @@ export default function CollectionPage() {
                   </span>
                 </button>
 
-                {portfolioStats.breakCount > 0 && (
-                  <button
-                    onClick={() => { setActiveTab('break'); setFilterCategory(null); }}
-                    className={cn(
-                      "px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 whitespace-nowrap",
-                      activeTab === 'break' 
-                        ? "bg-gradient-to-r from-orange-500 to-amber-400 text-slate-950 shadow-md shadow-orange-500/20" 
-                        : "text-slate-400 hover:text-white hover:bg-white/5"
-                    )}
-                  >
-                    <Users2 className="w-3.5 h-3.5" />
-                    <span>團拆專區</span>
-                    <span className={cn(
-                      "text-[10px] px-1.5 py-0.2 rounded-md font-code",
-                      activeTab === 'break' ? "bg-slate-950/30 text-slate-950 font-black" : "bg-white/10 text-slate-400"
-                    )}>
-                      {portfolioStats.breakCount}
-                    </span>
-                  </button>
-                )}
+                <button
+                  onClick={() => { setActiveTab('break'); setFilterCategory(null); }}
+                  className={cn(
+                    "px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 whitespace-nowrap",
+                    activeTab === 'break' 
+                      ? "bg-gradient-to-r from-orange-500 to-amber-400 text-slate-950 shadow-md shadow-orange-500/20" 
+                      : "text-slate-400 hover:text-white hover:bg-white/5"
+                  )}
+                >
+                  <Users2 className="w-3.5 h-3.5" />
+                  <span>團拆藏品</span>
+                  <span className={cn(
+                    "text-[10px] px-1.5 py-0.2 rounded-md font-code",
+                    activeTab === 'break' ? "bg-slate-950/30 text-slate-950 font-black" : "bg-white/10 text-slate-400"
+                  )}>
+                    {portfolioStats.breakCount}
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => { setActiveTab('random'); setFilterCategory(null); }}
+                  className={cn(
+                    "px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 whitespace-nowrap",
+                    activeTab === 'random' 
+                      ? "bg-gradient-to-r from-purple-500 to-indigo-400 text-slate-950 shadow-md shadow-purple-500/20" 
+                      : "text-slate-400 hover:text-white hover:bg-white/5"
+                  )}
+                >
+                  <Package className="w-3.5 h-3.5" />
+                  <span>累積小卡</span>
+                  <span className={cn(
+                    "text-[10px] px-1.5 py-0.2 rounded-md font-code",
+                    activeTab === 'random' ? "bg-slate-950/30 text-slate-950 font-black" : "bg-white/10 text-slate-400"
+                  )}>
+                    {portfolioStats.randomCount}
+                  </span>
+                </button>
               </div>
 
               {/* Search & Sort Controls */}
@@ -937,7 +955,7 @@ export default function CollectionPage() {
             )}
 
             {/* 2. RANDOM PLAYER CARDS TEXT VAULT (普特卡 文字聚合獨立專區 - 與一般卡片完全分開) */}
-            {randomPlayerCards.length > 0 && activeTab === 'all' && (
+            {randomPlayerCards.length > 0 && (activeTab === 'all' || activeTab === 'random') && (
               <motion.section
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -945,7 +963,7 @@ export default function CollectionPage() {
                 className="space-y-4"
               >
                 {/* Clean Section Divider if there are also standard cards */}
-                {uniqueStandardCards.length > 0 && (
+                {uniqueStandardCards.length > 0 && activeTab === 'all' && (
                   <div className="relative py-2 flex items-center justify-center">
                     <div className="w-full h-px bg-gradient-to-r from-transparent via-amber-500/30 to-transparent" />
                     <div className="absolute px-3 py-0.5 bg-[#0a0e1a] text-[10px] font-black text-amber-400 uppercase tracking-widest border border-amber-500/30 rounded-full flex items-center gap-1.5 shadow-md">

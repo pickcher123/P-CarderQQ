@@ -2,15 +2,27 @@
 
 import { useState } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, addDoc, deleteDoc, updateDoc, doc, Timestamp, orderBy, query } from 'firebase/firestore';
+import { collection, addDoc, deleteDoc, updateDoc, doc, Timestamp, orderBy, query, writeBatch } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { format } from 'date-fns';
-import { Trash2, Plus } from 'lucide-react';
+import { Trash2, Plus, Sparkles, Loader2, Calendar, MapPin, Clock, CheckCircle2, RefreshCw, ExternalLink } from 'lucide-react';
+
+interface ExtractedExhibition {
+    title: string;
+    startDate: string;
+    endDate?: string;
+    time?: string;
+    location: string;
+    description?: string;
+    imageUrl?: string;
+    selected?: boolean;
+}
 
 export default function CardExhibitionsAdmin() {
     const firestore = useFirestore();
@@ -23,11 +35,109 @@ export default function CardExhibitionsAdmin() {
     const [description, setDescription] = useState('');
     const [imageUrl, setImageUrl] = useState('');
 
+    // AI Fetch states
+    const [isAiFetching, setIsAiFetching] = useState(false);
+    const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
+    const [aiExtractedList, setAiExtractedList] = useState<ExtractedExhibition[]>([]);
+    const [isImporting, setIsImporting] = useState(false);
+
     const q = useMemoFirebase(() => {
         if (!firestore) return null;
         return query(collection(firestore, 'card_exhibitions'), orderBy('date', 'asc'));
     }, [firestore]);
     const { data: exhibitions } = useCollection<any>(q);
+
+    // Call AI fetch endpoint
+    const handleFetchFromAi = async () => {
+        setIsAiFetching(true);
+        try {
+            const res = await fetch('/api/admin/fetch-exhibitions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+            });
+            const data = await res.json();
+            if (!data.success) {
+                throw new Error(data.error || 'AI 抓取卡展失敗');
+            }
+
+            const items: ExtractedExhibition[] = (data.exhibitions || []).map((item: any) => ({
+                ...item,
+                selected: true,
+            }));
+
+            if (items.length === 0) {
+                toast({
+                    title: '未找到近期公開卡展',
+                    description: 'AI 暫時未檢索到近期即將舉辦的公開卡展，建議稍後再試或手動新增。',
+                });
+            } else {
+                setAiExtractedList(items);
+                setIsAiDialogOpen(true);
+                toast({
+                    title: 'AI 提取成功',
+                    description: `成功聯網找到 ${items.length} 場台灣球員卡展情報！`,
+                });
+            }
+        } catch (error: any) {
+            toast({
+                variant: 'destructive',
+                title: 'AI 檢索失敗',
+                description: error.message || '無法連線至 AI 聯網檢索服務',
+            });
+        } finally {
+            setIsAiFetching(false);
+        }
+    };
+
+    // Batch import AI extracted items into Firestore
+    const handleBatchImportAiExhibitions = async () => {
+        if (!firestore) return;
+        const selectedItems = aiExtractedList.filter(item => item.selected);
+        if (selectedItems.length === 0) {
+            toast({ variant: 'destructive', title: '請至少選擇一場卡展' });
+            return;
+        }
+
+        setIsImporting(true);
+        try {
+            const batch = writeBatch(firestore);
+            const exhibitionsCol = collection(firestore, 'card_exhibitions');
+
+            for (const item of selectedItems) {
+                const newDocRef = doc(exhibitionsCol);
+                const sDate = item.startDate ? new Date(item.startDate) : new Date();
+                const eDate = item.endDate ? new Date(item.endDate) : sDate;
+
+                batch.set(newDocRef, {
+                    title: item.title || '台灣球員卡展',
+                    date: Timestamp.fromDate(sDate),
+                    endDate: Timestamp.fromDate(eDate),
+                    time: item.time || '',
+                    location: item.location || '台灣',
+                    description: item.description || '',
+                    imageUrl: item.imageUrl || '',
+                    createdAt: Timestamp.now(),
+                    source: 'AI-Extracted',
+                });
+            }
+
+            await batch.commit();
+            toast({
+                title: '🎉 匯入成功',
+                description: `已將 ${selectedItems.length} 場台灣卡展情報同步至卡展行事曆！`,
+            });
+            setIsAiDialogOpen(false);
+            setAiExtractedList([]);
+        } catch (error: any) {
+            toast({
+                variant: 'destructive',
+                title: '匯入失敗',
+                description: error.message || '寫入資料庫時發生錯誤',
+            });
+        } finally {
+            setIsImporting(false);
+        }
+    };
 
     const handleAdd = async () => {
         if (!firestore || !title || !startDate) return;
@@ -163,10 +273,138 @@ export default function CardExhibitionsAdmin() {
     };
 
     return (
-        <div className="space-y-8 p-8">
-            <h1 className="text-3xl font-black">卡展管理</h1>
+        <div className="space-y-8 p-8 max-w-7xl mx-auto">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/40 pb-5">
+                <div>
+                    <h1 className="text-3xl font-black tracking-tight text-foreground flex items-center gap-3">
+                        卡展管理
+                        <span className="text-xs font-semibold px-2.5 py-1 bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded-full">
+                            全台情報
+                        </span>
+                    </h1>
+                    <p className="text-sm text-muted-foreground mt-1">
+                        管理卡展行事曆活動，或利用 AI 自動聯網搜尋台灣各地球員卡展並一鍵匯入。
+                    </p>
+                </div>
+
+                <div className="flex items-center gap-3">
+                    <Button 
+                        onClick={handleFetchFromAi} 
+                        disabled={isAiFetching}
+                        className="bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white font-bold shadow-lg shadow-cyan-500/20 border border-cyan-400/30 transition-all duration-300 active:scale-95"
+                    >
+                        {isAiFetching ? (
+                            <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin text-cyan-200" />
+                                正在全網檢索台灣卡展...
+                            </>
+                        ) : (
+                            <>
+                                <Sparkles className="mr-2 h-4 w-4 text-amber-300 animate-pulse" />
+                                🤖 AI 一鍵提取全台卡展
+                            </>
+                        )}
+                    </Button>
+                </div>
+            </div>
+
+            {/* AI Extracted Review Dialog */}
+            <Dialog open={isAiDialogOpen} onOpenChange={setIsAiDialogOpen}>
+                <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto bg-slate-950 text-white border-slate-800">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-bold flex items-center gap-2 text-cyan-400">
+                            <Sparkles className="h-5 w-5 text-amber-400" />
+                            AI 聯網檢索：台灣球員卡展情報 ({aiExtractedList.length} 場)
+                        </DialogTitle>
+                        <DialogDescription className="text-slate-400 text-xs">
+                            以下為 Gemini 聯網搜尋並解析之全台卡展活動。您可以勾選欲匯入之項目，點擊匯入後將直接同步發布至前台卡展行事曆。
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-3 my-3">
+                        {aiExtractedList.map((item, idx) => (
+                            <div 
+                                key={idx}
+                                onClick={() => {
+                                    setAiExtractedList(prev => prev.map((it, i) => i === idx ? { ...it, selected: !it.selected } : it));
+                                }}
+                                className={`p-4 rounded-xl border transition-all cursor-pointer select-none ${
+                                    item.selected 
+                                        ? 'bg-cyan-950/40 border-cyan-500/50 shadow-md shadow-cyan-500/10' 
+                                        : 'bg-slate-900/50 border-slate-800 opacity-60 hover:opacity-80'
+                                }`}
+                            >
+                                <div className="flex items-start justify-between gap-3">
+                                    <div className="flex items-start gap-3">
+                                        <div className={`mt-1 h-5 w-5 rounded border flex items-center justify-center transition-colors shrink-0 ${
+                                            item.selected ? 'bg-cyan-500 border-cyan-400 text-slate-950' : 'border-slate-600 bg-slate-800'
+                                        }`}>
+                                            {item.selected && <CheckCircle2 className="h-4 w-4" />}
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <h4 className="font-bold text-base text-white">{item.title}</h4>
+                                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-300">
+                                                <span className="flex items-center gap-1 text-amber-400 font-mono">
+                                                    <Calendar className="h-3.5 w-3.5" />
+                                                    {item.startDate} {item.endDate && item.endDate !== item.startDate ? `~ ${item.endDate}` : ''}
+                                                </span>
+                                                {item.time && (
+                                                    <span className="flex items-center gap-1 text-slate-400 font-mono">
+                                                        <Clock className="h-3.5 w-3.5" />
+                                                        {item.time}
+                                                    </span>
+                                                )}
+                                                <span className="flex items-center gap-1 text-cyan-300 font-medium">
+                                                    <MapPin className="h-3.5 w-3.5" />
+                                                    {item.location}
+                                                </span>
+                                            </div>
+                                            {item.description && (
+                                                <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed pt-1">
+                                                    {item.description}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <DialogFooter className="flex flex-col sm:flex-row gap-2 pt-2 border-t border-slate-800">
+                        <div className="flex items-center gap-2 text-xs text-slate-400 mr-auto">
+                            已選取 <strong className="text-cyan-400 font-bold">{aiExtractedList.filter(i => i.selected).length}</strong> / {aiExtractedList.length} 場卡展
+                        </div>
+                        <Button 
+                            variant="ghost" 
+                            onClick={() => setIsAiDialogOpen(false)}
+                            className="text-slate-400 hover:text-white"
+                        >
+                            取消
+                        </Button>
+                        <Button 
+                            onClick={handleBatchImportAiExhibitions}
+                            disabled={isImporting || aiExtractedList.filter(i => i.selected).length === 0}
+                            className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold"
+                        >
+                            {isImporting ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    正在同步寫入行事曆...
+                                </>
+                            ) : (
+                                <>
+                                    <Plus className="mr-1.5 h-4 w-4" />
+                                    一鍵同步匯入至行事曆
+                                </>
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
             <Card>
-                <CardHeader><CardTitle>新增卡展</CardTitle></CardHeader>
+                <CardHeader><CardTitle>手動新增卡展</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
                     <div className="space-y-2">
                         <Label>標題 *</Label>
