@@ -207,22 +207,6 @@ export default function LuckBagDetailPage() {
     return { prizeCards: prizes, otherPrizesList: otherPrizesData, otherPointsList: otherPointsData };
   }, [luckBag, allCards]);
 
-  const availableCardsToSelect = useMemo(() => {
-    if (!allCards) return [];
-    const available = allCards.filter(card => 
-      !card.isSold &&
-      !globallyAssignedCardIds.has(card.id) &&
-      card.source !== 'group-break'
-    );
-
-    return available.sort((a, b) => {
-      const da = a.createdAt ? new Date(typeof a.createdAt === 'string' ? a.createdAt : a.createdAt?.seconds ? a.createdAt.seconds * 1000 : a.createdAt).getTime() : 0;
-      const db = b.createdAt ? new Date(typeof b.createdAt === 'string' ? b.createdAt : b.createdAt?.seconds ? b.createdAt.seconds * 1000 : b.createdAt).getTime() : 0;
-      if (da !== db) return db - da;
-      return a.name.localeCompare(b.name);
-    });
-  }, [allCards, globallyAssignedCardIds]);
-
   const handleAddOtherPrizes = useCallback(async (type: 'card' | 'points', data: { cardIds?: string[], points?: number }) => {
     if (!luckBagRef) return;
     try {
@@ -615,7 +599,7 @@ export default function LuckBagDetailPage() {
     
     return allCards.filter(c => {
         // Basic: Must not be sold and not in other areas
-        const isFree = !c.isSold && !globallyAssignedCardIds.has(c.id);
+        const isFree = !c.isSold && !globallyAssignedCardIds.has(c.id) && c.source !== 'group-break';
         
         if (selectedPrizeLevel === 'other') {
             // Adding to other prizes: must be free AND not already in "other prizes"
@@ -625,6 +609,11 @@ export default function LuckBagDetailPage() {
             // Must be free AND NOT in any of the OTHER specific levels
             return isFree && !otherLevelsInBag.has(c.id);
         }
+    }).sort((a, b) => {
+      const da = a.createdAt ? new Date(typeof a.createdAt === 'string' ? a.createdAt : a.createdAt?.seconds ? a.createdAt.seconds * 1000 : a.createdAt).getTime() : 0;
+      const db = b.createdAt ? new Date(typeof b.createdAt === 'string' ? b.createdAt : b.createdAt?.seconds ? b.createdAt.seconds * 1000 : b.createdAt).getTime() : 0;
+      if (da !== db) return db - da;
+      return a.name.localeCompare(b.name);
     });
   }, [allCards, globallyAssignedCardIds, luckBag, selectedPrizeLevel]);
 
