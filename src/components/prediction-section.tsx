@@ -251,21 +251,23 @@ export function PredictionSection() {
                                                 key={option}
                                                 variant={isSelected ? 'default' : 'outline'}
                                                 className={cn(
-                                                    "rounded-xl transition-all relative font-bold h-12 sm:h-13 text-xs sm:text-sm px-3 flex flex-col items-center justify-center gap-0.5 border-slate-800 bg-slate-900/90 hover:bg-slate-800 text-white",
+                                                    "rounded-xl transition-all relative font-bold min-h-[54px] h-auto py-2 px-3 text-xs sm:text-sm flex flex-col items-center justify-center gap-1 border-slate-800 bg-slate-900/90 hover:bg-slate-800 text-white whitespace-normal",
                                                     isSelected && "bg-orange-600 hover:bg-orange-500 text-white border-orange-500 shadow-lg shadow-orange-600/30 ring-2 ring-orange-400/40",
                                                     isWinnerOpt && "border-amber-400 bg-amber-500/20 text-amber-200 hover:bg-amber-500/30 shadow-amber-500/10"
                                                 )}
                                                 onClick={() => handlePredict(event.id, option)}
                                                 disabled={isClosed || isConfirmed}
                                             >
-                                                <div className="flex items-center gap-1 max-w-full truncate">
+                                                <div className="flex items-center justify-center gap-1 max-w-full leading-snug text-center">
                                                     {isWinnerOpt && <Trophy className="w-3.5 h-3.5 text-amber-400 shrink-0" />}
-                                                    <span className="truncate">{option}</span>
+                                                    <span className="font-black text-slate-100 text-xs sm:text-sm leading-snug tracking-tight text-center break-words line-clamp-2">
+                                                        {option}
+                                                    </span>
                                                     {isSelected && isConfirmed && (
                                                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 ml-1" />
                                                     )}
                                                 </div>
-                                                <span className="text-[10px] text-slate-400 font-mono font-normal">
+                                                <span className="text-[11px] text-slate-400 font-mono font-medium leading-none block">
                                                     {countForOpt} 人 ({percentForOpt}%)
                                                 </span>
                                             </Button>

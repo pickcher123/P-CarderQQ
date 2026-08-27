@@ -26,9 +26,17 @@ import {
     User,
     Sparkles,
     X,
+    Flame,
+    Zap,
+    TrendingUp,
+    Calendar,
+    ArrowUpRight,
+    SlidersHorizontal,
+    Check,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PPlusIcon } from '@/components/icons';
+import type { SportsMatchOdd } from '@/app/api/admin/fetch-sports-odds/route';
 
 export interface PredictionEvent {
     id: string;
@@ -124,6 +132,13 @@ export default function AdminPredictionsPage() {
     const [createReward, setCreateReward] = useState('100');
     const [createBettingEndTime, setCreateBettingEndTime] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // AI 賽事情報與盤口檢索狀態
+    const [isAiSearchOpen, setIsAiSearchOpen] = useState(false);
+    const [aiSearchQuery, setAiSearchQuery] = useState('');
+    const [isAiSearching, setIsAiSearching] = useState(false);
+    const [aiSearchResults, setAiSearchResults] = useState<SportsMatchOdd[]>([]);
+    const [publishingMatchId, setPublishingMatchId] = useState<string | null>(null);
 
     // 編輯 Modal 狀態
     const [editingEvent, setEditingEvent] = useState<PredictionEvent | null>(null);
@@ -261,6 +276,92 @@ export default function AdminPredictionsPage() {
         }
     };
 
+    // 執行 AI 賽事與盤口檢索
+    const handleFetchSportsOdds = async (customQuery?: string) => {
+        const queryToUse = typeof customQuery === 'string' ? customQuery : aiSearchQuery;
+        setIsAiSearching(true);
+        try {
+            const res = await fetch('/api/admin/fetch-sports-odds', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query: queryToUse })
+            });
+            const data = await res.json();
+            if (data.success && Array.isArray(data.matches)) {
+                setAiSearchResults(data.matches);
+                if (data.warning) {
+                    toast({
+                        title: '已載入精選賽事與盤口資料',
+                        description: data.warning,
+                    });
+                } else {
+                    toast({
+                        title: 'AI 賽事與盤口檢索成功',
+                        description: `成功找到 ${data.matches.length} 場比賽時間與主客讓分盤口！`,
+                    });
+                }
+            } else {
+                toast({
+                    variant: 'destructive',
+                    title: '檢索失敗',
+                    description: data.warning || '無法獲取賽事盤口資料，請稍後重試。'
+                });
+            }
+        } catch (err: any) {
+            console.error('Fetch sports odds error:', err);
+            toast({
+                variant: 'destructive',
+                title: '連線錯誤',
+                description: '請檢查網路連線或 API 設定。'
+            });
+        } finally {
+            setIsAiSearching(false);
+        }
+    };
+
+    // 一鍵直接發布 AI 賽事為預測活動
+    const handleDirectPublishAiMatch = async (match: SportsMatchOdd) => {
+        setPublishingMatchId(match.id);
+        try {
+            await addDoc(eventsCollection, {
+                matchName: match.matchName,
+                question: match.suggestedQuestion,
+                options: match.suggestedOptions,
+                reward: 100,
+                bettingEndTime: match.bettingEndTime || match.matchTime.replace(' ', 'T'),
+                startTime: new Date().toISOString(),
+                status: 'open',
+                winningOption: '',
+                winningOptions: []
+            });
+
+            toast({
+                title: '發布成功！',
+                description: `已將「${match.matchName}」建立為開放中的預測活動。`
+            });
+        } catch (error) {
+            console.error(error);
+            toast({ variant: 'destructive', title: '發布失敗，請稍後重試' });
+        } finally {
+            setPublishingMatchId(null);
+        }
+    };
+
+    // 帶入建立表單並微調
+    const handleApplyMatchToCreateForm = (match: SportsMatchOdd) => {
+        setCreateMatchName(match.matchName);
+        setCreateQuestion(match.suggestedQuestion);
+        setCreateOptions(match.suggestedOptions.join(', '));
+        setCreateReward('100');
+        setCreateBettingEndTime(match.bettingEndTime || match.matchTime.replace(' ', 'T'));
+        setIsAiSearchOpen(false);
+        setIsCreateOpen(true);
+        toast({
+            title: '已帶入建立表單',
+            description: '您可以自由微調預測題目、獎勵或截止時間後送出。'
+        });
+    };
+
     // 計算全站統計數據
     const totalPredictionsCount = allPredictions ? allPredictions.length : 0;
 
@@ -283,11 +384,25 @@ export default function AdminPredictionsPage() {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                     <div className="hidden md:flex items-center gap-2 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-600">
                         <Users className="w-4 h-4 text-orange-500" />
                         <span>總下注筆數：<strong className="text-slate-900 font-mono">{totalPredictionsCount}</strong></span>
                     </div>
+
+                    {/* AI 賽事與盤口檢索按鈕 */}
+                    <Button 
+                        onClick={() => {
+                            setIsAiSearchOpen(true);
+                            if (aiSearchResults.length === 0) {
+                                handleFetchSportsOdds('');
+                            }
+                        }}
+                        className="rounded-xl font-black bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700 text-white shadow-md px-4 h-11 flex items-center gap-2"
+                    >
+                        <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
+                        <span>AI 賽事與盤口檢索</span>
+                    </Button>
 
                     <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
                         <DialogTrigger asChild>
@@ -895,6 +1010,248 @@ export default function AdminPredictionsPage() {
                     </DialogContent>
                 </Dialog>
             )}
+
+            {/* AI 賽事情報與盤口檢索 Dialog */}
+            <Dialog open={isAiSearchOpen} onOpenChange={setIsAiSearchOpen}>
+                <DialogContent className="light w-[95vw] md:max-w-4xl rounded-3xl bg-white shadow-2xl border-none p-0 overflow-hidden text-slate-900 max-h-[90vh] flex flex-col">
+                    <DialogHeader className="p-6 border-b border-slate-100 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white shrink-0">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-400 to-cyan-400 flex items-center justify-center text-slate-900 shrink-0 font-black shadow-md">
+                                    <Sparkles className="w-5 h-5 text-slate-950" />
+                                </div>
+                                <div>
+                                    <DialogTitle className="text-xl font-black text-white flex items-center gap-2">
+                                        AI 賽事情報與盤口檢索小幫手
+                                    </DialogTitle>
+                                    <p className="text-xs text-slate-300 font-medium mt-0.5">
+                                        利用 Gemini 3.7 聯網搜尋指定球隊最近比賽時間、主客對戰、讓分盤口 (Spread) 與大小分賠率
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </DialogHeader>
+
+                    {/* 搜尋與快選區 */}
+                    <div className="p-6 pb-3 border-b border-slate-100 bg-slate-50/70 shrink-0 space-y-3">
+                        <div className="flex gap-2">
+                            <div className="relative flex-1">
+                                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                <Input
+                                    placeholder="輸入球隊名稱或聯賽 (例: 湖人, 道奇, 兄弟, 勇士, 曼城, NBA, CPBL)..."
+                                    value={aiSearchQuery}
+                                    onChange={e => setAiSearchQuery(e.target.value)}
+                                    onKeyDown={e => e.key === 'Enter' && handleFetchSportsOdds()}
+                                    className="pl-10 h-11 rounded-xl bg-white border-slate-200 font-bold text-sm"
+                                />
+                            </div>
+                            <Button
+                                onClick={() => handleFetchSportsOdds()}
+                                disabled={isAiSearching}
+                                className="h-11 px-6 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700 text-white font-black shadow-md shrink-0 flex items-center gap-2"
+                            >
+                                {isAiSearching ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        <span>AI 檢索中...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Sparkles className="w-4 h-4 text-amber-300" />
+                                        <span>即時 AI 檢索</span>
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+
+                        {/* 快捷標籤 */}
+                        <div className="flex items-center gap-2 flex-wrap text-xs">
+                            <span className="text-[11px] font-black text-slate-400 flex items-center gap-1">
+                                <Flame className="w-3 h-3 text-orange-500" /> 熱門快選：
+                            </span>
+                            {[
+                                { label: '🏀 NBA 勇士 / 湖人', query: 'NBA 勇士 湖人' },
+                                { label: '⚾ MLB 道奇 / 教士', query: 'MLB 洛杉磯道奇' },
+                                { label: '⚾ CPBL 中信兄弟', query: 'CPBL 中信兄弟' },
+                                { label: '⚽ 英超 曼城 / 利物浦', query: '英超 曼城' },
+                                { label: '🏀 TPBL / PLG 職籃', query: 'TPBL 台灣職籃' },
+                                { label: '🔥 當前所有熱門賽事', query: '' },
+                            ].map(preset => (
+                                <button
+                                    key={preset.label}
+                                    type="button"
+                                    onClick={() => {
+                                        setAiSearchQuery(preset.query);
+                                        handleFetchSportsOdds(preset.query);
+                                    }}
+                                    className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 hover:border-slate-300 font-bold transition-all text-[11px]"
+                                >
+                                    {preset.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* 檢索結果列表 */}
+                    <div className="p-6 overflow-y-auto flex-1 space-y-4">
+                        {isAiSearching ? (
+                            <div className="space-y-4 py-8">
+                                <div className="text-center space-y-2">
+                                    <Loader2 className="w-8 h-8 animate-spin text-indigo-600 mx-auto" />
+                                    <p className="text-sm font-black text-slate-700">正在利用 AI 與 Google 搜尋最新賽事時間與運彩讓分盤口...</p>
+                                    <p className="text-xs text-slate-400 font-medium">分析主客對戰、傷兵現況、盤口賠率與預測題目建議中</p>
+                                </div>
+                            </div>
+                        ) : aiSearchResults.length > 0 ? (
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <p className="text-xs font-black text-slate-500">
+                                        共找到 <strong className="text-indigo-600">{aiSearchResults.length}</strong> 場賽事與盤口情報
+                                    </p>
+                                    <span className="text-[11px] text-slate-400 font-medium">開賽時間均已換算為台灣時間 (GMT+8)</span>
+                                </div>
+
+                                {aiSearchResults.map((match) => (
+                                    <div 
+                                        key={match.id}
+                                        className="p-5 rounded-2xl border border-slate-200/90 bg-white hover:border-indigo-200 transition-all shadow-xs space-y-4"
+                                    >
+                                        {/* 賽事頭部 */}
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
+                                            <div className="flex items-center gap-2.5 flex-wrap">
+                                                <Badge className="bg-indigo-50 text-indigo-700 border-indigo-200 font-black text-xs px-2.5 py-0.5">
+                                                    {match.league}
+                                                </Badge>
+                                                <h3 className="text-base font-black text-slate-900">
+                                                    {match.matchName}
+                                                </h3>
+                                            </div>
+                                            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500 bg-slate-50 px-3 py-1.5 rounded-xl shrink-0">
+                                                <Clock className="w-3.5 h-3.5 text-cyan-600" />
+                                                <span>開賽：{match.matchTime}</span>
+                                            </div>
+                                        </div>
+
+                                        {/* 盤口與賠率資訊展示卡 */}
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                            {/* 讓分盤 */}
+                                            <div className="p-3 rounded-xl bg-amber-50/70 border border-amber-200/70 space-y-1">
+                                                <div className="flex items-center justify-between text-[11px] font-black text-amber-900">
+                                                    <span className="flex items-center gap-1">
+                                                        <TrendingUp className="w-3.5 h-3.5 text-amber-600" /> 主客讓分 (Spread)
+                                                    </span>
+                                                    <Badge variant="outline" className="bg-amber-100/80 border-amber-300 text-amber-900 text-[10px] py-0 px-1.5 font-bold">
+                                                        盤口
+                                                    </Badge>
+                                                </div>
+                                                <p className="text-xs font-black text-slate-800 leading-snug">
+                                                    {match.spread}
+                                                </p>
+                                            </div>
+
+                                            {/* 獨贏賠率 */}
+                                            {match.moneyline && (
+                                                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                                                    <div className="text-[11px] font-black text-slate-500 flex items-center gap-1">
+                                                        <Zap className="w-3.5 h-3.5 text-cyan-600" /> 不讓分獨贏 (Moneyline)
+                                                    </div>
+                                                    <p className="text-xs font-bold text-slate-800 leading-snug">
+                                                        {match.moneyline}
+                                                    </p>
+                                                </div>
+                                            )}
+
+                                            {/* 大小分 */}
+                                            {match.totalPoints && (
+                                                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                                                    <div className="text-[11px] font-black text-slate-500 flex items-center gap-1">
+                                                        <Target className="w-3.5 h-3.5 text-emerald-600" /> 大小總分 (Over / Under)
+                                                    </div>
+                                                    <p className="text-xs font-bold text-slate-800 leading-snug">
+                                                        {match.totalPoints}
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* 賽事分析 */}
+                                        {match.analysis && (
+                                            <div className="p-3 rounded-xl bg-indigo-50/50 border border-indigo-100 text-xs text-slate-700 leading-relaxed font-medium">
+                                                <strong className="text-indigo-900 font-black mr-1">🔍 賽前焦點簡評：</strong>
+                                                {match.analysis}
+                                            </div>
+                                        )}
+
+                                        {/* 建議預測題目與選項 */}
+                                        <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                                            <div className="flex items-center gap-1.5 text-xs font-black text-slate-700">
+                                                <Trophy className="w-3.5 h-3.5 text-amber-500" />
+                                                <span>預測題目建議：</span>
+                                                <span className="text-slate-900 font-bold">{match.suggestedQuestion}</span>
+                                            </div>
+                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                                <span className="text-[11px] font-bold text-slate-400">可選項目：</span>
+                                                {match.suggestedOptions.map((opt, i) => (
+                                                    <Badge key={i} variant="outline" className="bg-white border-slate-200 text-slate-700 text-xs font-bold px-2 py-0.5">
+                                                        {opt}
+                                                    </Badge>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* 操作按鈕 */}
+                                        <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleApplyMatchToCreateForm(match)}
+                                                className="rounded-xl border-slate-200 text-slate-700 font-bold hover:bg-slate-100 flex items-center gap-1.5 text-xs h-9 px-3"
+                                            >
+                                                <SlidersHorizontal className="w-3.5 h-3.5" />
+                                                帶入表單並微調
+                                            </Button>
+
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                disabled={publishingMatchId === match.id}
+                                                onClick={() => handleDirectPublishAiMatch(match)}
+                                                className="rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-black flex items-center gap-1.5 text-xs h-9 px-4 shadow-sm"
+                                            >
+                                                {publishingMatchId === match.id ? (
+                                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                                ) : (
+                                                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                                                )}
+                                                一鍵發布預測 (100 P+)
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="py-12 text-center space-y-3">
+                                <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
+                                    <Search className="w-6 h-6" />
+                                </div>
+                                <p className="text-sm font-bold text-slate-600">請輸入球隊名稱或點選上方熱門標籤開始 AI 檢索</p>
+                                <p className="text-xs text-slate-400">支援 NBA、MLB、中華職棒 CPBL、英超/歐冠足球、TPBL 職籃等全球體育賽事</p>
+                            </div>
+                        )}
+                    </div>
+
+                    <DialogFooter className="p-4 border-t border-slate-100 bg-slate-50 gap-2 shrink-0">
+                        <Button 
+                            variant="outline" 
+                            onClick={() => setIsAiSearchOpen(false)} 
+                            className="rounded-xl font-bold border-slate-200"
+                        >
+                            關閉
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

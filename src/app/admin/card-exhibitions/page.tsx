@@ -73,10 +73,17 @@ export default function CardExhibitionsAdmin() {
             } else {
                 setAiExtractedList(items);
                 setIsAiDialogOpen(true);
-                toast({
-                    title: 'AI 提取成功',
-                    description: `成功聯網找到 ${items.length} 場台灣球員卡展情報！`,
-                });
+                if (data.warning) {
+                    toast({
+                        title: '已載入精選卡展資料庫',
+                        description: data.warning,
+                    });
+                } else {
+                    toast({
+                        title: 'AI 提取成功',
+                        description: `成功聯網找到 ${items.length} 場台灣球員卡展情報！`,
+                    });
+                }
             }
         } catch (error: any) {
             toast({
