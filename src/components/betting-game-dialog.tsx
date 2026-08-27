@@ -156,10 +156,13 @@ export function BettingGameDialog({
     const handleSpin = async () => {
         if (!user || !firestore || !card || selectedNumbers.length === 0 || isSpinning || isOutOfStock) return;
 
-        if (userProfile && card.minLevel) {
+        if (userProfile && card.minLevel && card.minLevel !== '不限' && card.minLevel !== '新手收藏家') {
             const levelNames = userLevels.map(l => l.level);
-            if (levelNames.indexOf(userProfile.userLevel) < levelNames.indexOf(card.minLevel)) {
-                toast({ variant: 'destructive', title: '等級權限不足', description: `本項目僅限「${card.minLevel}」以上會員挑戰。` });
+            const userLvl = userProfile.userLevel || '新手收藏家';
+            const userLvlIndex = levelNames.indexOf(userLvl);
+            const reqLvlIndex = levelNames.indexOf(card.minLevel);
+            if (userLvlIndex < reqLvlIndex) {
+                toast({ variant: 'destructive', title: '等級權限不足', description: `本項目僅限「${card.minLevel}」以上會員挑戰，您目前的階級為「${userLvl}」。` });
                 return;
             }
         }
@@ -360,20 +363,6 @@ export function BettingGameDialog({
                         {/* 氛圍背景光暈 */}
                         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-56 h-56 bg-rose-500/15 blur-[100px] rounded-full pointer-events-none" />
                         <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-48 h-48 bg-amber-500/10 blur-[80px] rounded-full pointer-events-none" />
-
-                        {/* 頂部徽章 */}
-                        <div className="w-full flex items-center justify-between mb-4 z-10">
-                            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-950/90 border border-rose-500/40 text-rose-300 text-xs font-black tracking-widest uppercase shadow-[0_0_15px_rgba(244,63,94,0.2)]">
-                                <Sparkles className="w-3.5 h-3.5 text-rose-400 animate-spin-slow" />
-                                1/10 機率挑戰
-                            </div>
-                            {card.minLevel && (
-                                <div className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-300 flex items-center gap-1">
-                                    <Award className="w-3 h-3 text-amber-400" />
-                                    {card.minLevel}+
-                                </div>
-                            )}
-                        </div>
 
                         {/* 卡片主體展示 */}
                         <div className={cn(

@@ -44,15 +44,20 @@ import {
 } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { userLevels } from '@/components/member-level-crown';
 
 interface CardData {
     id: string;
     name: string;
     category: string;
     imageUrl: string;
+    backImageUrl?: string;
     sellPrice?: number;
     source?: string;
     isSold?: boolean;
+    minLevel?: string;
+    dailyLimit?: number;
+    createdAt?: any;
 }
 
 interface BettingCategory {
@@ -81,6 +86,7 @@ export default function BettingCategoryDetailPage() {
   const [isAddCardDialogOpen, setIsAddCardDialogOpen] = useState(false);
   const [selectedCards, setSelectedCards] = useState<string[]>([]);
   const [addCardCategoryFilter, setAddCardCategoryFilter] = useState('全部');
+  const [addCardSearchTerm, setAddCardSearchTerm] = useState('');
   const [currentCategoryName, setCurrentCategoryName] = useState('');
   const [isSavingName, setIsSavingName] = useState(false);
 
@@ -153,14 +159,25 @@ export default function BettingCategoryDetailPage() {
     if (addCardCategoryFilter !== '全部') {
       filtered = available.filter(card => card.category === addCardCategoryFilter);
     }
+    if (addCardSearchTerm.trim()) {
+      filtered = filtered.filter(card => card.name.toLowerCase().includes(addCardSearchTerm.toLowerCase()));
+    }
+
+    filtered.sort((a, b) => {
+      const da = a.createdAt ? new Date(typeof a.createdAt === 'string' ? a.createdAt : a.createdAt?.seconds ? a.createdAt.seconds * 1000 : a.createdAt).getTime() : 0;
+      const db = b.createdAt ? new Date(typeof b.createdAt === 'string' ? b.createdAt : b.createdAt?.seconds ? b.createdAt.seconds * 1000 : b.createdAt).getTime() : 0;
+      if (da !== db) return db - da;
+      return a.name.localeCompare(b.name);
+    });
     
     return { cardsInBet, availableCardsToAdd: filtered, soldCardIds: soldIds };
-  }, [allCards, bettingItems, globallyAssignedCardIds, addCardCategoryFilter]);
+  }, [allCards, bettingItems, globallyAssignedCardIds, addCardCategoryFilter, addCardSearchTerm]);
 
   
   const handleOpenAddCardDialog = () => {
     setSelectedCards([]);
     setAddCardCategoryFilter('全部');
+    setAddCardSearchTerm('');
     setIsAddCardDialogOpen(true);
   }
 
@@ -228,6 +245,18 @@ export default function BettingCategoryDetailPage() {
     } catch(e) {
         console.error(e);
         toast({ variant: 'destructive', title: '錯誤', description: '更新卡片價值失敗。' });
+    }
+  }
+
+  const handleMinLevelChange = async (cardId: string, cardName: string, newLevel: string) => {
+    if (!firestore) return;
+    try {
+        const cardRef = doc(firestore, 'allCards', cardId);
+        await updateDoc(cardRef, { minLevel: newLevel });
+        toast({ title: '階級門檻已更新', description: `「${cardName}」拼卡門檻已設定為：${newLevel}` });
+    } catch (e: any) {
+        console.error(e);
+        toast({ variant: 'destructive', title: '錯誤', description: '更新門檻失敗。' });
     }
   }
 
@@ -313,18 +342,19 @@ export default function BettingCategoryDetailPage() {
                     <Table>
                         <TableHeader className="bg-slate-100">
                             <TableRow>
-                            <TableHead className="w-24 pl-6 text-slate-900 font-black uppercase text-[10px]">圖片</TableHead>
+                            <TableHead className="w-20 pl-6 text-slate-900 font-black uppercase text-[10px]">圖片</TableHead>
                             <TableHead className="text-slate-900 font-black uppercase text-[10px]">名稱</TableHead>
                             <TableHead className="text-slate-900 font-black uppercase text-[10px]">分類</TableHead>
                             <TableHead className="text-slate-900 font-black uppercase text-[10px]">庫存狀態</TableHead>
-                            <TableHead className="w-40 text-slate-900 font-black uppercase text-[10px]">卡片價值 (💎)</TableHead>
-                            <TableHead className="w-[100px] text-right pr-6 text-slate-900 font-black uppercase text-[10px]">操作</TableHead>
+                            <TableHead className="w-48 text-slate-900 font-black uppercase text-[10px]">拼卡階級門檻</TableHead>
+                            <TableHead className="w-36 text-slate-900 font-black uppercase text-[10px]">卡片價值 (💎)</TableHead>
+                            <TableHead className="w-[80px] text-right pr-6 text-slate-900 font-black uppercase text-[10px]">操作</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {isLoading && Array.from({length: 3}).map((_, i) => (
                                 <TableRow key={i}>
-                                    <TableCell colSpan={6} className="p-6"><Skeleton className="h-12 w-full rounded-xl" /></TableCell>
+                                    <TableCell colSpan={7} className="p-6"><Skeleton className="h-12 w-full rounded-xl" /></TableCell>
                                 </TableRow>
                             ))}
                             {!isLoading && cardsInBet.map(card => (
@@ -346,6 +376,24 @@ export default function BettingCategoryDetailPage() {
                                         ) : (
                                             <Badge variant="outline" className="border-green-500/50 text-green-600 bg-green-50 text-[10px] font-black uppercase">販售中</Badge>
                                         )}
+                                    </TableCell>
+                                    <TableCell>
+                                        <Select 
+                                            defaultValue={card.minLevel || '新手收藏家'} 
+                                            onValueChange={(val) => handleMinLevelChange(card.id, card.name, val)}
+                                        >
+                                            <SelectTrigger className="h-10 border-slate-200 bg-white text-slate-900 font-bold text-xs rounded-lg">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent className="rounded-xl bg-white shadow-xl">
+                                                <SelectItem value="新手收藏家" className="font-bold text-xs">新手收藏家 (不限)</SelectItem>
+                                                {userLevels.filter(l => l.level !== '新手收藏家').map(l => (
+                                                    <SelectItem key={l.level} value={l.level} className="font-bold text-xs">
+                                                        {l.level} 以上
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
                                     </TableCell>
                                     <TableCell>
                                         <div className="relative">
@@ -381,7 +429,7 @@ export default function BettingCategoryDetailPage() {
                             ))}
                             {!isLoading && cardsInBet.length === 0 && (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="h-32 text-center text-muted-foreground italic">
+                                    <TableCell colSpan={7} className="h-32 text-center text-muted-foreground italic">
                                         <Archive className="h-8 w-8 mx-auto mb-2 opacity-20" />
                                         尚未加入任何可拼卡的卡片資產。
                                     </TableCell>
@@ -405,7 +453,12 @@ export default function BettingCategoryDetailPage() {
             <div className="mb-6 flex gap-4">
                 <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                    <Input placeholder="搜尋卡片名稱..." className="pl-10 h-11 border-slate-200 bg-white text-slate-900 font-bold" />
+                    <Input 
+                        placeholder="搜尋卡片名稱..." 
+                        className="pl-10 h-11 border-slate-200 bg-white text-slate-900 font-bold" 
+                        value={addCardSearchTerm}
+                        onChange={(e) => setAddCardSearchTerm(e.target.value)}
+                    />
                 </div>
                 <Select value={addCardCategoryFilter} onValueChange={setAddCardCategoryFilter}>
                     <SelectTrigger className="w-48 h-11 border-slate-200 bg-white text-slate-900 font-bold">

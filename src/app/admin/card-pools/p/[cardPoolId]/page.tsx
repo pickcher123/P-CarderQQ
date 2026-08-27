@@ -102,6 +102,7 @@ interface CardData {
     sellPrice?: number;
     source?: string;
     isSold?: boolean;
+    createdAt?: any;
 }
 
 function RarityProbabilities({ pool, allCards }: { pool: Partial<CardPool>, allCards: CardData[] | null }) {
@@ -182,6 +183,7 @@ export default function CardPoolDetailPage() {
   
   const [poolDetails, setPoolDetails] = useState<Partial<CardPool>>({});
   const [addCardCategoryFilter, setAddCardCategoryFilter] = useState('全部');
+  const [addCardSearchTerm, setAddCardSearchTerm] = useState('');
   const [timeValue, setTimeValue] = useState("00:00");
   const [startTimeValue, setStartTimeValue] = useState("00:00");
   
@@ -445,11 +447,23 @@ export default function CardPoolDetailPage() {
         card.source !== 'group-break'
     );
 
-    if (addCardCategoryFilter === '全部') {
-        return available;
+    let filtered = available;
+    if (addCardCategoryFilter !== '全部') {
+      filtered = available.filter(card => card.category === addCardCategoryFilter);
     }
-    return available.filter(card => card.category === addCardCategoryFilter);
-  }, [allCards, globallyAssignedCardIds, addCardCategoryFilter]);
+    if (addCardSearchTerm.trim()) {
+      filtered = filtered.filter(card => card.name.toLowerCase().includes(addCardSearchTerm.toLowerCase()));
+    }
+
+    filtered.sort((a, b) => {
+      const da = a.createdAt ? new Date(typeof a.createdAt === 'string' ? a.createdAt : a.createdAt?.seconds ? a.createdAt.seconds * 1000 : a.createdAt).getTime() : 0;
+      const db = b.createdAt ? new Date(typeof b.createdAt === 'string' ? b.createdAt : b.createdAt?.seconds ? b.createdAt.seconds * 1000 : b.createdAt).getTime() : 0;
+      if (da !== db) return db - da;
+      return a.name.localeCompare(b.name);
+    });
+
+    return filtered;
+  }, [allCards, globallyAssignedCardIds, cardsInPoolIds, poolDetails.lastPrizeCardId, addCardCategoryFilter, addCardSearchTerm]);
   
   useEffect(() => {
     if (poolError) {
@@ -1247,7 +1261,12 @@ export default function CardPoolDetailPage() {
             <div className="mb-6 flex gap-4">
                 <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                    <Input placeholder="搜尋卡片名稱..." className="pl-10 h-11 border-slate-200 rounded-xl font-bold bg-white text-slate-900" />
+                    <Input 
+                        placeholder="搜尋卡片名稱..." 
+                        className="pl-10 h-11 border-slate-200 rounded-xl font-bold bg-white text-slate-900" 
+                        value={addCardSearchTerm}
+                        onChange={(e) => setAddCardSearchTerm(e.target.value)}
+                    />
                 </div>
                 <Select value={addCardCategoryFilter} onValueChange={setAddCardCategoryFilter}>
                     <SelectTrigger className="w-48 h-11 border-slate-200 rounded-xl font-bold bg-white text-slate-900">

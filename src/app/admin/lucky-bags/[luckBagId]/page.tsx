@@ -86,6 +86,7 @@ interface CardData {
     sellPrice?: number;
     source?: string;
     isSold?: boolean;
+    createdAt?: any;
 }
 
 
@@ -205,6 +206,22 @@ export default function LuckBagDetailPage() {
 
     return { prizeCards: prizes, otherPrizesList: otherPrizesData, otherPointsList: otherPointsData };
   }, [luckBag, allCards]);
+
+  const availableCardsToSelect = useMemo(() => {
+    if (!allCards) return [];
+    const available = allCards.filter(card => 
+      !card.isSold &&
+      !globallyAssignedCardIds.has(card.id) &&
+      card.source !== 'group-break'
+    );
+
+    return available.sort((a, b) => {
+      const da = a.createdAt ? new Date(typeof a.createdAt === 'string' ? a.createdAt : a.createdAt?.seconds ? a.createdAt.seconds * 1000 : a.createdAt).getTime() : 0;
+      const db = b.createdAt ? new Date(typeof b.createdAt === 'string' ? b.createdAt : b.createdAt?.seconds ? b.createdAt.seconds * 1000 : b.createdAt).getTime() : 0;
+      if (da !== db) return db - da;
+      return a.name.localeCompare(b.name);
+    });
+  }, [allCards, globallyAssignedCardIds]);
 
   const handleAddOtherPrizes = useCallback(async (type: 'card' | 'points', data: { cardIds?: string[], points?: number }) => {
     if (!luckBagRef) return;
