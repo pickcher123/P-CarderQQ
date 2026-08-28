@@ -31,7 +31,9 @@ import {
   ChevronRight,
   Sparkles,
   ExternalLink,
-  ShieldCheck
+  ShieldCheck,
+  Disc3,
+  Dices
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { Activity } from 'lucide-react';
@@ -71,6 +73,13 @@ const sidebarNavItems = [
       items: [
         { href: '/admin/users', label: '會員資訊', icon: UserCircle, permission: 'users', desc: '帳號查詢、權限與點數' },
         { href: '/admin/rewards', label: '會員回饋', icon: Gift, permission: 'rewards', desc: '簽到與紅利兌換商城' },
+      ]
+    },
+    { 
+      title: '活動專區', 
+      badge: '互動與抽獎',
+      items: [
+        { href: '/admin/lucky-wheel', label: '大轉盤福袋', icon: Disc3, permission: null, desc: '自訂號碼、名單與轉盤抽獎' },
       ]
     },
     { 

@@ -6,9 +6,11 @@ service cloud.firestore {
     function isSignedIn() { return request.auth != null; }
     function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
     function isVerifiedAdmin() { 
-      return isSignedIn() && 
-             (request.auth.token.email == "pickcher123@gmail.com" && request.auth.token.email_verified == true) ||
-             exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+      return isSignedIn() && (
+        request.auth.token.email == "pickcher123@gmail.com" ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin")
+      );
     }
     function incoming() { return request.resource.data; }
     function existing() { return resource.data; }
@@ -73,6 +75,25 @@ service cloud.firestore {
     match /news/{newsId} {
       allow read: if true;
       allow write: if isVerifiedAdmin();
+    }
+
+    match /card_exhibitions/{exhId} {
+      allow read: if true;
+      allow write: if isVerifiedAdmin();
+    }
+
+    match /lucky_wheels/{wheelId} {
+      allow read: if true;
+      allow write: if isVerifiedAdmin();
+    }
+
+    match /group_breaks/{breakId} {
+      allow read: if true;
+      allow write: if isVerifiedAdmin();
+    }
+
+    match /group_break_orders/{orderId} {
+      allow read, write: if isSignedIn();
     }
 
     // --- 其他互動集合 ---

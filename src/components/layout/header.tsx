@@ -24,6 +24,7 @@ const navLinks = [
   { href: '/group-break', label: '團拆', icon: Users2, color: "text-emerald-400" },
   { href: '/predictions', label: '賽事預測', icon: Trophy, color: "text-amber-400" },
   { href: '/exhibitions', label: '卡展行事曆', icon: Calendar, color: "text-cyan-400" },
+  { href: '/lucky-wheel', label: '活動專區', icon: Sparkles, color: "text-purple-400" },
   { href: '/collection', label: '收藏庫', icon: Library, color: "text-cyan-300/80" },
 ];
 
