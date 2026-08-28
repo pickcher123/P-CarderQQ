@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { User, LogIn, LogOut, ShieldCheck, Loader2, Package, Library, Plus, Users2, ChevronDown, Crown, Info, Sparkles, Wallet, Award } from 'lucide-react';
+import { User, LogIn, LogOut, ShieldCheck, Loader2, Package, Library, Plus, Users2, ChevronDown, Crown, Info, Sparkles, Wallet, Award, Trophy, Calendar } from 'lucide-react';
 import { Logo, CrossedCardsIcon, LuckyBagIcon, PPlusIcon, NavDrawIcon, NavCollectionIcon, DiamondIcon } from '@/components/icons';
 import { useUser, useAuth, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
@@ -22,6 +22,8 @@ const navLinks = [
   { href: '/bet', label: '拼卡', icon: CrossedCardsIcon, color: "text-rose-400" },
   { href: '/lucky-bags', label: '福袋', icon: LuckyBagIcon, color: "text-amber-400" },
   { href: '/group-break', label: '團拆', icon: Users2, color: "text-emerald-400" },
+  { href: '/predictions', label: '賽事預測', icon: Trophy, color: "text-amber-400" },
+  { href: '/exhibitions', label: '卡展行事曆', icon: Calendar, color: "text-cyan-400" },
   { href: '/collection', label: '收藏庫', icon: Library, color: "text-cyan-300/80" },
 ];
 

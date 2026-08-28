@@ -181,48 +181,88 @@ export default function Home() {
         </section>
       )}
 
-      {/* 賽事預測與卡展行事曆 */}
-      <section className="py-6 sm:py-10 container px-3 sm:px-4 relative">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-7 max-w-[1400px] mx-auto items-start">
+      {/* 獨立專區捷徑：卡展行事曆 & 賽事預測 */}
+      <section className="py-6 sm:py-10 container px-3 sm:px-4 max-w-7xl mx-auto relative">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-7 items-stretch">
           
-          {/* 賽事預測 */}
-          <div className="lg:col-span-5 xl:col-span-4 space-y-3 sm:space-y-4">
-            <div className="p-3 sm:p-3.5 rounded-2xl bg-gradient-to-r from-slate-900/90 via-slate-950/90 to-slate-900/90 border border-slate-800/80 backdrop-blur-xl flex items-center justify-between shadow-lg">
-              <div className="flex items-center gap-2.5">
-                <div className="p-1.5 sm:p-2 rounded-xl bg-orange-500/15 border border-orange-500/30 text-orange-400 shadow-[0_0_12px_rgba(249,115,22,0.2)]">
-                  <Target className="w-4 h-4 sm:w-5 sm:h-5" />
+          {/* 賽事預測入口卡 */}
+          <Link 
+            href="/predictions"
+            className="group relative rounded-3xl p-6 sm:p-8 bg-gradient-to-br from-slate-950/95 via-slate-900/80 to-slate-950/95 border border-slate-800 hover:border-amber-500/50 backdrop-blur-xl shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden flex flex-col justify-between"
+          >
+            <div className="absolute top-0 right-0 w-72 h-72 bg-amber-500/10 rounded-full blur-3xl pointer-events-none group-hover:bg-amber-500/20 transition-colors" />
+            <div className="space-y-4 relative z-10">
+              <div className="flex items-center justify-between">
+                <div className="p-3 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.25)]">
+                  <Trophy className="w-6 h-6" />
                 </div>
-                <div>
-                  <h2 className="text-sm sm:text-base font-black font-headline tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-amber-200 to-yellow-400 drop-shadow-[0_0_10px_rgba(249,115,22,0.3)]">
-                    賽事預測專區
-                  </h2>
-                </div>
+                <span className="text-xs font-black text-amber-400 bg-amber-500/10 border border-amber-500/30 px-3 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
+                  <Flame className="w-3.5 h-3.5" />
+                  <span>勝率先知榜 · 高額P+</span>
+                </span>
               </div>
-            </div>
-            <PredictionSection />
-          </div>
 
-          {/* 卡展行事曆 */}
-          <div className="lg:col-span-7 xl:col-span-8 space-y-3 sm:space-y-4">
-            <div className="p-3 sm:p-3.5 rounded-2xl bg-gradient-to-r from-slate-900/90 via-slate-950/90 to-slate-900/90 border border-slate-800/80 backdrop-blur-xl flex items-center justify-between shadow-lg">
-              <div className="flex items-center gap-2.5">
-                <div className="p-1.5 sm:p-2 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.2)]">
-                  <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
+              <div className="space-y-2">
+                <div className="text-[11px] font-mono font-bold text-amber-400/90 uppercase tracking-wider">
+                  PREDICTIONS & SPORTS ORACLE
                 </div>
-                <div>
-                  <h2 className="text-sm sm:text-base font-black font-headline tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-200 to-blue-400 drop-shadow-[0_0_10px_rgba(6,182,212,0.3)]">
-                    卡展行事曆
-                  </h2>
-                </div>
+                <h3 className="text-xl sm:text-2xl font-black font-headline text-white group-hover:text-amber-300 transition-colors flex items-center gap-2">
+                  <span>賽事先知 · 預測擂台</span>
+                  <ChevronRight className="w-5 h-5 text-amber-400 group-hover:translate-x-1.5 transition-transform" />
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                  精準競猜熱門球賽比分與球星數據！猜中即贏取海量 P+ 點數，個人勝率實時統計，挑戰全服神準先知榜。
+                </p>
               </div>
             </div>
-            
-            <div className="bg-slate-950/90 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-3 sm:p-5 shadow-xl">
-              <ScrollArea className="h-[480px] sm:h-[540px]">
-                <CardExhibitionCalendar hideHeader />
-              </ScrollArea>
+
+            <div className="pt-5 mt-6 border-t border-slate-800/80 flex items-center justify-between text-xs relative z-10">
+              <span className="text-slate-400 font-bold">個人勝率 · 累積P點 · 視覺下注</span>
+              <span className="text-amber-400 font-black group-hover:underline flex items-center gap-1">
+                立即前往預測 <ArrowRight className="w-3.5 h-3.5" />
+              </span>
             </div>
-          </div>
+          </Link>
+
+          {/* 卡展行事曆入口卡 */}
+          <Link 
+            href="/exhibitions"
+            className="group relative rounded-3xl p-6 sm:p-8 bg-gradient-to-br from-slate-950/95 via-slate-900/80 to-slate-950/95 border border-slate-800 hover:border-cyan-500/50 backdrop-blur-xl shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden flex flex-col justify-between"
+          >
+            <div className="absolute top-0 right-0 w-72 h-72 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none group-hover:bg-cyan-500/20 transition-colors" />
+            <div className="space-y-4 relative z-10">
+              <div className="flex items-center justify-between">
+                <div className="p-3 rounded-2xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.25)]">
+                  <Calendar className="w-6 h-6" />
+                </div>
+                <span className="text-xs font-black text-cyan-400 bg-cyan-500/10 border border-cyan-500/30 px-3 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>下一場卡展速報</span>
+                </span>
+              </div>
+
+              <div className="space-y-2">
+                <div className="text-[11px] font-mono font-bold text-cyan-400/90 uppercase tracking-wider">
+                  CARD EXPO & EVENTS CALENDAR
+                </div>
+                <h3 className="text-xl sm:text-2xl font-black font-headline text-white group-hover:text-cyan-300 transition-colors flex items-center gap-2">
+                  <span>全台卡展 · 展訊行事曆</span>
+                  <ChevronRight className="w-5 h-5 text-cyan-400 group-hover:translate-x-1.5 transition-transform" />
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                  掌握全台最新實體球員卡展覽、市集與交流會時間地點！「下一場卡展」倒數計時搶先報，不錯過任何換卡盛宴。
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-5 mt-6 border-t border-slate-800/80 flex items-center justify-between text-xs relative z-10">
+              <span className="text-slate-400 font-bold">倒數時程 · 地圖導航 · 月份展期</span>
+              <span className="text-cyan-400 font-black group-hover:underline flex items-center gap-1">
+                查看卡展資訊 <ArrowRight className="w-3.5 h-3.5" />
+              </span>
+            </div>
+          </Link>
+
         </div>
       </section>
 

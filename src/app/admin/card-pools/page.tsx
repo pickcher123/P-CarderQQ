@@ -37,6 +37,7 @@ import {
 } from '@/components/ui/table';
 import { Progress } from '@/components/ui/progress';
 import { SafeImage } from '@/components/safe-image';
+import { AIImageGeneratorDialog } from '@/components/admin/ai-image-generator-dialog';
 
 interface DrawCategory {
     id?: string;
@@ -256,7 +257,19 @@ export default function DrawCategoriesAdminPage() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label className="text-xs font-bold text-slate-500 uppercase tracking-widest">封面圖片</Label>
+                            <div className="flex items-center justify-between">
+                                <Label className="text-xs font-bold text-slate-500 uppercase tracking-widest">封面圖片</Label>
+                                <AIImageGeneratorDialog
+                                    initialTitle={categoryName || ''}
+                                    initialCategory={categoryName || '卡池分類'}
+                                    defaultType="category"
+                                    defaultAspectRatio="4:3"
+                                    onImageGenerated={(url) => {
+                                        setPreviewUrl(url);
+                                        setSelectedFile(null);
+                                    }}
+                                />
+                            </div>
                             <div className="flex flex-col gap-4">
                                 <div className="aspect-[4/5] relative w-32 mx-auto bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 overflow-hidden flex items-center justify-center group">
                                     {previewUrl ? (
@@ -302,7 +315,19 @@ export default function DrawCategoriesAdminPage() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label className="text-xs font-bold text-slate-500 uppercase tracking-widest">封面圖片</Label>
+                            <div className="flex items-center justify-between">
+                                <Label className="text-xs font-bold text-slate-500 uppercase tracking-widest">封面圖片</Label>
+                                <AIImageGeneratorDialog
+                                    initialTitle={categoryName || ''}
+                                    initialCategory={categoryName || '卡池分類'}
+                                    defaultType="category"
+                                    defaultAspectRatio="4:3"
+                                    onImageGenerated={(url) => {
+                                        setPreviewUrl(url);
+                                        setSelectedFile(null);
+                                    }}
+                                />
+                            </div>
                             <div className="flex flex-col gap-4">
                                 <div className="aspect-[4/5] relative w-32 mx-auto bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 overflow-hidden flex items-center justify-center group">
                                     {previewUrl ? (

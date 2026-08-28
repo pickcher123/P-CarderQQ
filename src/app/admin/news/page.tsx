@@ -47,6 +47,7 @@ import { format } from 'date-fns';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import type { SystemConfig } from '@/types/system';
+import { AIImageGeneratorDialog } from '@/components/admin/ai-image-generator-dialog';
 
 interface NewsItem {
     id?: string;
@@ -99,46 +100,6 @@ export default function NewsAdminPage() {
     if (!newsItems) return [];
     return [...newsItems].sort((a, b) => (a.isPinned ? -1 : 1) || (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
   }, [newsItems]);
-
-  const handleGenerateImage = async () => {
-    if (!currentItem.title) return;
-    setIsGenerating(true);
-    setIsProcessing(true);
-    try {
-        const { GoogleGenAI } = await import('@google/genai');
-        const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY || '' });
-        
-        const prompt = `Create a professional, high-quality, eye-catching banner image for an online game announcement.
-            Style: Cinematic, vibrant, digital art, high resolution, 4k.
-            Category: ${currentItem.category || 'General'}
-            Title: ${currentItem.title}
-            Description: ${currentItem.content || 'News announcement'}
-        `;
-        
-        const response = await ai.models.generateContent({
-            model: 'gemini-3-pro-image-preview',
-            contents: {
-                parts: [{ text: prompt }],
-            },
-        });
-        
-        if (response.candidates && response.candidates[0].content.parts) {
-            for (const part of response.candidates[0].content.parts) {
-                if ('inlineData' in part && part.inlineData) {
-                    const base64EncodeString = part.inlineData.data;
-                    const imageUrl = `data:image/png;base64,${base64EncodeString}`;
-                    setPreviewUrl(imageUrl);
-                    setCurrentItem({ ...currentItem, imageUrl });
-                    break;
-                }
-            }
-        }
-        toast({ title: 'AI 圖片生成成功' });
-    } catch (e) {
-        console.error(e);
-        toast({ variant: 'destructive', title: 'AI 圖片生成失敗' });
-    } finally { setIsProcessing(false); setIsGenerating(false); }
-  };
 
   const handleSave = async () => {
     if (!firestore || !currentItem.title) return;
@@ -362,10 +323,17 @@ export default function NewsAdminPage() {
                         <div className="space-y-4">
                             <div className="flex justify-between items-center">
                                 <Label className="text-xs font-bold text-slate-500 uppercase tracking-widest">圖片素材上傳</Label>
-                                <Button type="button" variant="outline" size="sm" onClick={handleGenerateImage} disabled={isGenerating || !currentItem.title}>
-                                    {isGenerating ? <Loader2 className="animate-spin h-3 w-3 mr-2"/> : <ImageIcon className="h-3 w-3 mr-2" />}
-                                    AI 生成圖片
-                                </Button>
+                                <AIImageGeneratorDialog
+                                    initialTitle={currentItem.title || ''}
+                                    initialCategory={currentItem.category || '活動快訊'}
+                                    defaultType="news-banner"
+                                    defaultAspectRatio="16:9"
+                                    onImageGenerated={(url) => {
+                                        setPreviewUrl(url);
+                                        setCurrentItem(prev => ({ ...prev, imageUrl: url }));
+                                        setSelectedFile(null);
+                                    }}
+                                />
                             </div>
                             <div className="flex flex-col gap-4">
                                 <div className="aspect-video relative rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 overflow-hidden flex items-center justify-center group">
