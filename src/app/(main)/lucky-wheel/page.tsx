@@ -46,7 +46,13 @@ import {
     PartyPopper,
     Crown,
     Medal,
-    Award
+    Award,
+    Search,
+    ArrowUpDown,
+    ShieldCheck,
+    Dices,
+    RefreshCw,
+    SlidersHorizontal
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -99,7 +105,108 @@ export interface WinnerRecord {
     drawnAt: string;
 }
 
-// 簡易 Web Audio API 撥片聲與勝利音效
+// 智慧獎項徽章與外觀風格解析器 (確保特獎/頭獎/貳獎/參獎/加碼獎等與文字完全符合)
+export function getPrizeBadgeMeta(prizeName: string, round: number) {
+    const name = prizeName || '';
+    if (name.includes('特獎') || name.includes('特等') || name.includes('特級') || name.includes('尊榮')) {
+        return {
+            badgeText: '🥇 特等大獎',
+            badgeStyle: 'bg-amber-500 text-slate-950 border-amber-300 font-black shadow-[0_0_10px_rgba(251,191,36,0.5)]',
+            cardTheme: 'bg-gradient-to-b from-amber-950/80 via-slate-900/90 to-slate-950/95 border-2 border-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.35)] ring-1 ring-amber-400/50',
+            glowColor: 'bg-amber-500/20',
+            textColor: 'text-amber-300',
+            numberGradient: 'from-amber-400 via-amber-500 to-yellow-300 text-slate-950',
+            rankNumber: 1
+        };
+    }
+    if (name.includes('頭獎') || name.includes('首獎') || name.includes('大獎') || name.includes('一獎') || name.includes('壹獎')) {
+        return {
+            badgeText: '🏆 頭獎榮耀',
+            badgeStyle: 'bg-cyan-500 text-slate-950 border-cyan-300 font-black shadow-[0_0_10px_rgba(6,182,212,0.5)]',
+            cardTheme: 'bg-gradient-to-b from-cyan-950/80 via-slate-900/90 to-slate-950/95 border-2 border-cyan-400 shadow-[0_0_30px_rgba(6,182,212,0.3)] ring-1 ring-cyan-400/50',
+            glowColor: 'bg-cyan-500/20',
+            textColor: 'text-cyan-300',
+            numberGradient: 'from-cyan-400 via-teal-500 to-emerald-400 text-slate-950',
+            rankNumber: 2
+        };
+    }
+    if (name.includes('貳獎') || name.includes('二獎')) {
+        return {
+            badgeText: '🥈 幸運貳獎',
+            badgeStyle: 'bg-purple-500 text-white border-purple-300 font-black shadow-[0_0_10px_rgba(168,85,247,0.5)]',
+            cardTheme: 'bg-gradient-to-b from-purple-950/80 via-slate-900/90 to-slate-950/95 border-2 border-purple-400 shadow-[0_0_25px_rgba(168,85,247,0.3)] ring-1 ring-purple-400/50',
+            glowColor: 'bg-purple-500/20',
+            textColor: 'text-purple-300',
+            numberGradient: 'from-purple-400 via-fuchsia-500 to-indigo-400 text-white',
+            rankNumber: 3
+        };
+    }
+    if (name.includes('參獎') || name.includes('三獎')) {
+        return {
+            badgeText: '🥉 幸運參獎',
+            badgeStyle: 'bg-rose-500 text-white border-rose-300 font-black shadow-[0_0_10px_rgba(244,63,94,0.5)]',
+            cardTheme: 'bg-gradient-to-b from-rose-950/80 via-slate-900/90 to-slate-950/95 border-2 border-rose-400 shadow-[0_0_25px_rgba(244,63,94,0.3)] ring-1 ring-rose-400/50',
+            glowColor: 'bg-rose-500/20',
+            textColor: 'text-rose-300',
+            numberGradient: 'from-rose-400 via-pink-500 to-amber-400 text-white',
+            rankNumber: 4
+        };
+    }
+    if (name.includes('肆獎') || name.includes('四獎')) {
+        return {
+            badgeText: '🎖️ 肆獎得主',
+            badgeStyle: 'bg-emerald-500 text-slate-950 border-emerald-300 font-black shadow-[0_0_10px_rgba(16,185,129,0.5)]',
+            cardTheme: 'bg-gradient-to-b from-emerald-950/80 via-slate-900/90 to-slate-950/95 border-2 border-emerald-400 shadow-[0_0_25px_rgba(16,185,129,0.3)]',
+            glowColor: 'bg-emerald-500/20',
+            textColor: 'text-emerald-300',
+            numberGradient: 'from-emerald-400 to-teal-400 text-slate-950',
+            rankNumber: 5
+        };
+    }
+    if (name.includes('伍獎') || name.includes('五獎')) {
+        return {
+            badgeText: '🎖️ 伍獎得主',
+            badgeStyle: 'bg-blue-500 text-white border-blue-300 font-black',
+            cardTheme: 'bg-gradient-to-b from-blue-950/80 via-slate-900/90 to-slate-950/95 border-2 border-blue-400 shadow-xl',
+            glowColor: 'bg-blue-500/20',
+            textColor: 'text-blue-300',
+            numberGradient: 'from-blue-400 to-indigo-400 text-white',
+            rankNumber: 6
+        };
+    }
+    if (name.includes('加碼') || name.includes('特別獎') || name.includes('加開')) {
+        return {
+            badgeText: '🌟 特別加碼獎',
+            badgeStyle: 'bg-yellow-400 text-slate-950 border-yellow-200 font-black shadow-[0_0_10px_rgba(234,179,8,0.5)]',
+            cardTheme: 'bg-gradient-to-b from-yellow-950/80 via-slate-900/90 to-slate-950/95 border-2 border-yellow-300 shadow-[0_0_25px_rgba(234,179,8,0.3)]',
+            glowColor: 'bg-yellow-500/20',
+            textColor: 'text-yellow-300',
+            numberGradient: 'from-yellow-300 to-amber-500 text-slate-950',
+            rankNumber: 7
+        };
+    }
+    if (name.includes('普獎') || name.includes('購物金') || name.includes('參加獎')) {
+        return {
+            badgeText: '🎁 普獎幸運獎',
+            badgeStyle: 'bg-slate-800 text-amber-300 border-amber-400/40 font-bold',
+            cardTheme: 'bg-gradient-to-b from-slate-900/90 via-slate-950/95 to-slate-950/95 border border-white/20 shadow-xl',
+            glowColor: 'bg-amber-500/10',
+            textColor: 'text-amber-200',
+            numberGradient: 'from-amber-500 to-rose-500 text-slate-950',
+            rankNumber: 8
+        };
+    }
+    // 預設樣式
+    return {
+        badgeText: `✨ 幸運得獎 (第 ${round} 輪)`,
+        badgeStyle: 'bg-slate-800 text-cyan-300 border-cyan-400/40 font-bold',
+        cardTheme: 'bg-gradient-to-b from-slate-900/90 via-slate-950/95 to-slate-950/95 border border-white/20 shadow-xl',
+        glowColor: 'bg-cyan-500/10',
+        textColor: 'text-cyan-200',
+        numberGradient: 'from-cyan-500 to-blue-600 text-slate-950',
+        rankNumber: 9
+    };
+}
 class SoundEffects {
     private ctx: AudioContext | null = null;
 
@@ -154,9 +261,134 @@ class SoundEffects {
             // ignore
         }
     }
+
+    playShuffle() {
+        try {
+            this.init();
+            if (!this.ctx) return;
+            // 快速撥動/洗牌音效 (多頻率快節奏彈跳)
+            for (let i = 0; i < 9; i++) {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                const time = this.ctx.currentTime + i * 0.035;
+                const freq = 450 + Math.sin(i * 0.8) * 280 + Math.random() * 150;
+                osc.frequency.setValueAtTime(freq, time);
+                osc.frequency.exponentialRampToValueAtTime(140, time + 0.03);
+                gain.gain.setValueAtTime(0.14, time);
+                gain.gain.exponentialRampToValueAtTime(0.001, time + 0.03);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(time);
+                osc.stop(time + 0.035);
+            }
+        } catch (e) {
+            // ignore
+        }
+    }
+
+    playDiceRoll() {
+        try {
+            this.init();
+            if (!this.ctx) return;
+            // 骰子在碗中激烈滾動碰撞音效
+            for (let i = 0; i < 14; i++) {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                const time = this.ctx.currentTime + i * 0.065 + Math.random() * 0.02;
+                const freq = 340 + Math.random() * 450;
+                osc.frequency.setValueAtTime(freq, time);
+                osc.frequency.exponentialRampToValueAtTime(120, time + 0.04);
+                gain.gain.setValueAtTime(0.16, time);
+                gain.gain.exponentialRampToValueAtTime(0.001, time + 0.04);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(time);
+                osc.stop(time + 0.045);
+            }
+        } catch (e) {}
+    }
+
+    playDiceHit() {
+        try {
+            this.init();
+            if (!this.ctx) return;
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(780, this.ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(390, this.ctx.currentTime + 0.18);
+            gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.18);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start();
+            osc.stop(this.ctx.currentTime + 0.18);
+        } catch (e) {}
+    }
 }
 
 const sfx = new SoundEffects();
+
+// 🎲 3D 質感骰子元件 (支援 1~6 點與真實紅黑點陣)
+function DieFace({ value, isRolling }: { value: number; isRolling: boolean }) {
+    const dotsMap: { [key: number]: number[] } = {
+        1: [4], // 正中 (紅色大圓)
+        2: [2, 6], // 右上、左下
+        3: [2, 4, 6], // 右上、正中、左下
+        4: [0, 2, 6, 8], // 四角
+        5: [0, 2, 4, 6, 8], // 四角 + 正中
+        6: [0, 2, 3, 5, 6, 8] // 左右各三
+    };
+
+    const activeIndices = dotsMap[value] || [4];
+    const isSingleRed = value === 1;
+
+    return (
+        <motion.div
+            animate={isRolling ? {
+                rotateX: [0, 180, 360, 540, 720],
+                rotateY: [0, 90, 270, 450, 720],
+                rotateZ: [0, -180, 180, -360, 0],
+                scale: [1, 1.15, 0.92, 1.1, 1],
+                y: [0, -16, 6, -10, 0]
+            } : {
+                rotateX: 0,
+                rotateY: 0,
+                rotateZ: 0,
+                scale: 1,
+                y: 0
+            }}
+            transition={isRolling ? {
+                duration: 0.65,
+                repeat: Infinity,
+                ease: 'easeInOut'
+            } : { duration: 0.25 }}
+            className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-white via-slate-100 to-slate-200 border-2 border-slate-300 shadow-[0_12px_25px_rgba(0,0,0,0.45),inset_0_2px_4px_rgba(255,255,255,0.9),inset_0_-2px_4px_rgba(0,0,0,0.15)] flex items-center justify-center p-2.5 relative select-none cursor-pointer"
+        >
+            <div className="w-full h-full grid grid-cols-3 grid-rows-3 items-center justify-items-center">
+                {Array.from({ length: 9 }).map((_, idx) => {
+                    const isDot = activeIndices.includes(idx);
+                    return (
+                        <div key={idx} className="w-full h-full flex items-center justify-center">
+                            {isDot && (
+                                <div
+                                    className={cn(
+                                        "rounded-full shadow-inner transition-all",
+                                        isSingleRed 
+                                            ? "w-4 h-4 sm:w-5 sm:h-5 bg-rose-600 shadow-rose-400" 
+                                            : "w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 bg-slate-900 shadow-slate-700"
+                                    )}
+                                />
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+        </motion.div>
+    );
+}
 
 export default function LuckyWheelFrontendPage() {
     const { user, isSuperAdmin } = useUser();
@@ -202,9 +434,50 @@ export default function LuckyWheelFrontendPage() {
 
     // 確認過後的有效參賽名單 (去除空白)
     const [activeWheelSlots, setActiveWheelSlots] = useState<SlotItem[]>([]);
+    // 原始未洗牌前的名單備份 (方便隨時還原)
+    const [originalStep2Slots, setOriginalStep2Slots] = useState<SlotItem[]>([]);
+    // 公平隨機洗牌機制狀態
+    const [shuffleCount, setShuffleCount] = useState<number>(0);
+    const [isShufflingAnim, setIsShufflingAnim] = useState<boolean>(false);
+    const [autoShuffleOnDraw, setAutoShuffleOnDraw] = useState<boolean>(true); // 預設開啟開獎自動洗牌，杜絕內定嫌疑
+
+    // 🎲 擲骰子決定洗牌次數狀態
+    const [diceValues, setDiceValues] = useState<number[]>([3, 4]); // 預設骰子面
+    const [diceCountMode, setDiceCountMode] = useState<1 | 2>(2); // 1 顆 (1~6) 或 2 顆 (2~12)
+    const [isRollingDice, setIsRollingDice] = useState<boolean>(false);
+    const [diceRollResult, setDiceRollResult] = useState<{ total: number; values: number[]; rolledAt: string } | null>(null);
+    const [shuffleProgress, setShuffleProgress] = useState<{ current: number; total: number } | null>(null);
+
+    // 🔄 全部重設彈窗
+    const [isResetAllModalOpen, setIsResetAllModalOpen] = useState(false);
 
     // 歷史中獎紀錄
-    const [winnerHistory, setWinnerHistory] = useState<WinnerRecord[]>([]);
+    const [winnerHistory, setWinnerHistory] = useState<WinnerRecord[]>(() => {
+        if (typeof window !== 'undefined') {
+            try {
+                const saved = localStorage.getItem('lucky_wheel_history_records');
+                if (saved) return JSON.parse(saved);
+            } catch (e) {}
+        }
+        return [];
+    });
+
+    // 歷史明細搜尋與排序
+    const [historySearchTerm, setHistorySearchTerm] = useState('');
+    const [historySortOrder, setHistorySortOrder] = useState<'desc' | 'asc'>('desc');
+    const [boardViewMode, setBoardViewMode] = useState<'both' | 'cards' | 'table'>('both');
+
+    // 歷史存檔庫
+    const [localArchives, setLocalArchives] = useState<any[]>(() => {
+        if (typeof window !== 'undefined') {
+            try {
+                const saved = localStorage.getItem('lucky_wheel_saved_archives');
+                if (saved) return JSON.parse(saved);
+            } catch (e) {}
+        }
+        return [];
+    });
+    const [selectedArchiveDetail, setSelectedArchiveDetail] = useState<any | null>(null);
 
     // 輪盤狀態
     const [isSpinning, setIsSpinning] = useState(false);
@@ -491,7 +764,263 @@ export default function LuckyWheelFrontendPage() {
         }
     };
 
-    // 流程切換：進入第二步【確認名單】(過濾無人空白號碼)
+    // Fisher-Yates 陣列隨機洗牌演算法
+    const fisherYates = <T,>(arr: T[]): T[] => {
+        const copy = [...arr];
+        for (let i = copy.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [copy[i], copy[j]] = [copy[j], copy[i]];
+        }
+        return copy;
+    };
+
+    // 隨機重洗轉盤位置 (扇形順序打亂，保留原號碼)
+    const handleShufflePositionsOnly = () => {
+        if (activeWheelSlots.length <= 1) return;
+        setIsShufflingAnim(true);
+        if (soundEnabled) sfx.playShuffle();
+
+        setTimeout(() => {
+            const shuffled = fisherYates(activeWheelSlots);
+            setActiveWheelSlots(shuffled);
+            setShuffleCount(prev => prev + 1);
+            setIsShufflingAnim(false);
+            toast({
+                title: '🔀 轉盤扇形順序已打亂！',
+                description: `所有號碼在轉盤上的分佈已徹底隨機錯開（已累計洗牌 ${shuffleCount + 1} 次）。`
+            });
+        }, 300);
+    };
+
+    // 隨機重新配號 (號碼與人員姓名全部打亂重配，杜絕內定)
+    const handleReassignNumbersAndShuffle = () => {
+        if (activeWheelSlots.length <= 1) return;
+        setIsShufflingAnim(true);
+        if (soundEnabled) sfx.playShuffle();
+
+        setTimeout(() => {
+            // 提取現有所有號碼並打亂
+            const allNumbers = activeWheelSlots.map(s => s.number);
+            const shuffledNumbers = fisherYates(allNumbers);
+
+            // 提取現有人員並打亂
+            const shuffledPeople = fisherYates(activeWheelSlots);
+
+            // 將打亂的號碼重新分配給打亂的人員
+            const reassigned = shuffledPeople.map((person, idx) => ({
+                ...person,
+                number: shuffledNumbers[idx]
+            }));
+
+            // 再次隨機洗牌轉盤排位
+            const finalShuffled = fisherYates(reassigned);
+
+            setActiveWheelSlots(finalShuffled);
+            setShuffleCount(prev => prev + 1);
+            setIsShufflingAnim(false);
+            toast({
+                title: '🎲 號碼與人員已全體隨機洗牌！',
+                description: `所有號碼與姓名已全面打亂重新配對，100% 公平公正零內定！（第 ${shuffleCount + 1} 次洗牌）`
+            });
+        }, 350);
+    };
+
+    // 🎲 擲骰子決定亂數洗牌次數 (核心新增功能)
+    const handleRollDiceAndShuffle = () => {
+        if (isRollingDice || isShufflingAnim || activeWheelSlots.length <= 1) return;
+        
+        setIsRollingDice(true);
+        if (soundEnabled) sfx.playDiceRoll();
+
+        // 快速輪播骰子點數動畫 (1.1 秒)
+        const rollInterval = setInterval(() => {
+            if (diceCountMode === 1) {
+                setDiceValues([Math.floor(Math.random() * 6) + 1]);
+            } else {
+                setDiceValues([
+                    Math.floor(Math.random() * 6) + 1,
+                    Math.floor(Math.random() * 6) + 1
+                ]);
+            }
+        }, 65);
+
+        setTimeout(() => {
+            clearInterval(rollInterval);
+            
+            // 決定最終點數
+            let finalValues: number[] = [];
+            if (diceCountMode === 1) {
+                finalValues = [Math.floor(Math.random() * 6) + 1];
+            } else {
+                finalValues = [
+                    Math.floor(Math.random() * 6) + 1,
+                    Math.floor(Math.random() * 6) + 1
+                ];
+            }
+            const totalShuffles = finalValues.reduce((a, b) => a + b, 0);
+            setDiceValues(finalValues);
+            setIsRollingDice(false);
+            if (soundEnabled) sfx.playDiceHit();
+
+            const timeStr = new Date().toLocaleTimeString('zh-TW', { hour12: false });
+            setDiceRollResult({
+                total: totalShuffles,
+                values: finalValues,
+                rolledAt: timeStr
+            });
+
+            // 開始執行連續 Fisher-Yates 洗牌 (帶視覺即時進度條)
+            setIsShufflingAnim(true);
+            let currentStepCount = 0;
+            setShuffleProgress({ current: 1, total: totalShuffles });
+
+            const shuffleStepInterval = setInterval(() => {
+                currentStepCount++;
+                setShuffleProgress({ current: currentStepCount, total: totalShuffles });
+                if (soundEnabled) sfx.playTick();
+
+                setActiveWheelSlots(prev => {
+                    const allNumbers = prev.map(s => s.number);
+                    const shuffledNumbers = fisherYates(allNumbers);
+                    const shuffledPeople = fisherYates(prev);
+                    const reassigned = shuffledPeople.map((person, idx) => ({
+                        ...person,
+                        number: shuffledNumbers[idx]
+                    }));
+                    return fisherYates(reassigned);
+                });
+
+                if (currentStepCount >= totalShuffles) {
+                    clearInterval(shuffleStepInterval);
+                    setTimeout(() => {
+                        setIsShufflingAnim(false);
+                        setShuffleProgress(null);
+                        setShuffleCount(prev => prev + totalShuffles);
+                        if (soundEnabled) sfx.playWin();
+                        try {
+                            confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
+                        } catch (e) {}
+                        toast({
+                            title: `🎲 擲出 ${finalValues.join(' + ')} = ${totalShuffles} 點！`,
+                            description: `已透過 Fisher-Yates 演算法連續完成 ${totalShuffles} 次隨機洗牌，號碼與人名已徹底打亂！`
+                        });
+                    }, 200);
+                }
+            }, 180);
+
+        }, 1100);
+    };
+
+    // 一鍵還原為最初填寫順序
+    const handleResetToOriginalOrder = () => {
+        if (originalStep2Slots.length > 0) {
+            setActiveWheelSlots([...originalStep2Slots]);
+            setShuffleCount(0);
+            setDiceRollResult(null);
+            toast({ title: '🔄 已還原為原始登錄號碼與順序' });
+        }
+    };
+
+    // 自動歸檔當前活動中獎紀錄
+    const handleAutoArchiveCurrentEvent = () => {
+        if (winnerHistory.length === 0) return;
+        const newArchive = {
+            id: 'arch-' + Date.now(),
+            eventName: eventName || '幸運大轉盤抽獎',
+            createdAt: new Date().toLocaleString('zh-TW'),
+            totalWinners: winnerHistory.length,
+            winnerHistory: [...winnerHistory],
+            prizes: [...prizes],
+            totalSlotCount: slots.length,
+        };
+        setLocalArchives(prev => {
+            const next = [newArchive, ...prev.filter(a => a.id !== newArchive.id)];
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('lucky_wheel_saved_archives', JSON.stringify(next));
+            }
+            return next;
+        });
+    };
+
+    // 🔄 重置本輪抽獎 (保留現有名單與獎項設定，重置開獎進度)
+    const handleResetDrawSessionOnly = () => {
+        // 先自動歸檔目前的紀錄 (若有)
+        if (winnerHistory.length > 0) {
+            handleAutoArchiveCurrentEvent();
+        }
+
+        // 重設獎項已抽次數
+        setPrizes(prev => prev.map(p => ({ ...p, drawnCount: 0 })));
+        if (prizes.length > 0) setSelectedPrizeId(prizes[0].id);
+
+        // 重設中獎紀錄
+        setWinnerHistory([]);
+        if (typeof window !== 'undefined') {
+            try {
+                localStorage.removeItem('lucky_wheel_history_records');
+            } catch (e) {}
+        }
+
+        // 把所有已填寫名單放回轉盤
+        const filled = slots.filter(s => s.name && s.name.trim() !== '');
+        setActiveWheelSlots(filled);
+        setOriginalStep2Slots(filled);
+        setShuffleCount(0);
+        setDiceRollResult(null);
+        setLatestWinner(null);
+        setIsResetAllModalOpen(false);
+        setCurrentStep(1);
+
+        toast({
+            title: '🔄 本輪抽獎已重置',
+            description: '已清空中獎紀錄，參賽名單與獎項已恢復初始狀態，可重新開始！'
+        });
+    };
+
+    // 🧹 全新清空重置 (清空所有人名、電話、獎項歸零，徹底重新開始)
+    const handleResetEverythingClean = () => {
+        if (winnerHistory.length > 0) {
+            handleAutoArchiveCurrentEvent();
+        }
+
+        // 清空格子
+        setSlots(Array.from({ length: totalSlotCount }, (_, i) => ({
+            number: i + 1,
+            name: '',
+            phone: '',
+            note: ''
+        })));
+
+        // 獎項恢復預設
+        setPrizes([
+            { id: '1', name: '🥇 特獎：2023-24 Panini Prizm 籃球卡盒', totalCount: 1, drawnCount: 0 },
+            { id: '2', name: '🥈 頭獎：大谷翔平 PSA 10 鑑定卡', totalCount: 1, drawnCount: 0 },
+            { id: '3', name: '🥉 貳獎：限量球員親簽卡磚包', totalCount: 2, drawnCount: 0 },
+            { id: '4', name: '🎁 參獎：500 點幸運購物金', totalCount: 3, drawnCount: 0 },
+        ]);
+        setSelectedPrizeId('1');
+
+        setActiveWheelSlots([]);
+        setOriginalStep2Slots([]);
+        setWinnerHistory([]);
+        if (typeof window !== 'undefined') {
+            try {
+                localStorage.removeItem('lucky_wheel_history_records');
+            } catch (e) {}
+        }
+        setShuffleCount(0);
+        setDiceRollResult(null);
+        setLatestWinner(null);
+        setIsResetAllModalOpen(false);
+        setCurrentStep(1);
+
+        toast({
+            title: '✨ 全新重置完成',
+            description: '所有名單、獎項與抽獎進度已全部重設為初始空白狀態！'
+        });
+    };
+
+    // 流程切換：進入第二步【確認名單】(過濾無人空白號碼 + 自動隨機打亂)
     const handleGoToStep2 = () => {
         const filled = slots.filter(s => s.name && s.name.trim() !== '');
         if (filled.length < 2) {
@@ -502,7 +1031,31 @@ export default function LuckyWheelFrontendPage() {
             });
             return;
         }
-        setActiveWheelSlots(filled);
+
+        // 保存一份原始未洗牌的資料以供備份還原
+        setOriginalStep2Slots([...filled]);
+
+        // 若啟用「開獎自動洗牌」，進入第二步時立即隨機打亂號碼與人員，避免任何內定嫌疑
+        let slotsForStep2 = [...filled];
+        if (autoShuffleOnDraw) {
+            const allNumbers = slotsForStep2.map(s => s.number);
+            const shuffledNumbers = fisherYates(allNumbers);
+            const shuffledPeople = fisherYates(slotsForStep2);
+            slotsForStep2 = fisherYates(shuffledPeople.map((person, idx) => ({
+                ...person,
+                number: shuffledNumbers[idx]
+            })));
+            setShuffleCount(1);
+            if (soundEnabled) sfx.playShuffle();
+            toast({
+                title: '🛡️ 已自動執行隨機打亂洗牌！',
+                description: '所有號碼與參賽人員已全數隨機重配，公開透明無內定。'
+            });
+        } else {
+            setShuffleCount(0);
+        }
+
+        setActiveWheelSlots(slotsForStep2);
         setCurrentStep(2);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
@@ -513,6 +1066,14 @@ export default function LuckyWheelFrontendPage() {
             toast({ variant: 'destructive', title: '名單空白', description: '無有效參賽名單。' });
             return;
         }
+
+        // 若開獎前自動洗牌開啟且尚未手動洗牌過，自動再進行一次轉盤順序重排
+        if (autoShuffleOnDraw && shuffleCount === 0) {
+            const shuffled = fisherYates(activeWheelSlots);
+            setActiveWheelSlots(shuffled);
+            setShuffleCount(1);
+        }
+
         setCurrentStep(3);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
@@ -781,7 +1342,7 @@ export default function LuckyWheelFrontendPage() {
 
                 // 產生中獎紀錄
                 const newRecord: WinnerRecord = {
-                    id: Date.now().toString(),
+                    id: Date.now().toString() + '-' + Math.random().toString(36).substring(2, 7),
                     round: winnerHistory.length + 1,
                     prizeName: currentActivePrize.name,
                     number: winningSlot.number,
@@ -790,15 +1351,45 @@ export default function LuckyWheelFrontendPage() {
                     drawnAt: new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
                 };
 
-                setWinnerHistory(prev => [newRecord, ...prev]);
+                const updatedHistory = [newRecord, ...winnerHistory];
+                setWinnerHistory(updatedHistory);
+
+                // 自動儲存到 LocalStorage
+                if (typeof window !== 'undefined') {
+                    try {
+                        localStorage.setItem('lucky_wheel_history_records', JSON.stringify(updatedHistory));
+                    } catch (e) {}
+                }
 
                 // 更新獎項抽出次數
-                setPrizes(prev => prev.map(p => {
+                const updatedPrizes = prizes.map(p => {
                     if (p.id === currentActivePrize.id) {
                         return { ...p, drawnCount: p.drawnCount + 1 };
                     }
                     return p;
-                }));
+                });
+                setPrizes(updatedPrizes);
+
+                // 檢查是否全部獎項已抽完，若抽完自動生成一筆存檔紀錄
+                const isAllDrawn = updatedPrizes.every(p => p.drawnCount >= p.totalCount);
+                if (isAllDrawn) {
+                    const newArchive = {
+                        id: 'arch-' + Date.now(),
+                        eventName: eventName || '幸運大轉盤抽獎',
+                        createdAt: new Date().toLocaleString('zh-TW'),
+                        totalWinners: updatedHistory.length,
+                        winnerHistory: updatedHistory,
+                        prizes: updatedPrizes,
+                        totalSlotCount: slots.length,
+                    };
+                    setLocalArchives(prev => {
+                        const next = [newArchive, ...prev.filter(a => a.id !== newArchive.id)];
+                        if (typeof window !== 'undefined') {
+                            localStorage.setItem('lucky_wheel_saved_archives', JSON.stringify(next));
+                        }
+                        return next;
+                    });
+                }
 
                 // 彈出中獎結果視窗
                 setLatestWinner({
@@ -815,6 +1406,65 @@ export default function LuckyWheelFrontendPage() {
         };
 
         animationFrameRef.current = requestAnimationFrame(animate);
+    };
+
+    // 手動將本次抽獎歸檔至歷史存檔庫
+    const handleSaveArchiveManually = () => {
+        if (winnerHistory.length === 0) {
+            toast({ variant: 'destructive', title: '目前無中獎紀錄', description: '請先進行抽獎後再進行歸檔。' });
+            return;
+        }
+        const newArchive = {
+            id: 'arch-' + Date.now(),
+            eventName: eventName || '幸運大轉盤抽獎',
+            createdAt: new Date().toLocaleString('zh-TW'),
+            totalWinners: winnerHistory.length,
+            winnerHistory: [...winnerHistory],
+            prizes: [...prizes],
+            totalSlotCount: slots.length,
+        };
+        setLocalArchives(prev => {
+            const next = [newArchive, ...prev.filter(a => a.id !== newArchive.id)];
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('lucky_wheel_saved_archives', JSON.stringify(next));
+            }
+            return next;
+        });
+        toast({ title: '📜 已成功存入歷史紀錄庫', description: `【${eventName}】(${winnerHistory.length} 位得獎者) 已安全留存！` });
+    };
+
+    // 複製單一得獎者紀錄
+    const handleCopySingleRecord = (record: WinnerRecord) => {
+        const phone = formatPhone(record.phone);
+        const text = `🏆【${eventName}】恭喜得獎！\n獎項：${record.prizeName}\n幸運號碼：#${record.number}\n得獎者：${record.name} (${phone})\n抽中時間：${record.drawnAt}`;
+        navigator.clipboard.writeText(text);
+        toast({ title: '📋 已複製得獎者資訊', description: `${record.name} 的中獎資料已複製。` });
+    };
+
+    // 刪除本機存檔
+    const handleDeleteArchive = (id: string) => {
+        setLocalArchives(prev => {
+            const next = prev.filter(a => a.id !== id);
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('lucky_wheel_saved_archives', JSON.stringify(next));
+            }
+            return next;
+        });
+        toast({ title: '已刪除歷史存檔' });
+    };
+
+    // 清空本次開獎歷史並重開一局
+    const handleResetDrawSession = () => {
+        if (winnerHistory.length > 0) {
+            handleSaveArchiveManually();
+        }
+        setWinnerHistory([]);
+        setPrizes(prev => prev.map(p => ({ ...p, drawnCount: 0 })));
+        if (typeof window !== 'undefined') {
+            localStorage.removeItem('lucky_wheel_history_records');
+        }
+        setCurrentStep(1);
+        toast({ title: '🔄 已重置開獎狀態', description: '舊紀錄已自動歸檔，可開始全新一輪抽獎！' });
     };
 
     // 電話遮罩格式化
@@ -1106,6 +1756,17 @@ export default function LuckyWheelFrontendPage() {
                     >
                         <FolderOpen className="w-3.5 h-3.5 mr-1.5" />
                         歷史紀錄
+                    </Button>
+
+                    {/* 🔄 全部重設 / 重來一次 (滿足用戶即時重置需求) */}
+                    <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => setIsResetAllModalOpen(true)}
+                        className="rounded-xl border-rose-500/30 bg-rose-950/30 text-xs text-rose-300 hover:bg-rose-900/40 hover:text-rose-200 transition-all shadow-[0_0_10px_rgba(244,63,94,0.15)]"
+                    >
+                        <RotateCcw className="w-3.5 h-3.5 mr-1.5 text-rose-400" />
+                        重設重來
                     </Button>
                 </div>
             </div>
@@ -1492,86 +2153,297 @@ export default function LuckyWheelFrontendPage() {
             )}
 
             {/* ======================================================== */}
-            {/* 第二步：確認名單 (排除無人空白號碼) */}
+            {/* 第二步：確認名單 (排除無人空白號碼 + 擲骰子決定隨機洗牌次數) */}
             {/* ======================================================== */}
             {currentStep === 2 && (
                 <div className="space-y-6">
-                    <div className="bg-slate-900/60 border border-white/10 rounded-3xl p-6 sm:p-8 backdrop-blur-xl shadow-xl">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-5 border-b border-white/10">
+                    <div className="bg-slate-900/70 border border-white/10 rounded-3xl p-5 sm:p-7 backdrop-blur-xl shadow-xl">
+                        {/* 標題與返回按鈕 */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-5 border-b border-white/10">
                             <div>
-                                <div className="flex items-center gap-2 mb-1">
+                                <div className="flex flex-wrap items-center gap-2 mb-1">
                                     <UserCheck className="w-6 h-6 text-cyan-400" />
                                     <h2 className="text-xl sm:text-2xl font-black text-white">
-                                        第二步：確認上轉盤名單
+                                        第二步：確認上轉盤名單與擲骰子洗牌
                                     </h2>
-                                    <Badge className="bg-cyan-500/20 text-cyan-300 border-cyan-400/30 text-xs px-2.5">
-                                        已自動排除空白號碼
+                                    <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-400/30 text-xs px-2.5">
+                                        <ShieldCheck className="w-3.5 h-3.5 mr-1 inline" /> 100% 公平演算法
                                     </Badge>
+                                    {shuffleCount > 0 && (
+                                        <Badge className="bg-purple-500/20 text-purple-300 border-purple-400/30 text-xs px-2.5">
+                                            <Dices className="w-3.5 h-3.5 mr-1 inline" /> 累計洗牌 {shuffleCount} 次
+                                        </Badge>
+                                    )}
                                 </div>
                                 <p className="text-xs sm:text-sm text-slate-400">
-                                    以下為即將進入實時大轉盤的有效號碼名單，請確認無誤後即可啟動轉盤抽獎！
+                                    已自動去除無人填寫的空白號位。現場可透過【擲骰子】決定隨機洗牌次數，公開透明零內定！
                                 </p>
                             </div>
 
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setCurrentStep(1)}
-                                className="rounded-xl border-white/15 bg-slate-800 text-slate-300 hover:text-white"
-                            >
-                                <ArrowLeft className="w-4 h-4 mr-1.5" /> 返回修改名單
-                            </Button>
-                        </div>
-
-                        {/* 名單對比摘要 */}
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                            <div className="p-4 rounded-2xl bg-slate-950/60 border border-white/10">
-                                <span className="text-xs text-slate-400 block mb-1">原始號碼總格數</span>
-                                <span className="text-2xl font-black text-slate-200">{totalSlotCount} 格</span>
-                            </div>
-                            <div className="p-4 rounded-2xl bg-cyan-950/40 border border-cyan-500/30">
-                                <span className="text-xs text-cyan-300 block mb-1">有效參賽總人數</span>
-                                <span className="text-2xl font-black text-cyan-400">{activeWheelSlots.length} 位</span>
-                            </div>
-                            <div className="p-4 rounded-2xl bg-slate-950/60 border border-white/10">
-                                <span className="text-xs text-slate-400 block mb-1">已排除空白號碼</span>
-                                <span className="text-2xl font-black text-rose-400">{totalSlotCount - activeWheelSlots.length} 格</span>
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setCurrentStep(1)}
+                                    className="rounded-xl border-white/15 bg-slate-800/80 text-slate-300 hover:text-white"
+                                >
+                                    <ArrowLeft className="w-4 h-4 mr-1.5" /> 返回修改名單
+                                </Button>
                             </div>
                         </div>
 
-                        {/* 有效號碼展示卡片 */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-8 max-h-[500px] overflow-y-auto pr-1">
-                            {activeWheelSlots.map((slot, index) => {
-                                const sectorColor = SECTOR_COLORS[index % SECTOR_COLORS.length];
-                                return (
-                                    <div
-                                        key={slot.number}
-                                        className="p-3.5 rounded-2xl bg-slate-950/80 border border-white/10 flex items-center justify-between gap-3 shadow-md"
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <div 
-                                                className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-white text-sm shadow-md"
-                                                style={{ backgroundColor: sectorColor }}
-                                            >
-                                                #{slot.number}
-                                            </div>
-                                            <div>
-                                                <p className="text-sm font-black text-white">{slot.name}</p>
-                                                <p className="text-xs font-mono text-slate-400">{formatPhone(slot.phone)}</p>
-                                            </div>
-                                        </div>
-                                        <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                        {/* 🎲 重點功能：擲骰子洗牌控制台 (互動式 3D 骰子 + 亂數排序次數決定) */}
+                        <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-purple-950/60 via-slate-900/90 to-cyan-950/60 border-2 border-purple-500/40 mb-6 relative overflow-hidden shadow-[0_0_35px_rgba(168,85,247,0.2)]">
+                            {/* 背景發光光暈 */}
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+                            <div className="absolute bottom-0 left-0 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+
+                            <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-6">
+                                {/* 骰子展示與點數動畫區 */}
+                                <div className="flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
+                                    <div className="flex items-center gap-3">
+                                        {diceValues.map((val, idx) => (
+                                            <DieFace key={idx} value={val} isRolling={isRollingDice} />
+                                        ))}
                                     </div>
-                                );
-                            })}
+
+                                    <div>
+                                        <div className="flex items-center justify-center sm:justify-start gap-2 mb-1.5">
+                                            <span className="text-xs font-black text-purple-300 uppercase tracking-wider bg-purple-500/20 px-2.5 py-0.5 rounded-full border border-purple-400/30">
+                                                🎲 擲骰子決定亂數次數
+                                            </span>
+                                            {diceRollResult && !isRollingDice && !shuffleProgress && (
+                                                <Badge className="bg-amber-500/20 text-amber-300 border-amber-400/30 text-xs">
+                                                    最新點數：{diceRollResult.values.join(' + ')} = {diceRollResult.total} 次
+                                                </Badge>
+                                            )}
+                                        </div>
+
+                                        <h3 className="text-lg sm:text-xl font-black text-white tracking-tight">
+                                            {isRollingDice 
+                                                ? '🎲 骰子滾動中... 決定命運次數！'
+                                                : shuffleProgress
+                                                    ? `🔀 正在進行第 ${shuffleProgress.current} / ${shuffleProgress.total} 次隨機洗牌...`
+                                                    : diceRollResult
+                                                        ? `已完成 ${diceRollResult.total} 次深度隨機洗牌重配！`
+                                                        : '點擊右側按鈕擲骰子，決定洗牌次數'}
+                                        </h3>
+
+                                        <p className="text-xs text-slate-400 mt-1 max-w-md">
+                                            {shuffleProgress 
+                                                ? '系統正在使用 Fisher-Yates 國際標準演算法實時打亂人名與號碼配對...'
+                                                : '現場觀眾與主播共同見證，依骰子點數隨機打亂所有號碼與人名！'}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* 骰子模式設定與擲骰 CTA 按鈕 */}
+                                <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
+                                    {/* 骰子顆數選擇器 */}
+                                    <div className="flex items-center bg-slate-950/80 p-1 rounded-2xl border border-white/10 self-stretch sm:self-auto justify-center">
+                                        <button
+                                            onClick={() => {
+                                                if (!isRollingDice && !shuffleProgress) {
+                                                    setDiceCountMode(1);
+                                                    setDiceValues([Math.floor(Math.random() * 6) + 1]);
+                                                }
+                                            }}
+                                            disabled={isRollingDice || !!shuffleProgress}
+                                            className={cn(
+                                                "px-3 py-1.5 rounded-xl text-xs font-bold transition-all",
+                                                diceCountMode === 1 
+                                                    ? "bg-purple-600 text-white shadow-md" 
+                                                    : "text-slate-400 hover:text-white"
+                                            )}
+                                        >
+                                            1 顆 (1~6次)
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                if (!isRollingDice && !shuffleProgress) {
+                                                    setDiceCountMode(2);
+                                                    setDiceValues([
+                                                        Math.floor(Math.random() * 6) + 1,
+                                                        Math.floor(Math.random() * 6) + 1
+                                                    ]);
+                                                }
+                                            }}
+                                            disabled={isRollingDice || !!shuffleProgress}
+                                            className={cn(
+                                                "px-3 py-1.5 rounded-xl text-xs font-bold transition-all",
+                                                diceCountMode === 2 
+                                                    ? "bg-purple-600 text-white shadow-md" 
+                                                    : "text-slate-400 hover:text-white"
+                                            )}
+                                        >
+                                            2 顆 (2~12次)
+                                        </button>
+                                    </div>
+
+                                    {/* 核心擲骰按鈕 */}
+                                    <Button
+                                        onClick={handleRollDiceAndShuffle}
+                                        disabled={isRollingDice || isShufflingAnim || activeWheelSlots.length <= 1}
+                                        className="w-full sm:w-auto h-12 px-6 rounded-2xl font-black text-sm bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white shadow-[0_0_25px_rgba(168,85,247,0.5)] transition-all active:scale-[0.98]"
+                                    >
+                                        <Dices className={cn("w-5 h-5 mr-2", isRollingDice && "animate-spin")} />
+                                        {isRollingDice ? '正在擲骰子...' : shuffleProgress ? `洗牌中 (${shuffleProgress.current}/${shuffleProgress.total})...` : '🎲 擲骰子並隨機洗牌'}
+                                    </Button>
+                                </div>
+                            </div>
+
+                            {/* 視覺洗牌進度條 (當洗牌中時顯示) */}
+                            {shuffleProgress && (
+                                <div className="mt-4 pt-3 border-t border-purple-500/20">
+                                    <div className="flex items-center justify-between text-xs text-purple-200 mb-1 font-bold">
+                                        <span>正在執行連續隨機亂數洗牌...</span>
+                                        <span>{Math.round((shuffleProgress.current / shuffleProgress.total) * 100)}%</span>
+                                    </div>
+                                    <div className="w-full h-2.5 rounded-full bg-slate-950/80 overflow-hidden border border-purple-400/30">
+                                        <motion.div 
+                                            className="h-full bg-gradient-to-r from-purple-500 via-cyan-400 to-emerald-400"
+                                            animate={{ width: `${(shuffleProgress.current / shuffleProgress.total) * 100}%` }}
+                                            transition={{ duration: 0.15 }}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* 輔助快捷控制項 (一鍵單次洗牌 / 還原原始順序 / 自動洗牌勾選) */}
+                            <div className="mt-4 pt-3.5 border-t border-white/10 flex flex-wrap items-center justify-between gap-3 text-xs">
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleReassignNumbersAndShuffle}
+                                        disabled={isRollingDice || isShufflingAnim}
+                                        className="h-8 px-2.5 rounded-xl border-white/15 bg-slate-900/80 text-cyan-300 hover:bg-cyan-500/10 text-xs font-bold"
+                                    >
+                                        <Shuffle className="w-3.5 h-3.5 mr-1" />
+                                        快速洗牌 1 次
+                                    </Button>
+
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleResetToOriginalOrder}
+                                        disabled={isRollingDice || isShufflingAnim}
+                                        className="h-8 px-2.5 rounded-xl border-white/10 bg-slate-900/60 text-slate-400 hover:text-slate-200 text-xs"
+                                        title="還原為在第一步填寫時的原始登錄順序"
+                                    >
+                                        <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                                        還原最初登錄順序
+                                    </Button>
+                                </div>
+
+                                <div className="flex items-center gap-3">
+                                    <label className="flex items-center gap-2 cursor-pointer text-slate-300 hover:text-white select-none">
+                                        <input
+                                            type="checkbox"
+                                            checked={autoShuffleOnDraw}
+                                            onChange={(e) => setAutoShuffleOnDraw(e.target.checked)}
+                                            className="w-3.5 h-3.5 rounded text-purple-600 focus:ring-purple-500 bg-slate-900 border-white/20"
+                                        />
+                                        <span>開獎前自動隨機打亂</span>
+                                    </label>
+                                    <span className="text-slate-500 hidden sm:inline">|</span>
+                                    <span className="text-slate-400 font-mono text-[11px]">
+                                        目前洗牌次數：<strong className="text-cyan-400">{shuffleCount}</strong> 次
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 統計摘要資訊條 */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 mb-6">
+                            <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-950/60 border border-white/10 flex items-center justify-between">
+                                <div>
+                                    <span className="text-xs text-slate-400 block">原始號碼總格數</span>
+                                    <span className="text-xl sm:text-2xl font-black text-slate-200">{totalSlotCount} 格</span>
+                                </div>
+                                <div className="w-9 h-9 rounded-xl bg-slate-800 flex items-center justify-center text-slate-400 font-bold text-sm">
+                                    #
+                                </div>
+                            </div>
+
+                            <div className="p-3.5 sm:p-4 rounded-2xl bg-cyan-950/40 border border-cyan-500/40 flex items-center justify-between">
+                                <div>
+                                    <span className="text-xs text-cyan-300 block">有效參賽總人數 (已上盤)</span>
+                                    <span className="text-xl sm:text-2xl font-black text-cyan-400">{activeWheelSlots.length} 位</span>
+                                </div>
+                                <div className="w-9 h-9 rounded-xl bg-cyan-500/20 text-cyan-300 flex items-center justify-center font-bold text-sm">
+                                    <Users className="w-4 h-4" />
+                                </div>
+                            </div>
+
+                            <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-950/60 border border-white/10 flex items-center justify-between">
+                                <div>
+                                    <span className="text-xs text-slate-400 block">已過濾空白無人格</span>
+                                    <span className="text-xl sm:text-2xl font-black text-rose-400">{totalSlotCount - activeWheelSlots.length} 格</span>
+                                </div>
+                                <div className="w-9 h-9 rounded-xl bg-rose-500/10 text-rose-400 flex items-center justify-center font-bold text-sm">
+                                    -
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 有效號碼名單展示卡片 (簡化優化版) */}
+                        <div className="space-y-2 mb-8">
+                            <div className="flex items-center justify-between text-xs text-slate-400 px-1">
+                                <span className="font-bold text-white flex items-center gap-1.5">
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400" />
+                                    轉盤即時參賽名單（共 {activeWheelSlots.length} 位）
+                                </span>
+                                <span>點擊上方「擲骰子」可即時隨機打亂重新排序</span>
+                            </div>
+
+                            <div className={cn(
+                                "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 max-h-[460px] overflow-y-auto pr-1 transition-all duration-300",
+                                (isShufflingAnim || isRollingDice) && "opacity-60 scale-[0.99] blur-[0.5px]"
+                            )}>
+                                {activeWheelSlots.map((slot, index) => {
+                                    const sectorColor = SECTOR_COLORS[index % SECTOR_COLORS.length];
+                                    return (
+                                        <div
+                                            key={`${slot.number}-${slot.name}-${index}`}
+                                            className="p-3 rounded-2xl bg-slate-950/80 border border-white/10 flex items-center justify-between gap-2.5 shadow-sm hover:border-cyan-400/40 transition-all group"
+                                        >
+                                            <div className="flex items-center gap-2.5 min-w-0">
+                                                <div 
+                                                    className="w-8 h-8 rounded-xl flex items-center justify-center font-black text-white text-xs shadow-md shrink-0"
+                                                    style={{ backgroundColor: sectorColor }}
+                                                >
+                                                    #{slot.number}
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className="text-xs sm:text-sm font-black text-white truncate group-hover:text-cyan-300 transition-colors">
+                                                        {slot.name}
+                                                    </p>
+                                                    <p className="text-[11px] font-mono text-slate-400 truncate">
+                                                        {formatPhone(slot.phone)}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <Badge className="bg-slate-900 text-slate-300 border-white/10 text-[10px] px-1.5 shrink-0 font-mono">
+                                                扇區 {index + 1}
+                                            </Badge>
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         </div>
 
                         {/* 進入轉盤 CTA */}
-                        <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-6 border-t border-white/10">
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-5 border-t border-white/10">
+                            <div className="text-xs text-slate-300 flex items-center gap-2">
+                                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                                <span>名單已隨機就緒，共 <strong className="text-cyan-400 font-black">{activeWheelSlots.length}</strong> 位進入幸運大轉盤！</span>
+                            </div>
+
                             <Button
                                 size="lg"
                                 onClick={handleGoToStep3}
-                                className="w-full sm:w-auto h-12 px-10 rounded-2xl font-black text-base bg-gradient-to-r from-cyan-500 via-teal-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-slate-950 shadow-[0_0_25px_rgba(6,182,212,0.4)]"
+                                className="w-full sm:w-auto h-12 px-10 rounded-2xl font-black text-base bg-gradient-to-r from-cyan-500 via-teal-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-slate-950 shadow-[0_0_25px_rgba(6,182,212,0.4)] transition-all active:scale-[0.98]"
                             >
                                 確認無誤，開啟幸運大轉盤！ <ChevronRight className="w-5 h-5 ml-1.5" />
                             </Button>
@@ -1591,15 +2463,35 @@ export default function LuckyWheelFrontendPage() {
                             {/* 頂部活動名稱與操作列 */}
                             <div className="w-full flex items-center justify-between mb-3 pb-3 border-b border-white/10">
                                 <div className="min-w-0">
-                                    <h2 className="text-base sm:text-lg font-black text-white truncate">
-                                        {eventName}
-                                    </h2>
+                                    <div className="flex items-center gap-2">
+                                        <h2 className="text-base sm:text-lg font-black text-white truncate">
+                                            {eventName}
+                                        </h2>
+                                        {shuffleCount > 0 && (
+                                            <Badge className="bg-purple-500/20 text-purple-300 border-purple-400/30 text-[10px] px-1.5 hidden sm:inline-flex">
+                                                🎲 洗牌 {shuffleCount} 次
+                                            </Badge>
+                                        )}
+                                    </div>
                                     <p className="text-xs text-slate-400">
                                         轉盤剩餘人數：<span className="font-bold text-cyan-400">{activeWheelSlots.length}</span> 人
                                     </p>
                                 </div>
 
                                 <div className="flex items-center gap-2">
+                                    {/* 現場洗牌按鈕 (主播可在鏡頭前隨時打亂順序以示公正) */}
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleReassignNumbersAndShuffle}
+                                        disabled={isSpinning || isShufflingAnim}
+                                        className="h-8 px-2.5 rounded-xl border-purple-500/30 bg-purple-500/10 text-purple-300 hover:bg-purple-500/20 text-xs font-bold"
+                                        title="現場鏡頭前隨機洗牌，杜絕內定"
+                                    >
+                                        <Shuffle className={cn("w-3.5 h-3.5 mr-1", isShufflingAnim && "animate-spin")} />
+                                        現場洗牌
+                                    </Button>
+
                                     <Button
                                         variant="outline"
                                         size="sm"
@@ -1607,7 +2499,7 @@ export default function LuckyWheelFrontendPage() {
                                         disabled={isSpinning}
                                         className="h-8 px-2.5 rounded-xl border-white/15 bg-slate-800 text-xs text-slate-300"
                                     >
-                                        <ArrowLeft className="w-3.5 h-3.5 mr-1" /> 重選名單
+                                        <ArrowLeft className="w-3.5 h-3.5 mr-1" /> 名單配置
                                     </Button>
 
                                     {/* 前往第四步大看板按鈕 */}
@@ -1836,38 +2728,66 @@ export default function LuckyWheelFrontendPage() {
             )}
 
             {/* ======================================================== */}
-            {/* 第四步：放大所有得獎者名單 (大螢幕/直播全景展示) */}
+            {/* 第四步：放大所有得獎者名單 (大螢幕/直播全景展示 & 完整開獎歷史明細) */}
             {/* ======================================================== */}
             {currentStep === 4 && (
-                <div className="space-y-6">
+                <div className="space-y-6 pt-2">
                     {/* 頂部控制列 */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-3xl bg-slate-900/80 border border-white/10 backdrop-blur-xl">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-3xl bg-slate-900/80 border border-white/10 backdrop-blur-xl shadow-lg">
                         <div className="flex items-center gap-3">
                             <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => setCurrentStep(3)}
-                                className="rounded-xl border-white/15 bg-slate-800 text-slate-300 hover:text-white text-xs"
+                                className="rounded-xl border-white/15 bg-slate-800 text-slate-300 hover:text-white text-xs font-bold"
                             >
                                 <ArrowLeft className="w-3.5 h-3.5 mr-1.5" /> 返回轉盤抽獎
                             </Button>
                             <Badge className="bg-amber-500/20 text-amber-300 border-amber-400/30 text-xs px-2.5 py-1 font-bold">
-                                🏆 得獎者光榮金榜
+                                🏆 得獎者榮譽榜 (共 {winnerHistory.length} 位)
                             </Badge>
                         </div>
 
                         <div className="flex flex-wrap items-center gap-2">
-                            {/* 灑花慶祝按鈕 */}
+                            {/* 視圖切換 */}
+                            <div className="flex items-center bg-slate-950/80 p-1 rounded-xl border border-white/10 text-xs">
+                                <button
+                                    onClick={() => setBoardViewMode('both')}
+                                    className={cn(
+                                        "px-2.5 py-1 rounded-lg font-bold transition-all",
+                                        boardViewMode === 'both' ? "bg-amber-500 text-slate-950" : "text-slate-400 hover:text-white"
+                                    )}
+                                >
+                                    全部展示
+                                </button>
+                                <button
+                                    onClick={() => setBoardViewMode('cards')}
+                                    className={cn(
+                                        "px-2.5 py-1 rounded-lg font-bold transition-all",
+                                        boardViewMode === 'cards' ? "bg-amber-500 text-slate-950" : "text-slate-400 hover:text-white"
+                                    )}
+                                >
+                                    大卡片
+                                </button>
+                                <button
+                                    onClick={() => setBoardViewMode('table')}
+                                    className={cn(
+                                        "px-2.5 py-1 rounded-lg font-bold transition-all",
+                                        boardViewMode === 'table' ? "bg-amber-500 text-slate-950" : "text-slate-400 hover:text-white"
+                                    )}
+                                >
+                                    歷史明細表
+                                </button>
+                            </div>
+
+                            {/* 存入歷史存檔 */}
                             <Button
+                                variant="outline"
                                 size="sm"
-                                onClick={() => {
-                                    try {
-                                        confetti({ particleCount: 150, spread: 100, origin: { y: 0.5 } });
-                                    } catch (e) {}
-                                }}
-                                className="rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-bold text-xs shadow-md"
+                                onClick={handleSaveArchiveManually}
+                                className="rounded-xl border-cyan-500/40 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 text-xs font-bold"
                             >
-                                <PartyPopper className="w-3.5 h-3.5 mr-1.5" /> 灑花慶祝 🎉
+                                <Save className="w-3.5 h-3.5 mr-1.5" /> 歸檔此場紀錄
                             </Button>
 
                             {/* 複製公告 */}
@@ -1875,9 +2795,9 @@ export default function LuckyWheelFrontendPage() {
                                 variant="outline"
                                 size="sm"
                                 onClick={handleCopyWinnersAnnouncement}
-                                className="rounded-xl border-white/15 bg-slate-800 text-cyan-300 hover:text-white text-xs font-bold"
+                                className="rounded-xl border-white/15 bg-slate-800 text-amber-300 hover:text-white text-xs font-bold"
                             >
-                                <Copy className="w-3.5 h-3.5 mr-1.5" /> 複製公告
+                                <Copy className="w-3.5 h-3.5 mr-1.5" /> 複製全榜公告
                             </Button>
 
                             {/* 匯出 CSV */}
@@ -1887,7 +2807,20 @@ export default function LuckyWheelFrontendPage() {
                                 onClick={handleExportCSV}
                                 className="rounded-xl border-white/15 bg-slate-800 text-emerald-300 hover:text-white text-xs font-bold"
                             >
-                                <Download className="w-3.5 h-3.5 mr-1.5" /> 匯出名單
+                                <Download className="w-3.5 h-3.5 mr-1.5" /> 匯出 CSV
+                            </Button>
+
+                            {/* 灑花慶祝按鈕 */}
+                            <Button
+                                size="sm"
+                                onClick={() => {
+                                    try {
+                                        confetti({ particleCount: 160, spread: 100, origin: { y: 0.5 } });
+                                    } catch (e) {}
+                                }}
+                                className="rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-bold text-xs shadow-md"
+                            >
+                                <PartyPopper className="w-3.5 h-3.5 mr-1.5" /> 灑花慶祝 🎉
                             </Button>
 
                             {/* 全螢幕切換 */}
@@ -1895,123 +2828,253 @@ export default function LuckyWheelFrontendPage() {
                                 variant="outline"
                                 size="sm"
                                 onClick={toggleFullscreen}
-                                className="rounded-xl border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 text-xs font-bold"
+                                className="rounded-xl border-purple-500/40 bg-purple-500/10 text-purple-300 hover:bg-purple-500/20 text-xs font-bold"
                             >
                                 {isFullscreen ? <Minimize className="w-3.5 h-3.5 mr-1.5" /> : <Maximize className="w-3.5 h-3.5 mr-1.5" />}
-                                {isFullscreen ? '退出全螢幕' : '全螢幕劇院模式'}
+                                {isFullscreen ? '退出全螢幕' : '全螢幕劇院'}
                             </Button>
                         </div>
                     </div>
 
-                    {/* 大看板主舞台 */}
-                    <div className="relative p-6 sm:p-10 md:p-12 rounded-3xl bg-gradient-to-b from-slate-900/95 via-[#0b1020]/95 to-slate-950/95 border-2 border-amber-500/30 shadow-[0_0_60px_rgba(245,158,11,0.15)] backdrop-blur-2xl text-center overflow-hidden">
+                    {/* 大看板主舞台 (修復手機端頂部留白與大字體) */}
+                    <div className="relative pt-10 sm:pt-14 pb-10 px-4 sm:px-8 md:px-12 rounded-3xl bg-gradient-to-b from-slate-900/95 via-[#0b1020]/95 to-slate-950/95 border-2 border-amber-500/30 shadow-[0_0_60px_rgba(245,158,11,0.15)] backdrop-blur-2xl text-center overflow-hidden">
                         {/* 頂部金光微粒氛圍 */}
                         <div className="absolute top-0 left-1/4 w-96 h-40 bg-amber-500/15 blur-3xl pointer-events-none" />
                         <div className="absolute top-0 right-1/4 w-96 h-40 bg-purple-500/15 blur-3xl pointer-events-none" />
 
                         {/* 大標題 */}
                         <div className="relative z-10 mb-8 sm:mb-12">
-                            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 font-black text-sm tracking-wider uppercase mb-3 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
-                                <Crown className="w-4 h-4 text-amber-400 animate-pulse" />
-                                WINNER CEREMONY
-                                <Crown className="w-4 h-4 text-amber-400 animate-pulse" />
+                            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 font-black text-xs sm:text-sm tracking-wider uppercase mb-3 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+                                <Crown className="w-4 h-4 text-amber-400 animate-pulse shrink-0" />
+                                <span>WINNER CEREMONY 得獎盛典</span>
+                                <Crown className="w-4 h-4 text-amber-400 animate-pulse shrink-0" />
                             </div>
-                            <h2 className="text-2xl sm:text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-yellow-200 tracking-tight drop-shadow-[0_0_25px_rgba(251,191,36,0.35)]">
+                            <h2 className="text-2xl sm:text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-yellow-200 tracking-tight drop-shadow-[0_0_25px_rgba(251,191,36,0.35)] px-2">
                                 {eventName}
                             </h2>
-                            <p className="text-base sm:text-lg text-slate-300 font-medium mt-2">
-                                🎊 恭喜所有得獎者！榮獲本次活動尊榮大獎 🎊
+                            <p className="text-sm sm:text-base md:text-lg text-slate-300 font-medium mt-2.5">
+                                🎊 恭喜所有得獎者！榮獲本次活動尊榮獎項 🎊
                             </p>
                         </div>
 
-                        {/* 得獎者超大卡片網格 (大字體排版、觀眾超好認) */}
-                        {winnerHistory.length === 0 ? (
-                            <div className="py-16 text-center text-slate-400">
-                                <Trophy className="w-16 h-16 text-slate-700 mx-auto mb-4" />
-                                <p className="text-lg font-bold text-slate-300">尚未開出任何中獎者</p>
-                                <p className="text-sm text-slate-500 mt-1">請返回第 3 步旋轉大轉盤進行抽獎！</p>
-                                <Button
-                                    onClick={() => setCurrentStep(3)}
-                                    className="mt-6 rounded-2xl bg-amber-500 text-slate-950 font-black px-6"
-                                >
-                                    前往抽獎
-                                </Button>
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 relative z-10">
-                                {winnerHistory.slice().reverse().map((record, index) => {
-                                    // 依獎項名次賦予特殊金屬光澤外框
-                                    const isFirst = index === 0;
-                                    const isSecond = index === 1;
-                                    const isThird = index === 2;
-
-                                    return (
-                                        <motion.div
-                                            key={record.id}
-                                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                                            transition={{ delay: index * 0.08, duration: 0.4 }}
-                                            className={cn(
-                                                "p-6 sm:p-7 rounded-3xl text-left relative overflow-hidden transition-all duration-300 hover:scale-[1.02]",
-                                                isFirst 
-                                                    ? "bg-gradient-to-b from-amber-950/70 via-slate-900/90 to-slate-950/90 border-2 border-amber-400 shadow-[0_0_30px_rgba(251,191,36,0.3)] ring-1 ring-amber-400/50"
-                                                    : isSecond
-                                                    ? "bg-gradient-to-b from-slate-800/70 via-slate-900/90 to-slate-950/90 border-2 border-cyan-400 shadow-[0_0_25px_rgba(6,182,212,0.25)]"
-                                                    : isThird
-                                                    ? "bg-gradient-to-b from-purple-950/70 via-slate-900/90 to-slate-950/90 border-2 border-purple-400 shadow-[0_0_25px_rgba(168,85,247,0.25)]"
-                                                    : "bg-slate-900/90 border border-white/15 shadow-xl"
-                                            )}
+                        {/* 得獎者超大卡片網格 (使用 getPrizeBadgeMeta 確保文字與徽章完全符合) */}
+                        {(boardViewMode === 'both' || boardViewMode === 'cards') && (
+                            <>
+                                {winnerHistory.length === 0 ? (
+                                    <div className="py-16 text-center text-slate-400">
+                                        <Trophy className="w-16 h-16 text-slate-700 mx-auto mb-4" />
+                                        <p className="text-lg font-bold text-slate-300">尚未開出任何中獎者</p>
+                                        <p className="text-sm text-slate-500 mt-1">請返回第 3 步旋轉大轉盤進行抽獎！</p>
+                                        <Button
+                                            onClick={() => setCurrentStep(3)}
+                                            className="mt-6 rounded-2xl bg-amber-500 text-slate-950 font-black px-6"
                                         >
-                                            {/* 背景光暈 */}
-                                            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
+                                            前往抽獎
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 relative z-10 mb-10">
+                                        {winnerHistory.slice().reverse().map((record, index) => {
+                                            // 智慧解析獎項專屬外觀與徽章文字 (徹底修正特等大獎與文字不符問題)
+                                            const meta = getPrizeBadgeMeta(record.prizeName, record.round);
 
-                                            {/* 頂部獎項大徽章 */}
-                                            <div className="flex items-center justify-between mb-4">
-                                                <Badge className={cn(
-                                                    "px-3 py-1 text-xs font-black rounded-xl border shadow-sm",
-                                                    isFirst ? "bg-amber-500 text-slate-950 border-amber-300" :
-                                                    isSecond ? "bg-cyan-500 text-slate-950 border-cyan-300" :
-                                                    isThird ? "bg-purple-500 text-white border-purple-300" :
-                                                    "bg-slate-800 text-slate-200 border-white/10"
-                                                )}>
-                                                    {isFirst ? '🥇 特等大獎' : isSecond ? '🥈 頭獎榮耀' : isThird ? '🥉 幸運貳獎' : `✨ 得獎項目`}
-                                                </Badge>
-                                                <span className="text-xs font-mono text-slate-400">
-                                                    第 {record.round} 輪
-                                                </span>
-                                            </div>
+                                            return (
+                                                <motion.div
+                                                    key={record.id}
+                                                    initial={{ opacity: 0, scale: 0.92, y: 20 }}
+                                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                    transition={{ delay: index * 0.06, duration: 0.35 }}
+                                                    className={cn(
+                                                        "p-6 sm:p-7 rounded-3xl text-left relative overflow-hidden transition-all duration-300 hover:scale-[1.02]",
+                                                        meta.cardTheme
+                                                    )}
+                                                >
+                                                    {/* 背景光暈 */}
+                                                    <div className={cn("absolute top-0 right-0 w-32 h-32 rounded-full blur-2xl pointer-events-none", meta.glowColor)} />
 
-                                            {/* 獎項名稱 */}
-                                            <h3 className="text-base sm:text-lg font-black text-amber-300 mb-4 line-clamp-2">
-                                                {record.prizeName}
+                                                    {/* 頂部獎項大徽章 (精準對齊獎項名稱) */}
+                                                    <div className="flex items-center justify-between mb-4">
+                                                        <Badge className={cn("px-3 py-1 text-xs rounded-xl border", meta.badgeStyle)}>
+                                                            {meta.badgeText}
+                                                        </Badge>
+                                                        <span className="text-xs font-mono text-slate-400">
+                                                            第 {record.round} 輪開出
+                                                        </span>
+                                                    </div>
+
+                                                    {/* 獎項名稱 */}
+                                                    <h3 className={cn("text-base sm:text-lg font-black mb-4 line-clamp-2", meta.textColor)}>
+                                                        {record.prizeName}
+                                                    </h3>
+
+                                                    {/* 中獎號碼與得獎者大字區塊 */}
+                                                    <div className="p-4 rounded-2xl bg-slate-950/85 border border-white/10 flex items-center gap-4 mb-4 shadow-inner">
+                                                        <div className={cn(
+                                                            "w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-tr font-black text-xl sm:text-2xl flex items-center justify-center shrink-0 shadow-lg",
+                                                            meta.numberGradient
+                                                        )}>
+                                                            #{record.number}
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <span className="text-[11px] text-slate-400 font-bold block">中獎幸運兒</span>
+                                                            <p className="text-xl sm:text-2xl font-black text-white truncate tracking-tight">
+                                                                {record.name}
+                                                            </p>
+                                                            <p className="text-xs font-mono text-cyan-300 font-bold mt-0.5">
+                                                                {formatPhone(record.phone)}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* 底部時間與驗證操作 */}
+                                                    <div className="flex items-center justify-between text-[11px] text-slate-400 font-mono pt-2 border-t border-white/10">
+                                                        <span>抽中時間：{record.drawnAt}</span>
+                                                        <button
+                                                            onClick={() => handleCopySingleRecord(record)}
+                                                            className="text-amber-400 hover:text-amber-300 font-bold flex items-center gap-1 transition-colors"
+                                                            title="複製此筆得獎資料"
+                                                        >
+                                                            <Copy className="w-3.5 h-3.5" /> 複製此筆
+                                                        </button>
+                                                    </div>
+                                                </motion.div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </>
+                        )}
+
+                        {/* ======================================================== */}
+                        {/* 📜 本場活動開獎歷史明細總表 (完整紀錄清單與搜尋/排序) */}
+                        {/* ======================================================== */}
+                        {(boardViewMode === 'both' || boardViewMode === 'table') && winnerHistory.length > 0 && (
+                            <div className="mt-8 text-left relative z-10 bg-slate-950/90 border border-white/15 rounded-3xl p-5 sm:p-7 shadow-2xl backdrop-blur-xl">
+                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-white/10 mb-5">
+                                    <div>
+                                        <div className="flex items-center gap-2">
+                                            <History className="w-5 h-5 text-emerald-400" />
+                                            <h3 className="text-base sm:text-lg font-black text-white">
+                                                本場開獎歷史明細總表
                                             </h3>
+                                            <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-400/30 text-xs">
+                                                共 {winnerHistory.length} 筆得獎紀錄
+                                            </Badge>
+                                        </div>
+                                        <p className="text-xs text-slate-400 mt-1">
+                                            所有轉盤開出紀錄皆已安全儲存，可依輪次排序、搜尋玩家或獎項，並支援個別複製
+                                        </p>
+                                    </div>
 
-                                            {/* 中獎號碼與得獎者大字區塊 */}
-                                            <div className="p-4 rounded-2xl bg-slate-950/80 border border-white/10 flex items-center gap-4 mb-4">
-                                                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-tr from-amber-400 via-amber-500 to-yellow-300 text-slate-950 font-black text-xl sm:text-2xl flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(251,191,36,0.4)]">
-                                                    #{record.number}
-                                                </div>
-                                                <div className="min-w-0">
-                                                    <span className="text-[11px] text-slate-400 font-bold block">中獎得主</span>
-                                                    <p className="text-xl sm:text-2xl font-black text-white truncate tracking-tight">
-                                                        {record.name}
-                                                    </p>
-                                                    <p className="text-xs font-mono text-cyan-300 font-bold mt-0.5">
-                                                        {formatPhone(record.phone)}
-                                                    </p>
-                                                </div>
-                                            </div>
+                                    {/* 搜尋與排序控制 */}
+                                    <div className="flex flex-wrap items-center gap-2.5">
+                                        <div className="relative min-w-[200px]">
+                                            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                            <Input
+                                                placeholder="搜尋得獎人 / 獎項 / 電話..."
+                                                value={historySearchTerm}
+                                                onChange={(e) => setHistorySearchTerm(e.target.value)}
+                                                className="pl-8 h-9 text-xs rounded-xl bg-slate-900 border-white/15 text-white"
+                                            />
+                                        </div>
 
-                                            {/* 底部時間與驗證 */}
-                                            <div className="flex items-center justify-between text-[11px] text-slate-500 font-mono pt-2 border-t border-white/10">
-                                                <span>抽中時間：{record.drawnAt}</span>
-                                                <span className="text-emerald-400 font-bold flex items-center gap-1">
-                                                    <Check className="w-3.5 h-3.5" /> 系統認證
-                                                </span>
-                                            </div>
-                                        </motion.div>
-                                    );
-                                })}
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setHistorySortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
+                                            className="h-9 px-3 rounded-xl border-white/15 bg-slate-900 text-xs text-slate-300 hover:text-white"
+                                        >
+                                            <ArrowUpDown className="w-3.5 h-3.5 mr-1 text-cyan-400" />
+                                            {historySortOrder === 'desc' ? '最新開出在前' : '第 1 輪依序排列'}
+                                        </Button>
+
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setShowPhoneMask(!showPhoneMask)}
+                                            className="h-9 px-3 rounded-xl border-white/15 bg-slate-900 text-xs text-slate-300 hover:text-white"
+                                        >
+                                            {showPhoneMask ? <EyeOff className="w-3.5 h-3.5 mr-1 text-amber-400" /> : <Eye className="w-3.5 h-3.5 mr-1 text-emerald-400" />}
+                                            {showPhoneMask ? '電話已遮罩' : '電話完整'}
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                {/* 歷史總表表格 */}
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-xs text-left">
+                                        <thead>
+                                            <tr className="border-b border-white/10 text-slate-400 bg-slate-900/60 font-bold">
+                                                <th className="p-3 rounded-l-xl">輪次</th>
+                                                <th className="p-3">獎項名稱</th>
+                                                <th className="p-3 text-center">幸運號碼</th>
+                                                <th className="p-3">得獎者姓名</th>
+                                                <th className="p-3">聯絡電話</th>
+                                                <th className="p-3">開出時間</th>
+                                                <th className="p-3 text-right rounded-r-xl">操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-white/5">
+                                            {winnerHistory
+                                                .filter(w => {
+                                                    if (!historySearchTerm.trim()) return true;
+                                                    const term = historySearchTerm.toLowerCase();
+                                                    return (
+                                                        w.name.toLowerCase().includes(term) ||
+                                                        w.prizeName.toLowerCase().includes(term) ||
+                                                        w.phone.includes(term) ||
+                                                        w.number.toString().includes(term)
+                                                    );
+                                                })
+                                                .sort((a, b) => {
+                                                    if (historySortOrder === 'asc') return a.round - b.round;
+                                                    return b.round - a.round;
+                                                })
+                                                .map((rec) => {
+                                                    const meta = getPrizeBadgeMeta(rec.prizeName, rec.round);
+                                                    return (
+                                                        <tr key={rec.id} className="hover:bg-white/5 transition-colors">
+                                                            <td className="p-3 font-mono font-bold text-slate-400">
+                                                                第 {rec.round} 輪
+                                                            </td>
+                                                            <td className="p-3">
+                                                                <div className="flex items-center gap-2">
+                                                                    <Badge className={cn("text-[10px] px-1.5 py-0.5 shrink-0", meta.badgeStyle)}>
+                                                                        {meta.badgeText.split(' ')[0]}
+                                                                    </Badge>
+                                                                    <span className="font-bold text-white line-clamp-1">{rec.prizeName}</span>
+                                                                </div>
+                                                            </td>
+                                                            <td className="p-3 text-center">
+                                                                <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-amber-500/20 border border-amber-400/40 text-amber-300 font-black text-xs font-mono">
+                                                                    #{rec.number}
+                                                                </span>
+                                                            </td>
+                                                            <td className="p-3 font-black text-white text-sm">
+                                                                {rec.name}
+                                                            </td>
+                                                            <td className="p-3 font-mono text-cyan-300">
+                                                                {formatPhone(rec.phone)}
+                                                            </td>
+                                                            <td className="p-3 font-mono text-slate-400">
+                                                                {rec.drawnAt}
+                                                            </td>
+                                                            <td className="p-3 text-right">
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    onClick={() => handleCopySingleRecord(rec)}
+                                                                    className="h-7 px-2 text-xs text-amber-300 hover:text-white hover:bg-amber-500/20 rounded-lg"
+                                                                >
+                                                                    <Copy className="w-3 h-3 mr-1" /> 複製
+                                                                </Button>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         )}
 
@@ -2031,7 +3094,25 @@ export default function LuckyWheelFrontendPage() {
                                 onClick={() => setCurrentStep(3)}
                                 className="h-12 px-8 rounded-2xl border-white/20 bg-slate-900 text-white font-black text-sm hover:bg-white/10"
                             >
-                                <RotateCcw className="w-4 h-4 mr-2" /> 返回轉盤抽獎
+                                <RotateCcw className="w-4 h-4 mr-2" /> 返回轉盤繼續抽獎
+                            </Button>
+
+                            <Button
+                                variant="outline"
+                                size="lg"
+                                onClick={() => setIsResetAllModalOpen(true)}
+                                className="h-12 px-6 rounded-2xl border-rose-500/40 bg-rose-500/10 text-rose-300 font-black text-sm hover:bg-rose-500/20 shadow-[0_0_15px_rgba(244,63,94,0.15)]"
+                            >
+                                <RotateCcw className="w-4 h-4 mr-2 text-rose-400" /> 全部重設 / 重新開始
+                            </Button>
+
+                            <Button
+                                variant="outline"
+                                size="lg"
+                                onClick={() => setIsLoadModalOpen(true)}
+                                className="h-12 px-6 rounded-2xl border-indigo-500/40 bg-indigo-500/10 text-indigo-300 font-black text-sm hover:bg-indigo-500/20"
+                            >
+                                <FolderOpen className="w-4 h-4 mr-2" /> 查閱歷史開獎存檔庫
                             </Button>
                         </div>
                     </div>
@@ -2250,55 +3331,222 @@ export default function LuckyWheelFrontendPage() {
             </Dialog>
 
             {/* ======================================================== */}
-            {/* 彈窗 6：載入歷史雲端存檔 */}
+            {/* 彈窗 6：歷史開獎存檔庫 (整合本機歷史與雲端存檔) */}
             {/* ======================================================== */}
             <Dialog open={isLoadModalOpen} onOpenChange={setIsLoadModalOpen}>
-                <DialogContent className="sm:max-w-lg bg-slate-900 border-white/15 rounded-3xl p-6">
+                <DialogContent className="sm:max-w-2xl bg-slate-900 border-white/15 rounded-3xl p-6">
                     <DialogHeader>
                         <DialogTitle className="text-lg font-black text-white flex items-center gap-2">
                             <FolderOpen className="w-5 h-5 text-indigo-400" />
-                            歷史活動存檔
+                            📜 歷次抽獎活動存檔與開獎明細庫
                         </DialogTitle>
                         <DialogDescription className="text-xs text-slate-400">
-                            選擇先前的存檔記錄以快速還原名單或查閱得獎者
+                            隨時回顧過往每一場抽獎活動的中獎名單、匯出 CSV 或複製公告
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="py-3 max-h-[350px] overflow-y-auto space-y-2.5 pr-1">
-                        {isSavedListLoading ? (
-                            <p className="text-xs text-slate-400 text-center py-6">載入存檔列表中...</p>
-                        ) : !savedWheelsList || savedWheelsList.length === 0 ? (
-                            <p className="text-xs text-slate-500 text-center py-6">目前尚無任何雲端存檔。</p>
-                        ) : (
-                            savedWheelsList.map((item: any) => (
-                                <div
-                                    key={item.id}
-                                    className="p-3.5 rounded-2xl bg-slate-950/80 border border-white/10 hover:border-indigo-500/40 flex items-center justify-between gap-3 transition-all"
-                                >
-                                    <div className="min-w-0">
-                                        <p className="text-sm font-bold text-white truncate">{item.eventName}</p>
-                                        <div className="flex items-center gap-2 mt-1 text-[11px] text-slate-400">
-                                            <span>名額：{item.slots?.length || item.totalSlotCount} 格</span>
-                                            <span>•</span>
-                                            <span>中獎數：{item.winnerHistory?.length || 0} 位</span>
-                                        </div>
-                                    </div>
+                    <div className="py-3 max-h-[420px] overflow-y-auto space-y-3 pr-1">
+                        {/* 本機歷史存檔 */}
+                        <div>
+                            <h4 className="text-xs font-black text-amber-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                <History className="w-3.5 h-3.5" /> 本機已存抽獎場次 ({localArchives.length})
+                            </h4>
 
-                                    <Button
-                                        size="sm"
-                                        onClick={() => handleLoadSavedWheel(item)}
-                                        className="h-8 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shrink-0"
-                                    >
-                                        載入
-                                    </Button>
+                            {localArchives.length === 0 ? (
+                                <p className="text-xs text-slate-500 bg-slate-950/40 p-3 rounded-xl border border-white/5">
+                                    尚無本機歷史存檔。開獎完成後系統將自動為您歸檔留存。
+                                </p>
+                            ) : (
+                                <div className="space-y-2">
+                                    {localArchives.map((arch) => (
+                                        <div
+                                            key={arch.id}
+                                            className="p-3.5 rounded-2xl bg-slate-950/80 border border-white/10 hover:border-amber-500/40 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                                        >
+                                            <div className="min-w-0">
+                                                <div className="flex items-center gap-2">
+                                                    <p className="text-sm font-bold text-white truncate">{arch.eventName}</p>
+                                                    <Badge className="bg-amber-500/20 text-amber-300 border-amber-400/30 text-[10px] px-1.5 py-0">
+                                                        {arch.totalWinners || arch.winnerHistory?.length || 0} 人中獎
+                                                    </Badge>
+                                                </div>
+                                                <p className="text-[11px] text-slate-400 mt-0.5">
+                                                    存檔時間：{arch.createdAt} • 總格數：{arch.totalSlotCount || 12} 格
+                                                </p>
+                                            </div>
+
+                                            <div className="flex items-center gap-1.5 shrink-0">
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => {
+                                                        const lines = [
+                                                            `🎉【${arch.eventName}・歷史得獎名單】🎉`,
+                                                            `時間：${arch.createdAt}`,
+                                                            `=================================`,
+                                                            ...(arch.winnerHistory || []).map((w: any, idx: number) => {
+                                                                return `${idx + 1}. [${w.prizeName}] #${w.number} ${w.name} (${formatPhone(w.phone)})`;
+                                                            }),
+                                                            `=================================`,
+                                                        ];
+                                                        navigator.clipboard.writeText(lines.join('\n'));
+                                                        toast({ title: '📋 已複製該場公告' });
+                                                    }}
+                                                    className="h-8 px-2.5 rounded-xl border-white/15 bg-slate-800 text-cyan-300 text-xs"
+                                                >
+                                                    <Copy className="w-3 h-3 mr-1" /> 複製公告
+                                                </Button>
+
+                                                <Button
+                                                    size="sm"
+                                                    onClick={() => handleLoadSavedWheel(arch)}
+                                                    className="h-8 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs"
+                                                >
+                                                    載入此場
+                                                </Button>
+
+                                                <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    onClick={() => handleDeleteArchive(arch.id)}
+                                                    className="h-8 w-8 p-0 text-slate-500 hover:text-rose-400"
+                                                    title="刪除此存檔"
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
-                            ))
-                        )}
+                            )}
+                        </div>
+
+                        {/* 雲端資料庫存檔 */}
+                        <div className="pt-3 border-t border-white/10">
+                            <h4 className="text-xs font-black text-cyan-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                <Save className="w-3.5 h-3.5" /> 雲端資料庫存檔
+                            </h4>
+
+                            {isSavedListLoading ? (
+                                <p className="text-xs text-slate-400 text-center py-4">載入雲端存檔中...</p>
+                            ) : !savedWheelsList || savedWheelsList.length === 0 ? (
+                                <p className="text-xs text-slate-500 bg-slate-950/40 p-3 rounded-xl border border-white/5">
+                                    尚無雲端存檔。管理員可隨時於設定列點擊「儲存存檔」上傳雲端。
+                                </p>
+                            ) : (
+                                <div className="space-y-2">
+                                    {savedWheelsList.map((item: any) => (
+                                        <div
+                                            key={item.id}
+                                            className="p-3.5 rounded-2xl bg-slate-950/80 border border-white/10 hover:border-cyan-500/40 flex items-center justify-between gap-3 transition-all"
+                                        >
+                                            <div className="min-w-0">
+                                                <p className="text-sm font-bold text-white truncate">{item.eventName}</p>
+                                                <div className="flex items-center gap-2 mt-1 text-[11px] text-slate-400">
+                                                    <span>格數：{item.slots?.length || item.totalSlotCount} 格</span>
+                                                    <span>•</span>
+                                                    <span>已開出：{item.winnerHistory?.length || 0} 位</span>
+                                                </div>
+                                            </div>
+
+                                            <Button
+                                                size="sm"
+                                                onClick={() => handleLoadSavedWheel(item)}
+                                                className="h-8 px-3 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shrink-0"
+                                            >
+                                                載入雲端
+                                            </Button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsLoadModalOpen(false)} className="rounded-xl border-white/15">
                             關閉
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* ======================================================== */}
+            {/* 彈窗 7：全部重設 / 重來一次 選擇彈窗 (滿足用戶自訂重設需求) */}
+            {/* ======================================================== */}
+            <Dialog open={isResetAllModalOpen} onOpenChange={setIsResetAllModalOpen}>
+                <DialogContent className="sm:max-w-lg bg-slate-900/95 border-2 border-rose-500/40 rounded-3xl p-6 sm:p-7 shadow-[0_0_50px_rgba(244,63,94,0.25)] backdrop-blur-2xl">
+                    <DialogHeader>
+                        <div className="mx-auto w-12 h-12 rounded-2xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center mb-2">
+                            <RotateCcw className="w-6 h-6 text-rose-400" />
+                        </div>
+                        <DialogTitle className="text-xl font-black text-white text-center">
+                            🔄 活動專區・重設與重來
+                        </DialogTitle>
+                        <DialogDescription className="text-xs text-slate-400 text-center">
+                            請選擇您想執行的重設方式（已開出的中獎紀錄將自動保存至歷史存檔）：
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-3 py-3">
+                        {/* 選項 A：重置開獎進度 (保留名單與獎項) */}
+                        <div 
+                            onClick={handleResetDrawSessionOnly}
+                            className="p-4 rounded-2xl bg-slate-950/80 border border-cyan-500/30 hover:border-cyan-400 hover:bg-cyan-950/30 cursor-pointer transition-all group"
+                        >
+                            <div className="flex items-start gap-3">
+                                <div className="w-9 h-9 rounded-xl bg-cyan-500/20 border border-cyan-400/30 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-110 transition-transform">
+                                    <RotateCcw className="w-4 h-4 text-cyan-300" />
+                                </div>
+                                <div className="min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <h4 className="text-sm font-black text-white group-hover:text-cyan-300 transition-colors">
+                                            重置本輪抽獎（保留現有名單與獎項）
+                                        </h4>
+                                        <Badge className="bg-cyan-500/20 text-cyan-300 border-cyan-400/30 text-[10px]">
+                                            推薦
+                                        </Badge>
+                                    </div>
+                                    <p className="text-xs text-slate-400 leading-relaxed">
+                                        清空目前開獎紀錄、將所有已中獎人員重新放回轉盤中，保留您先前填寫的人名、電話與獎項配置，可立即展開下一輪抽獎！
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 選項 B：全面清空重來 (清空所有資料) */}
+                        <div 
+                            onClick={handleResetEverythingClean}
+                            className="p-4 rounded-2xl bg-slate-950/80 border border-rose-500/30 hover:border-rose-400 hover:bg-rose-950/30 cursor-pointer transition-all group"
+                        >
+                            <div className="flex items-start gap-3">
+                                <div className="w-9 h-9 rounded-xl bg-rose-500/20 border border-rose-400/30 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-110 transition-transform">
+                                    <Trash2 className="w-4 h-4 text-rose-400" />
+                                </div>
+                                <div className="min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <h4 className="text-sm font-black text-white group-hover:text-rose-300 transition-colors">
+                                            全面清空並重新開始（清空所有人名/獎項）
+                                        </h4>
+                                        <Badge className="bg-rose-500/20 text-rose-300 border-rose-400/30 text-[10px]">
+                                            全部重來
+                                        </Badge>
+                                    </div>
+                                    <p className="text-xs text-slate-400 leading-relaxed">
+                                        徹底清空所有填寫的姓名、電話、自訂獎項與開獎進度，回歸初始 12 格空白預設狀態，建立一場全新的活動。
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <DialogFooter className="flex justify-end">
+                        <Button 
+                            variant="outline" 
+                            onClick={() => setIsResetAllModalOpen(false)}
+                            className="rounded-xl border-white/15 text-xs"
+                        >
+                            取消關閉
                         </Button>
                     </DialogFooter>
                 </DialogContent>
