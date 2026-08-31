@@ -1,33 +1,37 @@
 import * as admin from 'firebase-admin';
 
 function getFirebaseAdminApp() {
+  if (typeof window !== 'undefined') return null;
   if (!admin.apps.length) {
     try {
-      admin.initializeApp({
+      return admin.initializeApp({
         projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'studio-8439816843-ca6d5',
       });
-      console.log('Firebase Admin initialized successfully');
     } catch (error) {
-      console.error('Firebase Admin initialization error', error);
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn('Firebase Admin initialization deferred:', error);
+      }
+      return null;
     }
   }
   return admin.app();
 }
 
 export function getAdminDb() {
-  getFirebaseAdminApp();
-  return admin.firestore();
+  const app = getFirebaseAdminApp();
+  return app ? admin.firestore() : null;
 }
 
 export function getAdminAuth() {
-  getFirebaseAdminApp();
-  return admin.auth();
+  const app = getFirebaseAdminApp();
+  return app ? admin.auth() : null;
 }
 
 // Proxies for backwards compatibility
-export const adminDb = new Proxy({} as FirebaseFirestore.Firestore, {
+export const adminDb = new Proxy({} as any, {
   get(_, prop) {
     const db = getAdminDb();
+    if (!db) return undefined;
     const val = (db as any)[prop];
     if (typeof val === 'function') {
       return val.bind(db);
@@ -36,9 +40,10 @@ export const adminDb = new Proxy({} as FirebaseFirestore.Firestore, {
   }
 });
 
-export const adminAuth = new Proxy({} as admin.auth.Auth, {
+export const adminAuth = new Proxy({} as any, {
   get(_, prop) {
     const auth = getAdminAuth();
+    if (!auth) return undefined;
     const val = (auth as any)[prop];
     if (typeof val === 'function') {
       return val.bind(auth);
@@ -46,3 +51,4 @@ export const adminAuth = new Proxy({} as admin.auth.Auth, {
     return val;
   }
 });
+

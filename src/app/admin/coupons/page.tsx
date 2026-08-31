@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
+import { useCollection, useDoc, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection, query, orderBy, limit, addDoc, deleteDoc, updateDoc, doc, Timestamp } from "firebase/firestore";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -8,9 +8,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Plus, Ticket, Trash2, Calendar, Copy, Check, Percent, Sparkles, Loader2 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Plus, Ticket, Trash2, Calendar, Copy, Check, Percent, Sparkles, Loader2, Eye, EyeOff, KeyRound } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { SystemConfig } from '@/types/system';
+import { OFFICIAL_PROMO_CODES } from '@/components/events/PromoRedeemModal';
 
 interface CouponDoc {
     id: string;
@@ -45,6 +48,29 @@ export default function AdminCouponsPage() {
     }, [firestore]);
 
     const { data: coupons, isLoading } = useCollection<CouponDoc>(couponsQuery);
+
+    const systemConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'systemConfig', 'main') : null, [firestore]);
+    const { data: systemConfig } = useDoc<SystemConfig>(systemConfigRef);
+    const isPromoHintsVisible = Boolean(systemConfig?.showPromoCodeHints || systemConfig?.featureFlags?.showPromoHints);
+
+    const handleTogglePromoHints = async (enabled: boolean) => {
+        if (!firestore || !systemConfigRef) return;
+        try {
+            await updateDoc(systemConfigRef, {
+                showPromoCodeHints: enabled,
+                'featureFlags.showPromoHints': enabled
+            });
+            toast({
+                title: enabled ? '已開啟前台代碼展示' : '已隱藏前台代碼',
+                description: enabled 
+                    ? '前台活動領券中心現已公開展示熱門代碼快捷按鈕。' 
+                    : '前台活動領券中心已隱藏代碼清單，玩家需手動輸入代碼領取。'
+            });
+        } catch (e) {
+            console.error(e);
+            toast({ variant: 'destructive', title: '更新設定失敗' });
+        }
+    };
 
     const handleCreateCoupon = async () => {
         if (!firestore || !newCoupon.code.trim()) {
@@ -116,82 +142,139 @@ export default function AdminCouponsPage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Create form */}
-                <Card className="border-slate-200/90 shadow-2xs bg-white rounded-2xl">
-                    <CardHeader className="p-5 border-b border-slate-100">
-                        <CardTitle className="text-base font-black text-slate-900 flex items-center gap-2">
-                            <Plus className="h-4 w-4 text-emerald-600" /> 發行新優惠券
-                        </CardTitle>
-                        <CardDescription className="text-xs text-slate-500 font-medium">
-                            配置代碼、折扣面額與使用門檻
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-5 space-y-4">
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-slate-700">優惠券代碼 (英數大寫)</label>
-                            <Input 
-                                placeholder="例如：SUMMER2026, VIP888" 
-                                value={newCoupon.code} 
-                                onChange={e => setNewCoupon({...newCoupon, code: e.target.value.toUpperCase()})}
-                                className="h-10 bg-slate-50/70 border-slate-200 rounded-xl text-xs font-mono font-black tracking-wider uppercase"
-                            />
-                        </div>
+                {/* Left column: Create Form + Quick Codes Setting */}
+                <div className="space-y-6">
+                    {/* Create form */}
+                    <Card className="border-slate-200/90 shadow-2xs bg-white rounded-2xl">
+                        <CardHeader className="p-5 border-b border-slate-100">
+                            <CardTitle className="text-base font-black text-slate-900 flex items-center gap-2">
+                                <Plus className="h-4 w-4 text-emerald-600" /> 發行新優惠券
+                            </CardTitle>
+                            <CardDescription className="text-xs text-slate-500 font-medium">
+                                配置代碼、折扣面額與使用門檻
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-5 space-y-4">
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-slate-700">優惠券代碼 (英數大寫)</label>
+                                <Input 
+                                    placeholder="例如：SUMMER2026, VIP888" 
+                                    value={newCoupon.code} 
+                                    onChange={e => setNewCoupon({...newCoupon, code: e.target.value.toUpperCase()})}
+                                    className="h-10 bg-slate-50/70 border-slate-200 rounded-xl text-xs font-mono font-black tracking-wider uppercase"
+                                />
+                            </div>
 
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-slate-700">折扣面額 (鑽石/點數)</label>
-                                <Input 
-                                    type="number"
-                                    placeholder="100" 
-                                    value={newCoupon.discount} 
-                                    onChange={e => setNewCoupon({...newCoupon, discount: Number(e.target.value)})}
-                                    className="h-10 bg-slate-50/70 border-slate-200 rounded-xl text-xs font-bold"
-                                />
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-bold text-slate-700">折扣面額 (鑽石/點數)</label>
+                                    <Input 
+                                        type="number"
+                                        placeholder="100" 
+                                        value={newCoupon.discount} 
+                                        onChange={e => setNewCoupon({...newCoupon, discount: Number(e.target.value)})}
+                                        className="h-10 bg-slate-50/70 border-slate-200 rounded-xl text-xs font-bold"
+                                    />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-bold text-slate-700">最低消費門檻</label>
+                                    <Input 
+                                        type="number"
+                                        placeholder="0" 
+                                        value={newCoupon.minSpend} 
+                                        onChange={e => setNewCoupon({...newCoupon, minSpend: Number(e.target.value)})}
+                                        className="h-10 bg-slate-50/70 border-slate-200 rounded-xl text-xs font-bold"
+                                    />
+                                </div>
                             </div>
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-slate-700">最低消費門檻</label>
-                                <Input 
-                                    type="number"
-                                    placeholder="0" 
-                                    value={newCoupon.minSpend} 
-                                    onChange={e => setNewCoupon({...newCoupon, minSpend: Number(e.target.value)})}
-                                    className="h-10 bg-slate-50/70 border-slate-200 rounded-xl text-xs font-bold"
-                                />
-                            </div>
-                        </div>
 
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-slate-700">發行數量上限</label>
-                                <Input 
-                                    type="number"
-                                    placeholder="100" 
-                                    value={newCoupon.usageLimit} 
-                                    onChange={e => setNewCoupon({...newCoupon, usageLimit: Number(e.target.value)})}
-                                    className="h-10 bg-slate-50/70 border-slate-200 rounded-xl text-xs font-bold"
-                                />
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-bold text-slate-700">發行數量上限</label>
+                                    <Input 
+                                        type="number"
+                                        placeholder="100" 
+                                        value={newCoupon.usageLimit} 
+                                        onChange={e => setNewCoupon({...newCoupon, usageLimit: Number(e.target.value)})}
+                                        className="h-10 bg-slate-50/70 border-slate-200 rounded-xl text-xs font-bold"
+                                    />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-bold text-slate-700">有效截止日期</label>
+                                    <Input 
+                                        type="date"
+                                        value={newCoupon.expiresAt} 
+                                        onChange={e => setNewCoupon({...newCoupon, expiresAt: e.target.value})}
+                                        className="h-10 bg-slate-50/70 border-slate-200 rounded-xl text-xs font-medium"
+                                    />
+                                </div>
                             </div>
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-slate-700">有效截止日期</label>
-                                <Input 
-                                    type="date"
-                                    value={newCoupon.expiresAt} 
-                                    onChange={e => setNewCoupon({...newCoupon, expiresAt: e.target.value})}
-                                    className="h-10 bg-slate-50/70 border-slate-200 rounded-xl text-xs font-medium"
-                                />
-                            </div>
-                        </div>
 
-                        <Button 
-                            onClick={handleCreateCoupon} 
-                            disabled={isCreating || !newCoupon.code}
-                            className="w-full h-10 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-xs"
-                        >
-                            {isCreating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
-                            確認發行優惠券
-                        </Button>
-                    </CardContent>
-                </Card>
+                            <Button 
+                                onClick={handleCreateCoupon} 
+                                disabled={isCreating || !newCoupon.code}
+                                className="w-full h-10 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-xs"
+                            >
+                                {isCreating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
+                                確認發行優惠券
+                            </Button>
+                        </CardContent>
+                    </Card>
+
+                    {/* Promo Code Quick Hints Visibility Setting Card */}
+                    <Card className="border-slate-200/90 shadow-2xs bg-white rounded-2xl">
+                        <CardHeader className="p-5 border-b border-slate-100 pb-3">
+                            <div className="flex items-center justify-between">
+                                <CardTitle className="text-sm font-black text-slate-900 flex items-center gap-2">
+                                    <KeyRound className="h-4 w-4 text-purple-600" />
+                                    前台活動代碼快捷推薦
+                                </CardTitle>
+                                <Switch
+                                    checked={isPromoHintsVisible}
+                                    onCheckedChange={handleTogglePromoHints}
+                                />
+                            </div>
+                            <CardDescription className="text-xs text-slate-500 font-medium mt-1">
+                                控制前台活動領券中心是否公開顯示「現場熱門官方開幕代碼」快捷按鈕。
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-5 space-y-3">
+                            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100">
+                                <div className="flex items-center gap-2">
+                                    {isPromoHintsVisible ? (
+                                        <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-600">
+                                            <Eye className="w-4 h-4" />
+                                            <span>前台狀態：公開展示中</span>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500">
+                                            <EyeOff className="w-4 h-4 text-slate-400" />
+                                            <span>前台狀態：已隱藏保護</span>
+                                        </div>
+                                    )}
+                                </div>
+                                <Badge variant="outline" className={isPromoHintsVisible ? "bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px]" : "bg-slate-100 text-slate-600 border-slate-200 text-[10px]"}>
+                                    {isPromoHintsVisible ? "玩家可見代碼" : "需手動輸入密碼"}
+                                </Badge>
+                            </div>
+
+                            {/* Preset codes reference */}
+                            <div className="space-y-1.5 pt-1">
+                                <span className="text-[11px] font-bold text-slate-600 block">
+                                    官方內建活動代碼參考（共 {OFFICIAL_PROMO_CODES.length} 組）：
+                                </span>
+                                <div className="space-y-1">
+                                    {OFFICIAL_PROMO_CODES.map((item) => (
+                                        <div key={item.code} className="flex items-center justify-between text-xs p-2 rounded-lg bg-slate-100/70 border border-slate-200/60 font-mono">
+                                            <span className="font-black text-purple-700">{item.code}</span>
+                                            <span className="text-slate-500 text-[11px] font-sans truncate max-w-[140px]">{item.label}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
 
                 {/* List */}
                 <div className="lg:col-span-2 space-y-4">

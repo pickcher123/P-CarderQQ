@@ -7,7 +7,7 @@ import { doc } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Trophy, Clock, Zap, Star, Diamond, Layers, X, Package, Sparkles, Eye, ChevronRight } from 'lucide-react';
+import { Trophy, Clock, Zap, Star, Diamond, Layers, X, Package, Sparkles, Eye, ChevronRight, Gift, Ticket } from 'lucide-react';
 import { PPlusIcon, DiamondIcon } from '@/components/icons';
 import { SafeImage } from '@/components/safe-image';
 import { format } from 'date-fns';
@@ -15,6 +15,7 @@ import { CardItem } from '@/components/card-item';
 import { RandomPlayerCard } from '@/components/random-player-card';
 import { userLevels } from '@/components/member-level-crown';
 import { VerifyAgeModal } from '@/components/verify-age-modal';
+import { PromoRedeemModal } from '@/components/events/PromoRedeemModal';
 
 // (Re-adding interfaces and constants as in the file)
 const RARITIES = ['legendary', 'rare', 'common'] as const;
@@ -71,7 +72,7 @@ const pointPrizeStyles: Record<Rarity, { text: string, bg: string, border: strin
 };
 
 interface CardData { id: string; name: string; imageUrl: string; backImageUrl?: string; imageHint: string; isSold?: boolean; }
-interface CardPool { id: string; name: string; description: string; price?: number; price3Draws?: number; price10Draws?: number; totalPacks?: number; remainingPacks?: number; hasProtection?: boolean; isFeatured?: boolean; currency?: 'diamond' | 'p-point'; cardRarities?: { [cardId: string]: Rarity }; cards?: { cardId: string; quantity: number }[]; pointPrizes?: { prizeId: string; points: number; quantity: number; rarity: Rarity; name?: string }[]; lastPrizeCardId?: string; imageUrl?: string; startsAt?: { seconds: number; nanoseconds: number; }; expiresAt?: { seconds: number; nanoseconds: number; }; pointMultiplier?: number; pointMultiplierExpiresAt?: { seconds: number; nanoseconds: number; }; lockedBy?: string; lockedAt?: { seconds: number; nanoseconds: number; }; categoryId?: string; dailyLimit?: number; minLevel?: string; isAdult?: boolean; }
+interface CardPool { id: string; name: string; description: string; price?: number; price3Draws?: number; price10Draws?: number; totalPacks?: number; remainingPacks?: number; hasProtection?: boolean; isFeatured?: boolean; currency?: 'diamond' | 'p-point'; cardRarities?: { [cardId: string]: Rarity }; cards?: { cardId: string; quantity: number }[]; pointPrizes?: { prizeId: string; points: number; quantity: number; rarity: Rarity; name?: string }[]; lastPrizeCardId?: string; imageUrl?: string; startsAt?: { seconds: number; nanoseconds: number; }; expiresAt?: { seconds: number; nanoseconds: number; }; pointMultiplier?: number; pointMultiplierExpiresAt?: { seconds: number; nanoseconds: number; }; lockedBy?: string; lockedAt?: { seconds: number; nanoseconds: number; }; categoryId?: string; dailyLimit?: number; minLevel?: string; isAdult?: boolean; allowFreeDraw?: boolean; }
 const LOCK_DURATION = 120;
 
 export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, allCardsMap: Map<string, CardData>, userProfile: any }) {
@@ -84,6 +85,8 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
     const [isInventoryOpen, setIsInventoryOpen] = useState(false);
     const [isAgeVerifiedModalOpen, setIsAgeVerifiedModalOpen] = useState(false);
     const [pendingDraws, setPendingDraws] = useState<number>(0);
+    const [isUsingTicketForPending, setIsUsingTicketForPending] = useState(false);
+    const [isPromoModalOpen, setIsPromoModalOpen] = useState(false);
 
     const isAuthReady = !isUserLoading;
     const todayStr = format(new Date(), 'yyyy-MM-dd');
@@ -271,12 +274,26 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
     const handleDraw = (draws: number) => {
         if (pool.isAdult) {
             setPendingDraws(draws);
+            setIsUsingTicketForPending(false);
             setIsAgeVerifiedModalOpen(true);
         } else {
             setIsDrawing(true);
             setTimeout(() => {
                 router.push(`/draw/open?poolId=${pool.id}&draws=${draws}`);
             }, 800);
+        }
+    };
+
+    const handleDrawWithTicket = () => {
+        if (pool.isAdult) {
+            setPendingDraws(1);
+            setIsUsingTicketForPending(true);
+            setIsAgeVerifiedModalOpen(true);
+        } else {
+            setIsDrawing(true);
+            setTimeout(() => {
+                router.push(`/draw/open?poolId=${pool.id}&draws=1&useTicket=true`);
+            }, 500);
         }
     };
 
@@ -289,12 +306,18 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
 
     return (
         <div className="relative font-sans text-slate-100">
+            <PromoRedeemModal 
+                open={isPromoModalOpen} 
+                onOpenChange={setIsPromoModalOpen} 
+            />
+            
             <VerifyAgeModal 
                 isOpen={isAgeVerifiedModalOpen}
                 onClose={() => setIsAgeVerifiedModalOpen(false)}
                 onConfirm={() => {
                     setIsAgeVerifiedModalOpen(false);
-                    router.push(`/draw/open?poolId=${pool.id}&draws=${pendingDraws}`);
+                    const ticketQuery = isUsingTicketForPending ? '&useTicket=true' : '';
+                    router.push(`/draw/open?poolId=${pool.id}&draws=${pendingDraws}${ticketQuery}`);
                 }}
             />
             
@@ -335,6 +358,11 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                             {pool.isAdult && (
                                 <Badge className="bg-rose-500/20 text-rose-300 border border-rose-500/50 font-bold text-[10px] px-2 py-0.5">
                                     🔞 18+ 專區
+                                </Badge>
+                            )}
+                            {pool.allowFreeDraw && (
+                                <Badge className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/50 font-bold text-[10px] px-2 py-0.5">
+                                    <Ticket className="w-3 h-3 mr-1 text-emerald-400" /> 支援免費券
                                 </Badge>
                             )}
                         </div>
@@ -492,6 +520,27 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                         </div>
                     )}
                 </div>
+
+                {/* 活動兌換券專用兌換/抽取區（僅限後台開啟支援免費券的卡池） */}
+                {pool.allowFreeDraw && userProfile?.freeDrawTickets > 0 && (
+                    <div className="mb-2.5 p-2 rounded-xl bg-emerald-950/60 border border-emerald-500/40 flex flex-col sm:flex-row items-center justify-between gap-2 shadow-[0_0_15px_rgba(16,185,129,0.15)]">
+                        <div className="flex items-center gap-2">
+                            <Ticket className="w-4 h-4 text-emerald-400 shrink-0" />
+                            <div className="text-xs">
+                                <span className="font-bold text-white">本池支援免費兌換：</span>
+                                <span className="font-mono font-black text-emerald-300 ml-1 text-sm">{userProfile.freeDrawTickets} 張可用</span>
+                            </div>
+                        </div>
+                        <Button
+                            size="sm"
+                            onClick={handleDrawWithTicket}
+                            disabled={poolStatus.disabled || isDrawing}
+                            className="w-full sm:w-auto h-8 px-4 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs shadow-md transition-all cursor-pointer active:scale-95 whitespace-nowrap"
+                        >
+                            🎟️ 免費抽卡 (扣 1 張券)
+                        </Button>
+                    </div>
+                )}
 
                 {/* 抽卡操作按鈕 */}
                 <div className="grid grid-cols-3 gap-2 sm:gap-3 relative">

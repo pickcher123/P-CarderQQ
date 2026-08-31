@@ -44,6 +44,7 @@ interface CardPool {
   categoryId?: string;
   order?: number;
   status?: 'draft' | 'published';
+  allowFreeDraw?: boolean;
 }
 
 export default function CardPoolsAdminPage() {
@@ -116,6 +117,17 @@ export default function CardPoolsAdminPage() {
       }
   }
 
+  const handleFreeDrawToggle = async (poolId: string, currentVal: boolean = false) => {
+      if (!firestore) return;
+      try {
+          await updateDoc(doc(firestore, 'cardPools', poolId), { allowFreeDraw: !currentVal });
+          toast({ title: "免費券設定已更新", description: `卡池已${!currentVal ? '開放' : '關閉'}免費抽卡券` });
+      } catch (error) {
+          console.error("Error updating free draw status:", error);
+          toast({ variant: "destructive", title: "錯誤", description: "更新失敗" });
+      }
+  };
+
   const handleOrderChange = useCallback(async (poolId: string, newOrder: number) => {
     if (!firestore) return;
      if (isNaN(newOrder)) {
@@ -154,6 +166,7 @@ export default function CardPoolsAdminPage() {
               <TableHead className="pl-6">卡池名稱</TableHead>
               <TableHead>價格 (1抽/三抽)</TableHead>
               <TableHead>存量狀態</TableHead>
+              <TableHead>免費抽卡券</TableHead>
               <TableHead>上架狀態</TableHead>
               <TableHead className="w-24">排序權重</TableHead>
               <TableHead className="text-right pr-6 w-32">操作</TableHead>
@@ -166,6 +179,8 @@ export default function CardPoolsAdminPage() {
                 <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                 <TableCell><Skeleton className="h-6 w-24" /></TableCell>
                 <TableCell><Skeleton className="h-8 w-20" /></TableCell>
+                <TableCell><Skeleton className="h-8 w-20" /></TableCell>
+                <TableCell><Skeleton className="h-8 w-16" /></TableCell>
                 <TableCell className="text-right pr-6"><Skeleton className="h-8 w-20 ml-auto" /></TableCell>
               </TableRow>
             ))}
@@ -198,6 +213,18 @@ export default function CardPoolsAdminPage() {
                     <Badge variant={pool.remainingPacks === 0 ? "destructive" : "secondary"} className={cn("font-code text-xs px-2", pool.remainingPacks! > 0 && "bg-green-500/10 text-green-500 border-green-500/20")}>
                         {pool.remainingPacks} / {pool.totalPacks} PACKS
                     </Badge>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center space-x-2">
+                        <Switch 
+                            id={`freedraw-switch-${pool.id}`}
+                            checked={pool.allowFreeDraw === true}
+                            onCheckedChange={() => handleFreeDrawToggle(pool.id!, pool.allowFreeDraw)}
+                        />
+                        <Label htmlFor={`freedraw-switch-${pool.id}`} className={cn("text-[10px] font-bold", pool.allowFreeDraw ? 'text-emerald-400' : 'text-muted-foreground')}>
+                            {pool.allowFreeDraw ? '已開放' : '未開放'}
+                        </Label>
+                    </div>
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center space-x-2">

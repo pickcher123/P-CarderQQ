@@ -6,14 +6,9 @@ import Image from 'next/image';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, limit } from 'firebase/firestore';
 
-const FALLBACK_IMAGES = [
-  'https://picsum.photos/seed/card1/300/450',
-  'https://picsum.photos/seed/card2/300/400',
-  'https://picsum.photos/seed/card3/250/350',
-  'https://picsum.photos/seed/card4/320/480',
-  'https://picsum.photos/seed/card5/350/500',
-  'https://picsum.photos/seed/card6/280/420',
-];
+import { PLACEHOLDER_CARD_IMAGES } from '@/lib/placeholders';
+
+const FALLBACK_IMAGES = PLACEHOLDER_CARD_IMAGES;
 
 interface CardData {
     id: string;

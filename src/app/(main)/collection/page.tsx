@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { CardItem } from '@/components/card-item';
 import { CardReportDialog } from '@/components/card-report-dialog';
+import { PLACEHOLDER_CARD_IMAGE } from '@/lib/placeholders';
 import { Button } from '@/components/ui/button';
 import {
   Tooltip,
@@ -158,7 +159,7 @@ export default function CollectionPage() {
           return {
               ...userCard,
               name: '隨機球員 普/特 卡',
-              imageUrl: `https://picsum.photos/seed/${userCard.cardId.replace('random-player-', '')}/400/600`,
+              imageUrl: PLACEHOLDER_CARD_IMAGE,
               imageHint: '幸運獲獎',
               category: '抽賞',
               isSold: false,

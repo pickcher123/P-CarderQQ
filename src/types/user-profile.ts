@@ -20,4 +20,10 @@ export interface UserProfile {
   tags?: string[];
   createdAt?: Timestamp;
   address?: string;
+  freeDrawTickets?: number; // 持有的免費抽卡券數量
+  claimedWelcomeTicket?: boolean; // 是否已領取新手首登免費券
+  claimedPromoCodes?: string[]; // 已領取的兌換碼列表
+  inviteCode?: string; // 專屬邀請碼
+  invitedBy?: string; // 綁定的邀請人代碼
+  inviteCount?: number; // 成功邀請好友數量
 }

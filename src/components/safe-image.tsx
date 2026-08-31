@@ -3,12 +3,13 @@
 import { useState, useEffect } from 'react';
 import Image, { ImageProps } from 'next/image';
 import { cn } from '@/lib/utils';
+import { PLACEHOLDER_CARD_IMAGE } from '@/lib/placeholders';
 
 interface SafeImageProps extends ImageProps {
   fallbackSrc?: string;
 }
 
-export function SafeImage({ src, fallbackSrc = 'https://picsum.photos/seed/pcarder/800/1200', alt, className, ...props }: SafeImageProps) {
+export function SafeImage({ src, fallbackSrc = PLACEHOLDER_CARD_IMAGE, alt, className, ...props }: SafeImageProps) {
   const [imgSrc, setImgSrc] = useState(src);
   const [error, setError] = useState(false);
 

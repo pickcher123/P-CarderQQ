@@ -9,6 +9,7 @@ import { MarqueeContainer } from './ui/marquee-container';
 import { useAnnouncementData } from '@/hooks/use-announcement-data';
 import { PPlusIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
+import { PLACEHOLDER_CARD_IMAGE } from '@/lib/placeholders';
 
 interface Announcement {
     id: string;
@@ -147,7 +148,7 @@ export function HallOfFameMarquee() {
                             ) : (
                                 <>
                                     <Image 
-                                        src={item.prizeImageUrl || 'https://picsum.photos/seed/legendary/200/300'} 
+                                        src={item.prizeImageUrl || PLACEHOLDER_CARD_IMAGE} 
                                         alt={item.prize}
                                         fill
                                         referrerPolicy="no-referrer"
@@ -249,7 +250,7 @@ export function HallOfFameMarquee() {
                             ) : (
                                 <>
                                     <Image 
-                                        src={selectedItem?.prizeImageUrl || 'https://picsum.photos/seed/legendary/400/600'} 
+                                        src={selectedItem?.prizeImageUrl || PLACEHOLDER_CARD_IMAGE} 
                                         alt={selectedItem?.prize || 'Legendary Card'} 
                                         fill 
                                         referrerPolicy="no-referrer"

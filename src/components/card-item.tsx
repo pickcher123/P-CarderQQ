@@ -4,6 +4,7 @@ import { SafeImage } from '@/components/safe-image';
 import { cn } from '@/lib/utils';
 import { useState, useRef } from 'react';
 import { RotateCw, Gem, Search } from 'lucide-react';
+import { PLACEHOLDER_CARD_IMAGE } from '@/lib/placeholders';
 
 type Rarity = 'common' | 'rare' | 'legendary';
 
@@ -40,7 +41,7 @@ export function CardItem({ name, imageUrl, backImageUrl, imageHint, rarity, isFl
   const [backImgError, setBackImgError] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const fallbackUrl = 'https://picsum.photos/seed/card-fallback/400/600';
+  const fallbackUrl = PLACEHOLDER_CARD_IMAGE;
   const currentImageUrl = imgError ? fallbackUrl : imageUrl;
   const currentBackImageUrl = backImgError ? fallbackUrl : backImageUrl;
 

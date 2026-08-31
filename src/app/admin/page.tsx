@@ -399,11 +399,12 @@ export default function AdminDashboardPage() {
                         </CardHeader>
                         <CardContent className="p-5 space-y-2.5">
                             {[
-                                { label: '抽卡轉蛋池', flag: 'isDrawEnabled', desc: '控制全站抽卡功能' },
-                                { label: '幸運福袋', flag: 'isLuckyBagEnabled', desc: '控制福袋選購與拆封' },
-                                { label: '競猜拼卡', flag: 'isBettingEnabled', desc: '控制拼卡選號專區' },
-                                { label: '直播團拆', flag: 'isGroupBreakEnabled', desc: '控制團拆開盒專案' },
-                                { label: '中獎跑馬燈', flag: 'isMarqueeEnabled', desc: '首頁玩家即時中獎廣播' },
+                                { label: '抽卡轉蛋池', flag: 'isDrawEnabled', desc: '控制全站抽卡功能', defaultVal: true },
+                                { label: '幸運福袋', flag: 'isLuckyBagEnabled', desc: '控制福袋選購與拆封', defaultVal: true },
+                                { label: '競猜拼卡', flag: 'isBettingEnabled', desc: '控制拼卡選號專區', defaultVal: true },
+                                { label: '直播團拆', flag: 'isGroupBreakEnabled', desc: '控制團拆開盒專案', defaultVal: true },
+                                { label: '中獎跑馬燈', flag: 'isMarqueeEnabled', desc: '首頁玩家即時中獎廣播', defaultVal: true },
+                                { label: '活動代碼快捷推薦 (公開展示)', flag: 'showPromoHints', desc: '前台活動專區是否公開顯示 OPEN2024 等熱門代碼按鈕（預設關閉隱藏）', defaultVal: false },
                             ].map((feat) => (
                                 <div key={feat.flag} className="flex items-center justify-between p-3 border border-slate-100 rounded-xl bg-slate-50/60 hover:bg-slate-50 transition-colors">
                                     <div>
@@ -411,7 +412,7 @@ export default function AdminDashboardPage() {
                                         <p className="text-[10px] text-slate-400 font-medium">{feat.desc}</p>
                                     </div>
                                     <Switch
-                                        checked={systemConfig?.featureFlags?.[feat.flag as keyof NonNullable<SystemConfig['featureFlags']>] ?? true}
+                                        checked={systemConfig?.featureFlags?.[feat.flag as keyof NonNullable<SystemConfig['featureFlags']>] ?? feat.defaultVal}
                                         onCheckedChange={(checked) => handleFeatureToggle(feat.flag as any, checked)}
                                     />
                                 </div>

@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, doc, setDoc, addDoc, deleteDoc, updateDoc, query, orderBy, serverTimestamp, getDoc } from 'firebase/firestore';
 import confetti from 'canvas-confetti';
+import type { UserProfile } from '@/types/user-profile';
 import { 
     Disc3, 
     Sparkles, 
@@ -63,6 +64,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
+import { EventHeaderSelector, EventTabType } from '@/components/events/EventHeaderSelector';
+import { IchibanKujiEvent } from '@/components/events/IchibanKujiEvent';
+import { CardAppraiserEvent } from '@/components/events/CardAppraiserEvent';
+import { LuckyGridPunchEvent } from '@/components/events/LuckyGridPunchEvent';
+import { PromoRedeemModal } from '@/components/events/PromoRedeemModal';
 
 // 扇形經典顏色盤 (參考配色: 寶藍、珊瑚紅、淺綠、杏仁黃、丁香紫、天空藍、暖橙等)
 const SECTOR_COLORS = [
@@ -391,9 +397,23 @@ function DieFace({ value, isRolling }: { value: number; isRolling: boolean }) {
 }
 
 export default function LuckyWheelFrontendPage() {
-    const { user, isSuperAdmin } = useUser();
+    const { user, isSuperAdmin, isUserLoading } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
+
+    const userProfileRef = useMemoFirebase(() => {
+        if (!firestore || !user) return null;
+        return doc(firestore, "users", user.uid);
+    }, [firestore, user]);
+
+    const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
+    const isAdmin = isSuperAdmin || userProfile?.role === 'admin';
+
+    // 🎪 活動專區分類選單狀態 (轉盤大福袋 / 一番賞 / 估價王 / 九宮格盲盒)
+    const [activeEventTab, setActiveEventTab] = useState<EventTabType>('wheel');
+
+    // 🎁 開幕免費領券中心 / 兌換碼彈窗狀態
+    const [isPromoModalOpen, setIsPromoModalOpen] = useState<boolean>(false);
 
     // 🔒 密碼保護相關狀態
     const [isUnlocked, setIsUnlocked] = useState<boolean>(false);
@@ -1641,7 +1661,7 @@ export default function LuckyWheelFrontendPage() {
                     </form>
 
                     {/* 管理員快速免密按鈕 */}
-                    {isSuperAdmin && (
+                    {isAdmin && (
                         <div className="mt-6 pt-5 border-t border-white/10">
                             <Button 
                                 variant="ghost" 
@@ -1660,8 +1680,20 @@ export default function LuckyWheelFrontendPage() {
                         </div>
                     )}
 
-                    <div className="mt-5 text-[11px] text-slate-500">
-                        提示：預設公開活動通行碼為 <span className="font-mono text-purple-300 font-bold">8888</span>
+                    <div className="mt-5 space-y-2 text-[11px] text-slate-500">
+                        <div>
+                            提示：預設公開活動通行碼為 <span className="font-mono text-purple-300 font-bold">8888</span>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setIsUnlocked(true);
+                                setIsPromoModalOpen(true);
+                            }}
+                            className="inline-flex items-center gap-1.5 text-pink-400 hover:text-pink-300 font-bold underline underline-offset-4 cursor-pointer"
+                        >
+                            <Gift className="w-3.5 h-3.5" /> 掃碼入群獲得兌換碼？點此直接進入領券抽獎
+                        </button>
                     </div>
                 </motion.div>
             </div>
@@ -1669,9 +1701,43 @@ export default function LuckyWheelFrontendPage() {
     }
 
     return (
-        <div className="container mx-auto px-3 sm:px-4 md:px-6 py-6 max-w-7xl">
-            {/* 頂部標題與管理列 */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-5 border-b border-white/10">
+        <div className="container mx-auto px-3 sm:px-4 md:px-6 py-6 max-w-7xl space-y-6">
+            {/* 🌟 頂部四大活動分類切換選單 (轉盤大福袋 / 活動套一番賞 / 卡展估價王 / 九宮格戳戳樂) */}
+            <EventHeaderSelector
+                currentTab={activeEventTab}
+                onSelectTab={setActiveEventTab}
+                onOpenPromoModal={() => setIsPromoModalOpen(true)}
+            />
+
+            {/* 🎁 開幕領券中心 / 兌換碼彈窗 */}
+            <PromoRedeemModal
+                open={isPromoModalOpen}
+                onOpenChange={setIsPromoModalOpen}
+                onApplyReward={(targetEvent, freePlays) => {
+                    if (targetEvent !== 'all') {
+                        setActiveEventTab(targetEvent as EventTabType);
+                    }
+                    toast({
+                        title: '🎉 已為您切換至活動專區',
+                        description: `已啟用 ${freePlays} 次免費試玩機會，祝您中大獎！`,
+                    });
+                }}
+            />
+
+            {/* 2. 活動套一番賞 (Ichiban Kuji) */}
+            {activeEventTab === 'kuji' && <IchibanKujiEvent />}
+
+            {/* 3. 卡展估價王 (Card Appraiser & Market Price Guess) */}
+            {activeEventTab === 'price-guess' && <CardAppraiserEvent />}
+
+            {/* 4. 九宮格戳戳樂 (Lucky 9-Grid & Bingo Bonus) */}
+            {activeEventTab === 'punch-grid' && <LuckyGridPunchEvent />}
+
+            {/* 1. 轉盤大福袋 (Lucky Wheel 4-Step Process) */}
+            {activeEventTab === 'wheel' && (
+                <div className="space-y-6">
+                    {/* 頂部標題與管理列 */}
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-white/10">
                 <div>
                     <div className="flex items-center gap-2.5 mb-1.5">
                         <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-600 to-cyan-500 p-0.5 shadow-[0_0_15px_rgba(168,85,247,0.3)] flex items-center justify-center">
@@ -3551,6 +3617,8 @@ export default function LuckyWheelFrontendPage() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+            </div>
+            )}
         </div>
     );
 }

@@ -113,6 +113,18 @@ service cloud.firestore {
       allow delete: if isVerifiedAdmin();
     }
     
+    match /transactions/{txId} {
+      allow read: if isSignedIn() && (resource == null || resource.data.userId == request.auth.uid) || isVerifiedAdmin();
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow write: if isVerifiedAdmin();
+    }
+
+    match /drawnCardLogs/{logId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow write: if isVerifiedAdmin();
+    }
+
     match /wishes/{id} {
       allow create: if isSignedIn();
       allow read: if isVerifiedAdmin();

@@ -152,6 +152,7 @@ export default function OpenPackPage() {
     const startY = useRef(0);
     const poolId = searchParams.get('poolId');
     const initialDrawCount = parseInt(searchParams.get('draws') || '1', 10);
+    const isUsingTicket = searchParams.get('useTicket') === 'true';
     
     const systemConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'systemConfig', 'main') : null, [firestore]);
     const { data: systemConfig } = useDoc<SystemConfig>(systemConfigRef);
@@ -294,7 +295,9 @@ export default function OpenPackPage() {
         }
     }, [cardPool, isLoadingCards, allCards, searchParams, step, initialDrawCount, performTrialDraw]);
 
-    const performDraw = useCallback(async (count: number) => {
+    const performDraw = useCallback(async (count: number, forceUseTicket?: boolean) => {
+        const useTicketMode = forceUseTicket !== undefined ? forceUseTicket : isUsingTicket;
+
         if (!user) {
             toast({ variant: 'destructive', title: '請先登入', description: '正式開獎需要登入帳戶以扣除點數與發放卡牌。' });
             return;
@@ -327,6 +330,7 @@ export default function OpenPackPage() {
                         username: user.displayName || '新玩家',
                         points: 1000,
                         bonusPoints: 0,
+                        freeDrawTickets: 0,
                         role: 'user',
                         userLevel: '普通會員',
                         createdAt: serverTimestamp()
@@ -347,11 +351,17 @@ export default function OpenPackPage() {
                     }
                 }
 
-                const cost = count === 3 && cardPool.price3Draws ? cardPool.price3Draws : (cardPool.price || 0) * count;
+                const cost = useTicketMode ? 0 : (count === 3 && cardPool.price3Draws ? cardPool.price3Draws : (cardPool.price || 0) * count);
                 const currencyField = cardPool.currency === 'p-point' ? 'bonusPoints' : 'points';
                 const balance = (userData as any)[currencyField] || 0;
+                const tickets = (userData as any).freeDrawTickets || 0;
 
-                if (balance < cost) throw new Error('點數不足，無法抽卡。');
+                if (useTicketMode) {
+                    if (poolData.allowFreeDraw !== true) throw new Error('此卡池目前未開放免費抽卡券兌換，請選擇標有「支援免費券」的專屬卡池！');
+                    if (tickets < 1) throw new Error('您的活動免費抽卡券不足，請先至選單中的免費領取活動獲取！');
+                } else {
+                    if (balance < cost) throw new Error('點數不足，無法抽卡。');
+                }
 
                 // 2. 進行抽選
                 const { drawn, updatedCards } = drawFromPool(poolData, count);
@@ -369,7 +379,7 @@ export default function OpenPackPage() {
                         category: (prize as any).category,
                         rarity: (prize as any).rarity,
                         isFoil: (prize as any).rarity === 'legendary',
-                        source: 'draw',
+                        source: useTicketMode ? 'promo_ticket_draw' : 'draw',
                         poolId: poolId,
                         serialNumber: serialNumber,
                         createdAt: serverTimestamp()
@@ -378,9 +388,11 @@ export default function OpenPackPage() {
                     (prize as any).serialNumber = serialNumber;
                 }
 
-                // 4. 套用使用者資產更新 (扣除花費)
+                // 4. 套用使用者資產更新 (扣除花費或消耗免費券)
                 const updateFields: any = {};
-                if (cardPool.currency === 'p-point') {
+                if (useTicketMode) {
+                    updateFields.freeDrawTickets = increment(-1);
+                } else if (cardPool.currency === 'p-point') {
                     updateFields.bonusPoints = increment(-cost);
                 } else {
                     updateFields.points = increment(-cost);
@@ -398,9 +410,11 @@ export default function OpenPackPage() {
                 transaction.set(transactionRef, {
                     userId: user.uid,
                     transactionType: 'Draw',
-                    currency: cardPool.currency || 'diamond',
-                    amount: -cost,
-                    details: `在卡池 [${cardPool.name}] 進行 ${count} 連抽`,
+                    currency: useTicketMode ? 'free_ticket' : (cardPool.currency || 'diamond'),
+                    amount: useTicketMode ? 0 : -cost,
+                    details: useTicketMode
+                        ? `在卡池 [${cardPool.name}] 使用活動免費抽卡券 (1抽)`
+                        : `在卡池 [${cardPool.name}] 進行 ${count} 連抽`,
                     transactionDate: serverTimestamp(),
                     section: 'draw'
                 });
@@ -413,7 +427,8 @@ export default function OpenPackPage() {
                     agentId: cardPool.agentId || null,
                     drawnAt: serverTimestamp(),
                     cost: cost,
-                    count: count
+                    count: count,
+                    isTicket: useTicketMode
                 });
                 
                 // 7. 更新統計 (統計邏輯)
@@ -553,7 +568,9 @@ export default function OpenPackPage() {
                         isLevelMet={isLevelMet}
                         isLimitReachedForInitial={isLimitReachedForInitial}
                         isLoadingStats={isLoadingStats}
-                        performDraw={(count) => performDraw(count)}
+                        isUsingTicket={isUsingTicket}
+                        freeDrawTickets={userProfile?.freeDrawTickets || 0}
+                        performDraw={(count) => performDraw(count, isUsingTicket)}
                     />
                 </div>
             </div>

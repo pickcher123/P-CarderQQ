@@ -1,9 +1,6 @@
 
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/firebase/admin';
-import admin from 'firebase-admin';
-
-const { Timestamp } = admin.firestore;
 
 export const dynamic = 'force-dynamic';
 
@@ -21,7 +18,8 @@ export async function GET() {
   }
 
   try {
-    const nowSeconds = Timestamp.now().seconds;
+    const nowSeconds = Math.floor(Date.now() / 1000);
+
 
     // 1. 同步獲取有庫存的卡池與所有卡片資料庫
     const [poolsSnap, cardsSnap] = await Promise.all([

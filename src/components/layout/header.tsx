@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { User, LogIn, LogOut, ShieldCheck, Loader2, Package, Library, Plus, Users2, ChevronDown, Crown, Info, Sparkles, Wallet, Award, Trophy, Calendar } from 'lucide-react';
+import { User, LogIn, LogOut, ShieldCheck, Loader2, Package, Library, Plus, Users2, ChevronDown, Crown, Info, Sparkles, Wallet, Award, Trophy, Calendar, Gift, Ticket } from 'lucide-react';
 import { Logo, CrossedCardsIcon, LuckyBagIcon, PPlusIcon, NavDrawIcon, NavCollectionIcon, DiamondIcon } from '@/components/icons';
 import { useUser, useAuth, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
@@ -9,22 +9,21 @@ import { useRouter, usePathname } from 'next/navigation';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { doc } from 'firebase/firestore';
 import type { UserProfile } from '@/types/user-profile';
-import React from 'react';
+import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import type { SystemConfig } from '@/types/system';
 import { userLevels } from '@/components/member-level-crown';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
 import { PurchasePointsDialog } from '@/components/purchase-points-dialog';
+import { PromoRedeemModal } from '@/components/events/PromoRedeemModal';
+import { useToast } from '@/hooks/use-toast';
 
 const navLinks = [
   { href: '/draw', label: '抽卡', icon: Package, color: "text-cyan-400" },
   { href: '/bet', label: '拼卡', icon: CrossedCardsIcon, color: "text-rose-400" },
   { href: '/lucky-bags', label: '福袋', icon: LuckyBagIcon, color: "text-amber-400" },
   { href: '/group-break', label: '團拆', icon: Users2, color: "text-emerald-400" },
-  { href: '/predictions', label: '賽事預測', icon: Trophy, color: "text-amber-400" },
-  { href: '/exhibitions', label: '卡展行事曆', icon: Calendar, color: "text-cyan-400" },
-  { href: '/lucky-wheel', label: '活動專區', icon: Sparkles, color: "text-purple-400" },
   { href: '/collection', label: '收藏庫', icon: Library, color: "text-cyan-300/80" },
 ];
 
@@ -34,6 +33,8 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
   const firestore = useFirestore();
   const router = useRouter();
   const pathname = usePathname();
+  const { toast } = useToast();
+  const [isPromoModalOpen, setIsPromoModalOpen] = useState(false);
 
   const handleLogout = async () => {
     if (auth) {
@@ -247,7 +248,7 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                     </button>
                     </DropdownMenuTrigger>
 
-                    <DropdownMenuContent className="min-w-[220px] p-2 bg-[#090d19]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.85)]" align="end" sideOffset={8}>
+                    <DropdownMenuContent className="min-w-[240px] p-2 bg-[#090d19]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.85)] animate-in zoom-in-95 duration-200" align="end" sideOffset={8}>
                       {/* 用戶資訊 Header */}
                       <DropdownMenuLabel className="font-normal p-2.5 pb-2">
                           <div className="flex items-center gap-3">
@@ -279,27 +280,86 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
 
                       <DropdownMenuSeparator className="bg-white/10" />
 
+                      {/* 🎪 活動與福利專區 */}
+                      <div className="p-1 space-y-1">
+                          <div className="px-2 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                            <Sparkles className="w-3 h-3 text-amber-400" />
+                            <span>活動與福利專區</span>
+                          </div>
+
+                          {/* 賽事預測 */}
+                          <DropdownMenuItem asChild className="rounded-xl cursor-pointer text-slate-200 hover:text-white focus:bg-amber-500/15 focus:text-amber-300 transition-colors">
+                              <Link href="/predictions" className="flex items-center justify-between w-full py-1.5">
+                                <div className="flex items-center">
+                                  <Trophy className="mr-2.5 h-4 w-4 text-amber-400" />
+                                  <span className="font-semibold text-xs">賽事預測</span>
+                                </div>
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                                  贏 P+ 點
+                                </span>
+                              </Link>
+                          </DropdownMenuItem>
+
+                          {/* 卡展行事曆 */}
+                          <DropdownMenuItem asChild className="rounded-xl cursor-pointer text-slate-200 hover:text-white focus:bg-cyan-500/15 focus:text-cyan-300 transition-colors">
+                              <Link href="/exhibitions" className="flex items-center justify-between w-full py-1.5">
+                                <div className="flex items-center">
+                                  <Calendar className="mr-2.5 h-4 w-4 text-cyan-400" />
+                                  <span className="font-semibold text-xs">卡展行事曆</span>
+                                </div>
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+                                  全台展訊
+                                </span>
+                              </Link>
+                          </DropdownMenuItem>
+
+                          {/* 免費領券 / 兌換碼 */}
+                          <DropdownMenuItem 
+                              onClick={() => setIsPromoModalOpen(true)}
+                              className="rounded-xl cursor-pointer text-slate-200 hover:text-white focus:bg-white/10 font-medium transition-colors py-1.5 flex items-center justify-between"
+                          >
+                              <div className="flex items-center">
+                                <Gift className="mr-2.5 h-4 w-4 text-slate-400" />
+                                <span className="text-xs">免費領券 / 兌換碼</span>
+                              </div>
+                              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                                兌換
+                              </span>
+                          </DropdownMenuItem>
+                      </div>
+
+                      <DropdownMenuSeparator className="bg-white/10" />
+
+                      {/* 個人與系統選單 */}
                       <div className="p-1 space-y-0.5">
                           {userProfile?.role === 'admin' && (
+                            <>
                               <DropdownMenuItem asChild className="rounded-xl focus:bg-destructive/15 focus:text-destructive text-destructive font-bold cursor-pointer">
                                   <Link href="/admin">
                                       <ShieldCheck className="mr-2.5 h-4 w-4" />
                                       <span>後台管理中心</span>
                                   </Link>
                               </DropdownMenuItem>
+                              <DropdownMenuItem asChild className="rounded-xl focus:bg-purple-500/15 focus:text-purple-300 text-purple-400 font-bold cursor-pointer">
+                                  <Link href="/lucky-wheel">
+                                      <Sparkles className="mr-2.5 h-4 w-4 text-purple-400" />
+                                      <span>🎪 活動轉盤專區</span>
+                                  </Link>
+                              </DropdownMenuItem>
+                            </>
                           )}
                           <DropdownMenuItem asChild className="rounded-xl cursor-pointer text-slate-200 focus:bg-white/10">
-                              <Link href="/profile" className="font-medium"><User className="mr-2.5 h-4 w-4 text-cyan-400" />會員中心</Link>
+                              <Link href="/profile" className="font-medium text-xs"><User className="mr-2.5 h-4 w-4 text-cyan-400" />會員中心</Link>
                           </DropdownMenuItem>
                           <DropdownMenuItem asChild className="rounded-xl cursor-pointer text-slate-200 focus:bg-white/10">
-                              <Link href="/about" className="font-medium"><Info className="mr-2.5 h-4 w-4 text-slate-400" />關於我們</Link>
+                              <Link href="/about" className="font-medium text-xs"><Info className="mr-2.5 h-4 w-4 text-slate-400" />關於我們</Link>
                           </DropdownMenuItem>
                       </div>
 
                       <DropdownMenuSeparator className="bg-white/10" />
 
                       <div className="p-1">
-                          <DropdownMenuItem onClick={handleLogout} className="rounded-xl text-rose-400 focus:bg-rose-500/10 focus:text-rose-300 font-bold cursor-pointer">
+                          <DropdownMenuItem onClick={handleLogout} className="rounded-xl text-rose-400 focus:bg-rose-500/10 focus:text-rose-300 font-bold cursor-pointer text-xs">
                               <LogOut className="mr-2.5 h-4 w-4" />
                               登出帳戶
                           </DropdownMenuItem>
@@ -307,16 +367,73 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                     </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <Button asChild size="sm" className="h-8 sm:h-9 px-3 sm:px-4 rounded-xl font-bold bg-gradient-to-r from-primary to-cyan-400 text-slate-950 shadow-[0_0_15px_rgba(6,182,212,0.4)] hover:brightness-110">
-                  <Link href="/login">
-                    <LogIn className="mr-1.5 h-4 w-4" />
-                    登入
-                  </Link>
-                </Button>
+                <div className="flex items-center gap-2">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-8 sm:h-9 px-2.5 rounded-xl border border-white/10 text-slate-300 hover:text-white hover:bg-white/5">
+                        <Sparkles className="w-3.5 h-3.5 mr-1 text-amber-400" />
+                        <span className="text-xs font-bold">活動福利</span>
+                        <ChevronDown className="w-3 h-3 ml-1 text-slate-400" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="min-w-[220px] p-2 bg-[#090d19]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.85)] animate-in zoom-in-95 duration-200" align="end" sideOffset={8}>
+                      <DropdownMenuLabel className="text-xs font-bold text-slate-400 px-2.5 py-1.5">
+                        🎪 活動與福利特區
+                      </DropdownMenuLabel>
+                      <DropdownMenuItem asChild className="rounded-xl cursor-pointer text-slate-200 focus:bg-amber-500/15 focus:text-amber-300">
+                        <Link href="/predictions" className="flex items-center justify-between w-full py-1 font-medium">
+                          <div className="flex items-center">
+                            <Trophy className="mr-2.5 h-4 w-4 text-amber-400" />
+                            <span className="text-xs">賽事預測</span>
+                          </div>
+                          <span className="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded-md font-bold">贏P+點</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild className="rounded-xl cursor-pointer text-slate-200 focus:bg-cyan-500/15 focus:text-cyan-300">
+                        <Link href="/exhibitions" className="flex items-center justify-between w-full py-1 font-medium">
+                          <div className="flex items-center">
+                            <Calendar className="mr-2.5 h-4 w-4 text-cyan-400" />
+                            <span className="text-xs">卡展行事曆</span>
+                          </div>
+                          <span className="text-[10px] bg-cyan-500/20 text-cyan-300 px-1.5 py-0.5 rounded-md font-bold">全台展訊</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => setIsPromoModalOpen(true)} 
+                        className="rounded-xl cursor-pointer text-slate-200 focus:bg-white/10 font-medium flex items-center justify-between py-1"
+                      >
+                        <div className="flex items-center">
+                          <Gift className="mr-2.5 h-4 w-4 text-slate-400" />
+                          <span className="text-xs">免費領券 / 兌換碼</span>
+                        </div>
+                        <span className="text-[10px] bg-slate-800 text-slate-300 border border-slate-700 px-1.5 py-0.5 rounded-md font-medium">兌換</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
+                  <Button asChild size="sm" className="h-8 sm:h-9 px-3 sm:px-4 rounded-xl font-bold bg-gradient-to-r from-primary to-cyan-400 text-slate-950 shadow-[0_0_15px_rgba(6,182,212,0.4)] hover:brightness-110">
+                    <Link href="/login">
+                      <LogIn className="mr-1.5 h-4 w-4" />
+                      登入
+                    </Link>
+                  </Button>
+                </div>
               )}
           </div>
         </div>
       </div>
+
+      {/* 🎁 全站開幕領券中心 / 兌換碼彈窗 */}
+      <PromoRedeemModal
+        open={isPromoModalOpen}
+        onOpenChange={setIsPromoModalOpen}
+        onApplyReward={(targetEvent, freePlays) => {
+          toast({
+            title: '🎉 兌換成功！',
+            description: `已成功兌換 ${freePlays} 次免費試玩機會！`,
+          });
+        }}
+      />
     </div>
   );
 }

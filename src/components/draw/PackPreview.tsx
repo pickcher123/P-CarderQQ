@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Logo, PPlusIcon, DiamondIcon } from '@/components/icons';
-import { ShieldCheck, Ban, Loader2, Zap, Sparkles, ArrowLeft, Info, Scale, ChevronRight, ExternalLink, FileText } from 'lucide-react';
+import { ShieldCheck, Ban, Loader2, Zap, Sparkles, ArrowLeft, Info, Scale, ChevronRight, ExternalLink, FileText, Ticket } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CardPool } from '@/types/draw';
 import Link from 'next/link';
@@ -14,7 +14,9 @@ export function PackPreview({
     isLimitReachedForInitial,
     isLoadingStats,
     performDraw,
-    performTrialDraw
+    performTrialDraw,
+    isUsingTicket = false,
+    freeDrawTickets = 0
 }: {
     cardPool: CardPool,
     initialDrawCount: number,
@@ -22,10 +24,14 @@ export function PackPreview({
     isLimitReachedForInitial: boolean,
     isLoadingStats: boolean,
     performDraw: (_count: number) => void,
-    performTrialDraw?: (_count: number) => void
+    performTrialDraw?: (_count: number) => void,
+    isUsingTicket?: boolean,
+    freeDrawTickets?: number
 }) {
-    const cost = initialDrawCount === 3 && cardPool.price3Draws ? cardPool.price3Draws : (cardPool.price || 0) * initialDrawCount;
-    const canStart = isLevelMet && !isLimitReachedForInitial && !isLoadingStats;
+    const cost = isUsingTicket ? 0 : (initialDrawCount === 3 && cardPool.price3Draws ? cardPool.price3Draws : (cardPool.price || 0) * initialDrawCount);
+    const isFreeDrawAllowed = !isUsingTicket || cardPool.allowFreeDraw === true;
+    const hasEnoughTickets = !isUsingTicket || freeDrawTickets >= 1;
+    const canStart = isLevelMet && !isLimitReachedForInitial && !isLoadingStats && hasEnoughTickets && isFreeDrawAllowed;
 
     return (
         <div className="flex flex-col items-center justify-center min-h-[100dvh] p-3 sm:p-4 py-4 sm:py-8 relative select-none w-full max-w-md mx-auto">
@@ -46,7 +52,7 @@ export function PackPreview({
                         <div className="space-y-0.5">
                             <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-amber-400/80 flex items-center justify-center gap-1">
                                 <Sparkles className="w-3 h-3 text-amber-400" />
-                                拆卡抽賞確認
+                                {isUsingTicket ? '🎟️ 活動免費兌換券開獎確認' : '拆卡抽賞確認'}
                             </p>
                             <h2 className="text-base sm:text-xl font-headline font-black text-white italic tracking-tight line-clamp-2 px-1">
                                 {cardPool.name}
@@ -63,7 +69,11 @@ export function PackPreview({
                         <div className="p-2 sm:p-3 bg-slate-900/80 rounded-xl border border-slate-800 text-center space-y-0.5">
                             <span className="text-[9px] sm:text-[10px] text-slate-400 font-extrabold block uppercase tracking-wider">花費金額</span>
                             <div className="flex items-center justify-center gap-1 text-base sm:text-lg font-black text-amber-400 font-code">
-                                {cardPool.currency === 'p-point' ? (
+                                {isUsingTicket ? (
+                                    <span className="text-emerald-400 font-black text-xs sm:text-sm flex items-center gap-1">
+                                        <Ticket className="w-3.5 h-3.5 text-amber-400" /> 0 點 (扣 1 張券)
+                                    </span>
+                                ) : cardPool.currency === 'p-point' ? (
                                     <><PPlusIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-400 shrink-0" />{cost.toLocaleString()}</>
                                 ) : (
                                     <><DiamondIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" /> {cost.toLocaleString()}</>
@@ -80,6 +90,17 @@ export function PackPreview({
                         )}>
                             <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
                             <span>等級限制: {cardPool.minLevel}</span>
+                        </div>
+                    )}
+
+                    {/* Ticket remaining notice */}
+                    {isUsingTicket && (
+                        <div className="p-2.5 rounded-xl border border-amber-500/40 bg-amber-500/10 flex items-center justify-between text-xs">
+                            <div className="flex items-center gap-1.5 text-amber-300 font-bold">
+                                <Ticket className="w-4 h-4 text-amber-400" />
+                                <span>持有活動免費券餘額</span>
+                            </div>
+                            <span className="font-mono font-black text-amber-300 text-sm">{freeDrawTickets} 張</span>
                         </div>
                     )}
 
@@ -204,6 +225,12 @@ export function PackPreview({
                                 <><Ban className="mr-2 h-5 w-5 sm:h-6 sm:w-6 text-rose-400" /> 今日次數已用完</>
                             ) : !isLevelMet ? (
                                 <><Ban className="mr-2 h-5 w-5 sm:h-6 sm:w-6 text-rose-400" /> 權限不足 ({cardPool.minLevel})</>
+                            ) : isUsingTicket && !isFreeDrawAllowed ? (
+                                <><Ban className="mr-2 h-5 w-5 sm:h-6 sm:w-6 text-rose-400" /> 此卡池未開放免費券兌換</>
+                            ) : isUsingTicket && !hasEnoughTickets ? (
+                                <><Ban className="mr-2 h-5 w-5 sm:h-6 sm:w-6 text-rose-400" /> 免費抽卡券不足</>
+                            ) : isUsingTicket ? (
+                                <><Ticket className="mr-2 h-5 w-5 sm:h-6 sm:w-6 text-slate-950 fill-slate-950" /> 🎟️ 消耗免費券啟動開獎 (1抽)</>
                             ) : (
                                 <><Zap className="mr-2 h-5 w-5 sm:h-6 sm:w-6 fill-slate-950" /> 啟動正式開獎 ({cost.toLocaleString()} 點)</>
                             )}

@@ -27,7 +27,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card as UICard, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, ArrowLeft, Check, Settings, Gem, Package, Clock, GripVertical, Palette, Trophy, Star, Diamond, Layers, Gift, ShieldCheck, Sparkles, Calculator, CheckCircle2, Search, Archive, Crown, Loader2, Save, Ban, BarChart3 } from 'lucide-react';
+import { PlusCircle, Trash2, ArrowLeft, Check, Settings, Gem, Package, Clock, GripVertical, Palette, Trophy, Star, Diamond, Layers, Gift, ShieldCheck, Sparkles, Calculator, CheckCircle2, Search, Archive, Crown, Loader2, Save, Ban, BarChart3, Ticket } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SafeImage } from '@/components/safe-image';
 import { ScrollArea } from '@/components/ui/scroll-area';

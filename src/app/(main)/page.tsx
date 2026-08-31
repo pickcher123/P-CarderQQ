@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Trophy, Sparkles, Newspaper, Calendar, ShieldCheck, Zap, Target, Megaphone, Users2, Disc3, ArrowRight, Flame } from 'lucide-react';
+import { ChevronRight, Trophy, Sparkles, Newspaper, Calendar, ShieldCheck, Zap, Target, Megaphone, Users2, Disc3, ArrowRight, Flame, Gift } from 'lucide-react';
 import { LuckyBagIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
@@ -17,12 +17,15 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { NewsPopup } from '@/components/news-popup';
 import { SafeImage } from '@/components/safe-image';
 import { FloatingCardsBackground } from '@/components/floating-cards-background';
+import { PLACEHOLDER_CARD_IMAGE } from '@/lib/placeholders';
 import { CardExhibitionCalendar } from '@/components/card-exhibition-calendar';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { PredictionSection } from '@/components/prediction-section';
 import { HallOfFameMarquee } from '@/components/hall-of-fame-marquee';
 import { PoolCard } from '@/components/pool-card';
 import type { CardPool, CardItem } from '@/types';
+import { PromoRedeemModal } from '@/components/events/PromoRedeemModal';
+import { useToast } from '@/hooks/use-toast';
 
 interface NewsItem {
     id: string;
@@ -44,8 +47,10 @@ interface Partner {
 
 export default function Home() {
   const firestore = useFirestore();
+  const { toast } = useToast();
   const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [isPromoModalOpen, setIsPromoModalOpen] = useState(false);
 
   const newsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -134,7 +139,7 @@ export default function Home() {
           </div>
           
           {/* 快捷操作按鈕組 */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 animate-fade-in-up pt-4 sm:pt-6 max-w-md mx-auto">
+          <div className="flex items-center justify-center gap-3 sm:gap-4 animate-fade-in-up pt-4 sm:pt-6 max-w-lg mx-auto">
             <Button size="lg" asChild className="w-full sm:w-auto h-12 sm:h-14 px-8 text-base sm:text-lg font-black rounded-2xl group bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-slate-950 shadow-[0_0_30px_rgba(245,158,11,0.4)] hover:shadow-[0_0_40px_rgba(245,158,11,0.6)] border border-amber-300/60 relative overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98]">
               <Link href="/draw" className="flex items-center justify-center gap-2.5">
                 <Sparkles className="w-5 h-5 text-slate-950 fill-slate-950 animate-pulse" />
@@ -180,91 +185,6 @@ export default function Home() {
           </div>
         </section>
       )}
-
-      {/* 獨立專區捷徑：卡展行事曆 & 賽事預測 */}
-      <section className="py-6 sm:py-10 container px-3 sm:px-4 max-w-7xl mx-auto relative">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-7 items-stretch">
-          
-          {/* 賽事預測入口卡 */}
-          <Link 
-            href="/predictions"
-            className="group relative rounded-3xl p-6 sm:p-8 bg-gradient-to-br from-slate-950/95 via-slate-900/80 to-slate-950/95 border border-slate-800 hover:border-amber-500/50 backdrop-blur-xl shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden flex flex-col justify-between"
-          >
-            <div className="absolute top-0 right-0 w-72 h-72 bg-amber-500/10 rounded-full blur-3xl pointer-events-none group-hover:bg-amber-500/20 transition-colors" />
-            <div className="space-y-4 relative z-10">
-              <div className="flex items-center justify-between">
-                <div className="p-3 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.25)]">
-                  <Trophy className="w-6 h-6" />
-                </div>
-                <span className="text-xs font-black text-amber-400 bg-amber-500/10 border border-amber-500/30 px-3 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
-                  <Flame className="w-3.5 h-3.5" />
-                  <span>勝率先知榜 · 高額P+</span>
-                </span>
-              </div>
-
-              <div className="space-y-2">
-                <div className="text-[11px] font-mono font-bold text-amber-400/90 uppercase tracking-wider">
-                  PREDICTIONS & SPORTS ORACLE
-                </div>
-                <h3 className="text-xl sm:text-2xl font-black font-headline text-white group-hover:text-amber-300 transition-colors flex items-center gap-2">
-                  <span>賽事先知 · 預測擂台</span>
-                  <ChevronRight className="w-5 h-5 text-amber-400 group-hover:translate-x-1.5 transition-transform" />
-                </h3>
-                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                  精準競猜熱門球賽比分與球星數據！猜中即贏取海量 P+ 點數，個人勝率實時統計，挑戰全服神準先知榜。
-                </p>
-              </div>
-            </div>
-
-            <div className="pt-5 mt-6 border-t border-slate-800/80 flex items-center justify-between text-xs relative z-10">
-              <span className="text-slate-400 font-bold">個人勝率 · 累積P點 · 視覺下注</span>
-              <span className="text-amber-400 font-black group-hover:underline flex items-center gap-1">
-                立即前往預測 <ArrowRight className="w-3.5 h-3.5" />
-              </span>
-            </div>
-          </Link>
-
-          {/* 卡展行事曆入口卡 */}
-          <Link 
-            href="/exhibitions"
-            className="group relative rounded-3xl p-6 sm:p-8 bg-gradient-to-br from-slate-950/95 via-slate-900/80 to-slate-950/95 border border-slate-800 hover:border-cyan-500/50 backdrop-blur-xl shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden flex flex-col justify-between"
-          >
-            <div className="absolute top-0 right-0 w-72 h-72 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none group-hover:bg-cyan-500/20 transition-colors" />
-            <div className="space-y-4 relative z-10">
-              <div className="flex items-center justify-between">
-                <div className="p-3 rounded-2xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.25)]">
-                  <Calendar className="w-6 h-6" />
-                </div>
-                <span className="text-xs font-black text-cyan-400 bg-cyan-500/10 border border-cyan-500/30 px-3 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>下一場卡展速報</span>
-                </span>
-              </div>
-
-              <div className="space-y-2">
-                <div className="text-[11px] font-mono font-bold text-cyan-400/90 uppercase tracking-wider">
-                  CARD EXPO & EVENTS CALENDAR
-                </div>
-                <h3 className="text-xl sm:text-2xl font-black font-headline text-white group-hover:text-cyan-300 transition-colors flex items-center gap-2">
-                  <span>全台卡展 · 展訊行事曆</span>
-                  <ChevronRight className="w-5 h-5 text-cyan-400 group-hover:translate-x-1.5 transition-transform" />
-                </h3>
-                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                  掌握全台最新實體球員卡展覽、市集與交流會時間地點！「下一場卡展」倒數計時搶先報，不錯過任何換卡盛宴。
-                </p>
-              </div>
-            </div>
-
-            <div className="pt-5 mt-6 border-t border-slate-800/80 flex items-center justify-between text-xs relative z-10">
-              <span className="text-slate-400 font-bold">倒數時程 · 地圖導航 · 月份展期</span>
-              <span className="text-cyan-400 font-black group-hover:underline flex items-center gap-1">
-                查看卡展資訊 <ArrowRight className="w-3.5 h-3.5" />
-              </span>
-            </div>
-          </Link>
-
-        </div>
-      </section>
 
       {/* 最新消息中心 */}
       <section className="relative py-10 sm:py-14 bg-gradient-to-b from-slate-950/60 via-slate-900/40 to-slate-950/60 border-y border-slate-800/80 overflow-hidden">
@@ -314,7 +234,7 @@ export default function Home() {
                                         <div className="aspect-video relative overflow-hidden">
                                             {item.type === 'image' ? (
                                                 <SafeImage 
-                                                    src={item.imageUrl || 'https://picsum.photos/seed/news/800/450'} 
+                                                    src={item.imageUrl || PLACEHOLDER_CARD_IMAGE} 
                                                     alt={item.title} 
                                                     width={800}
                                                     height={450}
@@ -551,6 +471,18 @@ export default function Home() {
           </ScrollArea>
         </DialogContent>
       </Dialog>
+
+      {/* 🎁 開幕免費領券中心 / 兌換碼彈窗 */}
+      <PromoRedeemModal
+        open={isPromoModalOpen}
+        onOpenChange={setIsPromoModalOpen}
+        onApplyReward={(targetEvent, freePlays) => {
+          toast({
+            title: '🎉 兌換成功！',
+            description: `已成功兌換 ${freePlays} 次免費試玩機會！`,
+          });
+        }}
+      />
     </div>
   );
 }
