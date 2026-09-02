@@ -1,5 +1,5 @@
 'use client';
-import { motion } from "motion/react";
+import { motion } from "framer-motion";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { AnimatedBackground } from "@/components/animated-background";

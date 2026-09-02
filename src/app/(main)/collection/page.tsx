@@ -57,7 +57,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { PPlusIcon } from '@/components/icons';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 type Rarity = 'common' | 'rare' | 'legendary';
 type ShippingMethod = '7-11' | '郵寄' | '面交自取';

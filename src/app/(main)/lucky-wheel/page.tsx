@@ -63,7 +63,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { EventHeaderSelector, EventTabType } from '@/components/events/EventHeaderSelector';
 import { IchibanKujiEvent } from '@/components/events/IchibanKujiEvent';
 import { CardAppraiserEvent } from '@/components/events/CardAppraiserEvent';
