@@ -11,7 +11,9 @@ import {
     Copy, 
     Ticket, 
     Clock,
-    ArrowRight
+    ArrowRight,
+    Users,
+    ExternalLink
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +25,8 @@ import { cn } from '@/lib/utils';
 import { useAuth, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { SystemConfig } from '@/types/system';
+import { UserProfile } from '@/types/user-profile';
+import { claimCommunityFreeDraw } from '@/lib/promo-draw-service';
 
 // 預設可兌換的活動代碼庫
 export interface PromoCodeConfig {
@@ -99,11 +103,15 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward }: PromoRed
     const { data: systemConfig } = useDoc<SystemConfig>(systemConfigRef);
     const showPromoCodeHints = Boolean(systemConfig?.showPromoCodeHints || systemConfig?.featureFlags?.showPromoHints);
 
+    const userDocRef = useMemoFirebase(() => (firestore && user) ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
+    const { data: userProfile } = useDoc<UserProfile>(userDocRef);
+
     const [inputCode, setInputCode] = useState('');
     const [selectedTab, setSelectedTab] = useState<'redeem' | 'history' | 'poster'>('redeem');
     const [claimedHistory, setClaimedHistory] = useState<ClaimHistoryItem[]>([]);
     const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
     const [lastClaimedReward, setLastClaimedReward] = useState<ClaimHistoryItem | null>(null);
+    const [isClaimingCommunity, setIsClaimingCommunity] = useState(false);
 
     // 載入本地兌換歷史
     useEffect(() => {
@@ -194,7 +202,66 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward }: PromoRed
         handleRedeem('OPEN2024');
     };
 
+    const handleClaimCommunityReward = async () => {
+        const targetUrl = systemConfig?.communityUrl || 'https://line.me/ti/g2/';
+        window.open(targetUrl, '_blank', 'noopener,noreferrer');
+
+        if (!user || !firestore) {
+            toast({
+                title: '歡迎加入官方社群！',
+                description: '登入會員後點擊即可自動領取「免費首抽券 1 張」！'
+            });
+            return;
+        }
+
+        if (isClaimingCommunity) return;
+        setIsClaimingCommunity(true);
+
+        try {
+            const res = await claimCommunityFreeDraw(firestore, user.uid, '官方社群');
+            if (res.success && !res.alreadyClaimed) {
+                const newClaimItem: ClaimHistoryItem = {
+                    id: 'claim-community-' + Date.now(),
+                    code: 'COMMUNITY_JOIN',
+                    label: '官方社群專屬・免費首抽',
+                    targetEvent: 'all',
+                    freePlays: 1,
+                    claimedAt: new Date().toLocaleDateString('zh-TW', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }),
+                    status: 'ACTIVE'
+                };
+                const updatedHistory = [newClaimItem, ...claimedHistory];
+                saveClaimHistory(updatedHistory);
+                setLastClaimedReward(newClaimItem);
+                setIsSuccessDialogOpen(true);
+
+                confetti({
+                    particleCount: 60,
+                    spread: 70,
+                    origin: { y: 0.7 }
+                });
+
+                if (onApplyReward) {
+                    onApplyReward('all', 1);
+                }
+            } else if (res.alreadyClaimed) {
+                toast({
+                    title: '您已領取過社群首抽券',
+                    description: '歡迎前往社群與卡友交流分享戰績！'
+                });
+            }
+        } catch (err: any) {
+            console.error('Error claiming community reward:', err);
+        } finally {
+            setIsClaimingCommunity(false);
+        }
+    };
+
     const isStarterClaimed = claimedHistory.some(item => item.code === 'OPEN2024');
+    const isCommunityClaimed = Boolean(
+        userProfile?.claimedCommunityTicket || 
+        userProfile?.claimedPromoCodes?.includes('COMMUNITY_JOIN') ||
+        claimedHistory.some(item => item.code === 'COMMUNITY_JOIN')
+    );
 
     return (
         <>
@@ -261,32 +328,71 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward }: PromoRed
                         {/* 1. 兌換區 */}
                         {selectedTab === 'redeem' && (
                             <div className="space-y-4">
-                                {/* 新手首抽福利卡片 */}
-                                <div className="p-3.5 rounded-xl bg-slate-900/70 border border-slate-800 flex items-center justify-between gap-3">
-                                    <div className="space-y-0.5 min-w-0">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-xs font-bold text-white">新手首抽禮</span>
-                                            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                                                免費 1 次
-                                            </span>
+                                {/* 福利卡片列表 */}
+                                <div className="space-y-2.5">
+                                    {/* 新手首抽福利卡片 */}
+                                    <div className="p-3.5 rounded-xl bg-slate-900/70 border border-slate-800 flex items-center justify-between gap-3">
+                                        <div className="space-y-0.5 min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs font-bold text-white">新手首抽禮</span>
+                                                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                                                    免費 1 次
+                                                </span>
+                                            </div>
+                                            <p className="text-xs text-slate-400 truncate">
+                                                所有會員皆可直接領取開幕首抽福利
+                                            </p>
                                         </div>
-                                        <p className="text-xs text-slate-400 truncate">
-                                            所有會員皆可直接領取開幕首抽福利
-                                        </p>
+                                        <Button
+                                            size="sm"
+                                            disabled={isStarterClaimed}
+                                            onClick={handleOneClickLoginClaim}
+                                            className={cn(
+                                                "h-8 px-3.5 rounded-lg text-xs font-semibold shrink-0 transition-colors",
+                                                isStarterClaimed
+                                                    ? "bg-slate-800 text-slate-500 border border-slate-700/50"
+                                                    : "bg-amber-400 hover:bg-amber-300 text-slate-950"
+                                            )}
+                                        >
+                                            {isStarterClaimed ? '已領取' : '立即領取'}
+                                        </Button>
                                     </div>
-                                    <Button
-                                        size="sm"
-                                        disabled={isStarterClaimed}
-                                        onClick={handleOneClickLoginClaim}
-                                        className={cn(
-                                            "h-8 px-3.5 rounded-lg text-xs font-semibold shrink-0 transition-colors",
-                                            isStarterClaimed
-                                                ? "bg-slate-800 text-slate-500 border border-slate-700/50"
-                                                : "bg-amber-400 hover:bg-amber-300 text-slate-950"
-                                        )}
-                                    >
-                                        {isStarterClaimed ? '已領取' : '立即領取'}
-                                    </Button>
+
+                                    {/* 加入社群首抽福利卡片 */}
+                                    <div className="p-3.5 rounded-xl bg-gradient-to-r from-blue-950/40 via-slate-900/80 to-indigo-950/40 border border-blue-500/30 flex items-center justify-between gap-3">
+                                        <div className="space-y-0.5 min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                                                    <Users className="w-3.5 h-3.5 text-blue-400" />
+                                                    <span>加入官方社群禮</span>
+                                                </span>
+                                                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-400/30">
+                                                    免費 1 次
+                                                </span>
+                                            </div>
+                                            <p className="text-xs text-slate-400 truncate">
+                                                點擊加入官方社群，立即加碼送免費抽卡券
+                                            </p>
+                                        </div>
+                                        <Button
+                                            size="sm"
+                                            disabled={isCommunityClaimed}
+                                            onClick={handleClaimCommunityReward}
+                                            className={cn(
+                                                "h-8 px-3.5 rounded-lg text-xs font-semibold shrink-0 transition-colors flex items-center gap-1",
+                                                isCommunityClaimed
+                                                    ? "bg-slate-800 text-slate-500 border border-slate-700/50"
+                                                    : "bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)]"
+                                            )}
+                                        >
+                                            {isCommunityClaimed ? '已領取' : (
+                                                <>
+                                                    <span>加入並領取</span>
+                                                    <ExternalLink className="w-3 h-3 ml-0.5" />
+                                                </>
+                                            )}
+                                        </Button>
+                                    </div>
                                 </div>
 
                                 {/* 代碼輸入 */}
@@ -385,27 +491,55 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward }: PromoRed
                             </div>
                         )}
 
-                        {/* 3. 現場專區 */}
+                        {/* 3. 現場/社群專區 */}
                         {selectedTab === 'poster' && (
-                            <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-3 text-center">
-                                <div className="space-y-1">
-                                    <h4 className="text-sm font-bold text-white">現場活動兌換專區</h4>
-                                    <p className="text-xs text-slate-400">
-                                        加入官方 LINE 或至攤位出示代碼即可領取
-                                    </p>
+                            <div className="space-y-3">
+                                <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-3 text-center">
+                                    <div className="space-y-1">
+                                        <h4 className="text-sm font-bold text-white">現場活動兌換專區</h4>
+                                        <p className="text-xs text-slate-400">
+                                            出示代碼或於現場直接輸入領取
+                                        </p>
+                                    </div>
+                                    <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-between text-xs max-w-xs mx-auto">
+                                        <span className="text-slate-400">官方預設代碼：</span>
+                                        <span className="font-mono font-bold text-amber-400">OPEN2024</span>
+                                        <button
+                                            onClick={() => {
+                                                navigator.clipboard.writeText('OPEN2024');
+                                                toast({ title: '已複製代碼 OPEN2024' });
+                                            }}
+                                            className="text-slate-300 hover:text-white p-1 rounded hover:bg-slate-800"
+                                        >
+                                            <Copy className="w-3.5 h-3.5" />
+                                        </button>
+                                    </div>
                                 </div>
-                                <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-between text-xs max-w-xs mx-auto">
-                                    <span className="text-slate-400">官方預設代碼：</span>
-                                    <span className="font-mono font-bold text-amber-400">OPEN2024</span>
-                                    <button
-                                        onClick={() => {
-                                            navigator.clipboard.writeText('OPEN2024');
-                                            toast({ title: '已複製代碼 OPEN2024' });
-                                        }}
-                                        className="text-slate-300 hover:text-white p-1 rounded hover:bg-slate-800"
+
+                                {/* 社群快捷專區 */}
+                                <div className="p-4 rounded-xl bg-gradient-to-br from-blue-950/40 via-slate-900/80 to-slate-900/60 border border-blue-500/30 flex items-center justify-between gap-3">
+                                    <div className="space-y-0.5 text-left min-w-0">
+                                        <div className="flex items-center gap-1.5">
+                                            <Users className="w-4 h-4 text-blue-400" />
+                                            <h5 className="text-xs font-bold text-white">官方卡友社群</h5>
+                                        </div>
+                                        <p className="text-[11px] text-slate-400 truncate">
+                                            加入交流群即送 1 次首抽，天天獲取專屬好康
+                                        </p>
+                                    </div>
+                                    <Button
+                                        size="sm"
+                                        onClick={handleClaimCommunityReward}
+                                        disabled={isCommunityClaimed}
+                                        className={cn(
+                                            "h-8 px-3 text-xs font-bold shrink-0",
+                                            isCommunityClaimed
+                                                ? "bg-slate-800 text-slate-500 border border-slate-700"
+                                                : "bg-blue-600 hover:bg-blue-500 text-white shadow-md"
+                                        )}
                                     >
-                                        <Copy className="w-3.5 h-3.5" />
-                                    </button>
+                                        {isCommunityClaimed ? '已領取' : '立即加入 ➜'}
+                                    </Button>
                                 </div>
                             </div>
                         )}

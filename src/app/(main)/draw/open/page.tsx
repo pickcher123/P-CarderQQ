@@ -357,7 +357,7 @@ export default function OpenPackPage() {
                 const tickets = (userData as any).freeDrawTickets || 0;
 
                 if (useTicketMode) {
-                    if (poolData.allowFreeDraw !== true) throw new Error('此卡池目前未開放免費抽卡券兌換，請選擇標有「支援免費券」的專屬卡池！');
+                    if (poolData.allowFreeDraw === false) throw new Error('此卡池目前未開放免費抽卡券兌換。');
                     if (tickets < 1) throw new Error('您的活動免費抽卡券不足，請先至選單中的免費領取活動獲取！');
                 } else {
                     if (balance < cost) throw new Error('點數不足，無法抽卡。');
@@ -468,7 +468,7 @@ export default function OpenPackPage() {
                 });
             }
         }
-    }, [poolId, firestore, user, cardPool, toast]);
+    }, [poolId, firestore, user, cardPool, isUsingTicket, toast]);
 
     const handleSqueezeStart = (e: React.PointerEvent) => { 
         if (step !== 'ready-to-reveal' || isChanging) return; 
@@ -570,7 +570,7 @@ export default function OpenPackPage() {
                         isLoadingStats={isLoadingStats}
                         isUsingTicket={isUsingTicket}
                         freeDrawTickets={userProfile?.freeDrawTickets || 0}
-                        performDraw={(count) => performDraw(count, isUsingTicket)}
+                        performDraw={(count, forceTicket) => performDraw(count, forceTicket)}
                     />
                 </div>
             </div>
@@ -661,19 +661,18 @@ export default function OpenPackPage() {
                             {currentPrize.type === 'last-prize' ? '🎉 最後賞限定' : `第 ${revealedIndex + 1} / ${drawnPrizes.length} 項`}
                         </p>
                         <div className="flex items-center justify-center gap-1.5 mt-0.5">
-                            {(currentPrize.type === 'points') ? (
-                                <div className="flex items-center gap-1.5">
-                                    <PPlusIcon className="w-5 h-5 text-sky-400" />
-                                    <span className="text-xl sm:text-2xl font-black font-headline text-white">+{currentPrize.points}</span>
-                                </div>
+                            {(currentPrize.type === 'points' || currentPrize.isPoints || currentPrize.name?.includes('隨機球員')) ? (
+                                <h2 className="text-base sm:text-xl font-headline font-black text-white uppercase drop-shadow-lg truncate max-w-[260px]">
+                                    {currentPrize.rarity === 'rare' || currentPrize.rarity === 'legendary' ? '隨機球員 特卡' : '隨機球員 普/特 卡'}
+                                </h2>
                             ) : (
                                 <h2 className="text-base sm:text-xl font-headline font-black text-white uppercase drop-shadow-lg truncate max-w-[260px]">
                                     {currentPrize.name}
                                 </h2>
                             )}
                         </div>
-                        <p className={cn("text-[10px] font-black uppercase tracking-[0.25em] mt-0.5", visual.color)}>
-                            {visual.label}
+                        <p className={cn("text-[10px] font-black uppercase tracking-[0.25em] mt-0.5", visual.label === '點數獎' ? 'text-cyan-400' : visual.color)}>
+                            {(currentPrize.type === 'points' || currentPrize.isPoints || currentPrize.name?.includes('隨機球員')) ? (currentPrize.rarity === 'rare' || currentPrize.rarity === 'legendary' ? '特卡' : '普/特卡') : visual.label}
                         </p>
                     </div>
                 )}
@@ -741,10 +740,13 @@ export default function OpenPackPage() {
                                                 />
                                             </div>
                                         ) : (
-                                            <div className={cn("w-full h-full flex flex-col items-center justify-center p-2 rounded-lg sm:rounded-xl shadow-inner border-2", pointPrizeRarityStyles[currentPrize.rarity].bg, pointPrizeRarityStyles[currentPrize.rarity].border)}>
-                                                <PPlusIcon className={cn("w-12 h-12 sm:w-16 sm:h-16 mb-2 sm:mb-4 drop-shadow-[0_0_20px_currentColor]", pointPrizeRarityStyles[currentPrize.rarity].text)} />
-                                                <p className="font-headline text-2xl sm:text-4xl font-black text-white drop-shadow-lg">{currentPrize.points}</p>
-                                                <Badge variant="outline" className="mt-2 border-white/20 text-[7px] sm:text-[8px] font-black uppercase tracking-widest text-white/40">Digital Bonus</Badge>
+                                            <div className="relative w-full h-full rounded-lg sm:rounded-xl overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+                                                <RandomPlayerCard 
+                                                    rarity={currentPrize.rarity} 
+                                                    points={currentPrize.points} 
+                                                    title={currentPrize.rarity === 'rare' || currentPrize.rarity === 'legendary' ? '隨機球員 特卡' : '隨機球員 普/特 卡'} 
+                                                    showBuybackHint={false} 
+                                                />
                                             </div>
                                         )
                                     )}
@@ -912,6 +914,7 @@ export default function OpenPackPage() {
                                             canDraw10={canDraw10}
                                             cardPool={cardPool}
                                             performDraw={performDraw}
+                                            freeDrawTickets={userProfile?.freeDrawTickets || 0}
                                         />
                                     )}
                                 </div>

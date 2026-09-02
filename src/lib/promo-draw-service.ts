@@ -215,3 +215,66 @@ export async function redeemFriendInviteCode(firestore: Firestore, currentUserId
     };
   });
 }
+
+/**
+ * 點擊加入社群獲得免費首抽券 1 張 (限領一次)
+ */
+export async function claimCommunityFreeDraw(firestore: Firestore, userId: string, communitySource: string = '官方社群') {
+  if (!firestore || !userId) throw new Error('使用者未登入');
+
+  const userRef = doc(firestore, 'users', userId);
+
+  return await runTransaction(firestore, async (transaction) => {
+    const userSnap = await transaction.get(userRef);
+
+    if (!userSnap.exists()) {
+      const inviteCode = generateUserInviteCode(userId);
+      transaction.set(userRef, {
+        id: userId,
+        points: 1000,
+        bonusPoints: 0,
+        role: 'user',
+        userLevel: '普通會員',
+        freeDrawTickets: 1,
+        claimedCommunityTicket: true,
+        inviteCode,
+        inviteCount: 0,
+        claimedPromoCodes: ['COMMUNITY_JOIN'],
+        createdAt: serverTimestamp()
+      });
+      return { 
+        success: true, 
+        ticketsAdded: 1, 
+        alreadyClaimed: false,
+        message: '🎉 感謝加入社群！已成功發送免費首抽券 1 張！' 
+      };
+    }
+
+    const data = userSnap.data();
+    if (data.claimedCommunityTicket) {
+      return { 
+        success: false, 
+        alreadyClaimed: true, 
+        message: '您已經領取過社群專屬免費首抽券囉！歡迎在社群與卡友熱情交流！' 
+      };
+    }
+
+    const currentTickets = data.freeDrawTickets || 0;
+    const inviteCode = data.inviteCode || generateUserInviteCode(userId);
+
+    transaction.update(userRef, {
+      freeDrawTickets: currentTickets + 1,
+      claimedCommunityTicket: true,
+      inviteCode,
+      claimedPromoCodes: arrayUnion('COMMUNITY_JOIN')
+    });
+
+    return { 
+      success: true, 
+      ticketsAdded: 1, 
+      alreadyClaimed: false,
+      message: `🎉 感謝加入${communitySource}！已為您發送免費首抽券 1 張！` 
+    };
+  });
+}
+

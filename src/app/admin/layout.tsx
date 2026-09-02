@@ -33,7 +33,8 @@ import {
   ExternalLink,
   ShieldCheck,
   Disc3,
-  Dices
+  Dices,
+  Mail
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { Activity } from 'lucide-react';
@@ -86,6 +87,7 @@ const sidebarNavItems = [
       title: '行銷管理', 
       badge: '活動與宣傳',
       items: [
+        { href: '/admin/marketing-emails', label: '行銷郵件', icon: Mail, permission: 'marketing-emails', desc: '全體與指定會員郵件群發' },
         { href: '/admin/news', label: '消息管理', icon: Newspaper, permission: 'news', desc: '最新消息與專題文章' },
         { href: '/admin/announcements', label: '站內公告', icon: Megaphone, permission: 'announcements', desc: '彈出公告與跑馬燈' },
         { href: '/admin/coupons', label: '優惠券管理', icon: Ticket, permission: 'coupons', desc: '折價券與兌換碼發放' },

@@ -218,7 +218,7 @@ export default function Home() {
                     {isLoadingNews ? (
                         Array.from({ length: 3 }).map((_, i) => (
                             <CarouselItem key={i} className="pl-3 sm:pl-4 basis-full sm:basis-1/2 lg:basis-1/3">
-                                <div className="aspect-video w-full rounded-2xl overflow-hidden bg-slate-900">
+                                <div className="aspect-[16/10] sm:aspect-video w-full rounded-2xl overflow-hidden bg-slate-900/90 border border-slate-800">
                                     <Skeleton className="w-full h-full" />
                                 </div>
                             </CarouselItem>
@@ -230,43 +230,78 @@ export default function Home() {
                                   href={`/news?id=${item.id}`}
                                   className="group block h-full animate-fade-in-up"
                                 >
-                                    <div className="h-full overflow-hidden bg-slate-950/90 border border-slate-800/80 hover:border-amber-400/60 transition-all duration-300 rounded-2xl shadow-lg group-hover:-translate-y-1">
-                                        <div className="aspect-video relative overflow-hidden">
-                                            {item.type === 'image' ? (
-                                                <SafeImage 
-                                                    src={item.imageUrl || PLACEHOLDER_CARD_IMAGE} 
-                                                    alt={item.title} 
-                                                    width={800}
-                                                    height={450}
-                                                    className="object-cover transition-transform duration-500 group-hover:scale-105"
-                                                />
-                                            ) : (
-                                                <div className="absolute inset-0 bg-gradient-to-br from-amber-950/40 via-slate-950 to-slate-900" />
-                                            )}
+                                    <div className="h-full overflow-hidden bg-slate-950/90 border border-slate-800/80 hover:border-amber-400/70 transition-all duration-300 rounded-2xl shadow-xl hover:shadow-[0_8px_30px_rgba(245,158,11,0.18)] group-hover:-translate-y-1 relative">
+                                        <div className="aspect-[16/10] sm:aspect-video relative overflow-hidden flex flex-col justify-between p-3.5 sm:p-4">
                                             
-                                            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+                                            {/* 背景圖層 */}
+                                            {item.type === 'image' && item.imageUrl ? (
+                                                <>
+                                                    <SafeImage 
+                                                        src={item.imageUrl} 
+                                                        alt={item.title} 
+                                                        width={800}
+                                                        height={450}
+                                                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-108 brightness-[0.45] saturate-125"
+                                                    />
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-slate-950/70 pointer-events-none" />
+                                                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-amber-500/10 via-transparent to-slate-950/80 pointer-events-none" />
+                                                </>
+                                            ) : (
+                                                <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                                                    {/* 精美科技暗黑卡牌背景底色 */}
+                                                    <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-950 to-amber-950/40" />
+                                                    
+                                                    {/* 幾何微紋網格 */}
+                                                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff06_1px,transparent_1px),linear-gradient(to_bottom,#ffffff06_1px,transparent_1px)] bg-[size:20px_20px] opacity-70" />
+                                                    
+                                                    {/* 中心金色聚光燈 */}
+                                                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-amber-500/15 via-slate-900/30 to-slate-950" />
+                                                    
+                                                    {/* 裝飾性背景圖標光暈 */}
+                                                    <Newspaper className="w-28 h-28 text-amber-500/5 absolute -right-4 -bottom-4 group-hover:scale-110 group-hover:text-amber-500/10 transition-all duration-500" />
+                                                    <Sparkles className="w-16 h-16 text-amber-400/10 absolute -top-3 -left-3 group-hover:rotate-12 transition-all duration-500" />
+                                                </div>
+                                            )}
 
-                                            <div className="absolute top-2.5 left-2.5 flex gap-1.5">
-                                                {item.isPinned && (
-                                                  <span className="bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-black text-[9px] px-2 py-0.5 rounded-md shadow-md">
-                                                    置頂
-                                                  </span>
-                                                )}
-                                                <span className="bg-black/70 backdrop-blur-md border border-white/10 text-slate-300 font-bold text-[9px] px-2 py-0.5 rounded-md">
-                                                  {item.category}
+                                            {/* 頂部標籤列 */}
+                                            <div className="relative z-10 flex items-center justify-between gap-2">
+                                                <div className="flex items-center gap-1.5">
+                                                    {item.isPinned && (
+                                                      <span className="bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 font-black text-[10px] px-2 py-0.5 rounded-md shadow-[0_0_12px_rgba(245,158,11,0.4)] flex items-center gap-1">
+                                                        <span>★ 置頂</span>
+                                                      </span>
+                                                    )}
+                                                    <span className="bg-slate-900/90 backdrop-blur-md border border-slate-700/80 text-amber-300 font-bold text-[10px] px-2.5 py-0.5 rounded-md shadow-sm">
+                                                      {item.category || '官方公告'}
+                                                    </span>
+                                                </div>
+
+                                                <span className="text-[10px] text-slate-400/80 font-mono tracking-wider uppercase bg-black/40 backdrop-blur-sm px-2 py-0.5 rounded border border-white/5">
+                                                  NEWS
                                                 </span>
                                             </div>
 
-                                            <div className="absolute inset-x-3 bottom-8">
-                                                <h3 className="font-bold text-sm sm:text-base text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] line-clamp-2 leading-snug group-hover:text-amber-300 transition-colors">
+                                            {/* ★ 核心居中標題與視覺區塊 ★ */}
+                                            <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-3 py-2">
+                                                <h3 className="font-headline font-black text-sm sm:text-base text-white text-center leading-snug group-hover:text-amber-300 transition-colors drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)] max-w-full line-clamp-2">
                                                     {item.title}
                                                 </h3>
+                                                <div className="w-8 h-0.5 bg-gradient-to-r from-transparent via-amber-400/70 to-transparent mt-2 group-hover:w-16 group-hover:via-amber-300 transition-all duration-300" />
                                             </div>
 
-                                            <div className="absolute bottom-2.5 left-3 flex items-center gap-1.5 text-[9px] text-slate-400 font-mono">
-                                                <Calendar className="h-3 w-3 text-amber-400" />
-                                                <span>{item.createdAt ? format(new Date(item.createdAt.seconds * 1000), 'yyyy-MM-dd') : '---'}</span>
+                                            {/* 底部時間與詳閱指引 */}
+                                            <div className="relative z-10 flex items-center justify-between pt-2 border-t border-white/5 text-[10px] text-slate-400">
+                                                <div className="flex items-center gap-1.5 font-mono text-slate-400">
+                                                    <Calendar className="h-3 w-3 text-amber-400/90" />
+                                                    <span>{item.createdAt ? format(new Date(item.createdAt.seconds * 1000), 'yyyy-MM-dd') : '---'}</span>
+                                                </div>
+
+                                                <span className="text-amber-400/90 group-hover:text-amber-300 font-bold flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">
+                                                    <span>詳閱</span>
+                                                    <ChevronRight className="w-3 h-3" />
+                                                </span>
                                             </div>
+
                                         </div>
                                     </div>
                                 </Link>

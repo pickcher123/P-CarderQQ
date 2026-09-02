@@ -3,13 +3,22 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { X, MessageCircleCode, Radio, Users } from 'lucide-react';
+import { X, MessageCircleCode, Radio, Users, Sparkles } from 'lucide-react';
 import type { SystemConfig } from '@/types/system';
+import { useAuth, useFirestore } from '@/firebase';
+import { useToast } from '@/hooks/use-toast';
+import { claimCommunityFreeDraw } from '@/lib/promo-draw-service';
+import confetti from 'canvas-confetti';
 
 export function FloatingLineButton({ systemConfig }: { systemConfig: SystemConfig | null }) {
   const [isLiveVisible, setIsLiveVisible] = useState(true);
   const [isSupportVisible, setIsSupportVisible] = useState(true);
   const [isCommunityVisible, setIsCommunityVisible] = useState(true);
+  const [isClaiming, setIsClaiming] = useState(false);
+
+  const { user } = useAuth();
+  const firestore = useFirestore();
+  const { toast } = useToast();
 
   // Reset visibility if config changes
   useEffect(() => {
@@ -17,6 +26,45 @@ export function FloatingLineButton({ systemConfig }: { systemConfig: SystemConfi
     setIsSupportVisible(true);
     setIsCommunityVisible(true);
   }, [systemConfig?.isLiveEnabled, systemConfig?.liveYoutubeUrl, systemConfig?.isSupportEnabled, systemConfig?.supportLineUrl, systemConfig?.isCommunityEnabled, systemConfig?.communityUrl]);
+
+  const handleCommunityClick = async (e: React.MouseEvent) => {
+    const targetUrl = systemConfig?.communityUrl || 'https://line.me/ti/g2/';
+
+    if (!user || !firestore) {
+      toast({
+        title: '歡迎加入官方社群！',
+        description: '登入會員後點擊即可自動領取「免費首抽券 1 張」！'
+      });
+      return;
+    }
+
+    if (isClaiming) return;
+    setIsClaiming(true);
+
+    try {
+      const res = await claimCommunityFreeDraw(firestore, user.uid, '官方社群');
+      if (res.success && !res.alreadyClaimed) {
+        confetti({
+          particleCount: 60,
+          spread: 70,
+          origin: { y: 0.7 }
+        });
+        toast({
+          title: '🎉 加入社群送首抽成功！',
+          description: '感謝加入社群！已為您發送免費抽卡券 1 張，快去抽卡吧！'
+        });
+      } else if (res.alreadyClaimed) {
+        toast({
+          title: '歡迎前往官方社群！',
+          description: '您已領取過社群專屬免費首抽券，歡迎在社群與卡友交流！'
+        });
+      }
+    } catch (err: any) {
+      console.error('Error claiming community reward:', err);
+    } finally {
+      setIsClaiming(false);
+    }
+  };
 
   if (!isLiveVisible && !isSupportVisible && !isCommunityVisible) return null;
 
@@ -138,14 +186,20 @@ export function FloatingLineButton({ systemConfig }: { systemConfig: SystemConfi
             href={systemConfig.communityUrl}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={handleCommunityClick}
             className={cn(
-              "flex flex-col items-center justify-center w-15 h-15 md:w-18 md:h-18",
+              "flex flex-col items-center justify-center w-15 h-15 md:w-18 md:h-18 relative",
               "rounded-full shadow-[0_0_25px_rgba(59,130,246,0.45)] transition-all duration-300",
               "bg-[#080d19]/95 backdrop-blur-xl border-2 border-blue-500/60",
               "hover:scale-105 active:scale-95",
               "hover:border-blue-400 hover:shadow-[0_0_35px_rgba(59,130,246,0.7)]"
             )}
           >
+            {/* 首抽獎勵徽章 */}
+            <span className="absolute -top-2 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 text-slate-950 text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-[0_0_10px_rgba(245,158,11,0.5)] border border-amber-200 animate-bounce whitespace-nowrap z-10 flex items-center gap-0.5">
+              <Sparkles className="w-2.5 h-2.5 fill-slate-950" /> 送首抽
+            </span>
+
             <div className="relative">
               <Users className="w-6 h-6 md:w-8 md:h-8 text-blue-400 drop-shadow-[0_0_10px_rgba(59,130,246,0.9)]" />
               <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">

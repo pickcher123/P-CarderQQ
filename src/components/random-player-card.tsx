@@ -4,7 +4,7 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 import { PPlusIcon } from '@/components/icons';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, RefreshCw } from 'lucide-react';
+import { Sparkles, ShieldCheck } from 'lucide-react';
 
 interface RandomPlayerCardProps {
   rarity?: 'common' | 'rare' | 'legendary' | string;
@@ -21,18 +21,18 @@ export function RandomPlayerCard({
   count = 1,
   className,
   onClick,
-  showBuybackHint = true,
+  showBuybackHint = false,
   points,
   title
 }: RandomPlayerCardProps) {
   const isSpecial = rarity === 'rare' || rarity === 'legendary';
-  const titleText = title || '隨機球員 普/特 卡';
+  const displayTitle = isSpecial ? '隨機球員 特卡' : '隨機球員 普/特 卡';
 
   return (
     <div
       onClick={onClick}
       className={cn(
-        "relative w-full aspect-[2.5/3.5] rounded-2xl overflow-hidden flex flex-col justify-between p-2.5 sm:p-3 select-none cursor-pointer transition-all duration-300 hover:scale-[1.03] group shadow-2xl border-2",
+        "relative w-full aspect-[2.5/3.5] rounded-2xl overflow-hidden flex flex-col justify-between p-2.5 sm:p-3.5 select-none cursor-pointer transition-all duration-300 hover:scale-[1.03] group shadow-2xl border-2",
         isSpecial
           ? "bg-gradient-to-br from-amber-950/90 via-slate-900 to-amber-900/70 border-amber-500/60 shadow-[0_0_25px_rgba(245,158,11,0.3)]"
           : "bg-gradient-to-br from-slate-900 via-slate-950 to-blue-950/80 border-cyan-500/50 shadow-[0_0_20px_rgba(6,182,212,0.25)]",
@@ -68,7 +68,7 @@ export function RandomPlayerCard({
 
       {/* Card Center: Main Icon & Title */}
       <div className="relative z-10 my-auto flex flex-col items-center justify-center text-center px-1 py-1">
-        <div className="relative mb-1.5 flex flex-col items-center justify-center">
+        <div className="relative mb-2 flex flex-col items-center justify-center">
           <div
             className={cn(
               "absolute inset-0 blur-lg opacity-60",
@@ -85,23 +85,21 @@ export function RandomPlayerCard({
               : "bg-gradient-to-r from-cyan-100 via-white to-sky-300 bg-clip-text text-transparent"
           )}
         >
-          {titleText}
+          {displayTitle}
         </h3>
-        <span className="text-[9px] sm:text-[10px] text-cyan-300/80 font-bold uppercase tracking-widest mt-0.5">
-          {points ? `${points} P+ 點數` : '隨機球員卡'}
+        <span className="text-[9px] sm:text-[10px] text-cyan-300/80 font-bold uppercase tracking-widest mt-1">
+          球員限定盲卡
         </span>
       </div>
 
-      {/* Card Footer: Buy Back value indicator */}
-      <div className="relative z-10 flex items-center justify-between w-full pt-1 border-t border-white/10">
-        {showBuybackHint && (
-          <div className="flex items-center gap-1 text-[9px] sm:text-[10px] font-black text-amber-400/90">
-            <RefreshCw className="w-3 h-3" />
-            <span>{points ? `可獲 ${points}P` : '可兌換 300P'}</span>
-          </div>
-        )}
+      {/* Card Footer */}
+      <div className="relative z-10 flex items-center justify-between w-full pt-1.5 border-t border-white/10 text-[9px]">
+        <span className="font-bold text-slate-400 flex items-center gap-1">
+          <ShieldCheck className="w-3 h-3 text-cyan-400" />
+          <span>正版認證</span>
+        </span>
         <span className="text-[8px] text-slate-500 font-code tracking-widest uppercase ml-auto">
-          P+ 隨機賞
+          P+ CARDER
         </span>
       </div>
 

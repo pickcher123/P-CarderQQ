@@ -184,12 +184,15 @@ export default function NewsAdminPage() {
                 <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Users className="h-5 w-5 text-slate-400"/> 社群球設定</CardTitle></CardHeader>
                 <CardContent className="space-y-6">
                     <div className="flex items-center justify-between">
-                        <Label htmlFor="community-toggle" className="text-sm font-bold">啟用社群球</Label>
+                        <div>
+                            <Label htmlFor="community-toggle" className="text-sm font-bold block">啟用社群球</Label>
+                            <p className="text-xs text-slate-400 font-medium mt-0.5">點擊將開啟社群連結並自動贈送會員 1 次免費首抽券（限領一次）</p>
+                        </div>
                         <Switch id="community-toggle" checked={systemConfig?.isCommunityEnabled || false} onCheckedChange={(v) => updateSystemConfig({ isCommunityEnabled: v })} />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="community-url" className="text-xs font-bold text-slate-500">社群連結 (URL)</Label>
-                        <Input id="community-url" value={systemConfig?.communityUrl || ''} onChange={e => updateSystemConfig({ communityUrl: e.target.value })} className="h-12 border-slate-200 rounded-xl font-bold bg-white text-slate-900" placeholder="https://..." />
+                        <Input id="community-url" value={systemConfig?.communityUrl || ''} onChange={e => updateSystemConfig({ communityUrl: e.target.value })} className="h-12 border-slate-200 rounded-xl font-bold bg-white text-slate-900" placeholder="https://line.me/ti/g2/..." />
                     </div>
                 </CardContent>
             </Card>

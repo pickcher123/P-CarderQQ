@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Loader2, Sparkles } from 'lucide-react';
-import { DiamondIcon } from '@/components/icons';
+import { Loader2, Sparkles, Ticket } from 'lucide-react';
+import { DiamondIcon, PPlusIcon } from '@/components/icons';
 
 import { CardPool } from '@/types/draw';
 
@@ -11,9 +11,10 @@ interface DrawButtonsProps {
     canDraw3: boolean;
     canDraw10: boolean;
     cardPool: CardPool | null;
-    performDraw: (_count: number) => void;
+    performDraw: (_count: number, _forceUseTicket?: boolean) => void;
     performTrialDraw?: (_count: number) => void;
     isTrialMode?: boolean;
+    freeDrawTickets?: number;
 }
 
 export function DrawButtons({
@@ -24,8 +25,11 @@ export function DrawButtons({
     cardPool,
     performDraw,
     performTrialDraw,
-    isTrialMode = false
+    isTrialMode = false,
+    freeDrawTickets = 0
 }: DrawButtonsProps) {
+    const isPPoint = cardPool?.currency === 'p-point';
+
     if (isLimitReachedForSingle && !isTrialMode) {
         return (
             <Button disabled className="w-full h-12 sm:h-14 text-xs sm:text-sm font-black rounded-xl sm:rounded-2xl bg-slate-800 text-slate-500 border border-slate-700 opacity-50 italic">
@@ -43,15 +47,32 @@ export function DrawButtons({
         }
     };
 
+    const CurrencyIcon = ({ className = "w-2.5 h-2.5 mr-0.5" }: { className?: string }) => {
+        if (isTrialMode) return <Sparkles className={cn(className, "text-purple-300")} />;
+        if (isPPoint) return <PPlusIcon className={cn(className, "text-amber-400 shrink-0")} />;
+        return <DiamondIcon className={cn(className, "text-cyan-400 shrink-0")} />;
+    };
+
     return (
         <div className="flex flex-col gap-1.5 w-full">
+            {/* 🎟️ 免費抽卡券專用再抽一次按鈕 (如果有免費券且卡池支援) */}
+            {!isTrialMode && (cardPool?.allowFreeDraw !== false) && freeDrawTickets > 0 && (
+                <Button 
+                    className="w-full h-10 sm:h-11 text-xs font-black rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-slate-950 shadow-lg shadow-emerald-500/25 hover:brightness-110 flex items-center justify-center gap-1.5 transition-all cursor-pointer border border-emerald-400/40 active:scale-95"
+                    onClick={() => performDraw(1, true)}
+                >
+                    <Ticket className="w-4 h-4 fill-slate-950" />
+                    <span>🎟️ 使用免費券再抽 1 次 (持有 {freeDrawTickets} 張)</span>
+                </Button>
+            )}
+
             <div className="flex gap-1.5 w-full">
                 <Button 
                     className={cn(
                         "flex-1 h-12 sm:h-14 text-xs sm:text-sm font-black border-2 transition-all shadow-xl rounded-xl sm:rounded-2xl flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1 px-1 py-1",
                         isTrialMode 
                             ? "bg-purple-950 text-purple-100 border-purple-600 hover:bg-purple-900" 
-                            : isLoadingStats ? "bg-slate-900 text-slate-500 border-slate-800 opacity-50" : "bg-slate-950 text-slate-200 border border-slate-800 hover:border-slate-600 hover:bg-slate-900"
+                            : isLoadingStats ? "bg-slate-900 text-slate-500 border-slate-800 opacity-50" : isPPoint ? "bg-amber-950/80 text-amber-100 border border-amber-800/80 hover:border-amber-600 hover:bg-amber-900/80" : "bg-slate-950 text-slate-200 border border-slate-800 hover:border-slate-600 hover:bg-slate-900"
                     )}
                     onClick={() => handleButtonClick(1)} 
                     disabled={!isTrialMode && (isLoadingStats || (cardPool?.remainingPacks ?? 0) < 1)}
@@ -60,7 +81,7 @@ export function DrawButtons({
                         <>
                             <span className="text-[10px] sm:text-xs opacity-90 whitespace-nowrap">{isTrialMode ? '試 1抽' : '1抽'}</span>
                             <span className="text-[11px] sm:text-xs flex items-center font-headline truncate font-bold">
-                                {isTrialMode ? <Sparkles className="w-2.5 h-2.5 mr-0.5 text-purple-300"/> : <DiamondIcon className="w-2.5 h-2.5 mr-0.5"/>}
+                                <CurrencyIcon />
                                 {isTrialMode ? '免費' : cardPool?.price}
                             </span>
                         </>
@@ -71,7 +92,7 @@ export function DrawButtons({
                         "flex-1 h-12 sm:h-14 text-xs sm:text-sm font-black rounded-xl sm:rounded-2xl transition-all shadow-xl flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1 px-1 py-1",
                         isTrialMode 
                             ? "bg-purple-900 text-purple-100 border-purple-500 hover:bg-purple-800" 
-                            : (isLoadingStats || !canDraw3) ? "bg-slate-900 text-slate-500 border border-slate-800 opacity-50" : "bg-indigo-950 text-indigo-100 border border-indigo-800 hover:bg-indigo-900 hover:border-indigo-700"
+                            : (isLoadingStats || !canDraw3) ? "bg-slate-900 text-slate-500 border border-slate-800 opacity-50" : isPPoint ? "bg-amber-900 text-amber-100 border border-amber-700 hover:bg-amber-800" : "bg-indigo-950 text-indigo-100 border border-indigo-800 hover:bg-indigo-900 hover:border-indigo-700"
                     )}
                     onClick={() => handleButtonClick(3)} 
                     disabled={!isTrialMode && (isLoadingStats || (cardPool?.remainingPacks ?? 0) < 3 || !canDraw3)}
@@ -80,7 +101,7 @@ export function DrawButtons({
                         <>
                             <span className="text-[10px] sm:text-xs opacity-90 whitespace-nowrap">{isTrialMode ? '試 3連' : '3 連抽'}</span>
                             <span className="text-[11px] sm:text-xs flex items-center font-headline truncate font-bold">
-                                {isTrialMode ? <Sparkles className="w-2.5 h-2.5 mr-0.5 text-purple-300"/> : <DiamondIcon className="w-2.5 h-2.5 mr-0.5"/>}
+                                <CurrencyIcon />
                                 {isTrialMode ? '免費' : cardPool?.price3Draws}
                             </span>
                         </>
@@ -91,7 +112,7 @@ export function DrawButtons({
                         "flex-1 h-12 sm:h-14 text-xs sm:text-sm font-black rounded-xl sm:rounded-2xl transition-all shadow-xl flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1 px-1 py-1",
                         isTrialMode 
                             ? "bg-fuchsia-950 text-fuchsia-100 border-fuchsia-500 hover:bg-fuchsia-900" 
-                            : (isLoadingStats || !canDraw10) ? "bg-slate-900 text-slate-500 border border-slate-800 opacity-50" : "bg-amber-950 text-amber-100 border border-amber-800 hover:bg-amber-900 hover:border-amber-700"
+                            : (isLoadingStats || !canDraw10) ? "bg-slate-900 text-slate-500 border border-slate-800 opacity-50" : isPPoint ? "bg-yellow-950 text-yellow-100 border border-yellow-700 hover:bg-yellow-900" : "bg-amber-950 text-amber-100 border border-amber-800 hover:bg-amber-900 hover:border-amber-700"
                     )}
                     onClick={() => handleButtonClick(10)} 
                     disabled={!isTrialMode && (isLoadingStats || (cardPool?.remainingPacks ?? 0) < 10 || !canDraw10)}
@@ -100,7 +121,7 @@ export function DrawButtons({
                         <>
                             <span className="text-[10px] sm:text-xs opacity-90 whitespace-nowrap">{isTrialMode ? '試 10連' : '10 連抽'}</span>
                             <span className="text-[11px] sm:text-xs flex items-center font-headline truncate font-bold">
-                                {isTrialMode ? <Sparkles className="w-2.5 h-2.5 mr-0.5 text-purple-300"/> : <DiamondIcon className="w-2.5 h-2.5 mr-0.5"/>}
+                                <CurrencyIcon />
                                 {isTrialMode ? '免費' : ((cardPool as any)?.price10Draws || (cardPool?.price || 0) * 10)}
                             </span>
                         </>
@@ -114,7 +135,7 @@ export function DrawButtons({
                     onClick={() => performDraw(1)}
                 >
                     <Sparkles className="w-3.5 h-3.5 fill-slate-950" />
-                    <span>⚡ 轉為正式開獎 (扣點派發真卡)</span>
+                    <span>⚡ 轉為正式開獎 (扣 {isPPoint ? 'P點' : '鑽石'} 派發真卡)</span>
                 </Button>
             ) : (
                 performTrialDraw && (
@@ -131,3 +152,4 @@ export function DrawButtons({
         </div>
     );
 }
+

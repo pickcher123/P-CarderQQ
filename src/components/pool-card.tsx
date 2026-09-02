@@ -84,6 +84,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
     const [isDrawing, setIsDrawing] = useState(false);
     const [isInventoryOpen, setIsInventoryOpen] = useState(false);
     const [isAgeVerifiedModalOpen, setIsAgeVerifiedModalOpen] = useState(false);
+    const [isFreeTicketConfirmOpen, setIsFreeTicketConfirmOpen] = useState(false);
     const [pendingDraws, setPendingDraws] = useState<number>(0);
     const [isUsingTicketForPending, setIsUsingTicketForPending] = useState(false);
     const [isPromoModalOpen, setIsPromoModalOpen] = useState(false);
@@ -271,30 +272,31 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
         return list;
     }, [pool, allCardsMap]);
 
-    const handleDraw = (draws: number) => {
+    const executeDraw = (draws: number, useTicket: boolean = false) => {
+        setIsFreeTicketConfirmOpen(false);
         if (pool.isAdult) {
             setPendingDraws(draws);
-            setIsUsingTicketForPending(false);
+            setIsUsingTicketForPending(useTicket);
             setIsAgeVerifiedModalOpen(true);
         } else {
             setIsDrawing(true);
+            const ticketQuery = useTicket ? '&useTicket=true' : '';
             setTimeout(() => {
-                router.push(`/draw/open?poolId=${pool.id}&draws=${draws}`);
-            }, 800);
+                router.push(`/draw/open?poolId=${pool.id}&draws=${draws}${ticketQuery}`);
+            }, 500);
         }
     };
 
-    const handleDrawWithTicket = () => {
-        if (pool.isAdult) {
-            setPendingDraws(1);
-            setIsUsingTicketForPending(true);
-            setIsAgeVerifiedModalOpen(true);
-        } else {
-            setIsDrawing(true);
-            setTimeout(() => {
-                router.push(`/draw/open?poolId=${pool.id}&draws=1&useTicket=true`);
-            }, 500);
+    const handleDraw = (draws: number) => {
+        if (draws === 1 && pool.allowFreeDraw !== false && (userProfile?.freeDrawTickets || 0) > 0) {
+            setIsFreeTicketConfirmOpen(true);
+            return;
         }
+        executeDraw(draws, false);
+    };
+
+    const handleDrawWithTicket = () => {
+        setIsFreeTicketConfirmOpen(true);
     };
 
     const handleTrialDraw = () => {
@@ -320,6 +322,89 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                     router.push(`/draw/open?poolId=${pool.id}&draws=${pendingDraws}${ticketQuery}`);
                 }}
             />
+
+            {/* 🎟️ 免費抽卡券使用確認視窗 (先詢問客戶是否要使用免費券，並顯示持有的免費券張數) */}
+            {isFreeTicketConfirmOpen && (
+                <div 
+                    className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/80 backdrop-blur-md animate-in fade-in-0 duration-200"
+                    onClick={() => setIsFreeTicketConfirmOpen(false)}
+                >
+                    <div 
+                        className="relative max-w-md w-full bg-[#0b101d]/95 border-2 border-emerald-500/50 rounded-3xl p-5 sm:p-6 shadow-[0_0_50px_rgba(16,185,129,0.25)] text-center space-y-4"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        {/* 頂部動態邊框 */}
+                        <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-emerald-400 via-amber-400 to-cyan-400 rounded-t-3xl" />
+
+                        {/* 標題與圖示 */}
+                        <div className="space-y-1.5 pt-1">
+                            <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-400/50 mx-auto flex items-center justify-center text-2xl shadow-inner animate-bounce">
+                                🎟️
+                            </div>
+                            <h3 className="text-lg sm:text-xl font-black text-white font-headline">
+                                是否使用活動免費抽卡券？
+                            </h3>
+                            <p className="text-xs text-slate-300">
+                                卡池：<span className="font-bold text-amber-300">{pool.name}</span>
+                            </p>
+                        </div>
+
+                        {/* 客戶持有票券資訊卡 */}
+                        <div className="p-3.5 rounded-2xl bg-emerald-950/70 border border-emerald-500/40 shadow-inner flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-left">
+                                <Ticket className="w-6 h-6 text-emerald-400 shrink-0" />
+                                <div>
+                                    <div className="text-[11px] font-bold text-slate-300">您目前持有的免費券</div>
+                                    <div className="text-[10px] text-emerald-400/80">每次開獎消耗 1 張 (1抽)</div>
+                                </div>
+                            </div>
+                            <div className="text-right">
+                                <span className="font-mono font-black text-2xl text-emerald-300">
+                                    {userProfile?.freeDrawTickets || 0}
+                                </span>
+                                <span className="text-xs font-bold text-slate-400 ml-1">張</span>
+                            </div>
+                        </div>
+
+                        {/* 說明文字 */}
+                        <p className="text-[11px] sm:text-xs text-slate-400 leading-relaxed px-1">
+                            使用免費券開獎 <span className="text-emerald-300 font-bold">完全不消耗任何點數/鑽石</span>。您也可以選擇保留免費券，改用帳戶內的點數/鑽石進行抽卡。
+                        </p>
+
+                        {/* 操作按鈕組 */}
+                        <div className="space-y-2 pt-1">
+                            <Button
+                                onClick={() => executeDraw(1, true)}
+                                className="w-full h-11 sm:h-12 text-xs sm:text-sm font-black rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/30 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                            >
+                                <Ticket className="w-4 h-4 fill-slate-950" />
+                                <span>使用 1 張免費券開獎 (0 點)</span>
+                            </Button>
+
+                            <Button
+                                variant="outline"
+                                onClick={() => executeDraw(1, false)}
+                                className="w-full h-10 sm:h-11 text-xs font-black rounded-xl border-slate-700 bg-slate-900/80 text-slate-200 hover:bg-slate-800 hover:text-white active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                            >
+                                {pool.currency === 'p-point' ? (
+                                    <PPlusIcon className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                                ) : (
+                                    <DiamondIcon className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                                )}
+                                <span>保留免費券，以 {pool.price?.toLocaleString()} {pool.currency === 'p-point' ? 'P點' : '鑽石'} 抽卡</span>
+                            </Button>
+
+                            <Button
+                                variant="ghost"
+                                onClick={() => setIsFreeTicketConfirmOpen(false)}
+                                className="w-full h-8 text-[11px] font-bold text-slate-400 hover:text-white rounded-lg"
+                            >
+                                取消
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
             
             <div className="relative w-full max-w-3xl bg-slate-900/60 backdrop-blur-xl border border-slate-700/60 rounded-2xl sm:rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.6)] overflow-hidden p-3.5 sm:p-6 md:p-8">
                 <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-cyan-500 via-amber-400 to-purple-600"></div>
@@ -360,7 +445,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                     🔞 18+ 專區
                                 </Badge>
                             )}
-                            {pool.allowFreeDraw && (
+                            {pool.allowFreeDraw !== false && (
                                 <Badge className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/50 font-bold text-[10px] px-2 py-0.5">
                                     <Ticket className="w-3 h-3 mr-1 text-emerald-400" /> 支援免費券
                                 </Badge>
@@ -521,14 +606,14 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                     )}
                 </div>
 
-                {/* 活動兌換券專用兌換/抽取區（僅限後台開啟支援免費券的卡池） */}
-                {pool.allowFreeDraw && userProfile?.freeDrawTickets > 0 && (
+                {/* 活動兌換券專用兌換/抽取區（卡池未特別禁用即可使用免費券） */}
+                {pool.allowFreeDraw !== false && (userProfile?.freeDrawTickets || 0) > 0 && (
                     <div className="mb-2.5 p-2 rounded-xl bg-emerald-950/60 border border-emerald-500/40 flex flex-col sm:flex-row items-center justify-between gap-2 shadow-[0_0_15px_rgba(16,185,129,0.15)]">
                         <div className="flex items-center gap-2">
                             <Ticket className="w-4 h-4 text-emerald-400 shrink-0" />
                             <div className="text-xs">
-                                <span className="font-bold text-white">本池支援免費兌換：</span>
-                                <span className="font-mono font-black text-emerald-300 ml-1 text-sm">{userProfile.freeDrawTickets} 張可用</span>
+                                <span className="font-bold text-white">持有活動免費抽卡券：</span>
+                                <span className="font-mono font-black text-emerald-300 ml-1 text-sm">{userProfile?.freeDrawTickets} 張可用</span>
                             </div>
                         </div>
                         <Button
@@ -537,7 +622,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                             disabled={poolStatus.disabled || isDrawing}
                             className="w-full sm:w-auto h-8 px-4 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs shadow-md transition-all cursor-pointer active:scale-95 whitespace-nowrap"
                         >
-                            🎟️ 免費抽卡 (扣 1 張券)
+                            🎟️ 使用免費券開獎 (1抽)
                         </Button>
                     </div>
                 )}

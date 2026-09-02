@@ -826,6 +826,23 @@ export default function CardPoolDetailPage() {
                                     }}
                                 />
                             </div>
+
+                            <div className="flex items-center justify-between p-4 bg-emerald-50 rounded-xl border border-emerald-100 shadow-inner">
+                                <div className="space-y-0.5">
+                                    <Label className="text-base flex items-center gap-2 text-emerald-800 font-black">
+                                        <Ticket className="h-4 w-4 text-emerald-600" />
+                                        支援活動免費抽卡券
+                                    </Label>
+                                    <p className="text-[10px] text-emerald-600/60 font-bold uppercase tracking-widest">Allow Free Draw Tickets</p>
+                                </div>
+                                <Switch
+                                    checked={poolDetails.allowFreeDraw !== false}
+                                    onCheckedChange={(checked) => {
+                                        setPoolDetails({ ...poolDetails, allowFreeDraw: checked });
+                                        handleUpdatePoolDetails('allowFreeDraw', checked);
+                                    }}
+                                />
+                            </div>
                         </div>
 
                         <div className="space-y-3 p-5 bg-slate-50 border border-slate-100 rounded-xl">
