@@ -316,85 +316,141 @@ export default function Home() {
       </section>
 
       {/* 為什麼選擇我們 */}
-      <section className="py-12 sm:py-18 container px-3 sm:px-4 max-w-7xl mx-auto relative">
-        <div className="relative p-6 sm:p-10 rounded-3xl bg-slate-950/70 border border-slate-800/80 backdrop-blur-2xl overflow-hidden shadow-2xl">
-          {/* 背景環境流光 */}
-          <div className="absolute -top-24 -right-24 w-80 h-80 bg-amber-500/10 rounded-full blur-[100px] pointer-events-none" />
-          <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-blue-500/10 rounded-full blur-[100px] pointer-events-none" />
+      <section className="py-14 sm:py-24 container px-3 sm:px-4 max-w-7xl mx-auto relative">
+        <div className="relative p-6 sm:p-12 lg:p-14 rounded-3xl bg-gradient-to-b from-slate-900/90 via-slate-950/95 to-slate-950/90 border border-slate-800/90 backdrop-blur-2xl overflow-hidden shadow-[0_20px_60px_-15px_rgba(0,0,0,0.8)] ring-1 ring-white/5">
+          {/* 精緻背景環境流光與科技微網格 */}
+          <div className="absolute top-0 right-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-[120px] pointer-events-none" />
+          <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-[120px] pointer-events-none" />
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff04_1px,transparent_1px),linear-gradient(to_bottom,#ffffff04_1px,transparent_1px)] bg-[size:28px_28px] pointer-events-none opacity-60" />
 
-          <div className="text-center mb-10 sm:mb-12 space-y-3 relative z-10">
-            <h2 className="text-2xl sm:text-4xl font-black font-headline tracking-tight text-white">
-              為什麼選擇 <span className="bg-clip-text text-transparent bg-gradient-to-r from-amber-300 via-amber-400 to-yellow-500">P+Carder</span>
+          {/* 區塊標題區 */}
+          <div className="text-center mb-12 sm:mb-16 space-y-3.5 relative z-10">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-amber-500/5 border border-amber-500/30 text-amber-300 text-xs font-black tracking-widest uppercase shadow-[0_0_20px_rgba(245,158,11,0.15)]">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+              <span>CORE ADVANTAGES · 核心優勢</span>
+            </div>
+
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black font-headline tracking-tight text-white drop-shadow-sm">
+              為什麼選擇 <span className="bg-clip-text text-transparent bg-gradient-to-r from-amber-300 via-amber-400 to-yellow-400 drop-shadow-[0_0_25px_rgba(245,158,11,0.4)]">P+Carder</span>
             </h2>
-            <p className="text-xs sm:text-sm text-slate-400 max-w-lg mx-auto font-medium">
-              專為真實球卡愛好者打造的次世代數位開包與藏友社交平台
+            <p className="text-sm sm:text-base text-slate-400 max-w-2xl mx-auto font-medium leading-relaxed">
+              專為真實球卡愛好者打造的次世代數位開包與藏友社交平台 · 公開、真實、極致快感
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 relative z-10">
+          {/* 4 大核心特色卡片 */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 relative z-10">
             {[
               { 
+                num: '01',
+                subTag: 'AUTHENTICITY',
+                badge: '100% 實體存證',
                 title: '公開透明存證', 
-                desc: '每一張核心卡片皆經數位存證，確保來源真實、所有權明確，打造最讓人放心的收藏環境。', 
+                desc: '每一張核心卡片皆經數位存證與實物封裝比對，確保來源真實、所有權清晰，打造最值得信賴的收藏環境。', 
                 icon: ShieldCheck, 
-                color: 'text-amber-400',
-                border: 'group-hover:border-amber-500/50',
-                iconBg: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-                glow: 'group-hover:shadow-[0_0_30px_rgba(245,158,11,0.15)]'
+                theme: 'amber',
+                gradient: 'from-amber-500/20 via-amber-500/5 to-transparent',
+                border: 'hover:border-amber-400/60 hover:shadow-[0_12px_40px_rgba(245,158,11,0.2)]',
+                iconWrap: 'bg-amber-500/15 text-amber-400 border-amber-500/30 shadow-[0_0_20px_rgba(245,158,11,0.25)]',
+                tagClass: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
+                featurePills: ['實卡封裝檢驗', '真實防偽機制'],
               },
               { 
+                num: '02',
+                subTag: 'FAIRNESS',
+                badge: '全公開演算法',
                 title: '公平機率披露', 
-                desc: '絕不隱藏真實資訊，所有卡池機率完全公開披露，讓每一次抽卡都憑實力與運氣，回歸遊玩初衷。', 
+                desc: '絕不隱藏任何數據，所有卡池機率與剩餘大獎數量即時完全公開披露，杜絕黑箱，讓每次抽取都憑實力與運氣。', 
                 icon: Target, 
-                color: 'text-cyan-400',
-                border: 'group-hover:border-cyan-500/50',
-                iconBg: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
-                glow: 'group-hover:shadow-[0_0_30px_rgba(6,182,212,0.15)]'
+                theme: 'cyan',
+                gradient: 'from-cyan-500/20 via-cyan-500/5 to-transparent',
+                border: 'hover:border-cyan-400/60 hover:shadow-[0_12px_40px_rgba(6,182,212,0.2)]',
+                iconWrap: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30 shadow-[0_0_20px_rgba(6,182,212,0.25)]',
+                tagClass: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30',
+                featurePills: ['即時大獎存量', '數學概率公示'],
               },
               { 
-                title: '即時互動體驗', 
-                desc: '打破實體卡片的侷限，隨時隨地享受極具張力的數位開包效果，將收藏熱忱轉化為指尖的極致快感。', 
+                num: '03',
+                subTag: 'REAL-TIME VFX',
+                badge: '60FPS 撕卡特效',
+                title: '極致開包張力', 
+                desc: '打破實體卡片空間限制，隨時隨地享受極具張力的次世代全息開包特效，將收藏熱忱轉化為指尖的極致快感。', 
                 icon: Zap, 
-                color: 'text-pink-400',
-                border: 'group-hover:border-pink-500/50',
-                iconBg: 'bg-pink-500/10 text-pink-400 border-pink-500/20',
-                glow: 'group-hover:shadow-[0_0_30px_rgba(244,114,182,0.15)]'
+                theme: 'fuchsia',
+                gradient: 'from-fuchsia-500/20 via-fuchsia-500/5 to-transparent',
+                border: 'hover:border-fuchsia-400/60 hover:shadow-[0_12px_40px_rgba(217,70,239,0.2)]',
+                iconWrap: 'bg-fuchsia-500/15 text-fuchsia-400 border-fuchsia-500/30 shadow-[0_0_20px_rgba(217,70,239,0.25)]',
+                tagClass: 'bg-fuchsia-500/15 text-fuchsia-300 border-fuchsia-500/30',
+                featurePills: ['全息動態光效', '即抽即存即寄'],
               },
               { 
+                num: '04',
+                subTag: 'COMMUNITY',
+                badge: '藏家即時連線',
                 title: '專屬藏友社群', 
-                desc: '透過團拆與互動競技，與志同道合的藏友並肩遊玩，交流珍稀卡片，建立屬於你的球員卡核心交友圈。', 
+                desc: '集結頂級球員卡愛好者！支援線上多人團拆、交流珍稀卡片與玩家互動競技，建立屬於你的球員卡核心交友圈。', 
                 icon: Users2, 
-                color: 'text-emerald-400',
-                border: 'group-hover:border-emerald-500/50',
-                iconBg: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-                glow: 'group-hover:shadow-[0_0_30px_rgba(16,185,129,0.15)]'
+                theme: 'emerald',
+                gradient: 'from-emerald-500/20 via-emerald-500/5 to-transparent',
+                border: 'hover:border-emerald-400/60 hover:shadow-[0_12px_40px_rgba(16,185,129,0.2)]',
+                iconWrap: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30 shadow-[0_0_20px_rgba(16,185,129,0.25)]',
+                tagClass: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+                featurePills: ['多人同屏團拆', '專屬藏友交流'],
               },
             ].map((item, i) => (
               <div 
                 key={i}
                 className={cn(
-                  "p-6 rounded-2xl bg-slate-900/60 border border-slate-800/80 flex flex-col justify-between transition-all duration-300 group shadow-lg hover:-translate-y-1 backdrop-blur-md",
-                  item.border,
-                  item.glow
+                  "relative p-6 sm:p-7 rounded-2xl bg-gradient-to-b from-slate-900/90 to-slate-950/95 border border-slate-800/90 flex flex-col justify-between transition-all duration-500 group shadow-lg hover:-translate-y-1.5 backdrop-blur-xl overflow-hidden",
+                  item.border
                 )}
               >
+                {/* 卡片頂部漸層微光 */}
+                <div className={cn("absolute inset-x-0 top-0 h-1 bg-gradient-to-r opacity-60 group-hover:opacity-100 transition-opacity", item.gradient)} />
+                <div className={cn("absolute -top-16 -right-16 w-32 h-32 rounded-full blur-2xl opacity-0 group-hover:opacity-40 transition-opacity pointer-events-none", item.gradient)} />
+
                 <div>
-                  <div className="flex items-center justify-between mb-5">
-                    <div className={cn("p-3 rounded-xl border shadow-inner transition-transform duration-300 group-hover:scale-110", item.iconBg)}>
+                  {/* 頂部標號與徽章 */}
+                  <div className="flex items-center justify-between gap-2 mb-6">
+                    <div className={cn("p-3 rounded-xl border transition-all duration-300 group-hover:scale-110", item.iconWrap)}>
                       <item.icon className="w-5 h-5" />
                     </div>
+                    
+                    <div className="flex flex-col items-end">
+                      <span className="text-[11px] font-mono font-bold tracking-widest text-slate-500 group-hover:text-slate-300 transition-colors">
+                        {item.num}
+                      </span>
+                      <span className={cn("mt-1 px-2 py-0.5 rounded text-[10px] font-bold border", item.tagClass)}>
+                        {item.badge}
+                      </span>
+                    </div>
                   </div>
-                  <h3 className="text-base sm:text-lg font-black text-white mb-2.5 group-hover:text-amber-300 transition-colors font-headline tracking-wide">
-                    {item.title}
-                  </h3>
-                  <p className="text-xs sm:text-sm text-slate-400 leading-relaxed font-medium">
-                    {item.desc}
-                  </p>
+
+                  {/* 標題與簡介 */}
+                  <div className="space-y-2.5 mb-5">
+                    <div className="text-[10px] font-mono tracking-widest text-slate-400 font-bold uppercase">
+                      {item.subTag}
+                    </div>
+                    <h3 className="text-lg sm:text-xl font-black text-white group-hover:text-amber-300 transition-colors font-headline tracking-wide">
+                      {item.title}
+                    </h3>
+                    <p className="text-xs sm:text-sm text-slate-300/80 leading-relaxed font-normal">
+                      {item.desc}
+                    </p>
+                  </div>
                 </div>
 
-                <div className="pt-4 mt-4 border-t border-slate-800/50 flex items-center gap-1.5 text-[10px] font-mono text-slate-400 group-hover:text-slate-200 transition-colors">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400/80 animate-pulse" />
-                  <span>核心保障機制</span>
+                {/* 底部功能亮點膠囊標籤 */}
+                <div className="pt-4 mt-2 border-t border-slate-800/80 flex flex-wrap items-center gap-1.5">
+                  {item.featurePills.map((pill, pIndex) => (
+                    <span 
+                      key={pIndex} 
+                      className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-[11px] text-slate-400 group-hover:text-slate-200 group-hover:border-slate-700 transition-colors font-medium flex items-center gap-1"
+                    >
+                      <span className="w-1 h-1 rounded-full bg-amber-400/80" />
+                      {pill}
+                    </span>
+                  ))}
                 </div>
               </div>
             ))}
