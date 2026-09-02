@@ -1,14 +1,10 @@
-kind: AppStack
-schemaVersion: v1
-buildConfig:
-  runtime: nodejs20
-  buildCommand: npm run build
-  env:
-    - variable: NPM_CONFIG_LEGACY_PEER_DEPS
-      value: "true"
 runConfig:
   minInstances: 0
   maxInstances: 5
-  memory: 4096Mi
-  cpu: 2
-  startCommand: npm run start
+  cpu: 1
+  memoryMiB: 1024
+  concurrency: 80
+
+env:
+  - variable: NPM_CONFIG_LEGACY_PEER_DEPS
+    value: "true"
