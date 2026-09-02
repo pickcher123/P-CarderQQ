@@ -16,7 +16,8 @@ steps:
         '--image', 'gcr.io/$PROJECT_ID/p-carder:$COMMIT_SHA',
         '--region', 'asia-northeast1',
         '--platform', 'managed',
-        '--allow-unauthenticated'
+        '--allow-unauthenticated',
+        '--port', '3000'
       ]
 
 # 指定映像檔路徑供 Cloud Build 追蹤
