@@ -9,6 +9,8 @@ import { CardPool } from '@/types/draw';
 import Link from 'next/link';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { PromoRedeemModal } from '@/components/events/PromoRedeemModal';
+import { getEffectiveTicketCount } from '@/lib/promo-draw-service';
 
 export function PackPreview({
     cardPool,
@@ -32,14 +34,19 @@ export function PackPreview({
     freeDrawTickets?: number
 }) {
     const [useTicketMode, setUseTicketMode] = useState<boolean>(isUsingTicket);
+    const [isPromoModalOpen, setIsPromoModalOpen] = useState(false);
+    const [localRefresh, setLocalRefresh] = useState(0);
+
+    const effectiveTickets = Math.max(freeDrawTickets, getEffectiveTicketCount());
+    const actualDrawCount = useTicketMode ? 1 : initialDrawCount;
 
     const isPPoint = cardPool.currency === 'p-point';
-    const cost = useTicketMode ? 0 : (initialDrawCount === 3 && cardPool.price3Draws ? cardPool.price3Draws : (cardPool.price || 0) * initialDrawCount);
+    const cost = useTicketMode ? 0 : (actualDrawCount === 3 && cardPool.price3Draws ? cardPool.price3Draws : (cardPool.price || 0) * actualDrawCount);
     const isFreeDrawAllowed = !useTicketMode || cardPool.allowFreeDraw !== false;
-    const hasEnoughTickets = !useTicketMode || freeDrawTickets >= 1;
+    const hasEnoughTickets = !useTicketMode || effectiveTickets >= 1;
     const canStart = isLevelMet && !isLimitReachedForInitial && !isLoadingStats && hasEnoughTickets && isFreeDrawAllowed;
 
-    const canToggleTicket = cardPool.allowFreeDraw !== false && freeDrawTickets > 0 && initialDrawCount === 1;
+    const canToggleTicket = cardPool.allowFreeDraw !== false;
 
     return (
         <div className="flex flex-col items-center justify-center min-h-[100dvh] p-3 sm:p-4 py-4 sm:py-8 relative select-none w-full max-w-md mx-auto">
@@ -76,9 +83,20 @@ export function PackPreview({
                                     <Ticket className="w-4 h-4 text-emerald-400" />
                                     <span>活動免費抽卡券餘額</span>
                                 </span>
-                                <span className="font-mono font-black text-emerald-300 text-xs sm:text-sm bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-500/30">
-                                    {freeDrawTickets} 張可用
-                                </span>
+                                <div className="flex items-center gap-2">
+                                    <span className="font-mono font-black text-emerald-300 text-xs sm:text-sm bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                                        {effectiveTickets} 張可用
+                                    </span>
+                                    {effectiveTickets <= 0 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsPromoModalOpen(true)}
+                                            className="text-[11px] font-bold text-amber-300 hover:text-amber-200 underline underline-offset-2 cursor-pointer"
+                                        >
+                                            點此領取
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                             
                             <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-900/90 rounded-xl border border-slate-800">
@@ -117,7 +135,7 @@ export function PackPreview({
                     <div className="grid grid-cols-2 gap-2 sm:gap-3 p-2.5 sm:p-3 bg-slate-950/90 rounded-2xl border border-slate-800/80 shadow-inner">
                         <div className="p-2 sm:p-3 bg-slate-900/80 rounded-xl border border-slate-800 text-center space-y-0.5">
                             <span className="text-[9px] sm:text-[10px] text-slate-400 font-extrabold block uppercase tracking-wider">本次抽數</span>
-                            <span className="text-base sm:text-lg font-black text-white font-code">{initialDrawCount} 包</span>
+                            <span className="text-base sm:text-lg font-black text-white font-code">{actualDrawCount} 包</span>
                         </div>
                         <div className="p-2 sm:p-3 bg-slate-900/80 rounded-xl border border-slate-800 text-center space-y-0.5">
                             <span className="text-[9px] sm:text-[10px] text-slate-400 font-extrabold block uppercase tracking-wider">花費金額</span>
@@ -214,6 +232,18 @@ export function PackPreview({
 
                     {/* CTA Action Buttons */}
                     <div className="space-y-2">
+                        {useTicketMode && !hasEnoughTickets && (
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setIsPromoModalOpen(true)}
+                                className="w-full h-11 text-xs sm:text-sm font-black rounded-2xl border-emerald-500/60 bg-emerald-950/60 text-emerald-300 hover:bg-emerald-900/80 shadow-md shadow-emerald-950/50 flex items-center justify-center gap-1.5 cursor-pointer animate-pulse"
+                            >
+                                <Sparkles className="w-4 h-4 text-amber-300" />
+                                <span>點此免費領取 1 抽活動券</span>
+                            </Button>
+                        )}
+
                         <Button
                             size="lg"
                             className={cn(
@@ -224,8 +254,14 @@ export function PackPreview({
                                         : "bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-slate-950 border-amber-800 hover:brightness-110 shadow-amber-500/20" 
                                     : "bg-slate-800 text-slate-500 border-slate-950 cursor-not-allowed opacity-60"
                             )}
-                            onClick={() => canStart && performDraw(initialDrawCount, useTicketMode)}
-                            disabled={!canStart}
+                            onClick={() => {
+                                if (useTicketMode && !hasEnoughTickets) {
+                                    setIsPromoModalOpen(true);
+                                    return;
+                                }
+                                if (canStart) performDraw(actualDrawCount, useTicketMode);
+                            }}
+                            disabled={!canStart && (!useTicketMode || hasEnoughTickets)}
                         >
                             {isLoadingStats ? (
                                 <><Loader2 className="animate-spin mr-2 h-5 w-5 sm:h-6 sm:w-6" /> 驗證中...</>
@@ -236,7 +272,7 @@ export function PackPreview({
                             ) : useTicketMode && !isFreeDrawAllowed ? (
                                 <><Ban className="mr-2 h-5 w-5 sm:h-6 sm:w-6 text-rose-400" /> 此卡池未開放免費券兌換</>
                             ) : useTicketMode && !hasEnoughTickets ? (
-                                <><Ban className="mr-2 h-5 w-5 sm:h-6 sm:w-6 text-rose-400" /> 免費抽卡券不足</>
+                                <><Ticket className="mr-2 h-5 w-5 sm:h-6 sm:w-6 text-amber-300" /> 🎟️ 尚未領取免費券（點此領取）</>
                             ) : useTicketMode ? (
                                 <><Ticket className="mr-2 h-5 w-5 sm:h-6 sm:w-6 text-slate-950 fill-slate-950" /> 🎟️ 消耗免費券啟動開獎 (1抽)</>
                             ) : (
@@ -267,6 +303,17 @@ export function PackPreview({
                     </Button>
                 </div>
             </div>
+
+            {/* 活動兌換券領取彈窗 */}
+            <PromoRedeemModal 
+                open={isPromoModalOpen} 
+                onOpenChange={(open) => {
+                    setIsPromoModalOpen(open);
+                    if (!open) {
+                        setLocalRefresh(prev => prev + 1);
+                    }
+                }} 
+            />
         </div>
     );
 }

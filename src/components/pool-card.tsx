@@ -16,6 +16,7 @@ import { RandomPlayerCard } from '@/components/random-player-card';
 import { userLevels } from '@/components/member-level-crown';
 import { VerifyAgeModal } from '@/components/verify-age-modal';
 import { PromoRedeemModal } from '@/components/events/PromoRedeemModal';
+import { getEffectiveTicketCount, syncLocalPromoClaimsToFirestore } from '@/lib/promo-draw-service';
 
 // (Re-adding interfaces and constants as in the file)
 const RARITIES = ['legendary', 'rare', 'common'] as const;
@@ -88,6 +89,19 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
     const [pendingDraws, setPendingDraws] = useState<number>(0);
     const [isUsingTicketForPending, setIsUsingTicketForPending] = useState(false);
     const [isPromoModalOpen, setIsPromoModalOpen] = useState(false);
+    const [localTicketRefresh, setLocalTicketRefresh] = useState(0);
+
+    const effectiveTickets = useMemo(() => {
+        return getEffectiveTicketCount(userProfile);
+    }, [userProfile, localTicketRefresh]);
+
+    useEffect(() => {
+        if (user?.uid && firestore) {
+            syncLocalPromoClaimsToFirestore(firestore, user.uid).then(added => {
+                if (added > 0) setLocalTicketRefresh(prev => prev + 1);
+            });
+        }
+    }, [user?.uid, firestore]);
 
     const isAuthReady = !isUserLoading;
     const todayStr = format(new Date(), 'yyyy-MM-dd');
@@ -274,21 +288,27 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
 
     const executeDraw = (draws: number, useTicket: boolean = false) => {
         setIsFreeTicketConfirmOpen(false);
+        const targetDraws = useTicket ? 1 : draws;
+        const ticketQuery = useTicket ? '&useTicket=true' : '';
+
+        if (useTicket && user?.uid && firestore) {
+            syncLocalPromoClaimsToFirestore(firestore, user.uid);
+        }
+
         if (pool.isAdult) {
-            setPendingDraws(draws);
+            setPendingDraws(targetDraws);
             setIsUsingTicketForPending(useTicket);
             setIsAgeVerifiedModalOpen(true);
         } else {
             setIsDrawing(true);
-            const ticketQuery = useTicket ? '&useTicket=true' : '';
             setTimeout(() => {
-                router.push(`/draw/open?poolId=${pool.id}&draws=${draws}${ticketQuery}`);
-            }, 500);
+                router.push(`/draw/open?poolId=${pool.id}&draws=${targetDraws}${ticketQuery}`);
+            }, 400);
         }
     };
 
     const handleDraw = (draws: number) => {
-        if (draws === 1 && pool.allowFreeDraw !== false && (userProfile?.freeDrawTickets || 0) > 0) {
+        if (draws === 1 && pool.allowFreeDraw !== false && effectiveTickets > 0) {
             setIsFreeTicketConfirmOpen(true);
             return;
         }
@@ -296,6 +316,10 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
     };
 
     const handleDrawWithTicket = () => {
+        if (effectiveTickets <= 0) {
+            setIsPromoModalOpen(true);
+            return;
+        }
         setIsFreeTicketConfirmOpen(true);
     };
 
@@ -360,7 +384,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                             </div>
                             <div className="text-right">
                                 <span className="font-mono font-black text-2xl text-emerald-300">
-                                    {userProfile?.freeDrawTickets || 0}
+                                    {effectiveTickets}
                                 </span>
                                 <span className="text-xs font-bold text-slate-400 ml-1">張</span>
                             </div>
@@ -420,11 +444,6 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
 
                         {/* 特殊機制標籤列 */}
                         <div className="flex items-center justify-center gap-1.5 mb-2.5 flex-wrap">
-                            {pool.isFeatured && (
-                                <Badge className="bg-amber-500/20 text-amber-300 border border-amber-500/50 font-bold text-[10px] px-2 py-0.5">
-                                    <Sparkles className="w-3 h-3 mr-1 text-amber-400" /> 熱門精選
-                                </Badge>
-                            )}
                             {pool.hasProtection && (
                                 <Badge className="bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 font-bold text-[10px] px-2 py-0.5">
                                     <Trophy className="w-3 h-3 mr-1 text-cyan-400" /> 保底機制
@@ -607,23 +626,44 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                 </div>
 
                 {/* 活動兌換券專用兌換/抽取區（卡池未特別禁用即可使用免費券） */}
-                {pool.allowFreeDraw !== false && (userProfile?.freeDrawTickets || 0) > 0 && (
-                    <div className="mb-2.5 p-2 rounded-xl bg-emerald-950/60 border border-emerald-500/40 flex flex-col sm:flex-row items-center justify-between gap-2 shadow-[0_0_15px_rgba(16,185,129,0.15)]">
+                {pool.allowFreeDraw !== false && (
+                    <div className="mb-2.5 p-2 sm:p-2.5 rounded-xl bg-emerald-950/60 border border-emerald-500/40 flex flex-col sm:flex-row items-center justify-between gap-2 shadow-[0_0_15px_rgba(16,185,129,0.15)]">
                         <div className="flex items-center gap-2">
                             <Ticket className="w-4 h-4 text-emerald-400 shrink-0" />
-                            <div className="text-xs">
-                                <span className="font-bold text-white">持有活動免費抽卡券：</span>
-                                <span className="font-mono font-black text-emerald-300 ml-1 text-sm">{userProfile?.freeDrawTickets} 張可用</span>
+                            <div className="text-xs text-left">
+                                {effectiveTickets > 0 ? (
+                                    <>
+                                        <span className="font-bold text-white">持有活動免費抽卡券：</span>
+                                        <span className="font-mono font-black text-emerald-300 ml-1 text-sm">{effectiveTickets} 張可用</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span className="font-bold text-emerald-300">本卡池支援活動免費券！</span>
+                                        <span className="text-[11px] text-slate-300 ml-1 hidden sm:inline">尚未領券請點右側領取</span>
+                                    </>
+                                )}
                             </div>
                         </div>
-                        <Button
-                            size="sm"
-                            onClick={handleDrawWithTicket}
-                            disabled={poolStatus.disabled || isDrawing}
-                            className="w-full sm:w-auto h-8 px-4 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs shadow-md transition-all cursor-pointer active:scale-95 whitespace-nowrap"
-                        >
-                            🎟️ 使用免費券開獎 (1抽)
-                        </Button>
+                        {effectiveTickets > 0 ? (
+                            <Button
+                                size="sm"
+                                onClick={handleDrawWithTicket}
+                                disabled={poolStatus.disabled || isDrawing}
+                                className="w-full sm:w-auto h-8 px-4 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs shadow-md transition-all cursor-pointer active:scale-95 whitespace-nowrap"
+                            >
+                                🎟️ 使用免費券開獎 (1抽)
+                            </Button>
+                        ) : (
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setIsPromoModalOpen(true)}
+                                className="w-full sm:w-auto h-8 px-3 rounded-lg border-emerald-400/60 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 font-bold text-xs shadow-sm transition-all cursor-pointer active:scale-95 whitespace-nowrap flex items-center gap-1"
+                            >
+                                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                                <span>免費領取 1 抽</span>
+                            </Button>
+                        )}
                     </div>
                 )}
 

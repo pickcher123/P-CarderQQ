@@ -403,6 +403,8 @@ export default function AdminDashboardPage() {
                                 { label: '幸運福袋', flag: 'isLuckyBagEnabled', desc: '控制福袋選購與拆封', defaultVal: true },
                                 { label: '競猜拼卡', flag: 'isBettingEnabled', desc: '控制拼卡選號專區', defaultVal: true },
                                 { label: '直播團拆', flag: 'isGroupBreakEnabled', desc: '控制團拆開盒專案', defaultVal: true },
+                                { label: '賽事預測專區', flag: 'isPredictionsEnabled', desc: '控制賽事預測活動與下注競猜', defaultVal: true },
+                                { label: '卡展行事曆', flag: 'isExhibitionsEnabled', desc: '控制全台卡展活動行程專區', defaultVal: true },
                                 { label: '中獎跑馬燈', flag: 'isMarqueeEnabled', desc: '首頁玩家即時中獎廣播', defaultVal: true },
                                 { label: '活動代碼快捷推薦 (公開展示)', flag: 'showPromoHints', desc: '前台活動專區是否公開顯示 OPEN2024 等熱門代碼按鈕（預設關閉隱藏）', defaultVal: false },
                             ].map((feat) => (

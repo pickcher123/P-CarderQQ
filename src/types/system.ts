@@ -26,6 +26,8 @@ export interface SystemConfig {
         isGroupBreakEnabled?: boolean;
         isMarqueeEnabled?: boolean; // 新增：跑馬燈開關
         showPromoHints?: boolean; // 新增：前台活動代碼快捷推薦開關
+        isPredictionsEnabled?: boolean; // 新增：賽事預測開關
+        isExhibitionsEnabled?: boolean; // 新增：卡展行事曆開關
     };
     showPromoCodeHints?: boolean; // 前台活動專區是否公開顯示熱門兌換碼清單 (預設隱藏)
     levelBenefits?: LevelBenefit[];

@@ -16,6 +16,27 @@ export const VALID_PROMO_CODES: Record<string, PromoCodeDefinition> = {
     description: '慶祝盛大開幕，全場卡池免費抽卡券 1 張！',
     source: 'LINE 官方社群'
   },
+  'LUCKYCARD': {
+    code: 'LUCKYCARD',
+    label: '🎁 轉盤專屬・加碼券',
+    freePlays: 2,
+    description: '轉盤大福袋專屬 2 次抽獎加碼！',
+    source: 'DISCORD'
+  },
+  'KUJI888': {
+    code: 'KUJI888',
+    label: '✨ 一番賞・首抽特典',
+    freePlays: 1,
+    description: '活動套一番賞免費撕籤 1 次！',
+    source: 'IG'
+  },
+  'VIPGIFT': {
+    code: 'VIPGIFT',
+    label: '👑 貴賓專屬・九宮格券',
+    freePlays: 3,
+    description: '九宮格盲盒 3 次破箱連線挑戰！',
+    source: 'VIP'
+  },
   'FREE888': {
     code: 'FREE888',
     label: '🎁 幸運發發・限時福利券',
@@ -122,7 +143,26 @@ export async function redeemPromoDrawCode(firestore: Firestore, userId: string, 
   return await runTransaction(firestore, async (transaction) => {
     const userSnap = await transaction.get(userRef);
     if (!userSnap.exists()) {
-      throw new Error('用戶資料不存在，請重新整理頁面');
+      const inviteCode = generateUserInviteCode(userId);
+      transaction.set(userRef, {
+        id: userId,
+        username: '玩家',
+        points: 1000,
+        bonusPoints: 0,
+        role: 'user',
+        userLevel: '普通會員',
+        freeDrawTickets: promo.freePlays,
+        inviteCode,
+        inviteCount: 0,
+        claimedPromoCodes: [code],
+        createdAt: serverTimestamp()
+      });
+      return { 
+        success: true, 
+        ticketsAdded: promo.freePlays, 
+        label: promo.label, 
+        message: `兌換成功！已獲得 ${promo.freePlays} 張免費抽卡券！` 
+      };
     }
 
     const data = userSnap.data();
@@ -277,4 +317,153 @@ export async function claimCommunityFreeDraw(firestore: Firestore, userId: strin
     };
   });
 }
+
+/**
+ * 自動同步瀏覽器 localStorage 內的領券紀錄至 Firestore
+ * 用於處理未登入時領券、或先前背景同步失敗的客戶，讓客戶一進卡池或登入後免費券 100% 入帳可用
+ */
+export async function syncLocalPromoClaimsToFirestore(firestore: Firestore, userId: string): Promise<number> {
+  if (!firestore || !userId || typeof window === 'undefined') return 0;
+
+  try {
+    const raw1 = localStorage.getItem('card_exhibition_promo_claims');
+    const raw2 = localStorage.getItem('promo_claim_history');
+    const list1: any[] = raw1 ? JSON.parse(raw1) : [];
+    const list2: any[] = raw2 ? JSON.parse(raw2) : [];
+    const combined = [...(Array.isArray(list1) ? list1 : []), ...(Array.isArray(list2) ? list2 : [])];
+    if (combined.length === 0) return 0;
+
+    const activeItems = combined.filter(item => item && (item.status === 'ACTIVE' || !item.status) && item.code);
+    if (activeItems.length === 0) return 0;
+
+    const userRef = doc(firestore, 'users', userId);
+    
+    return await runTransaction(firestore, async (transaction) => {
+      const userSnap = await transaction.get(userRef);
+      let data: any = {};
+      let isNewUser = false;
+
+      if (!userSnap.exists()) {
+        isNewUser = true;
+        data = {
+          id: userId,
+          username: '新玩家',
+          points: 1000,
+          bonusPoints: 0,
+          role: 'user',
+          userLevel: '普通會員',
+          freeDrawTickets: 0,
+          claimedPromoCodes: [],
+          inviteCode: generateUserInviteCode(userId),
+          inviteCount: 0,
+          createdAt: serverTimestamp()
+        };
+      } else {
+        data = userSnap.data() || {};
+      }
+
+      const existingCodes: string[] = data.claimedPromoCodes || [];
+      let totalTicketsToAdd = 0;
+      const codesToAdd: string[] = [];
+      let setCommunityClaimed = false;
+
+      for (const item of activeItems) {
+        const codeUpper = item.code.trim().toUpperCase();
+        if (codeUpper === 'COMMUNITY_JOIN') {
+          if (!data.claimedCommunityTicket && !existingCodes.includes('COMMUNITY_JOIN')) {
+            totalTicketsToAdd += 1;
+            codesToAdd.push('COMMUNITY_JOIN');
+            setCommunityClaimed = true;
+          }
+        } else if (VALID_PROMO_CODES[codeUpper]) {
+          if (!existingCodes.includes(codeUpper)) {
+            totalTicketsToAdd += (VALID_PROMO_CODES[codeUpper].freePlays || 1);
+            codesToAdd.push(codeUpper);
+          }
+        } else if (item.freePlays && item.freePlays > 0 && !existingCodes.includes(codeUpper)) {
+          totalTicketsToAdd += item.freePlays;
+          codesToAdd.push(codeUpper);
+        }
+      }
+
+      if (totalTicketsToAdd <= 0 && !isNewUser) {
+        return 0;
+      }
+
+      const currentTickets = data.freeDrawTickets || 0;
+      const newTicketCount = currentTickets + totalTicketsToAdd;
+
+      const updates: any = {
+        freeDrawTickets: newTicketCount,
+        claimedPromoCodes: Array.from(new Set([...existingCodes, ...codesToAdd]))
+      };
+      if (setCommunityClaimed) {
+        updates.claimedCommunityTicket = true;
+      }
+
+      if (isNewUser) {
+        transaction.set(userRef, {
+          ...data,
+          ...updates
+        });
+      } else {
+        transaction.update(userRef, updates);
+      }
+
+      return totalTicketsToAdd;
+    });
+  } catch (err) {
+    console.warn('syncLocalPromoClaimsToFirestore warning:', err);
+    return 0;
+  }
+}
+
+/**
+ * 從本地 localStorage 計算所有已領取的免費券總張數
+ */
+export function getLocalAvailableTicketsCount(): number {
+  if (typeof window === 'undefined') return 0;
+  try {
+    let count = 0;
+    // 檢查卡展領取紀錄
+    const claimsRaw = localStorage.getItem('card_exhibition_promo_claims');
+    if (claimsRaw) {
+      const claims = JSON.parse(claimsRaw);
+      if (Array.isArray(claims)) {
+        claims.forEach((c: any) => {
+          count += (c.freePlays || 1);
+        });
+      }
+    }
+    // 檢查歷史紀錄
+    const historyRaw = localStorage.getItem('promo_claim_history');
+    if (historyRaw) {
+      const history = JSON.parse(historyRaw);
+      if (Array.isArray(history)) {
+        history.forEach((h: any) => {
+          // 如果是社群或兌換碼
+          if (h.code && !claimsRaw?.includes(h.code)) {
+            count += (h.freePlays || 1);
+          }
+        });
+      }
+    }
+    return count;
+  } catch (e) {
+    return 0;
+  }
+}
+
+/**
+ * 取得用戶真正的有效免費抽卡券張數（融合 Firestore 與 LocalStorage 紀錄）
+ */
+export function getEffectiveTicketCount(userProfile?: any): number {
+  const remoteTickets = typeof userProfile?.freeDrawTickets === 'number' ? userProfile.freeDrawTickets : 0;
+  // 若 remoteTickets 大於 0，直接以 Firestore 為準
+  if (remoteTickets > 0) return remoteTickets;
+  // 若 remoteTickets 為 0，檢查本地是否有已領取但尚未同步的券
+  const localTickets = getLocalAvailableTicketsCount();
+  return Math.max(remoteTickets, localTickets);
+}
+
 

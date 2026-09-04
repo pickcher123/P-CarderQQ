@@ -36,6 +36,7 @@ import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { performDrawAction } from '@/app/actions/draw';
 import { toPng } from 'html-to-image';
+import { getEffectiveTicketCount, syncLocalPromoClaimsToFirestore, getLocalAvailableTicketsCount } from '@/lib/promo-draw-service';
 
 enum OperationType {
   CREATE = 'create',
@@ -308,6 +309,14 @@ export default function OpenPackPage() {
         }
         if (!poolId) return;
 
+        if (useTicketMode && user?.uid && firestore) {
+            try {
+                await syncLocalPromoClaimsToFirestore(firestore, user.uid);
+            } catch (e) {
+                console.warn('Sync promo claims failed:', e);
+            }
+        }
+
         setStep('loading');
         
         try {
@@ -351,20 +360,22 @@ export default function OpenPackPage() {
                     }
                 }
 
-                const cost = useTicketMode ? 0 : (count === 3 && cardPool.price3Draws ? cardPool.price3Draws : (cardPool.price || 0) * count);
+                const actualDrawCount = useTicketMode ? 1 : count;
+                const cost = useTicketMode ? 0 : (actualDrawCount === 3 && cardPool.price3Draws ? cardPool.price3Draws : (cardPool.price || 0) * actualDrawCount);
                 const currencyField = cardPool.currency === 'p-point' ? 'bonusPoints' : 'points';
                 const balance = (userData as any)[currencyField] || 0;
                 const tickets = (userData as any).freeDrawTickets || 0;
+                const localTickets = getLocalAvailableTicketsCount();
 
                 if (useTicketMode) {
                     if (poolData.allowFreeDraw === false) throw new Error('此卡池目前未開放免費抽卡券兌換。');
-                    if (tickets < 1) throw new Error('您的活動免費抽卡券不足，請先至選單中的免費領取活動獲取！');
+                    if (tickets < 1 && localTickets < 1) throw new Error('您的活動免費抽卡券不足，請先至選單中的免費領取活動獲取！');
                 } else {
                     if (balance < cost) throw new Error('點數不足，無法抽卡。');
                 }
 
                 // 2. 進行抽選
-                const { drawn, updatedCards } = drawFromPool(poolData, count);
+                const { drawn, updatedCards } = drawFromPool(poolData, actualDrawCount);
 
                 if (drawn.length === 0) throw new Error('卡池目前已無獎項可供抽取。');
 
@@ -391,7 +402,7 @@ export default function OpenPackPage() {
                 // 4. 套用使用者資產更新 (扣除花費或消耗免費券)
                 const updateFields: any = {};
                 if (useTicketMode) {
-                    updateFields.freeDrawTickets = increment(-1);
+                    updateFields.freeDrawTickets = Math.max(0, tickets - 1);
                 } else if (cardPool.currency === 'p-point') {
                     updateFields.bonusPoints = increment(-cost);
                 } else {
@@ -569,7 +580,7 @@ export default function OpenPackPage() {
                         isLimitReachedForInitial={isLimitReachedForInitial}
                         isLoadingStats={isLoadingStats}
                         isUsingTicket={isUsingTicket}
-                        freeDrawTickets={userProfile?.freeDrawTickets || 0}
+                        freeDrawTickets={getEffectiveTicketCount(userProfile)}
                         performDraw={(count, forceTicket) => performDraw(count, forceTicket)}
                     />
                 </div>

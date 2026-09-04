@@ -33,7 +33,7 @@ export function FloatingLineButton({ systemConfig }: { systemConfig: SystemConfi
     if (!user || !firestore) {
       toast({
         title: '歡迎加入官方社群！',
-        description: '登入會員後點擊即可自動領取「免費首抽券 1 張」！'
+        description: '登入會員後點擊即可自動領取「免費抽卡券 1 張」！'
       });
       return;
     }
@@ -50,13 +50,13 @@ export function FloatingLineButton({ systemConfig }: { systemConfig: SystemConfi
           origin: { y: 0.7 }
         });
         toast({
-          title: '🎉 加入社群送首抽成功！',
+          title: '🎉 加入社群成功領取！',
           description: '感謝加入社群！已為您發送免費抽卡券 1 張，快去抽卡吧！'
         });
       } else if (res.alreadyClaimed) {
         toast({
           title: '歡迎前往官方社群！',
-          description: '您已領取過社群專屬免費首抽券，歡迎在社群與卡友交流！'
+          description: '您已領取過社群專屬免費抽卡券，歡迎在社群與卡友交流！'
         });
       }
     } catch (err: any) {
@@ -82,38 +82,35 @@ export function FloatingLineButton({ systemConfig }: { systemConfig: SystemConfi
               setIsLiveVisible(false);
             }}
             className={cn(
-              "absolute -top-1.5 -right-1.5 z-[60] p-1 rounded-full border shadow-md",
-              "bg-slate-950/90 backdrop-blur-md border-red-500/40 text-red-300",
-              "hover:bg-red-600 hover:text-white hover:border-red-400 transition-all duration-200",
-              "cursor-pointer"
+              "absolute -top-2.5 -right-2.5 sm:-top-3 sm:-right-3 z-[60] w-6 h-6 flex items-center justify-center rounded-full border shadow-xl transition-all duration-200",
+              "bg-slate-950/95 backdrop-blur-md border-red-500/50 text-red-300",
+              "hover:bg-red-600 hover:text-white hover:border-red-400 cursor-pointer active:scale-95"
             )}
-            title="關閉直播球"
+            title="關閉直播按鈕"
           >
-            <X className="w-2.5 h-2.5 stroke-[2.5]" />
+            <X className="w-3.5 h-3.5 stroke-[2.5]" />
           </button>
 
           <Link
             href={systemConfig.liveYoutubeUrl}
             target="_blank"
             rel="noopener noreferrer"
+            title="LIVE直播"
             className={cn(
-              "flex flex-col items-center justify-center w-15 h-15 md:w-18 md:h-18",
-              "rounded-full shadow-[0_0_25px_rgba(239,68,68,0.45)] transition-all duration-300",
-              "bg-red-600/95 backdrop-blur-xl border-2 border-red-400/60",
+              "flex items-center justify-center w-[72px] h-[72px] sm:w-20 sm:h-20",
+              "rounded-full shadow-[0_0_30px_rgba(239,68,68,0.5)] transition-all duration-300",
+              "bg-red-600/95 backdrop-blur-xl border-2 border-red-400/70",
               "hover:scale-105 active:scale-95",
-              "hover:bg-red-600 hover:shadow-[0_0_35px_rgba(239,68,68,0.7)]"
+              "hover:bg-red-600 hover:shadow-[0_0_40px_rgba(239,68,68,0.8)]"
             )}
           >
-            <div className="relative">
-              <Radio className="w-6 h-6 md:w-8 md:h-8 text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.9)]" />
-              <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+            <div className="relative flex items-center justify-center">
+              <Radio className="w-8 h-8 sm:w-9 sm:h-9 text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.9)]" />
+              <span className="absolute -top-1 -right-1 flex h-3 w-3">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white shadow-sm"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-white shadow-sm"></span>
               </span>
             </div>
-            <span className="text-[10px] md:text-[11px] font-black text-white mt-0.5 whitespace-nowrap tracking-tight">
-              LIVE直播
-            </span>
           </Link>
         </div>
       )}
@@ -127,59 +124,55 @@ export function FloatingLineButton({ systemConfig }: { systemConfig: SystemConfi
               setIsSupportVisible(false);
             }}
             className={cn(
-              "absolute -top-1.5 -right-1.5 z-[60] p-1 rounded-full border shadow-md",
-              "bg-slate-950/90 backdrop-blur-md border-[#06C755]/40 text-[#06C755]",
-              "hover:bg-[#06C755] hover:text-slate-950 hover:border-[#06C755] transition-all duration-200",
-              "cursor-pointer"
+              "absolute -top-2.5 -right-2.5 sm:-top-3 sm:-right-3 z-[60] w-6 h-6 flex items-center justify-center rounded-full border shadow-xl transition-all duration-200",
+              "bg-slate-950/95 backdrop-blur-md border-[#06C755]/50 text-[#06C755]",
+              "hover:bg-[#06C755] hover:text-slate-950 hover:border-[#06C755] cursor-pointer active:scale-95"
             )}
-            title="關閉客服球"
+            title="關閉客服按鈕"
           >
-            <X className="w-2.5 h-2.5 stroke-[2.5]" />
+            <X className="w-3.5 h-3.5 stroke-[2.5]" />
           </button>
 
           <Link
             href={systemConfig.supportLineUrl}
             target="_blank"
             rel="noopener noreferrer"
+            title="LINE客服"
             className={cn(
-              "flex flex-col items-center justify-center w-15 h-15 md:w-18 md:h-18",
-              "rounded-full shadow-[0_0_25px_rgba(6,199,85,0.4)] transition-all duration-300",
-              "bg-[#080d19]/95 backdrop-blur-xl border-2 border-[#06C755]/60",
+              "flex items-center justify-center w-[72px] h-[72px] sm:w-20 sm:h-20",
+              "rounded-full shadow-[0_0_30px_rgba(6,199,85,0.45)] transition-all duration-300",
+              "bg-[#080d19]/95 backdrop-blur-xl border-2 border-[#06C755]/70",
               "hover:scale-105 active:scale-95",
-              "hover:border-[#06C755] hover:shadow-[0_0_35px_rgba(6,199,85,0.7)]"
+              "hover:border-[#06C755] hover:shadow-[0_0_40px_rgba(6,199,85,0.8)]"
             )}
           >
-            <div className="relative">
-              <MessageCircleCode className="w-6 h-6 md:w-8 md:h-8 text-[#06C755] drop-shadow-[0_0_10px_rgba(6,199,85,0.9)]" />
-              <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+            <div className="relative flex items-center justify-center">
+              <MessageCircleCode className="w-8 h-8 sm:w-9 sm:h-9 text-[#06C755] drop-shadow-[0_0_12px_rgba(6,199,85,0.9)]" />
+              <span className="absolute -top-1 -right-1 flex h-3 w-3">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#06C755] opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#06C755] shadow-sm"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-[#06C755] shadow-sm"></span>
               </span>
             </div>
-            <span className="text-[10px] md:text-[11px] font-black text-[#06C755] mt-0.5 whitespace-nowrap tracking-tight">
-              LINE客服
-            </span>
           </Link>
         </div>
       )}
 
       {/* 社群跳球 */}
       {systemConfig?.isCommunityEnabled && systemConfig.communityUrl && isCommunityVisible && (
-        <div className="relative group/community">
+        <div className="relative group/community flex items-center">
           <button
             onClick={(e) => {
               e.preventDefault();
               setIsCommunityVisible(false);
             }}
             className={cn(
-              "absolute -top-1.5 -right-1.5 z-[60] p-1 rounded-full border shadow-md",
-              "bg-slate-950/90 backdrop-blur-md border-blue-400/50 text-blue-300",
-              "hover:bg-blue-600 hover:text-white hover:border-blue-300 transition-all duration-200",
-              "cursor-pointer"
+              "absolute -top-2.5 -right-2.5 sm:-top-3 sm:-right-3 z-[60] w-6 h-6 flex items-center justify-center rounded-full border shadow-xl transition-all duration-200",
+              "bg-slate-950/95 backdrop-blur-md border-blue-400/50 text-blue-300",
+              "hover:bg-red-600 hover:text-white hover:border-red-400 cursor-pointer active:scale-95"
             )}
-            title="關閉社群球"
+            title="關閉社群按鈕"
           >
-            <X className="w-2.5 h-2.5 stroke-[2.5]" />
+            <X className="w-3.5 h-3.5 stroke-[2.5]" />
           </button>
 
           <Link
@@ -187,29 +180,22 @@ export function FloatingLineButton({ systemConfig }: { systemConfig: SystemConfi
             target="_blank"
             rel="noopener noreferrer"
             onClick={handleCommunityClick}
+            title="加入官方社群（領取免費券）"
             className={cn(
-              "flex flex-col items-center justify-center w-15 h-15 md:w-18 md:h-18 relative",
-              "rounded-full shadow-[0_0_25px_rgba(59,130,246,0.45)] transition-all duration-300",
-              "bg-[#080d19]/95 backdrop-blur-xl border-2 border-blue-500/60",
+              "flex items-center justify-center w-[72px] h-[72px] sm:w-20 sm:h-20 relative",
+              "rounded-full shadow-[0_0_30px_rgba(59,130,246,0.5)] transition-all duration-300",
+              "bg-[#080d19]/95 backdrop-blur-xl border-2 border-blue-500/70",
               "hover:scale-105 active:scale-95",
-              "hover:border-blue-400 hover:shadow-[0_0_35px_rgba(59,130,246,0.7)]"
+              "hover:border-blue-400 hover:shadow-[0_0_40px_rgba(59,130,246,0.8)]"
             )}
           >
-            {/* 首抽獎勵徽章 */}
-            <span className="absolute -top-2 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 text-slate-950 text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-[0_0_10px_rgba(245,158,11,0.5)] border border-amber-200 animate-bounce whitespace-nowrap z-10 flex items-center gap-0.5">
-              <Sparkles className="w-2.5 h-2.5 fill-slate-950" /> 送首抽
-            </span>
-
-            <div className="relative">
-              <Users className="w-6 h-6 md:w-8 md:h-8 text-blue-400 drop-shadow-[0_0_10px_rgba(59,130,246,0.9)]" />
-              <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+            <div className="relative flex items-center justify-center">
+              <Users className="w-8 h-8 sm:w-9 sm:h-9 text-blue-400 drop-shadow-[0_0_12px_rgba(59,130,246,0.9)]" />
+              <span className="absolute -top-1 -right-1 flex h-3 w-3">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-400 shadow-sm"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-400 shadow-sm"></span>
               </span>
             </div>
-            <span className="text-[10px] md:text-[11px] font-black text-blue-400 mt-0.5 whitespace-nowrap tracking-tight">
-              加入社群
-            </span>
           </Link>
         </div>
       )}

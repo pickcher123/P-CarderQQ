@@ -11,6 +11,7 @@ import { FloatingLineButton } from "@/components/floating-line-button";
 import { InstallPWAButton } from "@/components/install-pwa-button";
 import type { SystemConfig } from "@/types/system";
 import { usePathname } from "next/navigation";
+import { useFeatureFlags } from "@/hooks/use-feature-flags";
 
 export default function MainLayout({
   children,
@@ -21,8 +22,9 @@ export default function MainLayout({
   const pathname = usePathname();
   const systemConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'systemConfig', 'main') : null, [firestore]);
   const { data: systemConfig } = useDoc<SystemConfig>(systemConfigRef);
+  const { isFeatureEnabled } = useFeatureFlags(systemConfig);
   
-  const isMarqueeVisible = systemConfig?.featureFlags?.isMarqueeEnabled !== false;
+  const isMarqueeVisible = isFeatureEnabled('isMarqueeEnabled', true);
   const isOpenPackPage = pathname.startsWith('/draw/open');
   const isDrawing = pathname.startsWith('/draw');
   

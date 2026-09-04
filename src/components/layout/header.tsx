@@ -9,7 +9,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { doc } from 'firebase/firestore';
 import type { UserProfile } from '@/types/user-profile';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import type { SystemConfig } from '@/types/system';
 import { userLevels } from '@/components/member-level-crown';
@@ -17,13 +17,17 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Badge } from '@/components/ui/badge';
 import { PurchasePointsDialog } from '@/components/purchase-points-dialog';
 import { PromoRedeemModal } from '@/components/events/PromoRedeemModal';
+import { syncLocalPromoClaimsToFirestore } from '@/lib/promo-draw-service';
 import { useToast } from '@/hooks/use-toast';
+import { useFeatureFlags } from '@/hooks/use-feature-flags';
 
 const navLinks = [
-  { href: '/draw', label: '抽卡', icon: Package, color: "text-cyan-400" },
-  { href: '/bet', label: '拼卡', icon: CrossedCardsIcon, color: "text-rose-400" },
-  { href: '/lucky-bags', label: '福袋', icon: LuckyBagIcon, color: "text-amber-400" },
-  { href: '/group-break', label: '團拆', icon: Users2, color: "text-emerald-400" },
+  { href: '/draw', label: '抽卡', icon: Package, color: "text-cyan-400", flag: 'isDrawEnabled' },
+  { href: '/bet', label: '拼卡', icon: CrossedCardsIcon, color: "text-rose-400", flag: 'isBettingEnabled' },
+  { href: '/lucky-bags', label: '福袋', icon: LuckyBagIcon, color: "text-amber-400", flag: 'isLuckyBagEnabled' },
+  { href: '/group-break', label: '團拆', icon: Users2, color: "text-emerald-400", flag: 'isGroupBreakEnabled' },
+  { href: '/predictions', label: '賽事預測', icon: Trophy, color: "text-yellow-400", flag: 'isPredictionsEnabled' },
+  { href: '/exhibitions', label: '卡展行事曆', icon: Calendar, color: "text-cyan-400", flag: 'isExhibitionsEnabled' },
   { href: '/collection', label: '收藏庫', icon: Library, color: "text-cyan-300/80" },
 ];
 
@@ -35,6 +39,7 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
   const pathname = usePathname();
   const { toast } = useToast();
   const [isPromoModalOpen, setIsPromoModalOpen] = useState(false);
+  const { isFeatureEnabled } = useFeatureFlags(systemConfig);
 
   const handleLogout = async () => {
     if (auth) {
@@ -49,6 +54,15 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
   }, [firestore, user]);
 
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
+
+  // 用戶登入時自動同步本地儲存之領券福利至 Firestore
+  useEffect(() => {
+    if (user && firestore) {
+      syncLocalPromoClaimsToFirestore(firestore, user.uid).catch((e) => {
+        console.warn('Auto sync promo claims in header warning:', e);
+      });
+    }
+  }, [user, firestore]);
   
   const currentLevel = userProfile?.userLevel || '新手收藏家';
   const levelInfo = userLevels.find(l => l.level === currentLevel) || userLevels[0];
@@ -63,43 +77,39 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
       {/* 底部高科技細微霓虹線 */}
       <div className="absolute bottom-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/40 to-transparent pointer-events-none" />
 
-      <div className="container flex h-14 sm:h-16 items-center px-3 sm:px-4 md:px-8">
-        <div className="mr-auto flex items-center ml-0.5 sm:ml-1">
-          <Logo className="text-primary" />
-          <nav className="ml-6 hidden items-center space-x-6 text-sm font-medium md:flex">
+      <div className="container flex h-14 sm:h-16 items-center justify-between px-2 sm:px-4 md:px-8 gap-1 sm:gap-4">
+        <div className="flex items-center shrink-0">
+          <Logo className="text-primary shrink-0" />
+          <nav className="ml-4 lg:ml-6 hidden items-center space-x-3 lg:space-x-4 xl:space-x-5 text-sm font-medium md:flex">
             {navLinks
                 .filter(link => {
-                    if (link.href === '/draw' && systemConfig?.featureFlags?.isDrawEnabled === false) return false;
-                    if (link.href === '/bet' && systemConfig?.featureFlags?.isBettingEnabled === false) return false;
-                    if (link.href === '/lucky-bags' && systemConfig?.featureFlags?.isLuckyBagEnabled === false) return false;
-                    if (link.href === '/group-break' && systemConfig?.featureFlags?.isGroupBreakEnabled === false) return false;
+                    if (link.flag && !isFeatureEnabled(link.flag)) return false;
                     return true;
                 })
                 .map((link) => {
-              const isActive = pathname.startsWith(link.href);
               const Icon = link.icon;
+              const isActive = pathname.startsWith(link.href);
               return (
                 <Link
                   key={link.href}
                   href={link.href}
                   className={cn(
-                    "flex items-center gap-2 transition-all duration-300 hover:opacity-100",
+                    "flex items-center gap-1.5 transition-all duration-300 hover:opacity-100 whitespace-nowrap",
                     isActive ? "text-foreground font-bold scale-105" : "text-muted-foreground opacity-70"
                   )}
                 >
                   <Icon className={cn(
                     "h-4 w-4 transition-all duration-300", 
-                    isActive ? link.color : "text-muted-foreground",
-                    link.href === '/profile' && isActive && "fill-accent/20"
+                    isActive ? link.color : "text-muted-foreground"
                   )} />
-                  {link.label}
+                  <span>{link.label}</span>
                 </Link>
               );
             })}
           </nav>
         </div>
         
-        <div className="flex flex-1 items-center justify-end gap-2 sm:gap-3.5">
+        <div className="flex flex-1 items-center justify-end gap-1.5 sm:gap-3 shrink-0">
             {user && userProfile?.role === 'admin' && (
               <Button variant="outline" size="sm" asChild className="hidden lg:flex h-8 px-3 rounded-xl border-destructive/40 text-destructive bg-destructive/5 hover:bg-destructive/15">
                 <Link href="/admin">
@@ -109,6 +119,25 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
               </Button>
             )}
 
+            {/* 🎁 免費領券按鈕 (移動至鑽石旁邊) */}
+            <button
+              type="button"
+              id="header-free-ticket-btn"
+              onClick={() => setIsPromoModalOpen(true)}
+              className="relative flex items-center justify-center gap-1 sm:gap-1.5 h-8 sm:h-9 px-2 sm:px-3 rounded-full bg-gradient-to-r from-pink-500/20 via-rose-500/20 to-pink-500/15 border border-pink-500/40 hover:border-pink-400/80 shadow-[0_0_12px_rgba(244,63,94,0.2)] text-pink-300 hover:text-white transition-all duration-200 group cursor-pointer shrink-0"
+              title="免費領券"
+            >
+              <div className="relative flex items-center justify-center">
+                <Gift className="h-4 w-4 text-pink-400 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300" />
+                {/* 手機版微型發光紅點 */}
+                <span className="sm:hidden absolute -top-1 -right-1 w-2 h-2 rounded-full bg-pink-500 border border-pink-200 animate-pulse shadow-[0_0_6px_rgba(244,63,94,0.8)]" />
+              </div>
+              <span className="text-xs font-bold tracking-tight hidden sm:inline">免費領券</span>
+              <span className="hidden sm:inline-block text-[9px] font-black px-1.5 py-0.5 rounded-full bg-pink-500/25 text-pink-200 border border-pink-400/40 leading-none shadow-sm">
+                送券
+              </span>
+            </button>
+
             {/* 點數區塊 (電競晶鑽膠囊) */}
             {user && (
               <div className="flex items-center">
@@ -117,13 +146,13 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                     <PopoverTrigger asChild>
                       <button 
                         id="header-points-trigger"
-                        className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 h-full hover:bg-cyan-500/10 active:bg-cyan-500/20 transition-all duration-200 group outline-none"
+                        className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 h-full hover:bg-cyan-500/10 active:bg-cyan-500/20 transition-all duration-200 group outline-none"
                       >
                         <div className="relative flex items-center justify-center">
                           <DiamondIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 drop-shadow-[0_0_10px_rgba(34,211,238,0.9)] group-hover:scale-110 transition-transform duration-300" />
                           <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-cyan-300 animate-ping opacity-75 pointer-events-none" />
                         </div>
-                        <span className="font-mono font-black text-xs sm:text-sm text-cyan-200 tracking-tight drop-shadow truncate max-w-[70px] sm:max-w-none">
+                        <span className="font-mono font-black text-xs sm:text-sm text-cyan-200 tracking-tight drop-shadow truncate max-w-[55px] xs:max-w-[75px] sm:max-w-none">
                           {isProfileLoading ? '...' : (userProfile?.points ?? 0).toLocaleString()}
                         </span>
                         <ChevronDown className="h-3 w-3 text-cyan-400/70 group-hover:text-cyan-300 group-hover:translate-y-0.5 transition-all duration-200" />

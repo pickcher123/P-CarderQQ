@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronRight, Trophy, Sparkles, Newspaper, Calendar, ShieldCheck, Zap, Target, Megaphone, Users2, Disc3, ArrowRight, Flame, Gift } from 'lucide-react';
 import { LuckyBagIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
-import { useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { useAuth, useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, limit, doc } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -25,7 +25,10 @@ import { HallOfFameMarquee } from '@/components/hall-of-fame-marquee';
 import { PoolCard } from '@/components/pool-card';
 import type { CardPool, CardItem } from '@/types';
 import { PromoRedeemModal } from '@/components/events/PromoRedeemModal';
+import { HomeFeatureNav } from '@/components/home/HomeFeatureNav';
 import { useToast } from '@/hooks/use-toast';
+import { claimCommunityFreeDraw } from '@/lib/promo-draw-service';
+import confetti from 'canvas-confetti';
 
 interface NewsItem {
     id: string;
@@ -46,11 +49,13 @@ interface Partner {
 }
 
 export default function Home() {
+  const { user } = useAuth();
   const firestore = useFirestore();
   const { toast } = useToast();
   const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isPromoModalOpen, setIsPromoModalOpen] = useState(false);
+  const [isClaimingCommunity, setIsClaimingCommunity] = useState(false);
 
   const newsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -89,6 +94,47 @@ export default function Home() {
     return doc(firestore, 'systemConfig', 'main');
   }, [firestore]);
   const { data: systemConfig } = useDoc<any>(systemConfigRef);
+
+  const handleCommunityJoin = async () => {
+    const targetUrl = systemConfig?.communityUrl || 'https://line.me/ti/g2/';
+
+    if (!user || !firestore) {
+      toast({
+        title: '歡迎加入官方社群！',
+        description: '登入會員後點擊加入官方社群，即可自動領取「免費抽卡券 1 張」！'
+      });
+      window.open(targetUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    if (isClaimingCommunity) return;
+    setIsClaimingCommunity(true);
+
+    try {
+      const res = await claimCommunityFreeDraw(firestore, user.uid, '官方社群');
+      if (res.success && !res.alreadyClaimed) {
+        confetti({
+          particleCount: 80,
+          spread: 80,
+          origin: { y: 0.6 }
+        });
+        toast({
+          title: '🎉 成功領取免費抽卡券！',
+          description: '已為您的帳號存入 1 張免費抽卡券！即將開啟官方社群，快與卡友們一同交流！'
+        });
+      } else if (res.alreadyClaimed) {
+        toast({
+          title: '歡迎前往官方社群！',
+          description: '您已領取過專屬免費抽卡券，歡迎在官方社群與各路卡友交流心得！'
+        });
+      }
+    } catch (err: any) {
+      console.error('Error claiming community reward:', err);
+    } finally {
+      setIsClaimingCommunity(false);
+      window.open(targetUrl, '_blank', 'noopener,noreferrer');
+    }
+  };
 
   const allCardsMap = useMemo(() => {
     const map = new Map<string, CardItem>();
@@ -154,6 +200,12 @@ export default function Home() {
         <div className="absolute bottom-0 inset-x-0 h-16 bg-gradient-to-t from-background/90 to-transparent pointer-events-none z-[5]" />
       </section>
 
+      {/* 🎪 首頁功能導覽橫條 (包含抽卡、拼卡、福袋、團拆、賽事預測、卡展行事曆、免費領券等) */}
+      <HomeFeatureNav
+        systemConfig={systemConfig}
+        onOpenPromoModal={() => setIsPromoModalOpen(true)}
+      />
+
       {/* 首頁熱門推薦卡池 */}
       {featuredPools && featuredPools.length > 0 && (
         <section className="py-4 sm:py-8 container px-3 sm:px-4 max-w-7xl mx-auto">
@@ -187,28 +239,39 @@ export default function Home() {
       )}
 
       {/* 最新消息中心 */}
-      <section className="relative py-10 sm:py-14 bg-gradient-to-b from-slate-950/60 via-slate-900/40 to-slate-950/60 border-y border-slate-800/80 overflow-hidden">
+      <section className="relative py-12 sm:py-16 bg-gradient-to-b from-slate-950/80 via-slate-900/50 to-slate-950/80 border-y border-slate-800/80 overflow-hidden">
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-amber-500/5 rounded-full blur-[140px] pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-amber-500/5 rounded-full blur-[120px] pointer-events-none" />
         <div className="container relative z-10 px-3 sm:px-4 max-w-7xl mx-auto">
             
-            {/* Header */}
-            <div className="p-3 sm:p-4 rounded-2xl bg-gradient-to-r from-slate-900/90 via-slate-950/90 to-slate-900/90 border border-slate-800/80 backdrop-blur-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 shadow-lg">
-                <div className="flex items-center gap-2.5">
-                    <div className="p-2 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
-                        <Newspaper className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
+            {/* Header - 旗艦級美化標題橫幅 */}
+            <div className="relative p-4 sm:p-6 rounded-3xl bg-gradient-to-r from-slate-900/95 via-slate-950/95 to-slate-900/95 border border-slate-800/90 backdrop-blur-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 shadow-[0_12px_40px_rgba(0,0,0,0.6)] ring-1 ring-white/5 overflow-hidden">
+                <div className="absolute -top-16 left-1/3 w-64 h-32 bg-amber-500/10 blur-3xl rounded-full pointer-events-none" />
+                
+                <div className="flex items-center gap-3.5 sm:gap-4 relative z-10">
+                    <div className="p-3 sm:p-3.5 rounded-2xl bg-gradient-to-br from-amber-400/20 via-amber-500/10 to-amber-600/5 border border-amber-400/30 text-amber-300 shadow-[0_0_20px_rgba(245,158,11,0.2)] flex items-center justify-center">
+                        <Newspaper className="w-5 h-5 sm:w-6 sm:h-6 text-amber-300 drop-shadow-[0_0_8px_rgba(245,158,11,0.6)]" />
                     </div>
                     <div>
-                        <h2 className="text-base sm:text-lg font-black font-headline tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-100 to-yellow-400 drop-shadow-[0_0_12px_rgba(245,158,11,0.3)]">
-                            最新消息中心
-                        </h2>
-                        <p className="text-[11px] text-slate-400 hidden sm:block">官方即時資訊 · 活動快訊與公告</p>
+                        <div className="flex items-center gap-2.5 mb-1">
+                            <h2 className="text-xl sm:text-2xl md:text-3xl font-black font-headline tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-100 to-yellow-400 drop-shadow-[0_2px_15px_rgba(245,158,11,0.3)]">
+                                最新消息中心
+                            </h2>
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[11px] font-bold shadow-sm">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                即時快訊
+                            </span>
+                        </div>
+                        <p className="text-xs sm:text-sm text-slate-400 font-medium">
+                            官方即時資訊 · 掌握第一手活動快訊、重磅卡池與公告
+                        </p>
                     </div>
                 </div>
 
-                <Button variant="ghost" asChild className="hover:bg-slate-800 h-9 px-3.5 rounded-xl font-bold text-slate-300 hover:text-white self-end sm:self-auto text-xs">
-                    <Link href="/news" className="flex items-center gap-1.5">
+                <Button variant="ghost" asChild className="relative z-10 hover:bg-slate-800/90 h-10 px-4 rounded-xl font-bold text-amber-300 hover:text-amber-200 border border-amber-500/25 hover:border-amber-400/50 bg-slate-900/70 shadow-md self-start sm:self-auto text-xs transition-all duration-300 hover:shadow-[0_0_20px_rgba(245,158,11,0.2)]">
+                    <Link href="/news" className="flex items-center gap-2">
                         <span>查看完整消息庫</span>
-                        <ChevronRight className="h-3.5 w-3.5" />
+                        <ChevronRight className="h-4 w-4" />
                     </Link>
                 </Button>
             </div>
@@ -276,8 +339,8 @@ export default function Home() {
                                                     </span>
                                                 </div>
 
-                                                <span className="text-[10px] text-slate-400/80 font-mono tracking-wider uppercase bg-black/40 backdrop-blur-sm px-2 py-0.5 rounded border border-white/5">
-                                                  NEWS
+                                                <span className="text-[10px] text-slate-400 font-medium bg-black/40 backdrop-blur-sm px-2 py-0.5 rounded border border-white/5">
+                                                  最新快報
                                                 </span>
                                             </div>
 
@@ -323,13 +386,8 @@ export default function Home() {
           <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-[120px] pointer-events-none" />
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff04_1px,transparent_1px),linear-gradient(to_bottom,#ffffff04_1px,transparent_1px)] bg-[size:28px_28px] pointer-events-none opacity-60" />
 
-          {/* 區塊標題區 */}
+          {/* 區塊標題區 - 已移除多餘的英文副標 */}
           <div className="text-center mb-12 sm:mb-16 space-y-3.5 relative z-10">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-amber-500/5 border border-amber-500/30 text-amber-300 text-xs font-black tracking-widest uppercase shadow-[0_0_20px_rgba(245,158,11,0.15)]">
-              <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-              <span>CORE ADVANTAGES · 核心優勢</span>
-            </div>
-
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black font-headline tracking-tight text-white drop-shadow-sm">
               為什麼選擇 <span className="bg-clip-text text-transparent bg-gradient-to-r from-amber-300 via-amber-400 to-yellow-400 drop-shadow-[0_0_25px_rgba(245,158,11,0.4)]">P+Carder</span>
             </h2>
@@ -343,7 +401,6 @@ export default function Home() {
             {[
               { 
                 num: '01',
-                subTag: 'AUTHENTICITY',
                 badge: '100% 實體存證',
                 title: '公開透明存證', 
                 desc: '每一張核心卡片皆經數位存證與實物封裝比對，確保來源真實、所有權清晰，打造最值得信賴的收藏環境。', 
@@ -357,7 +414,6 @@ export default function Home() {
               },
               { 
                 num: '02',
-                subTag: 'FAIRNESS',
                 badge: '全公開演算法',
                 title: '公平機率披露', 
                 desc: '絕不隱藏任何數據，所有卡池機率與剩餘大獎數量即時完全公開披露，杜絕黑箱，讓每次抽取都憑實力與運氣。', 
@@ -371,7 +427,6 @@ export default function Home() {
               },
               { 
                 num: '03',
-                subTag: 'REAL-TIME VFX',
                 badge: '60FPS 撕卡特效',
                 title: '極致開包張力', 
                 desc: '打破實體卡片空間限制，隨時隨地享受極具張力的次世代全息開包特效，將收藏熱忱轉化為指尖的極致快感。', 
@@ -385,17 +440,17 @@ export default function Home() {
               },
               { 
                 num: '04',
-                subTag: 'COMMUNITY',
-                badge: '藏家即時連線',
+                badge: '🎁 送免費抽卡券',
                 title: '專屬藏友社群', 
-                desc: '集結頂級球員卡愛好者！支援線上多人團拆、交流珍稀卡片與玩家互動競技，建立屬於你的球員卡核心交友圈。', 
+                desc: '集結頂級球員卡愛好者！現在點擊加入官方社群，即可免費領取抽卡券 1 張，與廣大卡友交流珍稀卡片與心得。', 
                 icon: Users2, 
                 theme: 'emerald',
                 gradient: 'from-emerald-500/20 via-emerald-500/5 to-transparent',
                 border: 'hover:border-emerald-400/60 hover:shadow-[0_12px_40px_rgba(16,185,129,0.2)]',
                 iconWrap: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30 shadow-[0_0_20px_rgba(16,185,129,0.25)]',
-                tagClass: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
-                featurePills: ['多人同屏團拆', '專屬藏友交流'],
+                tagClass: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 animate-pulse',
+                featurePills: ['加入領抽卡券', '專屬藏友交流'],
+                isCommunity: true,
               },
             ].map((item, i) => (
               <div 
@@ -426,11 +481,8 @@ export default function Home() {
                     </div>
                   </div>
 
-                  {/* 標題與簡介 */}
+                  {/* 標題與簡介 - 已刪除多餘的英文副標 */}
                   <div className="space-y-2.5 mb-5">
-                    <div className="text-[10px] font-mono tracking-widest text-slate-400 font-bold uppercase">
-                      {item.subTag}
-                    </div>
                     <h3 className="text-lg sm:text-xl font-black text-white group-hover:text-amber-300 transition-colors font-headline tracking-wide">
                       {item.title}
                     </h3>
@@ -440,17 +492,33 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* 底部功能亮點膠囊標籤 */}
-                <div className="pt-4 mt-2 border-t border-slate-800/80 flex flex-wrap items-center gap-1.5">
-                  {item.featurePills.map((pill, pIndex) => (
-                    <span 
-                      key={pIndex} 
-                      className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-[11px] text-slate-400 group-hover:text-slate-200 group-hover:border-slate-700 transition-colors font-medium flex items-center gap-1"
+                <div>
+                  {/* 底部功能亮點膠囊標籤 */}
+                  <div className="pt-4 mt-2 border-t border-slate-800/80 flex flex-wrap items-center gap-1.5">
+                    {item.featurePills.map((pill, pIndex) => (
+                      <span 
+                        key={pIndex} 
+                        className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-[11px] text-slate-400 group-hover:text-slate-200 group-hover:border-slate-700 transition-colors font-medium flex items-center gap-1"
+                      >
+                        <span className="w-1 h-1 rounded-full bg-amber-400/80" />
+                        {pill}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* 社群專屬加入領取按鈕 */}
+                  {item.isCommunity && (
+                    <Button
+                      type="button"
+                      onClick={handleCommunityJoin}
+                      disabled={isClaimingCommunity}
+                      className="mt-4 w-full py-2.5 h-auto rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs flex items-center justify-center gap-1.5 shadow-[0_0_20px_rgba(16,185,129,0.35)] hover:shadow-[0_0_25px_rgba(16,185,129,0.5)] transition-all active:scale-95 cursor-pointer"
                     >
-                      <span className="w-1 h-1 rounded-full bg-amber-400/80" />
-                      {pill}
-                    </span>
-                  ))}
+                      <Gift className="w-3.5 h-3.5 text-slate-950" />
+                      <span>{isClaimingCommunity ? '領取中...' : '加入官方社群 · 領免費抽卡券'}</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Button>
+                  )}
                 </div>
               </div>
             ))}
