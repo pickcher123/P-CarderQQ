@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import '@/lib/safe-json';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { cn } from "@/lib/utils";

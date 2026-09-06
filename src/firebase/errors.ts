@@ -292,10 +292,17 @@ export class FirestorePermissionError extends Error {
   }
 
   toJSON() {
-    return {
-      name: this.name,
-      message: this.message,
-      request: this.request,
-    };
+    try {
+      return {
+        name: this.name,
+        message: this.message,
+        request: this.request ? deepCleanForJSON(this.request) : null,
+      };
+    } catch {
+      return {
+        name: this.name,
+        message: this.message,
+      };
+    }
   }
 }

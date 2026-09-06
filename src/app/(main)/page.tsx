@@ -25,7 +25,6 @@ import { HallOfFameMarquee } from '@/components/hall-of-fame-marquee';
 import { PoolCard } from '@/components/pool-card';
 import type { CardPool, CardItem } from '@/types';
 import { PromoRedeemModal } from '@/components/events/PromoRedeemModal';
-import { HomeFeatureNav } from '@/components/home/HomeFeatureNav';
 import { useToast } from '@/hooks/use-toast';
 import { claimCommunityFreeDraw } from '@/lib/promo-draw-service';
 import confetti from 'canvas-confetti';
@@ -199,12 +198,6 @@ export default function Home() {
         {/* 底部平滑過渡流光帶 */}
         <div className="absolute bottom-0 inset-x-0 h-16 bg-gradient-to-t from-background/90 to-transparent pointer-events-none z-[5]" />
       </section>
-
-      {/* 🎪 首頁功能導覽橫條 (包含抽卡、拼卡、福袋、團拆、賽事預測、卡展行事曆、免費領券等) */}
-      <HomeFeatureNav
-        systemConfig={systemConfig}
-        onOpenPromoModal={() => setIsPromoModalOpen(true)}
-      />
 
       {/* 首頁熱門推薦卡池 */}
       {featuredPools && featuredPools.length > 0 && (
