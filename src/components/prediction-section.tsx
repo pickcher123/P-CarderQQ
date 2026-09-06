@@ -25,12 +25,10 @@ import {
     Search,
     User,
     ArrowUpRight,
-    Flame,
     X,
     TrendingUp,
     ListFilter,
     Medal,
-    Swords,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PPlusIcon } from '@/components/icons';
@@ -305,33 +303,15 @@ export function PredictionSection({
 
     return (
         <div className="space-y-7 w-full">
-            {/* 優化後的精緻圖像化標頭 */}
+            {/* 置中排版與優化後的精緻標頭 */}
             {!hideHeader && (
-                <div className="space-y-3 text-left">
-                    <div className="flex items-center gap-2">
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-mono font-bold uppercase tracking-wider">
-                            <Flame className="w-3.5 h-3.5 text-amber-400" />
-                            PREDICTIONS & SPORTS ORACLE
-                        </span>
-                        <span className="text-xs text-slate-500 font-mono hidden sm:inline-block">
-                            · 全服先知勝率擂台
-                        </span>
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 border-b border-slate-800/80 pb-5">
-                        <div>
-                            <h2 className="text-2xl sm:text-4xl font-black font-headline tracking-tight text-white flex items-center gap-2.5">
-                                <span>賽事先知 · 預測擂台</span>
-                            </h2>
-                            <p className="text-xs sm:text-sm text-slate-400 mt-1.5 leading-relaxed">
-                                競猜即時熱門球賽與球星數據 · 猜對即享高額 P+ 點數並晉升先知勝率榮譽榜
-                            </p>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-slate-400 font-mono bg-slate-900/80 px-3.5 py-2 rounded-2xl border border-slate-800 shrink-0">
-                            <Swords className="w-4 h-4 text-amber-400" />
-                            <span>共 <strong className="text-amber-400 font-black text-sm">{events?.length || 0}</strong> 場競猜賽事</span>
-                        </div>
-                    </div>
+                <div className="text-center space-y-2 border-b border-slate-800/80 pb-6 pt-1">
+                    <h1 className="text-2xl sm:text-4xl font-black font-headline tracking-tight text-white">
+                        賽事先知 · 預測擂台
+                    </h1>
+                    <p className="text-xs sm:text-sm text-slate-400 max-w-xl mx-auto leading-relaxed">
+                        競猜即時熱門球賽與球星數據 · 猜對即享高額 P+ 點數並晉升先知勝率榮譽榜
+                    </p>
                 </div>
             )}
 
