@@ -717,15 +717,15 @@ export default function OpenPackPage() {
                             damping: 12,
                             mass: 1.2
                         }}
-                        className="flex flex-col items-center w-[min(60vw,200px)] sm:w-[220px] relative max-h-[46dvh] aspect-[2.5/4]"
+                        className="flex flex-col items-center w-[min(65vw,215px)] sm:w-[235px] relative max-h-[50dvh] aspect-[2.5/3.5]"
                     >
                         <div className={cn(
-                            "relative p-1 bg-slate-900 border-[4px] sm:border-[5px] border-slate-950 rounded-[1.8rem] sm:rounded-[2.2rem] shadow-2xl overflow-hidden w-full h-full transition-all duration-700", 
+                            "relative p-0.5 sm:p-1 bg-slate-900 border-[3px] sm:border-[4px] border-slate-950 rounded-[1.4rem] sm:rounded-[1.6rem] shadow-2xl overflow-hidden w-full h-full transition-all duration-700 flex items-center justify-center", 
                             step === 'revealing' && revealPercent === 100 && visual.glow
                         )}>
                             <div 
                                 ref={squeezeRef} 
-                                className="relative bg-transparent rounded-[1rem] border-[3px] sm:border-[4px] border-slate-950 overflow-hidden w-full h-full flex items-center justify-center touch-none cursor-pointer select-none transition-transform duration-100"
+                                className="relative bg-transparent rounded-[1.1rem] sm:rounded-[1.3rem] border-2 border-slate-950/60 overflow-hidden w-full h-full flex items-center justify-center touch-none cursor-pointer select-none transition-transform duration-100"
                                 style={{ transform: isSqueezing ? `perspective(1000px) rotateX(${revealPercent * 0.2}deg) rotateY(-${revealPercent * 0.1}deg) scale(1.03)` : 'none' }}
                                 onPointerDown={handleSqueezeStart} 
                                 onPointerMove={handleSqueezeMove} 
@@ -733,12 +733,12 @@ export default function OpenPackPage() {
                                 onPointerCancel={handleSqueezeEnd}
                             >
                                 <div className={cn(
-                                    "relative w-full h-full z-10 flex items-center justify-center pointer-events-none p-1 select-none transition-opacity duration-200",
+                                    "relative w-full h-full z-10 flex items-center justify-center pointer-events-none select-none transition-opacity duration-200",
                                     isChanging ? "opacity-0" : "opacity-100"
                                 )}>
                                     {currentPrize && (
                                         (currentPrize.type === 'card' || currentPrize.type === 'last-prize') ? (
-                                            <div className="relative w-full h-full rounded-lg sm:rounded-xl overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+                                            <div className="relative w-full h-full rounded-xl overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)]">
                                                 <CardItem 
                                                     name={currentPrize.name} 
                                                     imageUrl={currentPrize.imageUrl} 
@@ -751,12 +751,13 @@ export default function OpenPackPage() {
                                                 />
                                             </div>
                                         ) : (
-                                            <div className="relative w-full h-full rounded-lg sm:rounded-xl overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+                                            <div className="relative w-full h-full rounded-xl overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)]">
                                                 <RandomPlayerCard 
                                                     rarity={currentPrize.rarity} 
                                                     points={currentPrize.points} 
                                                     title={currentPrize.rarity === 'rare' || currentPrize.rarity === 'legendary' ? '隨機球員 特卡' : '隨機球員 普/特 卡'} 
                                                     showBuybackHint={false} 
+                                                    className="w-full h-full !rounded-xl"
                                                 />
                                             </div>
                                         )
@@ -765,7 +766,7 @@ export default function OpenPackPage() {
                                 
                                 <div 
                                     className={cn(
-                                        "absolute inset-0 z-30 bg-slate-900 rounded-lg sm:rounded-xl border-2 sm:border-4 border-primary/50 flex flex-col items-center justify-center pointer-events-none select-none shadow-[inset_0_0_20px_rgba(6,182,212,0.3)]",
+                                        "absolute inset-0 z-30 bg-slate-900 rounded-[1.1rem] sm:rounded-[1.3rem] border-2 sm:border-3 border-primary/50 flex flex-col items-center justify-center pointer-events-none select-none shadow-[inset_0_0_20px_rgba(6,182,212,0.3)]",
                                         (!isSqueezing && (revealPercent === 0 || isChanging)) ? "" : "transition-all duration-500 ease-out",
                                         (revealPercent >= 100) ? "opacity-0" : "opacity-100"
                                     )} 
