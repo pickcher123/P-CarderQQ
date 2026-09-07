@@ -19,7 +19,6 @@ import {
     Clock,
     MapPin,
     ExternalLink,
-    Sparkles,
     Info,
     Search,
     Navigation,
@@ -28,7 +27,6 @@ import {
     Flame,
     ChevronRight,
     Compass,
-    Ticket,
 } from 'lucide-react';
 import { NextExhibitionCard, extractCity, getCityTheme, type Exhibition } from '@/components/next-exhibition-card';
 
@@ -130,33 +128,17 @@ export function CardExhibitionCalendar({
     return (
         <div className={cn("text-white space-y-6 w-full", !hideHeader && "py-2 sm:py-4")}>
             
-            {/* 優化後的精緻圖像化標頭 */}
+            {/* 置中排版與優化後的精緻標頭 */}
             {!hideHeader && (
-                <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-mono font-bold uppercase tracking-wider">
-                            <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-                            CARD EXPO & EVENTS CALENDAR
+                <div className="text-center space-y-2.5 border-b border-slate-800/80 pb-6 pt-1">
+                    <h1 className="text-2xl sm:text-4xl font-black font-headline tracking-tight">
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-200 via-sky-300 to-blue-400 drop-shadow-[0_2px_14px_rgba(6,182,212,0.25)]">
+                            全台卡展 · 展訊行事曆
                         </span>
-                        <span className="text-xs text-slate-500 font-mono hidden sm:inline-block">
-                            · 全台卡友實體展覽速報
-                        </span>
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 border-b border-slate-800/80 pb-5">
-                        <div>
-                            <h2 className="text-2xl sm:text-4xl font-black font-headline tracking-tight text-white flex items-center gap-2.5">
-                                <span>全台卡展 · 展訊行事曆</span>
-                            </h2>
-                            <p className="text-xs sm:text-sm text-slate-400 mt-1.5 leading-relaxed">
-                                彙整全台球員卡特展、卡友市集與交流盛會 · 支援即時地圖導航與展期倒數
-                            </p>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-slate-400 font-mono bg-slate-900/80 px-3.5 py-2 rounded-2xl border border-slate-800 shrink-0">
-                            <Ticket className="w-4 h-4 text-cyan-400" />
-                            <span>近期共 <strong className="text-cyan-400 font-black text-sm">{upcomingExhibitions.length}</strong> 場卡展</span>
-                        </div>
-                    </div>
+                    </h1>
+                    <p className="text-xs sm:text-sm text-slate-400 max-w-xl mx-auto leading-relaxed">
+                        彙整全台球員卡特展、卡友市集與交流盛會 · 支援<span className="text-cyan-300 font-semibold">即時地圖導航</span>與展期倒數
+                    </p>
                 </div>
             )}
             
@@ -291,10 +273,23 @@ export function CardExhibitionCalendar({
                                                 const startDate = new Date(exh.date.seconds * 1000);
                                                 const endDate = exh.endDate ? new Date(exh.endDate.seconds * 1000) : null;
                                                 const isSameDay = !endDate || format(startDate, 'yyyyMMdd') === format(endDate, 'yyyyMMdd');
+                                                const isSameMonth = !endDate || format(startDate, 'yyyyMM') === format(endDate, 'yyyyMM');
                                                 const dayOfMonth = format(startDate, 'dd');
                                                 const endDayOfMonth = endDate ? format(endDate, 'dd') : null;
                                                 const daysOfWeek = ['日', '一', '二', '三', '四', '五', '六'];
-                                                const dayName = daysOfWeek[startDate.getDay()];
+                                                const startDayName = daysOfWeek[startDate.getDay()];
+                                                const endDayName = endDate ? daysOfWeek[endDate.getDay()] : null;
+
+                                                // 計算標題星期與展期標示 (如：週日、週二–三、跨月展)
+                                                let weekdayLabel = `週${startDayName}`;
+                                                if (!isSameDay) {
+                                                    if (isSameMonth) {
+                                                        weekdayLabel = startDayName === endDayName ? `週${startDayName}` : `週${startDayName}–${endDayName}`;
+                                                    } else {
+                                                        weekdayLabel = '跨月展';
+                                                    }
+                                                }
+
                                                 const city = extractCity(exh.location);
                                                 const cityTheme = getCityTheme(city);
                                                 const isNext = nextExhibition?.id === exh.id;
@@ -316,20 +311,44 @@ export function CardExhibitionCalendar({
                                                                 : "border-slate-800/80 hover:border-slate-700"
                                                         )}
                                                     >
-                                                        {/* 左側：精美日曆票券方塊 */}
+                                                        {/* 左側：精美日曆票券方塊 (自適應單日與多日活動，告別文字擠壓與邊框溢出) */}
                                                         <div className="flex items-center gap-3 shrink-0">
                                                             <div className={cn(
-                                                                "w-13 sm:w-15 h-13 sm:h-15 rounded-2xl flex flex-col items-center justify-center font-mono border text-center transition-all shadow-inner shrink-0",
+                                                                "w-[66px] sm:w-[72px] h-[60px] sm:h-[64px] rounded-xl sm:rounded-2xl flex flex-col justify-between border text-center transition-all shadow-inner shrink-0 overflow-hidden",
                                                                 isNext 
-                                                                    ? "bg-gradient-to-b from-cyan-500/20 to-cyan-950/40 border-cyan-500/50 text-cyan-300 shadow-[0_0_10px_rgba(6,182,212,0.15)]" 
-                                                                    : "bg-slate-950 border-slate-800 text-slate-300 group-hover:border-slate-700"
+                                                                    ? "bg-gradient-to-b from-cyan-950/60 via-slate-950 to-slate-950 border-cyan-500/60 shadow-[0_0_12px_rgba(6,182,212,0.2)] ring-1 ring-cyan-500/30" 
+                                                                    : "bg-slate-950 border-slate-800 group-hover:border-slate-700"
                                                             )}>
-                                                                <span className="text-[10px] font-black opacity-80 uppercase leading-none">
-                                                                    週{dayName}
-                                                                </span>
-                                                                <span className="text-base sm:text-xl font-black text-white leading-tight mt-0.5">
-                                                                    {isSameDay ? dayOfMonth : `${dayOfMonth}-${endDayOfMonth}`}
-                                                                </span>
+                                                                {/* 頂部星期/跨日標籤條 */}
+                                                                <div className={cn(
+                                                                    "w-full py-1 px-1 border-b text-[10px] sm:text-[11px] font-black leading-none tracking-tight flex items-center justify-center truncate",
+                                                                    isNext
+                                                                        ? "bg-cyan-500/20 border-cyan-500/30 text-cyan-300"
+                                                                        : "bg-white/[0.05] border-slate-800/90 text-slate-400 group-hover:text-slate-300"
+                                                                )}>
+                                                                    {weekdayLabel}
+                                                                </div>
+
+                                                                {/* 核心日期區塊 */}
+                                                                <div className="w-full flex-1 flex items-center justify-center px-1 py-0.5">
+                                                                    {isSameDay ? (
+                                                                        <span className="text-xl sm:text-2xl font-black text-white font-mono tracking-tight leading-none">
+                                                                            {dayOfMonth}
+                                                                        </span>
+                                                                    ) : isSameMonth ? (
+                                                                        <div className="flex items-center justify-center gap-0.5 font-mono leading-none">
+                                                                            <span className="text-sm sm:text-base font-black text-white tracking-tight">{dayOfMonth}</span>
+                                                                            <span className="text-[10px] sm:text-xs text-slate-400 font-bold px-0.5 -translate-y-px">~</span>
+                                                                            <span className="text-sm sm:text-base font-black text-white tracking-tight">{endDayOfMonth}</span>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div className="flex items-center justify-center gap-0.5 font-mono text-[10px] sm:text-xs font-black text-white leading-tight">
+                                                                            <span>{format(startDate, 'M/d')}</span>
+                                                                            <span className="text-slate-400 font-normal">~</span>
+                                                                            <span>{format(endDate!, 'M/d')}</span>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
                                                             </div>
                                                         </div>
 

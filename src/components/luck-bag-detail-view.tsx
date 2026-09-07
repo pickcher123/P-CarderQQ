@@ -144,13 +144,6 @@ const PrizeDisplayCard = ({
                     isFlippable={false} 
                 />
             </div>
-
-            {/* Title & Info */}
-            <div className="mt-2.5 text-center flex-1 flex flex-col justify-center">
-                <p className={cn("font-bold text-xs sm:text-[13px] line-clamp-2 leading-snug transition-colors", tierStyles.textColor)}>
-                    {card.name}
-                </p>
-            </div>
         </div>
     );
 }; 
@@ -756,9 +749,6 @@ export function LuckBagDetailView({ luckBag }: { luckBag: LuckBagWithCount }) {
                     </DialogTitle>
                     {previewCard && (
                         <div className="w-full flex flex-col items-center gap-4 pt-4">
-                            <h2 className="text-base sm:text-lg font-black text-white text-center px-4 drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
-                                {previewCard.name}
-                            </h2>
                             <div className="w-[85%] sm:w-full max-w-[320px] aspect-[4/5] drop-shadow-[0_15px_35px_rgba(0,0,0,0.9)]">
                                 <CardItem 
                                     name={previewCard.name} 

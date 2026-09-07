@@ -177,8 +177,10 @@ export function FanZoneBentoGrid() {
                     <span className="text-[10px] font-mono font-black text-amber-400/90 uppercase tracking-wider block">
                       SPORTS PREDICTIONS & ORACLE
                     </span>
-                    <h3 className="text-lg sm:text-xl font-black font-headline text-white flex items-center gap-2">
-                      <span>賽事先知 · 預測擂台</span>
+                    <h3 className="text-lg sm:text-xl font-black font-headline flex items-center gap-2">
+                      <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-400">
+                        賽事先知 · 預測擂台
+                      </span>
                     </h3>
                   </div>
                 </div>
@@ -289,8 +291,10 @@ export function FanZoneBentoGrid() {
                     <span className="text-[10px] font-mono font-bold text-cyan-400/90 uppercase tracking-wider block">
                       EXPO RADAR
                     </span>
-                    <h3 className="text-base font-black text-white flex items-center gap-1.5">
-                      <span>全台卡展 · 展訊雷達</span>
+                    <h3 className="text-base font-black flex items-center gap-1.5">
+                      <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-200 via-sky-300 to-blue-400">
+                        全台卡展 · 展訊雷達
+                      </span>
                     </h3>
                   </div>
                 </div>

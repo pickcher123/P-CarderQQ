@@ -19,10 +19,7 @@ export function CardPreviewItem({ name, imageUrl, priority = false }: CardPrevie
             className="object-cover transition-transform duration-300 group-hover:scale-105"
             priority={priority}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 p-2">
-            <p className="text-xs font-bold text-white truncate drop-shadow-md">{name}</p>
-        </div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
     </div>
   );
 }

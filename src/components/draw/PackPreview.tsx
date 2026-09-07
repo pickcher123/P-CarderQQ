@@ -21,6 +21,8 @@ export function PackPreview({
     performDraw,
     performTrialDraw,
     isUsingTicket = false,
+    isUsingEventTicket = false,
+    eventPoolTickets = 0,
     freeDrawTickets = 0
 }: {
     cardPool: CardPool,
@@ -28,25 +30,32 @@ export function PackPreview({
     isLevelMet: boolean,
     isLimitReachedForInitial: boolean,
     isLoadingStats: boolean,
-    performDraw: (_count: number, _forceUseTicket?: boolean) => void,
+    performDraw: (_count: number, _forceUseTicket?: boolean, _forceUseEventTicket?: boolean) => void,
     performTrialDraw?: (_count: number) => void,
     isUsingTicket?: boolean,
+    isUsingEventTicket?: boolean,
+    eventPoolTickets?: number,
     freeDrawTickets?: number
 }) {
     const [useTicketMode, setUseTicketMode] = useState<boolean>(isUsingTicket);
     const [isPromoModalOpen, setIsPromoModalOpen] = useState(false);
     const [localRefresh, setLocalRefresh] = useState(0);
 
+    const isEventExclusive = !!(cardPool.isEventPool && cardPool.exclusiveTicketOnly);
+    const isEventMode = isUsingEventTicket || isEventExclusive;
+
     const effectiveTickets = Math.max(freeDrawTickets, getEffectiveTicketCount());
-    const actualDrawCount = useTicketMode ? 1 : initialDrawCount;
+    const actualDrawCount = isEventMode ? initialDrawCount : (useTicketMode ? 1 : initialDrawCount);
 
     const isPPoint = cardPool.currency === 'p-point';
-    const cost = useTicketMode ? 0 : (actualDrawCount === 3 && cardPool.price3Draws ? cardPool.price3Draws : (cardPool.price || 0) * actualDrawCount);
-    const isFreeDrawAllowed = !useTicketMode || cardPool.allowFreeDraw !== false;
-    const hasEnoughTickets = !useTicketMode || effectiveTickets >= 1;
+    const cost = (isEventMode || useTicketMode) ? 0 : (actualDrawCount === 3 && cardPool.price3Draws ? cardPool.price3Draws : (cardPool.price || 0) * actualDrawCount);
+    const isFreeDrawAllowed = isEventMode ? true : (!useTicketMode || cardPool.allowFreeDraw !== false);
+    const hasEnoughTickets = isEventMode 
+        ? eventPoolTickets >= actualDrawCount 
+        : (!useTicketMode || effectiveTickets >= 1);
     const canStart = isLevelMet && !isLimitReachedForInitial && !isLoadingStats && hasEnoughTickets && isFreeDrawAllowed;
 
-    const canToggleTicket = cardPool.allowFreeDraw !== false;
+    const canToggleTicket = !isEventMode && cardPool.allowFreeDraw !== false;
 
     return (
         <div className="flex flex-col items-center justify-center min-h-[100dvh] p-3 sm:p-4 py-4 sm:py-8 relative select-none w-full max-w-md mx-auto">
@@ -67,7 +76,7 @@ export function PackPreview({
                         <div className="space-y-0.5">
                             <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-amber-400/80 flex items-center justify-center gap-1">
                                 <Sparkles className="w-3 h-3 text-amber-400" />
-                                {useTicketMode ? '🎟️ 活動免費兌換券開獎確認' : '拆卡抽賞確認'}
+                                {isEventMode ? '🎪 活動限定專屬卡池開獎' : useTicketMode ? '🎟️ 活動免費兌換券開獎確認' : '拆卡抽賞確認'}
                             </p>
                             <h2 className="text-base sm:text-xl font-headline font-black text-white italic tracking-tight line-clamp-2 px-1">
                                 {cardPool.name}
@@ -75,8 +84,34 @@ export function PackPreview({
                         </div>
                     </div>
 
-                    {/* 🎟️ 免費券使用詢問與切換區塊 (如果卡池支援且用戶持有免費券) */}
-                    {canToggleTicket && (
+                    {/* 活動限定專屬券專用指示區塊 */}
+                    {isEventMode ? (
+                        <div className="p-3 rounded-2xl bg-purple-950/70 border border-purple-500/40 text-left space-y-2">
+                            <div className="flex items-center justify-between flex-wrap gap-2">
+                                <span className="text-xs font-black text-purple-200 flex items-center gap-1.5">
+                                    <Ticket className="w-4 h-4 text-amber-400" />
+                                    <span>【{cardPool.eventTicketName || '專屬活動抽卡券'}】</span>
+                                </span>
+                                <span className={cn(
+                                    "font-mono font-black text-xs px-2.5 py-0.5 rounded-full border",
+                                    eventPoolTickets >= actualDrawCount
+                                        ? "bg-purple-900/80 border-purple-400/50 text-amber-300"
+                                        : "bg-rose-950/80 border-rose-500/40 text-rose-300"
+                                )}>
+                                    持有: {eventPoolTickets} 張 (需 {actualDrawCount} 張)
+                                </span>
+                            </div>
+                            <p className="text-[11px] text-slate-300 leading-relaxed">
+                                此為專屬限定活動卡池，僅限使用管理員審核派發之專屬抽卡券。
+                            </p>
+                            {cardPool.eventRules && (
+                                <p className="text-[11px] text-purple-200 leading-relaxed pt-1.5 border-t border-purple-500/20">
+                                    <span className="font-bold text-amber-300">活動規則：</span>{cardPool.eventRules}
+                                </p>
+                            )}
+                        </div>
+                    ) : canToggleTicket ? (
+                        /* 🎟️ 免費券使用詢問與切換區塊 (如果卡池支援且用戶持有免費券) */
                         <div className="p-2.5 sm:p-3 rounded-2xl bg-slate-950/90 border border-emerald-500/30 space-y-2">
                             <div className="flex items-center justify-between px-1">
                                 <span className="text-[11px] font-bold text-slate-300 flex items-center gap-1.5">
@@ -129,7 +164,7 @@ export function PackPreview({
                                 </button>
                             </div>
                         </div>
-                    )}
+                    ) : null}
 
                     {/* Stats Grid */}
                     <div className="grid grid-cols-2 gap-2 sm:gap-3 p-2.5 sm:p-3 bg-slate-950/90 rounded-2xl border border-slate-800/80 shadow-inner">
@@ -140,7 +175,11 @@ export function PackPreview({
                         <div className="p-2 sm:p-3 bg-slate-900/80 rounded-xl border border-slate-800 text-center space-y-0.5">
                             <span className="text-[9px] sm:text-[10px] text-slate-400 font-extrabold block uppercase tracking-wider">花費金額</span>
                             <div className="flex items-center justify-center gap-1 text-base sm:text-lg font-black text-amber-400 font-code">
-                                {useTicketMode ? (
+                                {isEventMode ? (
+                                    <span className="text-purple-300 font-black text-xs sm:text-sm flex items-center gap-1">
+                                        <Ticket className="w-3.5 h-3.5 text-amber-400" /> 0 點 (消耗 {actualDrawCount} 張專屬券)
+                                    </span>
+                                ) : useTicketMode ? (
                                     <span className="text-emerald-400 font-black text-xs sm:text-sm flex items-center gap-1">
                                         <Ticket className="w-3.5 h-3.5 text-amber-400" /> 0 點 (消耗 1 張券)
                                     </span>
@@ -232,7 +271,7 @@ export function PackPreview({
 
                     {/* CTA Action Buttons */}
                     <div className="space-y-2">
-                        {useTicketMode && !hasEnoughTickets && (
+                        {!isEventMode && useTicketMode && !hasEnoughTickets && (
                             <Button
                                 type="button"
                                 variant="outline"
@@ -249,19 +288,23 @@ export function PackPreview({
                             className={cn(
                                 "w-full h-12 sm:h-14 text-base sm:text-lg font-black rounded-2xl shadow-2xl transition-all border-b-4 active:translate-y-1 active:border-b-0 cursor-pointer",
                                 canStart 
-                                    ? useTicketMode
-                                        ? "bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-slate-950 border-emerald-800 hover:brightness-110 shadow-emerald-500/30"
-                                        : "bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-slate-950 border-amber-800 hover:brightness-110 shadow-amber-500/20" 
+                                    ? isEventMode
+                                        ? "bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 text-white border-purple-900 hover:brightness-110 shadow-purple-500/30"
+                                        : useTicketMode
+                                            ? "bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-slate-950 border-emerald-800 hover:brightness-110 shadow-emerald-500/30"
+                                            : "bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-slate-950 border-amber-800 hover:brightness-110 shadow-amber-500/20" 
                                     : "bg-slate-800 text-slate-500 border-slate-950 cursor-not-allowed opacity-60"
                             )}
                             onClick={() => {
-                                if (useTicketMode && !hasEnoughTickets) {
+                                if (!isEventMode && useTicketMode && !hasEnoughTickets) {
                                     setIsPromoModalOpen(true);
                                     return;
                                 }
-                                if (canStart) performDraw(actualDrawCount, useTicketMode);
+                                if (canStart) {
+                                    performDraw(actualDrawCount, !isEventMode && useTicketMode, isEventMode);
+                                }
                             }}
-                            disabled={!canStart && (!useTicketMode || hasEnoughTickets)}
+                            disabled={!canStart && (isEventMode ? true : (!useTicketMode || hasEnoughTickets))}
                         >
                             {isLoadingStats ? (
                                 <><Loader2 className="animate-spin mr-2 h-5 w-5 sm:h-6 sm:w-6" /> 驗證中...</>
@@ -269,6 +312,10 @@ export function PackPreview({
                                 <><Ban className="mr-2 h-5 w-5 sm:h-6 sm:w-6 text-rose-400" /> 今日次數已用完</>
                             ) : !isLevelMet ? (
                                 <><Ban className="mr-2 h-5 w-5 sm:h-6 sm:w-6 text-rose-400" /> 權限不足 ({cardPool.minLevel})</>
+                            ) : isEventMode && !hasEnoughTickets ? (
+                                <><Ban className="mr-2 h-5 w-5 sm:h-6 sm:w-6 text-rose-400" /> 專屬券不足 (持有 {eventPoolTickets} 張 / 需 {actualDrawCount} 張)</>
+                            ) : isEventMode ? (
+                                <><Ticket className="mr-2 h-5 w-5 sm:h-6 sm:w-6 text-amber-300" /> 🎪 消耗專屬券啟動開獎 ({actualDrawCount} 抽)</>
                             ) : useTicketMode && !isFreeDrawAllowed ? (
                                 <><Ban className="mr-2 h-5 w-5 sm:h-6 sm:w-6 text-rose-400" /> 此卡池未開放免費券兌換</>
                             ) : useTicketMode && !hasEnoughTickets ? (

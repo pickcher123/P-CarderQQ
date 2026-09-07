@@ -45,6 +45,9 @@ interface CardPool {
   order?: number;
   status?: 'draft' | 'published';
   allowFreeDraw?: boolean;
+  isEventPool?: boolean;
+  exclusiveTicketOnly?: boolean;
+  eventTicketName?: string;
 }
 
 export default function CardPoolsAdminPage() {
@@ -187,12 +190,24 @@ export default function CardPoolsAdminPage() {
             {cardPools?.sort((a,b) => (a.order ?? 0) - (b.order ?? 0)).map((pool) => (
               <TableRow key={pool.id} className="hover:bg-white/5 transition-colors group">
                 <TableCell className="pl-6">
-                    <button 
-                        onClick={() => router.push(`/admin/card-pools/p/${pool.id}`)}
-                        className="font-bold text-lg hover:text-primary transition-colors text-left"
-                    >
-                        {pool.name}
-                    </button>
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <button 
+                            onClick={() => router.push(`/admin/card-pools/p/${pool.id}`)}
+                            className="font-bold text-lg hover:text-primary transition-colors text-left"
+                        >
+                            {pool.name}
+                        </button>
+                        {pool.isEventPool && (
+                            <Badge className="bg-purple-500/20 text-purple-400 border border-purple-500/30 text-[10px] px-1.5 py-0">
+                                🎪 活動池
+                            </Badge>
+                        )}
+                        {pool.exclusiveTicketOnly && (
+                            <Badge className="bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] px-1.5 py-0">
+                                🔒 僅派券
+                            </Badge>
+                        )}
+                    </div>
                     <p className="text-xs text-muted-foreground truncate max-w-[300px] mt-0.5">{pool.description}</p>
                 </TableCell>
                 <TableCell>

@@ -154,6 +154,7 @@ export default function OpenPackPage() {
     const poolId = searchParams.get('poolId');
     const initialDrawCount = parseInt(searchParams.get('draws') || '1', 10);
     const isUsingTicket = searchParams.get('useTicket') === 'true';
+    const isUsingEventTicket = searchParams.get('useEventTicket') === 'true';
     
     const systemConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'systemConfig', 'main') : null, [firestore]);
     const { data: systemConfig } = useDoc<SystemConfig>(systemConfigRef);
@@ -296,8 +297,12 @@ export default function OpenPackPage() {
         }
     }, [cardPool, isLoadingCards, allCards, searchParams, step, initialDrawCount, performTrialDraw]);
 
-    const performDraw = useCallback(async (count: number, forceUseTicket?: boolean) => {
-        const useTicketMode = forceUseTicket !== undefined ? forceUseTicket : isUsingTicket;
+    const performDraw = useCallback(async (count: number, forceUseTicket?: boolean, forceUseEventTicket?: boolean) => {
+        const isEventExclusive = !!(cardPool?.isEventPool && cardPool?.exclusiveTicketOnly);
+        const useEventTicketMode = forceUseEventTicket !== undefined 
+            ? forceUseEventTicket 
+            : (isUsingEventTicket || isEventExclusive);
+        const useTicketMode = !useEventTicketMode && (forceUseTicket !== undefined ? forceUseTicket : isUsingTicket);
 
         if (!user) {
             toast({ variant: 'destructive', title: '請先登入', description: '正式開獎需要登入帳戶以扣除點數與發放卡牌。' });
@@ -340,6 +345,7 @@ export default function OpenPackPage() {
                         points: 1000,
                         bonusPoints: 0,
                         freeDrawTickets: 0,
+                        eventPoolTickets: {},
                         role: 'user',
                         userLevel: '普通會員',
                         createdAt: serverTimestamp()
@@ -360,18 +366,39 @@ export default function OpenPackPage() {
                     }
                 }
 
+                // 驗證活動專屬限制：若為 exclusiveTicketOnly，禁止一般貨幣/免費券抽卡
+                if (poolData.isEventPool && poolData.exclusiveTicketOnly && !useEventTicketMode) {
+                    throw new Error(`此卡池為專屬活動卡池，僅限使用管理員派發之【${poolData.eventTicketName || '專屬活動抽卡券'}】！`);
+                }
+
                 const actualDrawCount = useTicketMode ? 1 : count;
-                const cost = useTicketMode ? 0 : (actualDrawCount === 3 && cardPool.price3Draws ? cardPool.price3Draws : (cardPool.price || 0) * actualDrawCount);
+                const cost = (useEventTicketMode || useTicketMode) ? 0 : (actualDrawCount === 3 && cardPool.price3Draws ? cardPool.price3Draws : (cardPool.price || 0) * actualDrawCount);
                 const currencyField = cardPool.currency === 'p-point' ? 'bonusPoints' : 'points';
                 const balance = (userData as any)[currencyField] || 0;
                 const tickets = (userData as any).freeDrawTickets || 0;
                 const localTickets = getLocalAvailableTicketsCount();
 
-                if (useTicketMode) {
+                const eventTicketsMap = (userData as any).eventPoolTickets || {};
+                const currentEventTickets = typeof eventTicketsMap[poolId] === 'number' ? eventTicketsMap[poolId] : 0;
+
+                if (useEventTicketMode) {
+                    if (currentEventTickets < actualDrawCount) {
+                        throw new Error(`【${poolData.eventTicketName || '活動專屬抽卡券'}】不足！您持有 ${currentEventTickets} 張，本次需消耗 ${actualDrawCount} 張。此券僅能由管理員依活動規則指名派發。`);
+                    }
+                } else if (useTicketMode) {
                     if (poolData.allowFreeDraw === false) throw new Error('此卡池目前未開放免費抽卡券兌換。');
                     if (tickets < 1 && localTickets < 1) throw new Error('您的活動免費抽卡券不足，請先至選單中的免費領取活動獲取！');
                 } else {
                     if (balance < cost) throw new Error('點數不足，無法抽卡。');
+                }
+
+                // 檢查活動專屬每人最大抽取限制
+                if (poolData.isEventPool && poolData.eventMaxDrawsPerUser && poolData.eventMaxDrawsPerUser > 0) {
+                    const poolStatsData = poolStatsSnap.exists() ? poolStatsSnap.data() : { count: 0, totalCount: 0 };
+                    const userTotalDraws = (poolStatsData.totalCount || poolStatsData.count || 0);
+                    if (userTotalDraws + actualDrawCount > poolData.eventMaxDrawsPerUser) {
+                        throw new Error(`此活動卡池每位玩家最多僅限抽取 ${poolData.eventMaxDrawsPerUser} 次，您目前已累積抽取 ${userTotalDraws} 次。`);
+                    }
                 }
 
                 // 2. 進行抽選
@@ -390,18 +417,21 @@ export default function OpenPackPage() {
                         category: (prize as any).category,
                         rarity: (prize as any).rarity,
                         isFoil: (prize as any).rarity === 'legendary',
-                        source: useTicketMode ? 'promo_ticket_draw' : 'draw',
+                        source: useEventTicketMode ? 'event_ticket_draw' : (useTicketMode ? 'promo_ticket_draw' : 'draw'),
                         poolId: poolId,
                         serialNumber: serialNumber,
                         createdAt: serverTimestamp()
                     });
-                    // 同步更新本地顯示的 ID (雖然目前是用 prize.id，但我們可以多加資訊)
+                    // 同步更新本地顯示的 ID
                     (prize as any).serialNumber = serialNumber;
                 }
 
-                // 4. 套用使用者資產更新 (扣除花費或消耗免費券)
+                // 4. 套用使用者資產更新 (扣除專屬券、免費券或花費)
                 const updateFields: any = {};
-                if (useTicketMode) {
+                if (useEventTicketMode) {
+                    const nextTickets = Math.max(0, currentEventTickets - actualDrawCount);
+                    updateFields[`eventPoolTickets.${poolId}`] = nextTickets;
+                } else if (useTicketMode) {
                     updateFields.freeDrawTickets = Math.max(0, tickets - 1);
                 } else if (cardPool.currency === 'p-point') {
                     updateFields.bonusPoints = increment(-cost);
@@ -421,11 +451,13 @@ export default function OpenPackPage() {
                 transaction.set(transactionRef, {
                     userId: user.uid,
                     transactionType: 'Draw',
-                    currency: useTicketMode ? 'free_ticket' : (cardPool.currency || 'diamond'),
-                    amount: useTicketMode ? 0 : -cost,
-                    details: useTicketMode
-                        ? `在卡池 [${cardPool.name}] 使用活動免費抽卡券 (1抽)`
-                        : `在卡池 [${cardPool.name}] 進行 ${count} 連抽`,
+                    currency: useEventTicketMode ? 'event_ticket' : (useTicketMode ? 'free_ticket' : (cardPool.currency || 'diamond')),
+                    amount: (useEventTicketMode || useTicketMode) ? 0 : -cost,
+                    details: useEventTicketMode
+                        ? `在活動卡池 [${cardPool.name}] 使用專屬抽卡券【${cardPool.eventTicketName || '活動券'}】 (${actualDrawCount} 抽，剩餘 ${Math.max(0, currentEventTickets - actualDrawCount)} 張)`
+                        : (useTicketMode
+                            ? `在卡池 [${cardPool.name}] 使用活動免費抽卡券 (1抽)`
+                            : `在卡池 [${cardPool.name}] 進行 ${count} 連抽`),
                     transactionDate: serverTimestamp(),
                     section: 'draw'
                 });
@@ -438,16 +470,20 @@ export default function OpenPackPage() {
                     agentId: cardPool.agentId || null,
                     drawnAt: serverTimestamp(),
                     cost: cost,
-                    count: count,
-                    isTicket: useTicketMode
+                    count: actualDrawCount,
+                    isTicket: useTicketMode || useEventTicketMode,
+                    isEventTicket: useEventTicketMode,
+                    eventTicketName: useEventTicketMode ? (cardPool.eventTicketName || '活動專屬抽卡券') : null
                 });
                 
-                // 7. 更新統計 (統計邏輯)
+                // 7. 更新統計
                 const todayStr = format(new Date(), 'yyyy-MM-dd');
-                const poolStatsData = poolStatsSnap.exists() ? poolStatsSnap.data() : { count: 0, lastDrawDate: '' };
+                const poolStatsData = poolStatsSnap.exists() ? poolStatsSnap.data() : { count: 0, totalCount: 0, lastDrawDate: '' };
                 const newCount = (poolStatsData.lastDrawDate === todayStr ? (poolStatsData.count || 0) : 0) + drawn.length;
+                const newTotalCount = (poolStatsData.totalCount || poolStatsData.count || 0) + drawn.length;
                 transaction.set(poolStatsRef, {
                   count: newCount,
+                  totalCount: newTotalCount,
                   lastDrawDate: todayStr
                 }, { merge: true });
 
@@ -479,7 +515,7 @@ export default function OpenPackPage() {
                 });
             }
         }
-    }, [poolId, firestore, user, cardPool, isUsingTicket, toast]);
+    }, [poolId, firestore, user, cardPool, isUsingTicket, isUsingEventTicket, toast]);
 
     const handleSqueezeStart = (e: React.PointerEvent) => { 
         if (step !== 'ready-to-reveal' || isChanging) return; 
@@ -580,8 +616,10 @@ export default function OpenPackPage() {
                         isLimitReachedForInitial={isLimitReachedForInitial}
                         isLoadingStats={isLoadingStats}
                         isUsingTicket={isUsingTicket}
+                        isUsingEventTicket={isUsingEventTicket || !!(cardPool.isEventPool && cardPool.exclusiveTicketOnly)}
+                        eventPoolTickets={poolId && userProfile?.eventPoolTickets ? (userProfile.eventPoolTickets[poolId] || 0) : 0}
                         freeDrawTickets={getEffectiveTicketCount(userProfile)}
-                        performDraw={(count, forceTicket) => performDraw(count, forceTicket)}
+                        performDraw={(count, forceTicket, forceEventTicket) => performDraw(count, forceTicket, forceEventTicket)}
                     />
                 </div>
             </div>
@@ -717,10 +755,10 @@ export default function OpenPackPage() {
                             damping: 12,
                             mass: 1.2
                         }}
-                        className="flex flex-col items-center w-[min(65vw,215px)] sm:w-[235px] relative max-h-[50dvh] aspect-[2.5/3.5]"
+                        className="flex flex-col items-center w-[min(65vw,215px)] sm:w-[235px] relative"
                     >
                         <div className={cn(
-                            "relative p-0.5 sm:p-1 bg-slate-900 border-[3px] sm:border-[4px] border-slate-950 rounded-[1.4rem] sm:rounded-[1.6rem] shadow-2xl overflow-hidden w-full h-full transition-all duration-700 flex items-center justify-center", 
+                            "relative w-full aspect-[2.5/4] p-0.5 sm:p-1 bg-slate-900 border-[3px] sm:border-[4px] border-slate-950 rounded-[1.4rem] sm:rounded-[1.6rem] shadow-2xl overflow-hidden transition-all duration-700 flex items-center justify-center shrink-0", 
                             step === 'revealing' && revealPercent === 100 && visual.glow
                         )}>
                             <div 
@@ -747,6 +785,7 @@ export default function OpenPackPage() {
                                                     rarity={currentPrize.rarity} 
                                                     serialNumber={currentPrize.serialNumber} 
                                                     isFlippable={true} 
+                                                    className="w-full h-full aspect-[2.5/4]"
                                                     priority 
                                                 />
                                             </div>
@@ -757,7 +796,7 @@ export default function OpenPackPage() {
                                                     points={currentPrize.points} 
                                                     title={currentPrize.rarity === 'rare' || currentPrize.rarity === 'legendary' ? '隨機球員 特卡' : '隨機球員 普/特 卡'} 
                                                     showBuybackHint={false} 
-                                                    className="w-full h-full !rounded-xl"
+                                                    className="w-full h-full aspect-[2.5/4] !rounded-xl"
                                                 />
                                             </div>
                                         )
@@ -783,7 +822,7 @@ export default function OpenPackPage() {
                         </div>
 
                         {step === 'ready-to-reveal' && (
-                            <div className="flex items-center gap-2 mt-2 sm:mt-3">
+                            <div className="flex items-center gap-2 mt-3 sm:mt-4 shrink-0">
                                 <Button 
                                     variant="ghost" 
                                     size="sm" 
@@ -842,9 +881,6 @@ export default function OpenPackPage() {
                                             className="h-full"
                                             isFlippable={false}
                                         />
-                                        <div className="absolute inset-x-0 bottom-0 p-1.5 bg-gradient-to-t from-black/80 to-transparent flex items-center justify-center">
-                                            <span className="text-[9px] text-white/70 font-bold truncate max-w-full">{p.name}</span>
-                                        </div>
                                     </div>
                                 )}
                             </div>
@@ -927,6 +963,7 @@ export default function OpenPackPage() {
                                             cardPool={cardPool}
                                             performDraw={performDraw}
                                             freeDrawTickets={userProfile?.freeDrawTickets || 0}
+                                            eventPoolTickets={poolId && userProfile?.eventPoolTickets ? (userProfile.eventPoolTickets[poolId] || 0) : 0}
                                         />
                                     )}
                                 </div>
@@ -961,7 +998,6 @@ export default function OpenPackPage() {
                     <DialogTitle><VisuallyHiddenPrimitive.Root>卡片預覽</VisuallyHiddenPrimitive.Root></DialogTitle>
                     {previewCard && (
                         <div className="w-full flex flex-col items-center gap-2">
-                            <h2 className="text-xs sm:text-sm font-black text-white text-center px-2 uppercase truncate max-w-full">{previewCard.name}</h2>
                             <div className="w-full max-w-[260px] aspect-[2.5/4]">
                                 {previewCard.isPoints || previewCard.type === 'points' || previewCard.name?.includes('隨機球員') ? (
                                     <RandomPlayerCard 

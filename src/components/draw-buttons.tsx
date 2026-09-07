@@ -11,10 +11,11 @@ interface DrawButtonsProps {
     canDraw3: boolean;
     canDraw10: boolean;
     cardPool: CardPool | null;
-    performDraw: (_count: number, _forceUseTicket?: boolean) => void;
+    performDraw: (_count: number, _forceUseTicket?: boolean, _forceUseEventTicket?: boolean) => void;
     performTrialDraw?: (_count: number) => void;
     isTrialMode?: boolean;
     freeDrawTickets?: number;
+    eventPoolTickets?: number;
 }
 
 export function DrawButtons({
@@ -26,7 +27,8 @@ export function DrawButtons({
     performDraw,
     performTrialDraw,
     isTrialMode = false,
-    freeDrawTickets = 0
+    freeDrawTickets = 0,
+    eventPoolTickets = 0
 }: DrawButtonsProps) {
     const isPPoint = cardPool?.currency === 'p-point';
 
@@ -35,6 +37,52 @@ export function DrawButtons({
             <Button disabled className="w-full h-12 sm:h-14 text-xs sm:text-sm font-black rounded-xl sm:rounded-2xl bg-slate-800 text-slate-500 border border-slate-700 opacity-50 italic">
                 今日次數已用完
             </Button>
+        );
+    }
+
+    // 限定活動卡池專屬券模式
+    if (cardPool?.exclusiveTicketOnly && !isTrialMode) {
+        return (
+            <div className="flex flex-col gap-1.5 w-full">
+                <div className="flex gap-1.5 w-full">
+                    <Button
+                        className={cn(
+                            "flex-1 h-12 sm:h-14 text-xs sm:text-sm font-black rounded-xl sm:rounded-2xl transition-all shadow-xl flex flex-col items-center justify-center px-1 py-1 cursor-pointer",
+                            eventPoolTickets >= 1
+                                ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:brightness-110"
+                                : "bg-slate-900 text-slate-500 border border-slate-800 opacity-50 cursor-not-allowed"
+                        )}
+                        disabled={eventPoolTickets < 1 || (cardPool?.remainingPacks ?? 0) < 1}
+                        onClick={() => performDraw(1, false, true)}
+                    >
+                        <span className="flex items-center gap-1 font-black">
+                            <Ticket className="w-3.5 h-3.5 text-amber-300" />
+                            <span>再抽 1 次</span>
+                        </span>
+                        <span className="text-[10px] opacity-80">消耗 1 張專屬券</span>
+                    </Button>
+
+                    <Button
+                        className={cn(
+                            "flex-1 h-12 sm:h-14 text-xs sm:text-sm font-black rounded-xl sm:rounded-2xl transition-all shadow-xl flex flex-col items-center justify-center px-1 py-1 cursor-pointer",
+                            eventPoolTickets >= 3
+                                ? "bg-gradient-to-r from-purple-700 to-indigo-700 text-white hover:brightness-110"
+                                : "bg-slate-900 text-slate-500 border border-slate-800 opacity-50 cursor-not-allowed"
+                        )}
+                        disabled={eventPoolTickets < 3 || (cardPool?.remainingPacks ?? 0) < 3}
+                        onClick={() => performDraw(3, false, true)}
+                    >
+                        <span className="flex items-center gap-1 font-black">
+                            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                            <span>三連抽</span>
+                        </span>
+                        <span className="text-[10px] opacity-80">消耗 3 張專屬券</span>
+                    </Button>
+                </div>
+                <div className="text-center text-[10px] text-purple-300 font-bold py-0.5">
+                    持有【{cardPool?.eventTicketName || '專屬活動券'}】: {eventPoolTickets} 張
+                </div>
+            </div>
         );
     }
 

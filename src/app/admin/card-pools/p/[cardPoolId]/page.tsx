@@ -43,6 +43,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Badge } from '@/components/ui/badge';
 import { userLevels } from '@/components/member-level-crown';
 import { PPlusIcon } from '@/components/icons';
+import { EventTicketDispatchDialog, EventTicketDispatchLogs } from '@/components/admin/event-ticket-manager';
 
 
 const CATEGORIES = ["籃球", "棒球", "足球", "女孩卡", "女優", "TCG", "其他", "全部"];
@@ -92,6 +93,12 @@ interface CardPool {
   dailyLimit?: number;
   minLevel?: string;
   agentId?: string;
+  allowFreeDraw?: boolean;
+  isEventPool?: boolean;
+  exclusiveTicketOnly?: boolean;
+  eventTicketName?: string;
+  eventRules?: string;
+  eventMaxDrawsPerUser?: number;
 }
 
 interface CardData {
@@ -188,6 +195,8 @@ export default function CardPoolDetailPage() {
   const [startTimeValue, setStartTimeValue] = useState("00:00");
   
   const [newPointPrize, setNewPointPrize] = useState({ points: 100, quantity: 10, rarity: 'common' as Rarity });
+  const [isDispatchDialogOpen, setIsDispatchDialogOpen] = useState(false);
+  const [isLogsDialogOpen, setIsLogsDialogOpen] = useState(false);
 
   const agentsQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'agents') : null), [firestore]);
   const { data: agents } = useCollection<{ id: string, name: string }>(agentsQuery);
@@ -335,6 +344,12 @@ export default function CardPoolDetailPage() {
         dailyLimit: cardPool.dailyLimit || 0,
         minLevel: cardPool.minLevel || '新手收藏家',
         agentId: cardPool.agentId || '',
+        allowFreeDraw: cardPool.allowFreeDraw !== false,
+        isEventPool: cardPool.isEventPool || false,
+        exclusiveTicketOnly: cardPool.exclusiveTicketOnly || false,
+        eventTicketName: cardPool.eventTicketName || '活動專屬抽卡券',
+        eventRules: cardPool.eventRules || '',
+        eventMaxDrawsPerUser: cardPool.eventMaxDrawsPerUser || 0,
       };
       setPoolDetails(details);
       if (cardPool.expiresAt) {
@@ -845,6 +860,123 @@ export default function CardPoolDetailPage() {
                             </div>
                         </div>
 
+                        {/* 🎪 活動卡池與專屬抽卡規則設定 */}
+                        <div className="space-y-4 p-5 sm:p-6 rounded-2xl border-2 border-purple-200 bg-gradient-to-br from-purple-50/70 via-slate-50 to-amber-50/50 shadow-sm">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-purple-100 pb-3">
+                                <div className="space-y-1">
+                                    <div className="flex items-center gap-2">
+                                        <Badge className="bg-purple-600 text-white font-bold text-xs px-2.5 py-0.5">
+                                            EVENT POOL
+                                        </Badge>
+                                        <h3 className="text-base font-black text-slate-950 flex items-center gap-1.5">
+                                            <Sparkles className="w-4 h-4 text-purple-600" />
+                                            活動卡池與專屬抽卡規則
+                                        </h3>
+                                    </div>
+                                    <p className="text-xs text-slate-500">
+                                        將此卡池設為特定活動專屬，可啟用「僅限管理員派發專屬券抽取」等特殊運作規則。
+                                    </p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Label htmlFor="event-pool-switch" className="text-xs font-bold text-slate-700">
+                                        {poolDetails.isEventPool ? '已設為活動卡池' : '一般卡池'}
+                                    </Label>
+                                    <Switch
+                                        id="event-pool-switch"
+                                        checked={poolDetails.isEventPool || false}
+                                        onCheckedChange={(checked) => {
+                                            setPoolDetails({ ...poolDetails, isEventPool: checked });
+                                            handleUpdatePoolDetails('isEventPool', checked);
+                                        }}
+                                    />
+                                </div>
+                            </div>
+
+                            {poolDetails.isEventPool && (
+                                <div className="space-y-4 pt-1 animate-in fade-in-50 duration-200">
+                                    {/* 核心規則：只有我能派發抽卡券 */}
+                                    <div className="p-4 rounded-xl bg-white border-2 border-amber-300 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                        <div className="space-y-1">
+                                            <div className="flex items-center gap-2">
+                                                <ShieldCheck className="w-5 h-5 text-amber-600 shrink-0" />
+                                                <Label className="text-sm font-black text-slate-900 cursor-pointer">
+                                                    🔒 僅限管理員派發專屬券方可抽取（禁止鑽石/P幣直接抽）
+                                                </Label>
+                                            </div>
+                                            <p className="text-xs text-slate-500 pl-7">
+                                                啟用此規則後，一般玩家無法使用鑽石或P幣進行抽卡；只有獲得管理員親自指名派發專屬抽卡券的玩家方可抽取。
+                                            </p>
+                                        </div>
+                                        <Switch
+                                            checked={poolDetails.exclusiveTicketOnly || false}
+                                            onCheckedChange={(checked) => {
+                                                setPoolDetails({ ...poolDetails, exclusiveTicketOnly: checked });
+                                                handleUpdatePoolDetails('exclusiveTicketOnly', checked);
+                                            }}
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="space-y-1.5">
+                                            <Label className="text-xs font-bold text-slate-700">專屬活動券名稱</Label>
+                                            <Input
+                                                value={poolDetails.eventTicketName || ''}
+                                                placeholder="例如：2026週年慶特邀券、VIP專屬抽卡券"
+                                                onChange={(e) => setPoolDetails({ ...poolDetails, eventTicketName: e.target.value })}
+                                                onBlur={(e) => handleUpdatePoolDetails('eventTicketName', e.target.value)}
+                                                className="h-10 bg-white border-slate-200 text-sm font-medium"
+                                            />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <Label className="text-xs font-bold text-slate-700">單一玩家抽取上限（選填）</Label>
+                                            <Input
+                                                type="number"
+                                                min={0}
+                                                value={poolDetails.eventMaxDrawsPerUser || ''}
+                                                placeholder="0 表示依持有券數抽完為止"
+                                                onChange={(e) => setPoolDetails({ ...poolDetails, eventMaxDrawsPerUser: Number(e.target.value) })}
+                                                onBlur={(e) => handleUpdatePoolDetails('eventMaxDrawsPerUser', Number(e.target.value))}
+                                                className="h-10 bg-white border-slate-200 text-sm font-medium"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs font-bold text-slate-700">活動卡池規則與獲券資格說明</Label>
+                                        <Textarea
+                                            rows={2}
+                                            value={poolDetails.eventRules || ''}
+                                            placeholder="請說明此活動卡池的舉辦目的與資格（例如：本卡池為官方特邀玩家限定，抽卡券由官方於特定賽事或社群活動指名派發...）"
+                                            onChange={(e) => setPoolDetails({ ...poolDetails, eventRules: e.target.value })}
+                                            onBlur={(e) => handleUpdatePoolDetails('eventRules', e.target.value)}
+                                            className="bg-white border-slate-200 text-xs text-slate-800"
+                                        />
+                                    </div>
+
+                                    {/* 派發操作按鈕群 */}
+                                    <div className="pt-2 flex flex-wrap items-center gap-3">
+                                        <Button
+                                            type="button"
+                                            onClick={() => setIsDispatchDialogOpen(true)}
+                                            className="h-10 px-5 rounded-xl font-black bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md shadow-amber-500/20 flex items-center gap-2"
+                                        >
+                                            <Ticket className="w-4 h-4" />
+                                            派發專屬抽卡券給玩家
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() => setIsLogsDialogOpen(true)}
+                                            className="h-10 px-4 rounded-xl font-bold border-purple-200 text-purple-900 bg-white hover:bg-purple-50 flex items-center gap-2"
+                                        >
+                                            <Clock className="w-4 h-4 text-purple-600" />
+                                            查看本池派發記錄
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
                         <div className="space-y-3 p-5 bg-slate-50 border border-slate-100 rounded-xl">
                             <Label className="flex items-center gap-2 font-black text-slate-900 uppercase tracking-widest text-[10px]"><Gem className="h-4 w-4 text-primary"/> 支付幣別與結算貨幣</Label>
                             <RadioGroup 
@@ -1342,6 +1474,36 @@ export default function CardPoolDetailPage() {
                     {targetPrizeType === 'last' ? '確認選定為最後賞' : `確認配置 ${selectedCardsToAdd.length} 項資產`}
                 </Button>
             </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
+        {/* 🎟️ 派發專屬抽卡券 Dialog */}
+        <EventTicketDispatchDialog
+            open={isDispatchDialogOpen}
+            onOpenChange={setIsDispatchDialogOpen}
+            pool={{
+                id: cardPoolId,
+                name: poolDetails.name || '活動卡池',
+                isEventPool: poolDetails.isEventPool,
+                exclusiveTicketOnly: poolDetails.exclusiveTicketOnly,
+                eventTicketName: poolDetails.eventTicketName || '活動專屬抽卡券',
+            }}
+        />
+
+        {/* 📋 本池專屬抽卡券派發記錄 Dialog */}
+        <Dialog open={isLogsDialogOpen} onOpenChange={setIsLogsDialogOpen}>
+            <DialogContent className="max-w-4xl bg-slate-50 border-slate-200 p-6 rounded-3xl shadow-2xl max-h-[85vh] overflow-y-auto">
+                <DialogHeader>
+                    <DialogTitle className="text-xl font-black text-slate-900">
+                        【{poolDetails.name || '活動卡池'}】專屬抽卡券派發名單與稽核記錄
+                    </DialogTitle>
+                    <DialogDescription className="text-xs text-slate-500">
+                        查看本活動卡池所有已獲派專屬抽卡券之玩家名單、張數與派發備註。
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="pt-2">
+                    <EventTicketDispatchLogs poolId={cardPoolId} title="本卡池派發記錄" />
+                </div>
             </DialogContent>
         </Dialog>
     </div>

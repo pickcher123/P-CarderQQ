@@ -10,13 +10,15 @@ type Rarity = 'common' | 'rare' | 'legendary';
 
 type CardItemProps = {
   name: string;
-  imageUrl: string;
+  imageUrl?: string;
   backImageUrl?: string;
-  imageHint: string;
+  imageHint?: string;
   rarity?: Rarity;
   isFlippable?: boolean;
   onFlip?: () => void;
   priority?: boolean;
+  serialNumber?: string;
+  className?: string;
 };
 
 const rarityStyles = {
@@ -34,7 +36,18 @@ const rarityStyles = {
   },
 };
 
-export function CardItem({ name, imageUrl, backImageUrl, imageHint, rarity, isFlippable = true, onFlip, priority = false }: CardItemProps) {
+export function CardItem({
+  name,
+  imageUrl,
+  backImageUrl,
+  imageHint,
+  rarity,
+  isFlippable = true,
+  onFlip,
+  priority = false,
+  serialNumber,
+  className
+}: CardItemProps) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [zoomPos, setZoomPos] = useState<{ x: number; y: number } | null>(null);
   const [imgError, setImgError] = useState(false);
@@ -42,8 +55,11 @@ export function CardItem({ name, imageUrl, backImageUrl, imageHint, rarity, isFl
   const containerRef = useRef<HTMLDivElement>(null);
 
   const fallbackUrl = PLACEHOLDER_CARD_IMAGE;
-  const currentImageUrl = imgError ? fallbackUrl : imageUrl;
-  const currentBackImageUrl = backImgError ? fallbackUrl : backImageUrl;
+  const isFrontValid = Boolean(imageUrl && typeof imageUrl === 'string' && imageUrl.trim() !== '');
+  const isBackValid = Boolean(backImageUrl && typeof backImageUrl === 'string' && backImageUrl.trim() !== '');
+
+  const currentImageUrl = (imgError || !isFrontValid) ? fallbackUrl : imageUrl!.trim();
+  const currentBackImageUrl = (backImgError || !isBackValid) ? fallbackUrl : backImageUrl!.trim();
 
   const handleCardClick = (e: React.MouseEvent) => {
     if (isFlippable) {
@@ -80,7 +96,10 @@ export function CardItem({ name, imageUrl, backImageUrl, imageHint, rarity, isFl
 
   return (
     <div
-      className="group w-full aspect-[2.5/3.5] [perspective:1200px] transition-transform duration-300 hover:scale-[1.02]"
+      className={cn(
+        "group w-full aspect-[2.5/3.5] [perspective:1200px] transition-transform duration-300 hover:scale-[1.02]",
+        className
+      )}
       onClick={handleCardClick}
       ref={containerRef}
     >
@@ -102,15 +121,16 @@ export function CardItem({ name, imageUrl, backImageUrl, imageHint, rarity, isFl
         >
           <div className="absolute inset-0 flex items-center justify-center">
             <SafeImage
-                src={imageUrl}
-                alt={name}
+                src={isFrontValid ? imageUrl : fallbackUrl}
+                fallbackSrc={fallbackUrl}
+                alt={name || '卡片'}
                 fill
                 sizes="(max-width: 640px) 40vw, (max-width: 1024px) 25vw, 15vw"
                 className={cn(
                     "object-cover rounded-xl transition-all duration-300",
                     (zoomPos && !isFlipped) ? "opacity-0" : "opacity-100"
                 )}
-                data-ai-hint={imageHint}
+                data-ai-hint={imageHint || name}
                 priority={priority}
                 onError={() => setImgError(true)}
             />
@@ -167,11 +187,12 @@ export function CardItem({ name, imageUrl, backImageUrl, imageHint, rarity, isFl
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
         >
-           {backImageUrl ? (
+           {isBackValid ? (
              <div className="w-full h-full relative flex items-center justify-center">
                 <SafeImage
-                    src={backImageUrl!}
-                    alt={`${name} back`}
+                    src={backImageUrl}
+                    fallbackSrc={fallbackUrl}
+                    alt={`${name || '卡片'} back`}
                     fill
                     className={cn(
                       "object-cover rounded-xl transition-all duration-300",

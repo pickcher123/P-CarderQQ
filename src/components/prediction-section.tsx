@@ -305,12 +305,14 @@ export function PredictionSection({
         <div className="space-y-7 w-full">
             {/* 置中排版與優化後的精緻標頭 */}
             {!hideHeader && (
-                <div className="text-center space-y-2 border-b border-slate-800/80 pb-6 pt-1">
-                    <h1 className="text-2xl sm:text-4xl font-black font-headline tracking-tight text-white">
-                        賽事先知 · 預測擂台
+                <div className="text-center space-y-2.5 border-b border-slate-800/80 pb-6 pt-1">
+                    <h1 className="text-2xl sm:text-4xl font-black font-headline tracking-tight">
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-400 drop-shadow-[0_2px_14px_rgba(245,158,11,0.25)]">
+                            賽事先知 · 預測擂台
+                        </span>
                     </h1>
                     <p className="text-xs sm:text-sm text-slate-400 max-w-xl mx-auto leading-relaxed">
-                        競猜即時熱門球賽與球星數據 · 猜對即享高額 P+ 點數並晉升先知勝率榮譽榜
+                        競猜即時熱門球賽與球星數據 · 猜對即享高額 <span className="text-amber-300 font-semibold">P+ 點數</span>並晉升先知勝率榮譽榜
                     </p>
                 </div>
             )}

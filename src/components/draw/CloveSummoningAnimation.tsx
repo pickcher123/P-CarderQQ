@@ -409,10 +409,10 @@ export function CloveSummoningAnimation({
                   : { opacity: 0 }
               }
               transition={{ duration: stage === 'burst' ? 0.75 : 0.45, ease: 'easeOut' }}
-              className="absolute top-3 w-[150px] aspect-[2.5/3.5] z-10 pointer-events-none flex items-center justify-center"
+              className="absolute top-3 w-[150px] aspect-[2.5/4] z-10 pointer-events-none flex items-center justify-center"
             >
               {/* 外層黑框與發光外框 (與第二階段 RevealComponent 一模一樣的結構與樣式) */}
-              <div className="relative p-1 bg-slate-900 border-[5px] border-slate-950 rounded-[2.2rem] shadow-2xl overflow-hidden w-full aspect-[2.5/3.5] flex items-center justify-center">
+              <div className="relative p-1 bg-slate-900 border-[5px] border-slate-950 rounded-[2.2rem] shadow-2xl overflow-hidden w-full aspect-[2.5/4] flex items-center justify-center">
                 
                 {/* 核心卡背 UI: 經典 slate-900 藍底 + primary 邊框 + Disc3 旋轉碟片 + P+ CARDER 標誌 */}
                 <div className="relative w-full h-full bg-slate-900 rounded-xl border-4 border-primary/50 flex flex-col items-center justify-center pointer-events-none select-none shadow-[inset_0_0_20px_rgba(6,182,212,0.3)] overflow-hidden">

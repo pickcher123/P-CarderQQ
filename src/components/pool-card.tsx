@@ -73,7 +73,7 @@ const pointPrizeStyles: Record<Rarity, { text: string, bg: string, border: strin
 };
 
 interface CardData { id: string; name: string; imageUrl: string; backImageUrl?: string; imageHint: string; isSold?: boolean; }
-interface CardPool { id: string; name: string; description: string; price?: number; price3Draws?: number; price10Draws?: number; totalPacks?: number; remainingPacks?: number; hasProtection?: boolean; isFeatured?: boolean; currency?: 'diamond' | 'p-point'; cardRarities?: { [cardId: string]: Rarity }; cards?: { cardId: string; quantity: number }[]; pointPrizes?: { prizeId: string; points: number; quantity: number; rarity: Rarity; name?: string }[]; lastPrizeCardId?: string; imageUrl?: string; startsAt?: { seconds: number; nanoseconds: number; }; expiresAt?: { seconds: number; nanoseconds: number; }; pointMultiplier?: number; pointMultiplierExpiresAt?: { seconds: number; nanoseconds: number; }; lockedBy?: string; lockedAt?: { seconds: number; nanoseconds: number; }; categoryId?: string; dailyLimit?: number; minLevel?: string; isAdult?: boolean; allowFreeDraw?: boolean; }
+interface CardPool { id: string; name: string; description: string; price?: number; price3Draws?: number; price10Draws?: number; totalPacks?: number; remainingPacks?: number; hasProtection?: boolean; isFeatured?: boolean; currency?: 'diamond' | 'p-point'; cardRarities?: { [cardId: string]: Rarity }; cards?: { cardId: string; quantity: number }[]; pointPrizes?: { prizeId: string; points: number; quantity: number; rarity: Rarity; name?: string }[]; lastPrizeCardId?: string; imageUrl?: string; startsAt?: { seconds: number; nanoseconds: number; }; expiresAt?: { seconds: number; nanoseconds: number; }; pointMultiplier?: number; pointMultiplierExpiresAt?: { seconds: number; nanoseconds: number; }; lockedBy?: string; lockedAt?: { seconds: number; nanoseconds: number; }; categoryId?: string; dailyLimit?: number; minLevel?: string; isAdult?: boolean; allowFreeDraw?: boolean; isEventPool?: boolean; exclusiveTicketOnly?: boolean; eventTicketName?: string; eventRules?: string; eventMaxDrawsPerUser?: number; }
 const LOCK_DURATION = 120;
 
 export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, allCardsMap: Map<string, CardData>, userProfile: any }) {
@@ -259,15 +259,17 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
             if (bHasStock !== aHasStock) {
                 return bHasStock - aHasStock;
             }
+            // 估值最高優先 (前兩張有價值的卡)
+            const valA = Number(a.cardVal) || 0;
+            const valB = Number(b.cardVal) || 0;
+            if (valB !== valA) {
+                return valB - valA;
+            }
             // 稀有度最高優先
             const rA = rarityOrder[a.rarity] || 0;
             const rB = rarityOrder[b.rarity] || 0;
             if (rB !== rA) {
                 return rB - rA;
-            }
-            // 估值最高優先
-            if (b.cardVal !== a.cardVal) {
-                return b.cardVal - a.cardVal;
             }
             return (a.name || '').localeCompare(b.name || '');
         });
@@ -469,344 +471,333 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                 </div>
             )}
             
-            <div className="relative w-full max-w-3xl bg-slate-900/80 backdrop-blur-xl border border-slate-800 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden p-3.5 sm:p-6 md:p-7">
+            <div className="relative w-full bg-slate-900/90 backdrop-blur-xl border border-slate-800/90 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden p-3.5 sm:p-5 flex flex-col justify-between">
                 {/* 頂部簡約微光裝飾線 */}
                 <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-cyan-500/60 to-transparent"></div>
 
-                {/* 👑 標題與焦點頭獎區塊 */}
-                <div className="mb-4 sm:mb-5 relative">
-                    <div className="relative bg-slate-950/60 backdrop-blur-md border border-slate-800/90 rounded-2xl p-3.5 sm:p-5 overflow-hidden">
+                {/* 📌 卡池標題與標籤列（位於卡片上方，置中對齊） */}
+                <div className="mb-3 text-center">
+                    {/* 特殊機制標籤列 */}
+                    <div className="flex items-center justify-center gap-1.5 mb-2 flex-wrap">
+                        {pool.hasProtection && (
+                            <Badge className="bg-slate-950 text-cyan-300 border border-cyan-500/30 font-medium text-[10px] px-2 py-0.5">
+                                <Trophy className="w-3 h-3 mr-1 text-cyan-400" /> 保底機制
+                            </Badge>
+                        )}
+                        {isMultiplierActive && (
+                            <Badge className="bg-slate-950 text-amber-300 border border-amber-500/30 font-medium text-[10px] px-2 py-0.5">
+                                <Zap className="w-3 h-3 mr-1 text-amber-400" /> {pool.pointMultiplier}x P點加倍
+                            </Badge>
+                        )}
+                        {pool.minLevel && (
+                            <Badge className="bg-slate-950 text-purple-300 border border-purple-500/30 font-medium text-[10px] px-2 py-0.5">
+                                <Star className="w-3 h-3 mr-1 text-purple-400" /> VIP限定
+                            </Badge>
+                        )}
+                        {pool.isAdult && (
+                            <Badge className="bg-slate-950 text-rose-300 border border-rose-500/30 font-medium text-[10px] px-2 py-0.5">
+                                🔞 18+
+                            </Badge>
+                        )}
+                        {pool.allowFreeDraw !== false && (
+                            <Badge className="bg-slate-950 text-emerald-300 border border-emerald-500/30 font-medium text-[10px] px-2 py-0.5">
+                                <Ticket className="w-3 h-3 mr-1 text-emerald-400" /> 免費券
+                            </Badge>
+                        )}
+                        {pool.isEventPool && (
+                            <Badge className="bg-purple-950 text-purple-300 border border-purple-500/50 font-black text-[10px] px-2 py-0.5 shadow-sm">
+                                🎪 活動卡池
+                            </Badge>
+                        )}
+                        {pool.exclusiveTicketOnly && (
+                            <Badge className="bg-amber-950 text-amber-300 border border-amber-500/50 font-black text-[10px] px-2 py-0.5 shadow-sm">
+                                🔒 僅限專屬券
+                            </Badge>
+                        )}
+                    </div>
 
-                        {/* 特殊機制標籤列 */}
-                        <div className="flex items-center justify-center gap-1.5 mb-2.5 flex-wrap">
-                            {pool.hasProtection && (
-                                <Badge className="bg-slate-900 text-cyan-300 border border-cyan-500/30 font-medium text-[10px] px-2 py-0.5">
-                                    <Trophy className="w-3 h-3 mr-1 text-cyan-400" /> 保底機制
-                                </Badge>
-                            )}
-                            {isMultiplierActive && (
-                                <Badge className="bg-slate-900 text-amber-300 border border-amber-500/30 font-medium text-[10px] px-2 py-0.5">
-                                    <Zap className="w-3 h-3 mr-1 text-amber-400" /> {pool.pointMultiplier}x P點加倍
-                                </Badge>
-                            )}
-                            {pool.minLevel && (
-                                <Badge className="bg-slate-900 text-purple-300 border border-purple-500/30 font-medium text-[10px] px-2 py-0.5">
-                                    <Star className="w-3 h-3 mr-1 text-purple-400" /> VIP限定
-                                </Badge>
-                            )}
-                            {pool.isAdult && (
-                                <Badge className="bg-slate-900 text-rose-300 border border-rose-500/30 font-medium text-[10px] px-2 py-0.5">
-                                    🔞 18+ 專區
-                                </Badge>
-                            )}
-                            {pool.allowFreeDraw !== false && (
-                                <Badge className="bg-slate-900 text-emerald-300 border border-emerald-500/30 font-medium text-[10px] px-2 py-0.5">
-                                    <Ticket className="w-3 h-3 mr-1 text-emerald-400" /> 支援免費券
-                                </Badge>
-                            )}
-                        </div>
-
-                        {/* 卡池標題與說明 */}
-                        <div className="relative pb-3 mb-3 border-b border-slate-800/80 text-center">
-                            <h1 className="text-lg sm:text-2xl md:text-3xl font-black text-white tracking-tight break-words leading-tight text-center">
-                                {pool.name}
-                            </h1>
-                            {pool.description && (
-                                <p className="text-slate-400 text-xs sm:text-sm mt-1.5 break-words leading-relaxed text-center mx-auto max-w-xl">{pool.description}</p>
-                            )}
-
-                            {/* 賞品清冊按鈕 */}
-                            <div className="mt-3 flex justify-center">
-                                <button 
-                                    onClick={() => setIsInventoryOpen(true)}
-                                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-300 hover:text-white bg-slate-900/80 hover:bg-slate-800 border border-slate-700/70 px-4 py-1.5 rounded-full transition-all cursor-pointer active:scale-95 group/btn"
-                                >
-                                    <Trophy className="w-3.5 h-3.5 text-amber-400 group-hover/btn:scale-105 transition-transform" />
-                                    <span>查看賞品清冊</span>
-                                    <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover/btn:translate-x-0.5 transition-transform" />
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* 👑 焦點頭獎大圖展示 (強大吸引力，吸引點擊與抽卡) */}
-                        {(() => {
-                            const featuredPrize = topPrizesPreview[selectedPrizeIndex] || topPrizesPreview[0];
-                            if (!featuredPrize) {
-                                return (
-                                    <div className="text-center py-4 bg-slate-900/40 rounded-xl border border-slate-800 text-slate-400 text-xs flex items-center justify-center gap-2">
-                                        <Package className="w-4 h-4 text-slate-500" />
-                                        <span>請點擊上方「查看賞品清冊」檢視卡池內全部賞品與機率</span>
-                                    </div>
-                                );
-                            }
-
-                            return (
-                                <div className="space-y-3">
-                                    {/* 頂部標籤與大獎數 */}
-                                    <div className="flex items-center justify-between px-1">
-                                        <div className="flex items-center gap-1.5 text-xs font-black text-amber-400">
-                                            <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />
-                                            <span className="tracking-wider uppercase font-headline">
-                                                {featuredPrize.isLastPrize ? '限定最後賞' : '焦點頭獎'}
-                                            </span>
-                                            <span className="text-[10px] text-amber-300/80 font-normal ml-1">
-                                                {featuredPrize.isLastPrize ? '清空卡池即得' : '本池最高價值賞品'}
-                                            </span>
-                                        </div>
-                                        {topPrizesPreview.length > 1 && (
-                                            <span className="text-[11px] text-slate-400 font-medium">
-                                                共 {topPrizesPreview.length} 款焦點大獎
-                                            </span>
-                                        )}
-                                    </div>
-
-                                    {/* 焦點大獎主要展示卡片 (高質感金色光暈與立體展示，點擊可放大並 3D 翻轉) */}
-                                    <div 
-                                        onClick={() => setPreviewCard(featuredPrize)}
-                                        className="group/hero relative bg-gradient-to-br from-amber-500/10 via-slate-900/95 to-slate-950/90 hover:from-amber-500/15 hover:via-slate-900 hover:to-slate-900 border border-amber-500/40 hover:border-amber-400/90 rounded-2xl p-3.5 sm:p-4.5 flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5 cursor-pointer transition-all duration-300 shadow-[0_4px_25px_rgba(245,158,11,0.18)] hover:shadow-[0_8px_35px_rgba(245,158,11,0.35)] overflow-hidden"
-                                    >
-                                        {/* 卡片背後奢華環境光暈 */}
-                                        <div className="absolute -top-12 -left-12 w-44 h-44 bg-amber-500/20 rounded-full blur-3xl pointer-events-none group-hover/hero:bg-amber-400/30 transition-colors" />
-
-                                        {/* 大獎卡片圖片 (立體高亮邊框，尺寸清晰穩固，點擊誘因極高) */}
-                                        <div className="relative w-32 sm:w-36 md:w-44 aspect-[2.5/3.5] rounded-xl overflow-hidden border-2 border-amber-400/90 bg-slate-950 shrink-0 shadow-[0_8px_25px_rgba(0,0,0,0.8),0_0_20px_rgba(245,158,11,0.3)] group-hover/hero:border-amber-300 group-hover/hero:shadow-[0_0_30px_rgba(245,158,11,0.6)] transition-all duration-300">
-                                            <SafeImage 
-                                                src={featuredPrize.imageUrl} 
-                                                alt={featuredPrize.name} 
-                                                sizes="(max-width: 640px) 150px, 200px" 
-                                                fill 
-                                                className="object-cover rounded-lg group-hover/hero:scale-105 transition-transform duration-500" 
-                                            />
-                                            
-                                            {/* 卡片左上角金色大獎徽章 */}
-                                            <div className="absolute top-1.5 left-1.5 z-10">
-                                                <span className="bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-black text-[9px] sm:text-[10px] px-2 py-0.5 rounded-md shadow-md uppercase tracking-wider flex items-center gap-1">
-                                                    <Star className="w-2.5 h-2.5 fill-slate-950" />
-                                                    <span>{featuredPrize.isLastPrize ? '最後賞' : 'TOP PRIZE'}</span>
-                                                </span>
-                                            </div>
-
-                                            {/* 完售水印 */}
-                                            {featuredPrize.quantity <= 0 && !featuredPrize.isPoolCover && (
-                                                <div className="absolute inset-0 bg-black/70 backdrop-blur-[1px] flex items-center justify-center z-10">
-                                                    <span className="bg-rose-600/90 text-white font-black text-xs px-2.5 py-1 rounded border border-rose-400/60 shadow-lg">
-                                                        已抽出
-                                                    </span>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {/* 大獎卡片資訊 */}
-                                        <div className="flex-1 min-w-0 w-full text-center sm:text-left flex flex-col justify-between self-stretch py-0.5 space-y-2.5">
-                                            <div>
-                                                {/* 稀有度標籤與剩餘存量 */}
-                                                <div className="flex items-center justify-center sm:justify-start gap-2 mb-2 flex-wrap">
-                                                    <span className={cn(
-                                                        "px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wider border shadow-sm",
-                                                        rarityStyles[featuredPrize.rarity as Rarity]?.badgeBg || "bg-amber-500/20 text-amber-300 border-amber-500/50"
-                                                    )}>
-                                                        {featuredPrize.isLastPrize ? '限定最後賞' : (rarityStyles[featuredPrize.rarity as Rarity]?.label || '傳說賞')}
-                                                    </span>
-                                                    
-                                                    {!featuredPrize.isPoolCover && (
-                                                        <span className={cn(
-                                                            "px-2.5 py-0.5 rounded-full text-xs font-semibold border",
-                                                            (featuredPrize.quantity ?? 1) > 0 
-                                                                ? "bg-slate-800/90 border-slate-700 text-slate-200" 
-                                                                : "bg-rose-950/60 border-rose-800 text-rose-300"
-                                                        )}>
-                                                            {(featuredPrize.quantity ?? 1) > 0 ? `剩餘 ${featuredPrize.quantity} 張` : '已抽畢'}
-                                                        </span>
-                                                    )}
-
-                                                    {featuredPrize.cardVal > 0 && (
-                                                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/10 border border-amber-500/30 text-amber-300 flex items-center gap-1">
-                                                            <Sparkles className="w-3 h-3 text-amber-400" />
-                                                            估值約 ${featuredPrize.cardVal.toLocaleString()}
-                                                        </span>
-                                                    )}
-                                                </div>
-
-                                                {/* 卡片標題 */}
-                                                <h4 className="text-base sm:text-lg md:text-xl font-black text-white break-words leading-snug group-hover/hero:text-amber-200 transition-colors drop-shadow-sm">
-                                                    {featuredPrize.name}
-                                                </h4>
-
-                                                <p className="text-xs text-slate-400 mt-1 line-clamp-2 leading-relaxed">
-                                                    {featuredPrize.isLastPrize 
-                                                        ? '本卡池終極最後賞！抽出最後一包即可直接獲得此限定大獎！' 
-                                                        : '玩家夢寐以求的大獎卡牌！點擊卡片即可進行 3D 旋轉翻面檢視細節。'}
-                                                </p>
-                                            </div>
-
-                                            {/* 誘人點擊的行動召喚 (CTA) */}
-                                            <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-2 border-t border-slate-800/80">
-                                                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-300 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-400/40 px-3.5 py-1.5 rounded-full shadow-[0_0_15px_rgba(245,158,11,0.15)] group-hover/hero:border-amber-300 group-hover/hero:text-amber-200 transition-all">
-                                                    <Eye className="w-3.5 h-3.5 text-amber-400" />
-                                                    <span>點擊檢視 3D 卡牌細節</span>
-                                                    <Sparkles className="w-3 h-3 text-amber-400 ml-0.5" />
-                                                </span>
-                                                
-                                                <span className="text-[11px] text-slate-400">
-                                                    支援 360° 卡片翻面預覽
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* 🌟 更多大獎縮圖列表 (點擊切換，讓玩家看到更多豪華獎項) */}
-                                    {topPrizesPreview.length > 1 && (
-                                        <div className="pt-1">
-                                            <div className="flex items-center justify-between mb-1.5 px-0.5">
-                                                <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1">
-                                                    <Trophy className="w-3 h-3 text-amber-400" />
-                                                    本池更多大獎 (點選切換預覽)
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center gap-2 overflow-x-auto pb-1.5 scrollbar-none">
-                                                {topPrizesPreview.slice(0, 5).map((p, idx) => {
-                                                    const isSelected = idx === selectedPrizeIndex;
-                                                    return (
-                                                        <button
-                                                            key={p.id || idx}
-                                                            type="button"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setSelectedPrizeIndex(idx);
-                                                            }}
-                                                            className={cn(
-                                                                "flex items-center gap-2 px-2.5 py-1.5 rounded-xl border transition-all cursor-pointer text-left shrink-0",
-                                                                isSelected 
-                                                                    ? "bg-amber-500/20 border-amber-400/90 shadow-[0_0_12px_rgba(245,158,11,0.3)] ring-1 ring-amber-400/60" 
-                                                                    : "bg-slate-900/80 hover:bg-slate-800 border-slate-800 hover:border-slate-700 opacity-80 hover:opacity-100"
-                                                            )}
-                                                        >
-                                                            <div className="relative w-8 h-11 rounded overflow-hidden bg-slate-950 border border-slate-700/80 shrink-0">
-                                                                <SafeImage src={p.imageUrl} alt={p.name} sizes="40px" fill className="object-cover" />
-                                                            </div>
-                                                            <div className="min-w-0 max-w-[110px]">
-                                                                <div className="flex items-center gap-1">
-                                                                    <span className={cn(
-                                                                        "text-[9px] font-black uppercase",
-                                                                        p.isLastPrize ? "text-amber-400" : (rarityStyles[p.rarity as Rarity]?.text || "text-amber-300")
-                                                                    )}>
-                                                                        {p.isLastPrize ? '最後賞' : (rarityStyles[p.rarity as Rarity]?.label || '大獎')}
-                                                                    </span>
-                                                                    <span className="text-[9px] text-slate-400">
-                                                                        {p.quantity > 0 ? `餘 ${p.quantity}` : '完售'}
-                                                                    </span>
-                                                                </div>
-                                                                <p className="text-[10px] font-bold text-white truncate">{p.name}</p>
-                                                            </div>
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            );
-                        })()}
+                    {/* 卡池名稱與說明 */}
+                    <div>
+                        <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight break-words leading-tight text-center">
+                            {pool.name}
+                        </h2>
+                        {pool.description && (
+                            <p className="text-slate-400 text-xs sm:text-sm mt-1 text-center max-w-md mx-auto leading-relaxed">
+                                {pool.description}
+                            </p>
+                        )}
                     </div>
                 </div>
 
-                {/* 📊 賞別剩餘張數、機率與存量面板 */}
-                <div className="mb-3.5 bg-slate-950/60 rounded-xl border border-slate-800/80 p-3 sm:p-3.5">
+                {/* 🏆 主卡面展示區：左側大圖，右側資訊 (傳說賞/卡片數據、大獎清單、賞品清冊按鈕) */}
+                {(() => {
+                    const featuredPrize = topPrizesPreview[selectedPrizeIndex] || topPrizesPreview[0];
+                    if (!featuredPrize) return null;
+
+                    return (
+                        <div className="mb-3.5 bg-gradient-to-br from-amber-500/10 via-slate-950/90 to-slate-950/95 border border-amber-500/35 hover:border-amber-400/70 rounded-2xl p-3.5 sm:p-4 shadow-[0_4px_20px_rgba(245,158,11,0.12)] transition-all duration-300">
+                            <div className="flex flex-col sm:flex-row items-center sm:items-stretch gap-4 sm:gap-5">
+                                
+                                {/* 🔴 左邊：卡片大圖 */}
+                                <div 
+                                    onClick={() => setPreviewCard(featuredPrize)}
+                                    className="group/card relative w-36 sm:w-44 md:w-48 aspect-[2.5/3.5] rounded-xl overflow-hidden border-2 border-amber-400/90 bg-slate-950 shrink-0 shadow-[0_6px_20px_rgba(0,0,0,0.8),0_0_20px_rgba(245,158,11,0.25)] hover:border-amber-300 hover:scale-[1.02] cursor-pointer transition-all duration-300 flex items-center justify-center my-auto"
+                                >
+                                    {/* 卡片背後微光 */}
+                                    <div className="absolute inset-0 bg-amber-500/10 rounded-xl blur-lg pointer-events-none group-hover/card:bg-amber-400/20 transition-colors" />
+
+                                    <SafeImage 
+                                        src={featuredPrize.imageUrl} 
+                                        alt={featuredPrize.name} 
+                                        sizes="(max-width: 640px) 180px, 220px" 
+                                        fill 
+                                        className="object-cover rounded-lg" 
+                                    />
+                                    
+                                    {/* 卡片角標 */}
+                                    <div className="absolute top-1.5 left-1.5 z-10">
+                                        <span className="bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-black text-[9px] px-1.5 py-0.5 rounded shadow uppercase tracking-wider flex items-center gap-0.5">
+                                            <Star className="w-2.5 h-2.5 fill-slate-950" />
+                                            <span>{featuredPrize.isLastPrize ? '最後賞' : 'TOP'}</span>
+                                        </span>
+                                    </div>
+
+                                    {/* 完售遮罩 */}
+                                    {featuredPrize.quantity <= 0 && !featuredPrize.isPoolCover && (
+                                        <div className="absolute inset-0 bg-black/70 backdrop-blur-[1px] flex items-center justify-center z-10">
+                                            <span className="bg-rose-600/90 text-white font-black text-[10px] px-2 py-0.5 rounded border border-rose-400/60 shadow">
+                                                已抽出
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* 🔴 右邊：資訊 (焦點頭獎置中、賞別/存量/約值、底部大獎清單前兩張+賞品清冊) */}
+                                <div className="flex-1 min-w-0 flex flex-col justify-between space-y-3 sm:space-y-0 text-left py-0.5">
+                                    
+                                    {/* 頂部：焦點頭獎標題置中與賞別數據 */}
+                                    <div className="space-y-2 text-center">
+                                        <div className="flex items-center justify-center gap-1.5 text-xs font-black text-amber-400">
+                                            <Sparkles className="w-4 h-4 text-amber-400 animate-pulse shrink-0" />
+                                            <span className="tracking-wider uppercase text-sm font-black">
+                                                {featuredPrize.isLastPrize ? '限定最後賞' : '焦點頭獎'}
+                                            </span>
+                                        </div>
+
+                                        {/* 稀有度標籤、存量與估值置中 */}
+                                        <div className="flex items-center justify-center gap-2 flex-wrap">
+                                            <span className={cn(
+                                                "px-3 py-1 rounded-lg text-xs sm:text-sm font-black uppercase tracking-wider border shadow-sm",
+                                                rarityStyles[featuredPrize.rarity as Rarity]?.badgeBg || "bg-amber-500/20 text-amber-300 border-amber-500/50"
+                                            )}>
+                                                {featuredPrize.isLastPrize ? '限定最後賞' : (rarityStyles[featuredPrize.rarity as Rarity]?.label || '傳說賞')}
+                                            </span>
+                                            
+                                            {!featuredPrize.isPoolCover && (
+                                                <span className={cn(
+                                                    "px-3 py-1 rounded-lg text-xs sm:text-sm font-semibold border",
+                                                    (featuredPrize.quantity ?? 1) > 0 
+                                                        ? "bg-slate-900 border-slate-700 text-slate-200" 
+                                                        : "bg-rose-950/60 border-rose-800 text-rose-300"
+                                                )}>
+                                                    {(featuredPrize.quantity ?? 1) > 0 ? `剩餘 ${featuredPrize.quantity} 張` : '已抽畢'}
+                                                </span>
+                                            )}
+
+                                            {featuredPrize.cardVal > 0 && (
+                                                <span className="px-3 py-1 rounded-lg text-xs sm:text-sm font-bold bg-amber-500/10 border border-amber-500/30 text-amber-300 flex items-center gap-1">
+                                                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                                                    約 ${featuredPrize.cardVal.toLocaleString()}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* 底部：大獎清單 (只放前兩張有價值的卡) + 賞品清冊按鈕 (置於大獎那邊) */}
+                                    <div className="pt-2.5 mt-2 border-t border-amber-500/20 flex items-center justify-between gap-2">
+                                        {/* 大獎清單：純卡片縮圖展示 (前兩張) */}
+                                        <div className="flex items-center gap-2 min-w-0">
+                                            {topPrizesPreview.length > 1 && (
+                                                <>
+                                                    <span className="text-[11px] font-black text-slate-400 shrink-0">大獎清單:</span>
+                                                    <div className="flex items-center gap-2 py-0.5">
+                                                        {topPrizesPreview.slice(0, 2).map((p, idx) => {
+                                                            const isSelected = idx === selectedPrizeIndex;
+                                                            const isSoldOut = (p.quantity ?? 1) <= 0 && !p.isPoolCover;
+                                                            return (
+                                                                <button
+                                                                    key={p.id || idx}
+                                                                    type="button"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setSelectedPrizeIndex(idx);
+                                                                    }}
+                                                                    className={cn(
+                                                                        "group/thumb relative w-10 sm:w-11 aspect-[2.5/3.5] rounded-lg overflow-hidden border-2 transition-all cursor-pointer shrink-0 bg-slate-950 shadow-sm",
+                                                                        isSelected 
+                                                                            ? "border-amber-400 ring-2 ring-amber-400/60 scale-105 shadow-md shadow-amber-500/20 z-10" 
+                                                                            : "border-slate-700/80 hover:border-slate-500 opacity-75 hover:opacity-100 hover:scale-105"
+                                                                    )}
+                                                                >
+                                                                    <SafeImage 
+                                                                        src={p.imageUrl} 
+                                                                        alt={p.name || "prize"} 
+                                                                        sizes="48px" 
+                                                                        fill 
+                                                                        className="object-cover" 
+                                                                    />
+                                                                    
+                                                                    {/* 完售遮罩 */}
+                                                                    {isSoldOut ? (
+                                                                        <div className="absolute inset-0 bg-black/75 flex items-center justify-center z-10">
+                                                                            <span className="text-[8px] font-black text-rose-300 bg-rose-950/90 px-1 py-0.5 rounded leading-none">
+                                                                                完售
+                                                                            </span>
+                                                                        </div>
+                                                                    ) : p.isLastPrize ? (
+                                                                        <div className="absolute top-0 right-0 z-10">
+                                                                            <span className="bg-amber-500 text-slate-950 font-black text-[7px] px-1 py-0.5 rounded-bl leading-none">
+                                                                                最後
+                                                                            </span>
+                                                                        </div>
+                                                                    ) : null}
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
+
+                                        {/* 賞品清冊按鈕 (移動至大獎這排右側) */}
+                                        <button 
+                                            type="button"
+                                            onClick={() => setIsInventoryOpen(true)}
+                                            className="inline-flex items-center gap-1.5 text-xs font-black text-slate-200 hover:text-white bg-slate-900/90 hover:bg-slate-800 border border-slate-700 hover:border-amber-400/60 px-3 py-1.5 rounded-xl transition-all cursor-pointer active:scale-95 group/btn shrink-0 shadow-md ml-auto"
+                                        >
+                                            <Trophy className="w-3.5 h-3.5 text-amber-400 group-hover/btn:scale-110 transition-transform" />
+                                            <span>賞品清冊</span>
+                                            <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover/btn:translate-x-0.5 transition-transform" />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* 活動卡池規則提示 (若有的話) */}
+                            {pool.isEventPool && (
+                                <div className="mt-3 p-2.5 rounded-xl bg-purple-950/60 border border-purple-500/40 space-y-1">
+                                    <div className="flex items-center justify-between flex-wrap gap-2">
+                                        <div className="flex items-center gap-1.5 text-xs font-black text-purple-300">
+                                            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                                            <span>【活動專屬】{pool.eventTicketName || '專屬活動抽卡券'}</span>
+                                        </div>
+                                        <span className="font-mono text-xs font-black px-2 py-0.5 rounded-full bg-purple-900/70 border border-purple-400/40 text-amber-300">
+                                            持有: {userProfile?.eventPoolTickets?.[pool.id] || 0} 張
+                                        </span>
+                                    </div>
+                                    {pool.eventRules && (
+                                        <p className="text-[11px] text-slate-300 leading-relaxed">
+                                            <span className="text-purple-300 font-bold">規則：</span>{pool.eventRules}
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    );
+                })()}
+
+                {/* 📊 賞別剩餘張數、機率與存量面板 (簡約緊湊版) */}
+                <div className="mb-2.5 bg-slate-950/60 rounded-xl border border-slate-800/70 p-2 sm:p-2.5">
                     {/* 賞別 3 欄精簡統計 */}
-                    <div className="grid grid-cols-3 gap-2 divide-x divide-slate-800/80">
+                    <div className="grid grid-cols-3 gap-1 divide-x divide-slate-800/80 text-center py-0.5">
                         {RARITIES.map((r, idx) => {
                             const detail = rarityDetails[r];
                             const RarityIcon = rarityStyles[r].icon;
 
                             return (
                                 <div key={r} className={cn(
-                                    "flex flex-col items-center justify-center text-center",
-                                    idx > 0 && "pl-2"
+                                    "flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5",
+                                    idx > 0 && "pl-1"
                                 )}>
-                                    {/* 賞別標題 */}
-                                    <div className="flex items-center gap-1 mb-1">
+                                    <div className="flex items-center gap-1">
                                         <RarityIcon className={cn("w-3 h-3 shrink-0", rarityStyles[r].text)} />
-                                        <span className={cn("text-[11px] sm:text-xs font-bold tracking-tight", rarityStyles[r].text)}>
+                                        <span className={cn("text-[10px] sm:text-[11px] font-bold", rarityStyles[r].text)}>
                                             {rarityStyles[r].label}
                                         </span>
                                     </div>
-
-                                    {/* 剩餘張數 */}
-                                    <div className="text-white font-mono text-lg sm:text-xl font-bold leading-none my-0.5">
-                                        {detail.count}
-                                        <span className="text-[10px] sm:text-xs font-normal text-slate-400 ml-0.5">張</span>
+                                    <div className="flex items-baseline gap-1">
+                                        <span className="text-white font-mono text-xs sm:text-sm font-black">
+                                            {detail.count}<span className="text-[9px] font-normal text-slate-400">張</span>
+                                        </span>
+                                        <span className="text-[9px] font-mono text-slate-500">
+                                            ({detail.prob.toFixed(0)}%)
+                                        </span>
                                     </div>
-
-                                    {/* 機率 */}
-                                    <span className="text-[10px] font-mono text-slate-400 mt-0.5">
-                                        {detail.prob.toFixed(1)}%
-                                    </span>
                                 </div>
                             );
                         })}
                     </div>
 
                     {/* 卡池剩餘包數與進度條 */}
-                    <div className="mt-3 pt-2.5 border-t border-slate-800/80">
-                        <div className="flex justify-between items-center text-xs mb-1.5 font-medium">
-                            <span className="text-slate-400 flex items-center gap-1 text-[11px] sm:text-xs">
+                    <div className="mt-1.5 pt-1.5 border-t border-slate-800/70">
+                        <div className="flex justify-between items-center text-[11px] mb-1 font-medium">
+                            <span className="text-slate-400 flex items-center gap-1 text-[10px] sm:text-[11px]">
                                 <Zap className="w-3 h-3 text-cyan-400" />
                                 剩餘包數
                             </span>
                             <div className="flex items-baseline gap-1 font-mono text-xs">
-                                <span className="font-bold text-white text-sm">{pool.remainingPacks}</span>
-                                <span className="text-slate-500 text-[11px]">/{pool.totalPacks}</span>
-                                <span className="text-cyan-400 text-[11px] font-bold ml-1">
+                                <span className="font-bold text-white text-xs sm:text-sm">{pool.remainingPacks}</span>
+                                <span className="text-slate-500 text-[10px]">/{pool.totalPacks}</span>
+                                <span className="text-cyan-400 text-[10px] sm:text-[11px] font-bold ml-1">
                                     ({((pool.remainingPacks || 0) / (pool.totalPacks || 1) * 100).toFixed(0)}%)
                                 </span>
                             </div>
                         </div>
-                        <div className="h-1.5 sm:h-2 w-full bg-slate-900 rounded-full overflow-hidden p-0">
+                        <div className="h-1.5 w-full bg-slate-900 rounded-full overflow-hidden p-0">
                             <div 
-                                className="h-full bg-cyan-500 rounded-full transition-all duration-500"
+                                className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full transition-all duration-500"
                                 style={{ width: `${Math.max(0, Math.min(100, (pool.remainingPacks || 0) / (pool.totalPacks || 1) * 100))}%` }}
                             />
                         </div>
                     </div>
                 </div>
 
-                {/* 狀態列 */}
-                <div className="flex justify-between items-center px-1 mb-2.5 text-[11px] text-slate-400 font-medium">
+                {/* 狀態列 (置中對齊) */}
+                <div className="flex items-center justify-center gap-3 px-1 mb-2.5 text-[11px] text-slate-400 font-medium text-center">
                     <div>
                         已抽 <span className="text-cyan-400 font-mono font-bold">{todayDrawCount}</span> 次
                     </div>
                     {pool.expiresAt && (
-                        <div className="flex items-center text-slate-400" suppressHydrationWarning>
-                            <Clock className="w-3 h-3 mr-1 text-slate-500" />
-                            截止 {format(new Date(pool.expiresAt.seconds * 1000), "MM/dd HH:mm")}
-                        </div>
+                        <>
+                            <span className="text-slate-600">•</span>
+                            <div className="flex items-center text-slate-400" suppressHydrationWarning>
+                                <Clock className="w-3 h-3 mr-1 text-slate-500" />
+                                截止 {format(new Date(pool.expiresAt.seconds * 1000), "MM/dd HH:mm")}
+                            </div>
+                        </>
                     )}
                 </div>
 
-                {/* 活動兌換券專用區（簡約低調，清楚實用） */}
+                {/* 活動兌換券專用區（置中對齊，緊湊實用） */}
                 {pool.allowFreeDraw !== false && (
-                    <div className="mb-2.5 p-2 sm:p-2.5 rounded-xl bg-emerald-950/30 border border-emerald-500/25 flex items-center justify-between gap-2.5">
-                        <div className="flex items-center gap-2 min-w-0">
-                            <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
-                                <Ticket className="w-3.5 h-3.5 text-emerald-400" />
-                            </div>
-                            <div className="text-xs truncate">
-                                {effectiveTickets > 0 ? (
-                                    <>
-                                        <span className="text-slate-300">持有免費抽卡券：</span>
-                                        <span className="font-mono font-bold text-emerald-400 ml-0.5">{effectiveTickets} 張可用</span>
-                                    </>
-                                ) : (
-                                    <span className="text-slate-300">本卡池支援活動免費抽卡券</span>
-                                )}
-                            </div>
+                    <div className="mb-2.5 p-2 sm:p-2.5 rounded-xl bg-emerald-950/30 border border-emerald-500/25 flex items-center justify-center gap-2.5 sm:gap-3.5 flex-wrap text-center">
+                        <div className="flex items-center gap-1.5 text-xs text-slate-300">
+                            <Ticket className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                            {effectiveTickets > 0 ? (
+                                <>
+                                    <span>持有免費抽卡券：</span>
+                                    <span className="font-mono font-bold text-emerald-400">{effectiveTickets} 張可用</span>
+                                </>
+                            ) : (
+                                <span>本卡池支援活動免費抽卡券</span>
+                            )}
                         </div>
                         {effectiveTickets > 0 ? (
                             <Button
                                 size="sm"
                                 onClick={handleDrawWithTicket}
                                 disabled={poolStatus.disabled || isDrawing}
-                                className="h-7.5 px-3 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-sm transition-all cursor-pointer active:scale-95 shrink-0"
+                                className="h-7 px-3 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-sm transition-all cursor-pointer active:scale-95 shrink-0"
                             >
                                 使用 1 抽
                             </Button>
@@ -825,70 +816,137 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                 )}
 
                 {/* 抽卡操作按鈕（統一樣式風格，清晰洗鍊） */}
-                <div className="grid grid-cols-3 gap-2 sm:gap-2.5 relative">
-                    {isDrawing && (
-                        <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm rounded-xl">
-                            <div className="flex space-x-1.5">
-                                <div className="w-2.5 h-2.5 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>
-                                <div className="w-2.5 h-2.5 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                                <div className="w-2.5 h-2.5 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+                {pool.exclusiveTicketOnly ? (
+                    <div className="space-y-2 relative">
+                        {isDrawing && (
+                            <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm rounded-xl">
+                                <div className="flex space-x-1.5">
+                                    <div className="w-2.5 h-2.5 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>
+                                    <div className="w-2.5 h-2.5 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                                    <div className="w-2.5 h-2.5 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        )}
 
-                    {[1, 3, 10].map((drawCount) => {
-                        const canDraw = !poolStatus.disabled;
-                        const baseCost = (pool.price || 0) * drawCount;
-                        const price = drawCount === 1 ? (pool.price || 0) 
-                                    : drawCount === 3 ? (pool.price3Draws || baseCost) 
-                                    : (pool.price10Draws || baseCost);
-                        const savings = baseCost - price;
-                        const label = `${drawCount} 抽`;
-                        const isPPoint = pool.currency === 'p-point';
-                        const is10Draw = drawCount === 10;
-                        
-                        return (
-                            <Button 
-                                key={drawCount}
-                                disabled={!canDraw || isDrawing}
-                                className={cn(
-                                    "relative h-auto py-2.5 sm:py-3 px-1.5 flex flex-col items-center justify-center rounded-xl transition-all active:scale-95 overflow-hidden border group cursor-pointer",
-                                    is10Draw
-                                        ? "bg-slate-900/90 border-cyan-500/50 hover:border-cyan-400 hover:bg-slate-800/90 shadow-[0_0_15px_rgba(6,182,212,0.12)]"
-                                        : "bg-slate-900/90 border-slate-800 hover:border-slate-700 hover:bg-slate-800/90"
-                                )}
-                                onClick={() => handleDraw(drawCount)}
-                            >
-                                {/* Savings Badge */}
-                                {savings > 0 ? (
-                                    <span className="absolute top-0 right-0 bg-amber-500 text-slate-950 font-black text-[9px] px-1.5 py-0.5 rounded-bl-md leading-none">
-                                        省{savings >= 10000 ? `${(savings / 1000).toFixed(0)}k` : savings.toLocaleString()}
-                                    </span>
-                                ) : is10Draw ? (
-                                    <span className="absolute top-0 right-0 bg-cyan-500/20 text-cyan-300 font-bold text-[9px] px-1.5 py-0.5 rounded-bl-md leading-none border-b border-l border-cyan-500/30">
-                                        推薦
-                                    </span>
-                                ) : null}
+                        {(() => {
+                            const eventTickets = userProfile?.eventPoolTickets?.[pool.id] || 0;
+                            return (
+                                <>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <Button
+                                            disabled={poolStatus.disabled || isDrawing || eventTickets < 1}
+                                            onClick={() => router.push(`/draw/open?poolId=${pool.id}&draws=1&useEventTicket=true`)}
+                                            className={cn(
+                                                "h-12 rounded-xl font-black text-xs sm:text-sm shadow-lg flex flex-col items-center justify-center transition-all cursor-pointer",
+                                                eventTickets >= 1
+                                                    ? "bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-400 hover:to-yellow-400 text-slate-950"
+                                                    : "bg-slate-900 text-slate-500 border border-slate-800 cursor-not-allowed"
+                                            )}
+                                        >
+                                            <span className="flex items-center gap-1.5 font-black">
+                                                <Ticket className="w-4 h-4 text-slate-950" />
+                                                <span>單抽 (消耗 1 張)</span>
+                                            </span>
+                                            <span className="text-[10px] font-bold opacity-85">
+                                                持有: {eventTickets} 張
+                                            </span>
+                                        </Button>
 
-                                <span className={cn(
-                                    "font-bold text-xs sm:text-sm tracking-wide",
-                                    is10Draw ? "text-cyan-200 font-black" : "text-slate-200 group-hover:text-white"
-                                )}>
-                                    {label}
-                                </span>
-                                
-                                <span className="flex items-center justify-center text-white font-mono font-bold text-xs sm:text-sm tracking-tight mt-1">
-                                    <span>{price.toLocaleString()}</span>
-                                    {isPPoint ? (
-                                        <PPlusIcon className="w-3.5 h-3.5 ml-0.5 shrink-0 text-amber-400" />
-                                    ) : (
-                                        <DiamondIcon className={cn("w-3.5 h-3.5 ml-0.5 shrink-0", is10Draw ? "text-cyan-300" : "text-cyan-400")} />
+                                        <Button
+                                            disabled={poolStatus.disabled || isDrawing || eventTickets < 3}
+                                            onClick={() => router.push(`/draw/open?poolId=${pool.id}&draws=3&useEventTicket=true`)}
+                                            className={cn(
+                                                "h-12 rounded-xl font-black text-xs sm:text-sm shadow-lg flex flex-col items-center justify-center transition-all cursor-pointer",
+                                                eventTickets >= 3
+                                                    ? "bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-500 hover:to-indigo-500 text-white"
+                                                    : "bg-slate-900 text-slate-500 border border-slate-800 cursor-not-allowed"
+                                            )}
+                                        >
+                                            <span className="flex items-center gap-1.5 font-black">
+                                                <Sparkles className="w-4 h-4 text-amber-300" />
+                                                <span>三連抽 (消耗 3 張)</span>
+                                            </span>
+                                            <span className="text-[10px] font-bold opacity-85">
+                                                {eventTickets >= 3 ? '專屬券充足' : `還需 ${3 - eventTickets} 張`}
+                                            </span>
+                                        </Button>
+                                    </div>
+
+                                    {eventTickets <= 0 && (
+                                        <div className="p-2.5 rounded-xl bg-amber-950/40 border border-amber-500/40 text-amber-300 text-center text-xs font-medium">
+                                            🔒 此為限定活動卡池，僅能使用管理員指名派發之【{pool.eventTicketName || '專屬抽卡券'}】抽取。
+                                        </div>
                                     )}
-                                </span>
-                            </Button>
-                        )
-                    })}
-                </div>
+                                </>
+                            );
+                        })()}
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-3 gap-2 sm:gap-2.5 relative">
+                        {isDrawing && (
+                            <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm rounded-xl">
+                                <div className="flex space-x-1.5">
+                                    <div className="w-2.5 h-2.5 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>
+                                    <div className="w-2.5 h-2.5 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                                    <div className="w-2.5 h-2.5 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+                                </div>
+                            </div>
+                        )}
+
+                        {[1, 3, 10].map((drawCount) => {
+                            const canDraw = !poolStatus.disabled;
+                            const baseCost = (pool.price || 0) * drawCount;
+                            const price = drawCount === 1 ? (pool.price || 0) 
+                                        : drawCount === 3 ? (pool.price3Draws || baseCost) 
+                                        : (pool.price10Draws || baseCost);
+                            const savings = baseCost - price;
+                            const label = `${drawCount} 抽`;
+                            const isPPoint = pool.currency === 'p-point';
+                            const is10Draw = drawCount === 10;
+                            
+                            return (
+                                <Button 
+                                    key={drawCount}
+                                    disabled={!canDraw || isDrawing}
+                                    className={cn(
+                                        "relative h-auto py-2.5 sm:py-3 px-1.5 flex flex-col items-center justify-center rounded-xl transition-all active:scale-95 overflow-hidden border group cursor-pointer",
+                                        is10Draw
+                                            ? "bg-slate-900/90 border-cyan-500/50 hover:border-cyan-400 hover:bg-slate-800/90 shadow-[0_0_15px_rgba(6,182,212,0.12)]"
+                                            : "bg-slate-900/90 border-slate-800 hover:border-slate-700 hover:bg-slate-800/90"
+                                    )}
+                                    onClick={() => handleDraw(drawCount)}
+                                >
+                                    {/* Savings Badge */}
+                                    {savings > 0 ? (
+                                        <span className="absolute top-0 right-0 bg-amber-500 text-slate-950 font-black text-[9px] px-1.5 py-0.5 rounded-bl-md leading-none">
+                                            省{savings >= 10000 ? `${(savings / 1000).toFixed(0)}k` : savings.toLocaleString()}
+                                        </span>
+                                    ) : is10Draw ? (
+                                        <span className="absolute top-0 right-0 bg-cyan-500/20 text-cyan-300 font-bold text-[9px] px-1.5 py-0.5 rounded-bl-md leading-none border-b border-l border-cyan-500/30">
+                                            推薦
+                                        </span>
+                                    ) : null}
+
+                                    <span className={cn(
+                                        "font-bold text-xs sm:text-sm tracking-wide",
+                                        is10Draw ? "text-cyan-200 font-black" : "text-slate-200 group-hover:text-white"
+                                    )}>
+                                        {label}
+                                    </span>
+                                    
+                                    <span className="flex items-center justify-center text-white font-mono font-bold text-xs sm:text-sm tracking-tight mt-1">
+                                        <span>{price.toLocaleString()}</span>
+                                        {isPPoint ? (
+                                            <PPlusIcon className="w-3.5 h-3.5 ml-0.5 shrink-0 text-amber-400" />
+                                        ) : (
+                                            <DiamondIcon className={cn("w-3.5 h-3.5 ml-0.5 shrink-0", is10Draw ? "text-cyan-300" : "text-cyan-400")} />
+                                        )}
+                                    </span>
+                                </Button>
+                            )
+                        })}
+                    </div>
+                )}
 
                 {/* 免費試手氣（簡約次要功能按鈕） */}
                 <Button 
@@ -945,15 +1003,12 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                         <SafeImage src={lastPrizeCard.imageUrl} alt="lp" sizes="120px" fill className="object-cover rounded-lg" />
                                     </div>
                                     <div className="text-center sm:text-left flex-1">
-                                        <span className="text-[11px] font-black text-amber-400 uppercase tracking-wider block mb-0.5">【最後賞】抽完最後一包即刻獲得</span>
-                                        <h4 className="text-sm sm:text-base font-black text-white mb-1 drop-shadow-[0_2px_8px_rgba(245,158,11,0.5)]">
-                                            {lastPrizeCard.name}
-                                        </h4>
+                                        <span className="text-[11px] font-black text-amber-400 uppercase tracking-wider block mb-1">【最後賞】抽完最後一包即刻獲得</span>
                                         <p className="text-[11px] text-slate-300 leading-relaxed max-w-lg">
                                             本卡池最終限定大獎！清空此卡池剩餘存量時，將自動作為最終獎勵發放至您的收藏庫中。
                                         </p>
                                         <span className="inline-flex items-center gap-1 text-[10px] text-cyan-300 font-bold mt-1.5 hover:underline">
-                                            <Eye className="w-3 h-3" /> 點擊放大查看大圖與詳細資訊
+                                            <Eye className="w-3 h-3" /> 點擊放大查看卡牌詳細資訊
                                         </span>
                                     </div>
                                 </div>
@@ -1022,11 +1077,6 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                                         )}
                                                     </div>
 
-                                                    {/* 品項名稱 */}
-                                                    <h4 className="w-full text-center text-[11px] font-bold text-slate-100 line-clamp-2 leading-tight min-h-[1.75rem] mb-1 px-0.5 group-hover/item:text-cyan-300 transition-colors" title={c.name}>
-                                                        {c.name}
-                                                    </h4>
-
                                                     {/* 剩餘數量膠囊 Badge */}
                                                     {!c.isSoldOut ? (
                                                         <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-cyan-950/80 border border-cyan-400/40 text-cyan-300 shadow-[0_0_10px_rgba(34,211,238,0.15)] flex items-center gap-1">
@@ -1061,14 +1111,11 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
 
                         <div className="text-center w-full">
                             <span className={cn(
-                                "text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full border inline-block mb-1",
+                                "text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full border inline-block",
                                 rarityStyles[previewCard.rarity as Rarity]?.badgeBg || "bg-cyan-500/20 text-cyan-300 border-cyan-500/40"
                             )}>
                                 {rarityStyles[previewCard.rarity as Rarity]?.label || previewCard.rarity}
                             </span>
-                            <h2 className="text-base sm:text-lg font-black text-white text-center px-2 drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)] font-headline">
-                                {previewCard.name}
-                            </h2>
                         </div>
 
                         <div className="w-full max-w-[240px] sm:max-w-[260px] my-0.5">

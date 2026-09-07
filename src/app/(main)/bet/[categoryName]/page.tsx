@@ -185,7 +185,7 @@ function DirectPurchaseDialog({ card, children, categoryName }: { card: CardData
                 </AlertDialogHeader>
                 <div className="flex flex-col items-center py-3 space-y-5">
                     <div className="w-32 aspect-[2.5/3.5] relative rounded-xl overflow-hidden bg-black/60 border border-white/10 p-1 shadow-md">
-                        <Image src={card.imageUrl} alt={card.name} fill className="object-contain" sizes="128px" referrerPolicy="no-referrer" />
+                        <SafeImage src={card.imageUrl} alt={card.name} fill className="object-contain" sizes="128px" referrerPolicy="no-referrer" />
                     </div>
                     <p className="text-sm font-bold text-center text-slate-200 px-4 truncate w-full">{card.name}</p>
 

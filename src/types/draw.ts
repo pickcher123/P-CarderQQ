@@ -40,6 +40,11 @@ export interface CardPool {
     minLevel?: string;
     isAdult?: boolean;
     allowFreeDraw?: boolean;
+    isEventPool?: boolean;
+    exclusiveTicketOnly?: boolean;
+    eventTicketName?: string;
+    eventRules?: string;
+    eventMaxDrawsPerUser?: number;
 }
 
 export type DrawnPrize = (Card & { rarity: Rarity; type: 'card' | 'last-prize'; serialNumber?: string }) | (PointPrize & { type: 'points'; rarity: Rarity });

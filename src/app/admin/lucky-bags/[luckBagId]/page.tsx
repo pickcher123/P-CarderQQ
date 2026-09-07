@@ -23,7 +23,7 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { PlusCircle, Trash2, Image as ImageIcon, Upload, ArrowLeft, Check, Settings, Gem, Package, Users, Trophy, Eye, EyeOff, Search, Loader2, Sparkles, Copy, ListChecks, UserCheck, Archive, Play, ChevronUp, ChevronDown, RefreshCw, Maximize2, X } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import Image from 'next/image';
+import { SafeImage } from '@/components/safe-image';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
@@ -540,7 +540,7 @@ export default function LuckBagDetailPage() {
     <div className="flex items-center justify-between p-4 border rounded-lg">
         <div className="flex items-center gap-4">
             {card ? (
-                <Image src={card.imageUrl} alt={card.name} width={48} height={68} className="rounded-md object-cover" />
+                <SafeImage src={card.imageUrl} alt={card.name} width={48} height={68} className="rounded-md object-cover" />
             ) : (
                 <div className="w-12 h-16 bg-muted rounded-md flex items-center justify-center">
                     <Trophy className="w-6 h-6 text-muted-foreground" />
@@ -567,7 +567,7 @@ export default function LuckBagDetailPage() {
   const PrizeImage = ({ card, className, alt }: { card?: CardData, className?: string, alt: string }) => (
     <div className={`relative bg-muted/50 rounded-md overflow-hidden flex items-center justify-center ${className}`}>
         {card ? (
-            <Image
+            <SafeImage
                 src={card.imageUrl}
                 alt={card.name}
                 fill
@@ -762,7 +762,7 @@ export default function LuckBagDetailPage() {
                                             <div className="relative w-12 h-16 md:w-16 md:h-20 bg-muted rounded-lg overflow-hidden shrink-0 border border-white/10 shadow-lg">
                                                 {prizeCards[level] ? (
                                                     <div className="relative w-full h-full group">
-                                                        <Image src={prizeCards[level]!.imageUrl} alt={prizeCards[level]!.name} fill className="object-cover" />
+                                                        <SafeImage src={prizeCards[level]!.imageUrl} alt={prizeCards[level]!.name} fill className="object-cover" />
                                                         <button 
                                                             onClick={() => setPreviewTarget({ imageUrl: prizeCards[level]!.imageUrl, name: prizeCards[level]!.name })}
                                                             className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
@@ -813,7 +813,7 @@ export default function LuckBagDetailPage() {
                                     {otherPrizesList.map(prize => (
                                         <div key={prize.prizeId} className="flex items-center gap-3 p-3 border rounded-xl bg-white/5 group hover:bg-white/10 transition-all">
                                             <div className="relative w-10 h-14 rounded-md overflow-hidden border border-white/10">
-                                                <Image src={prize.imageUrl} alt={prize.name} fill className="object-cover" />
+                                                <SafeImage src={prize.imageUrl} alt={prize.name} fill className="object-cover" />
                                             </div>
                                             <div className="flex-1 overflow-hidden">
                                                 <p className="font-bold text-xs truncate mb-1.5">{prize.name}</p>
@@ -954,7 +954,7 @@ export default function LuckBagDetailPage() {
                                                 {otherPrizesList.map((card, index) => (
                                                     <TableRow key={`${card.prizeId}-${index}`}>
                                                         <TableCell>
-                                                            <Image src={card.imageUrl} alt={card.name} width={32} height={45} className="rounded-sm" />
+                                                            <SafeImage src={card.imageUrl} alt={card.name} width={32} height={45} className="rounded-sm" />
                                                         </TableCell>
                                                         <TableCell className="font-medium text-sm">{card.name}</TableCell>
                                                         <TableCell className="text-right flex items-center justify-end gap-2">
@@ -1046,7 +1046,7 @@ export default function LuckBagDetailPage() {
                                  data-state={selectedCardsToAdd.includes(card.id) ? 'checked' : 'unchecked'}
                             >
                                 <div className="aspect-[2.5/3.5] relative">
-                                    <Image src={card.imageUrl} alt={card.name} fill className="object-cover rounded-md" />
+                                    <SafeImage src={card.imageUrl} alt={card.name} fill className="object-cover rounded-md" />
                                     <div className={cn("absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center", selectedPrizeLevel !== 'other' && 'group-active:opacity-100')}>
                                         <Check className="w-10 h-10 text-white"/>
                                     </div>
@@ -1086,7 +1086,7 @@ export default function LuckBagDetailPage() {
                 </VisuallyHidden>
                 {previewTarget && (
                     <div className="relative aspect-[2.5/3.5] w-full animate-in zoom-in-95 duration-200">
-                        <Image 
+                        <SafeImage 
                             src={previewTarget.imageUrl} 
                             alt={previewTarget.name} 
                             fill 

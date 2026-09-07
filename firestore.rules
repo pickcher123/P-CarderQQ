@@ -129,5 +129,10 @@ service cloud.firestore {
       allow create: if isSignedIn();
       allow read: if isVerifiedAdmin();
     }
+
+    match /eventTicketDispatches/{dispatchId} {
+      allow read: if isSignedIn() && (resource == null || resource.data.userId == request.auth.uid) || isVerifiedAdmin();
+      allow write: if isVerifiedAdmin();
+    }
   }
 }

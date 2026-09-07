@@ -21,6 +21,7 @@ export interface UserProfile {
   createdAt?: Timestamp;
   address?: string;
   freeDrawTickets?: number; // 持有的免費抽卡券數量
+  eventPoolTickets?: Record<string, number>; // 各活動卡池專屬抽卡券數量 { [poolId]: count }
   claimedWelcomeTicket?: boolean; // 是否已領取新手首登免費券
   claimedCommunityTicket?: boolean; // 是否已領取加入社群專屬免費券
   claimedPromoCodes?: string[]; // 已領取的兌換碼列表

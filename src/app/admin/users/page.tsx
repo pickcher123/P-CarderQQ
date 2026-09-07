@@ -31,7 +31,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
-import { Loader2, User as UserIcon, Gem, MapPin, Search, UserCheck, Briefcase, Mail, Ticket, Send } from 'lucide-react';
+import { Loader2, User as UserIcon, Gem, MapPin, Search, UserCheck, Briefcase, Mail, Ticket, Send, Sparkles, Clock } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -41,6 +41,7 @@ import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { PPlusIcon } from '@/components/icons';
+import { EventTicketDispatchDialog, EventTicketDispatchLogs } from '@/components/admin/event-ticket-manager';
 
 const PERMISSION_ITEMS = [
     { id: 'reports', label: '營業報表', category: '數據中心' },
@@ -1079,10 +1080,26 @@ export default function UsersAdminPage() {
   const firestore = useFirestore();
   const { user: currentUser } = useUser();
   const [searchTerm, setSearchTerm] = useState('');
+  const [isEventDispatchOpen, setIsEventDispatchOpen] = useState(false);
+  const [isEventLogsOpen, setIsEventLogsOpen] = useState(false);
   const isSuperAdmin = currentUser?.email === SUPER_ADMIN_EMAIL;
 
   const usersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'users'), limit(50)) : null, [firestore]);
   const { data: users, isLoading, forceRefetch } = useCollection<UserProfile>(usersQuery);
+
+  const poolsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'cardPools') : null, [firestore]);
+  const { data: allPools } = useCollection<any>(poolsQuery);
+
+  const eventPoolOptions = useMemo(() => {
+    if (!allPools) return [];
+    return allPools.map(p => ({
+      id: p.id,
+      name: p.name,
+      isEventPool: p.isEventPool,
+      exclusiveTicketOnly: p.exclusiveTicketOnly,
+      eventTicketName: p.eventTicketName,
+    }));
+  }, [allPools]);
   
   const filteredUsers = useMemo(() => {
     if (!users) return [];
@@ -1098,6 +1115,21 @@ export default function UsersAdminPage() {
             <p className="mt-1 text-sm text-slate-600 font-bold">查閱並管理全站會員資料、帳戶資產與活動抽卡券發放。</p>
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full xl:w-auto">
+            <Button
+                onClick={() => setIsEventDispatchOpen(true)}
+                className="h-11 sm:h-12 px-4 rounded-2xl font-black bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 shadow-md flex items-center gap-2"
+            >
+                <Ticket className="w-4 h-4" />
+                派發活動專屬券
+            </Button>
+            <Button
+                variant="outline"
+                onClick={() => setIsEventLogsOpen(true)}
+                className="h-11 sm:h-12 px-4 rounded-2xl font-bold border-purple-200 text-purple-900 bg-purple-50/60 hover:bg-purple-100 flex items-center gap-2"
+            >
+                <Clock className="w-4 h-4 text-purple-600" />
+                專屬券派發紀錄
+            </Button>
             <BatchGrantFreeTicketsDialog onComplete={() => forceRefetch?.()} />
             <div className="relative w-full sm:w-80 xl:w-96">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -1133,6 +1165,11 @@ export default function UsersAdminPage() {
                                 {user.freeDrawTickets || 0} <Ticket className="w-3.5 h-3.5 text-emerald-600" />
                                 <span className="text-[9px] text-emerald-600/80 font-bold">張免費券</span>
                             </span>
+                            {user.eventPoolTickets && Object.values(user.eventPoolTickets).some(v => v > 0) && (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                                    🎪 活動券: {Object.values(user.eventPoolTickets).reduce((a, b) => a + b, 0)} 張
+                                </span>
+                            )}
                         </div>
                     </TableCell>
                     <TableCell>
@@ -1175,6 +1212,29 @@ export default function UsersAdminPage() {
             </Table>
         </div>
       </Card>
+
+      {/* 🎟️ 派發活動專屬抽卡券 Dialog */}
+      <EventTicketDispatchDialog
+          open={isEventDispatchOpen}
+          onOpenChange={setIsEventDispatchOpen}
+          allPools={eventPoolOptions}
+          onSuccess={() => forceRefetch?.()}
+      />
+
+      {/* 📋 全站活動專屬券派發紀錄 Dialog */}
+      <Dialog open={isEventLogsOpen} onOpenChange={setIsEventLogsOpen}>
+          <DialogContent className="max-w-4xl bg-slate-50 border-slate-200 p-6 rounded-3xl shadow-2xl max-h-[85vh] overflow-y-auto">
+              <DialogHeader>
+                  <DialogTitle className="text-xl font-black text-slate-900 flex items-center gap-2">
+                      <Ticket className="w-5 h-5 text-amber-500" />
+                      全站活動專屬抽卡券派發與稽核紀錄
+                  </DialogTitle>
+              </DialogHeader>
+              <div className="pt-2">
+                  <EventTicketDispatchLogs title="全站活動抽卡券派發與稽核記錄" />
+              </div>
+          </DialogContent>
+      </Dialog>
     </div>
   );
 }
