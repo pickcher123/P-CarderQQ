@@ -307,7 +307,11 @@ export default function AdminLayout({
     );
   }
 
-  const pagePermission = sidebarNavItems.flatMap(s => s.items).find(i => i.href === pathname)?.permission;
+  const pagePermission = sidebarNavItems
+    .flatMap(s => s.items)
+    .filter(i => i.href !== '/admin')
+    .find(i => pathname === i.href || pathname.startsWith(i.href + '/'))
+    ?.permission;
 
   if (pagePermission && !isSuperAdmin && !userProfile.permissions?.includes(pagePermission)) {
     return (

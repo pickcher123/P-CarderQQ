@@ -223,9 +223,19 @@ export default function Home() {
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6 sm:gap-8">
             {featuredPools.map((pool) => (
-              <PoolCard key={pool.id} pool={pool} allCardsMap={allCardsMap} />
+              <div key={pool.id} className="relative w-full">
+                {pool.isFeatured && (
+                  <div className="absolute -top-2.5 -left-2 z-20">
+                    <div className="bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-black text-[10px] px-2.5 py-0.5 rounded-full shadow-[0_4px_12px_rgba(245,158,11,0.4)] border border-amber-200/50 uppercase tracking-wider flex items-center gap-1">
+                      <Sparkles className="w-3 h-3 fill-slate-950" />
+                      <span>HOT 精選</span>
+                    </div>
+                  </div>
+                )}
+                <PoolCard pool={pool} allCardsMap={allCardsMap} />
+              </div>
             ))}
           </div>
         </section>

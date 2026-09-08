@@ -62,9 +62,11 @@ const PERMISSION_ITEMS = [
     { id: 'announcements', label: '站內公告', category: '行銷管理' },
     { id: 'coupons', label: '優惠券管理', category: '行銷管理' },
     { id: 'card-exhibitions', label: '卡展行事曆', category: '行銷管理' },
-    { id: 'partners', label: '合作夥伴', category: '營運操作' },
     { id: 'shipping', label: '出貨管理', category: '營運操作' },
-    { id: 'materials', label: '素材管理', category: '素材管理' },
+    { id: 'partners', label: '合作夥伴', category: '營運操作' },
+    { id: 'materials', label: '品牌素材管理', category: '系統配置' },
+    { id: 'alerts', label: '異常預警', category: '系統配置' },
+    { id: 'activity-logs', label: '操作日誌', category: '系統配置' },
 ];
 
 const SUPER_ADMIN_EMAIL = 'pickcher123@gmail.com';
@@ -479,37 +481,56 @@ function ModifyPermissionsDialog({ user, onUpdate }: { user: UserProfile, onUpda
             <DialogTrigger asChild><Button variant="outline" size="sm" className="h-8 text-[10px] rounded-lg font-black bg-white border-slate-200 text-slate-700">模組授權</Button></DialogTrigger>
             <DialogContent className="light w-[95vw] md:max-w-2xl max-h-[90vh] rounded-3xl bg-white shadow-2xl border-none text-slate-900 p-0 flex flex-col overflow-hidden">
                 <DialogTitle className="sr-only">管理模組授權</DialogTitle>
-                <DialogHeader className="p-6 border-b border-slate-100 flex flex-row items-center justify-between">
+                <DialogHeader className="p-6 border-b border-slate-100 flex flex-row items-center justify-between shrink-0">
                     <div>
                         <DialogTitle className="text-xl font-black text-slate-900">管理模組授權 - {user.username}</DialogTitle>
                         <p className="text-xs text-slate-500 font-bold mt-1">獨立開關各後台功能模組的讀取與操作權限。</p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 shrink-0">
                         <Button type="button" variant="outline" size="sm" onClick={handleSelectAll} className="h-8 text-[10px] font-bold rounded-lg border-slate-200">全選</Button>
                         <Button type="button" variant="outline" size="sm" onClick={handleClearAll} className="h-8 text-[10px] font-bold rounded-lg border-slate-200 text-red-600 hover:text-red-700">全不選</Button>
                     </div>
                 </DialogHeader>
-                <div className="flex-1 overflow-hidden">
-                    <ScrollArea className="h-full p-6 space-y-6">
-                        {categories.map(cat => {
-                            const catItems = PERMISSION_ITEMS.filter(p => p.category === cat);
-                            return (
-                                <div key={cat} className="space-y-3">
-                                    <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest pl-1">{cat}</h4>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
-                                        {catItems.map(item => (
-                                            <div key={item.id} className="flex items-center space-x-2.5 p-3 border border-slate-100 rounded-2xl hover:bg-slate-50 transition-all cursor-pointer group hover:border-slate-300 shadow-sm bg-white">
-                                                <Checkbox id={`p-${item.id}`} checked={permissions.includes(item.id)} onCheckedChange={(c) => setPermissions(prev => c ? [...prev, item.id] : prev.filter(p => p !== item.id))} />
-                                                <Label htmlFor={`p-${item.id}`} className="text-xs cursor-pointer font-bold text-slate-800 group-hover:text-slate-950">{item.label}</Label>
+                <div className="flex-1 min-h-0 overflow-y-auto p-6 space-y-6 overscroll-contain">
+                    {categories.map(cat => {
+                        const catItems = PERMISSION_ITEMS.filter(p => p.category === cat);
+                        return (
+                            <div key={cat} className="space-y-3">
+                                <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest pl-1">{cat}</h4>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                                    {catItems.map(item => {
+                                        const isChecked = permissions.includes(item.id);
+                                        return (
+                                            <div 
+                                                key={item.id} 
+                                                onClick={() => setPermissions(prev => prev.includes(item.id) ? prev.filter(p => p !== item.id) : [...prev, item.id])}
+                                                className={cn(
+                                                    "flex items-center space-x-2.5 p-3 border rounded-2xl transition-all cursor-pointer group shadow-sm select-none",
+                                                    isChecked 
+                                                        ? "bg-slate-900 border-slate-900 text-white shadow-md" 
+                                                        : "border-slate-200 bg-white hover:bg-slate-50 text-slate-800 hover:border-slate-300"
+                                                )}
+                                            >
+                                                <Checkbox 
+                                                    id={`p-${item.id}`} 
+                                                    checked={isChecked} 
+                                                    onCheckedChange={(c) => setPermissions(prev => c ? [...prev, item.id] : prev.filter(p => p !== item.id))} 
+                                                    className={cn(
+                                                        isChecked && "border-white data-[state=checked]:bg-white data-[state=checked]:text-slate-900"
+                                                    )}
+                                                />
+                                                <Label htmlFor={`p-${item.id}`} className={cn("text-xs cursor-pointer font-bold", isChecked ? "text-white" : "text-slate-800 group-hover:text-slate-950")}>
+                                                    {item.label}
+                                                </Label>
                                             </div>
-                                        ))}
-                                    </div>
+                                        );
+                                    })}
                                 </div>
-                            );
-                        })}
-                    </ScrollArea>
+                            </div>
+                        );
+                    })}
                 </div>
-                <DialogFooter className="p-6 border-t border-slate-100 bg-slate-50">
+                <DialogFooter className="p-6 border-t border-slate-100 bg-slate-50 shrink-0">
                     <Button onClick={handleConfirm} disabled={isProcessing} className="w-full rounded-2xl h-14 font-black bg-slate-900 text-white shadow-xl hover:bg-slate-800 text-base">{isProcessing ? <Loader2 className="animate-spin"/> : '儲存授權設定'}</Button>
                 </DialogFooter>
             </DialogContent>

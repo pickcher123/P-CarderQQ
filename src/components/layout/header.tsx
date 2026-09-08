@@ -133,9 +133,6 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                 <span className="sm:hidden absolute -top-1 -right-1 w-2 h-2 rounded-full bg-pink-500 border border-pink-200 animate-pulse shadow-[0_0_6px_rgba(244,63,94,0.8)]" />
               </div>
               <span className="text-xs font-bold tracking-tight hidden sm:inline">免費領券</span>
-              <span className="hidden sm:inline-block text-[9px] font-black px-1.5 py-0.5 rounded-full bg-pink-500/25 text-pink-200 border border-pink-400/40 leading-none shadow-sm">
-                送券
-              </span>
             </button>
 
             {/* 點數區塊 (電競晶鑽膠囊) */}

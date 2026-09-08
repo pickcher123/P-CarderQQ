@@ -195,11 +195,6 @@ export function FloatingLineButton({ systemConfig }: { systemConfig: SystemConfi
           >
             <div className="relative flex items-center justify-center">
               <Users className="w-5 h-5 sm:w-5.5 sm:h-5.5 text-cyan-300 drop-shadow-[0_0_8px_rgba(34,211,238,0.9)] group-hover/community:text-cyan-200 transition-colors" />
-              
-              {/* 右上角領券發光小徽章 */}
-              <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 text-[9px] font-black text-slate-950 shadow-[0_0_8px_rgba(251,191,36,0.8)] border border-amber-200">
-                券
-              </span>
             </div>
           </Link>
         </div>

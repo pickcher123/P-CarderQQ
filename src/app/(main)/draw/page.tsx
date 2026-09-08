@@ -407,9 +407,9 @@ export default function DrawPage() {
 
                 {/* 卡池列表 */}
                 {allPools.length > 0 ? (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 max-w-7xl mx-auto">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6 sm:gap-8 max-w-7xl mx-auto">
                         {allPools.map((pool) => (
-                            <div key={pool.id} className="relative">
+                            <div key={pool.id} className="relative w-full">
                                 {pool.isFeatured && (
                                     <div className="absolute -top-2.5 -left-2 z-20">
                                         <div className="bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-black text-[10px] px-2.5 py-0.5 rounded-full shadow-[0_4px_12px_rgba(245,158,11,0.4)] border border-amber-200/50 uppercase tracking-wider flex items-center gap-1">
