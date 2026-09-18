@@ -294,7 +294,7 @@ export default function AdminLayout({
     );
   }
 
-  if (!user || !userProfile || userProfile.role !== 'admin') {
+  if (!user || (!isSuperAdmin && (!userProfile || userProfile.role !== 'admin'))) {
     return (
         <div className="flex h-screen flex-col items-center justify-center text-center bg-white p-6">
             <div className="p-6 rounded-full bg-red-50 border border-red-100 mb-6">

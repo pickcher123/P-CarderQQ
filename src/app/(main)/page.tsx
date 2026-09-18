@@ -63,7 +63,7 @@ export default function Home() {
 
   const poolsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'pools'), orderBy('createdAt', 'desc'), limit(4));
+    return query(collection(firestore, 'cardPools'), orderBy('createdAt', 'desc'), limit(4));
   }, [firestore]);
 
   const cardsQuery = useMemoFirebase(() => {

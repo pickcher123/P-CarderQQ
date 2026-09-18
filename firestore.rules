@@ -21,15 +21,22 @@ service cloud.firestore {
       allow read, write: if isVerifiedAdmin();
     }
 
-    // --- 使用者資料管理 ---
+    // --- 使用者資料管理 (防作弊與資產嚴格保護) ---
     match /users/{userId} {
       allow read: if isOwner(userId) || isVerifiedAdmin();
       allow create: if isOwner(userId) && 
                       incoming().role == "user" && 
-                      incoming().keys().hasAll(['id', 'points']);
+                      incoming().keys().hasAll(['id', 'points']) &&
+                      incoming().get('points', 0) <= 1000 &&
+                      incoming().get('bonusPoints', 0) <= 0 &&
+                      incoming().get('freeDrawTickets', 0) <= 5;
+                      
       allow update: if (isOwner(userId) && 
                        incoming().get('role', 'user') == existing().get('role', 'user') && 
                        incoming().get('id', userId) == existing().get('id', userId) &&
+                       // 🚨 資產防禦鐵壁：前端用戶絕對不可自行增加鑽石或紅利點數（只能抽卡扣除，增加必須由管理員/金流後端執行）
+                       (!incoming().diff(existing()).affectedKeys().hasAny(['points']) || incoming().get('points', 0) <= existing().get('points', 0)) &&
+                       (!incoming().diff(existing()).affectedKeys().hasAny(['bonusPoints']) || incoming().get('bonusPoints', 0) <= existing().get('bonusPoints', 0)) &&
                        // 更名限制：若使用者名稱改變，才檢查限制
                        (incoming().get('username', '') == existing().get('username', '') || (
                          !existing().get('hasChangedUsername', false) && 
@@ -40,7 +47,7 @@ service cloud.firestore {
                        ))
                       ) || isVerifiedAdmin();
       
-      // 使用者子集合 (如 poolStats)
+      // 使用者子集合 (如 poolStats, userCards)
       match /{allSubcollections=**} {
         allow read, write: if isOwner(userId) || isVerifiedAdmin();
       }

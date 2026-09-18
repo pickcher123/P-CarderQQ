@@ -538,10 +538,10 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                         <div className="mb-3.5 bg-gradient-to-br from-amber-500/10 via-slate-950/90 to-slate-950/95 border border-amber-500/35 hover:border-amber-400/70 rounded-2xl p-3.5 sm:p-4 shadow-[0_4px_20px_rgba(245,158,11,0.12)] transition-all duration-300">
                             <div className="flex flex-col items-center gap-2.5 sm:gap-3 w-full">
                                 
-                                {/* 頂部：焦點頭獎標題置中移至卡片上方 */}
-                                <div className="flex items-center justify-center gap-1.5 text-xs sm:text-sm font-black text-amber-400">
-                                    <Sparkles className="w-4 h-4 text-amber-400 animate-pulse shrink-0" />
-                                    <span className="tracking-wider uppercase text-sm font-black">
+                                {/* 頂部：焦點頭獎標題置中移至卡片上方 (精緻尊榮標章) */}
+                                <div className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.12)]">
+                                    <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse shrink-0" />
+                                    <span className="tracking-wider uppercase text-xs sm:text-sm font-black">
                                         {featuredPrize.isLastPrize ? '限定最後賞' : '焦點頭獎'}
                                     </span>
                                 </div>
@@ -704,21 +704,29 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                     );
                 })()}
 
-                {/* 📊 賞別剩餘張數、機率與存量面板 (簡約緊湊版，嚴格避免折字斷行) */}
-                <div className="mb-2.5 bg-slate-950/60 rounded-xl border border-slate-800/70 p-2 sm:p-2.5">
-                    {/* 賞別 3 欄精簡統計 */}
-                    <div className="grid grid-cols-3 gap-1 divide-x divide-slate-800/80 text-center py-1">
-                        {RARITIES.map((r, idx) => {
+                {/* 📊 賞別剩餘張數、機率與存量面板 (精緻微卡片版，嚴格避免折字斷行) */}
+                <div className="mb-2.5 bg-slate-950/70 rounded-2xl border border-slate-800/80 p-2 sm:p-2.5 shadow-inner">
+                    {/* 賞別 3 欄獨立微卡片統計 */}
+                    <div className="grid grid-cols-3 gap-1.5 text-center">
+                        {RARITIES.map((r) => {
                             const detail = rarityDetails[r];
                             const RarityIcon = rarityStyles[r].icon;
+                            const rarityBg = r === 'legendary' 
+                                ? 'bg-amber-500/[0.06] border-amber-500/20 text-amber-300' 
+                                : r === 'rare' 
+                                ? 'bg-purple-500/[0.06] border-purple-500/20 text-purple-300' 
+                                : 'bg-cyan-500/[0.06] border-cyan-500/20 text-cyan-300';
 
                             return (
-                                <div key={r} className={cn(
-                                    "flex flex-col items-center justify-center gap-0.5 px-0.5 min-w-0 overflow-hidden",
-                                    idx > 0 && "pl-1"
-                                )}>
+                                <div 
+                                    key={r} 
+                                    className={cn(
+                                        "flex flex-col items-center justify-center py-1.5 px-1 rounded-xl border transition-all duration-200 min-w-0 overflow-hidden",
+                                        rarityBg
+                                    )}
+                                >
                                     {/* 頂部：賞別標籤與圖示 (嚴格單行不換行) */}
-                                    <div className="flex items-center justify-center gap-1 whitespace-nowrap leading-tight">
+                                    <div className="flex items-center justify-center gap-1 whitespace-nowrap leading-tight mb-0.5">
                                         <RarityIcon className={cn("w-3 h-3 shrink-0", rarityStyles[r].text)} />
                                         <span className={cn("text-[10px] sm:text-[11px] font-black tracking-tight whitespace-nowrap", rarityStyles[r].text)}>
                                             {rarityStyles[r].label}
@@ -741,10 +749,10 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                     </div>
 
                     {/* 卡池剩餘包數與進度條 */}
-                    <div className="mt-1.5 pt-1.5 border-t border-slate-800/70">
-                        <div className="flex justify-between items-center text-[11px] mb-1 font-medium">
-                            <span className="text-slate-400 flex items-center gap-1 text-[10px] sm:text-[11px]">
-                                <Zap className="w-3 h-3 text-cyan-400" />
+                    <div className="mt-2 pt-2 border-t border-slate-800/80">
+                        <div className="flex justify-between items-center text-[11px] mb-1.5 font-medium">
+                            <span className="text-slate-400 flex items-center gap-1.5 text-[10px] sm:text-[11px]">
+                                <Zap className="w-3.5 h-3.5 text-cyan-400" />
                                 剩餘包數
                             </span>
                             <div className="flex items-baseline gap-1 font-mono text-xs">
@@ -755,51 +763,61 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                 </span>
                             </div>
                         </div>
-                        <div className="h-1.5 w-full bg-slate-900 rounded-full overflow-hidden p-0">
+                        <div className="h-2 w-full bg-slate-900/90 rounded-full overflow-hidden p-0.5 border border-slate-800/70">
                             <div 
-                                className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full transition-all duration-500"
+                                className="h-full bg-gradient-to-r from-cyan-500 via-sky-400 to-blue-500 rounded-full transition-all duration-500 shadow-[0_0_8px_rgba(6,182,212,0.4)]"
                                 style={{ width: `${Math.max(0, Math.min(100, (pool.remainingPacks || 0) / (pool.totalPacks || 1) * 100))}%` }}
                             />
                         </div>
                     </div>
                 </div>
 
-                {/* 狀態列 (置中對齊) */}
-                <div className="flex items-center justify-center gap-3 px-1 mb-2.5 text-[11px] text-slate-400 font-medium text-center">
-                    <div>
-                        已抽 <span className="text-cyan-400 font-mono font-bold">{todayDrawCount}</span> 次
+                {/* 狀態列 (置中精美膠囊) */}
+                <div className="flex items-center justify-center mb-2.5">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-950/60 border border-slate-800/70 shadow-sm text-[11px] text-slate-400 font-medium">
+                        <div>
+                            已抽 <span className="text-cyan-400 font-mono font-bold">{todayDrawCount}</span> 次
+                        </div>
+                        {pool.expiresAt && (
+                            <>
+                                <span className="text-slate-600">•</span>
+                                <div className="flex items-center text-slate-400" suppressHydrationWarning>
+                                    <Clock className="w-3 h-3 mr-1 text-slate-500" />
+                                    截止 {format(new Date(pool.expiresAt.seconds * 1000), "MM/dd HH:mm")}
+                                </div>
+                            </>
+                        )}
                     </div>
-                    {pool.expiresAt && (
-                        <>
-                            <span className="text-slate-600">•</span>
-                            <div className="flex items-center text-slate-400" suppressHydrationWarning>
-                                <Clock className="w-3 h-3 mr-1 text-slate-500" />
-                                截止 {format(new Date(pool.expiresAt.seconds * 1000), "MM/dd HH:mm")}
-                            </div>
-                        </>
-                    )}
                 </div>
 
-                {/* 活動兌換券專用區（置中對齊，緊湊實用） */}
+                {/* 活動兌換券專用區（高質感微光橫幅） */}
                 {pool.allowFreeDraw !== false && (
-                    <div className="mb-2.5 p-2 sm:p-2.5 rounded-xl bg-emerald-950/30 border border-emerald-500/25 flex items-center justify-center gap-2.5 sm:gap-3.5 flex-wrap text-center">
-                        <div className="flex items-center gap-1.5 text-xs text-slate-300">
-                            <Ticket className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                            {effectiveTickets > 0 ? (
-                                <>
-                                    <span>持有免費抽卡券：</span>
-                                    <span className="font-mono font-bold text-emerald-400">{effectiveTickets} 張可用</span>
-                                </>
-                            ) : (
-                                <span>本卡池支援活動免費抽卡券</span>
-                            )}
+                    <div className="mb-2.5 p-2 sm:p-2.5 rounded-xl bg-gradient-to-r from-emerald-950/40 via-teal-950/30 to-emerald-950/40 border border-emerald-500/30 flex items-center justify-between gap-2 shadow-sm">
+                        <div className="flex items-center gap-2 text-xs min-w-0">
+                            <div className="w-7 h-7 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shrink-0">
+                                <Ticket className="w-3.5 h-3.5 text-emerald-300" />
+                            </div>
+                            <div className="text-left min-w-0">
+                                <div className="text-[11px] sm:text-xs font-bold text-slate-200 truncate">
+                                    {effectiveTickets > 0 ? '活動免費抽卡券' : '本卡池支援免費抽卡券'}
+                                </div>
+                                {effectiveTickets > 0 ? (
+                                    <div className="text-[10px] text-emerald-400 font-semibold font-mono">
+                                        持有 {effectiveTickets} 張可用
+                                    </div>
+                                ) : (
+                                    <div className="text-[10px] text-slate-400">
+                                        免扣點數直接開獎
+                                    </div>
+                                )}
+                            </div>
                         </div>
                         {effectiveTickets > 0 ? (
                             <Button
                                 size="sm"
                                 onClick={handleDrawWithTicket}
                                 disabled={poolStatus.disabled || isDrawing}
-                                className="h-7 px-3 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-sm transition-all cursor-pointer active:scale-95 shrink-0"
+                                className="h-7.5 px-3.5 rounded-lg bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-300 hover:to-teal-300 text-slate-950 font-black text-xs shadow-md transition-all cursor-pointer active:scale-95 shrink-0"
                             >
                                 使用 1 抽
                             </Button>
@@ -808,7 +826,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => setIsPromoModalOpen(true)}
-                                className="h-7 px-2.5 rounded-lg text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 font-medium text-xs transition-all cursor-pointer active:scale-95 shrink-0 flex items-center gap-1"
+                                className="h-7 px-2.5 rounded-lg text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 font-bold text-xs transition-all cursor-pointer active:scale-95 shrink-0 flex items-center gap-1"
                             >
                                 <Sparkles className="w-3 h-3 text-emerald-400" />
                                 <span>領取優惠</span>
@@ -911,20 +929,20 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                     key={drawCount}
                                     disabled={!canDraw || isDrawing}
                                     className={cn(
-                                        "relative h-auto py-2.5 sm:py-3 px-1.5 flex flex-col items-center justify-center rounded-xl transition-all active:scale-95 overflow-hidden border group cursor-pointer",
+                                        "relative h-auto py-2.5 sm:py-3 px-1.5 flex flex-col items-center justify-center rounded-xl transition-all active:scale-95 overflow-hidden border group cursor-pointer shadow-sm",
                                         is10Draw
-                                            ? "bg-slate-900/90 border-cyan-500/50 hover:border-cyan-400 hover:bg-slate-800/90 shadow-[0_0_15px_rgba(6,182,212,0.12)]"
-                                            : "bg-slate-900/90 border-slate-800 hover:border-slate-700 hover:bg-slate-800/90"
+                                            ? "bg-gradient-to-b from-cyan-950/40 via-slate-900/90 to-slate-950 border-cyan-500/60 hover:border-cyan-400 hover:shadow-[0_0_20px_rgba(6,182,212,0.22)] ring-1 ring-cyan-500/25"
+                                            : "bg-slate-900/90 border-slate-800 hover:border-slate-700 hover:bg-slate-850"
                                     )}
                                     onClick={() => handleDraw(drawCount)}
                                 >
                                     {/* Savings Badge */}
                                     {savings > 0 ? (
-                                        <span className="absolute top-0 right-0 bg-amber-500 text-slate-950 font-black text-[9px] px-1.5 py-0.5 rounded-bl-md leading-none">
+                                        <span className="absolute top-0 right-0 bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-black text-[9px] px-1.5 py-0.5 rounded-bl-md leading-none shadow-sm">
                                             省{savings >= 10000 ? `${(savings / 1000).toFixed(0)}k` : savings.toLocaleString()}
                                         </span>
                                     ) : is10Draw ? (
-                                        <span className="absolute top-0 right-0 bg-cyan-500/20 text-cyan-300 font-bold text-[9px] px-1.5 py-0.5 rounded-bl-md leading-none border-b border-l border-cyan-500/30">
+                                        <span className="absolute top-0 right-0 bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 font-black text-[9px] px-1.5 py-0.5 rounded-bl-md leading-none shadow-sm">
                                             推薦
                                         </span>
                                     ) : null}
@@ -953,11 +971,11 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                 {/* 免費試手氣（簡約次要功能按鈕） */}
                 <Button 
                     variant="outline" 
-                    className="w-full mt-2 h-8.5 sm:h-9 text-xs font-medium rounded-xl border border-slate-800/90 bg-slate-950/40 text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 hover:border-slate-700 flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-[0.99]"
+                    className="w-full mt-2 h-8.5 sm:h-9 text-xs font-medium rounded-xl border border-slate-800/80 bg-slate-950/50 text-slate-400 hover:text-cyan-300 hover:bg-slate-900 hover:border-cyan-500/40 flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-[0.99]"
                     onClick={handleTrialDraw}
                     disabled={isDrawing}
                 >
-                    <Sparkles className="w-3.5 h-3.5 text-slate-500 group-hover:text-amber-400 transition-colors" />
+                    <Sparkles className="w-3.5 h-3.5 text-cyan-500 group-hover:text-cyan-400 transition-colors" />
                     <span>免費試手氣 (模擬抽)</span>
                 </Button>
             </div>
