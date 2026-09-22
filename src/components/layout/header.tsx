@@ -251,7 +251,7 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                           {userProfile?.photoURL ? (
                             <img 
                               src={userProfile.photoURL} 
-                              alt={userProfile.username || 'User'} 
+                              alt={userProfile?.username || user?.displayName || 'User'} 
                               className="w-full h-full object-cover" 
                             />
                           ) : (
@@ -286,7 +286,7 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                                 {userProfile?.photoURL ? (
                                   <img 
                                     src={userProfile.photoURL} 
-                                    alt={userProfile.username || 'User'} 
+                                    alt={userProfile?.username || user?.displayName || 'User'} 
                                     className="w-full h-full rounded-full object-cover" 
                                   />
                                 ) : (

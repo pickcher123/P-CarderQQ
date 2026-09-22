@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { format, isSameMonth, isAfter, isBefore, startOfDay, endOfDay } from 'date-fns';
@@ -37,7 +37,9 @@ import {
     X,
     CalendarRange,
     Flame,
-    Tag
+    Tag,
+    Timer,
+    Copy,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -136,6 +138,36 @@ export default function CardExhibitionsAdmin() {
     const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
     const [aiExtractedList, setAiExtractedList] = useState<ExtractedExhibition[]>([]);
     const [isImporting, setIsImporting] = useState(false);
+
+    // 定時自動抓取 (Cron) 狀態
+    const [isCronModalOpen, setIsCronModalOpen] = useState(false);
+    const [isCronSyncing, setIsCronSyncing] = useState(false);
+    const [copiedUrl, setCopiedUrl] = useState(false);
+
+    // 手動觸發後端定時抓取同步
+    const handleTriggerCronSync = async () => {
+        setIsCronSyncing(true);
+        try {
+            const res = await fetch('/api/cron/sync-exhibitions', { method: 'POST' });
+            const data = await res.json();
+            if (data.success) {
+                toast({
+                    title: '定時抓取同步完成！',
+                    description: `已自動搜尋並匯入 ${data.result?.addedCount ?? 0} 場最新卡展（自動去重跳過 ${data.result?.skippedCount ?? 0} 場已存在項目）。`,
+                });
+            } else {
+                throw new Error(data.error || '排程端點回應異常');
+            }
+        } catch (err: any) {
+            toast({
+                variant: 'destructive',
+                title: '同步觸發失敗',
+                description: err.message || '無法連線至排程端點，請確認後端狀態。',
+            });
+        } finally {
+            setIsCronSyncing(false);
+        }
+    };
 
     // 刪除確認 Modal 狀態
     const [deletingExhibition, setDeletingExhibition] = useState<{ id: string; title: string; dateStr?: string; location?: string } | null>(null);
@@ -716,6 +748,123 @@ export default function CardExhibitionsAdmin() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3">
+                    {/* 定時排程抓取按鈕 */}
+                    <Dialog open={isCronModalOpen} onOpenChange={setIsCronModalOpen}>
+                        <DialogTrigger asChild>
+                            <Button
+                                variant="outline"
+                                className="rounded-xl font-black border-slate-300 hover:border-slate-400 bg-white text-slate-800 shadow-sm text-xs h-10 px-4 flex items-center gap-2 transition-all hover:bg-slate-50"
+                            >
+                                <Timer className="w-4 h-4 text-cyan-600" />
+                                <span>定時抓取設定</span>
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="light w-[95vw] md:max-w-xl rounded-3xl bg-white shadow-2xl border-none p-0 overflow-hidden text-slate-900">
+                            <DialogHeader className="p-6 border-b border-slate-100 bg-slate-50">
+                                <DialogTitle className="text-xl font-black text-slate-900 flex items-center gap-2">
+                                    <Timer className="w-5 h-5 text-cyan-600" /> 卡展行事曆定時自動抓取設定
+                                </DialogTitle>
+                                <p className="text-xs text-slate-500 font-bold mt-1">
+                                    自動化檢索全台球員卡展、球卡市集與收藏交流會情報，自動去重寫入資料庫
+                                </p>
+                            </DialogHeader>
+
+                            <div className="p-6 space-y-5 max-h-[75vh] overflow-y-auto text-sm">
+                                {/* 狀態提示卡 */}
+                                <div className="p-4 rounded-2xl bg-cyan-50/70 border border-cyan-200/80 flex items-start gap-3">
+                                    <CheckCircle2 className="w-5 h-5 text-cyan-600 shrink-0 mt-0.5" />
+                                    <div className="space-y-1">
+                                        <h4 className="font-black text-cyan-950 text-sm">卡展定時排程端點已就緒</h4>
+                                        <p className="text-xs text-cyan-800 leading-relaxed">
+                                            系統已部署自動化 API，每次定時執行會聯網搜尋全台最新卡展場次、日期與地點，比對展覽名稱自動過濾防重複，直接更新至卡展資料庫。
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* 立即手動測試按鈕 */}
+                                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3">
+                                    <div>
+                                        <div className="font-black text-slate-900 text-xs">即時測試同步</div>
+                                        <div className="text-[11px] text-slate-500 font-medium">現在立刻呼叫後端執行一次抓取並儲存至 Firestore</div>
+                                    </div>
+                                    <Button
+                                        onClick={handleTriggerCronSync}
+                                        disabled={isCronSyncing}
+                                        className="h-9 px-4 rounded-xl font-black bg-cyan-600 hover:bg-cyan-700 text-white shrink-0 text-xs flex items-center gap-1.5 shadow-sm"
+                                    >
+                                        {isCronSyncing ? (
+                                            <>
+                                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                                <span>同步中...</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <RefreshCw className="w-3.5 h-3.5" />
+                                                <span>立即抓取</span>
+                                            </>
+                                        )}
+                                    </Button>
+                                </div>
+
+                                {/* Webhook 排程網址 */}
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-black text-slate-700">專屬卡展排程 Webhook URL (GET 或 POST 均可)</Label>
+                                    <div className="flex items-center gap-2">
+                                        <Input
+                                            readOnly
+                                            value={typeof window !== 'undefined' ? `${window.location.origin}/api/cron/sync-exhibitions` : '/api/cron/sync-exhibitions'}
+                                            className="h-10 text-xs font-mono bg-slate-100/80 border-slate-200 font-bold select-all"
+                                        />
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() => {
+                                                const url = typeof window !== 'undefined' ? `${window.location.origin}/api/cron/sync-exhibitions` : '/api/cron/sync-exhibitions';
+                                                navigator.clipboard.writeText(url);
+                                                setCopiedUrl(true);
+                                                setTimeout(() => setCopiedUrl(false), 2000);
+                                                toast({ title: '已複製卡展排程網址！' });
+                                            }}
+                                            className="h-10 px-3.5 rounded-xl border-slate-300 font-black text-xs shrink-0"
+                                        >
+                                            {copiedUrl ? <Check className="w-3.5 h-3.5 text-cyan-600 mr-1" /> : <Copy className="w-3.5 h-3.5 mr-1" />}
+                                            {copiedUrl ? '已複製' : '複製網址'}
+                                        </Button>
+                                    </div>
+                                    <p className="text-[11px] text-slate-500 font-medium">
+                                        另外也有全站整合端點：<code className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-700 font-mono">/api/cron/sync-all</code>（可一次同步賽事預測與卡展行事曆）。
+                                    </p>
+                                </div>
+
+                                {/* 推薦排程設定方法 */}
+                                <div className="space-y-2.5 pt-2 border-t border-slate-100">
+                                    <h4 className="text-xs font-black text-slate-800">如何設定「定時自動抓取」？（完全免費、3分鐘設定）</h4>
+                                    <div className="space-y-2 text-xs text-slate-600 leading-relaxed font-medium">
+                                        <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                                            <div className="font-black text-slate-900 flex items-center gap-1.5">
+                                                <span className="w-4 h-4 rounded-full bg-slate-900 text-white flex items-center justify-center text-[10px]">1</span>
+                                                使用免費定時服務（推薦 cron-job.org 或 EasyCron）
+                                            </div>
+                                            <p className="text-[11px] text-slate-500 pl-5">
+                                                註冊免費帳號，新增一個 Cron Job，將上方複製的 Webhook URL 貼入，頻率設定為<strong>「每天早上 08:00」</strong>或<strong>「每週」</strong>一次即可。
+                                            </p>
+                                        </div>
+
+                                        <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                                            <div className="font-black text-slate-900 flex items-center gap-1.5">
+                                                <span className="w-4 h-4 rounded-full bg-slate-900 text-white flex items-center justify-center text-[10px]">2</span>
+                                                使用 Google Cloud Platform (Cloud Scheduler)
+                                            </div>
+                                            <p className="text-[11px] text-slate-500 pl-5">
+                                                若您的專案部署於 GCP / Cloud Run，可直接在 Cloud Scheduler 建立 HTTP 工作，設定頻率例如每天一次，定期觸發此端點。
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </DialogContent>
+                    </Dialog>
+
                     <Button 
                         onClick={handleFetchFromAi} 
                         disabled={isAiFetching}

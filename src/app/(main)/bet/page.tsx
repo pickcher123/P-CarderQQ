@@ -12,7 +12,7 @@ import {
     Sparkles, ShoppingBag, Truck, Check, Package, 
     Settings, ChevronRight, Swords, Target, RefreshCcw, ShieldCheck, 
     XCircle, Search, Flame, Eye, Zap, Layers, Trophy, ArrowRight, 
-    Percent, Coins, Dices, Award, X, SlidersHorizontal
+    Percent, Coins, Dices, Award, X, SlidersHorizontal, Disc3
 } from 'lucide-react';
 import {
   Dialog,
@@ -323,73 +323,131 @@ export default function BetLandingPage() {
                 </div>
 
                 {/* === 主題卡池分類專區 === */}
-                <div className="space-y-4 sm:space-y-6">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-xl bg-destructive/15 border border-destructive/30 shadow-[0_0_15px_rgba(244,63,94,0.3)]">
-                                <CrossedCardsIcon className="w-5 h-5 text-destructive" />
-                            </div>
-                            <div>
-                                <h2 className="text-lg md:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-rose-400 via-pink-200 to-amber-300 drop-shadow-[0_0_12px_rgba(244,63,94,0.3)] tracking-wide font-headline flex items-center gap-2">
-                                    選擇主題卡池
-                                </h2>
-                                <p className="text-xs text-slate-400">點擊進入各專屬卡池查看即時卡片與挑戰拼卡</p>
-                            </div>
+                <div className="mb-3 sm:mb-5 flex items-center justify-between animate-fade-in-up px-0.5 sm:px-1">
+                    <div className="flex items-center gap-2 sm:gap-2.5">
+                        <div className="p-1.5 sm:p-2 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+                            <Disc3 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin-slow" />
+                        </div>
+                        <div>
+                            <h2 className="text-sm sm:text-lg font-black font-headline tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-100 to-yellow-400 drop-shadow-[0_0_12px_rgba(245,158,11,0.3)] flex items-center gap-2">
+                                <span>選擇主題卡池</span>
+                            </h2>
                         </div>
                     </div>
+                    <div className="h-px flex-1 mx-3 sm:mx-6 bg-gradient-to-r from-amber-500/30 via-slate-700/40 to-transparent hidden sm:block" />
+                    <div className="text-[11px] sm:text-xs text-slate-400 font-medium flex items-center gap-1.5 bg-slate-900/80 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/10">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        <span>共 {categoriesWithCounts.length} 個專區</span>
+                    </div>
+                </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-                        {finalIsLoading && Array.from({length: 4}).map((_, i) => (
-                            <div key={i} className="aspect-[16/10] rounded-2xl overflow-hidden">
-                                <Skeleton className="w-full h-full" />
-                            </div>
-                        ))}
+                {/* 主題卡片網格 */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 mb-8 sm:mb-12 max-w-7xl mx-auto">
+                    {finalIsLoading && Array.from({length: 4}).map((_, i) => (
+                        <div key={i} className="aspect-[4/3] sm:aspect-[16/10] rounded-xl sm:rounded-2xl overflow-hidden">
+                            <Skeleton className="w-full h-full" />
+                        </div>
+                    ))}
 
-                        {!finalIsLoading && categoriesWithCounts.map((category, index) => (
+                    {!finalIsLoading && categoriesWithCounts.map((category, index) => {
+                        const name = category.name || '';
+                        let theme = {
+                            glow: 'hover:shadow-[0_8px_25px_rgba(244,63,94,0.25)]',
+                            border: 'border-rose-500/30 hover:border-rose-400/80',
+                            accentText: 'group-hover:text-rose-300',
+                            gradient: 'from-rose-950/60 via-slate-950/40 to-transparent',
+                            ringColor: 'from-rose-500/40 to-pink-500/10',
+                        };
+
+                        if (name.includes('籃球') || name.toLowerCase().includes('nba')) {
+                            theme = {
+                                glow: 'hover:shadow-[0_8px_25px_rgba(249,115,22,0.25)]',
+                                border: 'border-orange-500/30 hover:border-orange-400/80',
+                                accentText: 'group-hover:text-orange-400',
+                                gradient: 'from-orange-950/60 via-slate-950/40 to-transparent',
+                                ringColor: 'from-orange-500/40 to-amber-500/10',
+                            };
+                        } else if (name.includes('足球') || name.toLowerCase().includes('fifa')) {
+                            theme = {
+                                glow: 'hover:shadow-[0_8px_25px_rgba(16,185,129,0.25)]',
+                                border: 'border-emerald-500/30 hover:border-emerald-400/80',
+                                accentText: 'group-hover:text-emerald-400',
+                                gradient: 'from-emerald-950/60 via-slate-950/40 to-transparent',
+                                ringColor: 'from-emerald-500/40 to-teal-500/10',
+                            };
+                        } else if (name.includes('棒球') || name.toLowerCase().includes('mlb')) {
+                            theme = {
+                                glow: 'hover:shadow-[0_8px_25px_rgba(59,130,246,0.25)]',
+                                border: 'border-blue-500/30 hover:border-blue-400/80',
+                                accentText: 'group-hover:text-cyan-300',
+                                gradient: 'from-blue-950/60 via-slate-950/40 to-transparent',
+                                ringColor: 'from-blue-500/40 to-cyan-500/10',
+                            };
+                        } else if (name.includes('寶可夢') || name.toLowerCase().includes('pokemon') || name.toLowerCase().includes('ptcg')) {
+                            theme = {
+                                glow: 'hover:shadow-[0_8px_25px_rgba(234,179,8,0.25)]',
+                                border: 'border-yellow-500/30 hover:border-yellow-400/80',
+                                accentText: 'group-hover:text-yellow-300',
+                                gradient: 'from-yellow-950/60 via-slate-950/40 to-transparent',
+                                ringColor: 'from-yellow-500/40 to-amber-500/10',
+                            };
+                        }
+
+                        return (
                             <Link 
                                 href={`/bet/${encodeURIComponent(category.id)}`} 
                                 key={category.id} 
                                 className={cn(
-                                    "group relative aspect-[16/10] rounded-2xl overflow-hidden block border border-rose-500/20 transition-all duration-500",
-                                    "hover:border-rose-400/80 hover:shadow-[0_0_40px_rgba(244,63,94,0.3)] hover:-translate-y-1.5",
-                                    "bg-slate-900"
+                                    "group relative aspect-[4/3] sm:aspect-[16/10] rounded-xl sm:rounded-2xl overflow-hidden block border transition-all duration-300",
+                                    "bg-slate-950/90 backdrop-blur-md cursor-pointer select-none active:scale-[0.98]",
+                                    theme.glow,
+                                    theme.border,
+                                    "animate-fade-in-up"
                                 )}
                             >
+                                {/* 背景封面圖片 */}
                                 <SafeImage
                                     src={category.imageUrl}
                                     alt={category.name}
                                     fill
-                                    className="object-cover transition-all duration-700 group-hover:scale-110 opacity-70 group-hover:opacity-90"
+                                    className="object-cover transition-transform duration-500 group-hover:scale-105 opacity-60 group-hover:opacity-85"
                                     priority={index < 4}
-                                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                                    sizes="(max-width: 768px) 50vw, 25vw"
                                 />
                                 
-                                {/* Gradient Overlay */}
-                                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent group-hover:from-slate-950/90 transition-all" />
+                                {/* 雙層高質感漸層遮罩 */}
+                                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-slate-950/20 group-hover:via-slate-950/40 transition-colors duration-300" />
+                                <div className={cn("absolute inset-0 bg-gradient-to-tr opacity-20 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none", theme.gradient)} />
 
-                                {/* Top Badges */}
-                                <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10">
-                                    <Badge className="bg-[#180a14]/90 backdrop-blur-md text-rose-300 border border-rose-500/40 text-[10px] font-black px-2.5 py-0.5 shadow-md">
-                                        剩餘 {category.itemCount} 張
-                                    </Badge>
-                                    <div className="w-7 h-7 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center group-hover:bg-rose-500 group-hover:text-white transition-all shadow-md">
-                                        <ArrowRight className="w-4 h-4" />
+                                {/* 頂部標籤列 (顯示卡池數量) */}
+                                <div className="absolute top-2 sm:top-2.5 inset-x-2 sm:inset-x-2.5 flex items-center justify-end z-10">
+                                    <span className="text-[9px] sm:text-[10px] font-mono font-bold text-slate-300 bg-black/75 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/15 shrink-0 shadow-sm">
+                                        {category.itemCount} 款
+                                    </span>
+                                </div>
+
+                                {/* 底部主題名稱與指引 */}
+                                <div className="absolute inset-0 flex flex-col justify-end p-2.5 sm:p-3.5 z-10">
+                                    <div className="transform transition-transform duration-300 group-hover:-translate-y-0.5">
+                                        <h3 className={cn(
+                                            "font-headline text-sm sm:text-base md:text-xl font-black text-white tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] transition-colors duration-300 line-clamp-1",
+                                            theme.accentText
+                                        )}>
+                                            {category.name}
+                                        </h3>
+                                        
+                                        <div className="flex items-center gap-0.5 text-[10px] sm:text-[11px] font-bold text-slate-300 opacity-90 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-300 mt-0.5">
+                                            <span>進入專區</span>
+                                            <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform text-amber-400" />
+                                        </div>
                                     </div>
                                 </div>
 
-                                {/* Bottom Info */}
-                                <div className="absolute bottom-0 inset-x-0 p-4 z-10">
-                                    <h3 className="font-headline text-lg sm:text-2xl font-black text-white tracking-tight group-hover:text-rose-300 transition-colors drop-shadow-md truncate">
-                                        {category.name}
-                                    </h3>
-                                    <div className="flex items-center justify-between mt-1 text-[11px] text-slate-300">
-                                        <span>總卡量 {category.totalCount} 張</span>
-                                        <span className="text-rose-400 font-bold group-hover:underline">進入卡池 →</span>
-                                    </div>
-                                </div>
+                                {/* 底部邊框微流光 */}
+                                <div className={cn("absolute bottom-0 inset-x-0 h-[2px] bg-gradient-to-r opacity-50 group-hover:opacity-100 transition-opacity", theme.ringColor)} />
                             </Link>
-                        ))}
-                    </div>
+                        );
+                    })}
                 </div>
 
                 {/* === 全部拼卡獎品區 (過濾 + 頂級卡磚) === */}

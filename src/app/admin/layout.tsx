@@ -313,7 +313,7 @@ export default function AdminLayout({
     .find(i => pathname === i.href || pathname.startsWith(i.href + '/'))
     ?.permission;
 
-  if (pagePermission && !isSuperAdmin && !userProfile.permissions?.includes(pagePermission)) {
+  if (pagePermission && !isSuperAdmin && !userProfile?.permissions?.includes(pagePermission)) {
     return (
         <div className="flex h-screen flex-col items-center justify-center text-center bg-white p-6">
             <h1 className="text-2xl font-black text-slate-900">權限不足</h1>
@@ -383,7 +383,7 @@ export default function AdminLayout({
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">
-                        <p className="text-xs font-black text-slate-900 truncate">{userProfile.username || '管理員'}</p>
+                        <p className="text-xs font-black text-slate-900 truncate">{userProfile?.username || user?.displayName || '管理員'}</p>
                         {isSuperAdmin ? (
                           <Badge className="h-4 px-1 text-[9px] bg-rose-100 text-rose-700 hover:bg-rose-100 border-none font-bold">最高</Badge>
                         ) : (
