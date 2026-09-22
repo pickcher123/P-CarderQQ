@@ -79,7 +79,7 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
 
       <div className="container flex h-14 sm:h-16 items-center justify-between px-2 sm:px-4 md:px-8 gap-1 sm:gap-4">
         <div className="flex items-center shrink-0">
-          <Logo className="text-primary shrink-0" />
+          <Logo className="text-primary shrink-0 ml-3 sm:ml-5 md:ml-7" />
           <nav className="ml-4 lg:ml-6 hidden items-center space-x-3 lg:space-x-4 xl:space-x-5 text-sm font-medium md:flex">
             {navLinks
                 .filter(link => {

@@ -43,9 +43,9 @@ export function MobileBottomNav({ systemConfig }: MobileBottomNavProps) {
       href: '/draw', 
       label: '抽卡', 
       icon: NavDrawIcon, 
-      activeColor: "text-cyan-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.7)]", 
-      activeBg: "bg-cyan-500/15 border-cyan-400/30 text-cyan-300 shadow-[0_0_12px_rgba(6,182,212,0.25)]",
-      dotColor: "bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.9)]",
+      activeColor: "text-cyan-400", 
+      activeBg: "bg-white/[0.08] border-white/10 text-white",
+      dotColor: "bg-cyan-400",
       flag: 'isDrawEnabled'
     },
     { 
@@ -53,9 +53,9 @@ export function MobileBottomNav({ systemConfig }: MobileBottomNavProps) {
       href: '/bet', 
       label: '拼卡', 
       icon: NavBetIcon, 
-      activeColor: "text-rose-400 drop-shadow-[0_0_10px_rgba(251,113,133,0.7)]", 
-      activeBg: "bg-rose-500/15 border-rose-400/30 text-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.25)]",
-      dotColor: "bg-rose-400 shadow-[0_0_8px_rgba(251,113,133,0.9)]",
+      activeColor: "text-rose-400", 
+      activeBg: "bg-white/[0.08] border-white/10 text-white",
+      dotColor: "bg-rose-400",
       flag: 'isBettingEnabled'
     },
     { 
@@ -63,9 +63,9 @@ export function MobileBottomNav({ systemConfig }: MobileBottomNavProps) {
       href: '/lucky-bags', 
       label: '福袋', 
       icon: NavLuckyBagIcon, 
-      activeColor: "text-amber-400 drop-shadow-[0_0_10px_rgba(251,191,36,0.7)]", 
-      activeBg: "bg-amber-500/15 border-amber-400/30 text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.25)]",
-      dotColor: "bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.9)]",
+      activeColor: "text-amber-400", 
+      activeBg: "bg-white/[0.08] border-white/10 text-white",
+      dotColor: "bg-amber-400",
       flag: 'isLuckyBagEnabled'
     },
     { 
@@ -73,9 +73,9 @@ export function MobileBottomNav({ systemConfig }: MobileBottomNavProps) {
       href: '/group-break', 
       label: '團拆', 
       icon: NavGroupBreakIcon, 
-      activeColor: "text-emerald-400 drop-shadow-[0_0_10px_rgba(52,211,153,0.7)]", 
-      activeBg: "bg-emerald-500/15 border-emerald-400/30 text-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.25)]",
-      dotColor: "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]",
+      activeColor: "text-emerald-400", 
+      activeBg: "bg-white/[0.08] border-white/10 text-white",
+      dotColor: "bg-emerald-400",
       flag: 'isGroupBreakEnabled'
     },
     { 
@@ -83,9 +83,9 @@ export function MobileBottomNav({ systemConfig }: MobileBottomNavProps) {
       href: '/predictions', 
       label: '預測', 
       icon: Trophy, 
-      activeColor: "text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.7)]", 
-      activeBg: "bg-yellow-500/15 border-yellow-400/30 text-yellow-300 shadow-[0_0_12px_rgba(234,179,8,0.25)]",
-      dotColor: "bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.9)]",
+      activeColor: "text-yellow-400", 
+      activeBg: "bg-white/[0.08] border-white/10 text-white",
+      dotColor: "bg-yellow-400",
       flag: 'isPredictionsEnabled'
     },
     { 
@@ -93,9 +93,9 @@ export function MobileBottomNav({ systemConfig }: MobileBottomNavProps) {
       href: '/exhibitions', 
       label: '卡展', 
       icon: Calendar, 
-      activeColor: "text-cyan-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.7)]", 
-      activeBg: "bg-cyan-500/15 border-cyan-400/30 text-cyan-300 shadow-[0_0_12px_rgba(6,182,212,0.25)]",
-      dotColor: "bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.9)]",
+      activeColor: "text-cyan-400", 
+      activeBg: "bg-white/[0.08] border-white/10 text-white",
+      dotColor: "bg-cyan-400",
       flag: 'isExhibitionsEnabled'
     },
     { 
@@ -103,9 +103,9 @@ export function MobileBottomNav({ systemConfig }: MobileBottomNavProps) {
       href: '/collection', 
       label: '收藏庫', 
       icon: NavCollectionIcon, 
-      activeColor: "text-sky-300 drop-shadow-[0_0_10px_rgba(125,211,252,0.7)]", 
-      activeBg: "bg-sky-500/15 border-sky-400/30 text-sky-200 shadow-[0_0_12px_rgba(14,165,233,0.25)]",
-      dotColor: "bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,0.9)]" 
+      activeColor: "text-sky-300", 
+      activeBg: "bg-white/[0.08] border-white/10 text-white",
+      dotColor: "bg-sky-400" 
     },
   ];
 
@@ -124,109 +124,110 @@ export function MobileBottomNav({ systemConfig }: MobileBottomNavProps) {
   return (
     <>
       <div className="fixed bottom-2.5 sm:bottom-4 left-0 right-0 z-50 md:hidden pointer-events-none px-2 sm:px-3 flex justify-center pb-[max(env(safe-area-inset-bottom),0px)]">
-        {/* 懸浮導覽膠囊 - 尺寸隨開放項目數量自動動態調適 */}
+        {/* 懸浮導覽膠囊 - 僅外框環狀 LED 炫彩 */}
         <div className={cn(
-          "pointer-events-auto relative w-full rounded-full bg-slate-950/90 backdrop-blur-2xl border border-white/[0.14] shadow-[0_12px_36px_rgba(0,0,0,0.9),0_0_24px_rgba(34,211,238,0.06),inset_0_1px_1px_rgba(255,255,255,0.2)] p-1 sm:p-1.5 overflow-hidden transition-all duration-300",
+          "pointer-events-auto relative w-full rounded-full transition-all duration-300",
           count <= 4 ? "max-w-[340px]" : count <= 5 ? "max-w-[400px]" : count === 6 ? "max-w-[450px]" : "max-w-[98vw]"
         )}>
-          
-          {/* 頂部微光流線 */}
-          <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent pointer-events-none" />
-          
-          <nav
-            className={cn(
-              "items-center relative z-10",
-              isScrollable 
-                ? "flex overflow-x-auto no-scrollbar scroll-smooth gap-0.5 px-0.5 justify-start snap-x"
-                : "grid justify-between gap-0.5"
-            )}
-            style={!isScrollable ? { gridTemplateColumns: `repeat(${count}, minmax(0, 1fr))` } : undefined}
-          >
-            {visibleLinks.map((link) => {
-              const isAction = link.isAction;
-              const isActive = !isAction && (
-                (link.href === '/' && pathname === '/') || 
-                (link.href !== '/' && pathname.startsWith(link.href!))
-              );
-              const Icon = link.icon;
+          {/* 外框環狀 LED 炫彩層 (僅 1.5px 旋轉流光環，極致細膩，絕不滲透到內部) */}
+          <div className="relative p-[1.5px] sm:p-[2px] rounded-full overflow-hidden shadow-[0_12px_32px_rgba(0,0,0,0.9)]">
+            
+            {/* 360 度多光譜幻彩 LED 旋轉束 (僅在外圈露出 1.5px 邊框) */}
+            <div 
+              className="absolute -inset-[220%] animate-led-flow pointer-events-none"
+              style={{
+                background: "conic-gradient(from 0deg, #00f0ff 0%, #3b82f6 16%, #8b5cf6 33%, #ec4899 50%, #f43f5e 66%, #f59e0b 80%, #10b981 92%, #00f0ff 100%)"
+              }}
+            />
 
-              const innerContent = (
-                <>
-                  {/* 作用中狀態頂部微光指示線 */}
-                  {isActive && (
-                    <div 
-                      className={cn(
-                        "absolute top-1 left-1/2 -translate-x-1/2 w-4 h-[2px] rounded-full transition-all duration-300",
-                        link.dotColor
-                      )} 
-                    />
-                  )}
+            {/* 內部完全純黑不透光曜石底色 (徹底隔絕內部，中間完全無炫彩) */}
+            <div className="relative w-full rounded-full bg-[#080d19] p-1 sm:p-1.5 overflow-hidden">
+              <nav
+                className={cn(
+                  "items-center relative z-10",
+                  isScrollable 
+                    ? "flex overflow-x-auto no-scrollbar scroll-smooth gap-0.5 px-0.5 justify-start snap-x"
+                    : "grid justify-between gap-0.5"
+                )}
+                style={!isScrollable ? { gridTemplateColumns: `repeat(${count}, minmax(0, 1fr))` } : undefined}
+              >
+                {visibleLinks.map((link) => {
+                  const isAction = link.isAction;
+                  const isActive = !isAction && (
+                    (link.href === '/' && pathname === '/') || 
+                    (link.href !== '/' && pathname.startsWith(link.href!))
+                  );
+                  const Icon = link.icon;
 
-                  {/* 圖示與角標 */}
-                  <div className="relative flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 my-0.5">
-                    <Icon className={cn(
-                      "w-[18px] h-[18px] sm:w-[20px] sm:h-[20px] transition-all duration-300", 
-                      isActive 
-                        ? cn(link.activeColor, "scale-110") 
-                        : "text-slate-400 group-hover:text-slate-200 group-hover:scale-105"
-                    )} />
+                  const innerContent = (
+                    <>
+                      {/* 圖示與角標 */}
+                      <div className="relative flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 my-0.5">
+                        <Icon className={cn(
+                          "w-[18px] h-[18px] sm:w-[20px] sm:h-[20px] transition-all duration-200", 
+                          isActive 
+                            ? cn(link.activeColor, "scale-105") 
+                            : "text-slate-400 group-hover:text-slate-200"
+                        )} />
 
-                    {/* 角標 (例如領券的「送」) */}
-                    {link.badge && (
-                      <span className="absolute -top-1.5 -right-2 bg-pink-500 text-white font-black text-[8px] leading-none px-1 py-0.5 rounded-full shadow-[0_0_6px_rgba(236,72,153,0.8)] animate-pulse">
-                        {link.badge}
+                        {/* 角標 (例如領券的「送」) */}
+                        {link.badge && (
+                          <span className="absolute -top-1.5 -right-2 bg-pink-500 text-white font-black text-[8px] leading-none px-1 py-0.5 rounded-full shadow-[0_0_6px_rgba(236,72,153,0.8)] animate-pulse">
+                            {link.badge}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* 標籤文字：禁止折行，保證排版簡潔 */}
+                      <span className={cn(
+                        "text-[10px] tracking-tight transition-all duration-200 text-center leading-none whitespace-nowrap mt-0.5",
+                        isActive 
+                          ? "font-bold text-white" 
+                          : "font-medium text-slate-400 group-hover:text-slate-200"
+                      )}>
+                        {link.label}
                       </span>
-                    )}
-                  </div>
+                    </>
+                  );
 
-                  {/* 標籤文字：禁止折行，保證排版簡潔 */}
-                  <span className={cn(
-                    "text-[10px] tracking-tight transition-all duration-200 text-center leading-none whitespace-nowrap mt-0.5",
-                    isActive 
-                      ? "font-black text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]" 
-                      : "font-medium text-slate-400 group-hover:text-slate-200"
-                  )}>
-                    {link.label}
-                  </span>
-                </>
-              );
+                  if (isAction) {
+                    return (
+                      <button
+                        key={link.id}
+                        type="button"
+                        onClick={() => setIsPromoModalOpen(true)}
+                        id={`mobile-nav-${link.id}`}
+                        className={cn(
+                          "relative flex flex-col items-center justify-center py-1 px-1 rounded-full transition-all duration-200 active:scale-95 group select-none min-h-[46px]",
+                          isScrollable ? "flex-1 min-w-[48px] snap-center" : "",
+                          "hover:bg-white/[0.04] text-slate-400 hover:text-pink-300 border border-transparent"
+                        )}
+                      >
+                        {innerContent}
+                      </button>
+                    );
+                  }
 
-              if (isAction) {
-                return (
-                  <button
-                    key={link.id}
-                    type="button"
-                    onClick={() => setIsPromoModalOpen(true)}
-                    id={`mobile-nav-${link.id}`}
-                    className={cn(
-                      "relative flex flex-col items-center justify-center py-1 px-1 rounded-full transition-all duration-200 active:scale-95 group select-none min-h-[46px]",
-                      isScrollable ? "flex-1 min-w-[48px] snap-center" : "",
-                      "hover:bg-white/[0.04] text-slate-400 hover:text-pink-300 border border-transparent"
-                    )}
-                  >
-                    {innerContent}
-                  </button>
-                );
-              }
-
-              return (
-                <Link
-                  key={link.id}
-                  href={link.href!}
-                  id={`mobile-nav-${link.id}`}
-                  className={cn(
-                    "relative flex flex-col items-center justify-center py-1 px-1 rounded-full transition-all duration-200 active:scale-95 group select-none min-h-[46px]",
-                    isScrollable ? "flex-1 min-w-[48px] snap-center" : "",
-                    isActive 
-                      ? cn("border", link.activeBg) 
-                      : "hover:bg-white/[0.04] text-slate-400 hover:text-slate-200 border border-transparent"
-                  )}
-                >
-                  {innerContent}
-                </Link>
-              );
-            })}
-          </nav>
+                  return (
+                    <Link
+                      key={link.id}
+                      href={link.href!}
+                      id={`mobile-nav-${link.id}`}
+                      className={cn(
+                        "relative flex flex-col items-center justify-center py-1 px-1 rounded-full transition-all duration-200 active:scale-95 group select-none min-h-[46px]",
+                        isScrollable ? "flex-1 min-w-[48px] snap-center" : "",
+                        isActive 
+                          ? cn("border", link.activeBg) 
+                          : "hover:bg-white/[0.04] text-slate-400 hover:text-slate-200 border border-transparent"
+                      )}
+                    >
+                      {innerContent}
+                    </Link>
+                  );
+                })}
+              </nav>
+            </div>
+          </div>
         </div>
       </div>
 

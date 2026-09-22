@@ -231,3 +231,25 @@
     from {background-position:0 0;}
     to {background-position:-10000px 5000px;}
 }
+
+/* 環狀 LED 炫彩流光霓虹動畫 */
+@keyframes led-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-led-flow {
+  animation: led-spin 4.5s linear infinite;
+}
+
+.animate-led-flow-fast {
+  animation: led-spin 3s linear infinite;
+}
+
+.animate-led-glow {
+  animation: led-spin 6s linear infinite;
+}
