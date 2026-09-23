@@ -20,6 +20,8 @@ export default {
         body: ['"Noto Sans TC"', 'sans-serif'],
         headline: ['Orbitron', 'sans-serif'],
         code: ['Rajdhani', 'monospace'],
+        numbers: ['Outfit', 'Rajdhani', 'sans-serif'],
+        cyber: ['"Chakra Petch"', 'Rajdhani', 'monospace'],
       },
       colors: {
         background: 'hsl(var(--background))',

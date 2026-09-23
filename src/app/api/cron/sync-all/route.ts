@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { syncPredictionsToFirestore, syncExhibitionsToFirestore } from '@/lib/auto-sync-service';
+import { autoSettlePendingPredictions } from '@/lib/prediction-settlement-service';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // 允許最長 60 秒供 AI 搜尋與寫入
@@ -36,10 +37,11 @@ async function handleSync(req: Request) {
   lastRunTime = now;
 
   try {
-    // 平行同步體育賽事預測與卡展
-    const [predictionResult, exhibitionResult] = await Promise.allSettled([
+    // 平行同步體育賽事預測、卡展，以及執行賽事賽果自動結算派獎
+    const [predictionResult, exhibitionResult, settlementResult] = await Promise.allSettled([
       syncPredictionsToFirestore(),
       syncExhibitionsToFirestore(),
+      autoSettlePendingPredictions(),
     ]);
 
     const predictions = predictionResult.status === 'fulfilled'
@@ -50,14 +52,19 @@ async function handleSync(req: Request) {
       ? exhibitionResult.value
       : { error: (exhibitionResult.reason as any)?.message || '同步失敗' };
 
+    const settlements = settlementResult.status === 'fulfilled'
+      ? settlementResult.value
+      : { error: (settlementResult.reason as any)?.message || '結算失敗' };
+
     return NextResponse.json({
       success: true,
       timestamp: new Date().toISOString(),
       summary: {
         predictions,
         exhibitions,
+        settlements,
       },
-      message: '自動排程同步作業已順利執行完成！',
+      message: '自動排程同步與賽果派獎作業已順利執行完成！',
     });
   } catch (error: any) {
     console.error('[Cron Sync All Error]:', error);

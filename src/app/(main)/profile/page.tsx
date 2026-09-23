@@ -43,7 +43,10 @@ import { doc, collection, increment, runTransaction, query, where, limit, update
 import { format } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { RefinedPoints } from "@/components/ui/refined-points";
 import { MemberLevelCrown, userLevels } from "@/components/member-level-crown";
+import { InteractiveHonorAtlas } from "@/components/interactive-honor-atlas";
+import { InteractiveAchievementWall, InteractiveAchievement } from "@/components/interactive-achievement-wall";
 import type { UserProfile } from "@/types/user-profile";
 import type { DailyMission, UserMissionProgress } from '@/types/missions';
 import type { SystemConfig } from "@/types/system";
@@ -344,7 +347,15 @@ function RedeemPrizesDialog({ children }: { children: React.ReactNode }) {
                             <div className="aspect-square relative overflow-hidden"><SafeImage src={item.imageUrl} alt={item.name} fill className="object-cover transition-transform group-hover:scale-110" /></div>
                             <CardContent className="p-2 md:p-3 text-center flex-1 flex flex-col justify-between">
                                 <p className="font-bold text-[10px] md:text-sm truncate text-white">{item.name}</p>
-                                <div className="flex items-center justify-center gap-1 mt-1 md:mt-2"><PPlusIcon className="w-3.5 h-3.5" /><p className="text-accent font-code font-black text-sm md:text-lg">{item.points.toLocaleString()}</p></div>
+                                <div className="flex items-center justify-center gap-1 mt-1 md:mt-2">
+                                    <RefinedPoints 
+                                        value={item.points}
+                                        currency="pplus"
+                                        size="sm"
+                                        showIcon
+                                        variant="luxury"
+                                    />
+                                </div>
                             </CardContent>
                         </Card>
                     ))}
@@ -407,32 +418,6 @@ function CompactDailyCheckIn() {
         </div>
     </Button>
   );
-}
-
-function AchievementItem({ item }: { item: any }) {
-    return (
-        <div className={cn(
-            "flex flex-col items-center p-4 sm:p-5 rounded-2xl border transition-all duration-300 relative overflow-hidden h-full group",
-            item.unlocked 
-                ? "bg-gradient-to-b from-[#13192a]/95 via-[#0c101d]/95 to-[#080b14]/95 border-cyan-500/30 shadow-[0_4px_20px_rgba(6,182,212,0.15)] hover:border-cyan-400 hover:shadow-[0_0_25px_rgba(6,182,212,0.3)]" 
-                : "bg-slate-950/70 border-white/5 grayscale opacity-60 hover:opacity-80"
-        )}>
-            <div className={cn(
-                "p-3.5 rounded-xl mb-3 transition-all duration-300", 
-                item.unlocked 
-                    ? "bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 group-hover:scale-110 shadow-[0_0_15px_rgba(6,182,212,0.2)]" 
-                    : "bg-white/5 text-white/20 border border-white/5"
-            )}>
-                {item.unlocked ? <item.icon className="w-6 h-6 sm:w-7 sm:h-7" /> : <Lock className="w-5 h-5" />}
-            </div>
-            <h4 className={cn("font-black text-xs text-center line-clamp-1 mb-1 transition-colors tracking-wide", item.unlocked ? "text-white" : "text-white/40")}>{item.title}</h4>
-            <p className={cn("text-[10px] text-center line-clamp-2 mb-3 leading-relaxed", item.unlocked ? "text-slate-400" : "text-white/20")}>{item.condition}</p>
-            <Badge variant="outline" className={cn(
-                "text-[9px] h-5 font-black uppercase tracking-wider px-2.5 mt-auto rounded-full transition-colors", 
-                item.unlocked ? "border-cyan-500/30 text-cyan-300 bg-cyan-500/10" : "border-white/5 text-white/20 bg-black/40"
-            )}>{item.category}</Badge>
-        </div>
-    );
 }
 
 function ShippingOrdersTab({ userId }: { userId: string }) {
@@ -600,30 +585,248 @@ export default function UnifiedMemberCenterPage() {
         };
     }, [userCards, allTransactions, userProfile]);
 
-    const achievements = useMemo(() => [
-        { id: 'first-card', title: '初次啼聲', category: '收藏', icon: Package, unlocked: (userCards?.length || 0) > 0, condition: '獲得第一張卡片' },
-        { id: 'collection-50', title: '資深館長', category: '收藏', icon: Library, unlocked: (userCards?.length || 0) >= 50, condition: '收藏達到 50 張卡片' },
-        { id: 'legend-collector', title: '傳奇見證者', category: '稀有度', icon: Crown, unlocked: stats.legends > 0, condition: '獲得 1 張傳奇卡' },
-        { id: 'lucky-star', title: '強運體質', category: '機率', icon: Sparkles, unlocked: stats.legends >= 5, condition: '獲得 5 張傳奇卡' },
-        { id: 'foil-lover', title: '萬中選一', category: '特殊', icon: Zap, unlocked: stats.foils > 0, condition: '獲得 1 張亮面卡' },
-        { id: 'bet-master', title: '拼卡大師', category: '拼卡', icon: Dices, unlocked: stats.bets >= 50, condition: '參與拼卡 50 次' },
-        { id: 'lucky-bag-pro', title: '福袋達人', category: '活動', icon: Ticket, unlocked: stats.luckyBags >= 10, condition: '購買福袋 10 次' },
-        { id: 'break-pioneer', title: '團拆先鋒', category: '活動', icon: Users2, unlocked: stats.groupBreaks >= 5, condition: '參與團拆 5 次' },
-        { id: 'sell-king', title: '快速轉點王', category: '管理', icon: RefreshCw, unlocked: stats.quickSells >= 10, condition: '使用快速轉點 10 次' },
-        { id: 'legend-20', title: '傳說級收藏家', category: '稀有度', icon: Trophy, unlocked: stats.legends >= 20, condition: '獲得 20 張傳奇卡' },
-        { id: 'wealthy', title: '點數大亨', category: '資產', icon: Gem, unlocked: (userProfile?.points || 0) >= 50000, condition: '持有 50,000 以上鑽石' },
-        { id: 'collector-max', title: '收藏之巔', category: '收藏', icon: Archive, unlocked: (userCards?.length || 0) >= 200, condition: '收藏達到 200 張卡片' },
-        { id: 'super-draw', title: '十連狂熱', category: '抽卡', icon: Zap, unlocked: stats.draws >= 1000, condition: '累計抽卡 1000 次' },
-        { id: 'p-plus-pro', title: '紅利狂人', category: '資產', icon: PPlusIcon, unlocked: (userProfile?.totalBonusEarned || 0) >= 1000000, condition: '累計獲得紅利破百萬' },
-        { id: 'bet-legend', title: '拼卡之神', category: '拼卡', icon: Dices, unlocked: stats.bets >= 200, condition: '參與拼卡 200 次' },
+    const achievements: InteractiveAchievement[] = useMemo(() => [
+        { 
+            id: 'first-card', 
+            title: '初次啼聲', 
+            category: '收藏', 
+            icon: Package, 
+            unlocked: (userCards?.length || 0) > 0, 
+            condition: '獲得第一張卡片',
+            current: userCards?.length || 0,
+            target: 1,
+            unit: '張',
+            points: 10,
+            rarity: 'common',
+            flavorText: '第一張收入口袋的卡牌，正是偉大收藏家生涯的基石。',
+            actionLink: '/',
+            actionText: '前往抽卡'
+        },
+        { 
+            id: 'collection-50', 
+            title: '資深館長', 
+            category: '收藏', 
+            icon: Library, 
+            unlocked: (userCards?.length || 0) >= 50, 
+            condition: '收藏達到 50 張卡片',
+            current: userCards?.length || 0,
+            target: 50,
+            unit: '張',
+            points: 30,
+            rarity: 'rare',
+            flavorText: '卡冊已漸漸充實，每一頁都記錄著滿滿的熱情與回憶。',
+            actionLink: '/collection',
+            actionText: '查看收藏庫'
+        },
+        { 
+            id: 'collector-max', 
+            title: '收藏之巔', 
+            category: '收藏', 
+            icon: Archive, 
+            unlocked: (userCards?.length || 0) >= 200, 
+            condition: '收藏達到 200 張卡片',
+            current: userCards?.length || 0,
+            target: 200,
+            unit: '張',
+            points: 100,
+            rarity: 'legendary',
+            flavorText: '藏品汗牛充棟，這是一座專屬於你的微型卡牌博物館。',
+            actionLink: '/collection',
+            actionText: '瞻仰卡冊'
+        },
+        { 
+            id: 'legend-collector', 
+            title: '傳奇見證者', 
+            category: '稀有度', 
+            icon: Crown, 
+            unlocked: stats.legends > 0, 
+            condition: '獲得 1 張傳奇卡',
+            current: stats.legends,
+            target: 1,
+            unit: '張',
+            points: 20,
+            rarity: 'rare',
+            flavorText: '金光驟閃之時，命定傳奇已烙印在卡盒之中。',
+            actionLink: '/',
+            actionText: '挑戰傳奇'
+        },
+        { 
+            id: 'lucky-star', 
+            title: '強運體質', 
+            category: '機率', 
+            icon: Sparkles, 
+            unlocked: stats.legends >= 5, 
+            condition: '獲得 5 張傳奇卡',
+            current: stats.legends,
+            target: 5,
+            unit: '張',
+            points: 50,
+            rarity: 'epic',
+            flavorText: '被幸運女神長期眷顧，五度打破機率天花板。',
+            actionLink: '/',
+            actionText: '延續歐氣'
+        },
+        { 
+            id: 'legend-20', 
+            title: '傳說級收藏家', 
+            category: '稀有度', 
+            icon: Trophy, 
+            unlocked: stats.legends >= 20, 
+            condition: '獲得 20 張傳奇卡',
+            current: stats.legends,
+            target: 20,
+            unit: '張',
+            points: 100,
+            rarity: 'legendary',
+            flavorText: '傳說已然成為常態，任何頂級藏品皆難逃你的法眼。',
+            actionLink: '/',
+            actionText: '傳奇之路'
+        },
+        { 
+            id: 'foil-lover', 
+            title: '萬中選一', 
+            category: '特殊', 
+            icon: Zap, 
+            unlocked: stats.foils > 0, 
+            condition: '獲得 1 張亮面卡',
+            current: stats.foils,
+            target: 1,
+            unit: '張',
+            points: 20,
+            rarity: 'rare',
+            flavorText: '閃耀動人的折射虹光，是卡迷心中永不褪色的浪漫。',
+            actionLink: '/',
+            actionText: '尋覓閃卡'
+        },
+        { 
+            id: 'bet-master', 
+            title: '拼卡大師', 
+            category: '拼卡', 
+            icon: Dices, 
+            unlocked: stats.bets >= 50, 
+            condition: '參與拼卡 50 次',
+            current: stats.bets,
+            target: 50,
+            unit: '次',
+            points: 30,
+            rarity: 'rare',
+            flavorText: '在勝負毫釐之間遊刃有餘，掌握拼卡桌上的絕對節奏。',
+            actionLink: '/bet',
+            actionText: '參與拼卡'
+        },
+        { 
+            id: 'bet-legend', 
+            title: '拼卡之神', 
+            category: '拼卡', 
+            icon: Dices, 
+            unlocked: stats.bets >= 200, 
+            condition: '參與拼卡 200 次',
+            current: stats.bets,
+            target: 200,
+            unit: '次',
+            points: 100,
+            rarity: 'legendary',
+            flavorText: '拼卡桌上的不敗神話，每一次出牌都令全場屏息。',
+            actionLink: '/bet',
+            actionText: '封神之戰'
+        },
+        { 
+            id: 'lucky-bag-pro', 
+            title: '福袋達人', 
+            category: '活動', 
+            icon: Ticket, 
+            unlocked: stats.luckyBags >= 10, 
+            condition: '購買福袋 10 次',
+            current: stats.luckyBags,
+            target: 10,
+            unit: '次',
+            points: 30,
+            rarity: 'rare',
+            flavorText: '拆開未知驚喜的瞬間，正是收藏最令人心跳加速的魔法。',
+            actionLink: '/lucky-bags',
+            actionText: '搶購福袋'
+        },
+        { 
+            id: 'break-pioneer', 
+            title: '團拆先鋒', 
+            category: '活動', 
+            icon: Users2, 
+            unlocked: stats.groupBreaks >= 5, 
+            condition: '參與團拆 5 次',
+            current: stats.groupBreaks,
+            target: 5,
+            unit: '次',
+            points: 30,
+            rarity: 'rare',
+            flavorText: '與志同道合的卡友一同開箱，同享揭曉名卡的震撼與狂歡。',
+            actionLink: '/group-break',
+            actionText: '加入團拆'
+        },
+        { 
+            id: 'sell-king', 
+            title: '快速轉點王', 
+            category: '管理', 
+            icon: RefreshCw, 
+            unlocked: stats.quickSells >= 10, 
+            condition: '使用快速轉點 10 次',
+            current: stats.quickSells,
+            target: 10,
+            unit: '次',
+            points: 20,
+            rarity: 'common',
+            flavorText: '靈活調度手頭資源，將暫不需要的卡片瞬間轉化為新戰力。',
+            actionLink: '/collection',
+            actionText: '資產管理'
+        },
+        { 
+            id: 'wealthy', 
+            title: '點數大亨', 
+            category: '資產', 
+            icon: Gem, 
+            unlocked: (userProfile?.points || 0) >= 50000, 
+            condition: '持有 50,000 以上鑽石',
+            current: userProfile?.points || 0,
+            target: 50000,
+            unit: '💎',
+            points: 50,
+            rarity: 'epic',
+            flavorText: '深不見底的晶鑽儲備，足以在任何大型展覽現場縱橫捭闔。',
+            actionLink: '/shop',
+            actionText: '儲值鑽石'
+        },
+        { 
+            id: 'super-draw', 
+            title: '十連狂熱', 
+            category: '抽卡', 
+            icon: Zap, 
+            unlocked: stats.draws >= 1000, 
+            condition: '累計抽卡 1000 次',
+            current: stats.draws,
+            target: 1000,
+            unit: '次',
+            points: 100,
+            rarity: 'legendary',
+            flavorText: '千次抽卡淬煉出的鋼鐵意志，是全站最堅定的信仰者。',
+            actionLink: '/',
+            actionText: '十連連抽'
+        },
+        { 
+            id: 'p-plus-pro', 
+            title: '紅利狂人', 
+            category: '資產', 
+            icon: PPlusIcon, 
+            unlocked: (userProfile?.totalBonusEarned || 0) >= 1000000, 
+            condition: '累計獲得紅利破百萬',
+            current: userProfile?.totalBonusEarned || 0,
+            target: 1000000,
+            unit: '點',
+            points: 100,
+            rarity: 'legendary',
+            flavorText: '百萬紅利點數入帳，這是對尊榮會員最崇高的敬意。',
+            actionLink: '/profile',
+            actionText: '檢視回饋'
+        },
     ], [userCards, stats, userProfile]);
-
-    const { unlockedAchievements, lockedAchievements } = useMemo(() => {
-        return {
-            unlockedAchievements: achievements.filter(a => a.unlocked),
-            lockedAchievements: achievements.filter(a => !a.unlocked),
-        };
-    }, [achievements]);
 
     const currentLevelBenefits = [
         { free: false, rate: 0 },   // 新手
@@ -733,30 +936,50 @@ export default function UnifiedMemberCenterPage() {
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3.5 w-full lg:w-auto">
                         
                         {/* 鑽石 */}
-                        <div className="p-3 sm:p-4 rounded-2xl bg-slate-900/80 border border-cyan-500/20 flex flex-col justify-between min-w-[130px]">
-                            <div className="flex items-center gap-1.5 text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">
-                                <DiamondIcon className="w-3.5 h-3.5 text-cyan-400" />
-                                <span>鑽石餘額</span>
+                        <div className="p-3 sm:p-4 rounded-2xl bg-gradient-to-b from-slate-900/90 to-[#0c1426]/90 border border-cyan-500/30 flex flex-col justify-between min-w-[135px] shadow-[0_4px_20px_rgba(6,182,212,0.12)] relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-16 h-16 bg-cyan-500/5 rounded-full blur-xl pointer-events-none group-hover:bg-cyan-500/10 transition-colors" />
+                            <div className="flex items-center justify-between text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">
+                                <span className="flex items-center gap-1.5">
+                                    <DiamondIcon className="w-3.5 h-3.5 text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.7)]" />
+                                    <span>鑽石餘額</span>
+                                </span>
+                                <span className="text-[9px] font-bold text-cyan-400/60 font-numbers tracking-widest">DIAMONDS</span>
                             </div>
-                            <p className="text-base sm:text-xl font-black font-code text-cyan-300 my-0.5">
-                                {(userProfile?.points ?? 0).toLocaleString()}
-                            </p>
-                            <Button size="sm" variant="ghost" asChild className="mt-1 h-7 px-2 text-[10px] text-cyan-300 hover:text-white bg-cyan-500/10 hover:bg-cyan-500/20 rounded-lg w-full font-bold">
+                            <div className="my-1.5">
+                                <RefinedPoints 
+                                    value={userProfile?.points ?? 0}
+                                    currency="diamond"
+                                    size="xl"
+                                    animate
+                                    variant="luxury"
+                                />
+                            </div>
+                            <Button size="sm" variant="ghost" asChild className="mt-1 h-7 px-2 text-[10px] text-cyan-300 hover:text-white bg-cyan-500/10 hover:bg-cyan-500/25 border border-cyan-500/20 rounded-lg w-full font-bold transition-all">
                                 <Link href="/#pools">前往抽卡</Link>
                             </Button>
                         </div>
 
                         {/* 紅利 P+ */}
-                        <div className="p-3 sm:p-4 rounded-2xl bg-slate-900/80 border border-amber-500/20 flex flex-col justify-between min-w-[130px]">
-                            <div className="flex items-center gap-1.5 text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">
-                                <PPlusIcon className="w-3.5 h-3.5 text-amber-400" />
-                                <span>紅利 P+</span>
+                        <div className="p-3 sm:p-4 rounded-2xl bg-gradient-to-b from-slate-900/90 to-[#1c1408]/90 border border-amber-500/30 flex flex-col justify-between min-w-[135px] shadow-[0_4px_20px_rgba(245,158,11,0.12)] relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-16 h-16 bg-amber-500/5 rounded-full blur-xl pointer-events-none group-hover:bg-amber-500/10 transition-colors" />
+                            <div className="flex items-center justify-between text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">
+                                <span className="flex items-center gap-1.5">
+                                    <PPlusIcon className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                                    <span>紅利 P+</span>
+                                </span>
+                                <span className="text-[9px] font-bold text-amber-400/60 font-numbers tracking-widest">BONUS</span>
                             </div>
-                            <p className="text-base sm:text-xl font-black font-code text-amber-300 my-0.5">
-                                {(userProfile?.bonusPoints ?? 0).toLocaleString()}
-                            </p>
+                            <div className="my-1.5">
+                                <RefinedPoints 
+                                    value={userProfile?.bonusPoints ?? 0}
+                                    currency="pplus"
+                                    size="xl"
+                                    animate
+                                    variant="luxury"
+                                />
+                            </div>
                             <RedeemPrizesDialog>
-                                <Button size="sm" variant="ghost" className="mt-1 h-7 px-2 text-[10px] text-amber-300 hover:text-white bg-amber-500/10 hover:bg-amber-500/20 rounded-lg w-full font-bold">
+                                <Button size="sm" variant="ghost" className="mt-1 h-7 px-2 text-[10px] text-amber-300 hover:text-white bg-amber-500/10 hover:bg-amber-500/25 border border-amber-500/20 rounded-lg w-full font-bold transition-all">
                                     兌換獎品
                                 </Button>
                             </RedeemPrizesDialog>
@@ -811,7 +1034,7 @@ export default function UnifiedMemberCenterPage() {
                 {/* 分頁 1: VIP 特權與榮耀成就 */}
                 <TabsContent value="vip" className="space-y-10 sm:space-y-14 animate-in fade-in duration-300">
                     
-                    {/* 榮耀階級圖譜 */}
+                    {/* 榮耀階級圖譜 (全互動式星軌天梯與全像卡冊) */}
                     <section className="space-y-6">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -822,7 +1045,7 @@ export default function UnifiedMemberCenterPage() {
                                     <h2 className="text-base sm:text-xl font-black font-headline tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-yellow-200 to-amber-300 drop-shadow-[0_0_12px_rgba(245,158,11,0.3)] flex items-center gap-2">
                                         <span>榮耀階級圖譜</span>
                                         <span className="text-[9px] sm:text-[10px] font-mono font-bold text-amber-300 bg-amber-500/15 px-2 py-0.5 rounded-full border border-amber-500/30">
-                                            TIERS
+                                            INTERACTIVE ATLAS
                                         </span>
                                     </h2>
                                 </div>
@@ -830,43 +1053,17 @@ export default function UnifiedMemberCenterPage() {
                             <div className="h-px flex-1 mx-4 sm:mx-6 bg-gradient-to-r from-amber-500/30 via-slate-700/40 to-transparent hidden sm:block" />
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                            {userLevels.map((lvl, index) => {
-                                const isCurrent = userProfile.userLevel === lvl.level;
-                                const userSpend = userProfile.totalSpent || 0;
-                                const isUnlocked = userSpend >= lvl.threshold;
-                                const b = currentLevelBenefits[index];
-                                
-                                return (
-                                    <div 
-                                        key={lvl.level} 
-                                        className={cn(
-                                            "relative flex items-center p-4 sm:p-5 rounded-2xl border transition-all duration-300 group",
-                                            isCurrent ? "bg-gradient-to-r from-cyan-950/40 to-slate-900/80 border-cyan-400/80 shadow-[0_0_25px_rgba(6,182,212,0.2)] ring-1 ring-cyan-400/40" : 
-                                            isUnlocked ? "bg-gradient-to-b from-[#13192a]/90 via-[#0c101d]/90 to-[#080b14]/90 border-white/10 hover:border-amber-500/40 hover:shadow-[0_0_20px_rgba(245,158,11,0.15)]" : "bg-slate-950/60 border-white/5 opacity-60 grayscale hover:opacity-90 hover:grayscale-0"
-                                        )}
-                                    >
-                                        <div className="mr-4 shrink-0">
-                                            <MemberLevelCrown level={lvl.level} size="sm" />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <h3 className={cn("text-base font-black font-headline tracking-wide truncate", lvl.color)}>{lvl.level}</h3>
-                                            <div className="flex items-center gap-3 text-xs font-bold font-code mt-1 text-slate-400">
-                                                <span>門檻: {lvl.threshold.toLocaleString()} 💎</span>
-                                                {b?.rate > 0 && <span className="text-cyan-400">● {b.rate}% 回饋</span>}
-                                            </div>
-                                        </div>
-                                        {isCurrent && <Badge className="bg-cyan-400 text-slate-950 font-black px-3 py-0.5 ml-3 text-xs shadow-lg shadow-cyan-400/20">當前等級</Badge>}
-                                        {isUnlocked && !isCurrent && <CheckCircle2 className="text-emerald-400 w-5 h-5 ml-3" />}
-                                        {!isUnlocked && <Lock className="text-white/20 w-5 h-5 ml-3" />}
-                                    </div>
-                                );
-                            })}
-                        </div>
+                        <InteractiveHonorAtlas
+                            currentLevel={userProfile.userLevel || '新手收藏家'}
+                            totalSpent={userProfile.totalSpent || 0}
+                            bonusPoints={userProfile.bonusPoints || 0}
+                            diamondBalance={userProfile.diamondBalance || 0}
+                            username={userProfile.username || '收藏家'}
+                        />
                     </section>
 
-                    {/* 榮譽成就牆 */}
-                    <section className="space-y-8">
+                    {/* 榮譽成就牆 (高科技互動式成就殿堂與全息勳章展位) */}
+                    <section className="space-y-6">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <div className="p-2.5 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.2)]">
@@ -876,44 +1073,18 @@ export default function UnifiedMemberCenterPage() {
                                     <h2 className="text-base sm:text-xl font-black font-headline tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-200 to-blue-300 drop-shadow-[0_0_12px_rgba(6,182,212,0.3)] flex items-center gap-2">
                                         <span>榮譽成就牆</span>
                                         <span className="text-[9px] sm:text-[10px] font-mono font-bold text-cyan-300 bg-cyan-500/15 px-2 py-0.5 rounded-full border border-cyan-500/30">
-                                            HALL OF FAME
+                                            HALL OF ACHIEVEMENTS
                                         </span>
                                     </h2>
                                 </div>
                             </div>
-                            <Badge variant="outline" className="border-cyan-500/30 text-cyan-300 font-code bg-cyan-500/10 px-3 h-7 text-xs font-bold">
-                                {unlockedAchievements.length} / {achievements.length} 已解鎖
-                            </Badge>
-                        </div>
-                        
-                        <div className="space-y-6">
-                            <div className="flex items-center gap-3">
-                                <Badge className="bg-emerald-500 text-slate-950 font-black px-3 py-0.5 text-xs shadow-md">已解鎖成就</Badge>
-                                <div className="h-px flex-1 bg-emerald-500/20" />
-                            </div>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
-                                {unlockedAchievements.map((item) => (
-                                    <AchievementItem key={item.id} item={item} />
-                                ))}
-                                {unlockedAchievements.length === 0 && (
-                                    <div className="col-span-full py-10 text-center text-white/30 italic font-bold">
-                                        尚未解鎖任何成就，快去體驗吧！
-                                    </div>
-                                )}
-                            </div>
+                            <div className="h-px flex-1 mx-4 sm:mx-6 bg-gradient-to-r from-cyan-500/30 via-slate-700/40 to-transparent hidden sm:block" />
                         </div>
 
-                        <div className="space-y-6">
-                            <div className="flex items-center gap-3">
-                                <Badge variant="outline" className="border-white/20 text-slate-400 font-black px-3 py-0.5 text-xs">未解鎖成就</Badge>
-                                <div className="h-px flex-1 bg-white/5" />
-                            </div>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
-                                {lockedAchievements.map((item) => (
-                                    <AchievementItem key={item.id} item={item} />
-                                ))}
-                            </div>
-                        </div>
+                        <InteractiveAchievementWall
+                            achievements={achievements}
+                            username={userProfile?.username || '收藏家'}
+                        />
                     </section>
                 </TabsContent>
 

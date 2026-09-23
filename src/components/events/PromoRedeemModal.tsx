@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import confetti from 'canvas-confetti';
+import Link from 'next/link';
 import { 
     Gift, 
     QrCode, 
@@ -14,7 +15,10 @@ import {
     ArrowRight,
     Users,
     ExternalLink,
-    Loader2
+    Loader2,
+    CalendarCheck,
+    Coins,
+    Calendar
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,8 +27,10 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { useAuth, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useAuth, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
+import { doc, collection, query, where, limit, runTransaction, increment } from 'firebase/firestore';
+import { format } from 'date-fns';
+import { DailyMission, UserMissionProgress } from '@/types/missions';
 import { SystemConfig } from '@/types/system';
 import { UserProfile } from '@/types/user-profile';
 import { claimCommunityFreeDraw, redeemPromoDrawCode, syncLocalPromoClaimsToFirestore } from '@/lib/promo-draw-service';
@@ -113,6 +119,109 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward }: PromoRed
     const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
     const [lastClaimedReward, setLastClaimedReward] = useState<ClaimHistoryItem | null>(null);
     const [isClaimingCommunity, setIsClaimingCommunity] = useState(false);
+
+    // 每日簽到狀態與查詢
+    const missionsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'dailyMissions'), where('type', '==', 'login'), limit(1)) : null, [firestore]);
+    const progressQuery = useMemoFirebase(() => (firestore && user) ? collection(firestore, `users/${user.uid}/missionProgress`) : null, [firestore, user]);
+    const { data: missions } = useCollection<DailyMission>(missionsQuery);
+    const { data: missionProgressList, forceRefetch: refetchProgress } = useCollection<UserMissionProgress>(progressQuery);
+    
+    const [isCheckingIn, setIsCheckingIn] = useState(false);
+    const [localCheckInDone, setLocalCheckInDone] = useState(false);
+
+    const loginMission = useMemo(() => missions?.[0] || null, [missions]);
+    const missionId = loginMission?.id || 'daily-login';
+    const rewardPoints = loginMission?.rewardPoints ?? 10;
+
+    const userLoginProgress = useMemo(() => {
+        return missionProgressList?.find(p => p.id === missionId || p.id === loginMission?.id);
+    }, [missionProgressList, missionId, loginMission]);
+
+    const todayStr = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
+
+    const hasClaimedCheckInToday = useMemo(() => {
+        if (localCheckInDone) return true;
+        if (!userLoginProgress?.lastCompleted) return false;
+        return userLoginProgress.lastCompleted === todayStr;
+    }, [localCheckInDone, userLoginProgress, todayStr]);
+
+    const handleCheckIn = useCallback(async () => {
+        if (!user) {
+            toast({
+                title: '請先登入',
+                description: '登入會員即可每日簽到領取紅利點數！',
+                variant: 'destructive',
+            });
+            return;
+        }
+        if (!firestore) return;
+        if (hasClaimedCheckInToday) {
+            toast({
+                title: '今日已完成簽到',
+                description: '明天再來領取簽到好禮吧！',
+            });
+            return;
+        }
+
+        setIsCheckingIn(true);
+        try {
+            await runTransaction(firestore, async (transaction) => {
+                const userRef = doc(firestore, 'users', user.uid);
+                const progressRef = doc(firestore, `users/${user.uid}/missionProgress`, missionId);
+                const [userDoc, existingProgress] = await Promise.all([
+                    transaction.get(userRef), 
+                    transaction.get(progressRef)
+                ]);
+
+                if (existingProgress.exists() && existingProgress.data()?.lastCompleted === todayStr) {
+                    throw new Error("今日已領取");
+                }
+
+                transaction.update(userRef, { 
+                    bonusPoints: increment(rewardPoints),
+                    lastCheckInDate: todayStr
+                });
+
+                if (!existingProgress.exists()) {
+                    transaction.set(progressRef, { 
+                        progress: 1, 
+                        lastCompleted: todayStr, 
+                        userId: user.uid,
+                        updatedAt: new Date().toISOString()
+                    });
+                } else {
+                    transaction.update(progressRef, { 
+                        progress: increment(1), 
+                        lastCompleted: todayStr,
+                        updatedAt: new Date().toISOString()
+                    });
+                }
+            });
+
+            setLocalCheckInDone(true);
+            confetti({
+                particleCount: 70,
+                spread: 80,
+                origin: { y: 0.6 }
+            });
+
+            toast({
+                title: '🎉 簽到成功！',
+                description: `恭喜獲得 +${rewardPoints} 紅利 P+ 點數！`,
+            });
+
+            if (refetchProgress) refetchProgress();
+        } catch (e: any) {
+            if (e.message === "今日已領取") {
+                setLocalCheckInDone(true);
+                toast({ title: '今日已簽到', description: '您今天已經領取過簽到獎勵囉！' });
+            } else {
+                toast({ variant: 'destructive', title: '簽到失敗', description: e.message || '請稍後再試' });
+            }
+        } finally {
+            setIsCheckingIn(false);
+        }
+    }, [user, firestore, hasClaimedCheckInToday, missionId, rewardPoints, todayStr, refetchProgress, toast]);
 
     // 載入本地兌換歷史並在開啟時自動同步至 Firestore
     useEffect(() => {
@@ -297,11 +406,11 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward }: PromoRed
                     <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-slate-800/80 shrink-0 bg-[#0c101a] pr-10 text-left">
                         <div className="space-y-1">
                             <DialogTitle className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                                <Gift className="w-4 h-4 text-amber-400 shrink-0" />
-                                <span>兌換代碼與福利</span>
+                                <CalendarCheck className="w-5 h-5 text-amber-400 shrink-0" />
+                                <span>簽到 / 領券中心</span>
                             </DialogTitle>
                             <DialogDescription className="text-xs text-slate-400 leading-tight">
-                                輸入活動代碼或領取福利，獲得免費抽卡次數。
+                                每日簽到領紅利 P+ 點，輸入兌換碼或加入社群享免費抽卡！
                             </DialogDescription>
                         </div>
 
@@ -317,8 +426,8 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward }: PromoRed
                                         : "text-slate-400 hover:text-slate-200"
                                 )}
                             >
-                                <KeyRound className="w-3.5 h-3.5 shrink-0" />
-                                <span className="truncate">代碼兌換</span>
+                                <CalendarCheck className="w-3.5 h-3.5 shrink-0 text-amber-400" />
+                                <span className="truncate">簽到與領券</span>
                             </button>
                             <button
                                 type="button"
@@ -361,6 +470,76 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward }: PromoRed
                             <div className="space-y-4">
                                 {/* 福利卡片列表 */}
                                 <div className="space-y-2.5">
+                                    {/* 🌟 每日簽到福利卡片 (核心高光首位) */}
+                                    <div className="relative overflow-hidden p-3.5 sm:p-4 rounded-xl bg-gradient-to-br from-amber-500/15 via-rose-500/10 to-slate-900 border border-amber-500/40 shadow-[0_4px_20px_rgba(245,158,11,0.12)] flex flex-col gap-2.5 group">
+                                        <div className="flex items-center justify-between gap-2.5">
+                                            <div className="space-y-1 min-w-0 flex-1">
+                                                <div className="flex items-center gap-1.5 flex-wrap">
+                                                    <div className="flex items-center gap-1 font-black text-xs sm:text-sm text-white whitespace-nowrap">
+                                                        <CalendarCheck className="w-4 h-4 text-amber-400" />
+                                                        <span>每日簽到福利</span>
+                                                    </div>
+                                                    <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30 text-[10px] font-mono px-1.5 py-0 h-4.5 whitespace-nowrap">
+                                                        +{rewardPoints} 紅利 P+ 點
+                                                    </Badge>
+                                                </div>
+                                                <p className="text-[11px] text-slate-300 leading-tight">
+                                                    天天登入免費簽到，累積紅利點數換專屬好禮
+                                                </p>
+                                            </div>
+
+                                            {!user ? (
+                                                <Button
+                                                    size="sm"
+                                                    asChild
+                                                    className="h-8 px-3 rounded-lg text-xs font-bold bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-sm shrink-0 whitespace-nowrap"
+                                                >
+                                                    <Link href="/login">
+                                                        登入簽到
+                                                    </Link>
+                                                </Button>
+                                            ) : (
+                                                <Button
+                                                    size="sm"
+                                                    disabled={hasClaimedCheckInToday || isCheckingIn}
+                                                    onClick={handleCheckIn}
+                                                    className={cn(
+                                                        "h-8 px-3 rounded-lg text-xs font-bold shrink-0 transition-all whitespace-nowrap flex items-center gap-1.5",
+                                                        hasClaimedCheckInToday
+                                                            ? "bg-emerald-950/60 text-emerald-400 border border-emerald-500/30 shadow-none cursor-not-allowed"
+                                                            : "bg-gradient-to-r from-amber-400 to-rose-400 hover:from-amber-300 hover:to-rose-300 text-slate-950 shadow-[0_0_12px_rgba(245,158,11,0.4)] active:scale-95 cursor-pointer"
+                                                    )}
+                                                >
+                                                    {isCheckingIn ? (
+                                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                                    ) : hasClaimedCheckInToday ? (
+                                                        <>
+                                                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                                                            <span>今日已簽到</span>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                                                            <span>立即簽到</span>
+                                                        </>
+                                                    )}
+                                                </Button>
+                                            )}
+                                        </div>
+
+                                        {user && (
+                                            <div className="flex items-center justify-between pt-2 border-t border-white/5 text-[11px] text-slate-400">
+                                                <span className="flex items-center gap-1">
+                                                    <span className={cn("w-1.5 h-1.5 rounded-full inline-block", hasClaimedCheckInToday ? "bg-emerald-400" : "bg-amber-400 animate-ping")} />
+                                                    {hasClaimedCheckInToday ? '今日獎勵已入帳，明日 00:00 重置' : '今日尚未簽到，點擊立即領取獎勵'}
+                                                </span>
+                                                <span className="font-mono text-amber-300/90 font-bold">
+                                                    目前紅利：{(userProfile?.bonusPoints ?? 0).toLocaleString()} 點
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+
                                     {/* 新手首抽福利卡片 */}
                                     <div className="p-3 sm:p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between gap-2.5">
                                         <div className="space-y-1 min-w-0 flex-1">

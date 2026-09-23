@@ -1692,7 +1692,7 @@ export default function LuckyWheelFrontendPage() {
                             }}
                             className="inline-flex items-center gap-1.5 text-pink-400 hover:text-pink-300 font-bold underline underline-offset-4 cursor-pointer"
                         >
-                            <Gift className="w-3.5 h-3.5" /> 掃碼入群獲得兌換碼？點此直接進入領券抽獎
+                            <Gift className="w-3.5 h-3.5" /> 掃碼入群獲得兌換碼？點此直接進入簽到/領券中心
                         </button>
                     </div>
                 </motion.div>

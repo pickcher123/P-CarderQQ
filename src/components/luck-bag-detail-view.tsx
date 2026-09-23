@@ -129,9 +129,6 @@ const PrizeDisplayCard = ({
                     <span>{tierStyles.icon}</span>
                     <span>{levelText}</span>
                 </span>
-                <span className="text-[9px] font-bold text-slate-400 group-hover/prize:text-amber-300 transition-colors">
-                    點擊鑑賞 🔍
-                </span>
             </div>
 
             {/* Card Visual Frame */}

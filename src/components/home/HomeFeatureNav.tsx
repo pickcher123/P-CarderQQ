@@ -8,7 +8,8 @@ import {
   Calendar, 
   Gift, 
   Library, 
-  Users2
+  Users2,
+  CalendarCheck
 } from 'lucide-react';
 import { CrossedCardsIcon, LuckyBagIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
@@ -110,13 +111,13 @@ export function HomeFeatureNav({ systemConfig, onOpenPromoModal }: HomeFeatureNa
     },
     {
       id: 'free-tickets',
-      label: '免費領券',
-      shortLabel: '領券',
-      desc: '輸入序號送抽卡',
+      label: '簽到/領券',
+      shortLabel: '簽到領券',
+      desc: '每日簽到與領抽卡券',
       isAction: true,
       onClick: onOpenPromoModal,
-      icon: Gift,
-      badge: '送券',
+      icon: CalendarCheck,
+      badge: '福利',
       badgeClass: 'bg-pink-500/25 text-pink-300 border-pink-500/40 shadow-[0_0_8px_rgba(236,72,153,0.35)] animate-pulse',
       colorClass: 'text-pink-400 group-hover:text-pink-300',
       bgGlow: 'group-hover:bg-pink-500/10 group-hover:border-pink-500/40',

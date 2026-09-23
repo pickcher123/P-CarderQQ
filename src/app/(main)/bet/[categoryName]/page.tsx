@@ -264,16 +264,32 @@ export default function BettingCategoryPage() {
     const allCardsCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, 'allCards') : null, [firestore]);
     const { data: allCards, isLoading: isLoadingCards } = useCollection<CardData>(allCardsCollectionRef);
     
-    const soldCardIds = useMemo(() => new Set(bettingItems?.soldCardIds || []), [bettingItems]);
+    const cardIdSet = useMemo(() => new Set(bettingItems?.allCardIds || []), [bettingItems]);
+
+    // 真正屬於該卡池的卡片
+    const poolCards = useMemo(() => {
+        if (!allCards || !bettingItems?.allCardIds) return [];
+        return allCards.filter(c => cardIdSet.has(c.id));
+    }, [allCards, cardIdSet, bettingItems]);
+
+    // Sold Card Set：結合 betting-items 的 soldCardIds，以及 allCards 裡真實的 isSold 與 status
+    const soldCardIds = useMemo(() => {
+        const set = new Set(bettingItems?.soldCardIds || []);
+        poolCards.forEach(c => {
+            if (c.isSold || c.status === 'sold') {
+                set.add(c.id);
+            }
+        });
+        return set;
+    }, [bettingItems, poolCards]);
 
     const filteredCards = useMemo(() => {
-        if (!allCards || !bettingItems?.allCardIds) return [];
-        const cardIdSet = new Set(bettingItems.allCardIds);
-        let baseCards = allCards.filter(c => cardIdSet.has(c.id));
+        if (!poolCards.length) return [];
+        let baseCards = [...poolCards];
         
         // Tab Filtering
         if (filterTab === 'available') {
-            baseCards = baseCards.filter(c => !soldCardIds.has(c.id) && !c.isSold);
+            baseCards = baseCards.filter(c => !soldCardIds.has(c.id) && !c.isSold && c.status !== 'sold');
         } else if (filterTab === 'featured') {
             baseCards = baseCards.filter(c => c.isFeatured);
         }
@@ -288,17 +304,17 @@ export default function BettingCategoryPage() {
             if (sortOption === 'price-high') return (b.sellPrice || 0) - (a.sellPrice || 0);
             if (sortOption === 'price-low') return (a.sellPrice || 0) - (b.sellPrice || 0);
             if (sortOption === 'unsold') {
-                const aSold = soldCardIds.has(a.id) || a.isSold;
-                const bSold = soldCardIds.has(b.id) || b.isSold;
+                const aSold = soldCardIds.has(a.id) || a.isSold || a.status === 'sold';
+                const bSold = soldCardIds.has(b.id) || b.isSold || b.status === 'sold';
                 if (aSold === bSold) return 0;
                 return aSold ? 1 : -1;
             }
             return (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0);
         });
-    }, [allCards, bettingItems, searchTerm, sortOption, filterTab, soldCardIds]);
+    }, [poolCards, searchTerm, sortOption, filterTab, soldCardIds]);
 
-    const totalPoolCount = bettingItems?.allCardIds?.length || 0;
-    const soldCount = bettingItems?.soldCardIds?.length || 0;
+    const totalPoolCount = poolCards.length;
+    const soldCount = poolCards.filter(c => soldCardIds.has(c.id) || c.isSold || c.status === 'sold').length;
     const availableCount = Math.max(0, totalPoolCount - soldCount);
     const progressPercent = totalPoolCount > 0 ? Math.round((soldCount / totalPoolCount) * 100) : 0;
 
@@ -572,7 +588,7 @@ export default function BettingCategoryPage() {
                                                             : "bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-400 hover:to-pink-400 text-white shadow-[0_0_12px_rgba(244,63,94,0.3)]"
                                                     )}
                                                 >
-                                                    {isSold ? '已售出' : (
+                                                    {isSold ? '已抽出' : (
                                                         <span className="flex items-center justify-center gap-1">
                                                             拼卡 {singleBetPrice} <DiamondIcon className="w-3.5 h-3.5" />
                                                         </span>

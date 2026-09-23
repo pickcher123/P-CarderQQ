@@ -68,8 +68,6 @@ interface CategoryWithCount extends BettingCategory {
 export default function BetLandingPage() {
     const firestore = useFirestore();
     const { user } = useUser();
-    const [categoriesWithCounts, setCategoriesWithCounts] = useState<CategoryWithCount[]>([]);
-    const [isLoadingCounts, setIsLoadingCounts] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterTab, setFilterTab] = useState<'all' | 'available' | 'featured'>('all');
     const [sortOption, setSortOption] = useState<'latest' | 'price-high' | 'price-low' | 'unsold'>('latest');
@@ -86,12 +84,21 @@ export default function BetLandingPage() {
     const { data: categories, isLoading: isLoadingCategories } = useCollection<BettingCategory>(categoriesQuery);
 
     const bettingItemsCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, 'betting-items') : null, [firestore]);
-    const { data: allBettingItems } = useCollection<BettingItems>(bettingItemsCollectionRef);
+    const { data: allBettingItems, isLoading: isLoadingBettingItems } = useCollection<BettingItems>(bettingItemsCollectionRef);
 
     const allCardsCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, 'allCards') : null, [firestore]);
     const { data: allCards, isLoading: isLoadingCards } = useCollection<CardData>(allCardsCollectionRef);
 
-    // Sold Card Set
+    // 建立 Card Map 快速查詢
+    const cardMap = useMemo(() => {
+        const map = new Map<string, CardData>();
+        if (allCards) {
+            allCards.forEach(c => map.set(c.id, c));
+        }
+        return map;
+    }, [allCards]);
+
+    // Sold Card Set: 包含 betting-items 記錄以及 allCards 中真實已售出的卡片
     const soldCardIds = useMemo(() => {
         const set = new Set<string>();
         if (allBettingItems) {
@@ -99,8 +106,46 @@ export default function BetLandingPage() {
                 item.soldCardIds?.forEach(id => set.add(id));
             });
         }
+        if (allCards) {
+            allCards.forEach(c => {
+                if (c.isSold || c.status === 'sold') {
+                    set.add(c.id);
+                }
+            });
+        }
         return set;
-    }, [allBettingItems]);
+    }, [allBettingItems, allCards]);
+
+    // 即時計算各分類的未售出卡片數量
+    const categoriesWithCounts: CategoryWithCount[] = useMemo(() => {
+        if (!categories) return [];
+        const sortedCategories = [...categories].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+        
+        return sortedCategories.map(category => {
+            const item = allBettingItems?.find(bi => 
+                bi.id === category.id || 
+                decodeURIComponent(bi.id) === category.id || 
+                bi.id === category.name ||
+                decodeURIComponent(bi.id) === category.name
+            );
+            
+            const allIds = item?.allCardIds || [];
+            // 計算真正存在於 allCards 且未售出的卡片
+            const availableCards = allIds.filter(id => {
+                const card = cardMap.get(id);
+                if (!card) return false;
+                if (card.isSold || card.status === 'sold') return false;
+                if (soldCardIds.has(id)) return false;
+                return true;
+            });
+
+            return {
+                ...category,
+                itemCount: availableCards.length,
+                totalCount: allIds.length,
+            };
+        });
+    }, [categories, allBettingItems, cardMap, soldCardIds]);
 
     // Cards in betting pool
     const cardsInBetting = useMemo(() => {
@@ -114,7 +159,7 @@ export default function BetLandingPage() {
         
         // Tab Filtering
         if (filterTab === 'available') {
-            baseCards = baseCards.filter(c => !soldCardIds.has(c.id) && !c.isSold);
+            baseCards = baseCards.filter(c => !soldCardIds.has(c.id) && !c.isSold && c.status !== 'sold');
         } else if (filterTab === 'featured') {
             baseCards = baseCards.filter(c => c.isFeatured);
         }
@@ -130,8 +175,8 @@ export default function BetLandingPage() {
             if (sortOption === 'price-high') return (b.sellPrice || 0) - (a.sellPrice || 0);
             if (sortOption === 'price-low') return (a.sellPrice || 0) - (b.sellPrice || 0);
             if (sortOption === 'unsold') {
-                const aSold = soldCardIds.has(a.id) || a.isSold;
-                const bSold = soldCardIds.has(b.id) || b.isSold;
+                const aSold = soldCardIds.has(a.id) || a.isSold || a.status === 'sold';
+                const bSold = soldCardIds.has(b.id) || b.isSold || b.status === 'sold';
                 if (aSold === bSold) return 0;
                 return aSold ? 1 : -1;
             }
@@ -139,61 +184,34 @@ export default function BetLandingPage() {
         });
     }, [allCards, allBettingItems, searchTerm, sortOption, filterTab, soldCardIds]);
 
-    // Summary Statistics
+    // Summary Statistics: 真實未售出的卡片數量，若被抽光則精準顯示 0
     const stats = useMemo(() => {
         let totalItems = 0;
         let availableItems = 0;
-        categoriesWithCounts.forEach(c => {
-            availableItems += c.itemCount;
-            totalItems += c.totalCount;
-        });
+
+        if (allCards && allBettingItems) {
+            const allPoolCardIds = new Set<string>();
+            allBettingItems.forEach(item => {
+                item.allCardIds?.forEach(id => allPoolCardIds.add(id));
+            });
+
+            allPoolCardIds.forEach(id => {
+                const card = cardMap.get(id);
+                if (card && !card.isSold && card.status !== 'sold' && !soldCardIds.has(id)) {
+                    availableItems++;
+                }
+            });
+            totalItems = allPoolCardIds.size;
+        }
+
         return {
             totalCategories: categoriesWithCounts.length,
             totalItems,
             availableItems,
         };
-    }, [categoriesWithCounts]);
+    }, [allCards, allBettingItems, cardMap, soldCardIds, categoriesWithCounts]);
 
-    useEffect(() => {
-        const fetchItemCounts = async () => {
-            if (!categories || !firestore) return;
-
-            setIsLoadingCounts(true);
-            try {
-                const sortedCategories = [...categories].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-                const counts = await Promise.all(
-                    sortedCategories.map(async (category) => {
-                        const itemDocRef = doc(firestore, 'betting-items', category.id);
-                        const itemDocSnap = await getDoc(itemDocRef);
-                        let count = 0;
-                        let total = 0;
-                        if (itemDocSnap.exists()) {
-                            const data = itemDocSnap.data() as BettingItems;
-                            total = data.allCardIds?.length || 0;
-                            const availableCount = total - (data.soldCardIds?.length || 0);
-                            count = Math.max(0, availableCount);
-                        }
-                        return {
-                            ...category,
-                            itemCount: count,
-                            totalCount: total,
-                        };
-                    })
-                );
-                setCategoriesWithCounts(counts);
-            } catch (error) {
-                console.error("Error fetching item counts: ", error);
-            } finally {
-                setIsLoadingCounts(false);
-            }
-        };
-
-        if (!isLoadingCategories && categories) {
-            fetchItemCounts();
-        }
-    }, [categories, firestore, isLoadingCategories]);
-
-    const finalIsLoading = isLoadingCategories || isLoadingCounts || isLoadingCards;
+    const finalIsLoading = isLoadingCategories || isLoadingCards || isLoadingBettingItems;
 
     if (!finalIsLoading && systemConfig?.featureFlags?.isBettingEnabled === false) {
         return (
@@ -295,24 +313,16 @@ export default function BetLandingPage() {
                         </div>
 
                         {/* Live Pool Quick Stats Widget */}
-                        <div className="grid grid-cols-2 gap-2 sm:gap-3 w-full lg:w-auto shrink-0">
-                            <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-[#1a0c16] border border-rose-500/30 flex flex-col items-center justify-center text-center shadow-[0_4px_20px_rgba(244,63,94,0.15)]">
-                                <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">主題卡池</span>
-                                <span className="text-xl sm:text-3xl font-black font-headline text-rose-400 mt-0.5 sm:mt-1">
-                                    {finalIsLoading ? '--' : stats.totalCategories}
-                                </span>
-                                <span className="text-[9px] sm:text-[10px] text-slate-400 mt-0.5">專屬主題池</span>
-                            </div>
-
-                            <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-[#1a0c16] border border-pink-500/30 flex flex-col items-center justify-center text-center shadow-[0_4px_20px_rgba(244,63,94,0.15)]">
+                        <div className="flex flex-col gap-2 sm:gap-2.5 w-full lg:w-auto shrink-0 items-center">
+                            <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-[#1a0c16] border border-pink-500/30 flex flex-col items-center justify-center text-center shadow-[0_4px_20px_rgba(244,63,94,0.15)] w-full min-w-[140px] sm:min-w-[170px]">
                                 <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">剩餘可拼</span>
-                                <span className="text-xl sm:text-3xl font-black font-headline text-pink-300 mt-0.5 sm:mt-1">
+                                <span className="text-2xl sm:text-4xl font-black font-headline text-pink-300 mt-0.5 sm:mt-1">
                                     {finalIsLoading ? '--' : stats.availableItems}
                                 </span>
                                 <span className="text-[9px] sm:text-[10px] text-slate-400 mt-0.5">球員卡</span>
                             </div>
 
-                            <div className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-[#1a0c16] border border-amber-500/30 flex flex-col items-center justify-center text-center shadow-lg col-span-2">
+                            <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-[#1a0c16] border border-amber-500/30 flex items-center justify-center text-center shadow-lg w-full">
                                 <div className="flex items-center gap-1.5">
                                     <DiamondIcon className="w-3.5 h-3.5 text-amber-400" />
                                     <span className="text-[11px] sm:text-xs font-bold text-amber-300">單注卡價 10% • 隨機公平</span>
@@ -421,8 +431,13 @@ export default function BetLandingPage() {
 
                                 {/* 頂部標籤列 (顯示卡池數量) */}
                                 <div className="absolute top-2 sm:top-2.5 inset-x-2 sm:inset-x-2.5 flex items-center justify-end z-10">
-                                    <span className="text-[9px] sm:text-[10px] font-mono font-bold text-slate-300 bg-black/75 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/15 shrink-0 shadow-sm">
-                                        {category.itemCount} 款
+                                    <span className={cn(
+                                        "text-[9px] sm:text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border shrink-0 shadow-sm backdrop-blur-md",
+                                        category.itemCount === 0 
+                                            ? "text-rose-400 bg-rose-950/80 border-rose-500/30" 
+                                            : "text-slate-300 bg-black/75 border-white/15"
+                                    )}>
+                                        {category.itemCount === 0 ? '已抽完' : `${category.itemCount} 款`}
                                     </span>
                                 </div>
 

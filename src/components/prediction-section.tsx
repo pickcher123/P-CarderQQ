@@ -34,6 +34,7 @@ import { cn } from '@/lib/utils';
 import { PPlusIcon } from '@/components/icons';
 import { PredictionLeaderboard, type UserStats } from '@/components/prediction-leaderboard';
 import { PersonalPredictionStats } from '@/components/personal-prediction-stats';
+import { resolveMatchTeamsAndLogos, findTeamLogoForOption } from '@/lib/sports-team-logos';
 
 export interface UserPredictionRecord {
     id?: string;
@@ -445,22 +446,25 @@ export function PredictionSection({
 
                                 const eventPreds = predictionsByEvent[event.id] || [];
                                 const totalBettors = eventPreds.length;
+                                const matchTeams = resolveMatchTeamsAndLogos(event);
 
                                 return (
                                     <Card key={event.id} className="bg-slate-950/90 backdrop-blur-2xl border-slate-800/90 rounded-3xl p-5 sm:p-6 hover:border-amber-500/40 transition-all shadow-xl relative overflow-hidden group">
                                         <div className="absolute top-0 right-0 w-44 h-44 bg-amber-500/5 rounded-full blur-3xl pointer-events-none group-hover:bg-amber-500/10 transition-all" />
 
                                         <CardContent className="p-0 space-y-4 relative z-10">
-                                            {/* 頂部：賽事名稱、獎勵與狀態標籤 */}
-                                            <div className="flex justify-between items-start flex-wrap gap-2 border-b border-slate-800/80 pb-3">
-                                                <div className="space-y-1">
+                                            {/* 頂部：標籤列 (獎勵、聯賽、狀態) */}
+                                            <div className="flex justify-between items-center flex-wrap gap-2 border-b border-slate-800/80 pb-3">
+                                                <div className="flex items-center gap-2 flex-wrap">
                                                     <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-black">
                                                         <Trophy className="w-3.5 h-3.5 text-amber-400" />
                                                         <span>命中獎勵 +{event.reward || 100} P+</span>
                                                     </div>
-                                                    <h3 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
-                                                        <span>{event.matchName}</span>
-                                                    </h3>
+                                                    {event.league && (
+                                                        <Badge variant="outline" className="bg-slate-900 border-slate-700 text-slate-300 text-xs font-bold px-2.5 py-0.5">
+                                                            {event.league}
+                                                        </Badge>
+                                                    )}
                                                 </div>
 
                                                 <div className="flex items-center gap-1.5">
@@ -482,6 +486,58 @@ export function PredictionSection({
                                                 </div>
                                             </div>
 
+                                            {/* 雙方對戰視覺旗艦橫幅 (Matchup Visual Banner with Team LOGOs) */}
+                                            <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-slate-900/95 via-slate-850/80 to-slate-900/95 border border-slate-800/90 shadow-inner flex items-center justify-between gap-3">
+                                                {/* 客隊 Away Team */}
+                                                <div className="flex items-center gap-2.5 sm:gap-3 flex-1 min-w-0">
+                                                    <div className="w-11 h-11 sm:w-13 sm:h-13 rounded-2xl bg-slate-950 border border-slate-700/80 p-1.5 flex items-center justify-center shrink-0 shadow-md group-hover:border-amber-500/40 transition-all">
+                                                        <img 
+                                                            src={matchTeams.awayTeamLogo} 
+                                                            alt={matchTeams.awayTeam} 
+                                                            className="w-full h-full object-contain filter drop-shadow" 
+                                                            loading="lazy"
+                                                            onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/team-logos/sports-default.svg'; }}
+                                                        />
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 block tracking-wider">
+                                                            客隊 (AWAY)
+                                                        </span>
+                                                        <span className="text-xs sm:text-base font-black text-white truncate block">
+                                                            {matchTeams.awayTeam}
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                {/* 中間對決 VS 徽飾 */}
+                                                <div className="flex flex-col items-center justify-center shrink-0 px-1 sm:px-3">
+                                                    <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-amber-500/20 border border-amber-500/40 text-[11px] font-black text-amber-300 tracking-widest shadow-sm">
+                                                        VS
+                                                    </span>
+                                                </div>
+
+                                                {/* 主隊 Home Team */}
+                                                <div className="flex items-center justify-end gap-2.5 sm:gap-3 flex-1 min-w-0 text-right">
+                                                    <div className="min-w-0">
+                                                        <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 block tracking-wider">
+                                                            主隊 (HOME)
+                                                        </span>
+                                                        <span className="text-xs sm:text-base font-black text-white truncate block">
+                                                            {matchTeams.homeTeam}
+                                                        </span>
+                                                    </div>
+                                                    <div className="w-11 h-11 sm:w-13 sm:h-13 rounded-2xl bg-slate-950 border border-slate-700/80 p-1.5 flex items-center justify-center shrink-0 shadow-md group-hover:border-amber-500/40 transition-all">
+                                                        <img 
+                                                            src={matchTeams.homeTeamLogo} 
+                                                            alt={matchTeams.homeTeam} 
+                                                            className="w-full h-full object-contain filter drop-shadow" 
+                                                            loading="lazy"
+                                                            onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/team-logos/sports-default.svg'; }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+
                                             {/* 題目與獲勝答案 */}
                                             <div className="space-y-3">
                                                 <div className="flex items-center gap-2 text-sm sm:text-base text-slate-100 font-black">
@@ -490,19 +546,34 @@ export function PredictionSection({
                                                 </div>
 
                                                 {winningList.length > 0 && (
-                                                    <div className="p-3 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-200 text-xs sm:text-sm font-bold flex items-center gap-2 shadow-inner">
-                                                        <Sparkles className="w-4 h-4 text-amber-400 shrink-0 animate-pulse" />
-                                                        <span>獲勝答案：<strong className="text-white font-black">{winningList.join(' / ')}</strong></span>
+                                                    <div className="p-3 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-200 text-xs sm:text-sm font-bold flex flex-col gap-1.5 shadow-inner">
+                                                        <div className="flex items-center justify-between flex-wrap gap-2">
+                                                            <div className="flex items-center gap-2">
+                                                                <Sparkles className="w-4 h-4 text-amber-400 shrink-0 animate-pulse" />
+                                                                <span>獲勝答案：<strong className="text-white font-black">{winningList.join(' / ')}</strong></span>
+                                                            </div>
+                                                            {event.actualScore && (
+                                                                <span className="text-[11px] font-black text-amber-300 bg-amber-500/20 px-2.5 py-0.5 rounded-lg border border-amber-500/40">
+                                                                    比分: {event.actualScore}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        {event.settlementNote && (
+                                                            <p className="text-[11px] text-amber-200/80 font-medium pl-6">
+                                                                {event.settlementNote}
+                                                            </p>
+                                                        )}
                                                     </div>
                                                 )}
 
-                                                {/* 圖像化選項按鈕組（附帶動態比例視覺條） */}
+                                                {/* 圖像化選項按鈕組（附帶動態比例視覺條與球隊 LOGO） */}
                                                 <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
                                                     {event.options?.map((option: string) => {
                                                         const isSelected = userChoice === option;
                                                         const isWinnerOpt = winningList.includes(option);
                                                         const countForOpt = eventPreds.filter(p => p.option === option).length;
                                                         const percentForOpt = totalBettors > 0 ? Math.round((countForOpt / totalBettors) * 100) : 0;
+                                                        const optionLogo = findTeamLogoForOption(option, event.sportCategory);
 
                                                         return (
                                                             <button
@@ -511,7 +582,7 @@ export function PredictionSection({
                                                                 disabled={isClosed || isConfirmed}
                                                                 onClick={() => handlePredict(event.id, option)}
                                                                 className={cn(
-                                                                    "rounded-2xl transition-all relative font-bold min-h-[64px] p-3 text-xs sm:text-sm flex flex-col justify-between border text-left overflow-hidden cursor-pointer",
+                                                                    "rounded-2xl transition-all relative font-bold min-h-[68px] p-3 text-xs sm:text-sm flex flex-col justify-between border text-left overflow-hidden cursor-pointer",
                                                                     isSelected 
                                                                         ? "bg-slate-900 border-amber-400 ring-2 ring-amber-400/50 shadow-lg shadow-amber-500/20" 
                                                                         : "bg-slate-900/90 border-slate-800 hover:border-slate-700 hover:bg-slate-850",
@@ -527,9 +598,17 @@ export function PredictionSection({
                                                                     style={{ width: `${percentForOpt}%` }}
                                                                 />
 
-                                                                {/* 選項文字與選取狀態 */}
-                                                                <div className="flex items-center justify-between gap-1 relative z-10 w-full">
-                                                                    <div className="flex items-center gap-1.5 min-w-0">
+                                                                {/* 選項文字、隊伍 LOGO 與選取狀態 */}
+                                                                <div className="flex items-center justify-between gap-1.5 relative z-10 w-full">
+                                                                    <div className="flex items-center gap-2 min-w-0">
+                                                                        {optionLogo && (
+                                                                            <img 
+                                                                                src={optionLogo} 
+                                                                                alt="" 
+                                                                                className="w-5 h-5 object-contain rounded-full bg-slate-950/80 p-0.5 border border-slate-700 shrink-0" 
+                                                                                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                                                                            />
+                                                                        )}
                                                                         {isWinnerOpt && <Trophy className="w-3.5 h-3.5 text-amber-400 shrink-0" />}
                                                                         <span className={cn("text-xs sm:text-sm font-black truncate", isSelected ? "text-amber-300" : "text-white")}>
                                                                             {option}
@@ -636,18 +715,41 @@ export function PredictionSection({
                             return true;
                         });
 
+                        const modalMatchTeams = resolveMatchTeamsAndLogos(selectedEventForModal);
+
                         return (
                             <div className="space-y-4">
-                                <DialogHeader className="space-y-2 text-left border-b border-slate-800 pb-3.5">
-                                    <div className="flex items-center gap-2">
-                                        <Badge className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-black">
-                                            公開下注名單
-                                        </Badge>
+                                <DialogHeader className="space-y-3 text-left border-b border-slate-800 pb-3.5">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <div className="flex items-center gap-2">
+                                            <Badge className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-black">
+                                                公開下注名單
+                                            </Badge>
+                                            {selectedEventForModal.league && (
+                                                <Badge variant="outline" className="bg-slate-900 border-slate-700 text-slate-400 text-[10px] font-bold">
+                                                    {selectedEventForModal.league}
+                                                </Badge>
+                                            )}
+                                        </div>
                                         <span className="text-xs text-slate-400 font-mono">共 {eventPreds.length} 筆</span>
                                     </div>
-                                    <DialogTitle className="text-base sm:text-lg font-black text-white font-headline leading-snug">
-                                        {selectedEventForModal.matchName}
-                                    </DialogTitle>
+                                    <div className="flex items-center gap-2.5">
+                                        <img 
+                                            src={modalMatchTeams.awayTeamLogo} 
+                                            alt={modalMatchTeams.awayTeam} 
+                                            className="w-7 h-7 object-contain rounded-full bg-slate-900 p-0.5 border border-slate-800 shrink-0" 
+                                            onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/team-logos/sports-default.svg'; }}
+                                        />
+                                        <DialogTitle className="text-base sm:text-lg font-black text-white font-headline leading-snug">
+                                            {modalMatchTeams.awayTeam} <span className="text-amber-400 font-normal text-xs px-1">VS</span> {modalMatchTeams.homeTeam}
+                                        </DialogTitle>
+                                        <img 
+                                            src={modalMatchTeams.homeTeamLogo} 
+                                            alt={modalMatchTeams.homeTeam} 
+                                            className="w-7 h-7 object-contain rounded-full bg-slate-900 p-0.5 border border-slate-800 shrink-0" 
+                                            onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/team-logos/sports-default.svg'; }}
+                                        />
+                                    </div>
                                 </DialogHeader>
 
                                 {/* 篩選選項 */}

@@ -210,21 +210,13 @@ export default function DrawPage() {
                 </div>
 
                 {/* Live Stats Widget */}
-                <div className="grid grid-cols-2 gap-2 sm:gap-3 w-full lg:w-auto shrink-0">
-                    <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-[#0b1329] border border-amber-500/30 flex flex-col items-center justify-center text-center shadow-[0_4px_20px_rgba(245,158,11,0.15)] min-w-[100px] sm:min-w-[130px]">
+                <div className="flex items-center justify-center w-full lg:w-auto shrink-0">
+                    <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-[#0b1329] border border-amber-500/30 flex flex-col items-center justify-center text-center shadow-[0_4px_20px_rgba(245,158,11,0.15)] min-w-[130px] sm:min-w-[150px]">
                         <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">開放中卡池</span>
                         <span className="text-xl sm:text-3xl font-black font-headline text-amber-400 mt-0.5 sm:mt-1">
                             {finalIsLoading ? '--' : allPools.length}
                         </span>
                         <span className="text-[9px] sm:text-[10px] text-slate-400 mt-0.5">熱門主題專區</span>
-                    </div>
-
-                    <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-[#0b1329] border border-cyan-500/30 flex flex-col items-center justify-center text-center shadow-[0_4px_20px_rgba(6,182,212,0.15)] min-w-[100px] sm:min-w-[130px]">
-                        <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">卡池總類別</span>
-                        <span className="text-xl sm:text-3xl font-black font-headline text-cyan-400 mt-0.5 sm:mt-1">
-                            {finalIsLoading ? '--' : categoriesWithCounts.length}
-                        </span>
-                        <span className="text-[9px] sm:text-[10px] text-slate-400 mt-0.5">球星分類主題</span>
                     </div>
                 </div>
             </div>

@@ -17,6 +17,7 @@ import { Loader2, ArrowRight, ShieldCheck, Check, Sparkles, Wallet } from 'lucid
 import { DiamondIcon, PPlusIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import type { UserProfile } from '@/types/user-profile';
+import { RefinedPoints } from '@/components/ui/refined-points';
 
 // 儲值包方案定義
 const pointPackages = [
@@ -118,9 +119,14 @@ export function PurchasePointsDialog({ children }: { children: React.ReactNode }
 
               {/* Current Points Badge */}
               {user && (
-                <div className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-900/90 border border-cyan-500/20 text-xs font-mono">
-                  <span className="text-[11px] text-slate-400">餘額</span>
-                  <span className="font-bold text-cyan-300">{(userProfile?.points ?? 0).toLocaleString()}</span>
+                <div className="flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-slate-900/90 border border-cyan-500/25 text-xs shadow-[0_0_10px_rgba(6,182,212,0.12)]">
+                  <span className="text-[11px] text-slate-400 font-medium">餘額</span>
+                  <RefinedPoints 
+                    value={userProfile?.points ?? 0}
+                    currency="diamond"
+                    size="xs"
+                    variant="luxury"
+                  />
                 </div>
               )}
             </div>
@@ -156,24 +162,23 @@ export function PurchasePointsDialog({ children }: { children: React.ReactNode }
                   ) : null}
 
                   {/* Main Points Amount */}
-                  <div className="flex items-center justify-center gap-0.5 mt-0.5">
-                    <span
-                      className={cn(
-                        'text-base font-black font-mono tracking-tight',
-                        isSelected ? 'text-cyan-300' : 'text-slate-100'
-                      )}
-                    >
-                      {pkg.points.toLocaleString()}
-                    </span>
-                    <DiamondIcon className="w-3 h-3 text-cyan-400 shrink-0" />
+                  <div className="flex items-center justify-center gap-1 mt-0.5">
+                    <RefinedPoints 
+                      value={pkg.points}
+                      currency="diamond"
+                      size="base"
+                      variant={isSelected ? 'luxury' : 'glow'}
+                      className="font-black"
+                    />
+                    <DiamondIcon className="w-3.5 h-3.5 text-cyan-400 shrink-0 drop-shadow-[0_0_6px_rgba(34,211,238,0.6)]" />
                   </div>
 
                   {/* NT$ Price */}
                   <div
                     className={cn(
-                      'text-[10px] font-mono font-bold mt-1 px-1.5 py-0.5 rounded transition-colors',
+                      'text-[11px] font-numbers font-bold mt-1 px-2 py-0.5 rounded transition-colors tabular-nums',
                       isSelected
-                        ? 'bg-cyan-500/20 text-cyan-200'
+                        ? 'bg-cyan-500/20 text-cyan-200 border border-cyan-500/30'
                         : 'text-slate-400 bg-white/5'
                     )}
                   >

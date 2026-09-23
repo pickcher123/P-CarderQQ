@@ -1,12 +1,17 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import { getAdminDb } from './firebase-admin';
 import * as admin from 'firebase-admin';
+import { resolveMatchTeamsAndLogos, resolveTeamLogo } from './sports-team-logos';
 
 // 體育賽事介面
 export interface ScrapedMatch {
   matchName: string;
   sportCategory: 'basketball' | 'baseball' | 'football' | 'esports' | 'other';
   league?: string;
+  homeTeam?: string;
+  awayTeam?: string;
+  homeTeamLogo?: string;
+  awayTeamLogo?: string;
   question: string;
   options: string[];
   reward: number;
@@ -45,6 +50,10 @@ export async function scrapeSportsMatches(): Promise<ScrapedMatch[]> {
       matchName: '金州勇士 vs 洛杉磯湖人',
       sportCategory: 'basketball',
       league: 'NBA 美國職籃',
+      homeTeam: '金州勇士',
+      awayTeam: '洛杉磯湖人',
+      homeTeamLogo: 'https://a.espncdn.com/i/teamlogos/nba/500/gsw.png',
+      awayTeamLogo: 'https://a.espncdn.com/i/teamlogos/nba/500/lal.png',
       question: '【NBA焦點戰】金州勇士 vs 洛杉磯湖人：讓分盤誰能過盤？',
       options: ['金州勇士 (-3.5)', '洛杉磯湖人 (+3.5)'],
       reward: 100,
@@ -55,6 +64,10 @@ export async function scrapeSportsMatches(): Promise<ScrapedMatch[]> {
       matchName: '洛杉磯道奇 vs 聖地牙哥教士',
       sportCategory: 'baseball',
       league: 'MLB 美國職棒',
+      homeTeam: '洛杉磯道奇',
+      awayTeam: '聖地牙哥教士',
+      homeTeamLogo: 'https://a.espncdn.com/i/teamlogos/mlb/500/lad.png',
+      awayTeamLogo: 'https://a.espncdn.com/i/teamlogos/mlb/500/sd.png',
       question: '【MLB國聯焦點】洛杉磯道奇 vs 聖地牙哥教士：比賽結果預測？',
       options: ['洛杉磯道奇 (-1.5)', '聖地牙哥教士 (+1.5)', '總分大於 8.5 分', '總分小於 8.5 分'],
       reward: 120,
@@ -65,6 +78,10 @@ export async function scrapeSportsMatches(): Promise<ScrapedMatch[]> {
       matchName: '中信兄弟 vs 富邦悍將',
       sportCategory: 'baseball',
       league: 'CPBL 中華職棒',
+      homeTeam: '中信兄弟',
+      awayTeam: '富邦悍將',
+      homeTeamLogo: '/team-logos/cpbl-brothers.svg',
+      awayTeamLogo: '/team-logos/cpbl-guardians.svg',
       question: '【中華職棒例行賽】中信兄弟 vs 富邦悍將：誰能獲勝？',
       options: ['中信兄弟 (-1.5)', '富邦悍將 (+1.5)'],
       reward: 100,
@@ -75,6 +92,10 @@ export async function scrapeSportsMatches(): Promise<ScrapedMatch[]> {
       matchName: '曼城 vs 利物浦',
       sportCategory: 'football',
       league: '英超足球 Premier League',
+      homeTeam: '曼城',
+      awayTeam: '利物浦',
+      homeTeamLogo: 'https://a.espncdn.com/i/teamlogos/soccer/500/382.png',
+      awayTeamLogo: 'https://a.espncdn.com/i/teamlogos/soccer/500/364.png',
       question: '【英超榜首天王山】曼城 vs 利物浦：最終賽果？',
       options: ['曼城獨贏', '雙方握手言和 (和局)', '利物浦獨贏'],
       reward: 150,
@@ -99,11 +120,16 @@ export async function scrapeSportsMatches(): Promise<ScrapedMatch[]> {
 3. 足球 (英超 Premier League / 歐冠 / 西甲) 焦點對決
 4. 台灣職籃 (TPBL / P. LEAGUE+) 焦點對決
 
-請精選 3 到 6 場「尚未開打、最受矚目」的焦點對決，為每一場比賽設計一個有趣的預測競猜問題與 2~4 個預測選項（如：讓分過盤、大小分、獨贏）。
+請精選 3 到 6 場「尚未開打、最受矚目」的焦點對決，為每一場比賽指出主隊 (homeTeam) 與客隊 (awayTeam)，並設計一個有趣的預測競猜問題與 2~4 個預測選項（如：讓分過盤、大小分、獨贏）。
+若能透過搜尋找到隊伍的官方 LOGO 圖片網址 (如 ESPN / 官網 / Wikipedia 圖片 URL)，請一併填入 homeTeamLogo 與 awayTeamLogo，若無則留空。
 所有比賽的 bettingEndTime 必須在開賽前 5~10 分鐘，且必須晚於 ${today}。
 
 請務必嚴格依循 JSON Schema 格式輸出：
 - matchName: 格式如 "金州勇士 vs 洛杉磯湖人"
+- homeTeam: 主隊名稱 (例如: "金州勇士")
+- awayTeam: 客隊名稱 (例如: "洛杉磯湖人")
+- homeTeamLogo: 主隊 LOGO 圖片網址 (可選)
+- awayTeamLogo: 客隊 LOGO 圖片網址 (可選)
 - sportCategory: "basketball" | "baseball" | "football" | "esports" | "other"
 - league: 聯賽名稱 (例如: "NBA 美國職籃", "CPBL 中華職棒")
 - question: 預測題目 (例如: "【NBA焦點戰】金州勇士 vs 洛杉磯湖人：讓分盤誰能過盤？")
@@ -128,6 +154,10 @@ export async function scrapeSportsMatches(): Promise<ScrapedMatch[]> {
                 type: Type.OBJECT,
                 properties: {
                   matchName: { type: Type.STRING },
+                  homeTeam: { type: Type.STRING },
+                  awayTeam: { type: Type.STRING },
+                  homeTeamLogo: { type: Type.STRING },
+                  awayTeamLogo: { type: Type.STRING },
                   sportCategory: { type: Type.STRING },
                   league: { type: Type.STRING },
                   question: { type: Type.STRING },
@@ -150,18 +180,36 @@ export async function scrapeSportsMatches(): Promise<ScrapedMatch[]> {
 
     const parsed = JSON.parse(response.text || '{}');
     if (parsed.matches && Array.isArray(parsed.matches) && parsed.matches.length > 0) {
-      return parsed.matches.map((m: any) => ({
-        matchName: m.matchName || '熱門焦點對決',
-        sportCategory: ['basketball', 'baseball', 'football', 'esports', 'other'].includes(m.sportCategory)
+      return parsed.matches.map((m: any) => {
+        const cat = ['basketball', 'baseball', 'football', 'esports', 'other'].includes(m.sportCategory)
           ? m.sportCategory
-          : 'other',
-        league: m.league || '焦點賽事',
-        question: m.question || `${m.matchName}：誰能獲勝？`,
-        options: Array.isArray(m.options) && m.options.length >= 2 ? m.options : ['主隊勝', '客隊勝'],
-        reward: Number(m.reward) || 100,
-        bettingEndTime: m.bettingEndTime || `${tDate}T12:00`,
-        analysis: m.analysis || '',
-      }));
+          : 'other';
+        
+        // 智慧解析與補充球隊名稱及高畫質官方 LOGO
+        const resolvedTeams = resolveMatchTeamsAndLogos({
+          matchName: m.matchName,
+          sportCategory: cat,
+          homeTeam: m.homeTeam,
+          awayTeam: m.awayTeam,
+          homeTeamLogo: m.homeTeamLogo,
+          awayTeamLogo: m.awayTeamLogo,
+        });
+
+        return {
+          matchName: m.matchName || `${resolvedTeams.homeTeam} vs ${resolvedTeams.awayTeam}`,
+          homeTeam: resolvedTeams.homeTeam,
+          awayTeam: resolvedTeams.awayTeam,
+          homeTeamLogo: resolvedTeams.homeTeamLogo,
+          awayTeamLogo: resolvedTeams.awayTeamLogo,
+          sportCategory: cat,
+          league: m.league || '焦點賽事',
+          question: m.question || `${m.matchName}：誰能獲勝？`,
+          options: Array.isArray(m.options) && m.options.length >= 2 ? m.options : ['主隊勝', '客隊勝'],
+          reward: Number(m.reward) || 100,
+          bettingEndTime: m.bettingEndTime || `${tDate}T12:00`,
+          analysis: m.analysis || '',
+        };
+      });
     }
   } catch (error) {
     console.error('[ScrapeSportsMatches] AI 搜尋失敗，切換為備援賽事:', error);
@@ -330,6 +378,10 @@ export async function syncPredictionsToFirestore() {
     const newDocRef = collectionRef.doc();
     batch.set(newDocRef, {
       matchName: match.matchName,
+      homeTeam: match.homeTeam || '',
+      awayTeam: match.awayTeam || '',
+      homeTeamLogo: match.homeTeamLogo || '',
+      awayTeamLogo: match.awayTeamLogo || '',
       sportCategory: match.sportCategory || 'other',
       league: match.league || '',
       question: match.question,

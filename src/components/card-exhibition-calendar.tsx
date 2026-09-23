@@ -490,9 +490,9 @@ export function CardExhibitionCalendar({
                 </div>
             </div>
 
-            {/* 清爽版活動詳情彈窗 */}
+            {/* 清爽版活動詳情彈窗 - 修正跑版與滾動限制，採固頂標頭、滑動內容與固底操作列 */}
             <Dialog open={!!selectedExh} onOpenChange={(open) => !open && setSelectedExh(null)}>
-                <DialogContent className="bg-slate-950/98 backdrop-blur-2xl border-cyan-500/30 text-white rounded-3xl p-5 sm:p-7 max-w-lg w-[92vw] mx-auto shadow-2xl focus:outline-none">
+                <DialogContent className="bg-slate-950/98 backdrop-blur-2xl border border-cyan-500/30 text-white rounded-3xl p-0 max-w-lg w-[94vw] sm:w-full max-h-[85vh] sm:max-h-[88vh] flex flex-col shadow-2xl overflow-hidden focus:outline-none">
                     {selectedExh && (() => {
                         const startDate = new Date(selectedExh.date.seconds * 1000);
                         const endDate = selectedExh.endDate ? new Date(selectedExh.endDate.seconds * 1000) : null;
@@ -506,87 +506,91 @@ export function CardExhibitionCalendar({
                             : null;
 
                         return (
-                            <div className="space-y-4">
-                                <DialogHeader className="space-y-2 text-left border-b border-slate-800 pb-3.5">
+                            <>
+                                {/* 固頂標頭 (Pinned Header) - 預留右側空間避免遮擋關閉按鈕 */}
+                                <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-slate-800/80 shrink-0 bg-slate-950/90 backdrop-blur-md pr-12 text-left space-y-1.5">
                                     <div className="flex items-center gap-2">
                                         <span className={cn("px-2.5 py-0.5 rounded-full text-xs font-black border", cityTheme.badge)}>
                                             {city}
                                         </span>
                                         <span className="text-xs font-mono text-slate-400">卡展活動詳情</span>
                                     </div>
-                                    <DialogTitle className="text-lg sm:text-xl font-black text-white font-headline leading-snug">
+                                    <DialogTitle className="text-base sm:text-lg font-black text-white font-headline leading-snug line-clamp-2">
                                         {selectedExh.title}
                                     </DialogTitle>
                                 </DialogHeader>
 
-                                {/* 活動海報 (若無則呈現城市卡牌視覺) */}
-                                <div className="relative w-full h-44 sm:h-52 rounded-2xl overflow-hidden border border-slate-800 bg-slate-900 shadow-inner">
-                                    {selectedExh.imageUrl ? (
-                                        <img 
-                                            src={selectedExh.imageUrl} 
-                                            alt={selectedExh.title}
-                                            className="w-full h-full object-cover"
-                                        />
-                                    ) : (
-                                        <div className={cn("w-full h-full bg-gradient-to-br flex flex-col items-center justify-center p-4", cityTheme.bg)}>
-                                            <Compass className="w-12 h-12 text-white/30 mb-2" />
-                                            <span className="text-xs font-black tracking-widest text-white/80 uppercase">CARD COLLECTOR EXPO</span>
-                                            <span className="text-lg font-black text-white mt-1">{city}卡牌特展</span>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* 重要資訊區塊 */}
-                                <div className="space-y-2 text-xs sm:text-sm">
-                                    {/* 日期 */}
-                                    <div className="flex items-start gap-3 p-3 rounded-2xl bg-slate-900/80 border border-slate-800">
-                                        <CalendarIcon className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-                                        <div className="space-y-0.5">
-                                            <span className="text-[11px] font-bold text-slate-400 block">日期日程</span>
-                                            <div className="text-white font-bold">
-                                                {isSameDay ? fullStartStr : `${fullStartStr} 至 ${fullEndStr}`}
+                                {/* 可自由滑動主體內容 (Smooth Scrollable Content) */}
+                                <div className="overflow-y-auto overscroll-contain flex-1 p-4 sm:p-5 space-y-3.5 text-xs sm:text-sm">
+                                    {/* 活動海報 (若無則呈現城市卡牌視覺) */}
+                                    <div className="relative w-full h-40 sm:h-48 rounded-2xl overflow-hidden border border-slate-800 bg-slate-900 shadow-inner shrink-0">
+                                        {selectedExh.imageUrl ? (
+                                            <img 
+                                                src={selectedExh.imageUrl} 
+                                                alt={selectedExh.title}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        ) : (
+                                            <div className={cn("w-full h-full bg-gradient-to-br flex flex-col items-center justify-center p-4", cityTheme.bg)}>
+                                                <Compass className="w-10 h-10 text-white/30 mb-1.5" />
+                                                <span className="text-[11px] font-black tracking-widest text-white/80 uppercase">CARD COLLECTOR EXPO</span>
+                                                <span className="text-base sm:text-lg font-black text-white mt-1">{city}卡牌特展</span>
                                             </div>
-                                        </div>
+                                        )}
                                     </div>
 
-                                    {/* 開放時間 */}
-                                    {selectedExh.time && (
+                                    {/* 重要資訊區塊 */}
+                                    <div className="space-y-2">
+                                        {/* 日期 */}
                                         <div className="flex items-start gap-3 p-3 rounded-2xl bg-slate-900/80 border border-slate-800">
-                                            <Clock className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+                                            <CalendarIcon className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
                                             <div className="space-y-0.5">
-                                                <span className="text-[11px] font-bold text-slate-400 block">開放時間</span>
-                                                <div className="text-white font-bold">{selectedExh.time}</div>
+                                                <span className="text-[11px] font-bold text-slate-400 block">日期日程</span>
+                                                <div className="text-white font-bold">
+                                                    {isSameDay ? fullStartStr : `${fullStartStr} 至 ${fullEndStr}`}
+                                                </div>
                                             </div>
                                         </div>
-                                    )}
 
-                                    {/* 展覽地點 */}
-                                    {selectedExh.location && (
-                                        <div className="flex items-start gap-3 p-3 rounded-2xl bg-slate-900/80 border border-slate-800">
-                                            <MapPin className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                                            <div className="space-y-0.5 flex-1 min-w-0">
-                                                <span className="text-[11px] font-bold text-slate-400 block">展覽地點</span>
-                                                <div className="text-white font-bold break-words">{selectedExh.location}</div>
+                                        {/* 開放時間 */}
+                                        {selectedExh.time && (
+                                            <div className="flex items-start gap-3 p-3 rounded-2xl bg-slate-900/80 border border-slate-800">
+                                                <Clock className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+                                                <div className="space-y-0.5">
+                                                    <span className="text-[11px] font-bold text-slate-400 block">開放時間</span>
+                                                    <div className="text-white font-bold">{selectedExh.time}</div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* 展覽地點 */}
+                                        {selectedExh.location && (
+                                            <div className="flex items-start gap-3 p-3 rounded-2xl bg-slate-900/80 border border-slate-800">
+                                                <MapPin className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                                                <div className="space-y-0.5 flex-1 min-w-0">
+                                                    <span className="text-[11px] font-bold text-slate-400 block">展覽地點</span>
+                                                    <div className="text-white font-bold break-words">{selectedExh.location}</div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* 內容說明 */}
+                                    {selectedExh.description && (
+                                        <div className="space-y-1.5 p-3.5 rounded-2xl bg-slate-900/40 border border-slate-800">
+                                            <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1">
+                                                <Info className="w-3.5 h-3.5 text-cyan-400" />
+                                                活動說明
+                                            </span>
+                                            <div className="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap break-words">
+                                                {selectedExh.description}
                                             </div>
                                         </div>
                                     )}
                                 </div>
 
-                                {/* 內容說明 */}
-                                {selectedExh.description && (
-                                    <div className="space-y-1.5 p-3.5 rounded-2xl bg-slate-900/40 border border-slate-800">
-                                        <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1">
-                                            <Info className="w-3.5 h-3.5 text-cyan-400" />
-                                            活動說明
-                                        </span>
-                                        <div className="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap break-words max-h-36 overflow-y-auto pr-1">
-                                            {selectedExh.description}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* 底部操作按鈕 */}
-                                <div className="flex items-center gap-2 pt-2">
+                                {/* 固底操作按鈕 (Pinned Footer) - 永不被裁切跑版 */}
+                                <div className="p-3.5 sm:p-4 border-t border-slate-800/80 bg-slate-950/95 backdrop-blur shrink-0 flex items-center gap-2.5">
                                     {mapSearchUrl && (
                                         <Button
                                             asChild
@@ -602,13 +606,13 @@ export function CardExhibitionCalendar({
                                     <DialogClose asChild>
                                         <Button
                                             variant="outline"
-                                            className="border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-200 font-bold rounded-xl h-11 text-xs sm:text-sm px-5"
+                                            className="border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-200 font-bold rounded-xl h-11 text-xs sm:text-sm px-5 shrink-0"
                                         >
                                             關閉
                                         </Button>
                                     </DialogClose>
                                 </div>
-                            </div>
+                            </>
                         );
                     })()}
                 </DialogContent>

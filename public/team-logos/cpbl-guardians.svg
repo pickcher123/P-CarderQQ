@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <linearGradient id="fb-blue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00529B" />
+      <stop offset="100%" stop-color="#002D62" />
+    </linearGradient>
+    <linearGradient id="fb-silver" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E0E6ED" />
+      <stop offset="100%" stop-color="#8896A6" />
+    </linearGradient>
+  </defs>
+  <circle cx="50" cy="50" r="46" fill="url(#fb-blue)" stroke="url(#fb-silver)" stroke-width="4"/>
+  <path d="M50 18 L76 34 L76 66 L50 82 L24 66 L24 34 Z" fill="none" stroke="#E0E6ED" stroke-width="2" opacity="0.4"/>
+  <text x="50" y="47" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="20" fill="#FFFFFF" text-anchor="middle">富邦</text>
+  <text x="50" y="68" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="18" fill="#38BDF8" text-anchor="middle">悍將</text>
+  <path d="M42 24 L50 18 L58 24" fill="none" stroke="#38BDF8" stroke-width="3" stroke-linecap="round"/>
+</svg>

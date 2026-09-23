@@ -1,5 +1,6 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import { NextResponse } from 'next/server';
+import { resolveMatchTeamsAndLogos, resolveTeamLogo } from '@/lib/sports-team-logos';
 
 export interface SportsMatchOdd {
   id: string;
@@ -7,6 +8,8 @@ export interface SportsMatchOdd {
   matchName: string; // e.g. "洛杉磯湖人 @ 金州勇士"
   homeTeam: string; // 主隊
   awayTeam: string; // 客隊
+  homeTeamLogo?: string; // 主隊 LOGO
+  awayTeamLogo?: string; // 客隊 LOGO
   matchTime: string; // 台灣時間 (YYYY-MM-DD HH:mm)
   bettingEndTime: string; // 預計下注截止時間 (YYYY-MM-DDTHH:mm)
   spread: string; // 讓分盤口, e.g. "勇士 -3.5 / 湖人 +3.5"
@@ -36,6 +39,8 @@ function getFallbackSportsOdds(queryText: string): SportsMatchOdd[] {
       matchName: '金州勇士 vs 洛杉磯湖人',
       homeTeam: '金州勇士',
       awayTeam: '洛杉磯湖人',
+      homeTeamLogo: 'https://a.espncdn.com/i/teamlogos/nba/500/gsw.png',
+      awayTeamLogo: 'https://a.espncdn.com/i/teamlogos/nba/500/lal.png',
       matchTime: `${tDate} 10:00`,
       bettingEndTime: `${tDate}T09:55`,
       spread: '勇士 主讓 -3.5 分 (1.92) / 湖人 客受讓 +3.5 分 (1.88)',
@@ -51,6 +56,8 @@ function getFallbackSportsOdds(queryText: string): SportsMatchOdd[] {
       matchName: '洛杉磯道奇 vs 聖地牙哥教士',
       homeTeam: '洛杉磯道奇',
       awayTeam: '聖地牙哥教士',
+      homeTeamLogo: 'https://a.espncdn.com/i/teamlogos/mlb/500/lad.png',
+      awayTeamLogo: 'https://a.espncdn.com/i/teamlogos/mlb/500/sd.png',
       matchTime: `${tDate} 07:10`,
       bettingEndTime: `${tDate}T07:05`,
       spread: '道奇 主讓 -1.5 分 (2.05) / 教士 客受讓 +1.5 分 (1.78)',
@@ -66,6 +73,8 @@ function getFallbackSportsOdds(queryText: string): SportsMatchOdd[] {
       matchName: '中信兄弟 vs 富邦悍將',
       homeTeam: '中信兄弟',
       awayTeam: '富邦悍將',
+      homeTeamLogo: '/team-logos/cpbl-brothers.svg',
+      awayTeamLogo: '/team-logos/cpbl-guardians.svg',
       matchTime: `${tDate} 18:35`,
       bettingEndTime: `${tDate}T18:30`,
       spread: '中信兄弟 主讓 -1.5 分 (1.95) / 富邦悍將 客受讓 +1.5 分 (1.85)',
@@ -81,6 +90,8 @@ function getFallbackSportsOdds(queryText: string): SportsMatchOdd[] {
       matchName: '曼城 (Manchester City) vs 利物浦 (Liverpool)',
       homeTeam: '曼城',
       awayTeam: '利物浦',
+      homeTeamLogo: 'https://a.espncdn.com/i/teamlogos/soccer/500/382.png',
+      awayTeamLogo: 'https://a.espncdn.com/i/teamlogos/soccer/500/364.png',
       matchTime: `${dDate} 03:00`,
       bettingEndTime: `${dDate}T02:55`,
       spread: '曼城 主讓 0.5/1 球 (1.98) / 利物浦 客受讓 0.5/1 球 (1.88)',
@@ -173,6 +184,8 @@ ${targetDesc}
                   matchName: { type: Type.STRING, description: '賽事名稱，例如 主隊 vs 客隊' },
                   homeTeam: { type: Type.STRING, description: '主場球隊名稱' },
                   awayTeam: { type: Type.STRING, description: '客場球隊名稱' },
+                  homeTeamLogo: { type: Type.STRING, description: '主隊官方 LOGO 圖片網址' },
+                  awayTeamLogo: { type: Type.STRING, description: '客隊官方 LOGO 圖片網址' },
                   matchTime: { type: Type.STRING, description: '比賽時間 (台灣時間 YYYY-MM-DD HH:mm)' },
                   bettingEndTime: { type: Type.STRING, description: '建議封盤截止時間 (格式 YYYY-MM-DDTHH:mm)' },
                   spread: { type: Type.STRING, description: '讓分盤口，例如 主隊 -3.5 / 客隊 +3.5' },
@@ -212,12 +225,27 @@ ${targetDesc}
       });
     }
 
-    // 格式化與補齊 id 與時間
-    const formattedMatches = matches.map((m: any, idx: number) => ({
-      ...m,
-      id: m.id || `ai-match-${Date.now()}-${idx}`,
-      bettingEndTime: m.bettingEndTime || (m.matchTime ? m.matchTime.replace(' ', 'T') : ''),
-    }));
+    // 格式化與補齊 id、時間與官方高解析度 LOGO
+    const formattedMatches = matches.map((m: any, idx: number) => {
+      const resolvedTeams = resolveMatchTeamsAndLogos({
+        matchName: m.matchName,
+        sportCategory: m.league,
+        homeTeam: m.homeTeam,
+        awayTeam: m.awayTeam,
+        homeTeamLogo: m.homeTeamLogo,
+        awayTeamLogo: m.awayTeamLogo,
+      });
+
+      return {
+        ...m,
+        id: m.id || `ai-match-${Date.now()}-${idx}`,
+        homeTeam: resolvedTeams.homeTeam,
+        awayTeam: resolvedTeams.awayTeam,
+        homeTeamLogo: resolvedTeams.homeTeamLogo,
+        awayTeamLogo: resolvedTeams.awayTeamLogo,
+        bettingEndTime: m.bettingEndTime || (m.matchTime ? m.matchTime.replace(' ', 'T') : ''),
+      };
+    });
 
     return NextResponse.json({
       success: true,

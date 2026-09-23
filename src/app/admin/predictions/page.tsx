@@ -47,10 +47,15 @@ import {
 import { cn } from '@/lib/utils';
 import { PPlusIcon } from '@/components/icons';
 import type { SportsMatchOdd } from '@/app/api/admin/fetch-sports-odds/route';
+import { resolveMatchTeamsAndLogos, resolveTeamLogo } from '@/lib/sports-team-logos';
 
 export interface PredictionEvent {
     id: string;
     matchName: string;
+    homeTeam?: string;
+    awayTeam?: string;
+    homeTeamLogo?: string;
+    awayTeamLogo?: string;
     question: string;
     options: string[];
     reward: number;
@@ -61,6 +66,14 @@ export interface PredictionEvent {
     league?: string;
     winningOption?: string;
     winningOptions?: string[];
+    actualScore?: string;
+    settlementNote?: string;
+    payoutSummary?: {
+        totalPredictions: number;
+        winnersCount: number;
+        totalPayout: number;
+        rewardPerWinner: number;
+    };
 }
 
 export type SportCategory = 'all' | 'basketball' | 'baseball' | 'football' | 'esports' | 'other';
@@ -211,6 +224,129 @@ export default function AdminPredictionsPage() {
     const [isCronModalOpen, setIsCronModalOpen] = useState(false);
     const [isCronSyncing, setIsCronSyncing] = useState(false);
     const [copiedUrl, setCopiedUrl] = useState(false);
+
+    // AI 賽果結算與派獎狀態
+    const [isSettlingAll, setIsSettlingAll] = useState(false);
+    const [settleModalEvent, setSettleModalEvent] = useState<PredictionEvent | null>(null);
+    const [isQueryingAiResult, setIsQueryingAiResult] = useState(false);
+    const [aiSettleResult, setAiSettleResult] = useState<any>(null);
+    const [selectedSettleWinningOptions, setSelectedSettleWinningOptions] = useState<string[]>([]);
+    const [customSettleScore, setCustomSettleScore] = useState('');
+    const [customSettleNote, setCustomSettleNote] = useState('');
+    const [isExecutingSettle, setIsExecutingSettle] = useState(false);
+
+    // 一鍵全自動 AI 賽果檢索並派獎所有截止賽事
+    const handleAutoSettleAll = async () => {
+        setIsSettlingAll(true);
+        try {
+            const res = await fetch('/api/admin/predictions/settle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'settle_all_pending' }),
+            });
+            const data = await res.json();
+            if (data.success) {
+                toast({
+                    title: '自動賽果結算與派獎完成！',
+                    description: data.message || `共掃描 ${data.summary?.scannedCount || 0} 場，結算 ${data.summary?.settledCount || 0} 場，共派發 ${data.summary?.totalPointsPaid || 0} P+ 點數！`,
+                });
+            } else {
+                throw new Error(data.error || '自動結算失敗');
+            }
+        } catch (err: any) {
+            toast({
+                variant: 'destructive',
+                title: '自動結算執行異常',
+                description: err.message || '無法連線至結算端點',
+            });
+        } finally {
+            setIsSettlingAll(false);
+        }
+    };
+
+    // 開啟單場賽事 AI 賽果檢索與結算彈窗
+    const handleOpenSettleModal = async (event: PredictionEvent) => {
+        setSettleModalEvent(event);
+        setSelectedSettleWinningOptions(getWinningOptions(event));
+        setCustomSettleScore(event.actualScore || '');
+        setCustomSettleNote(event.settlementNote || '');
+        setAiSettleResult(null);
+        setIsQueryingAiResult(true);
+
+        try {
+            const res = await fetch('/api/admin/predictions/settle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'fetch_result', eventId: event.id }),
+            });
+            const data = await res.json();
+            if (data.success && data.aiResult) {
+                setAiSettleResult(data.aiResult);
+                if (data.aiResult.actualScore) {
+                    setCustomSettleScore(data.aiResult.actualScore);
+                }
+                if (data.aiResult.explanation) {
+                    setCustomSettleNote(data.aiResult.explanation);
+                }
+                if (Array.isArray(data.aiResult.winningOptions) && data.aiResult.winningOptions.length > 0) {
+                    setSelectedSettleWinningOptions(data.aiResult.winningOptions);
+                }
+            }
+        } catch (err: any) {
+            console.error('AI 查詢賽果失敗:', err);
+        } finally {
+            setIsQueryingAiResult(false);
+        }
+    };
+
+    // 切換結算勝出選項 (複選)
+    const toggleSettleWinningOption = (opt: string) => {
+        setSelectedSettleWinningOptions(prev =>
+            prev.includes(opt) ? prev.filter(o => o !== opt) : [...prev, opt]
+        );
+    };
+
+    // 執行單場派獎
+    const handleExecuteSingleSettle = async () => {
+        if (!settleModalEvent) return;
+        if (selectedSettleWinningOptions.length === 0) {
+            toast({ variant: 'destructive', title: '請至少選擇一個勝出選項' });
+            return;
+        }
+
+        setIsExecutingSettle(true);
+        try {
+            const res = await fetch('/api/admin/predictions/settle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'settle_single',
+                    eventId: settleModalEvent.id,
+                    winningOptions: selectedSettleWinningOptions,
+                    actualScore: customSettleScore,
+                    explanation: customSettleNote,
+                }),
+            });
+            const data = await res.json();
+            if (data.success) {
+                toast({
+                    title: '賽事結算與派獎成功！',
+                    description: data.message || `已將 P+ 點數派發給所有獲勝玩家！`,
+                });
+                setSettleModalEvent(null);
+            } else {
+                throw new Error(data.error || '結算失敗');
+            }
+        } catch (err: any) {
+            toast({
+                variant: 'destructive',
+                title: '結算派獎失敗',
+                description: err.message || '請確認後端連線狀態',
+            });
+        } finally {
+            setIsExecutingSettle(false);
+        }
+    };
 
     // 手動觸發後端定時抓取同步
     const handleTriggerCronSync = async () => {
@@ -370,10 +506,19 @@ export default function AdminPredictionsPage() {
             ? detectSportCategory({ matchName: createMatchName, question: createQuestion })
             : createSportCategory;
 
+        const resolvedTeams = resolveMatchTeamsAndLogos({
+            matchName: createMatchName.trim(),
+            sportCategory: finalCategory,
+        });
+
         setIsSubmitting(true);
         try {
             await addDoc(eventsCollection, {
                 matchName: createMatchName.trim(),
+                homeTeam: resolvedTeams.homeTeam,
+                awayTeam: resolvedTeams.awayTeam,
+                homeTeamLogo: resolvedTeams.homeTeamLogo,
+                awayTeamLogo: resolvedTeams.awayTeamLogo,
                 sportCategory: finalCategory,
                 question: createQuestion.trim(),
                 options: optionsArray,
@@ -510,10 +655,23 @@ export default function AdminPredictionsPage() {
             question: match.suggestedQuestion,
         });
 
+        const resolvedTeams = resolveMatchTeamsAndLogos({
+            matchName: match.matchName,
+            sportCategory: autoCat,
+            homeTeam: match.homeTeam,
+            awayTeam: match.awayTeam,
+            homeTeamLogo: match.homeTeamLogo,
+            awayTeamLogo: match.awayTeamLogo,
+        });
+
         try {
             await addDoc(eventsCollection, {
                 matchName: match.matchName,
                 league: match.league,
+                homeTeam: resolvedTeams.homeTeam,
+                awayTeam: resolvedTeams.awayTeam,
+                homeTeamLogo: resolvedTeams.homeTeamLogo,
+                awayTeamLogo: resolvedTeams.awayTeamLogo,
                 sportCategory: autoCat,
                 question: match.suggestedQuestion,
                 options: match.suggestedOptions,
@@ -712,6 +870,20 @@ export default function AdminPredictionsPage() {
                             </div>
                         </DialogContent>
                     </Dialog>
+
+                    {/* 一鍵全自動賽果檢索與派獎按鈕 */}
+                    <Button
+                        onClick={handleAutoSettleAll}
+                        disabled={isSettlingAll}
+                        className="rounded-xl font-black bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-600 text-white shadow-md px-4 h-11 flex items-center gap-2 transition-all hover:scale-[1.02]"
+                    >
+                        {isSettlingAll ? (
+                            <Loader2 className="w-4 h-4 animate-spin text-white" />
+                        ) : (
+                            <Trophy className="w-4 h-4 text-amber-200" />
+                        )}
+                        <span>{isSettlingAll ? '自動結算派獎中...' : '自動獲取賽果並派獎'}</span>
+                    </Button>
 
                     {/* AI 賽事與盤口檢索按鈕 */}
                     <Button 
@@ -1047,6 +1219,7 @@ export default function AdminPredictionsPage() {
                                             const winningList = getWinningOptions(event);
                                             const eventPreds = predictionsByEvent[event.id] || [];
                                             const bettorsCount = eventPreds.length;
+                                            const matchLogos = resolveMatchTeamsAndLogos(event);
 
                                             return (
                                                 <Card key={event.id} className="rounded-2xl border-slate-200 bg-white hover:shadow-md transition-all flex flex-col justify-between overflow-hidden">
@@ -1074,14 +1247,38 @@ export default function AdminPredictionsPage() {
                                                                         已開獎
                                                                     </Badge>
                                                                 )}
+                                                                {event.actualScore && (
+                                                                    <Badge className="bg-amber-100/80 text-amber-900 border border-amber-300 font-bold text-[9px] flex items-center gap-0.5">
+                                                                        <Trophy className="w-2.5 h-2.5 text-amber-600" />
+                                                                        比分: {event.actualScore}
+                                                                    </Badge>
+                                                                )}
                                                             </div>
                                                         </div>
 
                                                         {/* 比賽名稱與題目 */}
                                                         <div>
-                                                            <h3 className="font-black text-sm text-slate-900 line-clamp-1">
-                                                                {event.matchName}
-                                                            </h3>
+                                                            <div className="flex items-center gap-1.5">
+                                                                {matchLogos.awayTeamLogo && (
+                                                                    <img 
+                                                                        src={matchLogos.awayTeamLogo} 
+                                                                        alt="" 
+                                                                        className="w-5 h-5 object-contain rounded-full bg-slate-100 p-0.5 border border-slate-200 shrink-0" 
+                                                                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                                                                    />
+                                                                )}
+                                                                <h3 className="font-black text-sm text-slate-900 line-clamp-1">
+                                                                    {event.matchName}
+                                                                </h3>
+                                                                {matchLogos.homeTeamLogo && (
+                                                                    <img 
+                                                                        src={matchLogos.homeTeamLogo} 
+                                                                        alt="" 
+                                                                        className="w-5 h-5 object-contain rounded-full bg-slate-100 p-0.5 border border-slate-200 shrink-0" 
+                                                                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                                                                    />
+                                                                )}
+                                                            </div>
                                                             <p className="text-xs text-slate-600 font-bold mt-1 flex items-start gap-1">
                                                                 <Target className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
                                                                 <span className="line-clamp-2">{event.question}</span>
@@ -1138,6 +1335,22 @@ export default function AdminPredictionsPage() {
                                                         </Button>
 
                                                         <div className="flex items-center gap-1.5">
+                                                            <Button
+                                                                type="button"
+                                                                variant="outline"
+                                                                size="sm"
+                                                                onClick={() => handleOpenSettleModal(event)}
+                                                                className={cn(
+                                                                    "h-8 text-xs rounded-xl font-black flex items-center gap-1 border",
+                                                                    status === 'finished'
+                                                                        ? "border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
+                                                                        : "border-orange-300 bg-orange-50 text-orange-700 hover:bg-orange-100"
+                                                                )}
+                                                            >
+                                                                <Trophy className="w-3 h-3 text-amber-500" />
+                                                                <span>{status === 'finished' ? '賽果' : '結算'}</span>
+                                                            </Button>
+
                                                             <Button
                                                                 type="button"
                                                                 variant="outline"
@@ -1209,6 +1422,7 @@ export default function AdminPredictionsPage() {
                                         const winningList = getWinningOptions(event);
                                         const eventPreds = predictionsByEvent[event.id] || [];
                                         const bettorsCount = eventPreds.length;
+                                        const matchLogos = resolveMatchTeamsAndLogos(event);
 
                                         return (
                                             <TableRow key={event.id} className="hover:bg-slate-50 transition-colors border-b-slate-100">
@@ -1218,7 +1432,25 @@ export default function AdminPredictionsPage() {
                                                             <span className="mr-1">{catInfo.icon}</span>
                                                             {catInfo.name}
                                                         </Badge>
-                                                        <div className="font-black text-sm text-slate-900">{event.matchName}</div>
+                                                        <div className="flex items-center gap-1.5">
+                                                            {matchLogos.awayTeamLogo && (
+                                                                <img 
+                                                                    src={matchLogos.awayTeamLogo} 
+                                                                    alt="" 
+                                                                    className="w-5 h-5 object-contain rounded-full bg-slate-100 p-0.5 border border-slate-200 shrink-0" 
+                                                                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                                                                />
+                                                            )}
+                                                            <div className="font-black text-sm text-slate-900">{event.matchName}</div>
+                                                            {matchLogos.homeTeamLogo && (
+                                                                <img 
+                                                                    src={matchLogos.homeTeamLogo} 
+                                                                    alt="" 
+                                                                    className="w-5 h-5 object-contain rounded-full bg-slate-100 p-0.5 border border-slate-200 shrink-0" 
+                                                                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                                                                />
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
@@ -1855,9 +2087,27 @@ export default function AdminPredictionsPage() {
                                                     <Badge className="bg-indigo-50 text-indigo-700 border-indigo-200 font-black text-xs px-2.5 py-0.5">
                                                         {match.league}
                                                     </Badge>
-                                                    <h3 className="text-base font-black text-slate-900">
-                                                        {match.matchName}
-                                                    </h3>
+                                                    <div className="flex items-center gap-1.5">
+                                                        {match.awayTeamLogo && (
+                                                            <img 
+                                                                src={match.awayTeamLogo} 
+                                                                alt={match.awayTeam} 
+                                                                className="w-6 h-6 object-contain rounded-full bg-slate-100 p-0.5 border border-slate-200" 
+                                                                onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/team-logos/sports-default.svg'; }}
+                                                            />
+                                                        )}
+                                                        <h3 className="text-base font-black text-slate-900">
+                                                            {match.matchName}
+                                                        </h3>
+                                                        {match.homeTeamLogo && (
+                                                            <img 
+                                                                src={match.homeTeamLogo} 
+                                                                alt={match.homeTeam} 
+                                                                className="w-6 h-6 object-contain rounded-full bg-slate-100 p-0.5 border border-slate-200" 
+                                                                onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/team-logos/sports-default.svg'; }}
+                                                            />
+                                                        )}
+                                                    </div>
                                                 </div>
                                                 <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500 bg-slate-50 px-3 py-1.5 rounded-xl shrink-0">
                                                     <Clock className="w-3.5 h-3.5 text-cyan-600" />

@@ -26,7 +26,8 @@ import {
   ChevronRight, 
   ExternalLink,
   Zap,
-  Tag
+  Tag,
+  CalendarCheck
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UserProfile } from '@/types/user-profile';
@@ -135,7 +136,7 @@ export function FanZoneBentoGrid() {
               {freeTicketsCount} 張
             </span>
             <span className="text-[10px] bg-pink-500 text-white px-1.5 py-0.2 rounded-full font-black animate-pulse">
-              領券 ➜
+              簽到/領券 ➜
             </span>
           </button>
 
@@ -358,7 +359,7 @@ export function FanZoneBentoGrid() {
           </div>
 
           {/* ----------------------------------------------------------------------- */}
-          {/* 右下卡片: 🎟️ 活動福利 · 免費領券中心 */}
+          {/* 右下卡片: 🎟️ 活動福利 · 簽到/領券中心 */}
           {/* ----------------------------------------------------------------------- */}
           <div className="rounded-3xl p-5 bg-gradient-to-br from-slate-950/95 via-purple-950/30 to-slate-950/95 border border-slate-800 hover:border-pink-500/40 backdrop-blur-xl shadow-xl transition-all duration-300 relative overflow-hidden flex flex-col justify-between group">
             <div className="absolute top-0 right-0 w-60 h-60 bg-pink-500/10 rounded-full blur-3xl pointer-events-none group-hover:bg-pink-500/15 transition-all" />
@@ -367,20 +368,20 @@ export function FanZoneBentoGrid() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="p-2 rounded-xl bg-pink-500/15 border border-pink-500/30 text-pink-400 shadow-[0_0_12px_rgba(236,72,153,0.2)]">
-                    <Gift className="w-4 h-4" />
+                    <CalendarCheck className="w-4 h-4" />
                   </div>
                   <div>
                     <span className="text-[10px] font-mono font-bold text-pink-400/90 uppercase tracking-wider block">
-                      REWARDS & FREE TICKETS
+                      CHECK-IN & REWARDS
                     </span>
                     <h3 className="text-base font-black text-white flex items-center gap-1.5">
-                      <span>活動福利 · 免費領券</span>
+                      <span>活動福利 · 簽到/領券</span>
                     </h3>
                   </div>
                 </div>
 
                 <Badge className="bg-pink-500/15 text-pink-300 border-pink-500/30 text-[11px] font-bold px-2 py-0.5">
-                  🎟️ 零門檻抽卡
+                  🎟️ 每日簽到送紅利
                 </Badge>
               </div>
 
@@ -399,15 +400,15 @@ export function FanZoneBentoGrid() {
                 <Button
                   size="sm"
                   onClick={() => setIsPromoModalOpen(true)}
-                  className="bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 hover:from-pink-500 hover:to-indigo-500 text-white text-xs font-black rounded-xl h-8 px-3 shadow-md group-hover:scale-105 transition-all"
+                  className="bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 hover:from-pink-500 hover:to-indigo-500 text-white text-xs font-black rounded-xl h-8 px-3 shadow-md group-hover:scale-105 transition-all cursor-pointer"
                 >
-                  <Gift className="w-3.5 h-3.5 mr-1 animate-bounce" />
-                  <span>領券 / 兌換</span>
+                  <CalendarCheck className="w-3.5 h-3.5 mr-1" />
+                  <span>簽到 / 領券</span>
                 </Button>
               </div>
 
               <p className="text-[11px] text-slate-400 font-medium leading-relaxed">
-                包含新手見面禮、社群好友邀請禮與官方現場活動代碼，獲得免費券即可在卡池免扣鑽石開獎！
+                每日登入簽到領 P+ 紅利點數，搭配新手見面禮與官方代碼，免費券即可在卡池免扣鑽石開獎！
               </p>
             </div>
 

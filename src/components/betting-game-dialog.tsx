@@ -28,6 +28,7 @@ import { useToast } from '@/hooks/use-toast';
 import { userLevels } from '@/components/member-level-crown';
 import type { UserProfile } from '@/types/user-profile';
 import type { LevelBenefit } from '@/types/system';
+import { RefinedPoints } from '@/components/ui/refined-points';
 import Link from 'next/link';
 
 interface CardData {
@@ -421,14 +422,14 @@ export function BettingGameDialog({
                                 <Wallet className="w-4 h-4 text-rose-400" />
                                 <span>我的錢包餘額</span>
                             </div>
-                            <div className="flex items-center gap-4 text-xs font-mono font-black">
+                            <div className="flex items-center gap-2.5 text-xs font-mono font-black">
                                 <div className="flex items-center gap-1.5 text-cyan-300 bg-cyan-950/50 px-2.5 py-1 rounded-lg border border-cyan-500/20">
-                                    <DiamondIcon className="w-3.5 h-3.5" />
-                                    <span>{diamondBalance.toLocaleString()}</span>
+                                    <DiamondIcon className="w-3.5 h-3.5 shrink-0" />
+                                    <RefinedPoints value={diamondBalance} currency="diamond" size="xs" variant="luxury" />
                                 </div>
                                 <div className="flex items-center gap-1.5 text-amber-300 bg-amber-950/50 px-2.5 py-1 rounded-lg border border-amber-500/20">
-                                    <PPlusIcon className="w-3.5 h-3.5 text-amber-400" />
-                                    <span>{pplusBalance.toLocaleString()}</span>
+                                    <PPlusIcon className="w-3.5 h-3.5 shrink-0" />
+                                    <RefinedPoints value={pplusBalance} currency="pplus" size="xs" variant="luxury" />
                                 </div>
                             </div>
                         </div>

@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { User, LogIn, LogOut, ShieldCheck, Loader2, Package, Library, Plus, Users2, ChevronDown, Crown, Info, Sparkles, Wallet, Award, Trophy, Calendar, Gift, Ticket } from 'lucide-react';
+import { User, LogIn, LogOut, ShieldCheck, Loader2, Package, Library, Plus, Users2, ChevronDown, Crown, Info, Sparkles, Wallet, Award, Trophy, Calendar, Gift, Ticket, CalendarCheck } from 'lucide-react';
 import { Logo, CrossedCardsIcon, LuckyBagIcon, PPlusIcon, NavDrawIcon, NavCollectionIcon, DiamondIcon } from '@/components/icons';
 import { useUser, useAuth, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
@@ -20,6 +20,7 @@ import { PromoRedeemModal } from '@/components/events/PromoRedeemModal';
 import { syncLocalPromoClaimsToFirestore } from '@/lib/promo-draw-service';
 import { useToast } from '@/hooks/use-toast';
 import { useFeatureFlags } from '@/hooks/use-feature-flags';
+import { RefinedPoints } from '@/components/ui/refined-points';
 
 const navLinks = [
   { href: '/draw', label: '抽卡', icon: Package, color: "text-cyan-400", flag: 'isDrawEnabled' },
@@ -119,20 +120,20 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
               </Button>
             )}
 
-            {/* 🎁 免費領券按鈕 (移動至鑽石旁邊) */}
+            {/* 🎁 簽到/領券按鈕 (移動至鑽石旁邊) */}
             <button
               type="button"
               id="header-free-ticket-btn"
               onClick={() => setIsPromoModalOpen(true)}
               className="relative flex items-center justify-center gap-1 sm:gap-1.5 h-8 sm:h-9 px-2 sm:px-3 rounded-full bg-gradient-to-r from-pink-500/20 via-rose-500/20 to-pink-500/15 border border-pink-500/40 hover:border-pink-400/80 shadow-[0_0_12px_rgba(244,63,94,0.2)] text-pink-300 hover:text-white transition-all duration-200 group cursor-pointer shrink-0"
-              title="免費領券"
+              title="簽到/領券"
             >
               <div className="relative flex items-center justify-center">
-                <Gift className="h-4 w-4 text-pink-400 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300" />
+                <CalendarCheck className="h-4 w-4 text-pink-400 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300" />
                 {/* 手機版微型發光紅點 */}
                 <span className="sm:hidden absolute -top-1 -right-1 w-2 h-2 rounded-full bg-pink-500 border border-pink-200 animate-pulse shadow-[0_0_6px_rgba(244,63,94,0.8)]" />
               </div>
-              <span className="text-xs font-bold tracking-tight hidden sm:inline">免費領券</span>
+              <span className="text-xs font-bold tracking-tight hidden sm:inline">簽到/領券</span>
             </button>
 
             {/* 點數區塊 (電競晶鑽膠囊) */}
@@ -143,20 +144,28 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                     <PopoverTrigger asChild>
                       <button 
                         id="header-points-trigger"
-                        className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 h-full hover:bg-cyan-500/10 active:bg-cyan-500/20 transition-all duration-200 group outline-none"
+                        className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 h-full hover:bg-cyan-500/10 active:bg-cyan-500/20 transition-all duration-200 group outline-none"
                       >
                         <div className="relative flex items-center justify-center">
                           <DiamondIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 drop-shadow-[0_0_10px_rgba(34,211,238,0.9)] group-hover:scale-110 transition-transform duration-300" />
                           <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-cyan-300 animate-ping opacity-75 pointer-events-none" />
                         </div>
-                        <span className="font-mono font-black text-xs sm:text-sm text-cyan-200 tracking-tight drop-shadow truncate max-w-[55px] xs:max-w-[75px] sm:max-w-none">
-                          {isProfileLoading ? '...' : (userProfile?.points ?? 0).toLocaleString()}
-                        </span>
-                        <ChevronDown className="h-3 w-3 text-cyan-400/70 group-hover:text-cyan-300 group-hover:translate-y-0.5 transition-all duration-200" />
+                        {isProfileLoading ? (
+                          <span className="font-numbers text-xs text-cyan-300/50 animate-pulse">...</span>
+                        ) : (
+                          <RefinedPoints 
+                            value={userProfile?.points ?? 0}
+                            currency="diamond"
+                            size="sm"
+                            animate
+                            variant="luxury"
+                          />
+                        )}
+                        <ChevronDown className="h-3 w-3 text-cyan-400/70 group-hover:text-cyan-300 group-hover:translate-y-0.5 transition-all duration-200 ml-0.5" />
                       </button>
                     </PopoverTrigger>
                     
-                    <PopoverContent className="w-72 p-4 bg-[#090d19]/95 backdrop-blur-2xl border border-cyan-500/25 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.85)] animate-in zoom-in-95 duration-200" align="end" sideOffset={10} collisionPadding={16}>
+                    <PopoverContent className="w-80 p-4 bg-[#090d19]/95 backdrop-blur-2xl border border-cyan-500/25 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.85)] animate-in zoom-in-95 duration-200" align="end" sideOffset={10} collisionPadding={16}>
                       <div className="space-y-4">
                         <div className="flex items-center justify-between pb-2 border-b border-white/[0.08]">
                           <div className="flex items-center gap-1.5">
@@ -169,29 +178,43 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                         </div>
 
                         {/* 鑽石餘額 */}
-                        <div className="p-2.5 rounded-xl bg-slate-900/80 border border-cyan-500/20 flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center">
+                        <div className="p-3 rounded-xl bg-gradient-to-r from-slate-900/90 to-[#0c1322]/90 border border-cyan-500/25 flex items-center justify-between shadow-[0_2px_12px_rgba(6,182,212,0.08)]">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center shadow-[0_0_8px_rgba(6,182,212,0.25)]">
                               <DiamondIcon className="w-4 h-4 drop-shadow-[0_0_8px_rgba(34,211,238,0.7)]" />
                             </div>
-                            <span className="text-xs font-semibold text-slate-300">鑽石餘額</span>
+                            <div>
+                              <span className="text-xs font-bold text-slate-200 block">鑽石餘額</span>
+                              <span className="text-[10px] text-cyan-400/70 font-medium">抽卡與團拆通用</span>
+                            </div>
                           </div>
-                          <span className="font-mono font-black text-base text-cyan-300">
-                            {(userProfile?.points ?? 0).toLocaleString()}
-                          </span>
+                          <RefinedPoints 
+                            value={userProfile?.points ?? 0}
+                            currency="diamond"
+                            size="lg"
+                            animate
+                            variant="luxury"
+                          />
                         </div>
 
                         {/* 紅利 P+ 點 */}
-                        <div className="p-2.5 rounded-xl bg-slate-900/80 border border-amber-500/20 flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center">
+                        <div className="p-3 rounded-xl bg-gradient-to-r from-slate-900/90 to-[#181308]/90 border border-amber-500/25 flex items-center justify-between shadow-[0_2px_12px_rgba(245,158,11,0.08)]">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center shadow-[0_0_8px_rgba(245,158,11,0.25)]">
                               <PPlusIcon className="w-4 h-4 animate-pulse" />
                             </div>
-                            <span className="text-xs font-semibold text-amber-300">紅利 P+ 點</span>
+                            <div>
+                              <span className="text-xs font-bold text-amber-200 block">紅利 P+ 點</span>
+                              <span className="text-[10px] text-amber-400/70 font-medium">兌換商城專屬商品</span>
+                            </div>
                           </div>
-                          <span className="font-mono font-black text-base text-amber-300">
-                            {(userProfile?.bonusPoints ?? 0).toLocaleString()}
-                          </span>
+                          <RefinedPoints 
+                            value={userProfile?.bonusPoints ?? 0}
+                            currency="pplus"
+                            size="lg"
+                            animate
+                            variant="luxury"
+                          />
                         </div>
 
                         {/* 加值按鈕 */}
@@ -339,17 +362,17 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                               </Link>
                           </DropdownMenuItem>
 
-                          {/* 免費領券 / 兌換碼 */}
+                          {/* 簽到/領券 (兌換碼) */}
                           <DropdownMenuItem 
                               onClick={() => setIsPromoModalOpen(true)}
                               className="rounded-xl cursor-pointer text-slate-200 hover:text-white focus:bg-white/10 font-medium transition-colors py-1.5 flex items-center justify-between"
                           >
                               <div className="flex items-center">
-                                <Gift className="mr-2.5 h-4 w-4 text-slate-400" />
-                                <span className="text-xs">免費領券 / 兌換碼</span>
+                                <CalendarCheck className="mr-2.5 h-4 w-4 text-pink-400" />
+                                <span className="text-xs">簽到/領券 (兌換碼)</span>
                               </div>
-                              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
-                                兌換
+                              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 border border-pink-500/30">
+                                福利
                               </span>
                           </DropdownMenuItem>
                       </div>
@@ -429,10 +452,10 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                         className="rounded-xl cursor-pointer text-slate-200 focus:bg-white/10 font-medium flex items-center justify-between py-1"
                       >
                         <div className="flex items-center">
-                          <Gift className="mr-2.5 h-4 w-4 text-slate-400" />
-                          <span className="text-xs">免費領券 / 兌換碼</span>
+                          <CalendarCheck className="mr-2.5 h-4 w-4 text-pink-400" />
+                          <span className="text-xs">簽到/領券 (兌換碼)</span>
                         </div>
-                        <span className="text-[10px] bg-slate-800 text-slate-300 border border-slate-700 px-1.5 py-0.5 rounded-md font-medium">兌換</span>
+                        <span className="text-[10px] bg-pink-500/20 text-pink-300 border border-pink-500/30 px-1.5 py-0.5 rounded-md font-medium">福利</span>
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

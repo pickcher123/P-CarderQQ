@@ -107,15 +107,15 @@ export function EventHeaderSelector({ currentTab, onSelectTab, onOpenPromoModal 
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2.5 self-start md:self-auto">
-                    {/* 🎁 開幕免費領券入口按鈕 */}
+                    {/* 🎁 簽到/領券入口按鈕 */}
                     {onOpenPromoModal && (
                         <Button
                             id="btn-open-promo-center"
                             onClick={onOpenPromoModal}
-                            className="h-9 px-4 rounded-xl bg-gradient-to-r from-pink-500 via-purple-600 to-indigo-600 hover:from-pink-400 hover:to-indigo-500 text-white font-black text-xs shadow-[0_0_20px_rgba(236,72,153,0.4)] border border-pink-400/40 animate-pulse active:scale-95 transition-all"
+                            className="h-9 px-4 rounded-xl bg-gradient-to-r from-pink-500 via-purple-600 to-indigo-600 hover:from-pink-400 hover:to-indigo-500 text-white font-black text-xs shadow-[0_0_20px_rgba(236,72,153,0.4)] border border-pink-400/40 animate-pulse active:scale-95 transition-all cursor-pointer"
                         >
                             <Gift className="w-4 h-4 mr-1.5" />
-                            🎁 開幕免費領券 / 兌換碼
+                            🎁 簽到/領券 (兌換碼)
                         </Button>
                     )}
 
