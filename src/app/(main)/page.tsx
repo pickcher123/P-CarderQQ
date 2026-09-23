@@ -11,7 +11,7 @@ import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { NewsPopup } from '@/components/news-popup';
@@ -19,7 +19,7 @@ import { SafeImage } from '@/components/safe-image';
 import { FloatingCardsBackground } from '@/components/floating-cards-background';
 import { PLACEHOLDER_CARD_IMAGE } from '@/lib/placeholders';
 import { CardExhibitionCalendar } from '@/components/card-exhibition-calendar';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from '@/components/ui/carousel';
 import { PredictionSection } from '@/components/prediction-section';
 import { HallOfFameMarquee } from '@/components/hall-of-fame-marquee';
 import { PoolCard } from '@/components/pool-card';
@@ -55,6 +55,20 @@ export default function Home() {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isPromoModalOpen, setIsPromoModalOpen] = useState(false);
   const [isClaimingCommunity, setIsClaimingCommunity] = useState(false);
+  const [whyChooseApi, setWhyChooseApi] = useState<CarouselApi>();
+  const [whyChooseCurrent, setWhyChooseCurrent] = useState(0);
+
+  useEffect(() => {
+    if (!whyChooseApi) return;
+    setWhyChooseCurrent(whyChooseApi.selectedScrollSnap());
+    const onSelect = () => {
+      setWhyChooseCurrent(whyChooseApi.selectedScrollSnap());
+    };
+    whyChooseApi.on('select', onSelect);
+    return () => {
+      whyChooseApi.off('select', onSelect);
+    };
+  }, [whyChooseApi]);
 
   const newsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -399,133 +413,165 @@ export default function Home() {
             </p>
           </div>
 
-          {/* 4 大核心特色卡片 */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 relative z-10">
-            {[
-              { 
-                num: '01',
-                badge: '100% 實體存證',
-                title: '公開透明存證', 
-                desc: '每一張核心卡片皆經數位存證與實物封裝比對，確保來源真實、所有權清晰，打造最值得信賴的收藏環境。', 
-                icon: ShieldCheck, 
-                theme: 'amber',
-                gradient: 'from-amber-500/20 via-amber-500/5 to-transparent',
-                border: 'hover:border-amber-400/60 hover:shadow-[0_12px_40px_rgba(245,158,11,0.2)]',
-                iconWrap: 'bg-amber-500/15 text-amber-400 border-amber-500/30 shadow-[0_0_20px_rgba(245,158,11,0.25)]',
-                tagClass: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
-                featurePills: ['實卡封裝檢驗', '真實防偽機制'],
-              },
-              { 
-                num: '02',
-                badge: '全公開演算法',
-                title: '公平機率披露', 
-                desc: '絕不隱藏任何數據，所有卡池機率與剩餘大獎數量即時完全公開披露，杜絕黑箱，讓每次抽取都憑實力與運氣。', 
-                icon: Target, 
-                theme: 'cyan',
-                gradient: 'from-cyan-500/20 via-cyan-500/5 to-transparent',
-                border: 'hover:border-cyan-400/60 hover:shadow-[0_12px_40px_rgba(6,182,212,0.2)]',
-                iconWrap: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30 shadow-[0_0_20px_rgba(6,182,212,0.25)]',
-                tagClass: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30',
-                featurePills: ['即時大獎存量', '數學概率公示'],
-              },
-              { 
-                num: '03',
-                badge: '60FPS 撕卡特效',
-                title: '極致開包張力', 
-                desc: '打破實體卡片空間限制，隨時隨地享受極具張力的次世代全息開包特效，將收藏熱忱轉化為指尖的極致快感。', 
-                icon: Zap, 
-                theme: 'fuchsia',
-                gradient: 'from-fuchsia-500/20 via-fuchsia-500/5 to-transparent',
-                border: 'hover:border-fuchsia-400/60 hover:shadow-[0_12px_40px_rgba(217,70,239,0.2)]',
-                iconWrap: 'bg-fuchsia-500/15 text-fuchsia-400 border-fuchsia-500/30 shadow-[0_0_20px_rgba(217,70,239,0.25)]',
-                tagClass: 'bg-fuchsia-500/15 text-fuchsia-300 border-fuchsia-500/30',
-                featurePills: ['全息動態光效', '即抽即存即寄'],
-              },
-              { 
-                num: '04',
-                badge: '🎁 送免費抽卡券',
-                title: '專屬藏友社群', 
-                desc: '集結頂級球員卡愛好者！現在點擊加入官方社群，即可免費領取抽卡券 1 張，與廣大卡友交流珍稀卡片與心得。', 
-                icon: Users2, 
-                theme: 'emerald',
-                gradient: 'from-emerald-500/20 via-emerald-500/5 to-transparent',
-                border: 'hover:border-emerald-400/60 hover:shadow-[0_12px_40px_rgba(16,185,129,0.2)]',
-                iconWrap: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30 shadow-[0_0_20px_rgba(16,185,129,0.25)]',
-                tagClass: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 animate-pulse',
-                featurePills: ['加入領抽卡券', '專屬藏友交流'],
-                isCommunity: true,
-              },
-            ].map((item, i) => (
-              <div 
-                key={i}
-                className={cn(
-                  "relative p-6 sm:p-7 rounded-2xl bg-gradient-to-b from-slate-900/90 to-slate-950/95 border border-slate-800/90 flex flex-col justify-between transition-all duration-500 group shadow-lg hover:-translate-y-1.5 backdrop-blur-xl overflow-hidden",
-                  item.border
-                )}
-              >
-                {/* 卡片頂部漸層微光 */}
-                <div className={cn("absolute inset-x-0 top-0 h-1 bg-gradient-to-r opacity-60 group-hover:opacity-100 transition-opacity", item.gradient)} />
-                <div className={cn("absolute -top-16 -right-16 w-32 h-32 rounded-full blur-2xl opacity-0 group-hover:opacity-40 transition-opacity pointer-events-none", item.gradient)} />
+          {/* 4 大核心特色卡片 - 手機支援手勢左右滑動，平板與電腦無縫響應 */}
+          <Carousel 
+            setApi={setWhyChooseApi}
+            opts={{ align: "start", loop: false }} 
+            className="w-full relative z-10"
+          >
+            <CarouselContent className="-ml-3 sm:-ml-4 lg:-ml-6">
+              {[
+                { 
+                  num: '01',
+                  badge: '100% 實體存證',
+                  title: '公開透明存證', 
+                  desc: '每一張核心卡片皆經數位存證與實物封裝比對，確保來源真實、所有權清晰，打造最值得信賴的收藏環境。', 
+                  icon: ShieldCheck, 
+                  theme: 'amber',
+                  gradient: 'from-amber-500/20 via-amber-500/5 to-transparent',
+                  border: 'hover:border-amber-400/60 hover:shadow-[0_12px_40px_rgba(245,158,11,0.2)]',
+                  iconWrap: 'bg-amber-500/15 text-amber-400 border-amber-500/30 shadow-[0_0_20px_rgba(245,158,11,0.25)]',
+                  tagClass: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
+                  featurePills: ['實卡封裝檢驗', '真實防偽機制'],
+                },
+                { 
+                  num: '02',
+                  badge: '全公開演算法',
+                  title: '公平機率披露', 
+                  desc: '絕不隱藏任何數據，所有卡池機率與剩餘大獎數量即時完全公開披露，杜絕黑箱，讓每次抽取都憑實力與運氣。', 
+                  icon: Target, 
+                  theme: 'cyan',
+                  gradient: 'from-cyan-500/20 via-cyan-500/5 to-transparent',
+                  border: 'hover:border-cyan-400/60 hover:shadow-[0_12px_40px_rgba(6,182,212,0.2)]',
+                  iconWrap: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30 shadow-[0_0_20px_rgba(6,182,212,0.25)]',
+                  tagClass: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30',
+                  featurePills: ['即時大獎存量', '數學概率公示'],
+                },
+                { 
+                  num: '03',
+                  badge: '60FPS 撕卡特效',
+                  title: '極致開包張力', 
+                  desc: '打破實體卡片空間限制，隨時隨地享受極具張力的次世代全息開包特效，將收藏熱忱轉化為指尖的極致快感。', 
+                  icon: Zap, 
+                  theme: 'fuchsia',
+                  gradient: 'from-fuchsia-500/20 via-fuchsia-500/5 to-transparent',
+                  border: 'hover:border-fuchsia-400/60 hover:shadow-[0_12px_40px_rgba(217,70,239,0.2)]',
+                  iconWrap: 'bg-fuchsia-500/15 text-fuchsia-400 border-fuchsia-500/30 shadow-[0_0_20px_rgba(217,70,239,0.25)]',
+                  tagClass: 'bg-fuchsia-500/15 text-fuchsia-300 border-fuchsia-500/30',
+                  featurePills: ['全息動態光效', '即抽即存即寄'],
+                },
+                { 
+                  num: '04',
+                  badge: '🎁 送免費抽卡券',
+                  title: '專屬藏友社群', 
+                  desc: '集結頂級球員卡愛好者！現在點擊加入官方社群，即可免費領取抽卡券 1 張，與廣大卡友交流珍稀卡片與心得。', 
+                  icon: Users2, 
+                  theme: 'emerald',
+                  gradient: 'from-emerald-500/20 via-emerald-500/5 to-transparent',
+                  border: 'hover:border-emerald-400/60 hover:shadow-[0_12px_40px_rgba(16,185,129,0.2)]',
+                  iconWrap: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30 shadow-[0_0_20px_rgba(16,185,129,0.25)]',
+                  tagClass: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 animate-pulse',
+                  featurePills: ['加入領抽卡券', '專屬藏友交流'],
+                  isCommunity: true,
+                },
+              ].map((item, i) => (
+                <CarouselItem 
+                  key={i} 
+                  className="pl-3 sm:pl-4 lg:pl-6 basis-[86%] xs:basis-[80%] sm:basis-1/2 lg:basis-1/4 flex flex-col"
+                >
+                  <div 
+                    className={cn(
+                      "relative p-6 sm:p-7 rounded-2xl bg-gradient-to-b from-slate-900/90 to-slate-950/95 border border-slate-800/90 flex flex-col justify-between transition-all duration-500 group shadow-lg hover:-translate-y-1.5 backdrop-blur-xl overflow-hidden w-full h-full",
+                      item.border
+                    )}
+                  >
+                    {/* 卡片頂部漸層微光 */}
+                    <div className={cn("absolute inset-x-0 top-0 h-1 bg-gradient-to-r opacity-60 group-hover:opacity-100 transition-opacity", item.gradient)} />
+                    <div className={cn("absolute -top-16 -right-16 w-32 h-32 rounded-full blur-2xl opacity-0 group-hover:opacity-40 transition-opacity pointer-events-none", item.gradient)} />
 
-                <div>
-                  {/* 頂部標號與徽章 */}
-                  <div className="flex items-center justify-between gap-2 mb-6">
-                    <div className={cn("p-3 rounded-xl border transition-all duration-300 group-hover:scale-110", item.iconWrap)}>
-                      <item.icon className="w-5 h-5" />
+                    <div>
+                      {/* 頂部標號與徽章 */}
+                      <div className="flex items-center justify-between gap-2 mb-6">
+                        <div className={cn("p-3 rounded-xl border transition-all duration-300 group-hover:scale-110", item.iconWrap)}>
+                          <item.icon className="w-5 h-5" />
+                        </div>
+                        
+                        <div className="flex flex-col items-end">
+                          <span className="text-[11px] font-mono font-bold tracking-widest text-slate-500 group-hover:text-slate-300 transition-colors">
+                            {item.num}
+                          </span>
+                          <span className={cn("mt-1 px-2 py-0.5 rounded text-[10px] font-bold border", item.tagClass)}>
+                            {item.badge}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* 標題與簡介 - 已刪除多餘的英文副標 */}
+                      <div className="space-y-2.5 mb-5">
+                        <h3 className="text-lg sm:text-xl font-black text-white group-hover:text-amber-300 transition-colors font-headline tracking-wide">
+                          {item.title}
+                        </h3>
+                        <p className="text-xs sm:text-sm text-slate-300/80 leading-relaxed font-normal">
+                          {item.desc}
+                        </p>
+                      </div>
                     </div>
-                    
-                    <div className="flex flex-col items-end">
-                      <span className="text-[11px] font-mono font-bold tracking-widest text-slate-500 group-hover:text-slate-300 transition-colors">
-                        {item.num}
-                      </span>
-                      <span className={cn("mt-1 px-2 py-0.5 rounded text-[10px] font-bold border", item.tagClass)}>
-                        {item.badge}
-                      </span>
+
+                    <div>
+                      {/* 底部功能亮點膠囊標籤 */}
+                      <div className="pt-4 mt-2 border-t border-slate-800/80 flex flex-wrap items-center gap-1.5">
+                        {item.featurePills.map((pill, pIndex) => (
+                          <span 
+                            key={pIndex} 
+                            className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-[11px] text-slate-400 group-hover:text-slate-200 group-hover:border-slate-700 transition-colors font-medium flex items-center gap-1"
+                          >
+                            <span className="w-1 h-1 rounded-full bg-amber-400/80" />
+                            {pill}
+                          </span>
+                        ))}
+                      </div>
+
+                      {/* 社群專屬加入領取按鈕 */}
+                      {item.isCommunity && (
+                        <Button
+                          type="button"
+                          onClick={handleCommunityJoin}
+                          disabled={isClaimingCommunity}
+                          className="mt-4 w-full py-2.5 h-auto rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs flex items-center justify-center gap-1.5 shadow-[0_0_20px_rgba(16,185,129,0.35)] hover:shadow-[0_0_25px_rgba(16,185,129,0.5)] transition-all active:scale-95 cursor-pointer"
+                        >
+                          <Gift className="w-3.5 h-3.5 text-slate-950" />
+                          <span>{isClaimingCommunity ? '領取中...' : '加入官方社群 · 領免費抽卡券'}</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
                     </div>
                   </div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
 
-                  {/* 標題與簡介 - 已刪除多餘的英文副標 */}
-                  <div className="space-y-2.5 mb-5">
-                    <h3 className="text-lg sm:text-xl font-black text-white group-hover:text-amber-300 transition-colors font-headline tracking-wide">
-                      {item.title}
-                    </h3>
-                    <p className="text-xs sm:text-sm text-slate-300/80 leading-relaxed font-normal">
-                      {item.desc}
-                    </p>
-                  </div>
-                </div>
+            {/* 平板模式下的左右導航按鈕 (電腦版 4 張並排無須滑動，手機版透過手指手勢滑動) */}
+            <CarouselPrevious className="hidden sm:flex lg:hidden -left-4 h-9 w-9 bg-slate-900 border-slate-700 text-slate-200 hover:bg-amber-500 hover:text-slate-950" />
+            <CarouselNext className="hidden sm:flex lg:hidden -right-4 h-9 w-9 bg-slate-900 border-slate-700 text-slate-200 hover:bg-amber-500 hover:text-slate-950" />
 
-                <div>
-                  {/* 底部功能亮點膠囊標籤 */}
-                  <div className="pt-4 mt-2 border-t border-slate-800/80 flex flex-wrap items-center gap-1.5">
-                    {item.featurePills.map((pill, pIndex) => (
-                      <span 
-                        key={pIndex} 
-                        className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-[11px] text-slate-400 group-hover:text-slate-200 group-hover:border-slate-700 transition-colors font-medium flex items-center gap-1"
-                      >
-                        <span className="w-1 h-1 rounded-full bg-amber-400/80" />
-                        {pill}
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* 社群專屬加入領取按鈕 */}
-                  {item.isCommunity && (
-                    <Button
-                      type="button"
-                      onClick={handleCommunityJoin}
-                      disabled={isClaimingCommunity}
-                      className="mt-4 w-full py-2.5 h-auto rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs flex items-center justify-center gap-1.5 shadow-[0_0_20px_rgba(16,185,129,0.35)] hover:shadow-[0_0_25px_rgba(16,185,129,0.5)] transition-all active:scale-95 cursor-pointer"
-                    >
-                      <Gift className="w-3.5 h-3.5 text-slate-950" />
-                      <span>{isClaimingCommunity ? '領取中...' : '加入官方社群 · 領免費抽卡券'}</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </Button>
+            {/* 手機專用滑動進度指示圓點 */}
+            <div className="flex sm:hidden justify-center items-center gap-2 mt-6">
+              {Array.from({ length: 4 }).map((_, dotIdx) => (
+                <button
+                  key={dotIdx}
+                  type="button"
+                  onClick={() => whyChooseApi?.scrollTo(dotIdx)}
+                  aria-label={`切換至特色 ${dotIdx + 1}`}
+                  className={cn(
+                    "h-1.5 transition-all duration-300 rounded-full",
+                    whyChooseCurrent === dotIdx 
+                      ? "w-6 bg-gradient-to-r from-amber-400 to-yellow-400 shadow-[0_0_8px_rgba(245,158,11,0.6)]" 
+                      : "w-1.5 bg-slate-700/80 hover:bg-slate-600"
                   )}
-                </div>
-              </div>
-            ))}
-          </div>
+                />
+              ))}
+            </div>
+          </Carousel>
         </div>
       </section>
 
