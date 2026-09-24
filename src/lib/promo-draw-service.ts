@@ -291,7 +291,12 @@ export async function claimCommunityFreeDraw(firestore: Firestore, userId: strin
     }
 
     const data = userSnap.data();
-    if (data.claimedCommunityTicket) {
+    const hasAlreadyClaimed = Boolean(
+      data.claimedCommunityTicket || 
+      (Array.isArray(data.claimedPromoCodes) && data.claimedPromoCodes.includes('COMMUNITY_JOIN'))
+    );
+
+    if (hasAlreadyClaimed) {
       return { 
         success: false, 
         alreadyClaimed: true, 
@@ -410,12 +415,31 @@ export async function syncLocalPromoClaimsToFirestore(firestore: Firestore, user
         transaction.update(userRef, updates);
       }
 
+      // 同步完成後清空本地暫存券，避免重複累計或消耗後又被本地紀錄復活
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.removeItem('card_exhibition_promo_claims');
+          localStorage.removeItem('promo_claim_history');
+        } catch (e) {}
+      }
+
       return totalTicketsToAdd;
     });
   } catch (err) {
     console.warn('syncLocalPromoClaimsToFirestore warning:', err);
     return 0;
   }
+}
+
+/**
+ * 清除本地暫存領取紀錄
+ */
+export function clearLocalPromoClaims() {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem('card_exhibition_promo_claims');
+    localStorage.removeItem('promo_claim_history');
+  } catch (e) {}
 }
 
 /**
@@ -456,14 +480,13 @@ export function getLocalAvailableTicketsCount(): number {
 
 /**
  * 取得用戶真正的有效免費抽卡券張數（融合 Firestore 與 LocalStorage 紀錄）
+ * 已登入會員一律以 Firestore 帳號內存量為準，避免重複領取或抽完後又復活
  */
 export function getEffectiveTicketCount(userProfile?: any): number {
-  const remoteTickets = typeof userProfile?.freeDrawTickets === 'number' ? userProfile.freeDrawTickets : 0;
-  // 若 remoteTickets 大於 0，直接以 Firestore 為準
-  if (remoteTickets > 0) return remoteTickets;
-  // 若 remoteTickets 為 0，檢查本地是否有已領取但尚未同步的券
-  const localTickets = getLocalAvailableTicketsCount();
-  return Math.max(remoteTickets, localTickets);
+  if (userProfile && typeof userProfile.freeDrawTickets === 'number') {
+    return Math.max(0, userProfile.freeDrawTickets);
+  }
+  return getLocalAvailableTicketsCount();
 }
 
 

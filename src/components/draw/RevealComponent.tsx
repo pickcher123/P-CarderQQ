@@ -33,12 +33,23 @@ export function RevealComponent({
     squeezeRef: any
 }) {
     const visual = currentPrize ? (rarityVisuals[currentPrize.rarity] || rarityVisuals.common) : rarityVisuals.common;
+    const isLegendaryRevealed = (step === 'revealing' || revealPercent === 100) && currentPrize && (currentPrize.rarity === 'legendary' || currentPrize.type === 'last-prize');
 
     return (
         <motion.div 
             initial={{ y: -800, opacity: 0, scale: 0.2, rotate: -45, filter: 'blur(50px)' }}
-            animate={{ y: 0, opacity: 1, scale: 1, rotate: 0, filter: 'blur(0px)' }}
-            transition={{ 
+            animate={isLegendaryRevealed ? { 
+                y: [0, -18, 6, -3, 0], 
+                scale: [1, 1.18, 0.95, 1.07, 1], 
+                rotate: [0, -4, 4, -2, 2, 0], 
+                filter: 'blur(0px)', 
+                opacity: 1 
+            } : { y: 0, opacity: 1, scale: 1, rotate: 0, filter: 'blur(0px)' }}
+            transition={isLegendaryRevealed ? {
+                duration: 0.85,
+                ease: "easeOut",
+                times: [0, 0.2, 0.45, 0.75, 1]
+            } : { 
                 type: 'spring', 
                 stiffness: 120, 
                 damping: 10,
@@ -47,7 +58,31 @@ export function RevealComponent({
             }}
             className="flex flex-col items-center w-full max-w-[170px] md:max-w-[220px] relative"
         >
-            <div className={cn("relative p-1 bg-slate-900 border-[5px] border-slate-950 rounded-[2.2rem] shadow-2xl overflow-hidden w-full transition-all duration-700", step === 'revealing' && revealPercent === 100 && visual.glow)}>
+            {/* 傳奇震撼身後向外擴散雙重黃金衝擊波 */}
+            {isLegendaryRevealed && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[-1]">
+                    <motion.div
+                        initial={{ scale: 0.7, opacity: 1 }}
+                        animate={{ scale: [0.7, 2.3, 2.8], opacity: [1, 0.7, 0] }}
+                        transition={{ duration: 1.2, ease: "easeOut", repeat: Infinity, repeatDelay: 0.5 }}
+                        className="absolute w-full h-full rounded-[2.2rem] border-2 border-amber-300 shadow-[0_0_50px_rgba(251,191,36,0.9)]"
+                    />
+                    <motion.div
+                        initial={{ scale: 0.7, opacity: 1 }}
+                        animate={{ scale: [0.7, 2.8, 3.5], opacity: [1, 0.5, 0] }}
+                        transition={{ duration: 1.5, ease: "easeOut", delay: 0.25, repeat: Infinity, repeatDelay: 0.5 }}
+                        className="absolute w-full h-full rounded-[2.8rem] border border-yellow-200 shadow-[0_0_70px_rgba(245,158,11,0.7)]"
+                    />
+                </div>
+            )}
+
+            <div className={cn(
+                "relative p-1 bg-slate-900 border-[4px] md:border-[5px] rounded-[2.2rem] shadow-2xl overflow-hidden w-full transition-all duration-500",
+                isLegendaryRevealed
+                    ? "border-amber-400 shadow-[0_0_85px_rgba(245,158,11,1),0_0_160px_rgba(251,191,36,0.75),inset_0_0_30px_rgba(254,240,138,0.85)] ring-4 ring-amber-300/90 scale-[1.03]"
+                    : (step === 'revealing' && revealPercent === 100 && visual.glow),
+                !isLegendaryRevealed && "border-slate-950"
+            )}>
                 <div 
                     ref={squeezeRef} 
                     className="relative bg-transparent rounded-[1.1rem] border-[5px] border-slate-950 overflow-hidden aspect-[2.5/4] flex items-center justify-center touch-none cursor-pointer select-none transition-transform duration-100"

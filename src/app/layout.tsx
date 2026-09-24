@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils";
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import Script from 'next/script';
 
+export const dynamic = 'force-dynamic';
+
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,

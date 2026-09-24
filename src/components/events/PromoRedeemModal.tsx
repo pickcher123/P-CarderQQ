@@ -27,7 +27,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { useAuth, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { doc, collection, query, where, limit, runTransaction, increment } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { DailyMission, UserMissionProgress } from '@/types/missions';
@@ -103,7 +103,7 @@ interface PromoRedeemModalProps {
 
 export function PromoRedeemModal({ open, onOpenChange, onApplyReward }: PromoRedeemModalProps) {
     const { toast } = useToast();
-    const { user } = useAuth();
+    const { user } = useUser();
     const firestore = useFirestore();
 
     const systemConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'systemConfig', 'main') : null, [firestore]);
@@ -137,13 +137,14 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward }: PromoRed
         return missionProgressList?.find(p => p.id === missionId || p.id === loginMission?.id);
     }, [missionProgressList, missionId, loginMission]);
 
-    const todayStr = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
 
     const hasClaimedCheckInToday = useMemo(() => {
         if (localCheckInDone) return true;
-        if (!userLoginProgress?.lastCompleted) return false;
-        return userLoginProgress.lastCompleted === todayStr;
-    }, [localCheckInDone, userLoginProgress, todayStr]);
+        if (userProfile?.lastCheckInDate === todayStr) return true;
+        if (userLoginProgress?.lastCompleted === todayStr) return true;
+        return false;
+    }, [localCheckInDone, userProfile?.lastCheckInDate, userLoginProgress?.lastCompleted, todayStr]);
 
     const handleCheckIn = useCallback(async () => {
         if (!user) {
@@ -165,6 +166,7 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward }: PromoRed
 
         setIsCheckingIn(true);
         try {
+            const currentToday = format(new Date(), 'yyyy-MM-dd');
             await runTransaction(firestore, async (transaction) => {
                 const userRef = doc(firestore, 'users', user.uid);
                 const progressRef = doc(firestore, `users/${user.uid}/missionProgress`, missionId);
@@ -173,26 +175,29 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward }: PromoRed
                     transaction.get(progressRef)
                 ]);
 
-                if (existingProgress.exists() && existingProgress.data()?.lastCompleted === todayStr) {
+                const userData = userDoc.data();
+                const progressData = existingProgress.data();
+
+                if (userData?.lastCheckInDate === currentToday || (existingProgress.exists() && progressData?.lastCompleted === currentToday)) {
                     throw new Error("今日已領取");
                 }
 
                 transaction.update(userRef, { 
                     bonusPoints: increment(rewardPoints),
-                    lastCheckInDate: todayStr
+                    lastCheckInDate: currentToday
                 });
 
                 if (!existingProgress.exists()) {
                     transaction.set(progressRef, { 
                         progress: 1, 
-                        lastCompleted: todayStr, 
+                        lastCompleted: currentToday, 
                         userId: user.uid,
                         updatedAt: new Date().toISOString()
                     });
                 } else {
                     transaction.update(progressRef, { 
                         progress: increment(1), 
-                        lastCompleted: todayStr,
+                        lastCompleted: currentToday,
                         updatedAt: new Date().toISOString()
                     });
                 }
@@ -253,8 +258,17 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward }: PromoRed
     };
 
     // 執行兌換碼兌換
-    const handleRedeem = (codeToRedeem?: string) => {
+    const handleRedeem = async (codeToRedeem?: string) => {
         const targetCode = (codeToRedeem || inputCode).trim().toUpperCase();
+
+        if (!user) {
+            toast({
+                title: '請先登入會員',
+                description: '登入會員後即可輸入兌換碼兌換專屬抽卡券！',
+                variant: 'destructive'
+            });
+            return;
+        }
 
         if (!targetCode) {
             toast({
@@ -265,8 +279,11 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward }: PromoRed
             return;
         }
 
-        // 檢查是否已兌換過
-        const isAlreadyClaimed = claimedHistory.some(item => item.code.toUpperCase() === targetCode);
+        // 檢查是否已兌換過 (同時檢查 Firestore 會員紀錄與本機紀錄)
+        const isAlreadyClaimed = 
+            userProfile?.claimedPromoCodes?.includes(targetCode) || 
+            claimedHistory.some(item => item.code.toUpperCase() === targetCode);
+
         if (isAlreadyClaimed) {
             toast({
                 title: '此代碼已領取過',
@@ -282,46 +299,52 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward }: PromoRed
         if (!matched) {
             toast({
                 title: '代碼無效',
-                description: '請確認代碼是否輸入正確。',
+                description: '請確認代碼是否輸入正確，或該活動已結束。',
                 variant: 'destructive'
             });
             return;
         }
 
-        const newClaimItem: ClaimHistoryItem = {
-            id: 'claim-' + Date.now(),
-            code: matched.code,
-            label: matched.label,
-            targetEvent: matched.targetEvent,
-            freePlays: matched.freePlays,
-            claimedAt: new Date().toLocaleDateString('zh-TW', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }),
-            status: 'ACTIVE'
-        };
+        try {
+            if (!firestore) return;
+            const res = await redeemPromoDrawCode(firestore, user.uid, targetCode);
 
-        const updatedHistory = [newClaimItem, ...claimedHistory];
-        saveClaimHistory(updatedHistory);
-        setLastClaimedReward(newClaimItem);
-        setInputCode('');
-        setIsSuccessDialogOpen(true);
+            const newClaimItem: ClaimHistoryItem = {
+                id: 'claim-' + Date.now(),
+                code: matched.code,
+                label: matched.label,
+                targetEvent: matched.targetEvent,
+                freePlays: res.ticketsAdded || matched.freePlays,
+                claimedAt: new Date().toLocaleDateString('zh-TW', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }),
+                status: 'ACTIVE'
+            };
 
-        confetti({
-            particleCount: 50,
-            spread: 60,
-            origin: { y: 0.7 }
-        });
+            const updatedHistory = [newClaimItem, ...claimedHistory.filter(i => i.code !== targetCode)];
+            saveClaimHistory(updatedHistory);
+            setLastClaimedReward(newClaimItem);
+            setInputCode('');
+            setIsSuccessDialogOpen(true);
 
-        if (onApplyReward) {
-            onApplyReward(matched.targetEvent, matched.freePlays);
-        }
+            confetti({
+                particleCount: 50,
+                spread: 60,
+                origin: { y: 0.7 }
+            });
 
-        // 若已登入，非同步同步給 Firestore 會員資料並即時校正
-        if (user && firestore) {
-            redeemPromoDrawCode(firestore, user.uid, targetCode)
-                .then(() => syncLocalPromoClaimsToFirestore(firestore, user.uid))
-                .catch((err) => {
-                    console.warn('Background sync promo code to firestore:', err);
-                    syncLocalPromoClaimsToFirestore(firestore, user.uid);
-                });
+            if (onApplyReward) {
+                onApplyReward(matched.targetEvent, res.ticketsAdded || matched.freePlays);
+            }
+
+            toast({
+                title: '🎉 兌換成功！',
+                description: res.message
+            });
+        } catch (err: any) {
+            toast({
+                variant: 'destructive',
+                title: '兌換失敗',
+                description: err.message || '兌換失敗，請稍後再試'
+            });
         }
     };
 
@@ -330,11 +353,24 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward }: PromoRed
     };
 
     const handleClaimCommunityReward = async () => {
+        const targetUrl = systemConfig?.communityUrl || 'https://line.me/ti/g2/';
+
+        if (!user) {
+            toast({
+                title: '請先登入會員',
+                description: '登入會員後加入官方社群，即可將免費首抽券 1 張存入您的帳號！',
+                variant: 'destructive'
+            });
+            window.open(targetUrl, '_blank', 'noopener,noreferrer');
+            return;
+        }
+
         if (isCommunityClaimed) {
             toast({
                 title: '您已領取過社群首抽券',
-                description: '歡迎前往社群與卡友交流分享戰績！'
+                description: '每位會員限領 1 次，歡迎前往社群與卡友交流分享戰績！'
             });
+            window.open(targetUrl, '_blank', 'noopener,noreferrer');
             return;
         }
 
@@ -342,57 +378,68 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward }: PromoRed
         setIsClaimingCommunity(true);
 
         try {
-            // 開啟官方社群連結
-            const targetUrl = systemConfig?.communityUrl || 'https://line.me/ti/g2/';
-            try {
+            if (!firestore) throw new Error('連線中，請稍後重試');
+
+            const res = await claimCommunityFreeDraw(firestore, user.uid, '官方社群');
+
+            if (res.alreadyClaimed) {
+                toast({
+                    title: '您已領取過社群首抽券',
+                    description: '每位會員限領 1 次，歡迎前往社群與卡友交流分享戰績！'
+                });
                 window.open(targetUrl, '_blank', 'noopener,noreferrer');
-            } catch (e) {
-                console.warn('Failed to open community window:', e);
+                return;
             }
 
-            // 無論是否登入，立即發放社群首抽福利至本地紀錄，確保 100% 成功領取
-            const newClaimItem: ClaimHistoryItem = {
-                id: 'claim-community-' + Date.now(),
-                code: 'COMMUNITY_JOIN',
-                label: '官方社群專屬・免費首抽',
-                targetEvent: 'all',
-                freePlays: 1,
-                claimedAt: new Date().toLocaleDateString('zh-TW', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }),
-                status: 'ACTIVE'
-            };
+            if (res.success) {
+                const newClaimItem: ClaimHistoryItem = {
+                    id: 'claim-community-' + Date.now(),
+                    code: 'COMMUNITY_JOIN',
+                    label: '官方社群專屬・免費首抽',
+                    targetEvent: 'all',
+                    freePlays: 1,
+                    claimedAt: new Date().toLocaleDateString('zh-TW', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }),
+                    status: 'ACTIVE'
+                };
 
-            const updatedHistory = [newClaimItem, ...claimedHistory.filter(i => i.code !== 'COMMUNITY_JOIN')];
-            saveClaimHistory(updatedHistory);
-            setLastClaimedReward(newClaimItem);
-            setIsSuccessDialogOpen(true);
+                const updatedHistory = [newClaimItem, ...claimedHistory.filter(i => i.code !== 'COMMUNITY_JOIN')];
+                saveClaimHistory(updatedHistory);
+                setLastClaimedReward(newClaimItem);
+                setIsSuccessDialogOpen(true);
 
-            confetti({
-                particleCount: 60,
-                spread: 70,
-                origin: { y: 0.7 }
-            });
+                confetti({
+                    particleCount: 60,
+                    spread: 70,
+                    origin: { y: 0.7 }
+                });
 
-            if (onApplyReward) {
-                onApplyReward('all', 1);
-            }
+                if (onApplyReward) {
+                    onApplyReward('all', 1);
+                }
 
-            // 若用戶已登入，背景同步寫入資料庫 users/{uid} 中的抽卡券資料
-            if (user && firestore) {
-                claimCommunityFreeDraw(firestore, user.uid, '官方社群')
-                    .then(() => syncLocalPromoClaimsToFirestore(firestore, user.uid))
-                    .catch(err => {
-                        console.warn('Background sync community ticket to firestore:', err);
-                        syncLocalPromoClaimsToFirestore(firestore, user.uid);
-                    });
+                toast({
+                    title: '🎉 成功領取社群專屬免費首抽券！',
+                    description: '已為您的帳號存入 1 張免費抽卡券，即將開啟官方社群！'
+                });
+
+                window.open(targetUrl, '_blank', 'noopener,noreferrer');
             }
         } catch (err: any) {
             console.error('Error claiming community reward:', err);
+            toast({
+                variant: 'destructive',
+                title: '領取失敗',
+                description: err.message || '請稍候重試'
+            });
         } finally {
             setIsClaimingCommunity(false);
         }
     };
 
-    const isStarterClaimed = claimedHistory.some(item => item.code === 'OPEN2024');
+    const isStarterClaimed = Boolean(
+        userProfile?.claimedPromoCodes?.includes('OPEN2024') ||
+        claimedHistory.some(item => item.code === 'OPEN2024')
+    );
     const isCommunityClaimed = Boolean(
         userProfile?.claimedCommunityTicket || 
         userProfile?.claimedPromoCodes?.includes('COMMUNITY_JOIN') ||

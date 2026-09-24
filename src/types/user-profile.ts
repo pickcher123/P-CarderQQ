@@ -28,4 +28,5 @@ export interface UserProfile {
   inviteCode?: string; // 專屬邀請碼
   invitedBy?: string; // 綁定的邀請人代碼
   inviteCount?: number; // 成功邀請好友數量
+  lastCheckInDate?: string; // 最後每日簽到日期 (yyyy-MM-dd)
 }

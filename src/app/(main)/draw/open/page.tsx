@@ -149,6 +149,20 @@ export default function OpenPackPage() {
         }
     }, [step, revealedIndex]);
 
+    const currentPrize = drawnPrizes[revealedIndex];
+    const isLegendaryRevealed = (step === 'revealing' || revealPercent === 100) && currentPrize && (currentPrize.rarity === 'legendary' || currentPrize.type === 'last-prize');
+
+    // 傳奇卡片震撼現世時觸發手機震動體感回饋
+    useEffect(() => {
+        if (isLegendaryRevealed && typeof window !== 'undefined' && typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+            try {
+                navigator.vibrate([60, 40, 100, 50, 180]);
+            } catch {
+                // ignore
+            }
+        }
+    }, [isLegendaryRevealed]);
+
     const squeezeRef = useRef<HTMLDivElement>(null);
     const startY = useRef(0);
     const poolId = searchParams.get('poolId');
@@ -546,8 +560,12 @@ export default function OpenPackPage() {
         setRevealPercent(100); 
         setStep('revealing'); 
         const p = drawnPrizes[revealedIndex]; 
-        if (p && rarityVisuals[p.rarity].celebration !== 'none') {
-            setShowCelebration(rarityVisuals[p.rarity].celebration);
+        if (p) {
+            if (p.rarity === 'legendary' || p.type === 'last-prize') {
+                setShowCelebration('legendary');
+            } else if (rarityVisuals[p.rarity]?.celebration !== 'none') {
+                setShowCelebration(rarityVisuals[p.rarity].celebration);
+            }
         }
     };
 
@@ -656,14 +674,18 @@ export default function OpenPackPage() {
         );
     }
 
-    const currentPrize = drawnPrizes[revealedIndex];
     const visual = currentPrize ? (rarityVisuals[currentPrize.rarity] || rarityVisuals.common) : rarityVisuals.common;
 
     const canDraw3 = !isLoadingStats && (!cardPool?.dailyLimit || cardPool.dailyLimit === 0 || (todayDrawCount + 3 <= cardPool.dailyLimit));
     const canDraw10 = !isLoadingStats && (!cardPool?.dailyLimit || cardPool.dailyLimit === 0 || (todayDrawCount + 10 <= cardPool.dailyLimit));
 
     return (
-        <div 
+        <motion.div 
+            animate={isLegendaryRevealed ? {
+                x: [0, -9, 9, -7, 7, -5, 5, -2, 2, 0],
+                y: [0, 7, -7, 5, -5, 3, -3, 1, -1, 0],
+            } : { x: 0, y: 0 }}
+            transition={{ duration: 0.65, ease: "easeOut" }}
             className="flex flex-col justify-between items-center h-[100dvh] min-h-[100dvh] w-full p-2 sm:p-4 relative overflow-hidden select-none" 
             style={{ backgroundImage: `url("${activeBackgroundUrl}")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
         >
@@ -742,14 +764,24 @@ export default function OpenPackPage() {
                 <div className="flex-1 flex flex-col items-center justify-center w-full relative z-[20] min-h-0 py-1">
                     <motion.div 
                         initial={{ y: -600, opacity: 0, scale: 0.3, rotate: -30, filter: 'blur(30px)' }}
-                        animate={{ y: 0, opacity: 1, scale: 1, rotate: 0, filter: 'blur(0px)' }}
+                        animate={isLegendaryRevealed ? { 
+                            y: [0, -18, 6, -3, 0], 
+                            scale: [1, 1.18, 0.95, 1.07, 1], 
+                            rotate: [0, -4, 4, -2, 2, 0], 
+                            filter: 'blur(0px)', 
+                            opacity: 1 
+                        } : { y: 0, opacity: 1, scale: 1, rotate: 0, filter: 'blur(0px)' }}
                         onAnimationComplete={() => {
                             if (topRarityCelebration !== 'none' && landingVFX === 'none') {
                                 setLandingVFX(topRarityCelebration);
                                 setTimeout(() => setLandingVFX('none'), 2000);
                             }
                         }}
-                        transition={{ 
+                        transition={isLegendaryRevealed ? {
+                            duration: 0.85,
+                            ease: "easeOut",
+                            times: [0, 0.2, 0.45, 0.75, 1]
+                        } : { 
                             type: 'spring', 
                             stiffness: 140, 
                             damping: 12,
@@ -757,9 +789,30 @@ export default function OpenPackPage() {
                         }}
                         className="flex flex-col items-center w-[min(65vw,215px)] sm:w-[235px] relative"
                     >
+                        {/* 傳奇卡片身後向外擴散的雙重黃金衝擊波 (Concentric Shockwaves) */}
+                        {isLegendaryRevealed && (
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[-1]">
+                                <motion.div
+                                    initial={{ scale: 0.7, opacity: 1 }}
+                                    animate={{ scale: [0.7, 2.3, 2.8], opacity: [1, 0.7, 0] }}
+                                    transition={{ duration: 1.2, ease: "easeOut", repeat: Infinity, repeatDelay: 0.5 }}
+                                    className="absolute w-full h-full rounded-[2.2rem] border-2 border-amber-300 shadow-[0_0_50px_rgba(251,191,36,0.9)]"
+                                />
+                                <motion.div
+                                    initial={{ scale: 0.7, opacity: 1 }}
+                                    animate={{ scale: [0.7, 2.8, 3.5], opacity: [1, 0.5, 0] }}
+                                    transition={{ duration: 1.5, ease: "easeOut", delay: 0.25, repeat: Infinity, repeatDelay: 0.5 }}
+                                    className="absolute w-full h-full rounded-[2.8rem] border border-yellow-200 shadow-[0_0_70px_rgba(245,158,11,0.7)]"
+                                />
+                            </div>
+                        )}
+
                         <div className={cn(
-                            "relative w-full aspect-[2.5/4] p-0.5 sm:p-1 bg-slate-900 border-[3px] sm:border-[4px] border-slate-950 rounded-[1.4rem] sm:rounded-[1.6rem] shadow-2xl overflow-hidden transition-all duration-700 flex items-center justify-center shrink-0", 
-                            step === 'revealing' && revealPercent === 100 && visual.glow
+                            "relative w-full aspect-[2.5/4] p-0.5 sm:p-1 bg-slate-900 border-[3px] sm:border-[4px] rounded-[1.4rem] sm:rounded-[1.6rem] shadow-2xl overflow-hidden transition-all duration-500 flex items-center justify-center shrink-0", 
+                            isLegendaryRevealed
+                                ? "border-amber-400 shadow-[0_0_85px_rgba(245,158,11,1),0_0_160px_rgba(251,191,36,0.75),inset_0_0_30px_rgba(254,240,138,0.85)] ring-4 ring-amber-300/90 scale-[1.03]"
+                                : (step === 'revealing' && revealPercent === 100 && visual.glow),
+                            !isLegendaryRevealed && "border-slate-950"
                         )}>
                             <div 
                                 ref={squeezeRef} 
@@ -1018,6 +1071,6 @@ export default function OpenPackPage() {
                     </Button>
                 </DialogContent>
             </Dialog>
-        </div>
+        </motion.div>
     );
 }

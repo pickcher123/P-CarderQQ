@@ -144,24 +144,26 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                     <PopoverTrigger asChild>
                       <button 
                         id="header-points-trigger"
-                        className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 h-full hover:bg-cyan-500/10 active:bg-cyan-500/20 transition-all duration-200 group outline-none"
+                        className="flex items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 h-full hover:bg-cyan-500/10 active:bg-cyan-500/20 transition-all duration-200 group outline-none"
                       >
-                        <div className="relative flex items-center justify-center">
+                        <div className="relative flex items-center justify-center shrink-0">
                           <DiamondIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 drop-shadow-[0_0_10px_rgba(34,211,238,0.9)] group-hover:scale-110 transition-transform duration-300" />
                           <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-cyan-300 animate-ping opacity-75 pointer-events-none" />
                         </div>
                         {isProfileLoading ? (
-                          <span className="font-numbers text-xs text-cyan-300/50 animate-pulse">...</span>
+                          <span className="font-numbers text-xs text-cyan-300/50 animate-pulse translate-y-[1.5px] sm:translate-y-[1px]">...</span>
                         ) : (
-                          <RefinedPoints 
-                            value={userProfile?.points ?? 0}
-                            currency="diamond"
-                            size="sm"
-                            animate
-                            variant="luxury"
-                          />
+                          <div className="flex items-center translate-y-[1.5px] sm:translate-y-[1px]">
+                            <RefinedPoints 
+                              value={userProfile?.points ?? 0}
+                              currency="diamond"
+                              size="sm"
+                              animate
+                              variant="luxury"
+                            />
+                          </div>
                         )}
-                        <ChevronDown className="h-3 w-3 text-cyan-400/70 group-hover:text-cyan-300 group-hover:translate-y-0.5 transition-all duration-200 ml-0.5" />
+                        <ChevronDown className="h-3 w-3 text-cyan-400/70 group-hover:text-cyan-300 group-hover:translate-y-0.5 transition-all duration-200 ml-0.5 shrink-0" />
                       </button>
                     </PopoverTrigger>
                     

@@ -129,18 +129,21 @@ export function MobileBottomNav({ systemConfig }: MobileBottomNavProps) {
           "pointer-events-auto relative w-full rounded-full transition-all duration-300",
           count <= 4 ? "max-w-[340px]" : count <= 5 ? "max-w-[400px]" : count === 6 ? "max-w-[450px]" : "max-w-[98vw]"
         )}>
-          {/* 外框環狀 LED 炫彩層 (僅 1.5px 旋轉流光環，極致細膩，絕不滲透到內部) */}
-          <div className="relative p-[1.5px] sm:p-[2px] rounded-full overflow-hidden shadow-[0_12px_32px_rgba(0,0,0,0.9)]">
+          {/* 外框循環環繞式 LED 流光層 (細膩流暢、溫潤護眼，絕不滲透到內部) */}
+          <div className="relative p-[1.5px] sm:p-[2px] rounded-full overflow-hidden shadow-[0_12px_32px_rgba(0,0,0,0.9),0_0_20px_rgba(6,182,212,0.18)]">
             
-            {/* 360 度多光譜幻彩 LED 旋轉束 (僅在外圈露出 1.5px 邊框) */}
+            {/* 底層微光軌道 (提供科技感底線) */}
+            <div className="absolute inset-0 rounded-full border border-cyan-500/25 bg-cyan-950/20 pointer-events-none" />
+
+            {/* 360 度循環環繞式雙束極光 LED 流光束 (溫潤護眼、科技青藍紫漸層，柔和循環環繞巡航) */}
             <div 
-              className="absolute -inset-[220%] animate-led-flow pointer-events-none"
+              className="absolute -inset-[220%] animate-led-orbit pointer-events-none opacity-85 blur-[0.5px]"
               style={{
-                background: "conic-gradient(from 0deg, #00f0ff 0%, #3b82f6 16%, #8b5cf6 33%, #ec4899 50%, #f43f5e 66%, #f59e0b 80%, #10b981 92%, #00f0ff 100%)"
+                background: "conic-gradient(from 0deg, transparent 0deg, rgba(6, 182, 212, 0.08) 35deg, rgba(34, 211, 238, 0.9) 80deg, rgba(99, 102, 241, 0.85) 120deg, transparent 155deg, transparent 180deg, rgba(6, 182, 212, 0.08) 215deg, rgba(34, 211, 238, 0.9) 260deg, rgba(99, 102, 241, 0.85) 300deg, transparent 335deg, transparent 360deg)"
               }}
             />
 
-            {/* 內部完全純黑不透光曜石底色 (徹底隔絕內部，中間完全無炫彩) */}
+            {/* 內部完全純黑不透光曜石底色 (徹底隔絕內部，中間完全無炫彩干擾) */}
             <div className="relative w-full rounded-full bg-[#080d19] p-1 sm:p-1.5 overflow-hidden">
               <nav
                 className={cn(

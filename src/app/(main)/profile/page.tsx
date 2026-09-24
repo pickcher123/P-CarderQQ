@@ -377,6 +377,8 @@ function CompactDailyCheckIn() {
   const { user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
+  const userDocRef = useMemoFirebase(() => (firestore && user) ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
+  const { data: userProfile } = useDoc<UserProfile>(userDocRef);
   const missionsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'dailyMissions'), where('type', '==', 'login'), limit(1)) : null, [firestore]);
   const progressQuery = useMemoFirebase(() => (firestore && user) ? collection(firestore, `users/${user.uid}/missionProgress`) : null, [firestore, user]);
   const { data: missions } = useCollection<DailyMission>(missionsQuery);
@@ -384,10 +386,12 @@ function CompactDailyCheckIn() {
   const [claimingId, setClaimingId] = useState<string | null>(null);
   const loginMission = useMemo(() => missions?.[0] || null, [missions]);
   const userProgress = useMemo(() => progress?.find(p => p.id === loginMission?.id), [progress, loginMission]);
+  const todayStr = format(new Date(), 'yyyy-MM-dd');
   const hasClaimedToday = useMemo(() => {
+    if (userProfile?.lastCheckInDate === todayStr) return true;
     if (!userProgress?.lastCompleted) return false;
-    return userProgress.lastCompleted === format(new Date(), 'yyyy-MM-dd');
-  }, [userProgress]);
+    return userProgress.lastCompleted === todayStr;
+  }, [userProgress, userProfile?.lastCheckInDate, todayStr]);
 
   const handleCheckIn = useCallback(async () => {
     if (!user || !firestore || !loginMission) return;
@@ -397,11 +401,17 @@ function CompactDailyCheckIn() {
         const userRef = doc(firestore, 'users', user.uid);
         const progressRef = doc(firestore, `users/${user.uid}/missionProgress`, loginMission.id);
         const [userDoc, existingProgress] = await Promise.all([transaction.get(userRef), transaction.get(progressRef)]);
-        const todayStr = format(new Date(), 'yyyy-MM-dd');
-        if (existingProgress.exists() && existingProgress.data()?.lastCompleted === todayStr) throw new Error("今日已領取");
-        transaction.update(userRef, { bonusPoints: increment(loginMission.rewardPoints) });
-        if (!existingProgress.exists()) transaction.set(progressRef, { progress: 1, lastCompleted: todayStr, userId: user.uid });
-        else transaction.update(progressRef, { progress: increment(1), lastCompleted: todayStr });
+        const currentToday = format(new Date(), 'yyyy-MM-dd');
+        const userData = userDoc.data();
+        if (userData?.lastCheckInDate === currentToday || (existingProgress.exists() && existingProgress.data()?.lastCompleted === currentToday)) {
+          throw new Error("今日已領取");
+        }
+        transaction.update(userRef, { 
+          bonusPoints: increment(loginMission.rewardPoints),
+          lastCheckInDate: currentToday
+        });
+        if (!existingProgress.exists()) transaction.set(progressRef, { progress: 1, lastCompleted: currentToday, userId: user.uid });
+        else transaction.update(progressRef, { progress: increment(1), lastCompleted: currentToday });
       });
       toast({ title: '簽到成功！' });
       if(forceRefetch) forceRefetch();

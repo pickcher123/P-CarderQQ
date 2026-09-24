@@ -5,9 +5,10 @@ interface MarqueeContainerProps {
     children: React.ReactNode;
     className?: string;
     speed?: 'fast' | 'normal' | 'slow';
+    isPaused?: boolean;
 }
 
-export function MarqueeContainer({ children, className, speed = 'normal' }: MarqueeContainerProps) {
+export function MarqueeContainer({ children, className, speed = 'normal', isPaused = false }: MarqueeContainerProps) {
     const speedClass = {
         fast: 'animate-marquee-fast',
         normal: 'animate-marquee',
@@ -16,10 +17,18 @@ export function MarqueeContainer({ children, className, speed = 'normal' }: Marq
 
     return (
         <div className={cn("flex overflow-hidden relative group/marquee", className)}>
-            <div className={cn("flex min-w-full shrink-0 items-center group-hover/marquee:[animation-play-state:paused]", speedClass)}>
+            <div className={cn(
+                "flex min-w-full shrink-0 items-center group-hover/marquee:[animation-play-state:paused]",
+                speedClass,
+                isPaused && "[animation-play-state:paused]!"
+            )}>
                 {children}
             </div>
-            <div className={cn("flex min-w-full shrink-0 items-center group-hover/marquee:[animation-play-state:paused]", speedClass)} aria-hidden="true">
+            <div className={cn(
+                "flex min-w-full shrink-0 items-center group-hover/marquee:[animation-play-state:paused]",
+                speedClass,
+                isPaused && "[animation-play-state:paused]!"
+            )} aria-hidden="true">
                 {children}
             </div>
         </div>

@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { X, MessageCircleCode, Radio, Users, Sparkles } from 'lucide-react';
 import type { SystemConfig } from '@/types/system';
-import { useAuth, useFirestore } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { claimCommunityFreeDraw } from '@/lib/promo-draw-service';
 import confetti from 'canvas-confetti';
@@ -16,9 +17,17 @@ export function FloatingLineButton({ systemConfig }: { systemConfig: SystemConfi
   const [isCommunityVisible, setIsCommunityVisible] = useState(true);
   const [isClaiming, setIsClaiming] = useState(false);
 
-  const { user } = useAuth();
+  const { user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
+
+  const userDocRef = useMemoFirebase(() => (firestore && user) ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
+  const { data: userProfile } = useDoc<any>(userDocRef);
+
+  const isCommunityClaimed = Boolean(
+    userProfile?.claimedCommunityTicket || 
+    userProfile?.claimedPromoCodes?.includes('COMMUNITY_JOIN')
+  );
 
   // Reset visibility if config changes
   useEffect(() => {
@@ -34,6 +43,14 @@ export function FloatingLineButton({ systemConfig }: { systemConfig: SystemConfi
       toast({
         title: '歡迎加入官方社群！',
         description: '登入會員後點擊即可自動領取「免費抽卡券 1 張」！'
+      });
+      return;
+    }
+
+    if (isCommunityClaimed) {
+      toast({
+        title: '歡迎前往官方社群！',
+        description: '您已領取過社群專屬免費抽卡券，每位會員限領 1 次，歡迎在社群與卡友交流！'
       });
       return;
     }

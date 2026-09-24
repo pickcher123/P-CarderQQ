@@ -21,7 +21,6 @@ import { PLACEHOLDER_CARD_IMAGE } from '@/lib/placeholders';
 import { CardExhibitionCalendar } from '@/components/card-exhibition-calendar';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from '@/components/ui/carousel';
 import { PredictionSection } from '@/components/prediction-section';
-import { HallOfFameMarquee } from '@/components/hall-of-fame-marquee';
 import { PoolCard } from '@/components/pool-card';
 import type { CardPool, CardItem } from '@/types';
 import { PromoRedeemModal } from '@/components/events/PromoRedeemModal';
@@ -108,6 +107,17 @@ export default function Home() {
   }, [firestore]);
   const { data: systemConfig } = useDoc<any>(systemConfigRef);
 
+  const userDocRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user]);
+  const { data: userProfile } = useDoc<any>(userDocRef);
+
+  const isCommunityClaimed = Boolean(
+    userProfile?.claimedCommunityTicket || 
+    userProfile?.claimedPromoCodes?.includes('COMMUNITY_JOIN')
+  );
+
   const handleCommunityJoin = async () => {
     const targetUrl = systemConfig?.communityUrl || 'https://line.me/ti/g2/';
 
@@ -115,6 +125,15 @@ export default function Home() {
       toast({
         title: '歡迎加入官方社群！',
         description: '登入會員後點擊加入官方社群，即可自動領取「免費抽卡券 1 張」！'
+      });
+      window.open(targetUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    if (isCommunityClaimed) {
+      toast({
+        title: '歡迎前往官方社群！',
+        description: '您已領取過專屬免費抽卡券，每位會員限領 1 次，快來社群與卡友交流戰績！'
       });
       window.open(targetUrl, '_blank', 'noopener,noreferrer');
       return;
@@ -537,10 +556,21 @@ export default function Home() {
                           type="button"
                           onClick={handleCommunityJoin}
                           disabled={isClaimingCommunity}
-                          className="mt-4 w-full py-2.5 h-auto rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs flex items-center justify-center gap-1.5 shadow-[0_0_20px_rgba(16,185,129,0.35)] hover:shadow-[0_0_25px_rgba(16,185,129,0.5)] transition-all active:scale-95 cursor-pointer"
+                          className={cn(
+                            "mt-4 w-full py-2.5 h-auto rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer",
+                            isCommunityClaimed
+                              ? "bg-slate-800/90 hover:bg-slate-700 text-slate-300 border border-slate-700/80 font-bold"
+                              : "bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black shadow-[0_0_20px_rgba(16,185,129,0.35)] hover:shadow-[0_0_25px_rgba(16,185,129,0.5)] active:scale-95"
+                          )}
                         >
-                          <Gift className="w-3.5 h-3.5 text-slate-950" />
-                          <span>{isClaimingCommunity ? '領取中...' : '加入官方社群 · 領免費抽卡券'}</span>
+                          <Gift className={cn("w-3.5 h-3.5", isCommunityClaimed ? "text-emerald-400" : "text-slate-950")} />
+                          <span>
+                            {isClaimingCommunity 
+                              ? '連線中...' 
+                              : isCommunityClaimed 
+                                ? '已領取專屬券 · 前往社群' 
+                                : '加入官方社群 · 領免費抽卡券'}
+                          </span>
                           <ArrowRight className="w-3.5 h-3.5" />
                         </Button>
                       )}

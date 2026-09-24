@@ -32,51 +32,51 @@ const SIZE_CONFIGS: Record<RefinedSize, {
 }> = {
   xs: {
     container: 'text-xs',
-    digits: 'text-[11px] leading-none',
+    digits: 'text-[11px] leading-tight translate-y-[0.5px]',
     icon: 'w-3 h-3',
-    comma: 'text-[9px] mx-[0.5px]',
+    comma: 'text-[9px] mx-[0.5px] translate-y-[1px]',
     suffix: 'text-[10px] ml-0.5',
   },
   sm: {
     container: 'text-sm',
-    digits: 'text-xs sm:text-[13px] leading-none',
+    digits: 'text-xs sm:text-[13px] leading-tight translate-y-[0.5px]',
     icon: 'w-3.5 h-3.5',
-    comma: 'text-[10px] mx-[0.5px]',
+    comma: 'text-[10px] mx-[0.5px] translate-y-[1px]',
     suffix: 'text-[11px] ml-1',
   },
   base: {
     container: 'text-base',
-    digits: 'text-sm sm:text-base leading-none',
+    digits: 'text-sm sm:text-base leading-tight translate-y-[0.5px]',
     icon: 'w-4 h-4',
-    comma: 'text-xs mx-[0.75px]',
+    comma: 'text-xs mx-[0.75px] translate-y-[1px]',
     suffix: 'text-xs ml-1',
   },
   lg: {
     container: 'text-lg sm:text-xl',
-    digits: 'text-base sm:text-lg leading-none',
+    digits: 'text-base sm:text-lg leading-tight translate-y-[0.5px]',
     icon: 'w-4 h-4 sm:w-5 sm:h-5',
-    comma: 'text-sm mx-[1px]',
+    comma: 'text-sm mx-[1px] translate-y-[1px]',
     suffix: 'text-xs sm:text-sm ml-1',
   },
   xl: {
     container: 'text-xl sm:text-2xl',
-    digits: 'text-lg sm:text-2xl leading-none',
+    digits: 'text-lg sm:text-2xl leading-tight translate-y-[0.5px]',
     icon: 'w-5 h-5 sm:w-6 sm:h-6',
-    comma: 'text-base mx-[1px]',
+    comma: 'text-base mx-[1px] translate-y-[1.5px]',
     suffix: 'text-xs sm:text-sm ml-1.5',
   },
   '2xl': {
     container: 'text-2xl sm:text-3xl',
-    digits: 'text-2xl sm:text-3xl leading-none tracking-tight',
+    digits: 'text-2xl sm:text-3xl leading-tight tracking-tight translate-y-[0.5px]',
     icon: 'w-6 h-6 sm:w-7 sm:h-7',
-    comma: 'text-lg mx-[1.5px]',
+    comma: 'text-lg mx-[1.5px] translate-y-[1.5px]',
     suffix: 'text-sm sm:text-base ml-1.5',
   },
   '3xl': {
     container: 'text-3xl sm:text-4xl lg:text-5xl',
-    digits: 'text-3xl sm:text-4xl lg:text-5xl leading-none tracking-tight',
+    digits: 'text-3xl sm:text-4xl lg:text-5xl leading-tight tracking-tight translate-y-[0.5px]',
     icon: 'w-7 h-7 sm:w-9 sm:h-9',
-    comma: 'text-xl sm:text-2xl mx-[2px]',
+    comma: 'text-xl sm:text-2xl mx-[2px] translate-y-[2px]',
     suffix: 'text-base sm:text-lg ml-2',
   },
 };
@@ -245,7 +245,7 @@ export function RefinedPoints({
     >
       {showIcon && iconPosition === 'left' && renderIcon()}
 
-      <span className={cn('inline-flex items-baseline', variantStyles, digitsClassName)}>
+      <span className={cn('inline-flex items-center', variantStyles, digitsClassName)}>
         {prefix && <span className="mr-0.5 opacity-80 font-bold">{prefix}</span>}
         {isNegative && <span className="mr-0.5 text-rose-400 font-black">-</span>}
 
@@ -255,7 +255,7 @@ export function RefinedPoints({
             {idx > 0 && (
               <span
                 className={cn(
-                  'font-sans font-medium text-current opacity-40 select-none align-baseline pointer-events-none',
+                  'font-sans font-medium text-current opacity-40 select-none align-middle pointer-events-none',
                   sizeCfg.comma
                 )}
               >

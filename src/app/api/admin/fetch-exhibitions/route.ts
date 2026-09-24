@@ -1,6 +1,8 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 // 預備精選之台灣定期與代表性球員卡展資料（當 API Key 未配置或聯網異常時無縫備援）
 function getFallbackExhibitions() {
   const currentYear = new Date().getFullYear();

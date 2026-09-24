@@ -107,7 +107,7 @@ export function CardItem({
         className={cn(
           "relative w-full h-full rounded-xl transition-transform duration-700 [transform-style:preserve-3d] bg-transparent",
           isFlippable && "cursor-pointer",
-          isFlipped ? '[transform:rotateY(180deg)_scale(0.8)]' : '[transform:rotateY(0deg)_scale(1)]'
+          isFlipped ? '[transform:rotateY(180deg)_scale(1)]' : '[transform:rotateY(0deg)_scale(1)]'
         )}
       >
         {/* Card Front */}

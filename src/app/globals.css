@@ -242,8 +242,22 @@
   }
 }
 
+/* 循環環繞式 LED 柔光巡航動畫 (溫潤流暢、護眼不刺眼) */
+@keyframes led-orbit-smooth {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
 .animate-led-flow {
   animation: led-spin 4.5s linear infinite;
+}
+
+.animate-led-orbit {
+  animation: led-orbit-smooth 7.5s linear infinite;
 }
 
 .animate-led-flow-fast {

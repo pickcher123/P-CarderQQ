@@ -2,6 +2,8 @@ import { GoogleGenAI, Type } from '@google/genai';
 import { NextResponse } from 'next/server';
 import { resolveMatchTeamsAndLogos, resolveTeamLogo } from '@/lib/sports-team-logos';
 
+export const dynamic = 'force-dynamic';
+
 export interface SportsMatchOdd {
   id: string;
   league: string; // NBA, MLB, CPBL, Premier League, etc.
