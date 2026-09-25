@@ -29,6 +29,8 @@ import {
     Compass,
 } from 'lucide-react';
 import { NextExhibitionCard, extractCity, getCityTheme, type Exhibition } from '@/components/next-exhibition-card';
+import { UnifiedEventCalendar } from '@/components/calendar/unified-event-calendar';
+import { Sparkles, Layers } from 'lucide-react';
 
 const REGIONS = [
     { label: '全部地區', value: 'ALL' },
@@ -57,6 +59,7 @@ export function CardExhibitionCalendar({
     showNextHighlight = false,
 }: CardExhibitionCalendarProps) {
     const firestore = useFirestore();
+    const [calendarMode, setCalendarMode] = useState<'unified' | 'classic'>('unified');
     const [selectedExh, setSelectedExh] = useState<Exhibition | null>(null);
     const [selectedRegion, setSelectedRegion] = useState<string>('ALL');
     const [searchKeyword, setSearchKeyword] = useState<string>('');
@@ -128,19 +131,54 @@ export function CardExhibitionCalendar({
     return (
         <div className={cn("text-white space-y-6 w-full", !hideHeader && "py-2 sm:py-4")}>
             
-            {/* 置中排版與優化後的精緻標頭 */}
-            {!hideHeader && (
-                <div className="text-center space-y-2.5 border-b border-slate-800/80 pb-6 pt-1">
-                    <h1 className="text-2xl sm:text-4xl font-black font-headline tracking-tight">
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-200 via-sky-300 to-blue-400 drop-shadow-[0_2px_14px_rgba(6,182,212,0.25)]">
-                            全台卡展 · 展訊行事曆
-                        </span>
-                    </h1>
-                    <p className="text-xs sm:text-sm text-slate-400 max-w-xl mx-auto leading-relaxed">
-                        彙整全台球員卡特展、卡友市集與交流盛會 · 支援<span className="text-cyan-300 font-semibold">即時地圖導航</span>與展期倒數
-                    </p>
-                </div>
-            )}
+            {/* 方案 A / 經典清單 雙軌切換按鈕 */}
+            <div className="flex items-center justify-between bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800 backdrop-blur-xl max-w-md mx-auto shadow-lg">
+                <button
+                    type="button"
+                    onClick={() => setCalendarMode('unified')}
+                    className={cn(
+                        "flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none",
+                        calendarMode === 'unified'
+                            ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-slate-950 shadow-md shadow-cyan-500/20"
+                            : "text-slate-400 hover:text-white"
+                    )}
+                >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>雙軌全能日曆 (方案 A)</span>
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setCalendarMode('classic')}
+                    className={cn(
+                        "flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none",
+                        calendarMode === 'classic'
+                            ? "bg-slate-800 text-white font-black shadow-sm"
+                            : "text-slate-400 hover:text-white"
+                    )}
+                >
+                    <Layers className="w-3.5 h-3.5" />
+                    <span>純卡展專屬清單</span>
+                </button>
+            </div>
+
+            {/* 若處於 方案 A 模式，直接渲染雙軌全能行事曆 */}
+            {calendarMode === 'unified' ? (
+                <UnifiedEventCalendar hideHeader={hideHeader} />
+            ) : (
+                <>
+                    {/* 置中排版與優化後的精緻標頭 */}
+                    {!hideHeader && (
+                        <div className="text-center space-y-2.5 border-b border-slate-800/80 pb-6 pt-1">
+                            <h1 className="text-2xl sm:text-4xl font-black font-headline tracking-tight">
+                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-200 via-sky-300 to-blue-400 drop-shadow-[0_2px_14px_rgba(6,182,212,0.25)]">
+                                    全台卡展 · 展訊行事曆
+                                </span>
+                            </h1>
+                            <p className="text-xs sm:text-sm text-slate-400 max-w-xl mx-auto leading-relaxed">
+                                彙整全台球員卡特展、卡友市集與交流盛會 · 支援<span className="text-cyan-300 font-semibold">即時地圖導航</span>與展期倒數
+                            </p>
+                        </div>
+                    )}
             
             {/* 主內容區 */}
             <div className={cn(
@@ -617,6 +655,8 @@ export function CardExhibitionCalendar({
                     })()}
                 </DialogContent>
             </Dialog>
+            </>
+        )}
         </div>
     );
 }

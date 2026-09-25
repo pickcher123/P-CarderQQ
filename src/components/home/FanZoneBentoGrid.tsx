@@ -33,7 +33,7 @@ import { cn } from '@/lib/utils';
 import { UserProfile } from '@/types/user-profile';
 import { extractCity, getCityTheme, Exhibition } from '@/components/next-exhibition-card';
 import { PromoRedeemModal } from '@/components/events/PromoRedeemModal';
-import { CardExhibitionCalendar } from '@/components/card-exhibition-calendar';
+import { UnifiedEventCalendar } from '@/components/calendar/unified-event-calendar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 
@@ -257,16 +257,24 @@ export function FanZoneBentoGrid() {
             </div>
 
             {/* 底部導覽跳轉 */}
-            <div className="pt-4 mt-4 border-t border-slate-800/80 flex items-center justify-between relative z-10">
+            <div className="pt-4 mt-4 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2 relative z-10">
               <span className="text-xs text-slate-400 font-medium">
                 挑戰全服勝率神準榜 · 個人預測戰績
               </span>
-              <Button asChild size="sm" className="bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-xl text-xs shadow-md">
-                <Link href="/predictions" className="flex items-center gap-1">
-                  <span>進入預測擂台</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button asChild variant="outline" size="sm" className="border-cyan-500/30 bg-slate-900/80 hover:bg-slate-800 text-cyan-300 font-bold rounded-xl text-xs h-8">
+                  <Link href="/predictions" className="flex items-center gap-1">
+                    <CalendarIcon className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>賽事日曆</span>
+                  </Link>
+                </Button>
+                <Button asChild size="sm" className="bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-xl text-xs h-8 shadow-md">
+                  <Link href="/predictions" className="flex items-center gap-1">
+                    <span>進入預測擂台</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -289,9 +297,14 @@ export function FanZoneBentoGrid() {
                     <CalendarIcon className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="text-[10px] font-mono font-bold text-cyan-400/90 uppercase tracking-wider block">
-                      EXPO RADAR
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-mono font-bold text-cyan-400/90 uppercase tracking-wider block">
+                        EXPO RADAR
+                      </span>
+                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/30">
+                        卡展/賽事雙軌
+                      </span>
+                    </div>
                     <h3 className="text-base font-black flex items-center gap-1.5">
                       <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-200 via-sky-300 to-blue-400">
                         全台卡展 · 展訊雷達
@@ -441,17 +454,19 @@ export function FanZoneBentoGrid() {
         }}
       />
 
-      {/* 整合快速月曆彈窗 */}
+      {/* 整合雙軌全能月曆彈窗 (方案 A) */}
       <Dialog open={isCalendarModalOpen} onOpenChange={setIsCalendarModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-slate-950 text-white border-slate-800 p-6 rounded-3xl">
+        <DialogContent className="max-w-5xl max-h-[92vh] overflow-y-auto bg-slate-950 text-white border-slate-800 p-4 sm:p-6 rounded-3xl">
           <DialogHeader className="border-b border-slate-800 pb-3">
             <DialogTitle className="text-lg font-black flex items-center gap-2 text-cyan-400">
-              <CalendarIcon className="w-5 h-5" />
-              <span>全台卡展 · 展訊行事曆速覽</span>
+              <CalendarIcon className="w-5 h-5 text-cyan-400" />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-sky-300 to-amber-400">
+                卡展/賽事行事曆
+              </span>
             </DialogTitle>
           </DialogHeader>
           <div className="mt-4">
-            <CardExhibitionCalendar hideHeader={true} showNextHighlight={true} />
+            <UnifiedEventCalendar hideHeader={true} initialMode="grid" />
           </div>
         </DialogContent>
       </Dialog>

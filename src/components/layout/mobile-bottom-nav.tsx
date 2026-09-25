@@ -79,19 +79,9 @@ export function MobileBottomNav({ systemConfig }: MobileBottomNavProps) {
       flag: 'isGroupBreakEnabled'
     },
     { 
-      id: 'predictions',
-      href: '/predictions', 
-      label: '預測', 
-      icon: Trophy, 
-      activeColor: "text-yellow-400", 
-      activeBg: "bg-white/[0.08] border-white/10 text-white",
-      dotColor: "bg-yellow-400",
-      flag: 'isPredictionsEnabled'
-    },
-    { 
-      id: 'exhibitions',
+      id: 'calendar',
       href: '/exhibitions', 
-      label: '卡展', 
+      label: '行事曆', 
       icon: Calendar, 
       activeColor: "text-cyan-400", 
       activeBg: "bg-white/[0.08] border-white/10 text-white",

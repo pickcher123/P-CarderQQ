@@ -27,8 +27,7 @@ const navLinks = [
   { href: '/bet', label: '拼卡', icon: CrossedCardsIcon, color: "text-rose-400", flag: 'isBettingEnabled' },
   { href: '/lucky-bags', label: '福袋', icon: LuckyBagIcon, color: "text-amber-400", flag: 'isLuckyBagEnabled' },
   { href: '/group-break', label: '團拆', icon: Users2, color: "text-emerald-400", flag: 'isGroupBreakEnabled' },
-  { href: '/predictions', label: '賽事預測', icon: Trophy, color: "text-yellow-400", flag: 'isPredictionsEnabled' },
-  { href: '/exhibitions', label: '卡展行事曆', icon: Calendar, color: "text-cyan-400", flag: 'isExhibitionsEnabled' },
+  { href: '/exhibitions', label: '卡展/賽事行事曆', icon: Calendar, color: "text-cyan-400", flag: 'isExhibitionsEnabled' },
   { href: '/collection', label: '收藏庫', icon: Library, color: "text-cyan-300/80" },
 ];
 
@@ -338,28 +337,15 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                             <span>活動與福利專區</span>
                           </div>
 
-                          {/* 賽事預測 */}
-                          <DropdownMenuItem asChild className="rounded-xl cursor-pointer text-slate-200 hover:text-white focus:bg-amber-500/15 focus:text-amber-300 transition-colors">
-                              <Link href="/predictions" className="flex items-center justify-between w-full py-1.5">
-                                <div className="flex items-center">
-                                  <Trophy className="mr-2.5 h-4 w-4 text-amber-400" />
-                                  <span className="font-semibold text-xs">賽事預測</span>
-                                </div>
-                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
-                                  贏 P+ 點
-                                </span>
-                              </Link>
-                          </DropdownMenuItem>
-
-                          {/* 卡展行事曆 */}
+                          {/* 卡展/賽事行事曆 */}
                           <DropdownMenuItem asChild className="rounded-xl cursor-pointer text-slate-200 hover:text-white focus:bg-cyan-500/15 focus:text-cyan-300 transition-colors">
                               <Link href="/exhibitions" className="flex items-center justify-between w-full py-1.5">
                                 <div className="flex items-center">
                                   <Calendar className="mr-2.5 h-4 w-4 text-cyan-400" />
-                                  <span className="font-semibold text-xs">卡展行事曆</span>
+                                  <span className="font-semibold text-xs">卡展/賽事行事曆</span>
                                 </div>
                                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
-                                  全台展訊
+                                  雙軌行事曆
                                 </span>
                               </Link>
                           </DropdownMenuItem>
