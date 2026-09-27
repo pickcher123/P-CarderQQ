@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -14,11 +14,11 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth, useFirestore, initiateEmailSignIn, initiateEmailSignUp, initiateGoogleSignIn, initiatePasswordReset } from '@/firebase';
 import { doc, getDoc, setDoc, serverTimestamp, query, collection, where, getDocs } from 'firebase/firestore';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { FirebaseError } from 'firebase/app';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Loader2, Sparkles, ShieldCheck, LogIn, CheckCircle2, Terminal, Mail, Lock, ArrowLeft } from 'lucide-react';
+import { Loader2, Sparkles, ShieldCheck, LogIn, CheckCircle2, Terminal, Mail, Lock, ArrowLeft, UserPlus, Gift, Check, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
@@ -32,10 +32,11 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
-export default function LoginPage() {
+function LoginContent() {
   const auth = useAuth();
   const firestore = useFirestore();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   
   const [loginEmail, setLoginEmail] = useState('');
@@ -44,6 +45,9 @@ export default function LoginPage() {
   const [registerEmail, setRegisterEmail] = useState('');
   const [registerPassword, setRegisterPassword] = useState('');
   const [registerConfirmPassword, setRegisterConfirmPassword] = useState('');
+  const [referralCode, setReferralCode] = useState('');
+  const [isVerifyingCode, setIsVerifyingCode] = useState(false);
+  const [codeVerifiedStatus, setCodeVerifiedStatus] = useState<{ valid: boolean; referrerName?: string; message?: string } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   // Forgot password states
@@ -51,6 +55,46 @@ export default function LoginPage() {
   const [resetEmail, setResetEmail] = useState('');
   const [isResetting, setIsResetting] = useState(false);
   const [resetSent, setResetSent] = useState(false);
+
+  // Check URL parameters for referral code (e.g. /login?ref=ABC123 or /login?code=ABC123)
+  useEffect(() => {
+    const urlRef = searchParams.get('ref') || searchParams.get('code') || searchParams.get('referral');
+    if (urlRef) {
+      const clean = urlRef.trim().toUpperCase();
+      setReferralCode(clean);
+      setIsRegistering(true); // 自動切換為註冊分頁
+      // 自動驗證
+      verifyReferralCode(clean);
+    }
+  }, [searchParams]);
+
+  const verifyReferralCode = async (codeToVerify: string) => {
+    if (!codeToVerify.trim()) {
+      setCodeVerifiedStatus(null);
+      return;
+    }
+    setIsVerifyingCode(true);
+    try {
+      const res = await fetch(`/api/referral/check?code=${encodeURIComponent(codeToVerify.trim())}`);
+      const data = await res.json();
+      if (data.success && data.valid) {
+        setCodeVerifiedStatus({
+          valid: true,
+          referrerName: data.referrerName,
+          message: `推薦人：${data.referrerName}（成功註冊將各獲贈點數禮包）`
+        });
+      } else {
+        setCodeVerifiedStatus({
+          valid: false,
+          message: data.error || '無效的推薦碼'
+        });
+      }
+    } catch {
+      setCodeVerifiedStatus(null);
+    } finally {
+      setIsVerifyingCode(false);
+    }
+  };
 
   useEffect(() => {
     if (!resetDialogOpen) {
@@ -61,7 +105,6 @@ export default function LoginPage() {
       }, 300);
     }
   }, [resetDialogOpen]);
-
 
   const getFirebaseErrorMessage = (error: FirebaseError) => {
     switch (error.code) {
@@ -157,6 +200,22 @@ export default function LoginPage() {
                 userLevel: '新手收藏家',
                 createdAt: serverTimestamp(),
             });
+
+            // 若有填寫推薦碼或網址帶有推薦碼，進行綁定發獎
+            if (referralCode.trim()) {
+              try {
+                await fetch('/api/referral/apply', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    newUserId: user.uid,
+                    referralCode: referralCode.trim()
+                  })
+                });
+              } catch (err) {
+                console.error('Google signup referral apply error:', err);
+              }
+            }
         }
         
         router.push('/profile');
@@ -223,6 +282,29 @@ export default function LoginPage() {
             userLevel: '新手收藏家',
             createdAt: serverTimestamp(),
         });
+
+        // 套用推薦碼 (若有填寫)
+        if (referralCode.trim()) {
+          try {
+            const refRes = await fetch('/api/referral/apply', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                newUserId: user.uid,
+                referralCode: referralCode.trim()
+              })
+            });
+            const refData = await refRes.json();
+            if (refData.success) {
+              toast({
+                title: "推薦獎勵已發放！",
+                description: `成功綁定推薦人【${refData.rewards.referrerName}】，獲得 ${refData.rewards.bonusPoints} 紅利 P+ 與抽卡券！`,
+              });
+            }
+          } catch (err) {
+            console.error('Apply referral err:', err);
+          }
+        }
         
         toast({
             title: "註冊成功",
@@ -245,19 +327,35 @@ export default function LoginPage() {
   const [isRegistering, setIsRegistering] = useState(false);
 
   return (
-    <div className="min-h-[100dvh] w-full flex flex-col justify-start items-center pt-10 sm:pt-16 p-4 sm:p-6 relative overflow-hidden bg-[#060913] text-white">
+    <div className="min-h-[100dvh] w-full flex flex-col justify-start items-center pt-8 sm:pt-14 p-4 sm:p-6 relative overflow-hidden bg-[#060913] text-white">
       {/* Background Ambience */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#06b6d408_1px,transparent_1px),linear-gradient(to_bottom,#06b6d408_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none opacity-60" />
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 sm:w-96 h-72 sm:h-96 bg-cyan-500/15 rounded-full blur-[100px] pointer-events-none" />
 
       {/* Main Container - Lifted Upwards */}
-      <div className="w-full max-w-[380px] relative z-10 flex flex-col items-center">
+      <div className="w-full max-w-[400px] relative z-10 flex flex-col items-center">
         
         {/* Title Only */}
         <div className="text-center mb-4 sm:mb-5">
-          <h1 className="text-xl sm:text-2xl font-black font-headline tracking-tight text-white">
-            {isRegistering ? '會員註冊' : '會員登入'}
+          <h1 className="text-xl sm:text-2xl font-black font-headline tracking-tight text-white flex items-center justify-center gap-2">
+            {isRegistering ? (
+              <>
+                <UserPlus className="w-6 h-6 text-cyan-400" />
+                <span>會員註冊</span>
+              </>
+            ) : (
+              <>
+                <LogIn className="w-6 h-6 text-cyan-400" />
+                <span>會員登入</span>
+              </>
+            )}
           </h1>
+          {isRegistering && referralCode && (
+            <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-bold animate-pulse">
+              <Gift className="w-3.5 h-3.5" />
+              <span>已自動帶入好友推薦碼【{referralCode}】</span>
+            </div>
+          )}
         </div>
 
         {/* Auth Card */}
@@ -324,6 +422,57 @@ export default function LoginPage() {
                     className="h-9.5 bg-slate-950/60 border-white/10 text-white placeholder:text-slate-500 rounded-xl text-xs sm:text-sm focus:border-cyan-400" 
                   />
                 </div>
+
+                {/* 推薦碼選填欄位 */}
+                <div className="space-y-1 pt-1">
+                  <div className="flex items-center justify-between text-[11px] text-slate-300 font-bold px-0.5">
+                    <span className="flex items-center gap-1 text-amber-300">
+                      <Gift className="w-3.5 h-3.5" />
+                      好友推薦碼（選填）
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-normal">填寫即享專屬紅利禮包</span>
+                  </div>
+                  <div className="relative">
+                    <Input 
+                      placeholder="輸入推薦碼 (如好友邀請碼或活動代碼)" 
+                      value={referralCode} 
+                      onChange={(e) => {
+                        const val = e.target.value.toUpperCase();
+                        setReferralCode(val);
+                        if (val.length >= 4) {
+                          verifyReferralCode(val);
+                        } else {
+                          setCodeVerifiedStatus(null);
+                        }
+                      }} 
+                      disabled={isLoading} 
+                      className={cn(
+                        "h-9.5 pr-20 uppercase font-mono tracking-wider bg-slate-950/60 border-white/10 text-white placeholder:text-slate-500 rounded-xl text-xs sm:text-sm transition-all",
+                        codeVerifiedStatus?.valid && "border-emerald-500/50 bg-emerald-950/10",
+                        codeVerifiedStatus && !codeVerifiedStatus.valid && "border-rose-500/50"
+                      )} 
+                    />
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                      {isVerifyingCode ? (
+                        <Loader2 className="w-3.5 h-3.5 text-slate-400 animate-spin" />
+                      ) : codeVerifiedStatus?.valid ? (
+                        <span className="flex items-center gap-0.5 text-[10px] text-emerald-400 font-bold bg-emerald-500/20 px-1.5 py-0.5 rounded">
+                          <Check className="w-3 h-3" /> 有效
+                        </span>
+                      ) : codeVerifiedStatus && !codeVerifiedStatus.valid ? (
+                        <span className="flex items-center gap-0.5 text-[10px] text-rose-400 font-bold bg-rose-500/20 px-1.5 py-0.5 rounded">
+                          無效
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+                  {codeVerifiedStatus?.message && (
+                    <p className={cn("text-[10px] px-1 font-medium", codeVerifiedStatus.valid ? "text-emerald-400" : "text-rose-400")}>
+                      {codeVerifiedStatus.message}
+                    </p>
+                  )}
+                </div>
+
                 <Button 
                   className="w-full h-10 rounded-xl font-black text-xs sm:text-sm bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 shadow-[0_0_20px_rgba(6,182,212,0.3)] transition-all active:scale-[0.98] cursor-pointer mt-1" 
                   type="submit" 
@@ -470,5 +619,17 @@ export default function LoginPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-[100dvh] flex items-center justify-center bg-[#060913]">
+        <Loader2 className="w-8 h-8 animate-spin text-cyan-400" />
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   );
 }

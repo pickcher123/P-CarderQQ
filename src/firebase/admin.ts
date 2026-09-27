@@ -1,4 +1,13 @@
 import admin from 'firebase-admin';
+import firebaseConfigData from '../../firebase-applet-config.json';
+
+export function hasAdminCredentials(): boolean {
+  if (typeof window !== 'undefined') return false;
+  return !!(
+    (process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_CLIENT_EMAIL) ||
+    process.env.GOOGLE_APPLICATION_CREDENTIALS
+  );
+}
 
 /**
  * 延遲初始化 Firebase Admin
@@ -9,6 +18,7 @@ export function getAdminApp() {
   
   if (!admin.apps.length) {
     try {
+      const defaultProjectId = firebaseConfigData?.projectId || 'studio-8439816843-ca6d5';
       if (process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL) {
         return admin.initializeApp({
           credential: admin.credential.cert({
@@ -18,12 +28,9 @@ export function getAdminApp() {
           }),
         });
       }
-      if (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) {
-        return admin.initializeApp({
-          projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-        });
-      }
-      return admin.initializeApp();
+      return admin.initializeApp({
+        projectId: process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || defaultProjectId,
+      });
     } catch (error) {
       if (process.env.NODE_ENV !== 'production') {
         console.warn('Firebase admin initialization deferred or missing credentials:', error);
@@ -36,13 +43,16 @@ export function getAdminApp() {
 
 /**
  * 使用 Getter 模式獲取實例，防止建置與啟動期崩潰
+ * 僅在具備合法服務帳戶憑證時才返回實例，避免未授權 gRPC 拋出 PERMISSION_DENIED
  */
 export const getAdminDb = () => {
+  if (!hasAdminCredentials()) return null;
   const app = getAdminApp();
   return app ? app.firestore() : null;
 };
 
 export const getAdminAuth = () => {
+  if (!hasAdminCredentials()) return null;
   const app = getAdminApp();
   return app ? app.auth() : null;
 };

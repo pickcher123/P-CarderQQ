@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Trophy, Sparkles, Newspaper, Calendar, ShieldCheck, Zap, Target, Megaphone, Users2, Disc3, ArrowRight, Flame, Gift } from 'lucide-react';
+import { ChevronRight, Trophy, Sparkles, Newspaper, Calendar, ShieldCheck, Zap, Target, Megaphone, Users2, Disc3, ArrowRight, Flame, Gift, Image as ImageIcon, FileText } from 'lucide-react';
 import { LuckyBagIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { useAuth, useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
@@ -56,6 +56,20 @@ export default function Home() {
   const [isClaimingCommunity, setIsClaimingCommunity] = useState(false);
   const [whyChooseApi, setWhyChooseApi] = useState<CarouselApi>();
   const [whyChooseCurrent, setWhyChooseCurrent] = useState(0);
+  const [newsApi, setNewsApi] = useState<CarouselApi>();
+  const [newsCurrent, setNewsCurrent] = useState(0);
+
+  useEffect(() => {
+    if (!newsApi) return;
+    setNewsCurrent(newsApi.selectedScrollSnap());
+    const onSelect = () => {
+      setNewsCurrent(newsApi.selectedScrollSnap());
+    };
+    newsApi.on('select', onSelect);
+    return () => {
+      newsApi.off('select', onSelect);
+    };
+  }, [newsApi]);
 
   useEffect(() => {
     if (!whyChooseApi) return;
@@ -203,14 +217,16 @@ export default function Home() {
           )}
           
           <div className="space-y-3 sm:space-y-4 animate-fade-in-up">
-            <h1 className="font-headline text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-black tracking-tight leading-none relative">
-                <span className="bg-clip-text text-transparent bg-gradient-to-b from-white via-slate-100 to-amber-200/90 drop-shadow-[0_4px_30px_rgba(245,158,11,0.3)]">
+            <h1 className="font-headline text-4xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-black tracking-tight leading-none relative select-none whitespace-nowrap inline-block mx-auto max-w-full">
+                <span className="bg-clip-text text-transparent bg-gradient-to-b from-white via-slate-100 to-amber-200/90 drop-shadow-[0_4px_30px_rgba(245,158,11,0.3)] whitespace-nowrap inline-block">
                     P+CARDER
                 </span>
-                <span className="absolute inset-0 text-amber-400/15 blur-[30px] pointer-events-none select-none">P+CARDER</span>
+                <span className="absolute inset-0 flex items-center justify-center text-amber-400/15 blur-[25px] sm:blur-[30px] pointer-events-none select-none whitespace-nowrap" aria-hidden="true">
+                    P+CARDER
+                </span>
             </h1>
             
-            <p className="text-sm sm:text-base md:text-xl text-slate-300 max-w-xl mx-auto font-medium tracking-wider leading-relaxed">
+            <p className="text-sm sm:text-base md:text-xl text-slate-300 max-w-xl mx-auto font-medium tracking-wider leading-relaxed px-2">
                 頂級球員卡福袋平台 · 即時連線公平抽取<br />
                 <span className="text-amber-400 font-bold drop-shadow-[0_0_12px_rgba(245,158,11,0.4)]">打造屬於你的極致玩卡與收藏體驗</span>
             </p>
@@ -275,141 +291,196 @@ export default function Home() {
       )}
 
       {/* 最新消息中心 */}
-      <section className="relative py-12 sm:py-16 bg-gradient-to-b from-slate-950/80 via-slate-900/50 to-slate-950/80 border-y border-slate-800/80 overflow-hidden">
+      <section className="relative py-8 sm:py-16 bg-gradient-to-b from-slate-950/80 via-slate-900/50 to-slate-950/80 border-y border-slate-800/80 overflow-hidden">
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-amber-500/5 rounded-full blur-[140px] pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-amber-500/5 rounded-full blur-[120px] pointer-events-none" />
         <div className="container relative z-10 px-3 sm:px-4 max-w-7xl mx-auto">
             
-            {/* Header - 旗艦級美化標題橫幅 */}
-            <div className="relative p-4 sm:p-6 rounded-3xl bg-gradient-to-r from-slate-900/95 via-slate-950/95 to-slate-900/95 border border-slate-800/90 backdrop-blur-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 shadow-[0_12px_40px_rgba(0,0,0,0.6)] ring-1 ring-white/5 overflow-hidden">
+            {/* Header - 手機版與桌面版完美平衡的美化標題列 */}
+            <div className="relative p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl bg-gradient-to-r from-slate-900/95 via-slate-950/95 to-slate-900/95 border border-slate-800/90 backdrop-blur-2xl mb-6 sm:mb-8 shadow-[0_12px_40px_rgba(0,0,0,0.6)] ring-1 ring-white/5 overflow-hidden">
                 <div className="absolute -top-16 left-1/3 w-64 h-32 bg-amber-500/10 blur-3xl rounded-full pointer-events-none" />
                 
-                <div className="flex items-center gap-3.5 sm:gap-4 relative z-10">
-                    <div className="p-3 sm:p-3.5 rounded-2xl bg-gradient-to-br from-amber-400/20 via-amber-500/10 to-amber-600/5 border border-amber-400/30 text-amber-300 shadow-[0_0_20px_rgba(245,158,11,0.2)] flex items-center justify-center">
-                        <Newspaper className="w-5 h-5 sm:w-6 sm:h-6 text-amber-300 drop-shadow-[0_0_8px_rgba(245,158,11,0.6)]" />
-                    </div>
-                    <div>
-                        <div className="flex items-center gap-2.5 mb-1">
-                            <h2 className="text-xl sm:text-2xl md:text-3xl font-black font-headline tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-100 to-yellow-400 drop-shadow-[0_2px_15px_rgba(245,158,11,0.3)]">
-                                最新消息中心
-                            </h2>
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[11px] font-bold shadow-sm">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                                即時快訊
-                            </span>
+                <div className="relative z-10 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5 sm:gap-4 min-w-0">
+                        <div className="p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-400/20 via-amber-500/10 to-amber-600/5 border border-amber-400/30 text-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.2)] shrink-0 flex items-center justify-center">
+                            <Newspaper className="w-4 h-4 sm:w-6 sm:h-6 text-amber-300 drop-shadow-[0_0_8px_rgba(245,158,11,0.6)]" />
                         </div>
-                        <p className="text-xs sm:text-sm text-slate-400 font-medium">
-                            官方即時資訊 · 掌握第一手活動快訊、重磅卡池與公告
-                        </p>
+                        <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <h2 className="text-base sm:text-2xl md:text-3xl font-black font-headline tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-100 to-yellow-400 drop-shadow-[0_2px_15px_rgba(245,158,11,0.3)] truncate">
+                                    最新消息中心
+                                </h2>
+                                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[10px] sm:text-[11px] font-bold shadow-sm shrink-0">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                    即時快訊
+                                </span>
+                            </div>
+                            <p className="text-[11px] sm:text-xs md:text-sm text-slate-400 font-medium truncate mt-0.5">
+                                官方即時資訊 · 掌握第一手活動快訊與公告
+                            </p>
+                        </div>
                     </div>
-                </div>
 
-                <Button variant="ghost" asChild className="relative z-10 hover:bg-slate-800/90 h-10 px-4 rounded-xl font-bold text-amber-300 hover:text-amber-200 border border-amber-500/25 hover:border-amber-400/50 bg-slate-900/70 shadow-md self-start sm:self-auto text-xs transition-all duration-300 hover:shadow-[0_0_20px_rgba(245,158,11,0.2)]">
-                    <Link href="/news" className="flex items-center gap-2">
-                        <span>查看完整消息庫</span>
-                        <ChevronRight className="h-4 w-4" />
-                    </Link>
-                </Button>
+                    <Button variant="ghost" asChild className="h-8 sm:h-10 px-3 sm:px-4 rounded-xl font-bold text-amber-300 hover:text-amber-200 border border-amber-500/25 hover:border-amber-400/50 bg-slate-900/80 hover:bg-slate-800 shadow-md text-xs transition-all duration-300 hover:shadow-[0_0_20px_rgba(245,158,11,0.2)] shrink-0">
+                        <Link href="/news" className="flex items-center gap-1 sm:gap-2">
+                            <span className="hidden sm:inline">完整消息庫</span>
+                            <span className="sm:hidden">全部消息</span>
+                            <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                        </Link>
+                    </Button>
+                </div>
             </div>
             
-            <Carousel opts={{ align: "start", loop: true }} className="w-full">
+            {/* 卡片輪播 - 手機版露出下張卡片邊緣 (basis-[86%] xs:basis-[82%])，支援手勢滑動與點擊開啟詳情 */}
+            <Carousel 
+                setApi={setNewsApi}
+                opts={{ align: "start", loop: false }} 
+                className="w-full relative"
+            >
                 <CarouselContent className="-ml-3 sm:-ml-4">
                     {isLoadingNews ? (
                         Array.from({ length: 3 }).map((_, i) => (
-                            <CarouselItem key={i} className="pl-3 sm:pl-4 basis-full sm:basis-1/2 lg:basis-1/3">
-                                <div className="aspect-[16/10] sm:aspect-video w-full rounded-2xl overflow-hidden bg-slate-900/90 border border-slate-800">
-                                    <Skeleton className="w-full h-full" />
+                            <CarouselItem key={i} className="pl-3 sm:pl-4 basis-[86%] xs:basis-[82%] sm:basis-1/2 lg:basis-1/3">
+                                <div className="aspect-[4/3] sm:aspect-[16/11] w-full rounded-2xl overflow-hidden bg-slate-900/90 border border-slate-800 flex flex-col p-4 justify-between">
+                                    <Skeleton className="w-full h-36 rounded-xl" />
+                                    <div className="space-y-2 mt-4">
+                                        <Skeleton className="w-3/4 h-4 rounded" />
+                                        <Skeleton className="w-1/2 h-3 rounded" />
+                                    </div>
                                 </div>
                             </CarouselItem>
                         ))
                     ) : (
-                        newsItems?.map((item) => (
-                            <CarouselItem key={item.id} className="pl-3 sm:pl-4 basis-full sm:basis-1/2 lg:basis-1/3">
-                                <Link 
-                                  href={`/news?id=${item.id}`}
-                                  className="group block h-full animate-fade-in-up"
-                                >
-                                    <div className="h-full overflow-hidden bg-slate-950/90 border border-slate-800/80 hover:border-amber-400/70 transition-all duration-300 rounded-2xl shadow-xl hover:shadow-[0_8px_30px_rgba(245,158,11,0.18)] group-hover:-translate-y-1 relative">
-                                        <div className="aspect-[16/10] sm:aspect-video relative overflow-hidden flex flex-col justify-between p-3.5 sm:p-4">
-                                            
-                                            {/* 背景圖層 */}
-                                            {item.type === 'image' && item.imageUrl ? (
-                                                <>
-                                                    <SafeImage 
-                                                        src={item.imageUrl} 
-                                                        alt={item.title} 
-                                                        width={800}
-                                                        height={450}
-                                                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-108 brightness-[0.45] saturate-125"
-                                                    />
-                                                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-slate-950/70 pointer-events-none" />
-                                                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-amber-500/10 via-transparent to-slate-950/80 pointer-events-none" />
-                                                </>
-                                            ) : (
-                                                <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                                                    {/* 精美科技暗黑卡牌背景底色 */}
-                                                    <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-950 to-amber-950/40" />
-                                                    
-                                                    {/* 幾何微紋網格 */}
-                                                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff06_1px,transparent_1px),linear-gradient(to_bottom,#ffffff06_1px,transparent_1px)] bg-[size:20px_20px] opacity-70" />
-                                                    
-                                                    {/* 中心金色聚光燈 */}
-                                                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-amber-500/15 via-slate-900/30 to-slate-950" />
-                                                    
-                                                    {/* 裝飾性背景圖標光暈 */}
-                                                    <Newspaper className="w-28 h-28 text-amber-500/5 absolute -right-4 -bottom-4 group-hover:scale-110 group-hover:text-amber-500/10 transition-all duration-500" />
-                                                    <Sparkles className="w-16 h-16 text-amber-400/10 absolute -top-3 -left-3 group-hover:rotate-12 transition-all duration-500" />
-                                                </div>
-                                            )}
+                        newsItems?.map((item) => {
+                            const snippet = item.content ? item.content.replace(/<[^>]+>/g, '').trim() : '';
 
-                                            {/* 頂部標籤列 */}
-                                            <div className="relative z-10 flex items-center justify-between gap-2">
-                                                <div className="flex items-center gap-1.5">
+                            return (
+                                <CarouselItem key={item.id} className="pl-3 sm:pl-4 basis-[86%] xs:basis-[82%] sm:basis-1/2 lg:basis-1/3 flex flex-col">
+                                    <div 
+                                      onClick={() => setSelectedNews(item)}
+                                      className="group block h-full cursor-pointer select-none text-left"
+                                      role="button"
+                                      tabIndex={0}
+                                    >
+                                        <div className="h-full overflow-hidden bg-gradient-to-b from-slate-900/95 via-slate-950/95 to-slate-950 border border-slate-800/80 hover:border-amber-400/70 transition-all duration-300 rounded-2xl shadow-xl hover:shadow-[0_12px_36px_rgba(245,158,11,0.18)] group-hover:-translate-y-1.5 flex flex-col justify-between">
+                                            
+                                            {/* 上半部：精美封面與浮動標籤 */}
+                                            <div className="aspect-[16/9] w-full relative overflow-hidden bg-slate-950 shrink-0">
+                                                {item.type === 'image' && item.imageUrl ? (
+                                                    <>
+                                                        <SafeImage 
+                                                            src={item.imageUrl} 
+                                                            alt={item.title} 
+                                                            width={600}
+                                                            height={338}
+                                                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-108"
+                                                        />
+                                                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent pointer-events-none" />
+                                                    </>
+                                                ) : (
+                                                    <div className="absolute inset-0 bg-gradient-to-br from-amber-950/30 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-4 overflow-hidden">
+                                                        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:16px_16px] opacity-60" />
+                                                        <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 mb-2 shadow-[0_0_20px_rgba(245,158,11,0.15)] group-hover:scale-110 transition-transform duration-300 z-10">
+                                                            <Newspaper className="w-6 h-6" />
+                                                        </div>
+                                                        <span className="text-[10px] font-mono font-bold text-amber-400/70 tracking-widest uppercase z-10">
+                                                            P+ CARDER NEWS
+                                                        </span>
+                                                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent pointer-events-none" />
+                                                    </div>
+                                                )}
+
+                                                {/* 頂部左側徽章 */}
+                                                <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 z-10">
                                                     {item.isPinned && (
-                                                      <span className="bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 font-black text-[10px] px-2 py-0.5 rounded-md shadow-[0_0_12px_rgba(245,158,11,0.4)] flex items-center gap-1">
+                                                      <span className="bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 font-black text-[10px] px-2 py-0.5 rounded shadow-[0_0_10px_rgba(245,158,11,0.5)] flex items-center gap-1">
                                                         <span>★ 置頂</span>
                                                       </span>
                                                     )}
-                                                    <span className="bg-slate-900/90 backdrop-blur-md border border-slate-700/80 text-amber-300 font-bold text-[10px] px-2.5 py-0.5 rounded-md shadow-sm">
+                                                    <span className="bg-black/75 backdrop-blur-md border border-white/10 text-amber-300 font-bold text-[10px] px-2 py-0.5 rounded shadow-sm">
                                                       {item.category || '官方公告'}
                                                     </span>
                                                 </div>
 
-                                                <span className="text-[10px] text-slate-400 font-medium bg-black/40 backdrop-blur-sm px-2 py-0.5 rounded border border-white/5">
-                                                  最新快報
-                                                </span>
+                                                {/* 頂部右側類型徽章 */}
+                                                <div className="absolute top-2.5 right-2.5 z-10">
+                                                    <span className="bg-black/70 backdrop-blur-md border border-white/10 text-[10px] text-slate-300 px-2 py-0.5 rounded font-mono flex items-center gap-1">
+                                                        {item.type === 'image' ? (
+                                                            <>
+                                                                <ImageIcon className="w-3 h-3 text-amber-400" />
+                                                                <span>圖文</span>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <FileText className="w-3 h-3 text-cyan-400" />
+                                                                <span>公告</span>
+                                                            </>
+                                                        )}
+                                                    </span>
+                                                </div>
                                             </div>
 
-                                            {/* ★ 核心居中標題與視覺區塊 ★ */}
-                                            <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-3 py-2">
-                                                <h3 className="font-headline font-black text-sm sm:text-base text-white text-center leading-snug group-hover:text-amber-300 transition-colors drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)] max-w-full line-clamp-2">
-                                                    {item.title}
-                                                </h3>
-                                                <div className="w-8 h-0.5 bg-gradient-to-r from-transparent via-amber-400/70 to-transparent mt-2 group-hover:w-16 group-hover:via-amber-300 transition-all duration-300" />
-                                            </div>
-
-                                            {/* 底部時間與詳閱指引 */}
-                                            <div className="relative z-10 flex items-center justify-between pt-2 border-t border-white/5 text-[10px] text-slate-400">
-                                                <div className="flex items-center gap-1.5 font-mono text-slate-400">
-                                                    <Calendar className="h-3 w-3 text-amber-400/90" />
-                                                    <span>{item.createdAt ? format(new Date(item.createdAt.seconds * 1000), 'yyyy-MM-dd') : '---'}</span>
+                                            {/* 下半部：層次分明的標題、內文摘要與底部時標 */}
+                                            <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-3">
+                                                <div className="space-y-1.5">
+                                                    <h3 className="font-headline font-black text-sm sm:text-base text-white group-hover:text-amber-300 transition-colors line-clamp-2 leading-snug text-left">
+                                                        {item.title}
+                                                    </h3>
+                                                    {snippet ? (
+                                                        <p className="text-[11px] sm:text-xs text-slate-400/90 line-clamp-2 leading-relaxed text-left font-normal">
+                                                            {snippet}
+                                                        </p>
+                                                    ) : (
+                                                        <p className="text-[11px] sm:text-xs text-slate-500/80 line-clamp-1 leading-relaxed text-left font-normal">
+                                                            點擊查看完整官方消息與最新動態...
+                                                        </p>
+                                                    )}
                                                 </div>
 
-                                                <span className="text-amber-400/90 group-hover:text-amber-300 font-bold flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">
-                                                    <span>詳閱</span>
-                                                    <ChevronRight className="w-3 h-3" />
-                                                </span>
+                                                {/* 底部時間與詳閱箭頭 */}
+                                                <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs">
+                                                    <div className="flex items-center gap-1.5 font-mono text-[11px] text-slate-400">
+                                                        <Calendar className="h-3 w-3 text-amber-400/80" />
+                                                        <span>{item.createdAt ? format(new Date(item.createdAt.seconds * 1000), 'yyyy-MM-dd') : '---'}</span>
+                                                    </div>
+                                                    <span className="text-amber-400 group-hover:text-amber-300 font-bold text-xs flex items-center gap-0.5 group-hover:translate-x-1 transition-transform">
+                                                        <span>詳閱內容</span>
+                                                        <ChevronRight className="w-3.5 h-3.5" />
+                                                    </span>
+                                                </div>
                                             </div>
 
                                         </div>
                                     </div>
-                                </Link>
-                            </CarouselItem>
-                        ))
+                                </CarouselItem>
+                            );
+                        })
                     )}
                 </CarouselContent>
-                <CarouselPrevious className="hidden sm:flex -left-4 h-9 w-9 bg-slate-900 border-slate-700 text-slate-200 hover:bg-amber-500 hover:text-slate-950" />
-                <CarouselNext className="hidden sm:flex -right-4 h-9 w-9 bg-slate-900 border-slate-700 text-slate-200 hover:bg-amber-500 hover:text-slate-950" />
+                
+                {/* 電腦與平板左右導覽箭頭 */}
+                <CarouselPrevious className="hidden md:flex -left-4 h-9 w-9 bg-slate-900 border-slate-700 text-slate-200 hover:bg-amber-500 hover:text-slate-950 shadow-lg" />
+                <CarouselNext className="hidden md:flex -right-4 h-9 w-9 bg-slate-900 border-slate-700 text-slate-200 hover:bg-amber-500 hover:text-slate-950 shadow-lg" />
+
+                {/* 手機專用滑動指示圓點 (Dots) */}
+                {newsItems && newsItems.length > 1 && (
+                    <div className="flex sm:hidden justify-center items-center gap-1.5 mt-5">
+                        {newsItems.map((_, dotIdx) => (
+                            <button
+                                key={dotIdx}
+                                type="button"
+                                onClick={() => newsApi?.scrollTo(dotIdx)}
+                                aria-label={`切換至消息 ${dotIdx + 1}`}
+                                className={cn(
+                                    "h-1.5 transition-all duration-300 rounded-full",
+                                    newsCurrent === dotIdx 
+                                        ? "w-6 bg-gradient-to-r from-amber-400 to-yellow-400 shadow-[0_0_8px_rgba(245,158,11,0.6)]" 
+                                        : "w-1.5 bg-slate-700/80 hover:bg-slate-600"
+                                )}
+                            />
+                        ))}
+                    </div>
+                )}
             </Carousel>
         </div>
       </section>
@@ -650,57 +721,62 @@ export default function Home() {
       {/* News Details Dialog */}
       <Dialog open={!!selectedNews} onOpenChange={(open) => !open && setSelectedNews(null)}>
         <DialogContent className={cn(
-            "bg-slate-950/95 backdrop-blur-2xl border-slate-800 p-0 overflow-hidden shadow-2xl",
-            selectedNews?.type === 'image' ? "max-w-4xl" : "max-w-2xl"
+            "bg-slate-950/98 backdrop-blur-2xl border-slate-800 p-0 overflow-hidden shadow-2xl rounded-2xl sm:rounded-3xl w-[94vw] sm:w-full max-h-[88vh]",
+            selectedNews?.type === 'image' ? "sm:max-w-4xl" : "sm:max-w-2xl"
         )}>
           <DialogHeader className="sr-only">
-            <DialogTitle>{selectedNews?.title}</DialogTitle>
-            <DialogDescription>{selectedNews?.category}</DialogDescription>
+            <DialogTitle>{selectedNews?.title || '消息詳情'}</DialogTitle>
+            <DialogDescription>{selectedNews?.category || '最新消息'}</DialogDescription>
           </DialogHeader>
           <ScrollArea className="max-h-[85vh]">
             {selectedNews?.type === 'image' ? (
                 <div className="flex flex-col text-white">
-                    <div className="relative aspect-video w-full bg-black/80 flex items-center justify-center overflow-hidden">
+                    <div className="relative aspect-video w-full bg-black/90 flex items-center justify-center overflow-hidden">
                         {selectedNews.imageUrl && (
                             <SafeImage 
                                 src={selectedNews.imageUrl} 
                                 alt={selectedNews.title} 
                                 width={1200}
                                 height={675}
-                                className="object-contain w-full h-full max-h-[70vh]"
+                                className="object-contain w-full h-full max-h-[50vh] sm:max-h-[70vh]"
                             />
                         )}
                     </div>
-                    <div className="p-5 sm:p-6 bg-slate-900/90 flex flex-col md:flex-row md:items-center justify-between border-t border-slate-800 gap-4">
-                        <div className="flex items-center gap-3">
-                            <Badge className="bg-amber-500 text-slate-950 font-black px-2.5 py-0.5 text-xs border-none">
-                                {selectedNews.category}
+                    <div className="p-4 sm:p-6 bg-slate-900/90 flex flex-col md:flex-row md:items-center justify-between border-t border-slate-800 gap-3">
+                        <div className="flex items-center gap-2.5">
+                            <Badge className="bg-amber-500 text-slate-950 font-black px-2.5 py-0.5 text-xs border-none shadow-sm">
+                                {selectedNews.category || '官方公告'}
                             </Badge>
                             <span className="text-xs text-slate-400 font-mono">
                                 {selectedNews.createdAt ? format(new Date(selectedNews.createdAt.seconds * 1000), 'yyyy-MM-dd HH:mm') : '---'}
                             </span>
                         </div>
-                        <h2 className="text-base sm:text-lg font-black truncate">{selectedNews.title}</h2>
+                        <h2 className="text-sm sm:text-lg font-black truncate">{selectedNews.title}</h2>
                     </div>
                 </div>
             ) : (
-                <div className="p-6 md:p-8 space-y-5 text-white">
-                    <div className="flex items-center justify-between">
-                        <div className="flex flex-wrap items-center gap-3">
-                            <Badge className="bg-amber-500 text-slate-950 px-3 py-1 text-xs font-black border-none">
-                                {selectedNews?.category}
+                <div className="p-5 sm:p-8 space-y-4 sm:space-y-5 text-white">
+                    <div className="flex items-center justify-between pb-2 border-b border-slate-800/80">
+                        <div className="flex flex-wrap items-center gap-2.5">
+                            <Badge className="bg-amber-500 text-slate-950 px-2.5 sm:px-3 py-0.5 sm:py-1 text-xs font-black border-none shadow-sm">
+                                {selectedNews?.category || '官方公告'}
                             </Badge>
-                            <div className="flex items-center gap-2 text-slate-400 text-xs font-mono">
-                              <Calendar className="h-3.5 w-3.5 text-amber-400" />
-                              {selectedNews?.createdAt ? format(new Date(selectedNews.createdAt.seconds * 1000), 'yyyy-MM-dd HH:mm') : '---'}
-                            </div>
+                            {selectedNews?.isPinned && (
+                              <Badge className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-bold">
+                                置頂
+                              </Badge>
+                            )}
+                        </div>
+                        <div className="flex items-center gap-1.5 text-slate-400 text-xs font-mono">
+                          <Calendar className="h-3.5 w-3.5 text-amber-400" />
+                          {selectedNews?.createdAt ? format(new Date(selectedNews.createdAt.seconds * 1000), 'yyyy-MM-dd HH:mm') : '---'}
                         </div>
                     </div>
-                    <div className="space-y-4">
-                        <h2 className="text-xl sm:text-3xl font-black leading-tight text-left text-white">{selectedNews?.title}</h2>
+                    <div className="space-y-3 sm:space-y-4">
+                        <h2 className="text-base sm:text-2xl md:text-3xl font-black font-headline leading-tight text-left text-white">{selectedNews?.title}</h2>
                         <Separator className="bg-slate-800" />
                         <div 
-                            className="prose prose-invert max-w-none text-slate-300 leading-relaxed text-sm md:text-base whitespace-pre-wrap font-medium text-left"
+                            className="prose prose-invert max-w-none text-slate-300 leading-relaxed text-xs sm:text-sm md:text-base whitespace-pre-wrap font-medium text-left"
                             dangerouslySetInnerHTML={{ __html: selectedNews?.content || '' }}
                         />
                     </div>

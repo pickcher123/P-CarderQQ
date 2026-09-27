@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useCollection, useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
+import { collection, query, orderBy, doc, setDoc, serverTimestamp, getDoc, addDoc } from 'firebase/firestore';
 import type { UserProfile } from '@/types/user-profile';
 import { generateMarketingEmailHtml, EmailTemplateOptions } from '@/lib/email-templates';
 import { useToast } from '@/hooks/use-toast';
@@ -55,6 +55,11 @@ import {
   UserCheck,
   Tag,
   Copy,
+  Check,
+  Shuffle,
+  Link2,
+  Wand2,
+  Percent,
   Flame,
   Gift,
   Ticket,
@@ -175,6 +180,23 @@ const MEMBER_LEVELS = [
   { id: '菁英VIP', label: '菁英VIP' },
 ];
 
+const QUICK_URL_PRESETS = [
+  { label: '🎴 抽卡大廳', text: '立即前往狂歡抽卡', url: 'https://card-platform.app/draw' },
+  { label: '🎁 幸運福袋', text: '前往搶購限定福袋', url: 'https://card-platform.app/lucky-bags' },
+  { label: '🏆 直播團拆', text: '參與官方團拆直播', url: 'https://card-platform.app/group-break' },
+  { label: '💎 儲值中心', text: '前往儲值加碼享回饋', url: 'https://card-platform.app/wallet' },
+  { label: '👤 會員中心', text: '立即登入會員中心', url: 'https://card-platform.app/profile' },
+  { label: '🎟️ 序號兌換', text: '前往兌換專屬序號', url: 'https://card-platform.app/profile?tab=redeem' },
+];
+
+const QUICK_PROMO_PRESETS = [
+  'SUMMER2026',
+  'VIPBONUS',
+  'FREEPACK888',
+  'CARDER999',
+  'LUCKY777',
+];
+
 function MarketingEmailsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -192,20 +214,31 @@ function MarketingEmailsContent() {
   const [customEmailsInput, setCustomEmailsInput] = useState('');
 
   // Email template data
-  const [senderName, setSenderName] = useState('P+ 卡牌交易中心');
+  const [senderName, setSenderName] = useState('P+Carder 玩卡人');
   const [subject, setSubject] = useState('🔥【限時狂歡】P+ 卡牌全館狂歡祭開跑！儲值最高送 30% 點數回饋！');
   const [preheader, setPreheader] = useState('親愛的 {{username}}，限時 72 小時抽卡加碼，立即登入領取專屬禮！');
   const [heading, setHeading] = useState('P+ 盛夏全館狂歡特惠');
   const [bannerImageUrl, setBannerImageUrl] = useState('https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=1000&q=80');
   const [contentHtml, setContentHtml] = useState(PRESET_TEMPLATES[0].contentHtml);
+
+  // Promo code & CTA Button switches
+  const [isPromoCodeEnabled, setIsPromoCodeEnabled] = useState(true);
+  const [promoCode, setPromoCode] = useState('SUMMER2026');
+
+  const [isCtaButtonEnabled, setIsCtaButtonEnabled] = useState(true);
   const [buttonText, setButtonText] = useState('立即前往狂歡抽卡');
   const [buttonUrl, setButtonUrl] = useState('https://card-platform.app/draw');
-  const [promoCode, setPromoCode] = useState('SUMMER2026');
+
   const [customFooterNote, setCustomFooterNote] = useState('※ 活動優惠受條款約束，P+ 官方保留最終解釋與變更之權利。');
   const [currentTemplateId, setCurrentTemplateId] = useState<string>('carnival');
 
   // Preview & Device State
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
+  const [previewPersona, setPreviewPersona] = useState<'diamond' | 'newbie' | 'standard'>('diamond');
+  const [hasCopiedHtml, setHasCopiedHtml] = useState(false);
+
+  // History search query
+  const [historySearchQuery, setHistorySearchQuery] = useState('');
 
   // User search in Specific Members mode
   const [userSearchText, setUserSearchText] = useState('');
@@ -227,7 +260,7 @@ function MarketingEmailsContent() {
     secure: false,
     user: '',
     pass: '',
-    fromName: 'P+ 卡牌交易中心',
+    fromName: 'P+Carder 玩卡人',
     fromEmail: '',
   });
   const [isSavingSmtp, setIsSavingSmtp] = useState(false);
@@ -242,18 +275,33 @@ function MarketingEmailsContent() {
     if (!firestore) return null;
     return query(collection(firestore, 'users'));
   }, [firestore]);
-  const { data: allUsers = [], isLoading: isLoadingUsers } = useCollection<UserProfile>(usersQuery);
+  const { data: rawUsers, isLoading: isLoadingUsers } = useCollection<UserProfile>(usersQuery);
+  const allUsers = useMemo(() => (Array.isArray(rawUsers) ? rawUsers : []), [rawUsers]);
 
   // Query Marketing Email Logs for history
   const logsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'marketingEmailLogs'), orderBy('createdAt', 'desc'));
   }, [firestore]);
-  const { data: emailLogs = [], isLoading: isLoadingLogs } = useCollection<any>(logsQuery);
+  const { data: rawLogs, isLoading: isLoadingLogs } = useCollection<any>(logsQuery);
+  const emailLogs = useMemo(() => (Array.isArray(rawLogs) ? rawLogs : []), [rawLogs]);
+
+  // Filtered email logs based on search query
+  const filteredEmailLogs = useMemo(() => {
+    if (!Array.isArray(emailLogs)) return [];
+    if (!historySearchQuery.trim()) return emailLogs;
+    const q = historySearchQuery.toLowerCase();
+    return emailLogs.filter((log: any) =>
+      (log.subject && String(log.subject).toLowerCase().includes(q)) ||
+      (log.sentBy && String(log.sentBy).toLowerCase().includes(q)) ||
+      (log.targetSummary && String(log.targetSummary).toLowerCase().includes(q)) ||
+      (log.promoCode && String(log.promoCode).toLowerCase().includes(q))
+    );
+  }, [emailLogs, historySearchQuery]);
 
   // Load SMTP config from Firestore on mount
   useEffect(() => {
-    if (!firestore) return;
+    if (!firestore || !authUser) return;
     const fetchSmtpConfig = async () => {
       try {
         const docRef = doc(firestore, 'systemSettings', 'email');
@@ -266,39 +314,46 @@ function MarketingEmailsContent() {
             secure: data.secure || false,
             user: data.user || '',
             pass: data.pass || '',
-            fromName: data.fromName || 'P+ 卡牌交易中心',
+            fromName: data.fromName || 'P+Carder 玩卡人',
             fromEmail: data.fromEmail || '',
           });
         }
-      } catch (err) {
-        console.warn('Failed to load SMTP settings:', err);
+      } catch (err: any) {
+        if (!err?.message?.includes('permission') && !err?.message?.includes('PERMISSION_DENIED')) {
+          console.warn('Failed to load SMTP settings:', err);
+        }
       }
     };
     fetchSmtpConfig();
-  }, [firestore]);
+  }, [firestore, authUser]);
 
   // Handle URL param: ?targetUser=xxx
   useEffect(() => {
     const targetUserId = searchParams.get('targetUser');
     if (targetUserId) {
       setTargetType('specific_users');
-      setSelectedUserIds([targetUserId]);
+      setSelectedUserIds((prev) => (prev.includes(targetUserId) ? prev : [...prev, targetUserId]));
       toast({
         title: '已帶入指定會員',
         description: `已選取會員 ID: ${targetUserId} 作為發信對象。`,
       });
     }
-    if (authUser?.email && !testEmail) {
-      setTestEmail(authUser.email);
+  }, [searchParams, toast]);
+
+  useEffect(() => {
+    if (authUser?.email) {
+      setTestEmail((prev) => (!prev ? authUser.email || '' : prev));
     }
-  }, [searchParams, authUser]);
+  }, [authUser?.email]);
 
   // Extract all distinct tags from users
   const allUserTags = useMemo(() => {
     const set = new Set<string>();
-    allUsers.forEach((u) => {
-      if (u.tags && Array.isArray(u.tags)) {
-        u.tags.forEach((t) => t && set.add(t));
+    (allUsers || []).forEach((u) => {
+      if (u?.tags && Array.isArray(u.tags)) {
+        u.tags.forEach((t) => {
+          if (t) set.add(t);
+        });
       }
     });
     return Array.from(set);
@@ -306,35 +361,37 @@ function MarketingEmailsContent() {
 
   // Filtered users in "Specific Users" mode
   const filteredUsers = useMemo(() => {
+    if (!Array.isArray(allUsers) || allUsers.length === 0) return [];
     if (!userSearchText.trim()) return allUsers.slice(0, 50);
     const lower = userSearchText.toLowerCase();
     return allUsers.filter(
       (u) =>
-        u.email?.toLowerCase().includes(lower) ||
-        u.username?.toLowerCase().includes(lower) ||
-        u.realName?.toLowerCase().includes(lower) ||
-        u.phone?.toLowerCase().includes(lower) ||
-        u.id?.toLowerCase().includes(lower)
+        u?.email?.toLowerCase().includes(lower) ||
+        u?.username?.toLowerCase().includes(lower) ||
+        u?.realName?.toLowerCase().includes(lower) ||
+        u?.phone?.toLowerCase().includes(lower) ||
+        u?.id?.toLowerCase().includes(lower)
     );
   }, [allUsers, userSearchText]);
 
   // Calculate estimated audience count
   const estimatedCount = useMemo(() => {
+    if (!Array.isArray(allUsers)) return 0;
     if (targetType === 'all') {
-      return allUsers.filter((u) => u.email && u.email.includes('@')).length;
+      return allUsers.filter((u) => u?.email && u.email.includes('@')).length;
     }
     if (targetType === 'specific_users') {
       return selectedUserIds.length;
     }
     if (targetType === 'user_levels') {
       return allUsers.filter(
-        (u) => u.email && u.email.includes('@') && u.userLevel && selectedLevels.includes(u.userLevel)
+        (u) => u?.email && u.email.includes('@') && u.userLevel && selectedLevels.includes(u.userLevel)
       ).length;
     }
     if (targetType === 'user_tags') {
       return allUsers.filter(
         (u) =>
-          u.email &&
+          u?.email &&
           u.email.includes('@') &&
           u.tags &&
           Array.isArray(u.tags) &&
@@ -361,12 +418,52 @@ function MarketingEmailsContent() {
     setContentHtml(t.contentHtml);
     setButtonText(t.buttonText);
     setButtonUrl(t.buttonUrl);
-    setPromoCode(t.promoCode);
+    setIsCtaButtonEnabled(Boolean(t.buttonText && t.buttonUrl));
+    if (t.promoCode) {
+      setIsPromoCodeEnabled(true);
+      setPromoCode(t.promoCode);
+    } else {
+      setIsPromoCodeEnabled(false);
+    }
     setCustomFooterNote(t.customFooterNote);
     toast({
       title: `已載入模版：${t.name}`,
-      description: '您可根據行銷需求隨時修改內容與主旨。',
+      description: '已切換主旨與內容，您可依需求自訂開關與文案。',
     });
+  };
+
+  // Helper to generate a random promo code
+  const generateRandomPromoCode = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let res = 'CARD-';
+    for (let i = 0; i < 5; i++) {
+      res += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setPromoCode(res);
+    setIsPromoCodeEnabled(true);
+    toast({
+      title: '已生成隨機兌換碼',
+      description: `新代碼：${res}，已自動開啟優惠碼功能。`,
+    });
+  };
+
+  // Helper to copy EDM HTML
+  const handleCopyHtml = async () => {
+    try {
+      await navigator.clipboard.writeText(livePreviewHtml);
+      setHasCopiedHtml(true);
+      toast({
+        title: '已複製 EDM HTML 代碼',
+        description: '完整郵件 HTML 代碼已複製至剪貼簿，可直接貼入任何 EDM 平台或郵件編輯器。',
+      });
+      setTimeout(() => setHasCopiedHtml(false), 2500);
+    } catch (e) {
+      toast({
+        title: '複製失敗',
+        description: '請確認瀏覽器剪貼簿權限。',
+        variant: 'destructive',
+      });
+    }
   };
 
   // Helper to insert placeholders into content
@@ -380,23 +477,29 @@ function MarketingEmailsContent() {
 
   // Live HTML generated preview
   const livePreviewHtml = useMemo(() => {
+    const mockUser =
+      previewPersona === 'diamond'
+        ? { username: '王大明', email: 'wang@example.com', points: 12800, userLevel: '鑽石 VIP' }
+        : previewPersona === 'newbie'
+        ? { username: '陳小華', email: 'chen@example.com', points: 100, userLevel: '銅牌會員' }
+        : { username: '林藏家', email: 'lin@example.com', points: 3500, userLevel: '金牌會員' };
+
+    const effectivePromoCode = isPromoCodeEnabled ? promoCode.trim() : '';
+    const effectiveButtonText = isCtaButtonEnabled ? buttonText : '';
+    const effectiveButtonUrl = isCtaButtonEnabled ? buttonUrl : '';
+
     const options: EmailTemplateOptions = {
       subject,
       preheader,
-      senderName,
+      senderName: senderName || 'P+Carder 玩卡人',
       heading,
       contentHtml,
-      buttonText,
-      buttonUrl,
-      promoCode,
+      buttonText: effectiveButtonText,
+      buttonUrl: effectiveButtonUrl,
+      promoCode: effectivePromoCode,
       bannerImageUrl,
       customFooterNote,
-      userData: {
-        username: '王大明 (範例)',
-        email: 'wang@example.com',
-        points: 8888,
-        userLevel: '鑽石 VIP',
-      },
+      userData: mockUser,
       siteUrl: typeof window !== 'undefined' ? window.location.origin : 'https://card-platform.app',
     };
     return generateMarketingEmailHtml(options);
@@ -408,9 +511,12 @@ function MarketingEmailsContent() {
     contentHtml,
     buttonText,
     buttonUrl,
+    isCtaButtonEnabled,
     promoCode,
+    isPromoCodeEnabled,
     bannerImageUrl,
     customFooterNote,
+    previewPersona,
   ]);
 
   // --- Actions ---
@@ -423,6 +529,10 @@ function MarketingEmailsContent() {
     }
     setIsSendingTest(true);
     try {
+      const effectivePromoCode = isPromoCodeEnabled ? promoCode.trim() : '';
+      const effectiveButtonText = isCtaButtonEnabled ? buttonText : '';
+      const effectiveButtonUrl = isCtaButtonEnabled ? buttonUrl : '';
+
       const res = await fetch('/api/admin/send-marketing-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -431,12 +541,12 @@ function MarketingEmailsContent() {
           testEmailAddress: testEmail.trim(),
           subject,
           preheader,
-          senderName,
+          senderName: senderName || 'P+Carder 玩卡人',
           heading,
           contentHtml,
-          buttonText,
-          buttonUrl,
-          promoCode,
+          buttonText: effectiveButtonText,
+          buttonUrl: effectiveButtonUrl,
+          promoCode: effectivePromoCode,
           bannerImageUrl,
           customFooterNote,
           templateType: currentTemplateId,
@@ -490,6 +600,54 @@ function MarketingEmailsContent() {
           .filter((s) => s.includes('@'));
       }
 
+      // 預先解析受眾名單提供給發信 API，避免依賴後端特權連線
+      let audienceRecipients: { email: string; username?: string; points?: number; userLevel?: string; userId?: string }[] = [];
+      if (targetType === 'all') {
+        audienceRecipients = allUsers
+          .filter((u) => u?.email && u.email.includes('@'))
+          .map((u) => ({
+            email: u.email!.trim(),
+            username: u.username || u.realName || '親愛的會員',
+            points: u.points || 0,
+            userLevel: u.userLevel || '一般會員',
+            userId: u.id,
+          }));
+      } else if (targetType === 'specific_users') {
+        audienceRecipients = allUsers
+          .filter((u) => u?.id && selectedUserIds.includes(u.id) && u.email && u.email.includes('@'))
+          .map((u) => ({
+            email: u.email!.trim(),
+            username: u.username || u.realName || '親愛的會員',
+            points: u.points || 0,
+            userLevel: u.userLevel || '一般會員',
+            userId: u.id,
+          }));
+      } else if (targetType === 'user_levels') {
+        audienceRecipients = allUsers
+          .filter((u) => u?.email && u.email.includes('@') && u.userLevel && selectedLevels.includes(u.userLevel))
+          .map((u) => ({
+            email: u.email!.trim(),
+            username: u.username || u.realName || '親愛的會員',
+            points: u.points || 0,
+            userLevel: u.userLevel || '一般會員',
+            userId: u.id,
+          }));
+      } else if (targetType === 'user_tags') {
+        audienceRecipients = allUsers
+          .filter((u) => u?.email && u.email.includes('@') && u.tags && Array.isArray(u.tags) && u.tags.some((t) => selectedTags.includes(t)))
+          .map((u) => ({
+            email: u.email!.trim(),
+            username: u.username || u.realName || '親愛的會員',
+            points: u.points || 0,
+            userLevel: u.userLevel || '一般會員',
+            userId: u.id,
+          }));
+      }
+
+      const effectivePromoCode = isPromoCodeEnabled ? promoCode.trim() : '';
+      const effectiveButtonText = isCtaButtonEnabled ? buttonText : '';
+      const effectiveButtonUrl = isCtaButtonEnabled ? buttonUrl : '';
+
       const res = await fetch('/api/admin/send-marketing-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -499,14 +657,15 @@ function MarketingEmailsContent() {
           targetLevels: targetType === 'user_levels' ? selectedLevels : undefined,
           targetTags: targetType === 'user_tags' ? selectedTags : undefined,
           customEmails: targetType === 'custom_emails' ? customEmailsList : undefined,
+          recipients: audienceRecipients.length > 0 ? audienceRecipients : undefined,
           subject,
           preheader,
-          senderName,
+          senderName: senderName || 'P+Carder 玩卡人',
           heading,
           contentHtml,
-          buttonText,
-          buttonUrl,
-          promoCode,
+          buttonText: effectiveButtonText,
+          buttonUrl: effectiveButtonUrl,
+          promoCode: effectivePromoCode,
           bannerImageUrl,
           customFooterNote,
           templateType: currentTemplateId,
@@ -518,6 +677,45 @@ function MarketingEmailsContent() {
       const data = await res.json();
       if (data.success) {
         setSendResult(data);
+
+        // 若後端未記錄 logId，由前端直接存入 marketingEmailLogs
+        if (firestore && !data.logId) {
+          try {
+            await addDoc(collection(firestore, 'marketingEmailLogs'), {
+              subject,
+              preheader: preheader || '',
+              senderName: senderName || smtpSettings.fromName || 'P+Carder 玩卡人',
+              templateType: currentTemplateId,
+              heading: heading || subject,
+              contentHtml: contentHtml || '',
+              buttonText: effectiveButtonText,
+              buttonUrl: effectiveButtonUrl,
+              promoCode: effectivePromoCode,
+              bannerImageUrl: bannerImageUrl || '',
+              targetType,
+              targetSummary:
+                targetType === 'all'
+                  ? '全體註冊會員'
+                  : targetType === 'specific_users'
+                  ? `指定會員 (${selectedUserIds.length} 人)`
+                  : targetType === 'user_levels'
+                  ? `會員等級 (${selectedLevels.join(', ')})`
+                  : targetType === 'user_tags'
+                  ? `會員標籤 (${selectedTags.join(', ')})`
+                  : `自訂 Email (${customEmailsList.length} 組)`,
+              totalRecipients: data.totalRecipients || estimatedCount,
+              sentCount: data.sentCount,
+              failedCount: data.failedCount,
+              errors: data.errors || [],
+              sentBy: authUser?.email || 'admin',
+              createdAt: serverTimestamp(),
+              status: data.failedCount === 0 ? 'success' : data.sentCount > 0 ? 'partial' : 'failed',
+            });
+          } catch (logErr) {
+            console.warn('Client-side log recording skipped:', logErr);
+          }
+        }
+
         toast({
           title: '🎉 行銷郵件發送完成！',
           description: `共發送給 ${data.sentCount} 位會員${data.failedCount > 0 ? ` (失敗 ${data.failedCount} 筆)` : ''}。`,
@@ -615,12 +813,18 @@ function MarketingEmailsContent() {
   const handleDuplicateFromLog = (log: any) => {
     setSubject(log.subject || '');
     setPreheader(log.preheader || '');
-    setSenderName(log.senderName || 'P+ 卡牌交易中心');
+    setSenderName(log.senderName || 'P+Carder 玩卡人');
     setHeading(log.heading || log.subject || '');
     setContentHtml(log.contentHtml || '');
     setButtonText(log.buttonText || '');
     setButtonUrl(log.buttonUrl || '');
-    setPromoCode(log.promoCode || '');
+    setIsCtaButtonEnabled(Boolean(log.buttonText && log.buttonUrl));
+    if (log.promoCode) {
+      setIsPromoCodeEnabled(true);
+      setPromoCode(log.promoCode);
+    } else {
+      setIsPromoCodeEnabled(false);
+    }
     setBannerImageUrl(log.bannerImageUrl || '');
     setActiveTab('compose');
     toast({
@@ -1026,7 +1230,7 @@ function MarketingEmailsContent() {
                       <Input
                         value={senderName}
                         onChange={(e) => setSenderName(e.target.value)}
-                        placeholder="例：P+ 卡牌交易中心"
+                        placeholder="例：P+Carder 玩卡人"
                         className="bg-slate-950 border-slate-800 text-xs h-9 text-slate-100"
                       />
                     </div>
@@ -1085,39 +1289,144 @@ function MarketingEmailsContent() {
                     />
                   </div>
 
+                  {/* 1. Promo Code Card with Switch Toggle */}
                   <div className="p-3.5 bg-slate-950/80 rounded-xl border border-slate-800 space-y-3">
-                    <p className="text-xs font-bold text-indigo-300 flex items-center gap-1.5">
-                      <Gift className="w-3.5 h-3.5" /> 優惠碼與行動按鈕設定 (CTA)
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                      <div className="space-y-1">
-                        <Label className="text-[11px] text-slate-400">專屬兌換序號</Label>
-                        <Input
-                          value={promoCode}
-                          onChange={(e) => setPromoCode(e.target.value)}
-                          placeholder="例：SUMMER2026"
-                          className="bg-slate-900 border-slate-800 text-xs h-8 font-mono text-amber-300"
-                        />
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Gift className="w-4 h-4 text-amber-400" />
+                        <span className="text-xs font-bold text-slate-200">專屬兌換 / 優惠碼 (Promo Code)</span>
+                        {isPromoCodeEnabled ? (
+                          <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30 text-[10px] py-0 px-1.5">
+                            已啟用
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="border-slate-800 text-slate-500 text-[10px] py-0 px-1.5">
+                            已關閉 (信件不附序號)
+                          </Badge>
+                        )}
                       </div>
-                      <div className="space-y-1">
-                        <Label className="text-[11px] text-slate-400">按鈕文字</Label>
-                        <Input
-                          value={buttonText}
-                          onChange={(e) => setButtonText(e.target.value)}
-                          placeholder="例：立即前往抽卡"
-                          className="bg-slate-900 border-slate-800 text-xs h-8 text-slate-200"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-[11px] text-slate-400">按鈕跳轉網址</Label>
-                        <Input
-                          value={buttonUrl}
-                          onChange={(e) => setButtonUrl(e.target.value)}
-                          placeholder="https://..."
-                          className="bg-slate-900 border-slate-800 text-xs h-8 text-slate-200"
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] text-slate-400 font-medium">附帶開關</span>
+                        <Switch
+                          checked={isPromoCodeEnabled}
+                          onCheckedChange={setIsPromoCodeEnabled}
                         />
                       </div>
                     </div>
+
+                    {isPromoCodeEnabled ? (
+                      <div className="space-y-2 pt-1 border-t border-slate-800/80">
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={promoCode}
+                            onChange={(e) => setPromoCode(e.target.value)}
+                            placeholder="例：SUMMER2026"
+                            className="bg-slate-900 border-slate-800 text-xs h-8 font-mono text-amber-300 font-bold flex-1"
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={generateRandomPromoCode}
+                            className="h-8 px-2.5 text-[11px] font-bold border-slate-700 bg-slate-800 hover:bg-slate-700 text-amber-300 shrink-0"
+                          >
+                            <Shuffle className="w-3 h-3 mr-1" />
+                            隨機產生
+                          </Button>
+                        </div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-[10px] text-slate-400">快速填入：</span>
+                          {QUICK_PROMO_PRESETS.map((code) => (
+                            <button
+                              key={code}
+                              type="button"
+                              onClick={() => setPromoCode(code)}
+                              className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-[10px] font-mono text-slate-300 hover:text-amber-300 hover:border-amber-500/40 transition"
+                            >
+                              {code}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-[11px] text-slate-400 bg-slate-900/60 p-2.5 rounded-lg border border-slate-800/80 flex items-center justify-between">
+                        <span>💡 開關已關閉，發送信件時將完全隱藏優惠碼區塊，文字已為您保留無需手動刪除。</span>
+                        {promoCode && (
+                          <span className="font-mono text-[10px] text-slate-500">已暫存：{promoCode}</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 2. CTA Button Card with Switch Toggle */}
+                  <div className="p-3.5 bg-slate-950/80 rounded-xl border border-slate-800 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Link2 className="w-4 h-4 text-indigo-400" />
+                        <span className="text-xs font-bold text-slate-200">行動引導按鈕 (CTA Button)</span>
+                        {isCtaButtonEnabled ? (
+                          <Badge className="bg-indigo-500/20 text-indigo-300 border-indigo-500/30 text-[10px] py-0 px-1.5">
+                            已啟用
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="border-slate-800 text-slate-500 text-[10px] py-0 px-1.5">
+                            已關閉 (純通知信)
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] text-slate-400 font-medium">按鈕開關</span>
+                        <Switch
+                          checked={isCtaButtonEnabled}
+                          onCheckedChange={setIsCtaButtonEnabled}
+                        />
+                      </div>
+                    </div>
+
+                    {isCtaButtonEnabled ? (
+                      <div className="space-y-2 pt-1 border-t border-slate-800/80">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                          <div className="space-y-1">
+                            <Label className="text-[11px] text-slate-400">按鈕顯示文字</Label>
+                            <Input
+                              value={buttonText}
+                              onChange={(e) => setButtonText(e.target.value)}
+                              placeholder="例：立即前往抽卡"
+                              className="bg-slate-900 border-slate-800 text-xs h-8 text-slate-200 font-bold"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-[11px] text-slate-400">按鈕跳轉網址</Label>
+                            <Input
+                              value={buttonUrl}
+                              onChange={(e) => setButtonUrl(e.target.value)}
+                              placeholder="https://..."
+                              className="bg-slate-900 border-slate-800 text-xs h-8 text-slate-200 font-mono"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                          <span className="text-[10px] text-slate-400">常用跳轉：</span>
+                          {QUICK_URL_PRESETS.map((preset) => (
+                            <button
+                              key={preset.label}
+                              type="button"
+                              onClick={() => {
+                                setButtonText(preset.text);
+                                setButtonUrl(preset.url);
+                              }}
+                              className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-[10px] text-slate-300 hover:text-indigo-300 hover:border-indigo-500/40 transition"
+                            >
+                              {preset.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-[11px] text-slate-400 bg-slate-900/60 p-2.5 rounded-lg border border-slate-800/80">
+                        💡 開關已關閉，本信件將以純圖文快訊呈現，不包含跳轉按鈕。
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-1.5">
@@ -1158,35 +1467,92 @@ function MarketingEmailsContent() {
             <div className="lg:col-span-5 space-y-4">
               <Card className="bg-slate-900/90 border-slate-800 shadow-xl sticky top-20">
                 <CardHeader className="pb-3 border-b border-slate-800">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <CardTitle className="text-sm font-bold text-slate-200 flex items-center gap-2">
                       <Eye className="w-4 h-4 text-cyan-400" />
                       實時信件排版預覽
                     </CardTitle>
-                    <div className="flex items-center gap-1 bg-slate-950 p-0.5 rounded-lg border border-slate-800">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <Button
                         size="sm"
-                        variant="ghost"
-                        onClick={() => setPreviewDevice('desktop')}
-                        className={cn(
-                          "h-6 px-2 text-[10px] font-bold rounded",
-                          previewDevice === 'desktop' ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-white"
-                        )}
+                        variant="outline"
+                        type="button"
+                        onClick={handleCopyHtml}
+                        className="h-6 px-2 text-[10px] font-bold border-slate-700 bg-slate-950 text-slate-300 hover:text-white hover:border-slate-600"
                       >
-                        <Monitor className="w-3 h-3 mr-1" /> 電腦
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setPreviewDevice('mobile')}
-                        className={cn(
-                          "h-6 px-2 text-[10px] font-bold rounded",
-                          previewDevice === 'mobile' ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-white"
+                        {hasCopiedHtml ? (
+                          <><Check className="w-3 h-3 mr-1 text-emerald-400" /> 已複製 HTML</>
+                        ) : (
+                          <><Copy className="w-3 h-3 mr-1 text-indigo-400" /> 複製 HTML</>
                         )}
-                      >
-                        <Smartphone className="w-3 h-3 mr-1" /> 手機
                       </Button>
+                      <div className="flex items-center gap-1 bg-slate-950 p-0.5 rounded-lg border border-slate-800">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          type="button"
+                          onClick={() => setPreviewDevice('desktop')}
+                          className={cn(
+                            "h-6 px-2 text-[10px] font-bold rounded",
+                            previewDevice === 'desktop' ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-white"
+                          )}
+                        >
+                          <Monitor className="w-3 h-3 mr-1" /> 電腦
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          type="button"
+                          onClick={() => setPreviewDevice('mobile')}
+                          className={cn(
+                            "h-6 px-2 text-[10px] font-bold rounded",
+                            previewDevice === 'mobile' ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-white"
+                          )}
+                        >
+                          <Smartphone className="w-3 h-3 mr-1" /> 手機
+                        </Button>
+                      </div>
                     </div>
+                  </div>
+                  {/* Persona Switcher for Preview Variables */}
+                  <div className="flex items-center gap-1.5 pt-2 text-[11px] text-slate-400 flex-wrap">
+                    <span className="shrink-0 text-[10px] text-slate-500 font-medium">模擬受眾變數：</span>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewPersona('diamond')}
+                      className={cn(
+                        "px-1.5 py-0.5 rounded text-[10px] font-bold transition",
+                        previewPersona === 'diamond'
+                          ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
+                          : "text-slate-400 hover:text-white bg-slate-950/60"
+                      )}
+                    >
+                      👑 鑽石VIP (王大明)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewPersona('newbie')}
+                      className={cn(
+                        "px-1.5 py-0.5 rounded text-[10px] font-bold transition",
+                        previewPersona === 'newbie'
+                          ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"
+                          : "text-slate-400 hover:text-white bg-slate-950/60"
+                      )}
+                    >
+                      🌱 新進會員 (陳小華)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewPersona('standard')}
+                      className={cn(
+                        "px-1.5 py-0.5 rounded text-[10px] font-bold transition",
+                        previewPersona === 'standard'
+                          ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/40"
+                          : "text-slate-400 hover:text-white bg-slate-950/60"
+                      )}
+                    >
+                      💎 金牌會員 (林藏家)
+                    </button>
                   </div>
                 </CardHeader>
                 <CardContent className="p-3 bg-slate-950 flex justify-center">
@@ -1227,7 +1593,7 @@ function MarketingEmailsContent() {
         <TabsContent value="history" className="space-y-4">
           <Card className="bg-slate-900/90 border-slate-800 shadow-xl">
             <CardHeader className="pb-3 border-b border-slate-800">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <CardTitle className="text-base font-bold text-slate-100 flex items-center gap-2">
                     <Clock className="w-4 h-4 text-indigo-400" />
@@ -1236,6 +1602,16 @@ function MarketingEmailsContent() {
                   <CardDescription className="text-xs text-slate-400">
                     檢視過往所有群發與定向行銷信件之發送結果、成功人數與錯誤明細
                   </CardDescription>
+                </div>
+                {/* Search Bar */}
+                <div className="relative w-full sm:w-64">
+                  <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                  <Input
+                    value={historySearchQuery}
+                    onChange={(e) => setHistorySearchQuery(e.target.value)}
+                    placeholder="搜尋主旨、人員、序號..."
+                    className="h-8 pl-8 text-xs bg-slate-950 border-slate-800 text-slate-200"
+                  />
                 </div>
               </div>
             </CardHeader>
@@ -1249,6 +1625,12 @@ function MarketingEmailsContent() {
                   <Mail className="w-12 h-12 mx-auto text-slate-700" />
                   <p className="text-sm font-bold text-slate-400">尚未有任何行銷郵件發送紀錄</p>
                   <p className="text-xs text-slate-600">前往「撰寫與發送」頁籤送出您的第一封會員行銷信吧！</p>
+                </div>
+              ) : filteredEmailLogs.length === 0 ? (
+                <div className="text-center py-12 text-slate-500 space-y-2">
+                  <Search className="w-10 h-10 mx-auto text-slate-700" />
+                  <p className="text-sm font-bold text-slate-400">找不到相符的發信日誌</p>
+                  <p className="text-xs text-slate-600">請嘗試更改搜尋關鍵字或清空搜尋條件。</p>
                 </div>
               ) : (
                 <Table>
@@ -1264,7 +1646,7 @@ function MarketingEmailsContent() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {emailLogs.map((log) => {
+                    {filteredEmailLogs.map((log) => {
                       const dateText = log.createdAt?.toDate
                         ? format(log.createdAt.toDate(), 'yyyy/MM/dd HH:mm')
                         : log.createdAt
@@ -1414,7 +1796,7 @@ function MarketingEmailsContent() {
                       <Input
                         value={smtpSettings.fromName}
                         onChange={(e) => setSmtpSettings({ ...smtpSettings, fromName: e.target.value })}
-                        placeholder="例：P+ 卡牌交易中心"
+                        placeholder="例：P+Carder 玩卡人"
                         className="bg-slate-950 border-slate-800 text-xs h-9 text-slate-100"
                       />
                     </div>
@@ -1581,40 +1963,48 @@ function MarketingEmailsContent() {
               <AlertCircle className="w-5 h-5 text-emerald-400" />
               確認啟動行銷郵件廣播發送？
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-xs text-slate-300 space-y-3 pt-2">
-              <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-2 text-left">
-                <div className="flex justify-between border-b border-slate-800 pb-1.5">
-                  <span className="text-slate-400">發送受眾：</span>
-                  <span className="font-bold text-white">
-                    {targetType === 'all'
-                      ? '全體註冊會員'
-                      : targetType === 'specific_users'
-                      ? `指定會員 (${selectedUserIds.length} 人)`
-                      : targetType === 'user_levels'
-                      ? `等級 (${selectedLevels.join(', ')})`
-                      : targetType === 'user_tags'
-                      ? `標籤 (${selectedTags.join(', ')})`
-                      : '自訂 Email 清單'}
-                  </span>
-                </div>
-                <div className="flex justify-between border-b border-slate-800 pb-1.5">
-                  <span className="text-slate-400">預估收件人數：</span>
-                  <span className="font-bold font-mono text-emerald-400 text-sm">{estimatedCount} 位會員</span>
-                </div>
-                <div className="flex justify-between border-b border-slate-800 pb-1.5">
-                  <span className="text-slate-400">郵件主旨：</span>
-                  <span className="font-bold text-slate-200 truncate max-w-[260px]">{subject}</span>
-                </div>
-                {promoCode && (
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">附帶兌換序號：</span>
-                    <span className="font-mono font-black text-amber-300">{promoCode}</span>
+            <AlertDialogDescription asChild>
+              <div className="text-xs text-slate-300 space-y-3 pt-2">
+                <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-2 text-left">
+                  <div className="flex justify-between border-b border-slate-800 pb-1.5">
+                    <span className="text-slate-400">發送受眾：</span>
+                    <span className="font-bold text-white">
+                      {targetType === 'all'
+                        ? '全體註冊會員'
+                        : targetType === 'specific_users'
+                        ? `指定會員 (${selectedUserIds.length} 人)`
+                        : targetType === 'user_levels'
+                        ? `等級 (${selectedLevels.join(', ')})`
+                        : targetType === 'user_tags'
+                        ? `標籤 (${selectedTags.join(', ')})`
+                        : '自訂 Email 清單'}
+                    </span>
                   </div>
-                )}
+                  <div className="flex justify-between border-b border-slate-800 pb-1.5">
+                    <span className="text-slate-400">預估收件人數：</span>
+                    <span className="font-bold font-mono text-emerald-400 text-sm">{estimatedCount} 位會員</span>
+                  </div>
+                  <div className="flex justify-between border-b border-slate-800 pb-1.5">
+                    <span className="text-slate-400">郵件主旨：</span>
+                    <span className="font-bold text-slate-200 truncate max-w-[260px]">{subject}</span>
+                  </div>
+                  {isPromoCodeEnabled && promoCode && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">附帶兌換序號：</span>
+                      <span className="font-mono font-black text-amber-300">{promoCode}</span>
+                    </div>
+                  )}
+                  {isCtaButtonEnabled && buttonText && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">行動按鈕 (CTA)：</span>
+                      <span className="font-bold text-indigo-300 truncate max-w-[200px]">{buttonText}</span>
+                    </div>
+                  )}
+                </div>
+                <div className="text-[11px] text-slate-400 text-left">
+                  ※ 系統將依序分批派發信件，並自動記錄至發信日誌。點擊「確定發送」後將立即排程發送。
+                </div>
               </div>
-              <p className="text-[11px] text-slate-400 text-left">
-                ※ 系統將依序分批派發信件，並自動記錄至發信日誌。點擊「確定發送」後將立即排程發送。
-              </p>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2">

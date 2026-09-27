@@ -218,7 +218,7 @@ export function generateMarketingEmailHtml(options: EmailTemplateOptions): strin
       
       <!-- Header -->
       <div class="header">
-        <div class="logo-badge">P+ 卡牌官方行銷快訊</div>
+        <div class="logo-badge">P+Carder 玩卡人 官方行銷快訊</div>
         <h1 class="main-title">${heading}</h1>
         <div class="user-greeting">
           會員專屬通知：<strong>${userData.username || '親愛的藏家'}</strong>
@@ -261,13 +261,13 @@ export function generateMarketingEmailHtml(options: EmailTemplateOptions): strin
       <!-- Footer -->
       <div class="footer">
         ${customFooterNote ? `<div class="footer-note">${customFooterNote}</div>` : ''}
-        <p style="margin: 0 0 6px 0;">此郵件為 P+ 官方卡牌交易系統自動發送之會員活動通訊。</p>
+        <p style="margin: 0 0 6px 0;">此郵件為 P+Carder 玩卡人 官方卡牌交易系統自動發送之會員活動通訊。</p>
         <p style="margin: 0;">
           <a href="${siteUrl}" target="_blank">造訪官方平台</a> &nbsp;|&nbsp; 
           <a href="${siteUrl}/profile" target="_blank">會員中心</a>
         </p>
         <p style="margin: 12px 0 0 0; font-size: 10px; color: #475569;">
-          © ${new Date().getFullYear()} P+ Card Platform. All rights reserved.
+          © ${new Date().getFullYear()} P+Carder 玩卡人. All rights reserved.
         </p>
       </div>
 

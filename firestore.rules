@@ -53,6 +53,17 @@ service cloud.firestore {
       }
     }
 
+    // --- 推薦代碼與紀錄集合 ---
+    match /referralCodes/{codeId} {
+      allow read: if true;
+      allow write: if isVerifiedAdmin();
+    }
+
+    match /referralLogs/{logId} {
+      allow read: if isSignedIn() && (resource == null || resource.data.referrerId == request.auth.uid || resource.data.newUserId == request.auth.uid) || isVerifiedAdmin();
+      allow write: if isVerifiedAdmin();
+    }
+
     // --- 卡池管理 (核心抽卡邏輯防禦) ---
     match /cardPools/{poolId} {
       allow read: if true; // 所有人可看卡池
@@ -61,6 +72,16 @@ service cloud.firestore {
         // 動作鎖定：玩家只能更新特定庫存欄位
         incoming().diff(existing()).affectedKeys().hasOnly(['cards', 'pointPrizes', 'remainingPacks', 'lockedBy', 'lockedAt'])
       ) || isVerifiedAdmin();
+    }
+
+    // --- 系統設定集合 (SMTP 郵件伺服器與後台配置) ---
+    match /systemSettings/{settingId} {
+      allow read, write: if isVerifiedAdmin();
+    }
+
+    // --- 行銷郵件紀錄集合 ---
+    match /marketingEmailLogs/{logId} {
+      allow read, write: if isVerifiedAdmin();
     }
 
     // --- 唯讀靜態集合 ---

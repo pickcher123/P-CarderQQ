@@ -9,6 +9,7 @@ interface SendMarketingEmailRequest {
   targetLevels?: string[];
   targetTags?: string[];
   customEmails?: string[];
+  recipients?: Recipient[];
   subject: string;
   preheader?: string;
   senderName?: string;
@@ -43,6 +44,7 @@ export async function POST(req: NextRequest) {
       targetLevels = [],
       targetTags = [],
       customEmails = [],
+      recipients: directRecipients = [],
       subject,
       preheader,
       senderName,
@@ -91,6 +93,19 @@ export async function POST(req: NextRequest) {
         username: '測試預覽會員',
         points: 8888,
         userLevel: '鑽石 VIP (測試)',
+      });
+    } else if (Array.isArray(directRecipients) && directRecipients.length > 0) {
+      // Use client-provided recipients directly
+      directRecipients.forEach((r) => {
+        if (r?.email && r.email.includes('@')) {
+          recipients.push({
+            email: r.email.trim(),
+            username: r.username || '親愛的會員',
+            points: r.points || 0,
+            userLevel: r.userLevel || '一般會員',
+            userId: r.userId,
+          });
+        }
       });
     } else {
       if (targetType === 'custom_emails') {
@@ -204,7 +219,7 @@ export async function POST(req: NextRequest) {
             const templateOpts: EmailTemplateOptions = {
               subject,
               preheader,
-              senderName: senderName || effectiveConfig.fromName || 'P+ 卡牌交易中心',
+              senderName: senderName || effectiveConfig.fromName || 'P+Carder 玩卡人',
               templateType,
               heading: heading || subject,
               contentHtml,
@@ -255,7 +270,7 @@ export async function POST(req: NextRequest) {
         const logRef = await db.collection('marketingEmailLogs').add({
           subject,
           preheader: preheader || '',
-          senderName: senderName || effectiveConfig.fromName || 'P+ 卡牌交易中心',
+          senderName: senderName || effectiveConfig.fromName || 'P+Carder 玩卡人',
           templateType,
           heading: heading || subject,
           contentHtml: contentHtml || '',

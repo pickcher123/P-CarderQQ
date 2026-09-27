@@ -46,22 +46,23 @@ export function NewsMarquee({ isDrawing }: NewsMarqueeProps) {
 
     return (
         <div className={cn(
-            "backdrop-blur-md border-b border-white/5 h-8 md:h-9 overflow-hidden relative flex items-center justify-between shadow-sm transition-colors duration-500",
+            "backdrop-blur-md border-b border-white/5 h-8 md:h-9 overflow-hidden relative shadow-sm transition-colors duration-500 w-full",
             isDrawing ? "bg-black/10" : "bg-black/10"
         )}>
-            <div className="flex items-center flex-1 overflow-hidden">
-                {/* 品牌標籤 - 移至左側，增加左邊距以對齊 Logo */}
-                <div className="px-2 md:px-5 z-20 flex items-center ml-0 md:ml-10">
-                    <span className="text-[7px] md:text-[10px] font-black text-primary uppercase tracking-[0.2em] italic whitespace-nowrap drop-shadow-[0_0_8px_rgba(6,182,212,0.4)] animate-pulse-slow">
-                        NEWS
-                    </span>
-                </div>
+            <div className="container mx-auto px-3 sm:px-6 md:px-8 flex items-center justify-between h-full overflow-hidden">
+                <div className="flex items-center flex-1 overflow-hidden">
+                    {/* 品牌標籤 */}
+                    <div className="pr-3 z-20 flex items-center shrink-0">
+                        <span className="text-[7px] md:text-[10px] font-black text-primary uppercase tracking-[0.2em] italic whitespace-nowrap drop-shadow-[0_0_8px_rgba(6,182,212,0.4)] animate-pulse-slow">
+                            NEWS
+                        </span>
+                    </div>
 
-                {/* 固定內容區塊 */}
-                <Link 
-                    href={`/news?id=${latestMarqueeItem.id}`} 
-                    className="flex items-center gap-2 md:gap-3 text-[9px] md:text-sm text-muted-foreground transition-all group overflow-hidden h-full px-2 md:px-4 animate-pulse-slowest"
-                >
+                    {/* 固定內容區塊 */}
+                    <Link 
+                        href={`/news?id=${latestMarqueeItem.id}`} 
+                        className="flex items-center gap-2 md:gap-3 text-[9px] md:text-sm text-muted-foreground transition-all group overflow-hidden h-full px-2 md:px-3 animate-pulse-slowest"
+                    >
                     <div className="flex items-center gap-2 md:gap-3">
                         {/* 置頂消息動態脈衝燈 */}
                         {latestMarqueeItem.isPinned ? (
@@ -94,5 +95,6 @@ export function NewsMarquee({ isDrawing }: NewsMarqueeProps) {
                 </Link>
             </div>
         </div>
-    );
+    </div>
+  );
 }

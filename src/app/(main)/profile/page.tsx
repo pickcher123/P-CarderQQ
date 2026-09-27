@@ -58,6 +58,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { SafeImage } from "@/components/safe-image";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ReferralTab } from "@/components/profile/ReferralTab";
+import { Share2 } from 'lucide-react';
 
 type OrderStatus = 'pending' | 'processing' | 'shipped' | 'cancelled';
 
@@ -1022,20 +1024,24 @@ export default function UnifiedMemberCenterPage() {
 
             {/* 會員中心整合導覽分頁 */}
             <Tabs defaultValue="vip" className="space-y-6 sm:space-y-8 relative z-10">
-                <TabsList className="grid w-full grid-cols-4 bg-slate-900/80 p-1 sm:p-1.5 rounded-2xl h-12 sm:h-14 border border-white/10 backdrop-blur-xl">
-                    <TabsTrigger value="vip" className="rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500/30 data-[state=active]:to-yellow-500/20 data-[state=active]:text-amber-300 font-black text-[11px] sm:text-sm tracking-tight sm:tracking-wide transition-all px-1 sm:px-3 flex items-center justify-center gap-1 sm:gap-1.5">
+                <TabsList className="grid w-full grid-cols-5 bg-slate-900/80 p-1 sm:p-1.5 rounded-2xl h-12 sm:h-14 border border-white/10 backdrop-blur-xl">
+                    <TabsTrigger value="vip" className="rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500/30 data-[state=active]:to-yellow-500/20 data-[state=active]:text-amber-300 font-black text-[11px] sm:text-sm tracking-tight sm:tracking-wide transition-all px-1 sm:px-2 flex items-center justify-center gap-1 sm:gap-1.5">
                         <Crown className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-amber-400 shrink-0" />
                         <span className="truncate">VIP 特權</span>
                     </TabsTrigger>
-                    <TabsTrigger value="profile" className="rounded-xl data-[state=active]:bg-primary/20 data-[state=active]:text-cyan-300 font-black text-[11px] sm:text-sm tracking-tight sm:tracking-wide transition-all px-1 sm:px-3 flex items-center justify-center gap-1 sm:gap-1.5">
+                    <TabsTrigger value="referral" className="rounded-xl data-[state=active]:bg-violet-500/25 data-[state=active]:text-violet-300 font-black text-[11px] sm:text-sm tracking-tight sm:tracking-wide transition-all px-1 sm:px-2 flex items-center justify-center gap-1 sm:gap-1.5">
+                        <Share2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-violet-400 shrink-0" />
+                        <span className="truncate">推薦好友</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="profile" className="rounded-xl data-[state=active]:bg-primary/20 data-[state=active]:text-cyan-300 font-black text-[11px] sm:text-sm tracking-tight sm:tracking-wide transition-all px-1 sm:px-2 flex items-center justify-center gap-1 sm:gap-1.5">
                         <UserIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-cyan-400 shrink-0" />
                         <span className="truncate">基本資料</span>
                     </TabsTrigger>
-                    <TabsTrigger value="transactions" className="rounded-xl data-[state=active]:bg-primary/20 data-[state=active]:text-cyan-300 font-black text-[11px] sm:text-sm tracking-tight sm:tracking-wide transition-all px-1 sm:px-3 flex items-center justify-center gap-1 sm:gap-1.5">
+                    <TabsTrigger value="transactions" className="rounded-xl data-[state=active]:bg-primary/20 data-[state=active]:text-cyan-300 font-black text-[11px] sm:text-sm tracking-tight sm:tracking-wide transition-all px-1 sm:px-2 flex items-center justify-center gap-1 sm:gap-1.5">
                         <History className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-cyan-400 shrink-0" />
                         <span className="truncate">帳務紀錄</span>
                     </TabsTrigger>
-                    <TabsTrigger value="shipping" className="rounded-xl data-[state=active]:bg-primary/20 data-[state=active]:text-cyan-300 font-black text-[11px] sm:text-sm tracking-tight sm:tracking-wide transition-all px-1 sm:px-3 flex items-center justify-center gap-1 sm:gap-1.5">
+                    <TabsTrigger value="shipping" className="rounded-xl data-[state=active]:bg-primary/20 data-[state=active]:text-cyan-300 font-black text-[11px] sm:text-sm tracking-tight sm:tracking-wide transition-all px-1 sm:px-2 flex items-center justify-center gap-1 sm:gap-1.5">
                         <Truck className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-cyan-400 shrink-0" />
                         <span className="truncate">出貨管理</span>
                     </TabsTrigger>
@@ -1098,7 +1104,12 @@ export default function UnifiedMemberCenterPage() {
                     </section>
                 </TabsContent>
 
-                {/* 分頁 2: 個人資料修改 */}
+                {/* 分頁 2: 好友推薦分享 */}
+                <TabsContent value="referral" className="animate-in fade-in duration-300">
+                    <ReferralTab userProfile={userProfile} userId={user.uid} />
+                </TabsContent>
+
+                {/* 分頁 3: 個人資料修改 */}
                 <TabsContent value="profile" className="animate-in fade-in duration-300">
                     <Card className="border-white/10 bg-gradient-to-b from-[#13192a]/95 via-[#0c101d]/90 to-[#080b14]/95 backdrop-blur-xl rounded-[2.5rem] shadow-2xl">
                         <CardHeader className="p-6 sm:p-8 pb-4">

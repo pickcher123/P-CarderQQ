@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import { getAdminDb } from '@/firebase/admin';
+import { getAdminDb, hasAdminCredentials } from '@/firebase/admin';
 
 export interface SmtpConfig {
   host?: string;
@@ -20,33 +20,37 @@ export async function getEffectiveSmtpConfig(overrideConfig?: SmtpConfig): Promi
       secure: overrideConfig.secure ?? (Number(overrideConfig.port) === 465),
       user: overrideConfig.user,
       pass: overrideConfig.pass,
-      fromName: overrideConfig.fromName || 'P+ 卡牌交易中心',
+      fromName: overrideConfig.fromName || 'P+Carder 玩卡人',
       fromEmail: overrideConfig.fromEmail || overrideConfig.user,
     };
   }
 
-  // 2. Try to load from Firestore systemSettings/email
-  try {
-    const db = getAdminDb();
-    if (db) {
-      const docSnap = await db.collection('systemSettings').doc('email').get();
-      if (docSnap.exists) {
-        const data = docSnap.data() as SmtpConfig;
-        if (data?.host && data?.user) {
-          return {
-            host: data.host,
-            port: data.port ? Number(data.port) : 587,
-            secure: data.secure ?? (Number(data.port) === 465),
-            user: data.user,
-            pass: data.pass,
-            fromName: data.fromName || 'P+ 卡牌交易中心',
-            fromEmail: data.fromEmail || data.user,
-          };
+  // 2. Try to load from Firestore systemSettings/email if admin credentials are ready
+  if (hasAdminCredentials()) {
+    try {
+      const db = getAdminDb();
+      if (db) {
+        const docSnap = await db.collection('systemSettings').doc('email').get();
+        if (docSnap.exists) {
+          const data = docSnap.data() as SmtpConfig;
+          if (data?.host && data?.user) {
+            return {
+              host: data.host,
+              port: data.port ? Number(data.port) : 587,
+              secure: data.secure ?? (Number(data.port) === 465),
+              user: data.user,
+              pass: data.pass,
+              fromName: data.fromName || 'P+Carder 玩卡人',
+              fromEmail: data.fromEmail || data.user,
+            };
+          }
         }
       }
+    } catch (err: any) {
+      if (!err?.message?.includes('PERMISSION_DENIED') && !err?.message?.includes('permission')) {
+        console.warn('Failed to load SMTP settings from Firestore:', err);
+      }
     }
-  } catch (err) {
-    console.warn('Failed to load SMTP settings from Firestore:', err);
   }
 
   // 3. Fallback to process.env
@@ -55,7 +59,7 @@ export async function getEffectiveSmtpConfig(overrideConfig?: SmtpConfig): Promi
   const user = process.env.SMTP_USER || process.env.GMAIL_USER || '';
   const pass = process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD || '';
   const secure = process.env.SMTP_SECURE === 'true' || port === 465;
-  const fromName = process.env.SMTP_FROM_NAME || 'P+ 卡牌交易中心';
+  const fromName = process.env.SMTP_FROM_NAME || 'P+Carder 玩卡人';
   const fromEmail = process.env.SMTP_FROM_EMAIL || user;
 
   return {

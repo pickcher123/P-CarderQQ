@@ -12,6 +12,9 @@ export interface SystemConfig {
     aboutOriginImageUrl?: string; // 新增：關於頁面起源圖片
     showFloatingBackground?: boolean; // 新增：首頁 3D 浮動卡片動態背景開關
     backgroundOpacity?: number;
+    wallpaperParticleEffect?: 'gold_dust' | 'stars' | 'none'; // 桌布背景顆粒特效 (金粉 / 星空 / 關閉)
+    dailyStyleRotation?: boolean; // 每天 12 點自動換風格開關
+    dailyRotationType?: 'every_12_hours' | 'daily_at_noon'; // 輪換模式：每 12 小時(中午/午夜) 或 每日中午 12 點
     cardOpacity?: number; // 新增：遊戲卡片不透明度
     liveYoutubeUrl?: string;
     isLiveEnabled?: boolean;

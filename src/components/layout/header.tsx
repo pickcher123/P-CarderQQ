@@ -27,7 +27,7 @@ const navLinks = [
   { href: '/bet', label: '拼卡', icon: CrossedCardsIcon, color: "text-rose-400", flag: 'isBettingEnabled' },
   { href: '/lucky-bags', label: '福袋', icon: LuckyBagIcon, color: "text-amber-400", flag: 'isLuckyBagEnabled' },
   { href: '/group-break', label: '團拆', icon: Users2, color: "text-emerald-400", flag: 'isGroupBreakEnabled' },
-  { href: '/exhibitions', label: '卡展/賽事行事曆', icon: Calendar, color: "text-cyan-400", flag: 'isExhibitionsEnabled' },
+  { href: '/exhibitions', label: '卡展賽事', icon: Calendar, color: "text-cyan-400", flag: 'isExhibitionsEnabled' },
   { href: '/collection', label: '收藏庫', icon: Library, color: "text-cyan-300/80" },
 ];
 
@@ -77,10 +77,10 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
       {/* 底部高科技細微霓虹線 */}
       <div className="absolute bottom-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/40 to-transparent pointer-events-none" />
 
-      <div className="container flex h-14 sm:h-16 items-center justify-between px-2 sm:px-4 md:px-8 gap-1 sm:gap-4">
+      <div className="container flex h-14 sm:h-16 items-center justify-between px-3 sm:px-6 md:px-8 gap-2 sm:gap-4">
         <div className="flex items-center shrink-0">
-          <Logo className="text-primary shrink-0 ml-3 sm:ml-5 md:ml-7" />
-          <nav className="ml-4 lg:ml-6 hidden items-center space-x-3 lg:space-x-4 xl:space-x-5 text-sm font-medium md:flex">
+          <Logo className="text-primary shrink-0" />
+          <nav className="ml-4 lg:ml-6 hidden items-center space-x-2.5 lg:space-x-3.5 xl:space-x-4 text-xs lg:text-sm font-medium lg:flex">
             {navLinks
                 .filter(link => {
                     if (link.flag && !isFeatureEnabled(link.flag)) return false;
@@ -94,12 +94,12 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                   key={link.href}
                   href={link.href}
                   className={cn(
-                    "flex items-center gap-1.5 transition-all duration-300 hover:opacity-100 whitespace-nowrap",
-                    isActive ? "text-foreground font-bold scale-105" : "text-muted-foreground opacity-70"
+                    "flex items-center gap-1.5 transition-all duration-300 hover:opacity-100 whitespace-nowrap py-1 px-1.5 rounded-lg hover:bg-white/5",
+                    isActive ? "text-cyan-300 font-bold bg-cyan-500/10" : "text-muted-foreground opacity-80"
                   )}
                 >
                   <Icon className={cn(
-                    "h-4 w-4 transition-all duration-300", 
+                    "h-3.5 w-3.5 transition-all duration-300", 
                     isActive ? link.color : "text-muted-foreground"
                   )} />
                   <span>{link.label}</span>
@@ -109,7 +109,7 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
           </nav>
         </div>
         
-        <div className="flex flex-1 items-center justify-end gap-1.5 sm:gap-3 shrink-0">
+        <div className="flex items-center justify-end gap-1.5 sm:gap-2.5 shrink-0 ml-auto">
             {user && userProfile?.role === 'admin' && (
               <Button variant="outline" size="sm" asChild className="hidden lg:flex h-8 px-3 rounded-xl border-destructive/40 text-destructive bg-destructive/5 hover:bg-destructive/15">
                 <Link href="/admin">
@@ -404,57 +404,12 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                     </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <div className="flex items-center gap-2">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-8 sm:h-9 px-2.5 rounded-xl border border-white/10 text-slate-300 hover:text-white hover:bg-white/5">
-                        <Sparkles className="w-3.5 h-3.5 mr-1 text-amber-400" />
-                        <span className="text-xs font-bold">活動福利</span>
-                        <ChevronDown className="w-3 h-3 ml-1 text-slate-400" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="min-w-[220px] p-2 bg-[#090d19]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.85)] animate-in zoom-in-95 duration-200" align="end" sideOffset={8}>
-                      <DropdownMenuLabel className="text-xs font-bold text-slate-400 px-2.5 py-1.5">
-                        🎪 活動與福利特區
-                      </DropdownMenuLabel>
-                      <DropdownMenuItem asChild className="rounded-xl cursor-pointer text-slate-200 focus:bg-amber-500/15 focus:text-amber-300">
-                        <Link href="/predictions" className="flex items-center justify-between w-full py-1 font-medium">
-                          <div className="flex items-center">
-                            <Trophy className="mr-2.5 h-4 w-4 text-amber-400" />
-                            <span className="text-xs">賽事預測</span>
-                          </div>
-                          <span className="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded-md font-bold">贏P+點</span>
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild className="rounded-xl cursor-pointer text-slate-200 focus:bg-cyan-500/15 focus:text-cyan-300">
-                        <Link href="/exhibitions" className="flex items-center justify-between w-full py-1 font-medium">
-                          <div className="flex items-center">
-                            <Calendar className="mr-2.5 h-4 w-4 text-cyan-400" />
-                            <span className="text-xs">卡展行事曆</span>
-                          </div>
-                          <span className="text-[10px] bg-cyan-500/20 text-cyan-300 px-1.5 py-0.5 rounded-md font-bold">全台展訊</span>
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={() => setIsPromoModalOpen(true)} 
-                        className="rounded-xl cursor-pointer text-slate-200 focus:bg-white/10 font-medium flex items-center justify-between py-1"
-                      >
-                        <div className="flex items-center">
-                          <CalendarCheck className="mr-2.5 h-4 w-4 text-pink-400" />
-                          <span className="text-xs">簽到/領券 (兌換碼)</span>
-                        </div>
-                        <span className="text-[10px] bg-pink-500/20 text-pink-300 border border-pink-500/30 px-1.5 py-0.5 rounded-md font-medium">福利</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-
-                  <Button asChild size="sm" className="h-8 sm:h-9 px-3 sm:px-4 rounded-xl font-bold bg-gradient-to-r from-primary to-cyan-400 text-slate-950 shadow-[0_0_15px_rgba(6,182,212,0.4)] hover:brightness-110">
-                    <Link href="/login">
-                      <LogIn className="mr-1.5 h-4 w-4" />
-                      登入
-                    </Link>
-                  </Button>
-                </div>
+                <Button asChild size="sm" className="h-8 sm:h-9 px-3 sm:px-4 rounded-xl font-bold bg-gradient-to-r from-primary to-cyan-400 text-slate-950 shadow-[0_0_15px_rgba(6,182,212,0.4)] hover:brightness-110">
+                  <Link href="/login">
+                    <LogIn className="mr-1.5 h-4 w-4" />
+                    登入
+                  </Link>
+                </Button>
               )}
           </div>
         </div>

@@ -18,7 +18,8 @@ import {
     Loader2,
     CalendarCheck,
     Coins,
-    Calendar
+    Calendar,
+    ChevronRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -446,6 +447,115 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward }: PromoRed
         claimedHistory.some(item => item.code === 'COMMUNITY_JOIN')
     );
 
+    // 整合所有已領取項目（包含今日簽到、新手禮、社群禮及兌換碼）
+    const allClaimedRecords = useMemo(() => {
+        const records: Array<{
+            id: string;
+            type: 'checkin' | 'starter' | 'community' | 'code';
+            title: string;
+            subtitle: string;
+            code?: string;
+            rewardText: string;
+            rewardType: 'points' | 'ticket';
+            claimedAt: string;
+            statusBadge: string;
+        }> = [];
+
+        // 1. 每日簽到 (若今日已簽到)
+        if (hasClaimedCheckInToday) {
+            records.push({
+                id: 'claim-checkin-' + todayStr,
+                type: 'checkin',
+                title: '每日簽到福利',
+                subtitle: '天天登入簽到，累積紅利點數',
+                code: '每日簽到',
+                rewardText: `+${rewardPoints} 紅利 P+ 點`,
+                rewardType: 'points',
+                claimedAt: '今日已完成 · 明日 00:00 重置',
+                statusBadge: '已領取'
+            });
+        }
+
+        // 2. 新手首抽禮
+        if (isStarterClaimed) {
+            const historyItem = claimedHistory.find(item => item.code === 'OPEN2024');
+            records.push({
+                id: 'claim-starter',
+                type: 'starter',
+                title: '新手首抽禮',
+                subtitle: '所有會員皆可直接領取開幕首抽福利',
+                code: 'OPEN2024',
+                rewardText: '+1 次 免費抽卡券',
+                rewardType: 'ticket',
+                claimedAt: historyItem?.claimedAt || '已存入帳號',
+                statusBadge: '已兌換'
+            });
+        }
+
+        // 3. 官方社群禮
+        if (isCommunityClaimed) {
+            const historyItem = claimedHistory.find(item => item.code === 'COMMUNITY_JOIN');
+            records.push({
+                id: 'claim-community',
+                type: 'community',
+                title: '官方社群禮',
+                subtitle: '加入官方卡友交流群加碼送抽卡券',
+                code: 'COMMUNITY_JOIN',
+                rewardText: '+1 次 免費抽卡券',
+                rewardType: 'ticket',
+                claimedAt: historyItem?.claimedAt || '已存入帳號',
+                statusBadge: '已兌換'
+            });
+        }
+
+        // 4. 其他兌換紀錄 (來自 local history 與 userProfile)
+        claimedHistory.forEach(item => {
+            if (item.code !== 'OPEN2024' && item.code !== 'COMMUNITY_JOIN') {
+                records.push({
+                    id: item.id || `claim-code-${item.code}`,
+                    type: 'code',
+                    title: item.label || item.code,
+                    subtitle: `專屬活動代碼：${item.code}`,
+                    code: item.code,
+                    rewardText: `+${item.freePlays} 次 免費抽卡券`,
+                    rewardType: 'ticket',
+                    claimedAt: item.claimedAt || '已兌換',
+                    statusBadge: '已兌換'
+                });
+            }
+        });
+
+        // 5. 若 userProfile.claimedPromoCodes 裡有但 claimedHistory 沒記錄的代碼
+        if (userProfile?.claimedPromoCodes) {
+            userProfile.claimedPromoCodes.forEach(code => {
+                if (code !== 'OPEN2024' && code !== 'COMMUNITY_JOIN') {
+                    const alreadyIn = records.some(r => r.code === code);
+                    if (!alreadyIn) {
+                        const matched = OFFICIAL_PROMO_CODES.find(p => p.code === code);
+                        records.push({
+                            id: `claim-profile-${code}`,
+                            type: 'code',
+                            title: matched?.label || code,
+                            subtitle: `專屬活動代碼：${code}`,
+                            code: code,
+                            rewardText: `+${matched?.freePlays ?? 1} 次 免費抽卡券`,
+                            rewardType: 'ticket',
+                            claimedAt: '已兌換',
+                            statusBadge: '已兌換'
+                        });
+                    }
+                }
+            });
+        }
+
+        return records;
+    }, [hasClaimedCheckInToday, todayStr, rewardPoints, isStarterClaimed, isCommunityClaimed, claimedHistory, userProfile?.claimedPromoCodes]);
+
+    const showCheckInCard = !hasClaimedCheckInToday;
+    const showStarterCard = !isStarterClaimed;
+    const showCommunityCard = !isCommunityClaimed;
+    const areAllRegularRewardsClaimed = !showCheckInCard && !showStarterCard && !showCommunityCard;
+
     return (
         <>
             <Dialog open={open} onOpenChange={onOpenChange}>
@@ -488,9 +598,9 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward }: PromoRed
                             >
                                 <Ticket className="w-3.5 h-3.5 shrink-0" />
                                 <span className="truncate">領取紀錄</span>
-                                {claimedHistory.length > 0 && (
+                                {allClaimedRecords.length > 0 && (
                                     <span className="px-1.5 py-0.2 rounded-full bg-slate-700 text-[10px] text-slate-300 font-mono shrink-0">
-                                        {claimedHistory.length}
+                                        {allClaimedRecords.length}
                                     </span>
                                 )}
                             </button>
@@ -515,145 +625,158 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward }: PromoRed
                         {/* 1. 兌換區 */}
                         {selectedTab === 'redeem' && (
                             <div className="space-y-4">
-                                {/* 福利卡片列表 */}
-                                <div className="space-y-2.5">
-                                    {/* 🌟 每日簽到福利卡片 (核心高光首位) */}
-                                    <div className="relative overflow-hidden p-3.5 sm:p-4 rounded-xl bg-gradient-to-br from-amber-500/15 via-rose-500/10 to-slate-900 border border-amber-500/40 shadow-[0_4px_20px_rgba(245,158,11,0.12)] flex flex-col gap-2.5 group">
-                                        <div className="flex items-center justify-between gap-2.5">
-                                            <div className="space-y-1 min-w-0 flex-1">
-                                                <div className="flex items-center gap-1.5 flex-wrap">
-                                                    <div className="flex items-center gap-1 font-black text-xs sm:text-sm text-white whitespace-nowrap">
-                                                        <CalendarCheck className="w-4 h-4 text-amber-400" />
-                                                        <span>每日簽到福利</span>
-                                                    </div>
-                                                    <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30 text-[10px] font-mono px-1.5 py-0 h-4.5 whitespace-nowrap">
-                                                        +{rewardPoints} 紅利 P+ 點
-                                                    </Badge>
-                                                </div>
-                                                <p className="text-[11px] text-slate-300 leading-tight">
-                                                    天天登入免費簽到，累積紅利點數換專屬好禮
+                                {/* 福利卡片列表 - 僅展示尚未領取的項目，已領取的自動移至「領取紀錄」 */}
+                                {areAllRegularRewardsClaimed ? (
+                                    <div className="p-3.5 sm:p-4 rounded-xl bg-gradient-to-r from-emerald-950/40 via-slate-900/90 to-slate-900/90 border border-emerald-500/30 flex items-center justify-between gap-3 shadow-sm">
+                                        <div className="flex items-center gap-2.5 min-w-0">
+                                            <div className="p-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 shrink-0">
+                                                <CheckCircle2 className="w-5 h-5" />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5">
+                                                    <span>常態福利皆已領取完畢</span>
+                                                </p>
+                                                <p className="text-[11px] text-slate-400 truncate mt-0.5">
+                                                    簽到與專屬禮已移至「領取紀錄」，明日 00:00 重置簽到
                                                 </p>
                                             </div>
+                                        </div>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setSelectedTab('history')}
+                                            className="h-8 px-2.5 sm:px-3 text-xs font-bold border-slate-700 bg-slate-800 text-amber-300 hover:text-amber-200 shrink-0 flex items-center gap-1 cursor-pointer"
+                                        >
+                                            <span>領取紀錄</span>
+                                            <ChevronRight className="w-3.5 h-3.5" />
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2.5">
+                                        {/* 🌟 每日簽到福利卡片 (若尚未簽到才顯示) */}
+                                        {showCheckInCard && (
+                                            <div className="relative overflow-hidden p-3.5 sm:p-4 rounded-xl bg-gradient-to-br from-amber-500/15 via-rose-500/10 to-slate-900 border border-amber-500/40 shadow-[0_4px_20px_rgba(245,158,11,0.12)] flex flex-col gap-2.5 group">
+                                                <div className="flex items-center justify-between gap-2.5">
+                                                    <div className="space-y-1 min-w-0 flex-1">
+                                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                                            <div className="flex items-center gap-1 font-black text-xs sm:text-sm text-white whitespace-nowrap">
+                                                                <CalendarCheck className="w-4 h-4 text-amber-400" />
+                                                                <span>每日簽到福利</span>
+                                                            </div>
+                                                            <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30 text-[10px] font-mono px-1.5 py-0 h-4.5 whitespace-nowrap">
+                                                                +{rewardPoints} 紅利 P+ 點
+                                                            </Badge>
+                                                        </div>
+                                                        <p className="text-[11px] text-slate-300 leading-tight">
+                                                            天天登入免費簽到，累積紅利點數換專屬好禮
+                                                        </p>
+                                                    </div>
 
-                                            {!user ? (
-                                                <Button
-                                                    size="sm"
-                                                    asChild
-                                                    className="h-8 px-3 rounded-lg text-xs font-bold bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-sm shrink-0 whitespace-nowrap"
-                                                >
-                                                    <Link href="/login">
-                                                        登入簽到
-                                                    </Link>
-                                                </Button>
-                                            ) : (
-                                                <Button
-                                                    size="sm"
-                                                    disabled={hasClaimedCheckInToday || isCheckingIn}
-                                                    onClick={handleCheckIn}
-                                                    className={cn(
-                                                        "h-8 px-3 rounded-lg text-xs font-bold shrink-0 transition-all whitespace-nowrap flex items-center gap-1.5",
-                                                        hasClaimedCheckInToday
-                                                            ? "bg-emerald-950/60 text-emerald-400 border border-emerald-500/30 shadow-none cursor-not-allowed"
-                                                            : "bg-gradient-to-r from-amber-400 to-rose-400 hover:from-amber-300 hover:to-rose-300 text-slate-950 shadow-[0_0_12px_rgba(245,158,11,0.4)] active:scale-95 cursor-pointer"
+                                                    {!user ? (
+                                                        <Button
+                                                            size="sm"
+                                                            asChild
+                                                            className="h-8 px-3 rounded-lg text-xs font-bold bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-sm shrink-0 whitespace-nowrap"
+                                                        >
+                                                            <Link href="/login">
+                                                                登入簽到
+                                                            </Link>
+                                                        </Button>
+                                                    ) : (
+                                                        <Button
+                                                            size="sm"
+                                                            disabled={isCheckingIn}
+                                                            onClick={handleCheckIn}
+                                                            className="h-8 px-3 rounded-lg text-xs font-bold shrink-0 transition-all whitespace-nowrap flex items-center gap-1.5 bg-gradient-to-r from-amber-400 to-rose-400 hover:from-amber-300 hover:to-rose-300 text-slate-950 shadow-[0_0_12px_rgba(245,158,11,0.4)] active:scale-95 cursor-pointer"
+                                                        >
+                                                            {isCheckingIn ? (
+                                                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                                            ) : (
+                                                                <>
+                                                                    <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                                                                    <span>立即簽到</span>
+                                                                </>
+                                                            )}
+                                                        </Button>
                                                     )}
+                                                </div>
+
+                                                {user && (
+                                                    <div className="flex items-center justify-between pt-2 border-t border-white/5 text-[11px] text-slate-400">
+                                                        <span className="flex items-center gap-1">
+                                                            <span className="w-1.5 h-1.5 rounded-full inline-block bg-amber-400 animate-ping" />
+                                                            <span>今日尚未簽到，點擊立即領取獎勵</span>
+                                                        </span>
+                                                        <span className="font-mono text-amber-300/90 font-bold">
+                                                            目前紅利：{(userProfile?.bonusPoints ?? 0).toLocaleString()} 點
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {/* 新手首抽福利卡片 (若尚未領取才顯示) */}
+                                        {showStarterCard && (
+                                            <div className="p-3 sm:p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between gap-2.5">
+                                                <div className="space-y-1 min-w-0 flex-1">
+                                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                                        <span className="text-xs font-bold text-white whitespace-nowrap">新手首抽禮</span>
+                                                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 whitespace-nowrap">
+                                                            免費 1 次
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-[11px] text-slate-400 leading-tight">
+                                                        所有會員皆可直接領取開幕首抽福利
+                                                    </p>
+                                                </div>
+                                                <Button
+                                                    size="sm"
+                                                    onClick={handleOneClickLoginClaim}
+                                                    className="h-8 px-3 rounded-lg text-xs font-bold shrink-0 transition-colors whitespace-nowrap bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-sm cursor-pointer active:scale-95"
                                                 >
-                                                    {isCheckingIn ? (
+                                                    立即領取
+                                                </Button>
+                                            </div>
+                                        )}
+
+                                        {/* 加入社群首抽福利卡片 (若尚未領取才顯示) */}
+                                        {showCommunityCard && (
+                                            <div className="p-3 sm:p-3.5 rounded-xl bg-gradient-to-r from-blue-950/40 via-slate-900/90 to-indigo-950/40 border border-blue-500/30 flex items-center justify-between gap-2.5">
+                                                <div className="space-y-1 min-w-0 flex-1">
+                                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                                        <span className="text-xs font-bold text-white flex items-center gap-1 whitespace-nowrap">
+                                                            <Users className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                                                            <span>官方社群禮</span>
+                                                        </span>
+                                                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-400/30 whitespace-nowrap">
+                                                            免費 1 次
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-[11px] text-slate-400 leading-tight">
+                                                        加入官方卡友交流群，立即加碼送抽卡券
+                                                    </p>
+                                                </div>
+                                                <Button
+                                                    size="sm"
+                                                    disabled={isClaimingCommunity}
+                                                    onClick={handleClaimCommunityReward}
+                                                    className="h-8 px-2.5 sm:px-3 rounded-lg text-xs font-bold shrink-0 transition-colors flex items-center gap-1 whitespace-nowrap bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_12px_rgba(37,99,235,0.4)] cursor-pointer active:scale-95"
+                                                >
+                                                    {isClaimingCommunity ? (
                                                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                                    ) : hasClaimedCheckInToday ? (
-                                                        <>
-                                                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                                                            <span>今日已簽到</span>
-                                                        </>
                                                     ) : (
                                                         <>
-                                                            <Sparkles className="w-3.5 h-3.5 shrink-0" />
-                                                            <span>立即簽到</span>
+                                                            <span className="hidden xs:inline">加入領取</span>
+                                                            <span className="xs:hidden">領取</span>
+                                                            <ExternalLink className="w-3 h-3 shrink-0" />
                                                         </>
                                                     )}
                                                 </Button>
-                                            )}
-                                        </div>
-
-                                        {user && (
-                                            <div className="flex items-center justify-between pt-2 border-t border-white/5 text-[11px] text-slate-400">
-                                                <span className="flex items-center gap-1">
-                                                    <span className={cn("w-1.5 h-1.5 rounded-full inline-block", hasClaimedCheckInToday ? "bg-emerald-400" : "bg-amber-400 animate-ping")} />
-                                                    {hasClaimedCheckInToday ? '今日獎勵已入帳，明日 00:00 重置' : '今日尚未簽到，點擊立即領取獎勵'}
-                                                </span>
-                                                <span className="font-mono text-amber-300/90 font-bold">
-                                                    目前紅利：{(userProfile?.bonusPoints ?? 0).toLocaleString()} 點
-                                                </span>
                                             </div>
                                         )}
                                     </div>
-
-                                    {/* 新手首抽福利卡片 */}
-                                    <div className="p-3 sm:p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between gap-2.5">
-                                        <div className="space-y-1 min-w-0 flex-1">
-                                            <div className="flex items-center gap-1.5 flex-wrap">
-                                                <span className="text-xs font-bold text-white whitespace-nowrap">新手首抽禮</span>
-                                                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 whitespace-nowrap">
-                                                    免費 1 次
-                                                </span>
-                                            </div>
-                                            <p className="text-[11px] text-slate-400 leading-tight">
-                                                所有會員皆可直接領取開幕首抽福利
-                                            </p>
-                                        </div>
-                                        <Button
-                                            size="sm"
-                                            disabled={isStarterClaimed}
-                                            onClick={handleOneClickLoginClaim}
-                                            className={cn(
-                                                "h-8 px-3 rounded-lg text-xs font-bold shrink-0 transition-colors whitespace-nowrap",
-                                                isStarterClaimed
-                                                    ? "bg-slate-800 text-slate-500 border border-slate-700/50"
-                                                    : "bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-sm"
-                                            )}
-                                        >
-                                            {isStarterClaimed ? '已領取' : '立即領取'}
-                                        </Button>
-                                    </div>
-
-                                    {/* 加入社群首抽福利卡片 */}
-                                    <div className="p-3 sm:p-3.5 rounded-xl bg-gradient-to-r from-blue-950/40 via-slate-900/90 to-indigo-950/40 border border-blue-500/30 flex items-center justify-between gap-2.5">
-                                        <div className="space-y-1 min-w-0 flex-1">
-                                            <div className="flex items-center gap-1.5 flex-wrap">
-                                                <span className="text-xs font-bold text-white flex items-center gap-1 whitespace-nowrap">
-                                                    <Users className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                                                    <span>官方社群禮</span>
-                                                </span>
-                                                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-400/30 whitespace-nowrap">
-                                                    免費 1 次
-                                                </span>
-                                            </div>
-                                            <p className="text-[11px] text-slate-400 leading-tight">
-                                                加入官方卡友交流群，立即加碼送抽卡券
-                                            </p>
-                                        </div>
-                                        <Button
-                                            size="sm"
-                                            disabled={isCommunityClaimed || isClaimingCommunity}
-                                            onClick={handleClaimCommunityReward}
-                                            className={cn(
-                                                "h-8 px-2.5 sm:px-3 rounded-lg text-xs font-bold shrink-0 transition-colors flex items-center gap-1 whitespace-nowrap",
-                                                isCommunityClaimed
-                                                    ? "bg-slate-800 text-slate-500 border border-slate-700/50 cursor-not-allowed"
-                                                    : "bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_12px_rgba(37,99,235,0.4)] cursor-pointer active:scale-95"
-                                            )}
-                                        >
-                                            {isClaimingCommunity ? (
-                                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                            ) : isCommunityClaimed ? '已領取' : (
-                                                <>
-                                                    <span className="hidden xs:inline">加入領取</span>
-                                                    <span className="xs:hidden">領取</span>
-                                                    <ExternalLink className="w-3 h-3 shrink-0" />
-                                                </>
-                                            )}
-                                        </Button>
-                                    </div>
-                                </div>
+                                )}
 
                                 {/* 代碼輸入 */}
                                 <div className="space-y-1.5">
@@ -718,34 +841,81 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward }: PromoRed
 
                         {/* 2. 領取紀錄 */}
                         {selectedTab === 'history' && (
-                            <div className="space-y-2.5">
-                                {claimedHistory.length === 0 ? (
-                                    <div className="py-10 text-center text-slate-500 space-y-1.5">
-                                        <Ticket className="w-8 h-8 mx-auto text-slate-600 stroke-[1.5]" />
-                                        <p className="text-xs">尚無已領取之票券</p>
+                            <div className="space-y-3">
+                                {allClaimedRecords.length === 0 ? (
+                                    <div className="py-12 text-center text-slate-500 space-y-2">
+                                        <Ticket className="w-10 h-10 mx-auto text-slate-600 stroke-[1.5]" />
+                                        <p className="text-xs font-medium">尚無已領取之福利或票券</p>
+                                        <p className="text-[11px] text-slate-600">完成簽到或兌換活動代碼後將在此呈現</p>
                                     </div>
                                 ) : (
                                     <div className="space-y-2">
-                                        {claimedHistory.map((item) => (
+                                        {allClaimedRecords.map((item) => (
                                             <div
                                                 key={item.id}
-                                                className="p-3 rounded-xl bg-slate-900/70 border border-slate-800 flex items-center justify-between gap-2.5 text-xs"
+                                                className="p-3 sm:p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between gap-3 text-xs transition-colors hover:border-slate-700"
                                             >
-                                                <div className="space-y-0.5 min-w-0 flex-1">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="font-mono font-bold text-white shrink-0">{item.code}</span>
-                                                        <span className="text-slate-400 truncate">{item.label}</span>
+                                                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                                    <div className={cn(
+                                                        "p-2 rounded-lg shrink-0",
+                                                        item.type === 'checkin' ? "bg-amber-500/15 text-amber-400 border border-amber-500/30" :
+                                                        item.type === 'community' ? "bg-blue-500/15 text-blue-400 border border-blue-500/30" :
+                                                        item.type === 'starter' ? "bg-rose-500/15 text-rose-400 border border-rose-500/30" :
+                                                        "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                                                    )}>
+                                                        {item.type === 'checkin' ? <CalendarCheck className="w-4 h-4" /> :
+                                                         item.type === 'community' ? <Users className="w-4 h-4" /> :
+                                                         item.type === 'starter' ? <Sparkles className="w-4 h-4" /> :
+                                                         <Ticket className="w-4 h-4" />}
                                                     </div>
-                                                    <div className="text-[11px] text-slate-500 flex items-center gap-1.5">
-                                                        <Clock className="w-3 h-3 shrink-0" />
-                                                        <span>{item.claimedAt}</span>
+                                                    <div className="space-y-0.5 min-w-0 flex-1">
+                                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                                            <span className="font-bold text-white text-xs truncate">{item.title}</span>
+                                                            {item.code && (
+                                                                <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 border border-slate-700/60">
+                                                                    {item.code}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <div className="text-[11px] text-slate-400 flex items-center gap-1.5">
+                                                            <Clock className="w-3 h-3 text-slate-500 shrink-0" />
+                                                            <span className="truncate">{item.claimedAt}</span>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                                <span className="text-xs font-bold text-emerald-400 shrink-0 whitespace-nowrap">
-                                                    +{item.freePlays} 次
-                                                </span>
+
+                                                <div className="text-right shrink-0">
+                                                    <span className={cn(
+                                                        "text-xs font-bold font-mono px-2 py-0.5 rounded-md inline-block",
+                                                        item.rewardType === 'points' 
+                                                            ? "bg-amber-500/15 text-amber-300 border border-amber-500/30" 
+                                                            : "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30"
+                                                    )}>
+                                                        {item.rewardText}
+                                                    </span>
+                                                </div>
                                             </div>
                                         ))}
+                                    </div>
+                                )}
+
+                                {/* 帳戶當前資產總覽小卡 */}
+                                {user && allClaimedRecords.length > 0 && (
+                                    <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 flex items-center justify-between text-xs text-slate-400 mt-2">
+                                        <div className="flex items-center gap-1.5">
+                                            <Coins className="w-3.5 h-3.5 text-amber-400" />
+                                            <span>累積紅利：<span className="font-mono font-bold text-amber-300">{(userProfile?.bonusPoints ?? 0).toLocaleString()}</span> 點</span>
+                                        </div>
+                                        <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            asChild
+                                            className="h-7 px-2.5 text-xs font-bold text-amber-400 hover:text-amber-300 hover:bg-slate-800"
+                                        >
+                                            <Link href="/draw" onClick={() => onOpenChange(false)}>
+                                                <span>前往抽卡 ➜</span>
+                                            </Link>
+                                        </Button>
                                     </div>
                                 )}
                             </div>
