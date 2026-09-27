@@ -328,10 +328,10 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                           </div>
                       </DropdownMenuLabel>
 
-                      <DropdownMenuSeparator className="bg-white/10" />
+                      <DropdownMenuSeparator className="hidden sm:block bg-white/10" />
 
-                      {/* 🎪 活動與福利專區 */}
-                      <div className="p-1 space-y-1">
+                      {/* 🎪 活動與福利專區（僅桌面端顯示，手機版已由頂部按鈕與底部導覽列承載） */}
+                      <div className="hidden sm:block p-1 space-y-1">
                           <div className="px-2 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
                             <Sparkles className="w-3 h-3 text-amber-400" />
                             <span>活動與福利專區</span>
@@ -367,7 +367,7 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
 
                       <DropdownMenuSeparator className="bg-white/10" />
 
-                      {/* 個人與系統選單 */}
+                      {/* 個人功能選單（手機版純粹精簡：會員中心與關於我們） */}
                       <div className="p-1 space-y-0.5">
                           {userProfile?.role === 'admin' && (
                             <>
@@ -377,7 +377,7 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                                       <span>後台管理中心</span>
                                   </Link>
                               </DropdownMenuItem>
-                              <DropdownMenuItem asChild className="rounded-xl focus:bg-purple-500/15 focus:text-purple-300 text-purple-400 font-bold cursor-pointer">
+                              <DropdownMenuItem asChild className="hidden sm:flex rounded-xl focus:bg-purple-500/15 focus:text-purple-300 text-purple-400 font-bold cursor-pointer">
                                   <Link href="/lucky-wheel">
                                       <Sparkles className="mr-2.5 h-4 w-4 text-purple-400" />
                                       <span>🎪 活動轉盤專區</span>
@@ -385,11 +385,17 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                               </DropdownMenuItem>
                             </>
                           )}
-                          <DropdownMenuItem asChild className="rounded-xl cursor-pointer text-slate-200 focus:bg-white/10">
-                              <Link href="/profile" className="font-medium text-xs"><User className="mr-2.5 h-4 w-4 text-cyan-400" />會員中心</Link>
+                          <DropdownMenuItem asChild className="rounded-xl cursor-pointer text-slate-200 hover:text-white focus:bg-white/10">
+                              <Link href="/profile" className="font-semibold text-xs flex items-center py-2 px-1 text-slate-100 hover:text-cyan-300 transition-colors">
+                                <User className="mr-2.5 h-4 w-4 text-cyan-400" />
+                                <span>會員中心</span>
+                              </Link>
                           </DropdownMenuItem>
-                          <DropdownMenuItem asChild className="rounded-xl cursor-pointer text-slate-200 focus:bg-white/10">
-                              <Link href="/about" className="font-medium text-xs"><Info className="mr-2.5 h-4 w-4 text-slate-400" />關於我們</Link>
+                          <DropdownMenuItem asChild className="rounded-xl cursor-pointer text-slate-200 hover:text-white focus:bg-white/10">
+                              <Link href="/about" className="font-semibold text-xs flex items-center py-2 px-1 text-slate-300 hover:text-white transition-colors">
+                                <Info className="mr-2.5 h-4 w-4 text-slate-400" />
+                                <span>關於我們</span>
+                              </Link>
                           </DropdownMenuItem>
                       </div>
 

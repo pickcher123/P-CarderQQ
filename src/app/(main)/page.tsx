@@ -17,6 +17,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { NewsPopup } from '@/components/news-popup';
 import { SafeImage } from '@/components/safe-image';
 import { FloatingCardsBackground } from '@/components/floating-cards-background';
+import { HeroStageFloor } from '@/components/hero-stage-floor';
 import { PLACEHOLDER_CARD_IMAGE } from '@/lib/placeholders';
 import { CardExhibitionCalendar } from '@/components/card-exhibition-calendar';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from '@/components/ui/carousel';
@@ -195,14 +196,17 @@ export default function Home() {
       <NewsPopup />
       
       {/* 英雄區塊 (Hero Section) */}
-      <section className="relative min-h-[80vh] md:min-h-[calc(100vh-4.5rem)] flex items-center justify-center overflow-hidden py-8 md:py-16">
+      <section className="relative min-h-[82vh] md:min-h-[calc(100vh-4.5rem)] flex items-center justify-center overflow-hidden py-8 md:py-16">
         {(systemConfig?.showFloatingBackground !== false) && <FloatingCardsBackground />}
+
+        {/* 立體賽博光學展台底座與透視地坪材質 (Cyber-Luxe Stage Floor Material) */}
+        <HeroStageFloor />
 
         {/* Ambient Top Glow */}
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-amber-500/10 rounded-full blur-[140px] pointer-events-none" />
         <div className="absolute top-1/3 left-1/3 w-[400px] h-[250px] bg-cyan-500/10 rounded-full blur-[120px] pointer-events-none" />
 
-        <div className="container relative z-10 text-center space-y-5 md:space-y-8 px-4 max-w-5xl mx-auto my-auto">
+        <div className="container relative z-10 text-center space-y-5 md:space-y-7 px-4 max-w-5xl mx-auto my-auto">
           {systemConfig?.announcement && (
             <div className="max-w-2xl mx-auto mb-4 animate-fade-in-up">
               <div className="bg-gradient-to-r from-slate-900/95 via-slate-950/95 to-slate-900/95 backdrop-blur-xl border border-amber-500/30 rounded-2xl p-3.5 sm:p-4 flex items-center gap-3 text-left shadow-[0_4px_25px_rgba(245,158,11,0.15)] ring-1 ring-white/5">
@@ -218,13 +222,24 @@ export default function Home() {
           
           <div className="space-y-3 sm:space-y-4 animate-fade-in-up">
             <h1 className="font-headline text-4xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-black tracking-tight leading-none relative select-none whitespace-nowrap inline-block mx-auto max-w-full">
-                <span className="bg-clip-text text-transparent bg-gradient-to-b from-white via-slate-100 to-amber-200/90 drop-shadow-[0_4px_30px_rgba(245,158,11,0.3)] whitespace-nowrap inline-block">
+                <span className="bg-clip-text text-transparent bg-gradient-to-b from-white via-slate-100 to-amber-200/90 drop-shadow-[0_4px_30px_rgba(245,158,11,0.35)] whitespace-nowrap inline-block">
                     P+CARDER
                 </span>
-                <span className="absolute inset-0 flex items-center justify-center text-amber-400/15 blur-[25px] sm:blur-[30px] pointer-events-none select-none whitespace-nowrap" aria-hidden="true">
+                <span className="absolute inset-0 flex items-center justify-center text-amber-400/20 blur-[28px] sm:blur-[34px] pointer-events-none select-none whitespace-nowrap" aria-hidden="true">
                     P+CARDER
                 </span>
             </h1>
+
+            {/* 標題底部光學地平飾條 (Title Horizon Light Accent & Badge) */}
+            <div className="flex items-center justify-center gap-2 sm:gap-3 my-2 sm:my-3 opacity-90 pointer-events-none max-w-full px-2">
+              <div className="h-[1px] w-6 sm:w-16 md:w-24 bg-gradient-to-r from-transparent via-amber-400/70 to-amber-300 shrink" />
+              <div className="flex items-center gap-1.5 sm:gap-2 text-[9px] sm:text-[11px] md:text-xs font-black tracking-[0.12em] sm:tracking-[0.2em] md:tracking-[0.25em] text-amber-300/90 uppercase whitespace-nowrap shrink-0">
+                <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 rotate-45 bg-amber-400 shadow-[0_0_8px_#fbbf24] shrink-0" />
+                <span className="whitespace-nowrap">OFFICIAL TRADING CARDS & VAULT</span>
+                <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 rotate-45 bg-amber-400 shadow-[0_0_8px_#fbbf24] shrink-0" />
+              </div>
+              <div className="h-[1px] w-6 sm:w-16 md:w-24 bg-gradient-to-l from-transparent via-amber-400/70 to-amber-300 shrink" />
+            </div>
             
             <p className="text-sm sm:text-base md:text-xl text-slate-300 max-w-xl mx-auto font-medium tracking-wider leading-relaxed px-2">
                 頂級球員卡福袋平台 · 即時連線公平抽取<br />
@@ -233,14 +248,16 @@ export default function Home() {
           </div>
           
           {/* 快捷操作按鈕組 */}
-          <div className="flex items-center justify-center gap-3 sm:gap-4 animate-fade-in-up pt-4 sm:pt-6 max-w-lg mx-auto">
-            <Button size="lg" asChild className="w-full sm:w-auto h-12 sm:h-14 px-8 text-base sm:text-lg font-black rounded-2xl group bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-slate-950 shadow-[0_0_30px_rgba(245,158,11,0.4)] hover:shadow-[0_0_40px_rgba(245,158,11,0.6)] border border-amber-300/60 relative overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98]">
+          <div className="flex flex-col items-center justify-center animate-fade-in-up pt-4 sm:pt-6 max-w-lg mx-auto">
+            <Button size="lg" asChild className="w-full sm:w-auto h-12 sm:h-14 px-8 text-base sm:text-lg font-black rounded-2xl group bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-slate-950 shadow-[0_0_35px_rgba(245,158,11,0.45)] hover:shadow-[0_0_50px_rgba(245,158,11,0.7)] border border-amber-300/70 relative overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98]">
               <Link href="/draw" className="flex items-center justify-center gap-2.5">
                 <Sparkles className="w-5 h-5 text-slate-950 fill-slate-950 animate-pulse" />
                 <span className="tracking-wide">立即前往卡池</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform" />
               </Link>
             </Button>
+            {/* 按鈕下方展台投影光暈 */}
+            <div className="w-44 sm:w-60 h-3 mt-2 bg-amber-400/25 blur-md rounded-full pointer-events-none" />
           </div>
         </div>
 

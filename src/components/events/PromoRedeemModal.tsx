@@ -19,7 +19,12 @@ import {
     CalendarCheck,
     Coins,
     Calendar,
-    ChevronRight
+    ChevronRight,
+    Share2,
+    Check,
+    Trophy,
+    HeartHandshake,
+    UserPlus
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,7 +34,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, collection, query, where, limit, runTransaction, increment } from 'firebase/firestore';
+import { doc, collection, query, where, orderBy, limit, runTransaction, increment } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { DailyMission, UserMissionProgress } from '@/types/missions';
 import { SystemConfig } from '@/types/system';
@@ -100,9 +105,10 @@ interface PromoRedeemModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onApplyReward?: (targetEvent: string, freePlays: number) => void;
+    initialTab?: 'redeem' | 'referral' | 'history' | 'poster';
 }
 
-export function PromoRedeemModal({ open, onOpenChange, onApplyReward }: PromoRedeemModalProps) {
+export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab }: PromoRedeemModalProps) {
     const { toast } = useToast();
     const { user } = useUser();
     const firestore = useFirestore();
@@ -115,11 +121,203 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward }: PromoRed
     const { data: userProfile } = useDoc<UserProfile>(userDocRef);
 
     const [inputCode, setInputCode] = useState('');
-    const [selectedTab, setSelectedTab] = useState<'redeem' | 'history' | 'poster'>('redeem');
+    const [selectedTab, setSelectedTab] = useState<'redeem' | 'referral' | 'history' | 'poster'>(initialTab || 'redeem');
+
+    useEffect(() => {
+        if (open && initialTab) {
+            setSelectedTab(initialTab);
+        }
+    }, [open, initialTab]);
     const [claimedHistory, setClaimedHistory] = useState<ClaimHistoryItem[]>([]);
     const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
     const [lastClaimedReward, setLastClaimedReward] = useState<ClaimHistoryItem | null>(null);
     const [isClaimingCommunity, setIsClaimingCommunity] = useState(false);
+
+    // 推薦系統獎勵配置與使用者推薦紀錄
+    const referralConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'systemConfig', 'referral') : null, [firestore]);
+    const { data: referralConfig } = useDoc<any>(referralConfigRef);
+    const bonusForReferrer = referralConfig?.referrerBonusPoints ?? 100;
+    const bonusForReferee = referralConfig?.refereeBonusPoints ?? 50;
+    const ticketsForReferee = referralConfig?.freeDrawTickets ?? 1;
+
+    // 查詢我的成功推薦名單 (referralLogs) - 避免 Firestore composite index 要求
+    const logsQuery = useMemoFirebase(() => {
+        if (!firestore || !user?.uid) return null;
+        return query(
+            collection(firestore, 'referralLogs'),
+            where('referrerId', '==', user.uid),
+            limit(50)
+        );
+    }, [firestore, user?.uid]);
+    const { data: rawReferralLogs, isLoading: isLoadingLogs } = useCollection<any>(logsQuery);
+
+    const myReferralLogs = useMemo(() => {
+        if (!rawReferralLogs) return [];
+        return [...rawReferralLogs].sort((a, b) => {
+            const timeA = a.createdAt?.seconds ? a.createdAt.seconds * 1000 : (new Date(a.createdAt || 0).getTime() || 0);
+            const timeB = b.createdAt?.seconds ? b.createdAt.seconds * 1000 : (new Date(b.createdAt || 0).getTime() || 0);
+            return timeB - timeA;
+        });
+    }, [rawReferralLogs]);
+
+    // 推薦碼狀態
+    const [copiedReferralCode, setCopiedReferralCode] = useState(false);
+    const [copiedReferralLink, setCopiedReferralLink] = useState(false);
+    const [isGeneratingReferralCode, setIsGeneratingReferralCode] = useState(false);
+    const [customReferralInput, setCustomReferralInput] = useState('');
+    const [isSavingCustomReferral, setIsSavingCustomReferral] = useState(false);
+    const [showCustomReferralInput, setShowCustomReferralInput] = useState(false);
+    const [friendReferralInput, setFriendReferralInput] = useState('');
+    const [isApplyingReferral, setIsApplyingReferral] = useState(false);
+
+    const currentInviteCode = userProfile?.inviteCode || '';
+
+    // 生成完整邀請連結
+    const inviteLink = useMemo(() => {
+        if (typeof window === 'undefined') return '';
+        const origin = window.location.origin;
+        if (!currentInviteCode) return `${origin}/login`;
+        return `${origin}/login?ref=${encodeURIComponent(currentInviteCode)}`;
+    }, [currentInviteCode]);
+
+    // 一鍵啟用 / 自訂專屬推薦碼
+    const handleGenerateReferralCode = async (customCodeToSet?: string) => {
+        if (!user) {
+            toast({
+                title: '請先登入會員',
+                description: '登入後即可免費啟用個人專屬推薦碼！',
+                variant: 'destructive',
+            });
+            return;
+        }
+        setIsGeneratingReferralCode(true);
+        try {
+            const res = await fetch('/api/referral/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId: user.uid,
+                    customCode: customCodeToSet || undefined,
+                }),
+            });
+            const data = await res.json();
+            if (data.success) {
+                confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
+                toast({
+                    title: '🎉 專屬推薦碼已啟用！',
+                    description: `您的專屬推薦碼為：${data.inviteCode}，分享好友註冊立享點數與抽卡券！`,
+                });
+                setShowCustomReferralInput(false);
+                setCustomReferralInput('');
+            } else {
+                toast({
+                    variant: 'destructive',
+                    title: '啟用失敗',
+                    description: data.error || '無法生成推薦碼',
+                });
+            }
+        } catch (e: any) {
+            toast({
+                variant: 'destructive',
+                title: '網路錯誤',
+                description: e.message || '請稍候再試',
+            });
+        } finally {
+            setIsGeneratingReferralCode(false);
+            setIsSavingCustomReferral(false);
+        }
+    };
+
+    // 複製推薦碼
+    const handleCopyReferralCode = () => {
+        if (!currentInviteCode) return;
+        navigator.clipboard.writeText(currentInviteCode);
+        setCopiedReferralCode(true);
+        toast({ title: '已複製推薦碼', description: currentInviteCode });
+        setTimeout(() => setCopiedReferralCode(false), 2000);
+    };
+
+    // 複製推薦連結
+    const handleCopyReferralLink = () => {
+        if (!inviteLink) return;
+        navigator.clipboard.writeText(inviteLink);
+        setCopiedReferralLink(true);
+        toast({ title: '已複製專屬推薦連結', description: '傳送給好友即可自動套用優惠代碼！' });
+        setTimeout(() => setCopiedReferralLink(false), 2000);
+    };
+
+    // 綁定好友推薦碼
+    const handleApplyFriendReferral = async (codeToApply?: string): Promise<boolean> => {
+        const code = (codeToApply || friendReferralInput).trim().toUpperCase();
+        if (!code) {
+            toast({ title: '請輸入好友推薦碼', description: '請輸入好友提供的 4-12 位推薦代碼。', variant: 'destructive' });
+            return false;
+        }
+        if (!user) {
+            toast({ title: '請先登入會員', description: '登入會員後即可綁定推薦碼並領取迎新加碼禮！', variant: 'destructive' });
+            return false;
+        }
+        if (userProfile?.referredBy) {
+            toast({ title: '已綁定過推薦人', description: `您已綁定過推薦碼：${userProfile.referredBy}` });
+            return false;
+        }
+
+        setIsApplyingReferral(true);
+        try {
+            const res = await fetch('/api/referral/apply', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId: user.uid,
+                    referralCode: code,
+                }),
+            });
+            const data = await res.json();
+            if (data.success) {
+                confetti({ particleCount: 70, spread: 80, origin: { y: 0.6 } });
+                toast({
+                    title: '🎉 推薦碼綁定成功！',
+                    description: data.message || `恭喜獲得 +${bonusForReferee} 紅利 P+ 及 ${ticketsForReferee} 張免費抽卡券！`,
+                });
+                setFriendReferralInput('');
+
+                const newClaimItem: ClaimHistoryItem = {
+                    id: 'claim-referral-' + Date.now(),
+                    code: code,
+                    label: '好友推薦禮・新人迎新加碼',
+                    targetEvent: 'all',
+                    freePlays: ticketsForReferee,
+                    claimedAt: new Date().toLocaleDateString('zh-TW', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }),
+                    status: 'ACTIVE'
+                };
+                const updatedHistory = [newClaimItem, ...claimedHistory];
+                saveClaimHistory(updatedHistory);
+                setLastClaimedReward(newClaimItem);
+                setIsSuccessDialogOpen(true);
+
+                if (onApplyReward) {
+                    onApplyReward('all', ticketsForReferee);
+                }
+                return true;
+            } else {
+                toast({
+                    variant: 'destructive',
+                    title: '推薦碼無效或失敗',
+                    description: data.error || '無法綁定此推薦碼',
+                });
+                return false;
+            }
+        } catch (e: any) {
+            toast({
+                variant: 'destructive',
+                title: '網路錯誤',
+                description: e.message || '連線逾時，請稍後重試',
+            });
+            return false;
+        } finally {
+            setIsApplyingReferral(false);
+        }
+    };
 
     // 每日簽到狀態與查詢
     const missionsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'dailyMissions'), where('type', '==', 'login'), limit(1)) : null, [firestore]);
@@ -298,11 +496,20 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward }: PromoRed
         const matched = OFFICIAL_PROMO_CODES.find(p => p.code.toUpperCase() === targetCode);
 
         if (!matched) {
-            toast({
-                title: '代碼無效',
-                description: '請確認代碼是否輸入正確，或該活動已結束。',
-                variant: 'destructive'
-            });
+            // 若非官方活動代碼，自動嘗試識別是否為好友會員推薦碼
+            if (!userProfile?.referredBy) {
+                const applied = await handleApplyFriendReferral(targetCode);
+                if (applied) {
+                    setInputCode('');
+                    return;
+                }
+            } else {
+                toast({
+                    title: '代碼無效',
+                    description: '請確認代碼是否輸入正確，或該活動已結束。',
+                    variant: 'destructive'
+                });
+            }
             return;
         }
 
@@ -508,6 +715,21 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward }: PromoRed
             });
         }
 
+        // 4. 好友推薦迎新禮 (若已綁定推薦人)
+        if (userProfile?.referredBy) {
+            records.push({
+                id: 'claim-referral-bound',
+                type: 'code',
+                title: '好友推薦迎新禮',
+                subtitle: `已綁定推薦人代碼：${userProfile.referredBy}`,
+                code: userProfile.referredBy,
+                rewardText: `+${bonusForReferee} P+ 及免費抽卡券`,
+                rewardType: 'points',
+                claimedAt: '已成功綁定發放',
+                statusBadge: '已綁定'
+            });
+        }
+
         // 4. 其他兌換紀錄 (來自 local history 與 userProfile)
         claimedHistory.forEach(item => {
             if (item.code !== 'OPEN2024' && item.code !== 'COMMUNITY_JOIN') {
@@ -572,25 +794,38 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward }: PromoRed
                         </div>
 
                         {/* 自適應分頁導航 */}
-                        <div className="flex items-center gap-1 mt-3 bg-slate-950/80 p-1 rounded-xl border border-slate-800/70">
+                        <div className="grid grid-cols-4 gap-1 mt-3 bg-slate-950/80 p-1 rounded-xl border border-slate-800/70">
                             <button
                                 type="button"
                                 onClick={() => setSelectedTab('redeem')}
                                 className={cn(
-                                    "flex-1 py-1.5 px-1 sm:px-2 rounded-lg text-[11px] sm:text-xs font-semibold transition-all flex items-center justify-center gap-1",
+                                    "py-1.5 px-0.5 sm:px-2 rounded-lg text-[11px] sm:text-xs font-semibold transition-all flex items-center justify-center gap-1",
                                     selectedTab === 'redeem'
                                         ? "bg-slate-800 text-white border border-slate-700 shadow-sm"
                                         : "text-slate-400 hover:text-slate-200"
                                 )}
                             >
                                 <CalendarCheck className="w-3.5 h-3.5 shrink-0 text-amber-400" />
-                                <span className="truncate">簽到與領券</span>
+                                <span className="truncate">簽到領券</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setSelectedTab('referral')}
+                                className={cn(
+                                    "py-1.5 px-0.5 sm:px-2 rounded-lg text-[11px] sm:text-xs font-semibold transition-all flex items-center justify-center gap-1",
+                                    selectedTab === 'referral'
+                                        ? "bg-slate-800 text-white border border-slate-700 shadow-sm"
+                                        : "text-slate-400 hover:text-slate-200"
+                                )}
+                            >
+                                <Share2 className="w-3.5 h-3.5 shrink-0 text-cyan-400" />
+                                <span className="truncate">會員推薦</span>
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setSelectedTab('history')}
                                 className={cn(
-                                    "flex-1 py-1.5 px-1 sm:px-2 rounded-lg text-[11px] sm:text-xs font-semibold transition-all flex items-center justify-center gap-1",
+                                    "py-1.5 px-0.5 sm:px-2 rounded-lg text-[11px] sm:text-xs font-semibold transition-all flex items-center justify-center gap-1",
                                     selectedTab === 'history'
                                         ? "bg-slate-800 text-white border border-slate-700 shadow-sm"
                                         : "text-slate-400 hover:text-slate-200"
@@ -599,7 +834,7 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward }: PromoRed
                                 <Ticket className="w-3.5 h-3.5 shrink-0" />
                                 <span className="truncate">領取紀錄</span>
                                 {allClaimedRecords.length > 0 && (
-                                    <span className="px-1.5 py-0.2 rounded-full bg-slate-700 text-[10px] text-slate-300 font-mono shrink-0">
+                                    <span className="hidden xs:inline-block px-1.5 py-0.2 rounded-full bg-slate-700 text-[10px] text-slate-300 font-mono shrink-0">
                                         {allClaimedRecords.length}
                                     </span>
                                 )}
@@ -608,7 +843,7 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward }: PromoRed
                                 type="button"
                                 onClick={() => setSelectedTab('poster')}
                                 className={cn(
-                                    "flex-1 py-1.5 px-1 sm:px-2 rounded-lg text-[11px] sm:text-xs font-semibold transition-all flex items-center justify-center gap-1",
+                                    "py-1.5 px-0.5 sm:px-2 rounded-lg text-[11px] sm:text-xs font-semibold transition-all flex items-center justify-center gap-1",
                                     selectedTab === 'poster'
                                         ? "bg-slate-800 text-white border border-slate-700 shadow-sm"
                                         : "text-slate-400 hover:text-slate-200"
@@ -775,17 +1010,52 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward }: PromoRed
                                                 </Button>
                                             </div>
                                         )}
+                                        {/* 會員推薦好友加碼卡片 */}
+                                        <div className="p-3 sm:p-3.5 rounded-xl bg-gradient-to-r from-violet-950/40 via-slate-900/90 to-cyan-950/40 border border-violet-500/30 flex items-center justify-between gap-2.5">
+                                            <div className="space-y-1 min-w-0 flex-1">
+                                                <div className="flex items-center gap-1.5 flex-wrap">
+                                                    <span className="text-xs font-bold text-white flex items-center gap-1 whitespace-nowrap">
+                                                        <Share2 className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                                                        <span>會員好友推薦禮</span>
+                                                    </span>
+                                                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 whitespace-nowrap">
+                                                        雙向加碼
+                                                    </span>
+                                                </div>
+                                                <p className="text-[11px] text-slate-400 leading-tight">
+                                                    分享專屬推薦碼，好友註冊得免費首抽券，您得 +{bonusForReferrer} P+
+                                                </p>
+                                            </div>
+                                            <Button
+                                                size="sm"
+                                                onClick={() => setSelectedTab('referral')}
+                                                className="h-8 px-2.5 sm:px-3 rounded-lg text-xs font-bold shrink-0 transition-colors flex items-center gap-1 whitespace-nowrap bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-500 hover:to-cyan-500 text-white shadow-sm cursor-pointer active:scale-95"
+                                            >
+                                                <span>推薦專區</span>
+                                                <ChevronRight className="w-3 h-3 shrink-0" />
+                                            </Button>
+                                        </div>
                                     </div>
                                 )}
 
                                 {/* 代碼輸入 */}
                                 <div className="space-y-1.5">
-                                    <Label className="text-xs font-medium text-slate-300">
-                                        輸入兌換碼
-                                    </Label>
+                                    <div className="flex items-center justify-between">
+                                        <Label className="text-xs font-medium text-slate-300">
+                                            輸入兌換碼 / 推薦碼
+                                        </Label>
+                                        <button
+                                            type="button"
+                                            onClick={() => setSelectedTab('referral')}
+                                            className="text-[11px] text-cyan-400 hover:underline flex items-center gap-0.5"
+                                        >
+                                            <span>好友推薦碼專區</span>
+                                            <ChevronRight className="w-3 h-3" />
+                                        </button>
+                                    </div>
                                     <div className="flex gap-2">
                                         <Input
-                                            placeholder="請輸入代碼 (如 OPEN2024)"
+                                            placeholder="請輸入代碼或好友推薦碼 (如 OPEN2024)"
                                             value={inputCode}
                                             onChange={(e) => setInputCode(e.target.value)}
                                             onKeyDown={(e) => e.key === 'Enter' && handleRedeem()}
@@ -839,7 +1109,263 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward }: PromoRed
                             </div>
                         )}
 
-                        {/* 2. 領取紀錄 */}
+                        {/* 2. 會員推薦碼專區 */}
+                        {selectedTab === 'referral' && (
+                            <div className="space-y-4">
+                                {/* 頂部推薦計畫說明橫幅 */}
+                                <div className="relative overflow-hidden p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-violet-950/70 via-slate-900/90 to-cyan-950/50 border border-violet-500/30 shadow-md">
+                                    <div className="space-y-1.5">
+                                        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-violet-500/20 border border-violet-500/30 text-violet-300 text-[11px] font-bold">
+                                            <Sparkles className="w-3 h-3 text-violet-400" />
+                                            <span>好友推廣分享計畫</span>
+                                        </div>
+                                        <h4 className="text-sm sm:text-base font-black text-white">
+                                            邀請好友加入，雙方皆享豪華贈禮！
+                                        </h4>
+                                        <p className="text-xs text-slate-300 leading-relaxed">
+                                            好友註冊即可獲得 <span className="text-amber-400 font-bold">+{bonusForReferee} 紅利 P+</span> 及 <span className="text-cyan-400 font-bold">{ticketsForReferee} 張免費抽卡券</span>；每成功推薦一位好友，您亦立得 <span className="text-amber-400 font-bold">+{bonusForReferrer} 紅利 P+</span>！
+                                        </p>
+                                    </div>
+
+                                    {/* 推薦成效簡要統計 */}
+                                    <div className="grid grid-cols-2 gap-2 pt-3 mt-3 border-t border-white/10">
+                                        <div className="p-2.5 rounded-xl bg-black/40 border border-white/5 text-center">
+                                            <p className="text-[10px] text-slate-400 font-medium">已成功推薦</p>
+                                            <p className="text-lg font-black font-mono text-cyan-400">
+                                                {userProfile?.inviteCount || 0} <span className="text-[10px] text-slate-400 font-normal">人</span>
+                                            </p>
+                                        </div>
+                                        <div className="p-2.5 rounded-xl bg-black/40 border border-white/5 text-center">
+                                            <p className="text-[10px] text-slate-400 font-medium">累計推薦紅利</p>
+                                            <p className="text-lg font-black font-mono text-amber-400">
+                                                {((userProfile?.inviteCount || 0) * bonusForReferrer).toLocaleString()} <span className="text-[10px] text-slate-400 font-normal">P+</span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* 專屬推薦碼管理卡片 */}
+                                <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-1.5 text-xs font-bold text-white">
+                                            <Gift className="w-4 h-4 text-amber-400" />
+                                            <span>我的專屬推薦碼</span>
+                                        </div>
+                                        {currentInviteCode && !showCustomReferralInput && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowCustomReferralInput(true)}
+                                                className="text-[11px] text-cyan-400 hover:text-cyan-300 transition-colors"
+                                            >
+                                                自訂好記代碼
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {!user ? (
+                                        <div className="p-4 text-center space-y-2 bg-slate-950/60 rounded-xl border border-slate-800/80">
+                                            <p className="text-xs text-slate-400">登入會員即可啟用您的專屬推薦碼與推廣網址</p>
+                                            <Button size="sm" asChild className="h-8 px-4 text-xs font-bold bg-amber-400 hover:bg-amber-300 text-slate-950">
+                                                <Link href="/login">前往登入</Link>
+                                            </Button>
+                                        </div>
+                                    ) : currentInviteCode ? (
+                                        <div className="space-y-2.5">
+                                            <div className="p-3 sm:p-3.5 rounded-xl bg-slate-950 border border-amber-500/30 flex items-center justify-between shadow-inner gap-2">
+                                                <div className="min-w-0">
+                                                    <span className="text-[9px] text-slate-500 uppercase font-mono tracking-wider block">REFERRAL CODE</span>
+                                                    <span className="text-xl sm:text-2xl font-black font-mono tracking-wider text-amber-400 truncate block">
+                                                        {currentInviteCode}
+                                                    </span>
+                                                </div>
+                                                <Button
+                                                    size="sm"
+                                                    onClick={handleCopyReferralCode}
+                                                    className={cn(
+                                                        "h-8 px-3 text-xs font-bold shrink-0 transition-all",
+                                                        copiedReferralCode ? "bg-emerald-500 hover:bg-emerald-600 text-white" : "bg-amber-400 hover:bg-amber-300 text-slate-950"
+                                                    )}
+                                                >
+                                                    {copiedReferralCode ? (
+                                                        <>
+                                                            <Check className="w-3.5 h-3.5 mr-1" /> 已複製
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Copy className="w-3.5 h-3.5 mr-1" /> 複製代碼
+                                                        </>
+                                                    )}
+                                                </Button>
+                                            </div>
+
+                                            {showCustomReferralInput && (
+                                                <div className="p-3 rounded-xl bg-white/5 border border-white/10 space-y-2 animate-in fade-in duration-200">
+                                                    <label className="text-[11px] font-bold text-slate-300 block">自訂個人推薦碼 (4-12 位英數字)</label>
+                                                    <div className="flex gap-2">
+                                                        <Input
+                                                            value={customReferralInput}
+                                                            onChange={e => setCustomReferralInput(e.target.value.toUpperCase())}
+                                                            placeholder="如：VIPCARD88"
+                                                            className="h-8 bg-black/50 border-white/10 font-mono text-white text-xs uppercase"
+                                                            maxLength={12}
+                                                        />
+                                                        <Button
+                                                            size="sm"
+                                                            onClick={() => handleGenerateReferralCode(customReferralInput)}
+                                                            disabled={isSavingCustomReferral || customReferralInput.length < 4}
+                                                            className="h-8 px-3 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs"
+                                                        >
+                                                            {isSavingCustomReferral ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : '儲存'}
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="ghost"
+                                                            onClick={() => setShowCustomReferralInput(false)}
+                                                            className="h-8 px-2 text-xs text-slate-400 hover:text-white"
+                                                        >
+                                                            取消
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* 一鍵專屬推薦網址 */}
+                                            <div className="space-y-1 pt-1">
+                                                <label className="text-[11px] text-slate-400 block font-medium">專屬好友邀請連結（點擊自動帶入推薦碼）</label>
+                                                <div className="flex items-center gap-1.5">
+                                                    <Input
+                                                        readOnly
+                                                        value={inviteLink}
+                                                        className="h-8 bg-slate-950 border-slate-800 text-cyan-300 font-mono text-xs select-all truncate"
+                                                    />
+                                                    <Button
+                                                        size="sm"
+                                                        onClick={handleCopyReferralLink}
+                                                        className={cn(
+                                                            "h-8 px-3 text-xs font-bold shrink-0 transition-all",
+                                                            copiedReferralLink ? "bg-emerald-500 hover:bg-emerald-600 text-white" : "bg-cyan-500 hover:bg-cyan-400 text-slate-950"
+                                                        )}
+                                                    >
+                                                        {copiedReferralLink ? <Check className="w-3.5 h-3.5 mr-1" /> : <Copy className="w-3.5 h-3.5 mr-1" />}
+                                                        {copiedReferralLink ? '已複製' : '複製連結'}
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-4 space-y-2 bg-slate-950/60 rounded-xl border border-slate-800/80">
+                                            <p className="text-xs text-slate-300">您尚未啟用專屬會員推薦碼</p>
+                                            <Button
+                                                size="sm"
+                                                onClick={() => handleGenerateReferralCode()}
+                                                disabled={isGeneratingReferralCode}
+                                                className="h-9 px-5 rounded-xl font-bold text-xs bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 shadow-md cursor-pointer hover:scale-105 active:scale-95 transition-all"
+                                            >
+                                                {isGeneratingReferralCode ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Sparkles className="w-3.5 h-3.5 mr-1.5" />}
+                                                立即免費啟用推薦碼
+                                            </Button>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* 綁定好友推薦碼卡片 */}
+                                <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-2.5">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-1.5 text-xs font-bold text-white">
+                                            <UserPlus className="w-4 h-4 text-emerald-400" />
+                                            <span>綁定好友推薦碼（迎新加碼禮）</span>
+                                        </div>
+                                        {userProfile?.referredBy && (
+                                            <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 text-[10px]">
+                                                已完成綁定
+                                            </Badge>
+                                        )}
+                                    </div>
+
+                                    {userProfile?.referredBy ? (
+                                        <div className="p-3 rounded-xl bg-emerald-950/30 border border-emerald-500/30 flex items-center justify-between text-xs text-slate-300">
+                                            <div className="flex items-center gap-2">
+                                                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                                                <span>已綁定好友推薦碼：<strong className="font-mono text-emerald-300">{userProfile.referredBy}</strong></span>
+                                            </div>
+                                            <span className="text-[11px] text-slate-400">迎新禮已入帳</span>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-2">
+                                            <p className="text-[11px] text-slate-400">
+                                                輸入好友提供的專屬推薦碼，立即額外獲得 +{bonusForReferee} 紅利 P+ 及 {ticketsForReferee} 張免費抽卡券！
+                                            </p>
+                                            <div className="flex gap-2">
+                                                <Input
+                                                    placeholder="輸入好友推薦碼 (4-12 碼)"
+                                                    value={friendReferralInput}
+                                                    onChange={e => setFriendReferralInput(e.target.value.toUpperCase())}
+                                                    onKeyDown={e => e.key === 'Enter' && handleApplyFriendReferral()}
+                                                    className="h-9 bg-slate-950 border-slate-800 text-white font-mono uppercase text-xs rounded-xl"
+                                                />
+                                                <Button
+                                                    size="sm"
+                                                    disabled={isApplyingReferral || !friendReferralInput.trim()}
+                                                    onClick={() => handleApplyFriendReferral()}
+                                                    className="h-9 px-4 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 shrink-0 cursor-pointer active:scale-95"
+                                                >
+                                                    {isApplyingReferral ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : '確認綁定'}
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* 推薦好友名單明細 */}
+                                {user && (
+                                    <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-2.5">
+                                        <div className="flex items-center justify-between text-xs">
+                                            <span className="font-bold text-white flex items-center gap-1.5">
+                                                <Users className="w-3.5 h-3.5 text-cyan-400" />
+                                                <span>我推薦的好友 ({myReferralLogs?.length || 0} 位)</span>
+                                            </span>
+                                            <span className="text-[11px] text-slate-400">最新推薦明細</span>
+                                        </div>
+
+                                        {isLoadingLogs ? (
+                                            <div className="py-4 text-center text-xs text-slate-500">
+                                                <Loader2 className="w-4 h-4 animate-spin mx-auto mb-1 text-cyan-400" />
+                                                載入推薦紀錄中...
+                                            </div>
+                                        ) : myReferralLogs && myReferralLogs.length > 0 ? (
+                                            <div className="space-y-1.5 max-h-36 overflow-y-auto">
+                                                {myReferralLogs.map((log: any) => (
+                                                    <div key={log.id} className="p-2 rounded-lg bg-slate-950/80 border border-white/5 flex items-center justify-between text-xs">
+                                                        <div className="flex items-center gap-2 min-w-0">
+                                                            <div className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-300 text-[10px] font-bold flex items-center justify-center shrink-0">
+                                                                {(log.newUserName || '友').charAt(0)}
+                                                            </div>
+                                                            <span className="font-bold text-white truncate text-[11px]">{log.newUserName || '新會員'}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 shrink-0">
+                                                            <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30 text-[9px] font-mono">
+                                                                +{log.referrerBonusGiven || bonusForReferrer} P+
+                                                            </Badge>
+                                                            <span className="text-[10px] text-slate-500 font-mono">
+                                                                {log.createdAt?.seconds 
+                                                                    ? format(new Date(log.createdAt.seconds * 1000), 'MM/dd')
+                                                                    : '剛剛'}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <p className="text-center py-3 text-[11px] text-slate-500">
+                                                尚未有好友透過您的代碼註冊，快複製推薦碼邀請好友吧！
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* 3. 領取紀錄 */}
                         {selectedTab === 'history' && (
                             <div className="space-y-3">
                                 {allClaimedRecords.length === 0 ? (
@@ -921,58 +1447,53 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward }: PromoRed
                             </div>
                         )}
 
-                        {/* 3. 現場/社群專區 */}
+                        {/* 4. 現場活動專區 */}
                         {selectedTab === 'poster' && (
-                            <div className="space-y-3">
-                                <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-3 text-center">
-                                    <div className="space-y-1">
-                                        <h4 className="text-sm font-bold text-white">現場活動兌換專區</h4>
+                            <div className="space-y-4">
+                                <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-amber-500/10 via-slate-900/90 to-slate-900 border border-amber-500/30 space-y-4 text-center">
+                                    <div className="space-y-1.5">
+                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-bold">
+                                            <QrCode className="w-3.5 h-3.5 text-amber-400" />
+                                            <span>展會活動專屬代碼</span>
+                                        </span>
+                                        <h4 className="text-sm sm:text-base font-bold text-white pt-1">現場活動兌換專區</h4>
                                         <p className="text-xs text-slate-400">
-                                            出示代碼或於現場直接輸入領取
+                                            出示專屬代碼或直接於現場一鍵帶入領取開幕首抽禮
                                         </p>
                                     </div>
-                                    <div className="p-2.5 sm:p-3 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-between text-xs max-w-xs mx-auto gap-2">
-                                        <span className="text-slate-400 whitespace-nowrap">預設代碼：</span>
-                                        <span className="font-mono font-bold text-amber-400 truncate">OPEN2024</span>
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                navigator.clipboard.writeText('OPEN2024');
-                                                toast({ title: '已複製代碼 OPEN2024' });
-                                            }}
-                                            className="text-slate-300 hover:text-white p-1 rounded hover:bg-slate-800 shrink-0"
-                                        >
-                                            <Copy className="w-3.5 h-3.5" />
-                                        </button>
-                                    </div>
-                                </div>
 
-                                {/* 社群快捷專區 */}
-                                <div className="p-3.5 sm:p-4 rounded-xl bg-gradient-to-br from-blue-950/40 via-slate-900/80 to-slate-900/60 border border-blue-500/30 flex items-center justify-between gap-2.5">
-                                    <div className="space-y-0.5 text-left min-w-0 flex-1">
-                                        <div className="flex items-center gap-1.5">
-                                            <Users className="w-4 h-4 text-blue-400 shrink-0" />
-                                            <h5 className="text-xs font-bold text-white">官方卡友社群</h5>
+                                    <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row items-center justify-between text-xs max-w-sm mx-auto gap-3 shadow-inner">
+                                        <div className="text-center sm:text-left min-w-0">
+                                            <span className="text-[10px] text-slate-500 block uppercase font-mono">Event Promo Code</span>
+                                            <span className="font-mono font-black text-base sm:text-lg text-amber-400 tracking-wider">OPEN2024</span>
                                         </div>
-                                        <p className="text-[11px] text-slate-400 leading-tight">
-                                            加入交流群即送首抽，獲取第一手好康
-                                        </p>
+                                        <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-center">
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => {
+                                                    navigator.clipboard.writeText('OPEN2024');
+                                                    toast({ title: '已複製代碼 OPEN2024', description: '可前往兌換區貼上領取首抽禮' });
+                                                }}
+                                                className="h-8 px-2.5 text-xs font-bold border-slate-700 bg-slate-900 text-slate-200 hover:text-white"
+                                            >
+                                                <Copy className="w-3.5 h-3.5 mr-1" />
+                                                <span>複製</span>
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                onClick={() => {
+                                                    setInputCode('OPEN2024');
+                                                    setSelectedTab('redeem');
+                                                }}
+                                                className="h-8 px-3 text-xs font-bold bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-sm cursor-pointer active:scale-95"
+                                            >
+                                                <span>帶入代碼前往兌換 ➜</span>
+                                            </Button>
+                                        </div>
                                     </div>
-                                    <Button
-                                        size="sm"
-                                        onClick={handleClaimCommunityReward}
-                                        disabled={isCommunityClaimed || isClaimingCommunity}
-                                        className={cn(
-                                            "h-8 px-2.5 sm:px-3 text-xs font-bold shrink-0 whitespace-nowrap",
-                                            isCommunityClaimed
-                                                ? "bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed"
-                                                : "bg-blue-600 hover:bg-blue-500 text-white shadow-md cursor-pointer active:scale-95"
-                                        )}
-                                    >
-                                        {isClaimingCommunity ? (
-                                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                        ) : isCommunityClaimed ? '已領取' : '立即加入 ➜'}
-                                    </Button>
                                 </div>
                             </div>
                         )}

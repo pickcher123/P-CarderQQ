@@ -40,7 +40,11 @@ import {
     Info,
     CalendarCheck,
     ArrowRight,
-    Coins
+    Coins,
+    Target,
+    ShieldCheck,
+    Award,
+    Dices
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -50,6 +54,8 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
+    DialogDescription,
+    DialogTrigger,
     DialogClose,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
@@ -422,6 +428,14 @@ export function UnifiedEventCalendar({
         }
     }, [nearestPrediction]);
 
+    const exhibitionEventsCount = useMemo(() => {
+        return allUnifiedEvents.filter(e => e.type === 'exhibition').length;
+    }, [allUnifiedEvents]);
+
+    const matchEventsCount = useMemo(() => {
+        return allUnifiedEvents.filter(e => e.type !== 'exhibition').length;
+    }, [allUnifiedEvents]);
+
     const formatMatchDate = (date: Date) => {
         const days = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
         const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -435,17 +449,101 @@ export function UnifiedEventCalendar({
     return (
         <div className="w-full space-y-6">
             
-            {/* 標題與介紹區塊：乾淨只留 "卡展/賽事行事曆" */}
+            {/* === HERO SECTION: 賽博卡展/賽事（與福袋/團拆風格統一） === */}
             {!hideHeader && (
-                <div className="text-center space-y-2 pb-2 pt-1 relative">
-                    <h1 className="text-2xl sm:text-4xl font-black font-headline tracking-tight text-white">
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-200 via-sky-300 to-amber-400">
-                            卡展/賽事行事曆
-                        </span>
-                    </h1>
-                    <p className="text-xs sm:text-sm text-slate-400 max-w-xl mx-auto">
-                        全台卡展巡迴展訊與熱門賽事對決行程 · 點擊賽事即可跳窗參與競猜預測
-                    </p>
+                <div className="relative rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] p-3.5 sm:p-6 md:p-8 overflow-hidden border border-amber-500/20 bg-gradient-to-b from-slate-900/90 via-[#0a0f1d]/95 to-[#050811] shadow-[0_20px_60px_rgba(0,0,0,0.8)] backdrop-blur-2xl">
+                    {/* Background Grid Pattern */}
+                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#f59e0b10_1px,transparent_1px),linear-gradient(to_bottom,#f59e0b10_1px,transparent_1px)] bg-[size:32px_32px] opacity-60 pointer-events-none" />
+                    
+                    {/* Top Glow Accent Bar */}
+                    <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_15px_#f59e0b]" />
+                    
+                    <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-3 sm:gap-6 md:gap-12">
+                        <div className="space-y-2 sm:space-y-3 text-center lg:text-left max-w-2xl">
+                            <h1 className="font-headline text-2xl sm:text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-yellow-200 to-orange-400 drop-shadow-[0_0_20px_rgba(245,158,11,0.4)] tracking-tight leading-none uppercase">
+                                卡展/賽事
+                            </h1>
+
+                            <p className="text-xs sm:text-sm md:text-base text-slate-300 font-medium leading-normal">
+                                全台卡展巡迴展訊與熱門賽事對決行程，即時連線掌握最新展期與競猜預測。
+                            </p>
+
+                            {/* Rules Quick Dialog Button */}
+                            <div className="pt-1 flex flex-wrap items-center justify-center lg:justify-start gap-2">
+                                <Dialog>
+                                    <DialogTrigger asChild>
+                                        <Button className="h-8 sm:h-10 px-4 sm:px-5 rounded-lg sm:rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 text-xs sm:text-sm font-black shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all gap-1.5 group cursor-pointer">
+                                            <Dices className="w-3.5 h-3.5 text-slate-950 group-hover:rotate-45 transition-transform" />
+                                            <span>玩法說明</span>
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="rounded-[2rem] bg-slate-950 border border-amber-500/30 text-white max-w-2xl backdrop-blur-2xl shadow-2xl">
+                                        <DialogHeader>
+                                            <DialogTitle className="text-xl md:text-2xl font-black text-amber-400 flex items-center gap-2 font-headline">
+                                                <Target className="w-6 h-6 text-amber-400" />
+                                                卡展與賽事行事曆機制說明
+                                            </DialogTitle>
+                                            <DialogDescription className="text-xs text-slate-400 pt-1">
+                                                整合全台卡展巡迴日程與體育賽事對決預測，一站掌握完整玩卡生態。
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <div className="space-y-4 py-3 text-sm text-slate-300">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
+                                                    <div className="flex items-center gap-2 text-cyan-400 font-bold">
+                                                        <MapPin className="w-4 h-4" /> 全台實體卡展巡迴
+                                                    </div>
+                                                    <p className="text-xs text-slate-400">完整收錄台北、台中、高雄等各大展會與卡聚，支援一鍵地圖導航與日程提醒。</p>
+                                                </div>
+                                                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
+                                                    <div className="flex items-center gap-2 text-amber-400 font-bold">
+                                                        <Trophy className="w-4 h-4" /> 熱門賽事即時預測
+                                                    </div>
+                                                    <p className="text-xs text-slate-400">包含 NBA、MLB、職足與職棒焦點大賽，開賽前自由參與競猜，瓜分海量點數。</p>
+                                                </div>
+                                                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
+                                                    <div className="flex items-center gap-2 text-purple-400 font-bold">
+                                                        <Layers className="w-4 h-4" /> 雙模式切換瀏覽
+                                                    </div>
+                                                    <p className="text-xs text-slate-400">自由切換月曆方格檢視或時間軸清單，快速按分類與關鍵字檢索活動。</p>
+                                                </div>
+                                                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
+                                                    <div className="flex items-center gap-2 text-emerald-400 font-bold">
+                                                        <ShieldCheck className="w-4 h-4" /> 自動結算獎勵入庫
+                                                    </div>
+                                                    <p className="text-xs text-slate-400">賽果自動官方公正核定，獲勝玩家紅利與獎勵點數即時自動派發至會員帳號。</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </DialogContent>
+                                </Dialog>
+
+                                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg sm:rounded-xl bg-white/5 border border-white/10 text-[11px] text-slate-300">
+                                    <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+                                    <span>系統自動開獎保障</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Live Stats Widget */}
+                        <div className="grid grid-cols-2 gap-2 sm:gap-3 w-full lg:w-auto shrink-0">
+                            <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-[#0b1329] border border-amber-500/30 flex flex-col items-center justify-center text-center shadow-[0_4px_20px_rgba(245,158,11,0.15)] min-w-[110px] sm:min-w-[130px]">
+                                <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">進行中展訊</span>
+                                <span className="text-xl sm:text-3xl font-black font-headline text-amber-400 mt-0.5 sm:mt-1">
+                                    {exhibitionEventsCount}
+                                </span>
+                                <span className="text-[9px] sm:text-[10px] text-slate-400 mt-0.5">全台巡迴展出</span>
+                            </div>
+
+                            <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-[#0b1329] border border-purple-500/30 flex flex-col items-center justify-center text-center shadow-[0_4px_20px_rgba(168,85,247,0.15)] min-w-[110px] sm:min-w-[130px]">
+                                <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">熱門賽事</span>
+                                <span className="text-xl sm:text-3xl font-black font-headline text-purple-400 mt-0.5 sm:mt-1">
+                                    {matchEventsCount}
+                                </span>
+                                <span className="text-[9px] sm:text-[10px] text-slate-400 mt-0.5">即時競猜中</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             )}
 

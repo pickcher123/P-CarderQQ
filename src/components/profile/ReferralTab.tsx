@@ -50,17 +50,25 @@ export function ReferralTab({ userProfile, userId }: ReferralTabProps) {
     const bonusForReferee = referralConfig?.refereeBonusPoints ?? 50;
     const ticketsForReferee = referralConfig?.freeDrawTickets ?? 1;
 
-    // 查詢我的成功邀請紀錄 (從 referralLogs 查)
+    // 查詢我的成功邀請紀錄 (從 referralLogs 查) - 避免 Firestore composite index 要求
     const logsQuery = useMemoFirebase(() => {
         if (!firestore || !userId) return null;
         return query(
             collection(firestore, 'referralLogs'),
             where('referrerId', '==', userId),
-            orderBy('createdAt', 'desc'),
             limit(50)
         );
     }, [firestore, userId]);
-    const { data: myReferralLogs, isLoading: isLoadingLogs } = useCollection<any>(logsQuery);
+    const { data: rawReferralLogs, isLoading: isLoadingLogs } = useCollection<any>(logsQuery);
+
+    const myReferralLogs = useMemo(() => {
+        if (!rawReferralLogs) return [];
+        return [...rawReferralLogs].sort((a, b) => {
+            const timeA = a.createdAt?.seconds ? a.createdAt.seconds * 1000 : (new Date(a.createdAt || 0).getTime() || 0);
+            const timeB = b.createdAt?.seconds ? b.createdAt.seconds * 1000 : (new Date(b.createdAt || 0).getTime() || 0);
+            return timeB - timeA;
+        });
+    }, [rawReferralLogs]);
 
     const currentInviteCode = userProfile.inviteCode || '';
 
