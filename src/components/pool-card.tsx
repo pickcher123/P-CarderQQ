@@ -92,6 +92,32 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
     const [localTicketRefresh, setLocalTicketRefresh] = useState(0);
     const [selectedPrizeIndex, setSelectedPrizeIndex] = useState(0);
 
+    // 🌟 3D 陀螺儀微傾斜與雷射流光 (Holo Foil) 互動狀態
+    const [cardTilt, setCardTilt] = useState<{ x: number; y: number; active: boolean; mouseX: number; mouseY: number }>({
+        x: 0,
+        y: 0,
+        active: false,
+        mouseX: 50,
+        mouseY: 50,
+    });
+
+    const handleCardMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        const rotateX = ((y - centerY) / centerY) * -12; // 最大傾斜 12 度
+        const rotateY = ((x - centerX) / centerX) * 12;
+        const mousePercentX = Math.round((x / rect.width) * 100);
+        const mousePercentY = Math.round((y / rect.height) * 100);
+        setCardTilt({ x: rotateX, y: rotateY, active: true, mouseX: mousePercentX, mouseY: mousePercentY });
+    };
+
+    const handleCardMouseLeave = () => {
+        setCardTilt({ x: 0, y: 0, active: false, mouseX: 50, mouseY: 50 });
+    };
+
     const effectiveTickets = useMemo(() => {
         return getEffectiveTicketCount(userProfile);
     }, [userProfile, localTicketRefresh]);
@@ -185,6 +211,13 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
             total
         };
     }, [pool, allCardsMap]);
+
+    // 🎯 頭獎雷達與即將售罄衝刺狀態計算
+    const legendaryRemainingCount = rarityDetails.legendary.count;
+    const remainingPacks = pool.remainingPacks ?? 0;
+    const totalPacks = pool.totalPacks ?? 1;
+    const remainingPercent = Math.max(0, Math.min(100, Math.round((remainingPacks / totalPacks) * 100)));
+    const isLastChance = remainingPacks > 0 && remainingPercent <= 20;
 
     const lastPrizeCard = pool.lastPrizeCardId ? allCardsMap.get(pool.lastPrizeCardId) : null;
     
@@ -471,14 +504,46 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                 </div>
             )}
             
-            <div className="relative w-full bg-slate-900/90 backdrop-blur-xl border border-slate-800/90 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden p-3.5 sm:p-5 flex flex-col justify-between">
-                {/* 頂部簡約微光裝飾線 */}
-                <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-cyan-500/60 to-transparent"></div>
+            <div className={cn(
+                "relative w-full bg-slate-900/90 backdrop-blur-xl border rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden p-3.5 sm:p-5 flex flex-col justify-between transition-all duration-500",
+                isLastChance 
+                    ? "border-amber-500/80 shadow-[0_0_35px_rgba(245,158,11,0.35)] ring-1 ring-amber-400/50" 
+                    : "border-slate-800/90 hover:border-slate-700 hover:shadow-cyan-950/30"
+            )}>
+                {/* 頂部微光裝飾線 (衝刺時轉為燃燒金紅流光) */}
+                <div className={cn(
+                    "absolute top-0 left-0 w-full h-[2.5px] transition-all duration-500",
+                    isLastChance 
+                        ? "bg-gradient-to-r from-amber-500 via-rose-500 to-amber-500 animate-pulse" 
+                        : "bg-gradient-to-r from-transparent via-cyan-500/60 to-transparent"
+                )}></div>
 
                 {/* 📌 卡池標題與標籤列（位於卡片上方，置中對齊） */}
                 <div className="mb-3 text-center">
                     {/* 特殊機制標籤列 */}
                     <div className="flex items-center justify-center gap-1.5 mb-2 flex-wrap">
+                        {/* 🎯 頭獎在席即時雷達 */}
+                        {legendaryRemainingCount > 0 ? (
+                            <Badge className="bg-emerald-950/90 text-emerald-300 border border-emerald-500/50 font-black text-[10px] px-2.5 py-0.5 shadow-sm shadow-emerald-900/30 flex items-center gap-1 animate-pulse">
+                                <span className="relative flex h-2 w-2">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
+                                </span>
+                                <span>頭獎在席！(剩 {legendaryRemainingCount} 張)</span>
+                            </Badge>
+                        ) : (pool.remainingPacks ?? 0) > 0 ? (
+                            <Badge className="bg-slate-950/90 text-slate-400 border border-slate-700/60 font-medium text-[10px] px-2 py-0.5">
+                                傳說賞已抽出・最後賞爭奪中
+                            </Badge>
+                        ) : null}
+
+                        {/* 🔥 衝刺狀態標籤 */}
+                        {isLastChance && (
+                            <Badge className="bg-gradient-to-r from-amber-500 to-rose-600 text-slate-950 border border-amber-400/80 font-black text-[10px] px-2.5 py-0.5 shadow-md shadow-amber-500/30 flex items-center gap-1 animate-bounce">
+                                <span>🔥 即將售罄！僅剩 {remainingPacks} 包</span>
+                            </Badge>
+                        )}
+
                         {pool.hasProtection && (
                             <Badge className="bg-slate-950 text-cyan-300 border border-cyan-500/30 font-medium text-[10px] px-2 py-0.5">
                                 <Trophy className="w-3 h-3 mr-1 text-cyan-400" /> 保底機制
@@ -546,13 +611,40 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                     </span>
                                 </div>
 
-                                {/* 🔴 卡片大圖：居中霸氣展示 (保持與手機版一致的精緻收藏展示風格) */}
+                                {/* 🔴 卡片大圖：3D 微傾斜與雷射反光互動 (滑鼠移入跟隨視差傾斜) */}
                                 <div 
                                     onClick={() => setPreviewCard(featuredPrize)}
-                                    className="group/card relative w-40 sm:w-48 md:w-52 aspect-[2.5/3.5] rounded-xl overflow-hidden border-2 border-amber-400/90 bg-slate-950 shrink-0 shadow-[0_8px_25px_rgba(0,0,0,0.8),0_0_25px_rgba(245,158,11,0.25)] hover:border-amber-300 hover:scale-[1.02] cursor-pointer transition-all duration-300 flex items-center justify-center mx-auto"
+                                    onMouseMove={handleCardMouseMove}
+                                    onMouseLeave={handleCardMouseLeave}
+                                    style={{
+                                        transform: cardTilt.active 
+                                            ? `perspective(700px) rotateX(${cardTilt.x}deg) rotateY(${cardTilt.y}deg) scale3d(1.03, 1.03, 1.03)` 
+                                            : 'perspective(700px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)',
+                                        transition: cardTilt.active ? 'transform 0.1s ease-out' : 'transform 0.4s ease-out',
+                                    }}
+                                    className="group/card relative w-40 sm:w-48 md:w-52 aspect-[2.5/3.5] rounded-xl overflow-hidden border-2 border-amber-400/90 bg-slate-950 shrink-0 shadow-[0_8px_30px_rgba(0,0,0,0.85),0_0_30px_rgba(245,158,11,0.3)] hover:border-amber-300 cursor-pointer flex items-center justify-center mx-auto select-none"
                                 >
-                                    {/* 卡片背後微光 */}
-                                    <div className="absolute inset-0 bg-amber-500/10 rounded-xl blur-lg pointer-events-none group-hover/card:bg-amber-400/20 transition-colors" />
+                                    {/* 卡片背後呼吸金光光暈 */}
+                                    <div className="absolute inset-0 bg-amber-500/15 rounded-xl blur-lg pointer-events-none group-hover/card:bg-amber-400/30 transition-colors animate-pulse" />
+
+                                    {/* 實體卡面雷射彩虹折射層 (Holo Sheen Layer) */}
+                                    <div 
+                                        className={cn(
+                                            "absolute inset-0 pointer-events-none transition-opacity duration-200 z-20 mix-blend-color-dodge",
+                                            cardTilt.active ? "opacity-90" : "opacity-0 group-hover/card:opacity-40"
+                                        )}
+                                        style={{
+                                            background: `radial-gradient(circle at ${cardTilt.mouseX}% ${cardTilt.mouseY}%, rgba(255,255,255,0.75) 0%, rgba(255,215,0,0.45) 25%, rgba(168,85,247,0.35) 50%, rgba(34,211,238,0.25) 75%, transparent 100%)`,
+                                        }}
+                                    />
+
+                                    {/* 炫光斜向光束 (Foil Beams) */}
+                                    <div 
+                                        className="absolute inset-0 pointer-events-none z-20 mix-blend-overlay opacity-0 group-hover/card:opacity-50 transition-opacity duration-300"
+                                        style={{
+                                            backgroundImage: 'linear-gradient(115deg, transparent 25%, rgba(255,255,255,0.35) 45%, rgba(255,215,0,0.6) 50%, rgba(255,255,255,0.35) 55%, transparent 75%)',
+                                        }}
+                                    />
 
                                     <SafeImage 
                                         src={featuredPrize.imageUrl} 
@@ -563,17 +655,25 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                     />
                                     
                                     {/* 卡片角標 */}
-                                    <div className="absolute top-1.5 left-1.5 z-10">
+                                    <div className="absolute top-1.5 left-1.5 z-30">
                                         <span className="bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-black text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded shadow uppercase tracking-wider flex items-center gap-0.5">
                                             <Star className="w-2.5 h-2.5 fill-slate-950" />
                                             <span>{featuredPrize.isLastPrize ? '最後賞' : 'TOP'}</span>
                                         </span>
                                     </div>
 
+                                    {/* 右上方：點擊雙面檢視提示浮水微標籤 */}
+                                    <div className="absolute top-1.5 right-1.5 z-30 opacity-0 group-hover/card:opacity-100 transition-opacity duration-200">
+                                        <span className="bg-slate-950/80 backdrop-blur-xs text-amber-300 border border-amber-400/40 font-bold text-[9px] px-1.5 py-0.5 rounded-md shadow flex items-center gap-1">
+                                            <Eye className="w-2.5 h-2.5" />
+                                            <span>放大檢視</span>
+                                        </span>
+                                    </div>
+
                                     {/* 完售遮罩 */}
                                     {featuredPrize.quantity <= 0 && !featuredPrize.isPoolCover && (
-                                        <div className="absolute inset-0 bg-black/70 backdrop-blur-[1px] flex items-center justify-center z-10">
-                                            <span className="bg-rose-600/90 text-white font-black text-[10px] px-2 py-0.5 rounded border border-rose-400/60 shadow">
+                                        <div className="absolute inset-0 bg-black/75 backdrop-blur-[2px] flex items-center justify-center z-30">
+                                            <span className="bg-rose-600 text-white font-black text-xs px-2.5 py-1 rounded-lg border border-rose-400 shadow-lg">
                                                 已抽出
                                             </span>
                                         </div>
@@ -583,7 +683,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                 {/* 🔴 資訊區：全寬置中 (賞別/存量/約值、底部大獎清單+賞品清冊) */}
                                 <div className="w-full min-w-0 flex flex-col justify-between space-y-2.5 text-center py-0.5">
                                     
-                                    {/* 稀有度標籤、存量與估值置中 */}
+                                    {/* 稀有度標籤與存量置中 (已移除估值，避免爭議) */}
                                     <div className="flex items-center justify-center gap-2 flex-wrap">
                                         <span className={cn(
                                             "px-3 py-1 rounded-lg text-xs sm:text-sm font-black uppercase tracking-wider border shadow-sm whitespace-nowrap",
@@ -600,13 +700,6 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                                     : "bg-rose-950/60 border-rose-800 text-rose-300"
                                             )}>
                                                 {(featuredPrize.quantity ?? 1) > 0 ? `剩餘 ${featuredPrize.quantity} 張` : '已抽畢'}
-                                            </span>
-                                        )}
-
-                                        {featuredPrize.cardVal > 0 && (
-                                            <span className="px-3 py-1 rounded-lg text-xs sm:text-sm font-bold bg-amber-500/10 border border-amber-500/30 text-amber-300 flex items-center gap-1 whitespace-nowrap">
-                                                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                                                約 ${featuredPrize.cardVal.toLocaleString()}
                                             </span>
                                         )}
                                     </div>
@@ -748,25 +841,40 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                         })}
                     </div>
 
-                    {/* 卡池剩餘包數與進度條 */}
+                    {/* 卡池剩餘包數與進度條 (衝刺時切換為燃燒烈焰流光) */}
                     <div className="mt-2 pt-2 border-t border-slate-800/80">
                         <div className="flex justify-between items-center text-[11px] mb-1.5 font-medium">
-                            <span className="text-slate-400 flex items-center gap-1.5 text-[10px] sm:text-[11px]">
-                                <Zap className="w-3.5 h-3.5 text-cyan-400" />
-                                剩餘包數
+                            <span className={cn(
+                                "flex items-center gap-1.5 text-[10px] sm:text-[11px] font-bold",
+                                isLastChance ? "text-amber-400" : "text-slate-400"
+                            )}>
+                                <Zap className={cn("w-3.5 h-3.5 shrink-0", isLastChance ? "text-amber-400 fill-amber-400 animate-pulse" : "text-cyan-400")} />
+                                <span>{isLastChance ? '🔥 搶包衝刺 (最後席位)' : '剩餘包數'}</span>
                             </span>
                             <div className="flex items-baseline gap-1 font-mono text-xs">
-                                <span className="font-bold text-white text-xs sm:text-sm">{pool.remainingPacks}</span>
+                                <span className={cn("font-black text-xs sm:text-sm", isLastChance ? "text-amber-300" : "text-white")}>
+                                    {pool.remainingPacks}
+                                </span>
                                 <span className="text-slate-500 text-[10px]">/{pool.totalPacks}</span>
-                                <span className="text-cyan-400 text-[10px] sm:text-[11px] font-bold ml-1">
-                                    ({((pool.remainingPacks || 0) / (pool.totalPacks || 1) * 100).toFixed(0)}%)
+                                <span className={cn("text-[10px] sm:text-[11px] font-black ml-1", isLastChance ? "text-rose-400 animate-pulse" : "text-cyan-400")}>
+                                    ({remainingPercent}%)
                                 </span>
                             </div>
                         </div>
-                        <div className="h-2 w-full bg-slate-900/90 rounded-full overflow-hidden p-0.5 border border-slate-800/70">
+                        <div className={cn(
+                            "h-2.5 w-full rounded-full overflow-hidden p-0.5 border transition-all duration-300",
+                            isLastChance 
+                                ? "bg-amber-950/60 border-amber-500/70 shadow-[0_0_12px_rgba(245,158,11,0.35)]" 
+                                : "bg-slate-900/90 border-slate-800/70"
+                        )}>
                             <div 
-                                className="h-full bg-gradient-to-r from-cyan-500 via-sky-400 to-blue-500 rounded-full transition-all duration-500 shadow-[0_0_8px_rgba(6,182,212,0.4)]"
-                                style={{ width: `${Math.max(0, Math.min(100, (pool.remainingPacks || 0) / (pool.totalPacks || 1) * 100))}%` }}
+                                className={cn(
+                                    "h-full rounded-full transition-all duration-500",
+                                    isLastChance 
+                                        ? "bg-gradient-to-r from-amber-400 via-rose-500 to-red-600 shadow-[0_0_12px_rgba(244,63,94,0.7)] animate-pulse" 
+                                        : "bg-gradient-to-r from-cyan-500 via-sky-400 to-blue-500 shadow-[0_0_8px_rgba(6,182,212,0.4)]"
+                                )}
+                                style={{ width: `${remainingPercent}%` }}
                             />
                         </div>
                     </div>
