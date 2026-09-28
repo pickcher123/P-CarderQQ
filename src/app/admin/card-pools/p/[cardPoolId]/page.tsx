@@ -319,7 +319,7 @@ export default function CardPoolDetailPage() {
     });
 
     return ids;
-  }, [allCardPools, bettingItems, luckBags]);
+  }, [allCardPools, bettingItems, luckBags, cardPoolId]);
 
   useEffect(() => {
     if (cardPool) {

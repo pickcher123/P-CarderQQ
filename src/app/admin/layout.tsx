@@ -36,7 +36,8 @@ import {
   ShieldAlert,
   Activity,
   X,
-  Compass
+  Compass,
+  Home
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -238,14 +239,13 @@ function MobileHeader({ permissions, isSuperAdmin }: { permissions?: string[]; i
             <div className="border-t border-slate-200 p-3 bg-slate-50">
               <Link 
                 href="/" 
-                target="_blank"
                 className="flex items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold bg-white border border-slate-200 hover:bg-slate-50 transition-colors text-slate-700"
               >
                 <div className="flex items-center gap-2">
-                  <Compass className="h-4 w-4 text-slate-500" />
-                  <span>前往前台網站</span>
+                  <Home className="h-4 w-4 text-slate-500" />
+                  <span>返回前台首頁</span>
                 </div>
-                <ExternalLink className="h-3.5 w-3.5 text-slate-400"/>
+                <ChevronRight className="h-3.5 w-3.5 text-slate-400"/>
               </Link>
             </div>
           </SheetContent>
@@ -260,10 +260,10 @@ function MobileHeader({ permissions, isSuperAdmin }: { permissions?: string[]; i
       
       <Link 
         href="/" 
-        className="text-xs font-semibold text-slate-600 hover:text-slate-900 flex items-center gap-1 bg-slate-100 hover:bg-slate-200/80 px-2.5 py-1.5 rounded-lg transition-colors"
+        className="text-xs font-semibold text-slate-700 hover:text-slate-900 flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition-colors border border-slate-200/80 shadow-2xs"
       >
-        <span>前台</span>
-        <ChevronRight className="h-3 w-3" />
+        <Home className="h-3.5 w-3.5 text-slate-600" />
+        <span>返回前台</span>
       </Link>
     </header>
   );
@@ -421,18 +421,17 @@ export default function AdminLayout({
 
           <Link 
             href="/" 
-            target="_blank"
             className={cn(
-              "group flex items-center rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-white hover:text-slate-900 hover:shadow-2xs transition-colors border border-transparent hover:border-slate-200", 
+              "group flex items-center rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-white hover:text-slate-950 hover:shadow-2xs transition-colors border border-transparent hover:border-slate-200", 
               isCollapsed && "justify-center px-2 py-2"
             )}
-            title="開啟前台網站"
+            title="返回前台首頁 (同視窗)"
           >
-            <Compass className="h-3.5 w-3.5 shrink-0 text-slate-400 group-hover:text-slate-700" />
+            <Home className="h-3.5 w-3.5 shrink-0 text-slate-500 group-hover:text-slate-900" />
             {!isCollapsed && (
               <div className="ml-2 flex items-center justify-between flex-1">
-                <span>前往前台網站</span>
-                <ExternalLink className="h-3 w-3 text-slate-400 opacity-60" />
+                <span className="font-semibold">返回前台網站</span>
+                <ChevronRight className="h-3 w-3 text-slate-400 opacity-60" />
               </div>
             )}
           </Link>
@@ -470,8 +469,8 @@ export default function AdminLayout({
             )}
           </div>
 
-          <div className="flex items-center gap-4 text-xs">
-            <div className="flex items-center gap-1.5 text-slate-600">
+          <div className="flex items-center gap-3 text-xs">
+            <div className="flex items-center gap-1.5 text-slate-600 mr-1">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
@@ -481,13 +480,25 @@ export default function AdminLayout({
 
             <span className="text-slate-200">|</span>
 
+            {/* 同視窗直接返回前台 (主要按鈕，不開新分頁) */}
+            <Link 
+              href="/" 
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition-colors border border-slate-200/80 shadow-2xs group"
+              title="在當前視窗直接返回前台首頁"
+            >
+              <Home className="h-3.5 w-3.5 text-slate-600 group-hover:text-slate-900" />
+              <span>返回前台首頁</span>
+            </Link>
+
+            {/* 開新分頁小圖示 (可選) */}
             <Link 
               href="/" 
               target="_blank"
-              className="flex items-center gap-1 text-slate-600 hover:text-slate-900 font-medium transition-colors"
+              rel="noopener noreferrer"
+              className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+              title="在新分頁另開前台"
             >
-              <span>前台首頁</span>
-              <ExternalLink className="h-3 w-3 text-slate-400" />
+              <ExternalLink className="h-3.5 w-3.5" />
             </Link>
           </div>
         </header>

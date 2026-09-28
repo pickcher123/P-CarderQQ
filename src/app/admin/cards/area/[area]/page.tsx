@@ -42,6 +42,7 @@ import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { userLevels } from '@/components/member-level-crown';
+import { SmartBulkCardUploadDialog } from '@/components/admin/smart-bulk-card-upload-dialog';
 
 export interface CardData {
     id?: string;
@@ -571,7 +572,7 @@ export default function CardAreaManagementPage() {
             </div>
             
             <div className="flex flex-wrap items-center gap-3">
-                <BulkUploadDialog 
+                <SmartBulkCardUploadDialog 
                     area={area} 
                     onComplete={() => {
                         setDateFilter('today');
@@ -595,9 +596,10 @@ export default function CardAreaManagementPage() {
                         setBackPreviewUrl(null); 
                         setIsCardDialogOpen(true); 
                     }} 
-                    className="h-10 rounded-xl font-black bg-slate-900 text-white hover:bg-slate-800 shadow-lg"
+                    variant="outline"
+                    className="h-10 rounded-xl font-bold border-slate-200 bg-white text-slate-800 hover:bg-slate-50"
                 >
-                    <PlusCircle className="mr-2 h-4 w-4" /> 新增卡片
+                    <PlusCircle className="mr-2 h-4 w-4" /> 單張手動新增
                 </Button>
             </div>
         </div>

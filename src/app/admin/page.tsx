@@ -27,7 +27,8 @@ import {
   Clock,
   Layers,
   ShoppingBag,
-  Palette
+  Palette,
+  Home
 } from 'lucide-react';
 import { useRequest, useFirestore, useMemoFirebase, useDoc, useUser } from "@/firebase";
 import { collection, doc, updateDoc, query, where, getDocs, writeBatch, setDoc } from "firebase/firestore";
@@ -312,10 +313,10 @@ export default function AdminDashboardPage() {
               營運報表
             </Link>
           </Button>
-          <Button asChild size="sm" className="h-8 text-xs font-semibold rounded-lg bg-slate-900 text-white hover:bg-slate-800">
-            <Link href="/" target="_blank">
-              <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
-              前往前台網站
+          <Button asChild size="sm" className="h-8 text-xs font-semibold rounded-lg bg-slate-900 text-white hover:bg-slate-800 shadow-sm">
+            <Link href="/">
+              <Home className="mr-1.5 h-3.5 w-3.5" />
+              返回前台首頁
             </Link>
           </Button>
         </div>

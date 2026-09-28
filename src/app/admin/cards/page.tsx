@@ -10,6 +10,7 @@ import { Package, Swords, Ticket, Users2, ChevronRight, Layers, CreditCard, Plus
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { SmartBulkCardUploadDialog } from '@/components/admin/smart-bulk-card-upload-dialog';
 
 interface CardData {
     id: string;
@@ -127,12 +128,19 @@ export default function CardsAdminAreaListPage() {
                     </p>
                 </div>
                 
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
+                    <SmartBulkCardUploadDialog 
+                        area="all" 
+                        onComplete={() => {
+                            router.push('/admin/cards/area/all');
+                        }} 
+                    />
                     <Button 
                         onClick={() => router.push('/admin/cards/area/all')}
-                        className="bg-slate-900 text-white hover:bg-slate-800 font-bold rounded-xl shadow-xs"
+                        variant="outline"
+                        className="border-slate-200 bg-white text-slate-800 hover:bg-slate-50 font-bold rounded-xl shadow-xs"
                     >
-                        <Plus className="mr-2 h-4 w-4" /> 新增卡片 / 批量上傳
+                        <Plus className="mr-2 h-4 w-4" /> 進入全部資產庫
                     </Button>
                 </div>
             </div>
