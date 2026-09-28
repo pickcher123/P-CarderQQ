@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { SmartBulkCardUploadDialog } from '@/components/admin/smart-bulk-card-upload-dialog';
+import { CardUploadGuideDialog } from '@/components/admin/card-upload-guide-dialog';
 
 interface CardData {
     id: string;
@@ -129,6 +130,7 @@ export default function CardsAdminAreaListPage() {
                 </div>
                 
                 <div className="flex flex-wrap items-center gap-3">
+                    <CardUploadGuideDialog />
                     <SmartBulkCardUploadDialog 
                         area="all" 
                         onComplete={() => {

@@ -43,6 +43,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { userLevels } from '@/components/member-level-crown';
 import { SmartBulkCardUploadDialog } from '@/components/admin/smart-bulk-card-upload-dialog';
+import { CardUploadGuideDialog } from '@/components/admin/card-upload-guide-dialog';
 
 export interface CardData {
     id?: string;
@@ -572,6 +573,9 @@ export default function CardAreaManagementPage() {
             </div>
             
             <div className="flex flex-wrap items-center gap-3">
+                {/* 運作機制說明 (紅色圈圈位置) */}
+                <CardUploadGuideDialog />
+
                 <SmartBulkCardUploadDialog 
                     area={area} 
                     onComplete={() => {
