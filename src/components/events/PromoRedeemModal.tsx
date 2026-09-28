@@ -425,7 +425,7 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
         } finally {
             setIsCheckingIn(false);
         }
-    }, [user, firestore, hasClaimedCheckInToday, missionId, rewardPoints, todayStr, refetchProgress, toast]);
+    }, [user, firestore, hasClaimedCheckInToday, missionId, rewardPoints, refetchProgress, toast]);
 
     // 載入本地兌換歷史並在開啟時自動同步至 Firestore
     useEffect(() => {
@@ -771,7 +771,7 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
         }
 
         return records;
-    }, [hasClaimedCheckInToday, todayStr, rewardPoints, isStarterClaimed, isCommunityClaimed, claimedHistory, userProfile?.claimedPromoCodes]);
+    }, [hasClaimedCheckInToday, todayStr, rewardPoints, isStarterClaimed, isCommunityClaimed, claimedHistory, userProfile?.claimedPromoCodes, userProfile?.referredBy, bonusForReferee]);
 
     const showCheckInCard = !hasClaimedCheckInToday;
     const showStarterCard = !isStarterClaimed;

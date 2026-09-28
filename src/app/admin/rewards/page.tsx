@@ -2,7 +2,7 @@
 
 import { useState, useEffect, ChangeEvent } from 'react';
 import { useCollection, useFirestore, useMemoFirebase, useDoc, useStorage } from '@/firebase';
-import { collection, addDoc, updateDoc, doc, query, where, limit, deleteDoc, orderBy } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, doc, query, where, limit, deleteDoc, orderBy, setDoc } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -172,7 +172,7 @@ export default function RewardsAdminPage() {
 
         <TabsContent value="levels">
             <Card className="border-slate-200 shadow-sm bg-white">
-                <CardHeader className="flex flex-row justify-between items-center"><CardTitle className="text-lg flex items-center gap-2"><Trophy className="h-5 w-5 text-slate-400" /> 等級權益矩陣</CardTitle><Button onClick={async () => { setIsProcessing(true); try { await updateDoc(systemConfigRef!, { levelBenefits }); toast({title:'已更新'}); } catch(e){} finally {setIsProcessing(false);}}} disabled={isProcessing} className="bg-slate-900 text-white font-bold h-10 px-6">確認更新</Button></CardHeader>
+                <CardHeader className="flex flex-row justify-between items-center"><CardTitle className="text-lg flex items-center gap-2"><Trophy className="h-5 w-5 text-slate-400" /> 等級權益矩陣</CardTitle><Button onClick={async () => { setIsProcessing(true); try { await setDoc(systemConfigRef!, { levelBenefits }, { merge: true }); toast({title:'已更新'}); } catch(e){} finally {setIsProcessing(false);}}} disabled={isProcessing} className="bg-slate-900 text-white font-bold h-10 px-6">確認更新</Button></CardHeader>
                 <CardContent className="p-0">
                     <Table>
                         <TableHeader className="bg-slate-50"><TableRow><TableHead className="pl-8">等級名稱</TableHead><TableHead>門檻 (💎)</TableHead><TableHead>免運</TableHead><TableHead className="pr-8">回饋 (%)</TableHead></TableRow></TableHeader>

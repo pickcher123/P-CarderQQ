@@ -3,7 +3,7 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Image as ImageIcon, Wallpaper, Trash2, BookOpen, Info, Layers, Sparkles, Clock, ShieldCheck, Sun, Moon, RefreshCw } from 'lucide-react';
 import { useFirestore, useDoc, useStorage, useMemoFirebase } from "@/firebase";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, updateDoc, setDoc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -89,8 +89,8 @@ export default function MaterialsAdminPage() {
             const uploadTask = uploadBytesResumable(fileRef, file);
             uploadTask.on('state_changed', (s) => setProgress((s.bytesTransferred / s.totalBytes) * 100), (e) => setProgress(null), async () => {
                 const url = await getDownloadURL(uploadTask.snapshot.ref);
-                if (type === 'logo') await updateDoc(systemConfigRef, { logoUrl: url });
-                else if (type === 'origin') await updateDoc(systemConfigRef, { aboutOriginImageUrl: url });
+                if (type === 'logo') await setDoc(systemConfigRef, { logoUrl: url }, { merge: true });
+                else if (type === 'origin') await setDoc(systemConfigRef, { aboutOriginImageUrl: url }, { merge: true });
                 else fetchBackgrounds();
                 toast({ title: "成功" }); setProgress(null);
             });
@@ -136,7 +136,7 @@ export default function MaterialsAdminPage() {
                             <Button 
                                 variant="outline" 
                                 className="w-full h-12 border-slate-200 text-slate-500 hover:text-red-500 hover:border-red-200"
-                                onClick={() => updateDoc(systemConfigRef!, { backgroundUrl: null })}
+                                onClick={() => setDoc(systemConfigRef!, { backgroundUrl: null }, { merge: true })}
                             >
                                 清除當前背景圖片 (點回無背景)
                             </Button>
@@ -153,7 +153,7 @@ export default function MaterialsAdminPage() {
                                     </div>
                                     <Switch 
                                         checked={systemConfig?.showFloatingBackground !== false} 
-                                        onCheckedChange={(v) => updateDoc(systemConfigRef!, { showFloatingBackground: v })} 
+                                        onCheckedChange={(v) => setDoc(systemConfigRef!, { showFloatingBackground: v }, { merge: true })} 
                                     />
                                 </div>
                             </div>
@@ -185,10 +185,10 @@ export default function MaterialsAdminPage() {
                                         type="button"
                                         onClick={async () => {
                                             if (!systemConfigRef) return;
-                                            await updateDoc(systemConfigRef, {
+                                            await setDoc(systemConfigRef, {
                                                 wallpaperParticleEffect: 'gold_dust',
                                                 dailyStyleRotation: false, // 關鍵：直接套用，無視 12 點更換
-                                            });
+                                            }, { merge: true });
                                             try {
                                                 localStorage.setItem('p_carder_wallpaper_particle', 'gold_dust');
                                                 window.dispatchEvent(new CustomEvent('wallpaper-particle-changed', { detail: { mode: 'gold_dust' } }));
@@ -216,10 +216,10 @@ export default function MaterialsAdminPage() {
                                         type="button"
                                         onClick={async () => {
                                             if (!systemConfigRef) return;
-                                            await updateDoc(systemConfigRef, {
+                                            await setDoc(systemConfigRef, {
                                                 wallpaperParticleEffect: 'stars',
                                                 dailyStyleRotation: false, // 關鍵：直接套用，無視 12 點更換
-                                            });
+                                            }, { merge: true });
                                             try {
                                                 localStorage.setItem('p_carder_wallpaper_particle', 'stars');
                                                 window.dispatchEvent(new CustomEvent('wallpaper-particle-changed', { detail: { mode: 'stars' } }));
@@ -247,10 +247,10 @@ export default function MaterialsAdminPage() {
                                         type="button"
                                         onClick={async () => {
                                             if (!systemConfigRef) return;
-                                            await updateDoc(systemConfigRef, {
+                                            await setDoc(systemConfigRef, {
                                                 wallpaperParticleEffect: 'none',
                                                 dailyStyleRotation: false, // 關鍵：直接套用，無視 12 點更換
-                                            });
+                                            }, { merge: true });
                                             try {
                                                 localStorage.setItem('p_carder_wallpaper_particle', 'none');
                                                 window.dispatchEvent(new CustomEvent('wallpaper-particle-changed', { detail: { mode: 'none' } }));
@@ -306,7 +306,7 @@ export default function MaterialsAdminPage() {
                                         checked={systemConfig?.dailyStyleRotation === true} 
                                         onCheckedChange={async (v) => {
                                             if (!systemConfigRef) return;
-                                            await updateDoc(systemConfigRef, { dailyStyleRotation: v });
+                                            await setDoc(systemConfigRef, { dailyStyleRotation: v }, { merge: true });
                                             if (v) {
                                                 const autoMode = getEffectiveParticleEffect({ ...systemConfig, dailyStyleRotation: true });
                                                 window.dispatchEvent(new CustomEvent('wallpaper-particle-changed', { detail: { mode: autoMode } }));
@@ -331,7 +331,7 @@ export default function MaterialsAdminPage() {
                                             <div className="inline-flex rounded-lg bg-black/40 p-1 border border-white/10">
                                                 <button
                                                     type="button"
-                                                    onClick={() => updateDoc(systemConfigRef!, { dailyRotationType: 'every_12_hours' })}
+                                                    onClick={() => setDoc(systemConfigRef!, { dailyRotationType: 'every_12_hours' }, { merge: true })}
                                                     className={cn(
                                                         "px-2.5 py-1 rounded-md text-[11px] font-bold transition",
                                                         (systemConfig?.dailyRotationType || 'every_12_hours') === 'every_12_hours'
@@ -343,7 +343,7 @@ export default function MaterialsAdminPage() {
                                                 </button>
                                                 <button
                                                     type="button"
-                                                    onClick={() => updateDoc(systemConfigRef!, { dailyRotationType: 'daily_at_noon' })}
+                                                    onClick={() => setDoc(systemConfigRef!, { dailyRotationType: 'daily_at_noon' }, { merge: true })}
                                                     className={cn(
                                                         "px-2.5 py-1 rounded-md text-[11px] font-bold transition",
                                                         systemConfig?.dailyRotationType === 'daily_at_noon'
@@ -365,7 +365,7 @@ export default function MaterialsAdminPage() {
                                                     </span>
                                                     <div>
                                                         <p className="text-xs font-bold text-amber-300">
-                                                            目前排程生效風格：{STYLE_DEFINITIONS[effectiveStyle as 'gold_dust' | 'stars' | 'none']?.name || '璀璨金粒'}
+                                                             目前排程生效風格：{STYLE_DEFINITIONS[effectiveStyle as 'gold_dust' | 'stars' | 'none']?.name || '璀璨金粒'}
                                                         </p>
                                                         <p className="text-[10px] text-slate-400">
                                                             {STYLE_DEFINITIONS[effectiveStyle as 'gold_dust' | 'stars' | 'none']?.description}
@@ -388,7 +388,7 @@ export default function MaterialsAdminPage() {
                             <div className="space-y-4">
                                 <Label className="text-xs font-bold text-slate-500 flex justify-between">背景不透明度 <span>{Math.round(currentOpacity * 100)}%</span></Label>
                                 <div className="p-6 bg-slate-50 border rounded-xl">
-                                    <Slider value={[currentOpacity]} max={1} step={0.1} onValueChange={v => setCurrentOpacity(v[0])} onValueCommit={v => updateDoc(systemConfigRef!, { backgroundOpacity: v[0] })} />
+                                    <Slider value={[currentOpacity]} max={1} step={0.1} onValueChange={v => setCurrentOpacity(v[0])} onValueCommit={v => setDoc(systemConfigRef!, { backgroundOpacity: v[0] }, { merge: true })} />
                                 </div>
                                 <div className="p-6 rounded-2xl bg-accent/5 border border-accent/20 space-y-3">
                                     <p className="text-[10px] text-accent font-black uppercase tracking-[0.2em] flex items-center gap-2"><Info className="w-3 h-3"/> 專業建議提示</p>
@@ -405,7 +405,7 @@ export default function MaterialsAdminPage() {
                             <div key={img.url} className={cn("relative aspect-video rounded-xl border-2 transition-all cursor-pointer group", systemConfig?.backgroundUrl === img.url ? "border-slate-900 ring-2 ring-slate-100" : "border-slate-100")}>
                                 <SafeImage src={img.url} alt="bg" fill className="object-cover rounded-lg" />
                                 <div className="absolute inset-0 bg-white/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                                    <Button size="sm" onClick={() => updateDoc(systemConfigRef!, { backgroundUrl: img.url })}>套用</Button>
+                                    <Button size="sm" onClick={() => setDoc(systemConfigRef!, { backgroundUrl: img.url }, { merge: true })}>套用</Button>
                                     <Button size="sm" variant="destructive" onClick={async () => { await deleteObject(img.ref); fetchBackgrounds(); }}><Trash2 size={14}/></Button>
                                 </div>
                             </div>

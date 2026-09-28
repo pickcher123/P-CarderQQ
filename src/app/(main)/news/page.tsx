@@ -35,6 +35,7 @@ import { cn } from '@/lib/utils';
 import { useSearchParams } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import type { SystemConfig } from '@/types/system';
+import { OFFICIAL_NEWS_LIST } from '@/lib/default-news';
 
 // 公版高品質收藏家/活動背景圖
 const DEFAULT_NEWS_HERO_BG = 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?q=80&w=2000&auto=format&fit=crop';
@@ -48,6 +49,7 @@ interface NewsItem {
     imageUrl?: string;
     createdAt?: { seconds: number };
     isPinned?: boolean;
+    isDeleted?: boolean;
 }
 
 function NewsPageContent() {
@@ -70,13 +72,28 @@ function NewsPageContent() {
 
   const { data: newsItems, isLoading: isLoadingNews } = useCollection<NewsItem>(newsQuery);
 
+  // 合併雲端最新消息與官方旗艦公告 (置頂優先，接著時間由新到舊)
+  const effectiveNews = useMemo(() => {
+    const rawItems = newsItems || [];
+    const customItems = rawItems.filter(n => !n.isDeleted);
+    const existingIds = new Set(rawItems.map(n => n.id));
+    const remainingOfficial = OFFICIAL_NEWS_LIST.filter(n => !existingIds.has(n.id));
+    const all = [...customItems, ...remainingOfficial];
+    return all.sort((a, b) => {
+      const aPinned = Boolean(a.isPinned);
+      const bPinned = Boolean(b.isPinned);
+      if (aPinned !== bPinned) return aPinned ? -1 : 1;
+      return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
+    });
+  }, [newsItems]);
+
   // 取得所有現有分類與統計數量
   const { categories, categoryCounts } = useMemo(() => {
-    if (!newsItems) return { categories: ['ALL'], categoryCounts: { ALL: 0 } as Record<string, number> };
+    if (!effectiveNews || effectiveNews.length === 0) return { categories: ['ALL'], categoryCounts: { ALL: 0 } as Record<string, number> };
     const cats = new Set<string>();
-    const counts: Record<string, number> = { ALL: newsItems.length };
+    const counts: Record<string, number> = { ALL: effectiveNews.length };
     
-    newsItems.forEach(n => {
+    effectiveNews.forEach(n => {
       const cat = n.category?.trim() || '官方公告';
       cats.add(cat);
       counts[cat] = (counts[cat] || 0) + 1;
@@ -85,23 +102,23 @@ function NewsPageContent() {
       categories: ['ALL', ...Array.from(cats)],
       categoryCounts: counts
     };
-  }, [newsItems]);
+  }, [effectiveNews]);
 
   // 當網址帶有 id 參數時，自動開啟對應的消息詳細內容
   useEffect(() => {
     const targetId = searchParams.get('id');
-    if (targetId && newsItems && newsItems.length > 0) {
-      const item = newsItems.find(n => n.id === targetId);
+    if (targetId && effectiveNews && effectiveNews.length > 0) {
+      const item = effectiveNews.find(n => n.id === targetId);
       if (item) {
         setSelectedNews(item);
       }
     }
-  }, [searchParams, newsItems]);
+  }, [searchParams, effectiveNews]);
 
   // 篩選與排序邏輯 (置頂優先，接著是時間)
   const filteredNews = useMemo(() => {
-    if (!newsItems) return [];
-    return newsItems.filter(item => {
+    if (!effectiveNews) return [];
+    return effectiveNews.filter(item => {
       const matchesCat = selectedCategory === 'ALL' || (item.category?.trim() || '官方公告') === selectedCategory;
       const matchesSearch = !searchTerm.trim() || 
         item.title?.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -112,7 +129,7 @@ function NewsPageContent() {
       if (!a.isPinned && b.isPinned) return 1;
       return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
     });
-  }, [newsItems, selectedCategory, searchTerm]);
+  }, [effectiveNews, selectedCategory, searchTerm]);
 
   // 取得背景圖網址 (支援自訂或公版)
   const heroBackgroundUrl = systemConfig?.backgroundUrl || DEFAULT_NEWS_HERO_BG;
@@ -386,73 +403,80 @@ function NewsPageContent() {
       {/* 消息詳細視窗 (Dialog) */}
       <Dialog open={!!selectedNews} onOpenChange={(open) => !open && setSelectedNews(null)}>
         <DialogContent className={cn(
-            "bg-slate-950/98 backdrop-blur-2xl border-slate-800 p-0 overflow-hidden shadow-2xl rounded-3xl text-slate-100",
-            selectedNews?.type === 'image' ? "max-w-4xl" : "max-w-2xl"
+            "bg-slate-950/98 backdrop-blur-2xl border border-slate-800 p-0 overflow-hidden shadow-2xl rounded-2xl sm:rounded-3xl text-slate-100 w-[94vw] sm:w-[90vw] md:w-full max-h-[88vh] flex flex-col",
+            selectedNews?.type === 'image' ? "sm:max-w-4xl" : "sm:max-w-3xl"
         )}>
           <DialogHeader className="sr-only">
             <DialogTitle>{selectedNews?.title}</DialogTitle>
             <DialogDescription>最新消息詳情</DialogDescription>
           </DialogHeader>
           
-          <ScrollArea className="max-h-[85vh]">
-            {selectedNews?.type === 'image' ? (
-                <div className="flex flex-col text-white">
-                    <div className="relative w-full aspect-auto min-h-[260px] bg-black/90 flex items-center justify-center p-2 sm:p-4">
-                        {selectedNews.imageUrl && (
-                            <SafeImage 
-                                src={selectedNews.imageUrl} 
-                                alt={selectedNews.title} 
-                                className="w-full h-auto object-contain max-h-[70vh] rounded-2xl shadow-2xl"
-                                width={1200}
-                                height={800}
-                            />
-                        )}
-                    </div>
-                    <div className="p-5 sm:p-6 bg-slate-900/95 flex flex-col md:flex-row md:items-center justify-between border-t border-slate-800 gap-3">
-                        <div className="flex items-center gap-3">
-                            <Badge className="bg-amber-500 text-slate-950 font-black px-2.5 py-1 text-xs border-none shadow-md">
-                              {selectedNews.category || '官方公告'}
-                            </Badge>
-                            <span className="text-xs text-slate-400 font-mono flex items-center gap-1">
-                              <Calendar className="w-3.5 h-3.5 text-amber-400" />
-                              {selectedNews.createdAt ? format(new Date(selectedNews.createdAt.seconds * 1000), 'yyyy-MM-dd HH:mm') : '---'}
-                            </span>
-                        </div>
-                        <h2 className="text-base sm:text-lg font-black truncate">{selectedNews.title}</h2>
-                    </div>
-                </div>
-            ) : (
-                <div className="p-6 sm:p-8 space-y-5 text-white">
-                    <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-slate-800/80">
-                        <div className="flex items-center gap-2.5">
-                            <Badge className="bg-amber-500 text-slate-950 px-3 py-1 text-xs font-black border-none shadow-md">
-                              {selectedNews?.category || '官方公告'}
-                            </Badge>
-                            {selectedNews?.isPinned && (
-                              <Badge className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-bold">
-                                置頂消息
-                              </Badge>
-                            )}
-                        </div>
-                        <div className="flex items-center gap-1.5 text-slate-400 text-xs font-mono">
-                            <Calendar className="h-3.5 w-3.5 text-amber-400" />
-                            {selectedNews?.createdAt ? format(new Date(selectedNews.createdAt.seconds * 1000), 'yyyy-MM-dd HH:mm') : '---'}
-                        </div>
-                    </div>
-                    
-                    <div className="space-y-4">
-                        <h2 className="text-xl sm:text-2xl lg:text-3xl font-black font-headline leading-tight tracking-tight text-white">
-                          {selectedNews?.title}
-                        </h2>
-                        <Separator className="bg-slate-800" />
-                        <div 
-                            className="prose prose-invert max-w-none text-slate-300 leading-relaxed text-sm sm:text-base whitespace-pre-wrap font-medium"
-                            dangerouslySetInnerHTML={{ __html: selectedNews?.content || '' }}
-                        />
-                    </div>
-                </div>
+          {/* 圖片橫幅 (若為圖片模式) */}
+          {selectedNews?.type === 'image' && selectedNews?.imageUrl && (
+            <div className="relative w-full bg-black/95 flex items-center justify-center overflow-hidden shrink-0 max-h-[220px] sm:max-h-[320px] border-b border-slate-800/80">
+              <SafeImage 
+                src={selectedNews.imageUrl} 
+                alt={selectedNews.title} 
+                className="w-full h-full object-cover sm:object-contain max-h-[220px] sm:max-h-[320px]"
+                width={1200}
+                height={800}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent pointer-events-none" />
+            </div>
+          )}
+
+          {/* 滾動內容區域 */}
+          <div className="flex-1 overflow-y-auto min-h-0 p-5 sm:p-8 space-y-4 sm:space-y-6 text-white custom-scrollbar">
+            {/* 標籤與時間 */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800/80">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge className="bg-amber-500 text-slate-950 font-black px-2.5 sm:px-3 py-0.5 sm:py-1 text-xs border-none shadow-md">
+                  {selectedNews?.category || '官方公告'}
+                </Badge>
+                {selectedNews?.isPinned && (
+                  <Badge className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-bold flex items-center gap-1">
+                    <Megaphone className="h-3 w-3" /> 置頂快訊
+                  </Badge>
+                )}
+              </div>
+              <div className="flex items-center gap-1.5 text-slate-400 text-xs font-mono">
+                <Calendar className="w-3.5 h-3.5 text-amber-400" />
+                <span>{selectedNews?.createdAt ? format(new Date(selectedNews.createdAt.seconds * 1000), 'yyyy-MM-dd HH:mm') : '---'}</span>
+              </div>
+            </div>
+
+            {/* 完整標題 (絕不 truncate) */}
+            <div>
+              <h2 className="text-lg sm:text-2xl md:text-3xl font-black font-headline leading-snug tracking-tight text-left text-white break-words">
+                {selectedNews?.title}
+              </h2>
+            </div>
+
+            <Separator className="bg-slate-800" />
+
+            {/* 內文區域 */}
+            {selectedNews?.content && (
+              <div 
+                className="prose prose-invert max-w-none text-slate-300 leading-relaxed text-xs sm:text-sm md:text-base font-medium break-words space-y-3"
+                dangerouslySetInnerHTML={{ __html: selectedNews.content }}
+              />
             )}
-          </ScrollArea>
+          </div>
+
+          {/* 底部固定操作列 */}
+          <div className="shrink-0 p-4 sm:p-5 bg-slate-900/90 border-t border-slate-800/90 backdrop-blur-md flex flex-wrap items-center justify-between gap-3">
+            <Button asChild variant="outline" size="sm" className="rounded-xl border-amber-500/40 text-amber-300 hover:text-white hover:bg-amber-500/20 text-xs font-bold">
+              <Link href="/changelog">
+                查看完整歷史更新日誌 (Changelog) &rarr;
+              </Link>
+            </Button>
+            <Button 
+              onClick={() => setSelectedNews(null)}
+              className="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-bold h-9 px-5 rounded-xl border border-slate-700 ml-auto"
+            >
+              關閉
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

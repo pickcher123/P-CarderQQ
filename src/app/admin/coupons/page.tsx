@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useCollection, useDoc, useFirestore, useMemoFirebase } from "@/firebase";
-import { collection, query, orderBy, limit, addDoc, deleteDoc, updateDoc, doc, Timestamp } from "firebase/firestore";
+import { collection, query, orderBy, limit, addDoc, deleteDoc, updateDoc, doc, Timestamp, setDoc } from "firebase/firestore";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -56,10 +56,10 @@ export default function AdminCouponsPage() {
     const handleTogglePromoHints = async (enabled: boolean) => {
         if (!firestore || !systemConfigRef) return;
         try {
-            await updateDoc(systemConfigRef, {
+            await setDoc(systemConfigRef, {
                 showPromoCodeHints: enabled,
                 'featureFlags.showPromoHints': enabled
-            });
+            }, { merge: true });
             toast({
                 title: enabled ? '已開啟前台代碼展示' : '已隱藏前台代碼',
                 description: enabled 

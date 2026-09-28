@@ -28,6 +28,7 @@ import { PromoRedeemModal } from '@/components/events/PromoRedeemModal';
 import { useToast } from '@/hooks/use-toast';
 import { claimCommunityFreeDraw } from '@/lib/promo-draw-service';
 import confetti from 'canvas-confetti';
+import { OFFICIAL_NEWS_LIST } from '@/lib/default-news';
 
 interface NewsItem {
     id: string;
@@ -105,6 +106,21 @@ export default function Home() {
   }, [firestore]);
 
   const { data: newsItems, isLoading: isLoadingNews } = useCollection<NewsItem>(newsQuery);
+
+  const effectiveNews = useMemo(() => {
+    const rawItems = newsItems || [];
+    const customItems = rawItems.filter(n => !n.isDeleted);
+    const existingIds = new Set(rawItems.map(n => n.id));
+    const remainingOfficial = OFFICIAL_NEWS_LIST.filter(n => !existingIds.has(n.id));
+    const all = [...customItems, ...remainingOfficial];
+    return all.sort((a, b) => {
+      const aPinned = Boolean(a.isPinned);
+      const bPinned = Boolean(b.isPinned);
+      if (aPinned !== bPinned) return aPinned ? -1 : 1;
+      return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
+    }).slice(0, 10);
+  }, [newsItems]);
+
   const { data: featuredPools, isLoading: isLoadingPools } = useCollection<CardPool>(poolsQuery);
   const { data: cardsList } = useCollection<CardItem>(cardsQuery);
   const { data: categories } = useCollection<{ id: string; name: string; imageUrl?: string; linkUrl?: string; order?: number }>(categoriesQuery);
@@ -231,14 +247,14 @@ export default function Home() {
             </h1>
 
             {/* 標題底部光學地平飾條 (Title Horizon Light Accent & Badge) */}
-            <div className="flex items-center justify-center gap-2 sm:gap-3 my-2 sm:my-3 opacity-90 pointer-events-none max-w-full px-2">
-              <div className="h-[1px] w-6 sm:w-16 md:w-24 bg-gradient-to-r from-transparent via-amber-400/70 to-amber-300 shrink" />
-              <div className="flex items-center gap-1.5 sm:gap-2 text-[9px] sm:text-[11px] md:text-xs font-black tracking-[0.12em] sm:tracking-[0.2em] md:tracking-[0.25em] text-amber-300/90 uppercase whitespace-nowrap shrink-0">
+            <div className="flex flex-nowrap items-center justify-center gap-1.5 sm:gap-3 my-2 sm:my-3 opacity-90 pointer-events-none w-full max-w-lg mx-auto px-2 sm:px-4 overflow-hidden">
+              <div className="h-[1px] flex-1 max-w-[24px] sm:max-w-[60px] md:max-w-[90px] bg-gradient-to-r from-transparent via-amber-400/60 to-amber-300 shrink" />
+              <div className="flex items-center gap-1.5 sm:gap-2 text-[8px] sm:text-[10px] md:text-xs font-black tracking-wider sm:tracking-[0.2em] md:tracking-[0.25em] text-amber-300/90 uppercase whitespace-nowrap shrink-0">
                 <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 rotate-45 bg-amber-400 shadow-[0_0_8px_#fbbf24] shrink-0" />
                 <span className="whitespace-nowrap">OFFICIAL TRADING CARDS & VAULT</span>
                 <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 rotate-45 bg-amber-400 shadow-[0_0_8px_#fbbf24] shrink-0" />
               </div>
-              <div className="h-[1px] w-6 sm:w-16 md:w-24 bg-gradient-to-l from-transparent via-amber-400/70 to-amber-300 shrink" />
+              <div className="h-[1px] flex-1 max-w-[24px] sm:max-w-[60px] md:max-w-[90px] bg-gradient-to-l from-transparent via-amber-400/60 to-amber-300 shrink" />
             </div>
             
             <p className="text-sm sm:text-base md:text-xl text-slate-300 max-w-xl mx-auto font-medium tracking-wider leading-relaxed px-2">
@@ -368,7 +384,7 @@ export default function Home() {
                             </CarouselItem>
                         ))
                     ) : (
-                        newsItems?.map((item) => {
+                        effectiveNews.map((item) => {
                             const snippet = item.content ? item.content.replace(/<[^>]+>/g, '').trim() : '';
 
                             return (
@@ -738,68 +754,80 @@ export default function Home() {
       {/* News Details Dialog */}
       <Dialog open={!!selectedNews} onOpenChange={(open) => !open && setSelectedNews(null)}>
         <DialogContent className={cn(
-            "bg-slate-950/98 backdrop-blur-2xl border-slate-800 p-0 overflow-hidden shadow-2xl rounded-2xl sm:rounded-3xl w-[94vw] sm:w-full max-h-[88vh]",
-            selectedNews?.type === 'image' ? "sm:max-w-4xl" : "sm:max-w-2xl"
+            "bg-slate-950/98 backdrop-blur-2xl border border-slate-800 p-0 overflow-hidden shadow-2xl rounded-2xl sm:rounded-3xl w-[94vw] sm:w-[90vw] md:w-full max-h-[88vh] flex flex-col",
+            selectedNews?.type === 'image' ? "sm:max-w-4xl" : "sm:max-w-3xl"
         )}>
           <DialogHeader className="sr-only">
             <DialogTitle>{selectedNews?.title || '消息詳情'}</DialogTitle>
             <DialogDescription>{selectedNews?.category || '最新消息'}</DialogDescription>
           </DialogHeader>
-          <ScrollArea className="max-h-[85vh]">
-            {selectedNews?.type === 'image' ? (
-                <div className="flex flex-col text-white">
-                    <div className="relative aspect-video w-full bg-black/90 flex items-center justify-center overflow-hidden">
-                        {selectedNews.imageUrl && (
-                            <SafeImage 
-                                src={selectedNews.imageUrl} 
-                                alt={selectedNews.title} 
-                                width={1200}
-                                height={675}
-                                className="object-contain w-full h-full max-h-[50vh] sm:max-h-[70vh]"
-                            />
-                        )}
-                    </div>
-                    <div className="p-4 sm:p-6 bg-slate-900/90 flex flex-col md:flex-row md:items-center justify-between border-t border-slate-800 gap-3">
-                        <div className="flex items-center gap-2.5">
-                            <Badge className="bg-amber-500 text-slate-950 font-black px-2.5 py-0.5 text-xs border-none shadow-sm">
-                                {selectedNews.category || '官方公告'}
-                            </Badge>
-                            <span className="text-xs text-slate-400 font-mono">
-                                {selectedNews.createdAt ? format(new Date(selectedNews.createdAt.seconds * 1000), 'yyyy-MM-dd HH:mm') : '---'}
-                            </span>
-                        </div>
-                        <h2 className="text-sm sm:text-lg font-black truncate">{selectedNews.title}</h2>
-                    </div>
-                </div>
-            ) : (
-                <div className="p-5 sm:p-8 space-y-4 sm:space-y-5 text-white">
-                    <div className="flex items-center justify-between pb-2 border-b border-slate-800/80">
-                        <div className="flex flex-wrap items-center gap-2.5">
-                            <Badge className="bg-amber-500 text-slate-950 px-2.5 sm:px-3 py-0.5 sm:py-1 text-xs font-black border-none shadow-sm">
-                                {selectedNews?.category || '官方公告'}
-                            </Badge>
-                            {selectedNews?.isPinned && (
-                              <Badge className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-bold">
-                                置頂
-                              </Badge>
-                            )}
-                        </div>
-                        <div className="flex items-center gap-1.5 text-slate-400 text-xs font-mono">
-                          <Calendar className="h-3.5 w-3.5 text-amber-400" />
-                          {selectedNews?.createdAt ? format(new Date(selectedNews.createdAt.seconds * 1000), 'yyyy-MM-dd HH:mm') : '---'}
-                        </div>
-                    </div>
-                    <div className="space-y-3 sm:space-y-4">
-                        <h2 className="text-base sm:text-2xl md:text-3xl font-black font-headline leading-tight text-left text-white">{selectedNews?.title}</h2>
-                        <Separator className="bg-slate-800" />
-                        <div 
-                            className="prose prose-invert max-w-none text-slate-300 leading-relaxed text-xs sm:text-sm md:text-base whitespace-pre-wrap font-medium text-left"
-                            dangerouslySetInnerHTML={{ __html: selectedNews?.content || '' }}
-                        />
-                    </div>
-                </div>
+
+          {/* 圖片橫幅 (若為圖片模式) */}
+          {selectedNews?.type === 'image' && selectedNews?.imageUrl && (
+            <div className="relative w-full bg-black/95 flex items-center justify-center overflow-hidden shrink-0 max-h-[220px] sm:max-h-[320px] border-b border-slate-800/80">
+              <SafeImage 
+                src={selectedNews.imageUrl} 
+                alt={selectedNews.title} 
+                width={1200}
+                height={675}
+                className="object-cover sm:object-contain w-full h-full max-h-[220px] sm:max-h-[320px]"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent pointer-events-none" />
+            </div>
+          )}
+
+          {/* 滾動內容區域 */}
+          <div className="flex-1 overflow-y-auto min-h-0 p-5 sm:p-8 space-y-4 sm:space-y-6 text-white custom-scrollbar">
+            {/* 標籤與時間 */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800/80">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge className="bg-amber-500 text-slate-950 font-black px-2.5 sm:px-3 py-0.5 sm:py-1 text-xs border-none shadow-sm">
+                  {selectedNews?.category || '官方公告'}
+                </Badge>
+                {selectedNews?.isPinned && (
+                  <Badge className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-bold flex items-center gap-1">
+                    <Megaphone className="h-3 w-3" /> 置頂快訊
+                  </Badge>
+                )}
+              </div>
+              <div className="flex items-center gap-1.5 text-slate-400 text-xs font-mono">
+                <Calendar className="h-3.5 w-3.5 text-amber-400" />
+                <span>{selectedNews?.createdAt ? format(new Date(selectedNews.createdAt.seconds * 1000), 'yyyy-MM-dd HH:mm') : '---'}</span>
+              </div>
+            </div>
+
+            {/* 完整標題 (絕不 truncate) */}
+            <div>
+              <h2 className="text-lg sm:text-2xl md:text-3xl font-black font-headline leading-snug tracking-tight text-left text-white break-words">
+                {selectedNews?.title}
+              </h2>
+            </div>
+
+            <Separator className="bg-slate-800" />
+
+            {/* 內文區域 */}
+            {selectedNews?.content && (
+              <div 
+                className="prose prose-invert max-w-none text-slate-300 leading-relaxed text-xs sm:text-sm md:text-base font-medium break-words space-y-3"
+                dangerouslySetInnerHTML={{ __html: selectedNews.content }}
+              />
             )}
-          </ScrollArea>
+          </div>
+
+          {/* 底部固定操作列 */}
+          <div className="shrink-0 p-4 sm:p-5 bg-slate-900/90 border-t border-slate-800/90 backdrop-blur-md flex flex-wrap items-center justify-between gap-3">
+            <Button asChild variant="outline" size="sm" className="rounded-xl border-amber-500/40 text-amber-300 hover:text-white hover:bg-amber-500/20 text-xs font-bold">
+              <Link href="/changelog">
+                查看完整歷史更新日誌 (Changelog) &rarr;
+              </Link>
+            </Button>
+            <Button 
+              onClick={() => setSelectedNews(null)}
+              className="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-bold h-9 px-5 rounded-xl border border-slate-700 ml-auto"
+            >
+              關閉
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 

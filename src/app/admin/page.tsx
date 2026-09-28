@@ -30,7 +30,7 @@ import {
   Palette
 } from 'lucide-react';
 import { useRequest, useFirestore, useMemoFirebase, useDoc, useUser } from "@/firebase";
-import { collection, doc, updateDoc, query, where, getDocs, writeBatch } from "firebase/firestore";
+import { collection, doc, updateDoc, query, where, getDocs, writeBatch, setDoc } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -265,9 +265,9 @@ export default function AdminDashboardPage() {
   const handleFeatureToggle = async (flagName: keyof NonNullable<SystemConfig['featureFlags']>, isEnabled: boolean) => {
     if (!systemConfigRef) return;
     try {
-      await updateDoc(systemConfigRef, {
+      await setDoc(systemConfigRef, {
         [`featureFlags.${flagName}`]: isEnabled,
-      });
+      }, { merge: true });
       toast({ title: '已更新開關', description: '模組運行狀態已即時生效。' });
       if (forceRefetch) forceRefetch();
     } catch (error) {
@@ -279,7 +279,7 @@ export default function AdminDashboardPage() {
     if (!systemConfigRef) return;
     setIsSavingAnnouncement(true);
     try {
-      await updateDoc(systemConfigRef, { announcement });
+      await setDoc(systemConfigRef, { announcement }, { merge: true });
       toast({ title: '公告更新成功', description: '首頁跑馬燈已同步生效。' });
       if (forceRefetch) forceRefetch();
     } catch (e) {

@@ -6,6 +6,7 @@ import { Megaphone, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo } from 'react';
 import { cn } from '@/lib/utils';
+import { OFFICIAL_NEWS_LIST } from '@/lib/default-news';
 
 interface NewsItem {
     id: string;
@@ -13,6 +14,7 @@ interface NewsItem {
     category: string;
     isPinned?: boolean;
     isMarquee?: boolean;
+    isDeleted?: boolean;
 }
 
 interface NewsMarqueeProps {
@@ -34,11 +36,27 @@ export function NewsMarquee({ isDrawing }: NewsMarqueeProps) {
 
     const { data: newsItems, isLoading } = useCollection<NewsItem>(newsQuery);
 
-    // 取得最新一則標記為跑馬燈的消息
-    const latestMarqueeItem = useMemo(() => {
-        if (!newsItems) return null;
-        return newsItems.find(n => n.isMarquee === true);
+    const effectiveNews = useMemo(() => {
+        const rawItems = newsItems || [];
+        const customItems = rawItems.filter(n => !n.isDeleted);
+        const existingIds = new Set(rawItems.map(n => n.id));
+        const remainingOfficial = OFFICIAL_NEWS_LIST.filter(n => !existingIds.has(n.id));
+        const all = [...customItems, ...remainingOfficial];
+        return all.sort((a, b) => {
+            const aPinned = Boolean(a.isPinned);
+            const bPinned = Boolean(b.isPinned);
+            if (aPinned !== bPinned) return aPinned ? -1 : 1;
+            return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
+        });
     }, [newsItems]);
+
+    // 取得最新一則標記為跑馬燈的消息 (優先取置頂跑馬燈消息)
+    const latestMarqueeItem = useMemo(() => {
+        if (!effectiveNews || effectiveNews.length === 0) return null;
+        return effectiveNews.find(n => n.isMarquee && n.isPinned) || 
+               effectiveNews.find(n => n.isMarquee) || 
+               effectiveNews[0];
+    }, [effectiveNews]);
 
     if (isLoading || !latestMarqueeItem) {
         return null;

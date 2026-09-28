@@ -3,8 +3,9 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useCollection, useFirestore, useMemoFirebase, useStorage } from '@/firebase';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy, getDoc } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy, getDoc, setDoc } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
+import { OFFICIAL_NEWS_LIST } from '@/lib/default-news';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import {
@@ -39,7 +40,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Edit, Trash2, Image as ImageIcon, FileText, Loader2, Radio, MessageCircleCode, Users } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Image as ImageIcon, FileText, Loader2, Radio, MessageCircleCode, Users, Sparkles } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { SafeImage } from '@/components/safe-image';
@@ -59,6 +60,7 @@ interface NewsItem {
     createdAt?: { seconds: number };
     isPinned?: boolean;
     isMarquee?: boolean;
+    isDeleted?: boolean;
 }
 
 const CATEGORIES = ["系統公告", "遊戲更新", "活動快訊", "維護通知"];
@@ -73,7 +75,7 @@ export default function NewsAdminPage() {
     title: '', 
     category: '系統公告', 
     type: 'text', 
-    isPinned: false,
+    isPinned: false, 
     isMarquee: false 
   });
   const [isEditMode, setIsEditMode] = useState(false);
@@ -97,9 +99,40 @@ export default function NewsAdminPage() {
   const { data: newsItems, isLoading, forceRefetch } = useCollection<NewsItem>(newsQuery);
 
   const sortedNews = useMemo(() => {
-    if (!newsItems) return [];
-    return [...newsItems].sort((a, b) => (a.isPinned ? -1 : 1) || (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+    const rawItems = newsItems || [];
+    const customItems = rawItems.filter(n => !n.isDeleted);
+    const existingIds = new Set(rawItems.map(n => n.id));
+    const remainingOfficial = OFFICIAL_NEWS_LIST.filter(n => !existingIds.has(n.id));
+    const all = [...customItems, ...remainingOfficial];
+    return all.sort((a, b) => {
+      const aPinned = Boolean(a.isPinned);
+      const bPinned = Boolean(b.isPinned);
+      if (aPinned !== bPinned) return aPinned ? -1 : 1;
+      return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
+    });
   }, [newsItems]);
+
+  const handleSyncOfficialNews = async () => {
+    if (!firestore) return;
+    setIsProcessing(true);
+    try {
+      for (const item of OFFICIAL_NEWS_LIST) {
+        await setDoc(doc(firestore, 'news', item.id), {
+          ...item,
+          isDeleted: false,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+      }
+      toast({ title: '已成功同步官方公測版 5.0 公告至雲端資料庫！' });
+      if (forceRefetch) forceRefetch();
+    } catch (e) {
+      console.error(e);
+      toast({ variant: 'destructive', title: '同步失敗', description: '請確認權限或網路連線' });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!firestore || !currentItem.title) return;
@@ -114,38 +147,83 @@ export default function NewsAdminPage() {
                 uploadTask.on('state_changed', (s) => setUploadProgress((s.bytesTransferred / s.totalBytes) * 100), reject, () => getDownloadURL(uploadTask.snapshot.ref).then(resolve));
             });
         }
-        const data = { 
+        const data: any = { 
             ...currentItem, 
             imageUrl, 
             isMarquee: currentItem.isMarquee || false,
             isPinned: currentItem.isPinned || false,
-            createdAt: currentItem.createdAt || serverTimestamp() 
+            isDeleted: false,
+            updatedAt: serverTimestamp()
         };
-        if (isEditMode && currentItem.id) await updateDoc(doc(firestore, 'news', currentItem.id), data);
-        else await addDoc(collection(firestore, 'news'), data);
+        if (!data.createdAt) {
+          data.createdAt = serverTimestamp();
+        }
+        if (isEditMode && currentItem.id) {
+            await setDoc(doc(firestore, 'news', currentItem.id), data, { merge: true });
+        } else {
+            await addDoc(collection(firestore, 'news'), data);
+        }
         setIsDialogOpen(false); setUploadProgress(null); setSelectedFile(null);
         toast({ title: '成功' });
-        if(forceRefetch) forceRefetch();
+        if (forceRefetch) forceRefetch();
     } catch (e) {
         console.error(e);
-        toast({ variant: 'destructive' });
+        toast({ variant: 'destructive', title: '儲存失敗', description: (e as Error)?.message });
     } finally { setIsProcessing(false); }
   };
 
   const handleToggleField = async (id: string, field: 'isPinned' | 'isMarquee', value: boolean) => {
     if (!firestore) return;
     try {
-        await updateDoc(doc(firestore, 'news', id), { [field]: value });
+        const itemToUpdate = sortedNews.find(n => n.id === id);
+        const dataToSave: any = {
+            [field]: value,
+            updatedAt: serverTimestamp()
+        };
+        if (itemToUpdate) {
+            dataToSave.title = itemToUpdate.title || '';
+            dataToSave.category = itemToUpdate.category || '官方公告';
+            dataToSave.type = itemToUpdate.type || 'text';
+            dataToSave.content = itemToUpdate.content || '';
+            dataToSave.isDeleted = false;
+            if (itemToUpdate.imageUrl) dataToSave.imageUrl = itemToUpdate.imageUrl;
+            if (itemToUpdate.isPinned !== undefined && field !== 'isPinned') dataToSave.isPinned = itemToUpdate.isPinned;
+            if (itemToUpdate.isMarquee !== undefined && field !== 'isMarquee') dataToSave.isMarquee = itemToUpdate.isMarquee;
+            if (itemToUpdate.createdAt) dataToSave.createdAt = itemToUpdate.createdAt;
+        }
+        await setDoc(doc(firestore, 'news', id), dataToSave, { merge: true });
         toast({ title: '狀態已更新' });
+        if (forceRefetch) forceRefetch();
     } catch (e) {
         console.error(e);
-        toast({ variant: 'destructive' });
+        toast({ variant: 'destructive', title: '更新失敗', description: (e as Error)?.message });
+    }
+  };
+
+  const handleDelete = async (item: NewsItem) => {
+    if (!firestore || !item.id) return;
+    try {
+      const isOfficial = OFFICIAL_NEWS_LIST.some(o => o.id === item.id);
+      if (isOfficial) {
+        await setDoc(doc(firestore, 'news', item.id), {
+          ...item,
+          isDeleted: true,
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+      } else {
+        await deleteDoc(doc(firestore, 'news', item.id));
+      }
+      toast({ title: '已成功刪除消息' });
+      if (forceRefetch) forceRefetch();
+    } catch (e) {
+      console.error(e);
+      toast({ variant: 'destructive', title: '刪除失敗', description: (e as Error)?.message });
     }
   };
 
   const updateSystemConfig = async (data: Partial<SystemConfig>) => {
     if (!systemConfigRef) return;
-    await updateDoc(systemConfigRef, data);
+    await setDoc(systemConfigRef, data, { merge: true });
     setSystemConfig(prev => prev ? {...prev, ...data} : null);
   };
 
@@ -197,12 +275,23 @@ export default function NewsAdminPage() {
                 </CardContent>
             </Card>
         </div>
-       <div className="flex justify-between items-center">
+       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
                 <h1 className="text-3xl font-black tracking-tight">消息發布管理</h1>
                 <p className="text-sm text-slate-500 font-bold mt-1">控制消息在首頁列表或全站跑馬燈的顯示狀態。</p>
             </div>
-            <Button onClick={() => { setIsEditMode(false); setCurrentItem({title: '', category: '系統公告', type: 'text', isPinned: false, isMarquee: false}); setPreviewUrl(null); setIsDialogOpen(true); }} className="bg-slate-900 text-white rounded-xl font-bold h-12 px-6 shadow-xl"><PlusCircle className="mr-2 h-4 w-4" /> 新增消息</Button>
+            <div className="flex items-center gap-3 flex-wrap">
+                <Button 
+                    variant="outline" 
+                    onClick={handleSyncOfficialNews} 
+                    disabled={isProcessing}
+                    className="border-amber-400 text-amber-700 hover:bg-amber-50 rounded-xl font-bold h-12 px-5 shadow-sm"
+                >
+                    {isProcessing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Sparkles className="mr-2 h-4 w-4 text-amber-500" />}
+                    一鍵同步公測版 5.0 旗艦公告
+                </Button>
+                <Button onClick={() => { setIsEditMode(false); setCurrentItem({title: '', category: '系統公告', type: 'text', isPinned: false, isMarquee: false}); setPreviewUrl(null); setIsDialogOpen(true); }} className="bg-slate-900 text-white rounded-xl font-bold h-12 px-6 shadow-xl"><PlusCircle className="mr-2 h-4 w-4" /> 新增消息</Button>
+            </div>
         </div>
 
         <Card className="border-slate-200 shadow-sm rounded-2xl overflow-hidden bg-white">
@@ -257,7 +346,7 @@ export default function NewsAdminPage() {
                                 </AlertDialogHeader>
                                 <AlertDialogFooter className="gap-3">
                                     <AlertDialogCancel className="rounded-xl font-bold">取消</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => deleteDoc(doc(firestore!, 'news', item.id!))} className="rounded-xl bg-red-600 font-black px-8 border-none shadow-xl text-white">確認刪除</AlertDialogAction>
+                                    <AlertDialogAction onClick={() => handleDelete(item)} className="rounded-xl bg-red-600 font-black px-8 border-none shadow-xl text-white">確認刪除</AlertDialogAction>
                                 </AlertDialogFooter>
                             </AlertDialogContent>
                         </AlertDialog>
