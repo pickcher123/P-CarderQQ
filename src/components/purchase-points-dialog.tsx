@@ -17,7 +17,9 @@ import { Loader2, ArrowRight, ShieldCheck, Check, Sparkles, Wallet } from 'lucid
 import { DiamondIcon, PPlusIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import type { UserProfile } from '@/types/user-profile';
+import type { SystemConfig } from '@/types/system';
 import { RefinedPoints } from '@/components/ui/refined-points';
+import { getBonusMultiplier, isBonusEventActive } from '@/lib/bonus-event';
 
 // 儲值包方案定義
 const pointPackages = [
@@ -60,6 +62,27 @@ export function PurchasePointsDialog({ children }: { children: React.ReactNode }
     [firestore, user]
   );
   const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
+
+  const systemConfigRef = useMemoFirebase(
+    () => (firestore ? doc(firestore, 'systemConfig', 'main') : null),
+    [firestore]
+  );
+  const { data: systemConfig } = useDoc<SystemConfig>(systemConfigRef);
+
+  const bonusMultiplier = getBonusMultiplier(systemConfig?.bonusEvent, 'purchase');
+  const isBonusActive = isBonusEventActive(systemConfig?.bonusEvent);
+
+  const effectivePackages = pointPackages.map(pkg => {
+    if (!pkg.bonusPoints || bonusMultiplier <= 1) return { ...pkg, isDoubleEvent: false };
+    const multipliedBonus = pkg.bonusPoints * bonusMultiplier;
+    return {
+      ...pkg,
+      bonusPoints: multipliedBonus,
+      points: pkg.basePoints + multipliedBonus,
+      bonus: pkg.bonus ? pkg.bonus * bonusMultiplier : null,
+      isDoubleEvent: true,
+    };
+  });
 
   const handlePurchase = async () => {
     if (!user || !user.email) {
@@ -132,13 +155,17 @@ export function PurchasePointsDialog({ children }: { children: React.ReactNode }
             </div>
 
             <DialogDescription className="text-slate-400 text-xs">
-              即時入帳 • 高額方案享最高 <span className="text-amber-400 font-bold">10%</span> 加贈
+              即時入帳 • {isBonusActive && bonusMultiplier > 1 ? (
+                <span className="text-amber-300 font-black animate-pulse">🔥 限時狂歡：高額方案額外享 {bonusMultiplier}X 雙倍紅利贈點！</span>
+              ) : (
+                <>高額方案享最高 <span className="text-amber-400 font-bold">10%</span> 加贈</>
+              )}
             </DialogDescription>
           </DialogHeader>
 
           {/* Package Selection Grid (3 Columns) */}
           <div className="grid grid-cols-3 gap-2 pt-0.5">
-            {pointPackages.map((pkg) => {
+            {effectivePackages.map((pkg) => {
               const isSelected = selectedPackage.price === pkg.price;
               return (
                 <button
@@ -155,8 +182,13 @@ export function PurchasePointsDialog({ children }: { children: React.ReactNode }
                   {/* Bonus Tag */}
                   {pkg.bonus ? (
                     <div className="absolute -top-2 left-1/2 -translate-x-1/2 z-10">
-                      <div className="bg-amber-500 text-slate-950 text-[9px] font-black px-1.5 py-0.2 rounded-full shadow border border-amber-300/40 whitespace-nowrap">
-                        +{pkg.bonus}%
+                      <div className={cn(
+                        "text-slate-950 text-[9px] font-black px-1.5 py-0.2 rounded-full shadow border whitespace-nowrap",
+                        pkg.isDoubleEvent 
+                          ? "bg-gradient-to-r from-amber-400 to-rose-500 text-white border-amber-300 animate-pulse" 
+                          : "bg-amber-500 border-amber-300/40"
+                      )}>
+                        {pkg.isDoubleEvent ? `🔥 +${pkg.bonus}% (2X)` : `+${pkg.bonus}%`}
                       </div>
                     </div>
                   ) : null}

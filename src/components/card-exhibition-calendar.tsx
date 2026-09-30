@@ -31,6 +31,7 @@ import {
 import { NextExhibitionCard, extractCity, getCityTheme, type Exhibition } from '@/components/next-exhibition-card';
 import { UnifiedEventCalendar } from '@/components/calendar/unified-event-calendar';
 import { Sparkles, Layers } from 'lucide-react';
+import { SafeImage } from '@/components/safe-image';
 
 const REGIONS = [
     { label: '全部地區', value: 'ALL' },
@@ -563,10 +564,12 @@ export function CardExhibitionCalendar({
                                     {/* 活動海報 (若無則呈現城市卡牌視覺) */}
                                     <div className="relative w-full h-40 sm:h-48 rounded-2xl overflow-hidden border border-slate-800 bg-slate-900 shadow-inner shrink-0">
                                         {selectedExh.imageUrl ? (
-                                            <img 
+                                            <SafeImage 
                                                 src={selectedExh.imageUrl} 
                                                 alt={selectedExh.title}
-                                                className="w-full h-full object-cover"
+                                                fill
+                                                sizes="(max-width: 640px) 90vw, 480px"
+                                                className="object-cover"
                                             />
                                         ) : (
                                             <div className={cn("w-full h-full bg-gradient-to-br flex flex-col items-center justify-center p-4", cityTheme.bg)}>

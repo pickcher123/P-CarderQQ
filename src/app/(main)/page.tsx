@@ -25,6 +25,7 @@ import { PredictionSection } from '@/components/prediction-section';
 import { PoolCard } from '@/components/pool-card';
 import type { CardPool, CardItem } from '@/types';
 import { PromoRedeemModal } from '@/components/events/PromoRedeemModal';
+import { BonusDoubleBanner } from '@/components/events/bonus-double-banner';
 import { useToast } from '@/hooks/use-toast';
 import { claimCommunityFreeDraw } from '@/lib/promo-draw-service';
 import confetti from 'canvas-confetti';
@@ -279,6 +280,13 @@ export default function Home() {
 
         {/* 底部平滑過渡流光帶 */}
         <div className="absolute bottom-0 inset-x-0 h-16 bg-gradient-to-t from-background/90 to-transparent pointer-events-none z-[5]" />
+      </section>
+
+      {/* 🔥 全站紅利 2X 加倍狂歡活動橫幅 */}
+      <section className="container px-3 sm:px-4 max-w-7xl mx-auto pt-4 sm:pt-6">
+        <BonusDoubleBanner 
+          onOpenPromoModal={() => setIsPromoModalOpen(true)}
+        />
       </section>
 
       {/* 首頁熱門推薦卡池 */}

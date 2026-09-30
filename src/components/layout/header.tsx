@@ -21,6 +21,7 @@ import { syncLocalPromoClaimsToFirestore } from '@/lib/promo-draw-service';
 import { useToast } from '@/hooks/use-toast';
 import { useFeatureFlags } from '@/hooks/use-feature-flags';
 import { RefinedPoints } from '@/components/ui/refined-points';
+import { SafeImage } from '@/components/safe-image';
 
 const navLinks = [
   { href: '/draw', label: '抽卡', icon: Package, color: "text-cyan-400", flag: 'isDrawEnabled' },
@@ -269,14 +270,16 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                       )}>
                         {/* 頭像主體 */}
                         <div className={cn(
-                          "w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center overflow-hidden border border-black/60 shadow-inner bg-slate-900",
+                          "w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center overflow-hidden border border-black/60 shadow-inner bg-slate-900 relative",
                           levelInfo.bg
                         )}>
                           {userProfile?.photoURL ? (
-                            <img 
+                            <SafeImage 
                               src={userProfile.photoURL} 
                               alt={userProfile?.username || user?.displayName || 'User'} 
-                              className="w-full h-full object-cover" 
+                              fill
+                              sizes="36px"
+                              className="object-cover" 
                             />
                           ) : (
                             <LevelIcon className={cn(
@@ -303,15 +306,17 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                       <DropdownMenuLabel className="font-normal p-2.5 pb-2">
                           <div className="flex items-center gap-3">
                               <div className={cn(
-                                "w-10 h-10 rounded-full flex items-center justify-center border p-0.5 shrink-0",
+                                "w-10 h-10 rounded-full flex items-center justify-center border p-0.5 shrink-0 relative overflow-hidden",
                                 levelInfo.border,
                                 levelInfo.bg
                               )}>
                                 {userProfile?.photoURL ? (
-                                  <img 
+                                  <SafeImage 
                                     src={userProfile.photoURL} 
                                     alt={userProfile?.username || user?.displayName || 'User'} 
-                                    className="w-full h-full rounded-full object-cover" 
+                                    fill
+                                    sizes="40px"
+                                    className="rounded-full object-cover" 
                                   />
                                 ) : (
                                   <LevelIcon className={cn("w-5 h-5", levelInfo.color)} />

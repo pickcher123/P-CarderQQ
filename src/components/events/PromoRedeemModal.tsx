@@ -40,6 +40,7 @@ import { DailyMission, UserMissionProgress } from '@/types/missions';
 import { SystemConfig } from '@/types/system';
 import { UserProfile } from '@/types/user-profile';
 import { claimCommunityFreeDraw, redeemPromoDrawCode, syncLocalPromoClaimsToFirestore } from '@/lib/promo-draw-service';
+import { getBonusMultiplier, isBonusEventActive } from '@/lib/bonus-event';
 
 // 預設可兌換的活動代碼庫
 export interface PromoCodeConfig {
@@ -330,7 +331,16 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
 
     const loginMission = useMemo(() => missions?.[0] || null, [missions]);
     const missionId = loginMission?.id || 'daily-login';
-    const rewardPoints = loginMission?.rewardPoints ?? 10;
+    const baseRewardPoints = loginMission?.rewardPoints ?? 10;
+
+    // 🔥 活動期間紅利加倍
+    const bonusMultiplier = useMemo(() => {
+        return getBonusMultiplier(systemConfig?.bonusEvent, 'checkIn');
+    }, [systemConfig]);
+
+    const rewardPoints = useMemo(() => {
+        return baseRewardPoints * bonusMultiplier;
+    }, [baseRewardPoints, bonusMultiplier]);
 
     const userLoginProgress = useMemo(() => {
         return missionProgressList?.find(p => p.id === missionId || p.id === loginMission?.id);
@@ -902,6 +912,11 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
                                                             <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30 text-[10px] font-mono px-1.5 py-0 h-4.5 whitespace-nowrap">
                                                                 +{rewardPoints} 紅利 P+ 點
                                                             </Badge>
+                                                            {bonusMultiplier > 1 && (
+                                                                <Badge className="bg-gradient-to-r from-amber-500 to-rose-600 text-slate-950 font-black text-[9px] px-1.5 py-0 h-4.5 animate-pulse">
+                                                                    🔥 {bonusMultiplier}X 加倍
+                                                                </Badge>
+                                                            )}
                                                         </div>
                                                         <p className="text-[11px] text-slate-300 leading-tight">
                                                             天天登入免費簽到，累積紅利點數換專屬好禮

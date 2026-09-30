@@ -496,6 +496,7 @@ export function PredictionSection({
                                                             alt={matchTeams.awayTeam} 
                                                             className="w-full h-full object-contain filter drop-shadow" 
                                                             loading="lazy"
+                                                            referrerPolicy="no-referrer"
                                                             onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/team-logos/sports-default.svg'; }}
                                                         />
                                                     </div>
@@ -532,6 +533,7 @@ export function PredictionSection({
                                                             alt={matchTeams.homeTeam} 
                                                             className="w-full h-full object-contain filter drop-shadow" 
                                                             loading="lazy"
+                                                            referrerPolicy="no-referrer"
                                                             onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/team-logos/sports-default.svg'; }}
                                                         />
                                                     </div>
@@ -738,6 +740,8 @@ export function PredictionSection({
                                             src={modalMatchTeams.awayTeamLogo} 
                                             alt={modalMatchTeams.awayTeam} 
                                             className="w-7 h-7 object-contain rounded-full bg-slate-900 p-0.5 border border-slate-800 shrink-0" 
+                                            loading="lazy"
+                                            referrerPolicy="no-referrer"
                                             onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/team-logos/sports-default.svg'; }}
                                         />
                                         <DialogTitle className="text-base sm:text-lg font-black text-white font-headline leading-snug">
@@ -747,6 +751,8 @@ export function PredictionSection({
                                             src={modalMatchTeams.homeTeamLogo} 
                                             alt={modalMatchTeams.homeTeam} 
                                             className="w-7 h-7 object-contain rounded-full bg-slate-900 p-0.5 border border-slate-800 shrink-0" 
+                                            loading="lazy"
+                                            referrerPolicy="no-referrer"
                                             onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/team-logos/sports-default.svg'; }}
                                         />
                                     </div>

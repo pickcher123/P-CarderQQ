@@ -8,6 +8,7 @@ import { PLACEHOLDER_CARD_IMAGE } from '@/lib/placeholders';
 interface SafeImageProps extends Omit<ImageProps, 'src'> {
   src?: any;
   fallbackSrc?: string;
+  showSkeleton?: boolean;
 }
 
 function isValidSrc(source: unknown): boolean {
@@ -35,7 +36,9 @@ export function SafeImage({
   alt,
   className,
   priority = false,
+  showSkeleton = true,
   onError,
+  onLoad,
   ...props
 }: SafeImageProps) {
   const safeFallback = getGuaranteedFallback(fallbackSrc);
@@ -44,14 +47,17 @@ export function SafeImage({
 
   const [imgSrc, setImgSrc] = useState(initialSrc);
   const [hasError, setHasError] = useState(!initialValid);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
     if (isValidSrc(src)) {
       setImgSrc(typeof src === 'string' ? src.trim() : src);
       setHasError(false);
+      setIsLoaded(false);
     } else {
       setImgSrc(safeFallback);
       setHasError(true);
+      setIsLoaded(true);
     }
   }, [src, safeFallback]);
 
@@ -66,19 +72,43 @@ export function SafeImage({
   const safePriority = Boolean(priority && isPreloadable);
 
   return (
-    <Image
-      {...props}
-      src={effectiveSrc}
-      alt={alt || 'Image'}
-      className={cn(className)}
-      priority={safePriority}
-      onError={(e) => {
-        if (!hasError) {
-          setHasError(true);
-          setImgSrc(safeFallback);
-        }
-        onError?.(e);
-      }}
-    />
+    <>
+      {/* 載入中骨架屏佔位微光 */}
+      {showSkeleton && !isLoaded && (
+        <div 
+          className={cn(
+            "absolute inset-0 bg-slate-900/80 animate-pulse pointer-events-none rounded-inherit z-0",
+            props.fill ? "w-full h-full" : ""
+          )} 
+        />
+      )}
+
+      <Image
+        {...props}
+        src={effectiveSrc}
+        alt={alt || 'Card Image'}
+        referrerPolicy="no-referrer"
+        loading={safePriority ? undefined : 'lazy'}
+        decoding="async"
+        className={cn(
+          "transition-opacity duration-300 ease-out",
+          isLoaded ? "opacity-100" : "opacity-0",
+          className
+        )}
+        priority={safePriority}
+        onLoad={(e) => {
+          setIsLoaded(true);
+          onLoad?.(e);
+        }}
+        onError={(e) => {
+          if (!hasError) {
+            setHasError(true);
+            setImgSrc(safeFallback);
+          }
+          setIsLoaded(true);
+          onError?.(e);
+        }}
+      />
+    </>
   );
 }

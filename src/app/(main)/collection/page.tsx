@@ -43,6 +43,8 @@ import {
   Coins, Truck, ShieldCheck, HelpCircle
 } from 'lucide-react';
 import { useCollection, useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
+import { getBonusMultiplier, isBonusEventActive } from '@/lib/bonus-event';
+import type { SystemConfig } from '@/types/system';
 import { collection, doc, writeBatch, serverTimestamp, getDoc, increment, updateDoc, getDocs, arrayRemove } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
@@ -124,8 +126,14 @@ export default function CollectionPage() {
   }, [firestore, user?.uid]);
   const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
 
-  const systemConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'systemConfig', 'main') : null, [firestore]);
+  const systemConfigRef = useMemoFirebase(() => (firestore ? doc(firestore, 'systemConfig', 'main') : null), [firestore]);
   const { data: systemConfig } = useDoc<SystemConfig>(systemConfigRef);
+  const bonusMultiplier = useMemo(() => {
+    return getBonusMultiplier(systemConfig?.bonusEvent, 'recycling');
+  }, [systemConfig]);
+  const isBonusActive = useMemo(() => {
+    return isBonusEventActive(systemConfig?.bonusEvent);
+  }, [systemConfig]);
 
   useEffect(() => {
     if (userProfile) {
@@ -293,7 +301,9 @@ export default function CollectionPage() {
     setIsProcessing(true);
     try {
       const batch = writeBatch(firestore);
-      const pPointsGained = actualCount * 300;
+      const basePointsPerCard = 300;
+      const effectivePointsPerCard = basePointsPerCard * (bonusMultiplier || 1);
+      const pPointsGained = actualCount * effectivePointsPerCard;
       const diamondsGained = actualCount * 10;
       const soldCardNames = `隨機球員 普/特 卡 x ${actualCount}`;
 
@@ -400,12 +410,13 @@ export default function CollectionPage() {
     let pPoints = 0;
     
     cardsToSell.forEach(card => {
+        const mult = bonusMultiplier || 1;
         if (card.name.includes('隨機球員')) {
-            pPoints += 300;
+            pPoints += 300 * mult;
         } else {
             const basePrice = card.sellPrice || 10;
             diamonds += basePrice * 0.7;
-            pPoints += basePrice * 0.1 * 10; 
+            pPoints += (basePrice * 0.1 * 10) * mult; 
         }
     });
 
@@ -413,9 +424,11 @@ export default function CollectionPage() {
         diamonds: Math.round(diamonds),
         pPoints: Math.round(pPoints),
         eligibleCount: cardsToSell.length,
-        ineligibleCount: selectedCardIds.size - cardsToSell.length
+        ineligibleCount: selectedCardIds.size - cardsToSell.length,
+        isBonusActive: isBonusActive && (bonusMultiplier > 1),
+        bonusMultiplier
     };
-  }, [mergedCards, selectedCardIds]);
+  }, [mergedCards, selectedCardIds, bonusMultiplier, isBonusActive]);
 
   const handleQuickSell = async () => {
     if (selectedCardIds.size === 0 || !user || !firestore) return;
@@ -1429,6 +1442,11 @@ export default function CollectionPage() {
                           </span>
                           <span className="text-amber-400 flex items-center gap-1 font-bold whitespace-nowrap">
                             <PPlusIcon className="w-3 h-3" /> +{conversionValues.pPoints.toLocaleString()} P點
+                            {conversionValues.isBonusActive && (
+                              <span className="px-1.5 py-0.2 rounded bg-gradient-to-r from-amber-400 to-rose-500 text-slate-950 text-[9px] font-black animate-pulse shadow-sm">
+                                🔥 {conversionValues.bonusMultiplier}X 加倍
+                              </span>
+                            )}
                           </span>
                         </div>
                       </div>

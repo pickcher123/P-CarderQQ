@@ -99,6 +99,12 @@ export default function RootLayout({
 
   return (
     <html lang="zh-Hant" suppressHydrationWarning className="bg-[#070b14] text-foreground min-h-screen min-h-[100dvh] w-full overflow-x-hidden m-0 p-0">
+      <head>
+        <link rel="preconnect" href="https://firebasestorage.googleapis.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://firebasestorage.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+      </head>
       <body className={cn("min-h-screen min-h-[100dvh] bg-[#070b14] text-foreground font-body antialiased overflow-x-hidden max-w-full w-full m-0 p-0")} suppressHydrationWarning>
         <FirebaseClientProvider>
           {children}

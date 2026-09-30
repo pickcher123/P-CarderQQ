@@ -15,6 +15,7 @@ import {
   Compass,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { SafeImage } from '@/components/safe-image';
 
 export interface Exhibition {
   id: string;
@@ -152,10 +153,12 @@ export function NextExhibitionCard({
           className="relative w-full h-40 sm:h-44 rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 cursor-pointer group-hover:border-cyan-500/40 transition-all shadow-inner"
         >
           {exhibition.imageUrl ? (
-            <img 
+            <SafeImage 
               src={exhibition.imageUrl} 
               alt={exhibition.title} 
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              fill
+              sizes="(max-width: 640px) 95vw, 600px"
+              className="object-cover group-hover:scale-105 transition-transform duration-500"
             />
           ) : (
             <div className={cn("w-full h-full bg-gradient-to-br flex flex-col items-center justify-center p-4 relative overflow-hidden", cityTheme.bg)}>

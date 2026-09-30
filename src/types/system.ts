@@ -35,4 +35,18 @@ export interface SystemConfig {
     showPromoCodeHints?: boolean; // 前台活動專區是否公開顯示熱門兌換碼清單 (預設隱藏)
     levelBenefits?: LevelBenefit[];
     bettingAutoRelistOnBuyBack?: boolean; // 拼卡 Buy Back (轉點) 自動重新上架開關
+    bonusEvent?: {
+        isActive?: boolean;
+        multiplier?: number;
+        title?: string;
+        subtitle?: string;
+        startDate?: string;
+        endDate?: string;
+        targets?: {
+            checkIn?: boolean;
+            purchase?: boolean;
+            recycling?: boolean;
+            drawBonus?: boolean;
+        };
+    };
 }

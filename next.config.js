@@ -1,7 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: false,
+  compress: true,
+  poweredByHeader: false,
   images: {
+    formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 2592000, // 30 天快取
     remotePatterns: [
       {
         protocol: 'https',

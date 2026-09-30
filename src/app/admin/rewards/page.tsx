@@ -22,6 +22,8 @@ import { SafeImage } from '@/components/safe-image';
 import type { DailyMission } from '@/types/missions';
 import type { SystemConfig, LevelBenefit } from '@/types/system';
 import { PPlusIcon } from '@/components/icons';
+import { DEFAULT_BONUS_EVENT, type BonusEventConfig } from '@/lib/bonus-event';
+import { Flame, Sparkles } from 'lucide-react';
 
 const DEFAULT_LEVELS: LevelBenefit[] = [
     { level: '新手收藏家', threshold: 0, freeShipping: false, depositBonus: 0, cashbackRate: 0 },
@@ -81,6 +83,35 @@ export default function RewardsAdminPage() {
 
   useEffect(() => { if (missions?.[0]) { setCheckInPoints(missions[0].rewardPoints); setIsCheckInActive(missions[0].isActive); setCheckInId(missions[0].id); } }, [missions]);
   useEffect(() => { if (systemConfig) setLevelBenefits(DEFAULT_LEVELS.map(def => ({ ...def, ...(systemConfig.levelBenefits?.find(b => b.level === def.level) || {}) }))); }, [systemConfig]);
+
+  // 🔥 紅利加倍活動設定
+  const [bonusEvent, setBonusEvent] = useState<BonusEventConfig>(DEFAULT_BONUS_EVENT);
+
+  useEffect(() => {
+    if (systemConfig?.bonusEvent) {
+      setBonusEvent(prev => ({
+        ...DEFAULT_BONUS_EVENT,
+        ...systemConfig.bonusEvent,
+        targets: {
+          ...DEFAULT_BONUS_EVENT.targets,
+          ...(systemConfig.bonusEvent.targets || {})
+        }
+      }));
+    }
+  }, [systemConfig]);
+
+  const handleSaveBonusEvent = async () => {
+    if (!firestore || !systemConfigRef) return;
+    setIsProcessing(true);
+    try {
+      await setDoc(systemConfigRef, { bonusEvent }, { merge: true });
+      toast({ title: '🔥 紅利加倍活動設定已儲存', description: '前台加倍倍率與活動橫幅已即時更新生效！' });
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: '儲存失敗', description: e.message || '請稍後再試' });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   const handleSaveCheckIn = async () => {
     if (!firestore) return;
@@ -149,6 +180,10 @@ export default function RewardsAdminPage() {
       <Tabs defaultValue="checkin" className="space-y-6">
         <TabsList className="bg-slate-100 p-1 rounded-xl h-12 w-fit">
             <TabsTrigger value="checkin" className="rounded-lg px-6 font-bold text-xs">簽到設定</TabsTrigger>
+            <TabsTrigger value="bonusEvent" className="rounded-lg px-6 font-bold text-xs flex items-center gap-1.5 text-amber-600 data-[state=active]:text-amber-700">
+                <Flame className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                <span>🔥 紅利加倍活動</span>
+            </TabsTrigger>
             <TabsTrigger value="levels" className="rounded-lg px-6 font-bold text-xs">等級權益</TabsTrigger>
             <TabsTrigger value="redemptions" className="rounded-lg px-6 font-bold text-xs">紅利兌換</TabsTrigger>
         </TabsList>
@@ -166,6 +201,144 @@ export default function RewardsAdminPage() {
                     </div>
                     <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100"><Label className="font-bold">功能啟用</Label><Switch checked={isCheckInActive} onCheckedChange={setIsCheckInActive} /></div>
                     <Button onClick={handleSaveCheckIn} className="w-full h-12 rounded-xl bg-slate-900 text-white font-bold" disabled={isProcessing}>{isProcessing ? <Loader2 className="animate-spin h-4 w-4"/> : '儲存設定'}</Button>
+                </CardContent>
+            </Card>
+        </TabsContent>
+
+        <TabsContent value="bonusEvent">
+            <Card className="border-slate-200 shadow-sm max-w-2xl bg-white">
+                <CardHeader>
+                    <CardTitle className="text-lg flex items-center justify-between text-slate-900">
+                        <span className="flex items-center gap-2">
+                            <Flame className="h-5 w-5 text-amber-500 fill-amber-500" /> 
+                            <span>紅利加倍活動設定</span>
+                        </span>
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-slate-500">活動總開關</span>
+                            <Switch 
+                                checked={bonusEvent.isActive} 
+                                onCheckedChange={(v) => setBonusEvent(prev => ({ ...prev, isActive: v }))} 
+                            />
+                        </div>
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    {/* 活動加倍倍率 */}
+                    <div className="space-y-2">
+                        <Label className="text-xs font-bold text-slate-500">加倍倍率 (例如：2 代表 2X 雙倍，3 代表 3X)</Label>
+                        <div className="flex items-center gap-3">
+                            <Input 
+                                type="number" 
+                                min={1} 
+                                max={10} 
+                                value={bonusEvent.multiplier} 
+                                onChange={e => setBonusEvent(prev => ({ ...prev, multiplier: Math.max(1, Number(e.target.value)) }))} 
+                                className="h-12 w-32 border-slate-200 font-bold bg-white text-slate-900 text-center text-lg" 
+                            />
+                            <div className="flex items-center gap-1.5">
+                                {[2, 3, 5].map(m => (
+                                    <Button
+                                        key={m}
+                                        type="button"
+                                        size="sm"
+                                        variant={bonusEvent.multiplier === m ? 'default' : 'outline'}
+                                        onClick={() => setBonusEvent(prev => ({ ...prev, multiplier: m }))}
+                                        className="h-9 px-3 rounded-lg font-black text-xs"
+                                    >
+                                        {m}X 加倍
+                                    </Button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 活動文案 */}
+                    <div className="space-y-3">
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-bold text-slate-500">活動主標題 (前台橫幅展示)</Label>
+                            <Input 
+                                value={bonusEvent.title} 
+                                onChange={e => setBonusEvent(prev => ({ ...prev, title: e.target.value }))} 
+                                className="h-11 border-slate-200 font-bold bg-white text-slate-900" 
+                                placeholder="例如：🔥 全站紅利 2X 狂歡狂飆週"
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-bold text-slate-500">活動副標說明</Label>
+                            <Textarea 
+                                value={bonusEvent.subtitle} 
+                                onChange={e => setBonusEvent(prev => ({ ...prev, subtitle: e.target.value }))} 
+                                className="border-slate-200 font-medium bg-white text-slate-900 text-xs min-h-[60px]" 
+                                placeholder="例如：每日簽到紅利 2 倍、儲值回饋 2 倍、卡片回收享雙倍 P+ 點數！"
+                            />
+                        </div>
+                    </div>
+
+                    {/* 起訖日期 */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-bold text-slate-500">活動開始日期 (YYYY-MM-DD)</Label>
+                            <Input 
+                                type="date"
+                                value={bonusEvent.startDate || ''} 
+                                onChange={e => setBonusEvent(prev => ({ ...prev, startDate: e.target.value }))} 
+                                className="h-11 border-slate-200 font-mono font-bold bg-white text-slate-900 text-xs" 
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-bold text-slate-500">活動結束日期 (YYYY-MM-DD)</Label>
+                            <Input 
+                                type="date"
+                                value={bonusEvent.endDate || ''} 
+                                onChange={e => setBonusEvent(prev => ({ ...prev, endDate: e.target.value }))} 
+                                className="h-11 border-slate-200 font-mono font-bold bg-white text-slate-900 text-xs" 
+                            />
+                        </div>
+                    </div>
+
+                    {/* 加倍適用的項目開關 */}
+                    <div className="space-y-2.5">
+                        <Label className="text-xs font-bold text-slate-500">加倍項目配置</Label>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                                <span className="font-bold text-slate-700">每日簽到加倍</span>
+                                <Switch 
+                                    checked={bonusEvent.targets?.checkIn ?? true} 
+                                    onCheckedChange={v => setBonusEvent(prev => ({ ...prev, targets: { ...prev.targets, checkIn: v } }))} 
+                                />
+                            </div>
+                            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                                <span className="font-bold text-slate-700">儲值贈點加倍</span>
+                                <Switch 
+                                    checked={bonusEvent.targets?.purchase ?? true} 
+                                    onCheckedChange={v => setBonusEvent(prev => ({ ...prev, targets: { ...prev.targets, purchase: v } }))} 
+                                />
+                            </div>
+                            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                                <span className="font-bold text-slate-700">卡片回收熔煉加倍</span>
+                                <Switch 
+                                    checked={bonusEvent.targets?.recycling ?? true} 
+                                    onCheckedChange={v => setBonusEvent(prev => ({ ...prev, targets: { ...prev.targets, recycling: v } }))} 
+                                />
+                            </div>
+                            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                                <span className="font-bold text-slate-700">抽卡紅利賞加倍</span>
+                                <Switch 
+                                    checked={bonusEvent.targets?.drawBonus ?? true} 
+                                    onCheckedChange={v => setBonusEvent(prev => ({ ...prev, targets: { ...prev.targets, drawBonus: v } }))} 
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <Button 
+                        onClick={handleSaveBonusEvent} 
+                        className="w-full h-12 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-bold text-sm shadow-md" 
+                        disabled={isProcessing}
+                    >
+                        {isProcessing ? <Loader2 className="animate-spin h-4 w-4 mr-2"/> : <Flame className="w-4 h-4 mr-2 fill-white" />}
+                        儲存並即時發布紅利加倍活動
+                    </Button>
                 </CardContent>
             </Card>
         </TabsContent>
