@@ -1,12 +1,13 @@
 'use client';
 
 import { useMemo } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useRequest, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Package, Swords, Ticket, Users2, ChevronRight, Layers, CreditCard, Plus, UploadCloud, Sparkles } from 'lucide-react';
+import { Package, Swords, Ticket, Users2, ChevronRight, Layers, CreditCard, Plus, UploadCloud, Sparkles, ScanLine } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -130,6 +131,14 @@ export default function CardsAdminAreaListPage() {
                 </div>
                 
                 <div className="flex flex-wrap items-center gap-3">
+                    <Button 
+                        asChild
+                        className="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-600 text-white font-black rounded-xl shadow-xs"
+                    >
+                        <Link href="/admin/cards/scanner">
+                            <ScanLine className="mr-2 h-4 w-4" /> 掃描自動分割 (PRO)
+                        </Link>
+                    </Button>
                     <CardUploadGuideDialog />
                     <SmartBulkCardUploadDialog 
                         area="all" 

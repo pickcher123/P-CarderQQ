@@ -22,6 +22,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFeatureFlags } from '@/hooks/use-feature-flags';
 import { RefinedPoints } from '@/components/ui/refined-points';
 import { SafeImage } from '@/components/safe-image';
+import { BonusDoubleTicker } from '@/components/events/bonus-double-banner';
 
 const navLinks = [
   { href: '/draw', label: '抽卡', icon: Package, color: "text-cyan-400", flag: 'isDrawEnabled' },
@@ -425,6 +426,9 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
           </div>
         </div>
       </div>
+
+      {/* 🔥 全站頂部紅利加倍即時跑馬燈活動廣播條 */}
+      <BonusDoubleTicker onOpenDetail={() => setIsPromoModalOpen(true)} />
 
       {/* 🎁 全站開幕領券中心 / 兌換碼彈窗 */}
       <PromoRedeemModal

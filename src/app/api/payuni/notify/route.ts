@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import querystring from 'node:querystring';
 import { adminDb } from '@/firebase/admin';
 import admin from 'firebase-admin';
+import { getBonusMultiplier, isBonusEventActive } from '@/lib/bonus-event';
 
 function decrypt(encryptStr: string, key: string, iv: Buffer): string {
   try {
@@ -57,16 +58,29 @@ export async function POST(req: NextRequest) {
         const userId = transactionDoc.data()?.userId;
         const userRef = adminDb.collection('users').doc(userId);
         
+        let multiplier = 1;
+        try {
+          const sysDoc = await t.get(adminDb.collection('systemConfig').doc('main'));
+          const bonusEvent = sysDoc.data()?.bonusEvent;
+          multiplier = getBonusMultiplier(bonusEvent, 'purchase');
+        } catch (e) {
+          multiplier = 2; // 活動預設 2X
+        }
+
         let bonus = 0;
         if (amount >= 30000) bonus = Math.floor(amount * 0.10);
         else if (amount >= 10000) bonus = Math.floor(amount * 0.08);
         else if (amount >= 5000) bonus = Math.floor(amount * 0.06);
 
+        if (bonus > 0 && multiplier > 1) {
+          bonus = Math.floor(bonus * multiplier);
+        }
+
         t.update(userRef, { points: admin.firestore.FieldValue.increment(amount + bonus) });
         t.update(transactionRef, {
             status: 'completed',
             payuniTradeNo: payuniTradeId,
-            details: `線上儲值 ${amount} 點${bonus > 0 ? ` (含點數包加贈 ${bonus} 點)` : ''}`,
+            details: `線上儲值 ${amount} 點${bonus > 0 ? ` (含點數包${multiplier > 1 ? ` ${multiplier}X加倍` : ''}加贈 ${bonus} 點)` : ''}`,
             transactionDate: admin.firestore.FieldValue.serverTimestamp(),
         });
     });

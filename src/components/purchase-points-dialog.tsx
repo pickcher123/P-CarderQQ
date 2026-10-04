@@ -70,10 +70,10 @@ export function PurchasePointsDialog({ children }: { children: React.ReactNode }
   const { data: systemConfig } = useDoc<SystemConfig>(systemConfigRef);
 
   const bonusMultiplier = getBonusMultiplier(systemConfig?.bonusEvent, 'purchase');
-  const isBonusActive = isBonusEventActive(systemConfig?.bonusEvent);
+  const isBonusActive = isBonusEventActive(systemConfig?.bonusEvent) && bonusMultiplier > 1;
 
   const effectivePackages = pointPackages.map(pkg => {
-    if (!pkg.bonusPoints || bonusMultiplier <= 1) return { ...pkg, isDoubleEvent: false };
+    if (!pkg.bonusPoints || !isBonusActive) return { ...pkg, isDoubleEvent: false };
     const multipliedBonus = pkg.bonusPoints * bonusMultiplier;
     return {
       ...pkg,
@@ -83,6 +83,8 @@ export function PurchasePointsDialog({ children }: { children: React.ReactNode }
       isDoubleEvent: true,
     };
   });
+
+  const currentSelectedPkg = effectivePackages.find(p => p.price === selectedPackage.price) || selectedPackage;
 
   const handlePurchase = async () => {
     if (!user || !user.email) {
@@ -97,8 +99,8 @@ export function PurchasePointsDialog({ children }: { children: React.ReactNode }
         body: JSON.stringify({
           userId: user.uid,
           orderDetails: {
-            amt: selectedPackage.price,
-            prodDesc: `P+Carder 點數 - ${selectedPackage.label}`,
+            amt: currentSelectedPkg.price,
+            prodDesc: `P+Carder 點數 - ${currentSelectedPkg.label}`,
             email: user.email,
           },
         }),
@@ -185,10 +187,10 @@ export function PurchasePointsDialog({ children }: { children: React.ReactNode }
                       <div className={cn(
                         "text-slate-950 text-[9px] font-black px-1.5 py-0.2 rounded-full shadow border whitespace-nowrap",
                         pkg.isDoubleEvent 
-                          ? "bg-gradient-to-r from-amber-400 to-rose-500 text-white border-amber-300 animate-pulse" 
+                          ? "bg-gradient-to-r from-amber-400 to-rose-500 text-white border-amber-300 animate-pulse shadow-sm" 
                           : "bg-amber-500 border-amber-300/40"
                       )}>
-                        {pkg.isDoubleEvent ? `🔥 +${pkg.bonus}% (2X)` : `+${pkg.bonus}%`}
+                        {pkg.isDoubleEvent ? `🔥 +${pkg.bonus}% (${bonusMultiplier}X)` : `+${pkg.bonus}%`}
                       </div>
                     </div>
                   ) : null}
@@ -235,7 +237,7 @@ export function PurchasePointsDialog({ children }: { children: React.ReactNode }
                 </div>
               ) : (
                 <span className="flex items-center justify-center gap-1.5">
-                  <span>支付 NT$ {selectedPackage.price.toLocaleString()}（得 {selectedPackage.points.toLocaleString()} 點）</span>
+                  <span>支付 NT$ {currentSelectedPkg.price.toLocaleString()}（得 {currentSelectedPkg.points.toLocaleString()} 點）</span>
                   <ArrowRight className="w-3.5 h-3.5 stroke-[2.5]" />
                 </span>
               )}

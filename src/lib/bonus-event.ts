@@ -23,8 +23,8 @@ export const DEFAULT_BONUS_EVENT: BonusEventConfig = {
   multiplier: 2,
   title: '🔥 全站紅利 2X 狂歡狂飆週',
   subtitle: '活動期間：每日簽到紅利 2 倍、儲值回饋 2 倍、卡片回收熔煉享雙倍 P+ 點數！',
-  startDate: '2026-09-28',
-  endDate: '2026-10-15',
+  startDate: '2026-09-01',
+  endDate: '2026-12-31',
   targets: {
     checkIn: true,
     purchase: true,
@@ -37,20 +37,25 @@ export const DEFAULT_BONUS_EVENT: BonusEventConfig = {
  * 檢查紅利加倍活動目前是否在生傚期間內
  */
 export function isBonusEventActive(config?: Partial<BonusEventConfig> | null): boolean {
+  // 若未傳入或 isActive 未特別設為 false，則預設為啟用
   if (!config) return DEFAULT_BONUS_EVENT.isActive;
   if (config.isActive === false) return false;
 
-  const now = new Date();
-  const todayStr = now.toISOString().slice(0, 10);
+  try {
+    const now = new Date();
+    const todayStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
 
-  const startDate = config.startDate || DEFAULT_BONUS_EVENT.startDate;
-  const endDate = config.endDate || DEFAULT_BONUS_EVENT.endDate;
+    const startDate = config.startDate || DEFAULT_BONUS_EVENT.startDate;
+    const endDate = config.endDate || DEFAULT_BONUS_EVENT.endDate;
 
-  if (startDate && todayStr < startDate) {
-    return false;
-  }
-  if (endDate && todayStr > endDate) {
-    return false;
+    if (startDate && todayStr < startDate) {
+      return false;
+    }
+    if (endDate && todayStr > endDate) {
+      return false;
+    }
+  } catch (e) {
+    return true;
   }
 
   return true;
@@ -72,7 +77,13 @@ export function getBonusMultiplier(
     return 1;
   }
 
-  return Math.max(1, effectiveConfig.multiplier || 2);
+  // 確保紅利加倍活動期間，倍率至少為 2X 雙倍（消除歷史 1.5X 誤差）
+  const rawMult = Number(effectiveConfig.multiplier);
+  if (isNaN(rawMult) || rawMult < 2) {
+    return 2;
+  }
+
+  return rawMult;
 }
 
 /**

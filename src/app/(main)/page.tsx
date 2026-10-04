@@ -25,7 +25,7 @@ import { PredictionSection } from '@/components/prediction-section';
 import { PoolCard } from '@/components/pool-card';
 import type { CardPool, CardItem } from '@/types';
 import { PromoRedeemModal } from '@/components/events/PromoRedeemModal';
-import { BonusDoubleBanner } from '@/components/events/bonus-double-banner';
+import { BonusDoubleHeroPill } from '@/components/events/bonus-double-banner';
 import { useToast } from '@/hooks/use-toast';
 import { claimCommunityFreeDraw } from '@/lib/promo-draw-service';
 import confetti from 'canvas-confetti';
@@ -262,6 +262,11 @@ export default function Home() {
                 頂級球員卡福袋平台 · 即時連線公平抽取<br />
                 <span className="text-amber-400 font-bold drop-shadow-[0_0_12px_rgba(245,158,11,0.4)]">打造屬於你的極致玩卡與收藏體驗</span>
             </p>
+
+            {/* 🔥 首頁首屏第一眼活動膠囊 */}
+            <div className="pt-2 sm:pt-3">
+              <BonusDoubleHeroPill onOpenDetail={() => setIsPromoModalOpen(true)} />
+            </div>
           </div>
           
           {/* 快捷操作按鈕組 */}
@@ -280,13 +285,6 @@ export default function Home() {
 
         {/* 底部平滑過渡流光帶 */}
         <div className="absolute bottom-0 inset-x-0 h-16 bg-gradient-to-t from-background/90 to-transparent pointer-events-none z-[5]" />
-      </section>
-
-      {/* 🔥 全站紅利 2X 加倍狂歡活動橫幅 */}
-      <section className="container px-3 sm:px-4 max-w-7xl mx-auto pt-4 sm:pt-6">
-        <BonusDoubleBanner 
-          onOpenPromoModal={() => setIsPromoModalOpen(true)}
-        />
       </section>
 
       {/* 首頁熱門推薦卡池 */}
