@@ -31,7 +31,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
-import { Loader2, User as UserIcon, Gem, MapPin, Search, UserCheck, Briefcase, Mail, Ticket, Send, Sparkles, Clock } from 'lucide-react';
+import { Loader2, User as UserIcon, Gem, MapPin, Search, UserCheck, Briefcase, Mail, Ticket, Send, Sparkles, Clock, LogIn } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -57,6 +57,7 @@ const PERMISSION_ITEMS = [
     { id: 'predictions', label: '賽事預測管理', category: '行銷管理' },
     { id: 'referrals', label: '推薦碼管理', category: '行銷管理' },
     { id: 'users', label: '會員資訊', category: '會員管理' },
+    { id: 'login-logs', label: '玩家登入紀錄', category: '會員管理' },
     { id: 'rewards', label: '會員回饋', category: '會員管理' },
     { id: 'marketing-emails', label: '行銷郵件', category: '行銷管理' },
     { id: 'news', label: '消息管理', category: '行銷管理' },
@@ -181,7 +182,19 @@ function UserDetailsDialog({ user }: { user: UserProfile }) {
                                                     <span className="text-slate-500 font-black uppercase text-[9px]">註冊日期</span>
                                                     <span className="font-code font-bold text-slate-700">{user.createdAt ? format((user.createdAt as any).toDate(), 'yyyy-MM-dd') : '-'}</span>
                                                 </div>
+                                                <div className="flex justify-between border-b border-slate-100 pb-2">
+                                                    <span className="text-slate-500 font-black uppercase text-[9px]">最近登入</span>
+                                                    <span className="font-code font-bold text-slate-700">
+                                                        {(user as any).lastLoginAt ? format(((user as any).lastLoginAt as any).toDate(), 'yyyy-MM-dd HH:mm') : ((user as any).lastLoginTime ? (user as any).lastLoginTime.slice(0, 16).replace('T', ' ') : '無紀錄')}
+                                                    </span>
+                                                </div>
                                                 <div className="text-left"><p className="text-slate-500 text-[9px] font-black uppercase mb-1">UID</p><p className="font-mono text-[10px] font-bold break-all bg-slate-50 p-2 rounded border border-slate-100">{user.id}</p></div>
+                                                <Link href={`/admin/login-logs?search=${encodeURIComponent(user.id)}`} className="w-full block">
+                                                    <Button variant="outline" size="sm" className="w-full h-7 text-xs font-bold gap-1 border-cyan-200 text-cyan-700 hover:bg-cyan-50">
+                                                        <LogIn className="w-3 h-3" />
+                                                        <span>查看玩家登入軌跡</span>
+                                                    </Button>
+                                                </Link>
                                                 <div className="text-left">
                                                     <p className="text-slate-500 text-[9px] font-black uppercase mb-1">用戶標籤</p>
                                                     <div className="flex flex-wrap gap-1 mb-2">
@@ -1218,6 +1231,12 @@ export default function UsersAdminPage() {
                             <Button variant="outline" size="sm" className="h-8 text-[10px] rounded-lg font-black bg-white border-indigo-200 text-indigo-600 hover:bg-indigo-50 hover:border-indigo-300 shadow-sm flex items-center gap-1">
                                 <Mail className="w-3 h-3" />
                                 寄信
+                            </Button>
+                        </Link>
+                        <Link href={`/admin/login-logs?search=${encodeURIComponent(user.id)}`}>
+                            <Button variant="outline" size="sm" className="h-8 text-[10px] rounded-lg font-black bg-white border-cyan-200 text-cyan-600 hover:bg-cyan-50 hover:border-cyan-300 shadow-sm flex items-center gap-1" title="查看該玩家登入歷史紀錄">
+                                <LogIn className="w-3 h-3" />
+                                登入紀錄
                             </Button>
                         </Link>
                         <ModifyPointsDialog user={user} onUpdate={() => forceRefetch?.()} />

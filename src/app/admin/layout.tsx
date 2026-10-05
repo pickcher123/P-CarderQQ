@@ -38,7 +38,8 @@ import {
   X,
   Compass,
   Home,
-  ScanLine
+  ScanLine,
+  LogIn
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -90,6 +91,7 @@ const sidebarNavItems: NavSection[] = [
     badge: '營運',
     items: [
       { href: '/admin/users', label: '會員資訊', icon: UserCircle, permission: 'users', desc: '帳號查詢、權限與點數' },
+      { href: '/admin/login-logs', label: '登入紀錄', icon: LogIn, permission: 'users', desc: '玩家登入時間、IP、裝置與歷程' },
       { href: '/admin/shipping', label: '出貨管理', icon: Truck, permission: 'shipping', desc: '實體卡片寄送與單號' },
       { href: '/admin/rewards', label: '會員回饋', icon: Gift, permission: 'rewards', desc: '簽到與紅利兌換商城' },
     ]

@@ -306,29 +306,48 @@ export function SmartBulkCardUploadDialog({ area, onComplete }: SmartBulkCardUpl
       const draft = drafts[i];
 
       try {
-        // 1. 上傳正面圖
-        const frontExt = draft.frontFile.name.split('.').pop() || 'png';
-        const frontStorageRef = ref(storage, `P-Carder/cards/${uuidv4()}.${frontExt}`);
-        const frontUploadTask = uploadBytesResumable(frontStorageRef, draft.frontFile);
+        // 1. 上傳正面圖 (若 Storage 無權限自動降級至預覽圖直存)
+        let frontImageUrl = '';
+        if (storage) {
+          try {
+            const frontExt = draft.frontFile.name.split('.').pop() || 'png';
+            const frontStorageRef = ref(storage, `P-Carder/cards/${uuidv4()}.${frontExt}`);
+            const frontUploadTask = uploadBytesResumable(frontStorageRef, draft.frontFile);
 
-        const frontImageUrl = await new Promise<string>((resolve, reject) => {
-          frontUploadTask.on('state_changed', null, reject, () => {
-            getDownloadURL(frontUploadTask.snapshot.ref).then(resolve);
-          });
-        });
+            frontImageUrl = await new Promise<string>((resolve, reject) => {
+              frontUploadTask.on('state_changed', null, reject, () => {
+                getDownloadURL(frontUploadTask.snapshot.ref).then(resolve);
+              });
+            });
+          } catch (storageErr) {
+            console.warn('Firebase Storage upload failed, falling back to frontPreview:', storageErr);
+          }
+        }
+        if (!frontImageUrl) {
+          frontImageUrl = draft.frontPreview;
+        }
 
         // 2. 上傳背面圖 (若有)
         let backImageUrl: string | undefined = undefined;
         if (draft.backFile) {
-          const backExt = draft.backFile.name.split('.').pop() || 'png';
-          const backStorageRef = ref(storage, `P-Carder/cards/${uuidv4()}-back.${backExt}`);
-          const backUploadTask = uploadBytesResumable(backStorageRef, draft.backFile);
+          if (storage) {
+            try {
+              const backExt = draft.backFile.name.split('.').pop() || 'png';
+              const backStorageRef = ref(storage, `P-Carder/cards/${uuidv4()}-back.${backExt}`);
+              const backUploadTask = uploadBytesResumable(backStorageRef, draft.backFile);
 
-          backImageUrl = await new Promise<string>((resolve, reject) => {
-            backUploadTask.on('state_changed', null, reject, () => {
-              getDownloadURL(backUploadTask.snapshot.ref).then(resolve);
-            });
-          });
+              backImageUrl = await new Promise<string>((resolve, reject) => {
+                backUploadTask.on('state_changed', null, reject, () => {
+                  getDownloadURL(backUploadTask.snapshot.ref).then(resolve);
+                });
+              });
+            } catch (storageErr) {
+              console.warn('Firebase Storage back upload failed, falling back to backPreview:', storageErr);
+            }
+          }
+          if (!backImageUrl) {
+            backImageUrl = draft.backPreview;
+          }
         }
 
         // 3. 寫入 Firestore 集合 allCards

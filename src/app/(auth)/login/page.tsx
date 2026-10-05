@@ -130,11 +130,68 @@ function LoginContent() {
     }
   };
 
+  // 記錄玩家登入歷史歷程
+  const recordUserLoginEvent = async (userId: string, email?: string | null, username?: string | null, photoURL?: string | null, method: 'google' | 'email' | 'register' = 'email') => {
+    try {
+      // 1. 呼叫後端 API 取得真實 IP 與解析設備
+      const res = await fetch('/api/auth/record-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          email: email || '',
+          username: username || '',
+          photoURL: photoURL || '',
+          loginMethod: method,
+        }),
+      });
+      const data = await res.json().catch(() => null);
+
+      // 2. 客戶端直寫 Firestore userLoginLogs 作為雙重保障
+      if (firestore) {
+        const { addDoc, collection, serverTimestamp, doc: firestoreDoc, setDoc: firestoreSetDoc } = await import('firebase/firestore');
+        const nowIso = new Date().toISOString();
+        let methodName = '帳號密碼登入';
+        if (method === 'google') methodName = 'Google 快捷登入';
+        else if (method === 'register') methodName = '新會員註冊登入';
+
+        await addDoc(collection(firestore, 'userLoginLogs'), {
+          userId,
+          email: email || '',
+          username: username || (email ? email.split('@')[0] : '會員'),
+          photoURL: photoURL || null,
+          loginMethod: method,
+          loginMethodName: methodName,
+          ip: data?.logData?.ip || '連線偵測中',
+          device: data?.logData?.device || (window.innerWidth < 768 ? 'mobile' : 'desktop'),
+          browser: data?.logData?.browser || '瀏覽器訪問',
+          os: data?.logData?.os || '連線裝置',
+          userAgent: navigator.userAgent,
+          status: 'success',
+          createdAt: serverTimestamp(),
+          loginTime: nowIso,
+        }).catch(() => {});
+
+        // 同步更新 users 文件中的最近登入時間與方式
+        await firestoreSetDoc(firestoreDoc(firestore, 'users', userId), {
+          lastLoginAt: serverTimestamp(),
+          lastLoginTime: nowIso,
+          lastLoginMethod: method,
+        }, { merge: true }).catch(() => {});
+      }
+    } catch (err) {
+      console.warn('Record login log silently failed:', err);
+    }
+  };
+
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     initiateEmailSignIn(auth, loginEmail, loginPassword)
-      .then(() => {
+      .then(async (cred) => {
+        if (cred?.user) {
+          recordUserLoginEvent(cred.user.uid, cred.user.email, cred.user.displayName, cred.user.photoURL, 'email');
+        }
         router.push('/profile');
       })
       .catch((error) => {
@@ -182,6 +239,9 @@ function LoginContent() {
         const result = await initiateGoogleSignIn(auth);
         const user = result.user;
         
+        // 記錄登入軌跡
+        recordUserLoginEvent(user.uid, user.email, user.displayName, user.photoURL, 'google');
+
         // 檢查 Firestore 是否已有會員資料
         const userRef = doc(firestore, 'users', user.uid);
         const userSnap = await getDoc(userRef);
@@ -199,6 +259,7 @@ function LoginContent() {
                 totalSpent: 0,
                 userLevel: '新手收藏家',
                 createdAt: serverTimestamp(),
+                lastLoginAt: serverTimestamp(),
             });
 
             // 若有填寫推薦碼或網址帶有推薦碼，進行綁定發獎
@@ -269,6 +330,9 @@ function LoginContent() {
         const result = await initiateEmailSignUp(auth, registerEmail, registerPassword);
         const user = result.user;
         
+        // 記錄登入/註冊軌跡
+        recordUserLoginEvent(user.uid, registerEmail, registerUsername, null, 'register');
+
         // 建立會員 Firestore 文件
         const userRef = doc(firestore, 'users', user.uid);
         await setDoc(userRef, {
@@ -281,6 +345,7 @@ function LoginContent() {
             totalSpent: 0,
             userLevel: '新手收藏家',
             createdAt: serverTimestamp(),
+            lastLoginAt: serverTimestamp(),
         });
 
         // 套用推薦碼 (若有填寫)

@@ -46,7 +46,7 @@ export async function cropImageFromSource(
   cropBox: CropBox,
   mimeType: string = 'image/jpeg',
   quality: number = 0.95
-): Promise<{ blob: Blob; dataUrl: string }> {
+): Promise<{ blob: Blob; dataUrl: string; optimizedDataUrl: string }> {
   return new Promise((resolve, reject) => {
     try {
       const naturalWidth = imageElement.naturalWidth;
@@ -96,6 +96,28 @@ export async function cropImageFromSource(
       );
       ctx.restore();
 
+      // 另行生成輕量化、極高清晰度的儲存專用 Data URL（最大寬度 720px，避免超出文檔上限且無損視覺）
+      let optimizedDataUrl = '';
+      try {
+        const optMaxW = 720;
+        let optW = canvas.width;
+        let optH = canvas.height;
+        if (optW > optMaxW) {
+          optH = Math.round((optH * optMaxW) / optW);
+          optW = optMaxW;
+        }
+        const optCanvas = document.createElement('canvas');
+        optCanvas.width = optW;
+        optCanvas.height = optH;
+        const optCtx = optCanvas.getContext('2d');
+        if (optCtx) {
+          optCtx.drawImage(canvas, 0, 0, optW, optH);
+          optimizedDataUrl = optCanvas.toDataURL('image/jpeg', 0.85);
+        }
+      } catch (optErr) {
+        console.warn('Optimized dataUrl generation fallback:', optErr);
+      }
+
       canvas.toBlob(
         (blob) => {
           if (!blob) {
@@ -103,7 +125,7 @@ export async function cropImageFromSource(
             return;
           }
           const dataUrl = canvas.toDataURL(mimeType, quality);
-          resolve({ blob, dataUrl });
+          resolve({ blob, dataUrl, optimizedDataUrl: optimizedDataUrl || dataUrl });
         },
         mimeType,
         quality

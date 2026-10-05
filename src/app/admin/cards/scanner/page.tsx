@@ -393,12 +393,13 @@ export default function CardScannerProPage() {
 
   // 儲存並匯入卡片庫
   const handleSaveAllToDatabase = async () => {
-    if (!firestore || !storage || cards.length === 0 || !frontImgRef.current) return;
+    if (!firestore || cards.length === 0 || !frontImgRef.current) return;
     setIsSavingToDb(true);
     setSaveProgress({ current: 0, total: cards.length });
 
     try {
       let savedCount = 0;
+      let usedFallbackStorage = false;
 
       for (let i = 0; i < cards.length; i++) {
         const card = cards[i];
@@ -406,20 +407,44 @@ export default function CardScannerProPage() {
 
         // 1. 高清裁切正面
         const frontResult = await cropImageFromSource(frontImgRef.current, card.frontCropBox);
-        const frontStorageRef = ref(storage, `cards/scanned_${uuidv4()}_front.jpg`);
-        await uploadBytes(frontStorageRef, frontResult.blob);
-        const frontUrl = await getDownloadURL(frontStorageRef);
+        let frontUrl = '';
+
+        if (storage) {
+          try {
+            const frontStorageRef = ref(storage, `cards/scanned_${uuidv4()}_front.jpg`);
+            await uploadBytes(frontStorageRef, frontResult.blob);
+            frontUrl = await getDownloadURL(frontStorageRef);
+          } catch (storageErr: any) {
+            console.warn('Firebase Storage upload failed (storage/unauthorized or network error), using optimized direct storage:', storageErr);
+            usedFallbackStorage = true;
+          }
+        }
+
+        // 若 Firebase Storage 權限未開放（如 storage/unauthorized）或上傳異常，無縫回退至輕量高清 Base64 直存
+        if (!frontUrl) {
+          frontUrl = frontResult.optimizedDataUrl || frontResult.dataUrl;
+        }
 
         // 2. 高清裁切背面 (若有)
         let backUrl: string | undefined = undefined;
         if (backImgRef.current && card.backCropBox) {
           try {
             const backResult = await cropImageFromSource(backImgRef.current, card.backCropBox);
-            const backStorageRef = ref(storage, `cards/scanned_${uuidv4()}_back.jpg`);
-            await uploadBytes(backStorageRef, backResult.blob);
-            backUrl = await getDownloadURL(backStorageRef);
+            if (storage) {
+              try {
+                const backStorageRef = ref(storage, `cards/scanned_${uuidv4()}_back.jpg`);
+                await uploadBytes(backStorageRef, backResult.blob);
+                backUrl = await getDownloadURL(backStorageRef);
+              } catch (storageErr) {
+                console.warn('Firebase Storage back upload failed, using optimized direct storage:', storageErr);
+                usedFallbackStorage = true;
+              }
+            }
+            if (!backUrl) {
+              backUrl = backResult.optimizedDataUrl || backResult.dataUrl;
+            }
           } catch (be) {
-            console.warn('Back upload failed, skipped:', be);
+            console.warn('Back crop failed, skipped:', be);
           }
         }
 
@@ -445,7 +470,9 @@ export default function CardScannerProPage() {
 
       toast({
         title: '🎉 批次匯入成功！',
-        description: `已成功將 ${savedCount} 張球員卡（含正面與背面）無損匯入卡片資產庫。`,
+        description: usedFallbackStorage
+          ? `已成功將 ${savedCount} 張球員卡以高清直存模式安全匯入卡片資產庫！`
+          : `已成功將 ${savedCount} 張球員卡（含正面與背面）無損匯入卡片資產庫。`,
       });
 
       // 導回卡片管理主頁

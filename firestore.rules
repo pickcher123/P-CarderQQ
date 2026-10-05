@@ -79,6 +79,13 @@ service cloud.firestore {
       allow read, write: if isVerifiedAdmin();
     }
 
+    // --- 玩家登入紀錄集合 ---
+    match /userLoginLogs/{logId} {
+      allow read: if isVerifiedAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow create: if (isSignedIn() && request.resource.data.userId == request.auth.uid) || isVerifiedAdmin();
+      allow update, delete: if isVerifiedAdmin();
+    }
+
     // --- 行銷郵件紀錄集合 ---
     match /marketingEmailLogs/{logId} {
       allow read, write: if isVerifiedAdmin();

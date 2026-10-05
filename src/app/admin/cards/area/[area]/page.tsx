@@ -45,7 +45,7 @@ import { userLevels } from '@/components/member-level-crown';
 import { SmartBulkCardUploadDialog } from '@/components/admin/smart-bulk-card-upload-dialog';
 import { CardUploadGuideDialog } from '@/components/admin/card-upload-guide-dialog';
 
-export interface CardData {
+interface CardData {
     id?: string;
     name: string;
     imageUrl: string;
@@ -60,7 +60,7 @@ export interface CardData {
     createdAt?: any;
 }
 
-export function parseCardDate(createdAt: any): Date | null {
+function parseCardDate(createdAt: any): Date | null {
     if (!createdAt) return null;
     if (typeof createdAt === 'string') {
         const d = new Date(createdAt);
@@ -78,7 +78,7 @@ export function parseCardDate(createdAt: any): Date | null {
     return null;
 }
 
-export function formatCardDateBadge(createdAt: any) {
+function formatCardDateBadge(createdAt: any) {
     const d = parseCardDate(createdAt);
     if (!d) return { label: '歷史舊卡', isNew: false, isYesterday: false, dateStr: '未記錄', timeStr: '' };
     
@@ -136,15 +136,30 @@ function BulkUploadDialog({ area, onComplete }: { area: string, onComplete: (cou
             setCurrentFileIndex(i + 1);
             const file = selectedFiles[i];
             try {
-                const fileExtension = file.name.split('.').pop();
-                const fileName = `P-Carder/cards/bulk-${uuidv4()}.${fileExtension}`;
-                const storageRef = ref(storage, fileName);
-                const uploadTask = uploadBytesResumable(storageRef, file);
-                const imageUrl = await new Promise<string>((resolve, reject) => {
-                    uploadTask.on('state_changed', null, reject, () => {
-                        getDownloadURL(uploadTask.snapshot.ref).then(resolve);
+                let imageUrl = '';
+                if (storage) {
+                    try {
+                        const fileExtension = file.name.split('.').pop();
+                        const fileName = `P-Carder/cards/bulk-${uuidv4()}.${fileExtension}`;
+                        const storageRef = ref(storage, fileName);
+                        const uploadTask = uploadBytesResumable(storageRef, file);
+                        imageUrl = await new Promise<string>((resolve, reject) => {
+                            uploadTask.on('state_changed', null, reject, () => {
+                                getDownloadURL(uploadTask.snapshot.ref).then(resolve);
+                            });
+                        });
+                    } catch (storageErr) {
+                        console.warn('Storage bulk upload failed, falling back to dataUrl:', storageErr);
+                    }
+                }
+                if (!imageUrl) {
+                    imageUrl = await new Promise<string>((resolve) => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result as string);
+                        reader.onerror = () => resolve('');
+                        reader.readAsDataURL(file);
                     });
-                });
+                }
                 const cardName = file.name.replace(/\.[^/.]+$/, "");
                 const cardData: any = { 
                     name: cardName, 
@@ -469,23 +484,51 @@ export default function CardAreaManagementPage() {
   }, [filteredCards, isGroupedByDate]);
 
   const handleSaveCard = async () => {
-    if (!firestore || !currentCard.name || !storage) return;
+    if (!firestore || !currentCard.name) return;
     try {
         let imageUrl = currentCard.imageUrl || '';
         let backImageUrl = currentCard.backImageUrl || '';
         if (selectedFile) {
-            const storageRef = ref(storage, `P-Carder/cards/${uuidv4()}`);
-            const uploadTask = uploadBytesResumable(storageRef, selectedFile);
-            imageUrl = await new Promise((resolve, reject) => {
-                uploadTask.on('state_changed', (s) => setUploadProgress((s.bytesTransferred / s.totalBytes) * 100), reject, () => getDownloadURL(uploadTask.snapshot.ref).then(resolve));
-            });
+            if (storage) {
+                try {
+                    const storageRef = ref(storage, `P-Carder/cards/${uuidv4()}`);
+                    const uploadTask = uploadBytesResumable(storageRef, selectedFile);
+                    imageUrl = await new Promise((resolve, reject) => {
+                        uploadTask.on('state_changed', (s) => setUploadProgress((s.bytesTransferred / s.totalBytes) * 100), reject, () => getDownloadURL(uploadTask.snapshot.ref).then(resolve));
+                    });
+                } catch (storageErr) {
+                    console.warn('Storage save card failed, falling back to dataUrl:', storageErr);
+                }
+            }
+            if (!imageUrl || imageUrl === currentCard.imageUrl) {
+                imageUrl = await new Promise<string>((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result as string);
+                    reader.onerror = () => resolve(currentCard.imageUrl || '');
+                    reader.readAsDataURL(selectedFile);
+                });
+            }
         }
         if (selectedBackFile) {
-            const backStorageRef = ref(storage, `P-Carder/cards/${uuidv4()}-back`);
-            const backUploadTask = uploadBytesResumable(backStorageRef, selectedBackFile);
-            backImageUrl = await new Promise((resolve, reject) => {
-                backUploadTask.on('state_changed', (s) => setBackUploadProgress((s.bytesTransferred / s.totalBytes) * 100), reject, () => getDownloadURL(backUploadTask.snapshot.ref).then(resolve));
-            });
+            if (storage) {
+                try {
+                    const backStorageRef = ref(storage, `P-Carder/cards/${uuidv4()}-back`);
+                    const backUploadTask = uploadBytesResumable(backStorageRef, selectedBackFile);
+                    backImageUrl = await new Promise((resolve, reject) => {
+                        backUploadTask.on('state_changed', (s) => setBackUploadProgress((s.bytesTransferred / s.totalBytes) * 100), reject, () => getDownloadURL(backUploadTask.snapshot.ref).then(resolve));
+                    });
+                } catch (storageErr) {
+                    console.warn('Storage save back card failed, falling back to dataUrl:', storageErr);
+                }
+            }
+            if (!backImageUrl || backImageUrl === currentCard.backImageUrl) {
+                backImageUrl = await new Promise<string>((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result as string);
+                    reader.onerror = () => resolve(currentCard.backImageUrl || '');
+                    reader.readAsDataURL(selectedBackFile);
+                });
+            }
         }
         
         const nowIso = new Date().toISOString();
