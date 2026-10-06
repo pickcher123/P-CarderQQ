@@ -2,10 +2,11 @@
 
 import { adminDb } from '@/lib/firebase-admin';
 import * as admin from 'firebase-admin';
+import { drawFromPool } from '@/lib/draw-utils';
 
 export async function performDrawAction(userId: string, poolId: string, count: number) {
   try {
-    const result = await adminDb.runTransaction(async (transaction) => {
+    const result = await adminDb.runTransaction(async (transaction: any) => {
       const userRef = adminDb.collection('users').doc(userId);
       const poolRef = adminDb.collection('cardPools').doc(poolId);
 
@@ -81,10 +82,10 @@ export async function performDrawAction(userId: string, poolId: string, count: n
     });
 
     // 推送中獎通知
-    if (result.drawn.some(card => card.rarity === 'rare' || card.rarity === 'super-rare')) {
+    if (result.drawn.some((card: any) => card.rarity === 'rare' || card.rarity === 'super-rare')) {
       const { pushLineMessage } = await import('@/lib/line');
       if (result.userData.lineUserId) {
-        await pushLineMessage(result.userData.lineUserId, `恭喜抽中大獎！\n獎項：${result.drawn.filter(c => c.rarity === 'rare' || c.rarity === 'super-rare').map(c => c.name).join(', ')}`);
+        await pushLineMessage(result.userData.lineUserId, `恭喜抽中大獎！\n獎項：${result.drawn.filter((c: any) => c.rarity === 'rare' || c.rarity === 'super-rare').map((c: any) => c.name).join(', ')}`);
       }
     }
 

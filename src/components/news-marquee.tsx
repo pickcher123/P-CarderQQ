@@ -15,6 +15,7 @@ interface NewsItem {
     isPinned?: boolean;
     isMarquee?: boolean;
     isDeleted?: boolean;
+    createdAt?: any;
 }
 
 interface NewsMarqueeProps {

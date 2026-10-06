@@ -21,6 +21,20 @@ interface MobileBottomNavProps {
   systemConfig?: SystemConfig | null;
 }
 
+interface MobileNavItem {
+  id: string;
+  href?: string;
+  label: string;
+  icon: any;
+  activeColor: string;
+  activeBg: string;
+  dotColor: string;
+  flag?: string;
+  isAction?: boolean;
+  action?: () => void;
+  badge?: string;
+}
+
 export function MobileBottomNav({ systemConfig }: MobileBottomNavProps) {
   const pathname = usePathname();
   const [isMounted, setIsMounted] = useState(false);
@@ -37,7 +51,7 @@ export function MobileBottomNav({ systemConfig }: MobileBottomNavProps) {
   }
 
   // 行動版所有可選區域導覽項目
-  const allNavItems = [
+  const allNavItems: MobileNavItem[] = [
     { 
       id: 'draw',
       href: '/draw', 

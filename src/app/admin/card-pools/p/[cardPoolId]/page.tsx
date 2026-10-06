@@ -27,7 +27,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card as UICard, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, ArrowLeft, Check, Settings, Gem, Package, Clock, GripVertical, Palette, Trophy, Star, Diamond, Layers, Gift, ShieldCheck, Sparkles, Calculator, CheckCircle2, Search, Archive, Crown, Loader2, Save, Ban, BarChart3, Ticket } from 'lucide-react';
+import { PlusCircle, Trash2, ArrowLeft, Check, Settings, Gem, Package, Clock, GripVertical, Palette, Trophy, Star, Diamond, Layers, Gift, ShieldCheck, Sparkles, Calculator, CheckCircle2, Search, Archive, Crown, Loader2, Save, Ban, BarChart3, Ticket, Flame, Shuffle, RotateCcw } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SafeImage } from '@/components/safe-image';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -44,6 +44,7 @@ import { Badge } from '@/components/ui/badge';
 import { userLevels } from '@/components/member-level-crown';
 import { PPlusIcon } from '@/components/icons';
 import { EventTicketDispatchDialog, EventTicketDispatchLogs } from '@/components/admin/event-ticket-manager';
+import { generateKujiTickets } from '@/lib/draw-utils';
 
 
 const CATEGORIES = ["籃球", "棒球", "足球", "女孩卡", "女優", "TCG", "其他", "全部"];
@@ -350,6 +351,9 @@ export default function CardPoolDetailPage() {
         eventTicketName: cardPool.eventTicketName || '活動專屬抽卡券',
         eventRules: cardPool.eventRules || '',
         eventMaxDrawsPerUser: cardPool.eventMaxDrawsPerUser || 0,
+        enablePickNumber: cardPool.enablePickNumber || false,
+        totalTicketsCount: cardPool.totalTicketsCount || cardPool.remainingPacks || 80,
+        kujiTickets: cardPool.kujiTickets || [],
       };
       setPoolDetails(details);
       if (cardPool.expiresAt) {
@@ -498,6 +502,44 @@ export default function CardPoolDetailPage() {
         toast({ variant: 'destructive', title: '錯誤', description: '更新卡池失敗。' });
     }
   }
+
+  const handleGenerateKujiTickets = async (customCount?: number) => {
+    if (!cardPoolRef || !cardPool) return;
+    const countToUse = customCount || poolDetails.totalTicketsCount || poolDetails.remainingPacks || 80;
+    const newTickets = generateKujiTickets(cardPool, countToUse);
+    setPoolDetails(prev => ({
+      ...prev,
+      kujiTickets: newTickets,
+      enablePickNumber: true,
+      totalTicketsCount: countToUse,
+    }));
+    await updateDoc(cardPoolRef, {
+      kujiTickets: newTickets,
+      enablePickNumber: true,
+      totalTicketsCount: countToUse,
+    });
+    toast({
+      title: '一番賞籤位產生成功！',
+      description: `已成功隨機打散生成 ${newTickets.length} 張番號籤牌，玩家前台已可即時挑號抽卡。`,
+    });
+  };
+
+  const handleResetKujiTickets = async () => {
+    if (!cardPoolRef || !poolDetails.kujiTickets) return;
+    const resetTickets = poolDetails.kujiTickets.map(t => ({
+      ...t,
+      isDrawn: false,
+      drawnBy: null,
+      drawnByName: null,
+      drawnAt: null,
+    }));
+    setPoolDetails(prev => ({ ...prev, kujiTickets: resetTickets }));
+    await updateDoc(cardPoolRef, { kujiTickets: resetTickets });
+    toast({
+      title: '一番賞籤位已重置',
+      description: '全數號碼已恢復為未開出狀態！',
+    });
+  };
 
   const handleDateSelect = (date: Date | undefined) => {
     if (!date) return;
@@ -858,6 +900,120 @@ export default function CardPoolDetailPage() {
                                     }}
                                 />
                             </div>
+                        </div>
+
+                        {/* 🎯 一番賞番號選號（玩家挑號碼模式）設定 */}
+                        <div className="space-y-4 p-5 sm:p-6 rounded-2xl border-2 border-amber-300 bg-gradient-to-br from-amber-50/80 via-yellow-50/40 to-slate-50 shadow-sm">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-amber-200 pb-3">
+                                <div className="space-y-1">
+                                    <div className="flex items-center gap-2">
+                                        <Badge className="bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-black text-xs px-2.5 py-0.5">
+                                            KUJI NUMBER WALL
+                                        </Badge>
+                                        <h3 className="text-base font-black text-slate-950 flex items-center gap-1.5">
+                                            <Flame className="w-4 h-4 text-amber-600 fill-amber-500" />
+                                            一番賞番號選號模式（玩家挑籤牆）
+                                        </h3>
+                                    </div>
+                                    <p className="text-xs text-slate-600">
+                                        開啟後前台將出現「自選號碼（一番賞挑籤）」按鈕與 1 ~ N 號數字牆，玩家可點選心儀幸運號碼開獎。
+                                    </p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Label htmlFor="kuji-switch" className="text-xs font-bold text-slate-700">
+                                        {poolDetails.enablePickNumber ? '已啟用挑號' : '未啟用挑號'}
+                                    </Label>
+                                    <Switch
+                                        id="kuji-switch"
+                                        checked={poolDetails.enablePickNumber || false}
+                                        onCheckedChange={(checked) => {
+                                            setPoolDetails({ ...poolDetails, enablePickNumber: checked });
+                                            handleUpdatePoolDetails('enablePickNumber', checked);
+                                            if (checked && (!poolDetails.kujiTickets || poolDetails.kujiTickets.length === 0)) {
+                                                handleGenerateKujiTickets();
+                                            }
+                                        }}
+                                    />
+                                </div>
+                            </div>
+
+                            {poolDetails.enablePickNumber && (
+                                <div className="space-y-4 pt-1">
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                        <div className="space-y-1 sm:col-span-1">
+                                            <Label className="text-xs font-bold text-slate-700">總籤數 (套籤容量)</Label>
+                                            <div className="flex items-center gap-2">
+                                                <Input
+                                                    type="number"
+                                                    value={poolDetails.totalTicketsCount || 80}
+                                                    onChange={e => setPoolDetails({ ...poolDetails, totalTicketsCount: Number(e.target.value) })}
+                                                    onBlur={e => handleUpdatePoolDetails('totalTicketsCount', Number(e.target.value))}
+                                                    className="h-9 font-bold bg-white border-amber-200"
+                                                />
+                                            </div>
+                                            <p className="text-[10px] text-slate-500">標準一番賞通常為 60~100 籤</p>
+                                        </div>
+
+                                        <div className="sm:col-span-2 flex flex-wrap items-end gap-2">
+                                            <Button
+                                                onClick={() => handleGenerateKujiTickets(poolDetails.totalTicketsCount || 80)}
+                                                className="h-9 text-xs font-black bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-md shadow-amber-500/20"
+                                            >
+                                                <Shuffle className="w-3.5 h-3.5 mr-1" />
+                                                🎲 一鍵隨機打散洗籤 (生成籤表)
+                                            </Button>
+
+                                            {poolDetails.kujiTickets && poolDetails.kujiTickets.length > 0 && (
+                                                <Button
+                                                    variant="outline"
+                                                    onClick={handleResetKujiTickets}
+                                                    className="h-9 text-xs font-bold border-amber-300 text-slate-700 hover:bg-amber-100/50"
+                                                >
+                                                    <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                                                    重置全數籤位狀態
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* 即時籤位監控牆 (管理員視角) */}
+                                    {poolDetails.kujiTickets && poolDetails.kujiTickets.length > 0 && (
+                                        <div className="p-3 bg-white/90 rounded-xl border border-amber-200 space-y-2">
+                                            <div className="flex items-center justify-between text-xs font-bold">
+                                                <span className="text-slate-700 flex items-center gap-1.5">
+                                                    <Layers className="w-3.5 h-3.5 text-amber-500" />
+                                                    番號籤牌即時狀態 (管理員全覽)
+                                                </span>
+                                                <div className="flex items-center gap-2">
+                                                    <Badge variant="outline" className="border-emerald-500 text-emerald-700 bg-emerald-50 text-[10px]">
+                                                        未開：{poolDetails.kujiTickets.filter(t => !t.isDrawn).length}
+                                                    </Badge>
+                                                    <Badge variant="outline" className="border-slate-400 text-slate-600 bg-slate-100 text-[10px]">
+                                                        已開出：{poolDetails.kujiTickets.filter(t => t.isDrawn).length}
+                                                    </Badge>
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-8 sm:grid-cols-12 md:grid-cols-16 gap-1 max-h-48 overflow-y-auto p-1 bg-slate-50 rounded-lg border border-slate-200">
+                                                {poolDetails.kujiTickets.map(t => (
+                                                    <div
+                                                        key={t.number}
+                                                        title={`#${t.number}：${t.isDrawn ? '已被開出' : '可選'}`}
+                                                        className={cn(
+                                                            "h-7 rounded flex items-center justify-center text-[10px] font-black border transition-all",
+                                                            t.isDrawn
+                                                                ? "bg-slate-200 border-slate-300 text-slate-400 line-through"
+                                                                : "bg-amber-400/20 border-amber-400 text-amber-800 hover:bg-amber-400/40"
+                                                        )}
+                                                    >
+                                                        {t.number}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
 
                         {/* 🎪 活動卡池與專屬抽卡規則設定 */}

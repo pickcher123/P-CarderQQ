@@ -15,9 +15,9 @@ import {
 } from "@/components/ui/dialog";
 import * as VisuallyHiddenPrimitive from "@radix-ui/react-visually-hidden";
 import { Gem, Sparkles, Loader2, RotateCcw, ArrowLeft, PlayCircle, FastForward, Check, Disc3, RotateCw, Clock, ChevronsUp, X, ShieldCheck, Star, Trophy, Layers, Zap, AlertCircle, Ban, ChevronRight, Hash, Download } from 'lucide-react';
-import { PackPreview, RevealComponent, DrawResults, CelebrationVFX, CloveSummoningAnimation } from '@/components/draw';
+import { PackPreview, RevealComponent, DrawResults, CelebrationVFX, CloveSummoningAnimation, KujiNumberPickerDialog } from '@/components/draw';
 import { rarityVisuals, pointPrizeRarityStyles } from '@/lib/draw-constants';
-import { drawFromPool } from '@/lib/draw-utils';
+import { drawFromPool, drawKujiTickets } from '@/lib/draw-utils';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useUser, useAuth, useDoc, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
@@ -134,6 +134,7 @@ export default function OpenPackPage() {
     const [isChanging, setIsChanging] = useState(false); 
     const [landingVFX, setLandingVFX] = useState<'none' | 'rare' | 'legendary'>('none');
     const [previewCard, setPreviewCard] = useState<any | null>(null);
+    const [isPickNumberOpen, setIsPickNumberOpen] = useState(false);
 
     const topRarityCelebration = useMemo(() => {
         if (drawnPrizes.length === 0) return 'none';
@@ -282,10 +283,20 @@ export default function OpenPackPage() {
         }));
     }, [allCardsMap]);
 
-    const performTrialDraw = useCallback((count: number) => {
+    const performTrialDraw = useCallback((count: number, selectedNumbers?: number[]) => {
         if (!cardPool) return;
         setIsTrialMode(true);
-        const { drawn } = drawFromPool(cardPool, count, allCardsMap, true);
+        let drawn: any[] = [];
+        const isKujiPool = !!(cardPool.enablePickNumber || (cardPool.kujiTickets && cardPool.kujiTickets.length > 0));
+
+        if (isKujiPool && selectedNumbers && selectedNumbers.length > 0) {
+            const kujiRes = drawKujiTickets(cardPool, selectedNumbers, selectedNumbers.length, allCardsMap);
+            drawn = kujiRes.drawn;
+        } else {
+            const { drawn: normalDrawn } = drawFromPool(cardPool, count, allCardsMap, true);
+            drawn = normalDrawn;
+        }
+
         if (drawn.length === 0) {
             toast({ variant: 'destructive', title: '告示', description: '卡池目前已無獎項可供試手氣。' });
             return;
@@ -299,7 +310,9 @@ export default function OpenPackPage() {
         setLandingVFX('none');
         setStep('summoning');
         toast({
-            title: '🧪 免費試手氣模式啟動',
+            title: selectedNumbers && selectedNumbers.length > 0
+                ? `🎯 試抽自選號碼 (#${selectedNumbers.join(', #')})`
+                : '🧪 免費試手氣模式啟動',
             description: '此為純模擬開獎體驗，完全未扣除點數，亦不會派發卡牌與扣減庫存！',
         });
     }, [cardPool, allCardsMap, toast]);
@@ -311,7 +324,19 @@ export default function OpenPackPage() {
         }
     }, [cardPool, isLoadingCards, allCards, searchParams, step, initialDrawCount, performTrialDraw]);
 
-    const performDraw = useCallback(async (count: number, forceUseTicket?: boolean, forceUseEventTicket?: boolean) => {
+    // Auto-trigger pick number dialog if URL param has pick=true
+    useEffect(() => {
+        if (cardPool && searchParams.get('pick') === 'true' && step === 'waiting-to-start') {
+            setIsPickNumberOpen(true);
+        }
+    }, [cardPool, searchParams, step]);
+
+    const performDraw = useCallback(async (
+        count: number, 
+        forceUseTicket?: boolean, 
+        forceUseEventTicket?: boolean,
+        selectedNumbers?: number[]
+    ) => {
         const isEventExclusive = !!(cardPool?.isEventPool && cardPool?.exclusiveTicketOnly);
         const useEventTicketMode = forceUseEventTicket !== undefined 
             ? forceUseEventTicket 
@@ -416,7 +441,31 @@ export default function OpenPackPage() {
                 }
 
                 // 2. 進行抽選
-                const { drawn, updatedCards } = drawFromPool(poolData, actualDrawCount);
+                const isKujiPool = !!(poolData.enablePickNumber || (poolData.kujiTickets && poolData.kujiTickets.length > 0));
+                let drawn: any[] = [];
+                let updatedCards: any[] = [];
+                let updatedPointPrizes: any[] = [];
+                let updatedTickets: any[] | undefined = undefined;
+
+                if (isKujiPool && poolData.kujiTickets && poolData.kujiTickets.length > 0) {
+                    if (selectedNumbers && selectedNumbers.length > 0) {
+                        for (const num of selectedNumbers) {
+                            const found = poolData.kujiTickets.find(t => t.number === num);
+                            if (!found) throw new Error(`號碼 #${num} 不存在於此卡池中。`);
+                            if (found.isDrawn) throw new Error(`號碼 #${num} 剛剛已被其他玩家抽走，請重新挑選其他號碼！`);
+                        }
+                    }
+                    const kujiRes = drawKujiTickets(poolData, selectedNumbers, actualDrawCount, allCardsMap);
+                    drawn = kujiRes.drawn;
+                    updatedCards = kujiRes.updatedCards;
+                    updatedPointPrizes = kujiRes.updatedPointPrizes;
+                    updatedTickets = kujiRes.updatedTickets;
+                } else {
+                    const normalRes = drawFromPool(poolData, actualDrawCount, allCardsMap);
+                    drawn = normalRes.drawn;
+                    updatedCards = normalRes.updatedCards;
+                    updatedPointPrizes = normalRes.updatedPointPrizes;
+                }
 
                 if (drawn.length === 0) throw new Error('卡池目前已無獎項可供抽取。');
 
@@ -434,6 +483,7 @@ export default function OpenPackPage() {
                         source: useEventTicketMode ? 'event_ticket_draw' : (useTicketMode ? 'promo_ticket_draw' : 'draw'),
                         poolId: poolId,
                         serialNumber: serialNumber,
+                        ticketNumber: (prize as any).ticketNumber || null,
                         createdAt: serverTimestamp()
                     });
                     // 同步更新本地顯示的 ID
@@ -455,10 +505,17 @@ export default function OpenPackPage() {
                 transaction.update(userDocRef, updateFields);
 
                 // 5. 更新卡池資料
-                transaction.update(poolDocRef, {
+                const poolUpdates: any = {
                     remainingPacks: increment(-drawn.length),
                     cards: updatedCards
-                });
+                };
+                if (updatedPointPrizes && updatedPointPrizes.length > 0) {
+                    poolUpdates.pointPrizes = updatedPointPrizes;
+                }
+                if (updatedTickets) {
+                    poolUpdates.kujiTickets = updatedTickets;
+                }
+                transaction.update(poolDocRef, poolUpdates);
 
                 // 6. 紀錄交易日誌
                 const transactionRef = doc(collection(firestore, 'transactions'));
@@ -529,7 +586,7 @@ export default function OpenPackPage() {
                 });
             }
         }
-    }, [poolId, firestore, user, cardPool, isUsingTicket, isUsingEventTicket, toast]);
+    }, [poolId, firestore, user, cardPool, isUsingTicket, isUsingEventTicket, toast, allCardsMap]);
 
     const handleSqueezeStart = (e: React.PointerEvent) => { 
         if (step !== 'ready-to-reveal' || isChanging) return; 
@@ -638,6 +695,12 @@ export default function OpenPackPage() {
                         eventPoolTickets={poolId && userProfile?.eventPoolTickets ? (userProfile.eventPoolTickets[poolId] || 0) : 0}
                         freeDrawTickets={getEffectiveTicketCount(userProfile)}
                         performDraw={(count, forceTicket, forceEventTicket) => performDraw(count, forceTicket, forceEventTicket)}
+                        performTrialDraw={(count) => performTrialDraw(count)}
+                        onOpenPickNumber={
+                            (cardPool.enablePickNumber || (cardPool.kujiTickets && cardPool.kujiTickets.length > 0))
+                                ? () => setIsPickNumberOpen(true)
+                                : undefined
+                        }
                     />
                 </div>
             </div>
@@ -1015,8 +1078,15 @@ export default function OpenPackPage() {
                                             canDraw10={canDraw10}
                                             cardPool={cardPool}
                                             performDraw={performDraw}
+                                            performTrialDraw={performTrialDraw}
+                                            isTrialMode={isTrialMode}
                                             freeDrawTickets={userProfile?.freeDrawTickets || 0}
                                             eventPoolTickets={poolId && userProfile?.eventPoolTickets ? (userProfile.eventPoolTickets[poolId] || 0) : 0}
+                                            onOpenPickNumber={
+                                                (cardPool?.enablePickNumber || (cardPool?.kujiTickets && cardPool.kujiTickets.length > 0))
+                                                    ? () => setIsPickNumberOpen(true)
+                                                    : undefined
+                                            }
                                         />
                                     )}
                                 </div>
@@ -1045,6 +1115,28 @@ export default function OpenPackPage() {
                 )}
             </div>
             
+            {/* 一番賞自選號碼彈窗 */}
+            <KujiNumberPickerDialog
+                isOpen={isPickNumberOpen}
+                onClose={() => setIsPickNumberOpen(false)}
+                cardPool={cardPool}
+                isTrialMode={isTrialMode}
+                userBalance={
+                    userProfile 
+                        ? (cardPool?.currency === 'p-point' ? (userProfile.bonusPoints || 0) : (userProfile.points || 0))
+                        : 0
+                }
+                isDrawing={step === 'loading'}
+                onConfirmDraw={(chosenNumbers, asTrial) => {
+                    setIsPickNumberOpen(false);
+                    if (asTrial || isTrialMode) {
+                        performTrialDraw(chosenNumbers.length, chosenNumbers);
+                    } else {
+                        performDraw(chosenNumbers.length, false, false, chosenNumbers);
+                    }
+                }}
+            />
+
             {/* Full Screen Card Zoom Dialog */}
             <Dialog open={!!previewCard} onOpenChange={(open) => !open && setPreviewCard(null)}>
                 <DialogContent className="max-w-[min(92vw,400px)] bg-slate-950/95 backdrop-blur-2xl border border-white/20 rounded-3xl p-4 flex flex-col items-center justify-center gap-3 [&>button:last-child]:hidden z-[200]">

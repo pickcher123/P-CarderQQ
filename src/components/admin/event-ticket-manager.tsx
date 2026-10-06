@@ -463,7 +463,7 @@ export function EventTicketDispatchLogs({ poolId, title }: LogsProps) {
         );
     }, [firestore, poolId]);
 
-    const { data: rawLogs, isLoading, refresh } = useCollection<EventTicketDispatchRecord>(logsQuery);
+    const { data: rawLogs, isLoading, forceRefetch } = useCollection<EventTicketDispatchRecord>(logsQuery);
 
     const poolsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -522,7 +522,7 @@ export function EventTicketDispatchLogs({ poolId, title }: LogsProps) {
                     <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => refresh()}
+                        onClick={() => forceRefetch?.()}
                         className="h-8 text-xs font-bold border-slate-200 text-slate-700"
                     >
                         <RefreshCw className="w-3.5 h-3.5 mr-1" />

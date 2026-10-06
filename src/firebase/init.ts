@@ -18,10 +18,11 @@ export function initializeFirebase() {
 }
 
 export function getSdks(firebaseApp: FirebaseApp) {
+  const dbId = (firebaseConfig as any)?.firestoreDatabaseId;
   return {
     firebaseApp,
     auth: getAuth(firebaseApp),
-    firestore: getFirestore(firebaseApp, firebaseConfig.firestoreDatabaseId),
+    firestore: dbId ? getFirestore(firebaseApp, dbId) : getFirestore(firebaseApp),
     // Explicitly pass the storage bucket to ensure it's always initialized correctly
     storage: getStorage(firebaseApp, firebaseConfig.storageBucket)
   };

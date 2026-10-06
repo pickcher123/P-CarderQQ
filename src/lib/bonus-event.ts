@@ -10,10 +10,10 @@ export interface BonusEventConfig {
   startDate?: string; // 格式 YYYY-MM-DD
   endDate?: string; // 格式 YYYY-MM-DD
   targets: {
-    checkIn: boolean; // 每日簽到雙倍
-    purchase: boolean; // 儲值加贈雙倍
-    recycling: boolean; // 卡片回收熔煉雙倍
-    drawBonus: boolean; // 抽卡紅利賞雙倍
+    checkIn?: boolean; // 每日簽到雙倍
+    purchase?: boolean; // 儲值加贈雙倍
+    recycling?: boolean; // 卡片回收熔煉雙倍
+    drawBonus?: boolean; // 抽卡紅利賞雙倍
   };
 }
 

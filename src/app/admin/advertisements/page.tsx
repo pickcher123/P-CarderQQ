@@ -72,6 +72,7 @@ export default function AdvertisementAdminPage() {
   const [aiPrompt, setAiPrompt] = useState('');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const previewUrl = previewUrls[0] || '';
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
   const adsQuery = useMemoFirebase(() => {

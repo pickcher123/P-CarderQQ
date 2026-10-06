@@ -23,7 +23,8 @@ export function PackPreview({
     isUsingTicket = false,
     isUsingEventTicket = false,
     eventPoolTickets = 0,
-    freeDrawTickets = 0
+    freeDrawTickets = 0,
+    onOpenPickNumber
 }: {
     cardPool: CardPool,
     initialDrawCount: number,
@@ -35,7 +36,8 @@ export function PackPreview({
     isUsingTicket?: boolean,
     isUsingEventTicket?: boolean,
     eventPoolTickets?: number,
-    freeDrawTickets?: number
+    freeDrawTickets?: number,
+    onOpenPickNumber?: () => void
 }) {
     const [useTicketMode, setUseTicketMode] = useState<boolean>(isUsingTicket);
     const [isPromoModalOpen, setIsPromoModalOpen] = useState(false);
@@ -280,6 +282,19 @@ export function PackPreview({
                             >
                                 <Sparkles className="w-4 h-4 text-amber-300" />
                                 <span>點此免費領取 1 抽活動券</span>
+                            </Button>
+                        )}
+
+                        {/* 🎯 一番賞自選號碼（挑籤） */}
+                        {onOpenPickNumber && !isEventMode && (
+                            <Button
+                                size="lg"
+                                className="w-full h-11 sm:h-12 text-sm sm:text-base font-black rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 border border-yellow-300 shadow-xl shadow-amber-500/25 hover:brightness-110 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95 animate-pulse"
+                                onClick={onOpenPickNumber}
+                                disabled={!isLevelMet || isLoadingStats}
+                            >
+                                <Sparkles className="w-4 h-4 fill-slate-950" />
+                                <span>🎯 自選號碼開獎（一番賞挑籤）</span>
                             </Button>
                         )}
 

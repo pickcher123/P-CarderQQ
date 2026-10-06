@@ -209,21 +209,21 @@ export function CloveSummoningAnimation({
       </div>
 
       {/* 中心舞台：實體鋁箔卡包與撕包動效 */}
-      <div className="relative flex-1 flex flex-col items-center justify-center z-20 w-full max-w-sm px-4 min-h-0">
+      <div className="relative flex-1 flex flex-col items-center justify-center z-20 w-full max-w-lg px-4 min-h-0">
         
-        <div className="relative w-64 h-88 sm:w-72 sm:h-96 flex items-center justify-center">
+        <div className="relative w-[280px] h-[430px] sm:w-[320px] sm:h-[490px] flex items-center justify-center">
           
-          {/* 卡包背後柔美微光暈 (捨棄突兀刺眼的旋轉虛線圈圈，改為呼吸暖光) */}
+          {/* 卡包背後柔美微光暈 */}
           <div 
-            className="absolute w-56 h-72 sm:w-64 sm:h-80 rounded-3xl blur-2xl opacity-40 pointer-events-none transition-all duration-700"
+            className="absolute w-[260px] h-[390px] sm:w-[300px] sm:h-[450px] rounded-3xl blur-2xl opacity-40 pointer-events-none transition-all duration-700"
             style={{ 
               background: tierConfig.glowColor,
               transform: stage === 'burst' ? 'scale(1.4)' : 'scale(1)',
-              opacity: stage === 'burst' ? 0.8 : 0.4 
+              opacity: stage === 'burst' ? 0.85 : 0.4 
             }}
           />
 
-          {/* 溫潤金粉星塵飄散 (柔和緩慢升騰，非死板旋轉) */}
+          {/* 溫潤金粉星塵飄散 (柔和緩慢升騰) */}
           <div className="absolute inset-0 pointer-events-none overflow-visible">
             {[...Array(isLegendary ? 16 : 10)].map((_, i) => (
               <motion.div
@@ -232,15 +232,15 @@ export function CloveSummoningAnimation({
                 style={{
                   width: (i % 3 === 0 ? 3 : 2) + 'px',
                   height: (i % 3 === 0 ? 3 : 2) + 'px',
-                  left: `${20 + (i * 19) % 65}%`,
-                  top: `${30 + (i * 23) % 55}%`,
-                  boxShadow: `0 0 6px ${isLegendary ? '#fbbf24' : '#93c5fd'}`,
+                  left: `${15 + (i * 19) % 70}%`,
+                  top: `${20 + (i * 23) % 65}%`,
+                  boxShadow: `0 0 8px ${isLegendary ? '#fbbf24' : '#93c5fd'}`,
                   opacity: 0.6,
                 }}
                 animate={{
-                  y: [0, -35 - (i % 4) * 8],
-                  opacity: [0.2, 0.8, 0],
-                  scale: [0.8, 1.2, 0.4],
+                  y: [0, -45 - (i % 4) * 10],
+                  opacity: [0.2, 0.85, 0],
+                  scale: [0.8, 1.3, 0.4],
                 }}
                 transition={{
                   duration: 2.2 + (i % 3) * 0.6,
@@ -252,8 +252,8 @@ export function CloveSummoningAnimation({
             ))}
           </div>
 
-          {/* 實體鋁箔卡包容器 (AUTHENTIC FOIL BOOSTER PACK) */}
-          <div className="relative z-10 w-44 h-74 sm:w-48 sm:h-82 flex flex-col items-center drop-shadow-[0_16px_35px_rgba(0,0,0,0.7)]">
+          {/* 實體鋁箔卡包容器 (AUTHENTIC FOIL BOOSTER PACK - 標準比例 1:1.6) */}
+          <div className="relative z-10 w-[240px] h-[380px] sm:w-[270px] sm:h-[430px] flex flex-col items-center drop-shadow-[0_25px_50px_rgba(0,0,0,0.85)]">
             
             {/* 1. 卡包頂部封口：帶有真實鋸齒壓紋 (Crimped Seal Top) */}
             <motion.div
@@ -267,88 +267,88 @@ export function CloveSummoningAnimation({
                     }
                   : stage === 'tearing'
                   ? {
-                      x: [0, 45, 95],
-                      y: [0, -18, -45],
-                      rotate: [0, 14, 28],
+                      x: [0, 50, 110],
+                      y: [0, -20, -55],
+                      rotate: [0, 15, 30],
                       opacity: [1, 0.85, 0],
                     }
-                  : { opacity: 0, y: -60, x: 100 }
+                  : { opacity: 0, y: -70, x: 120 }
               }
               transition={{
                 duration: stage === 'idle' ? 2.8 : 0.6,
                 repeat: stage === 'idle' ? Infinity : 0,
-                ease: [0.22, 1, 0.36, 1], // 優雅阻尼
+                ease: [0.22, 1, 0.36, 1],
               }}
-              className="relative w-full h-11 sm:h-12 rounded-t-lg bg-gradient-to-b from-slate-700 via-slate-800 to-slate-900 border-t border-x border-white/20 shadow-md overflow-hidden flex flex-col justify-between p-2 z-20"
+              className="relative w-full h-14 sm:h-16 rounded-t-xl bg-gradient-to-b from-slate-700 via-slate-800 to-slate-900 border-t border-x border-white/25 shadow-lg overflow-hidden flex flex-col justify-between p-2.5 z-20 shrink-0"
             >
               {/* 頂部鋸齒紋路 (Zigzag Foil Edge) */}
-              <div className="absolute top-0 inset-x-0 h-1 flex justify-between overflow-hidden opacity-50">
-                {[...Array(24)].map((_, i) => (
-                  <div key={i} className="w-1.5 h-1 border-t border-r border-slate-500/80 -rotate-45 shrink-0" />
+              <div className="absolute top-0 inset-x-0 h-1 flex justify-between overflow-hidden opacity-60">
+                {[...Array(32)].map((_, i) => (
+                  <div key={i} className="w-1.5 h-1 border-t border-r border-slate-400 -rotate-45 shrink-0" />
                 ))}
               </div>
 
               {/* 柔和鋁箔流光 */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/12 to-transparent -translate-x-full animate-[shimmer_3.5s_infinite] pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent -translate-x-full animate-[shimmer_3.5s_infinite] pointer-events-none" />
 
               {/* 頂部精簡資訊 */}
               <div className="flex items-center justify-between w-full px-1 pt-1">
-                <span className="text-[8px] font-semibold tracking-wider text-slate-300 uppercase">
+                <span className="text-[9px] sm:text-[10px] font-bold tracking-wider text-slate-300 uppercase">
                   OFFICIAL PACK
                 </span>
-                <span className={cn("text-[8px] px-2 py-0.5 rounded-full shadow-2xs font-bold", tierConfig.badgeBg)}>
+                <span className={cn("text-[9px] sm:text-[10px] px-2.5 py-0.5 rounded-full shadow-sm font-bold", tierConfig.badgeBg)}>
                   {drawCount} PACK
                 </span>
               </div>
 
               {/* 典雅撕紙虛線引導 (Soft Perforation Line) */}
-              <div className="relative flex items-center justify-between border-t border-dashed border-amber-300/40 pt-1 mt-0.5">
+              <div className="relative flex items-center justify-between border-t border-dashed border-amber-300/40 pt-1.5 mt-0.5">
                 <div className="flex items-center gap-1.5">
-                  <Scissors className="w-2.5 h-2.5 text-amber-300/90" />
-                  <span className="text-[7px] font-semibold tracking-widest text-amber-200/90">
+                  <Scissors className="w-3 h-3 text-amber-300" />
+                  <span className="text-[8px] sm:text-[9px] font-bold tracking-widest text-amber-200">
                     PULL TO TEAR
                   </span>
                 </div>
                 {/* 輕量滑動指示進度 */}
-                <div className="h-0.5 w-14 bg-white/15 rounded-full overflow-hidden">
+                <div className="h-1 w-18 bg-white/20 rounded-full overflow-hidden">
                   <div 
-                    className="h-full bg-gradient-to-r from-amber-300 to-amber-100 transition-all duration-100 rounded-full" 
+                    className="h-full bg-gradient-to-r from-amber-400 to-amber-200 transition-all duration-100 rounded-full" 
                     style={{ width: `${Math.max(swipeProgress, 12)}%` }}
                   />
                 </div>
               </div>
             </motion.div>
 
-            {/* 2. 內部卡片優雅升騰 (Stage 2: 柔順浮出，去除生硬感) */}
+            {/* 2. 內部卡片優雅升騰 (Stage 2: 柔順浮出) */}
             <motion.div
-              initial={{ y: 15, opacity: 0, scale: 0.9 }}
+              initial={{ y: 20, opacity: 0, scale: 0.9 }}
               animate={
                 stage === 'tearing'
-                  ? { y: [-5, -20], opacity: [0.4, 0.9], scale: [0.9, 0.95] }
+                  ? { y: [-5, -25], opacity: [0.4, 0.9], scale: [0.9, 0.96] }
                   : stage === 'burst'
                   ? { 
-                      y: [-20, -50], 
-                      scale: [0.95, 1.04], 
+                      y: [-25, -60], 
+                      scale: [0.96, 1.05], 
                       opacity: [0.9, 1],
                     }
                   : { opacity: 0 }
               }
               transition={{ duration: stage === 'burst' ? 0.75 : 0.5, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute top-2 w-[145px] aspect-[2.5/4] z-10 pointer-events-none flex items-center justify-center"
+              className="absolute top-2 w-[190px] sm:w-[215px] aspect-[2.5/3.5] z-10 pointer-events-none flex items-center justify-center"
             >
               {/* 精緻深色卡背：呈現品牌高雅質感 */}
-              <div className="relative p-1 bg-slate-950/95 border-2 border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden w-full aspect-[2.5/4] flex items-center justify-center">
-                <div className="relative w-full h-full bg-slate-900 rounded-xl border border-cyan-500/30 flex flex-col items-center justify-center pointer-events-none select-none overflow-hidden p-2">
-                  <div className="absolute inset-0 bg-gradient-to-b from-cyan-950/30 via-slate-900 to-slate-950" />
+              <div className="relative p-1.5 bg-slate-950/95 border-2 border-slate-700 rounded-2xl shadow-2xl overflow-hidden w-full aspect-[2.5/3.5] flex items-center justify-center">
+                <div className="relative w-full h-full bg-slate-900 rounded-xl border border-cyan-500/30 flex flex-col items-center justify-center pointer-events-none select-none overflow-hidden p-3">
+                  <div className="absolute inset-0 bg-gradient-to-b from-cyan-950/40 via-slate-900 to-slate-950" />
                   
                   {/* 品牌卡背標誌 */}
                   <div className="relative flex flex-col items-center">
-                    <Disc3 className="w-8 h-8 text-cyan-400/80 animate-spin-slow mb-1.5" />
-                    <span className="font-headline text-[11px] font-black text-white tracking-widest drop-shadow-sm">
+                    <Disc3 className="w-10 h-10 text-cyan-400 animate-spin-slow mb-2" />
+                    <span className="font-headline text-sm font-black text-white tracking-widest drop-shadow-sm">
                       P+ CARDER
                     </span>
-                    <span className="text-[7px] text-cyan-300/70 font-semibold tracking-wider mt-1">
-                      COLLECTIBLES
+                    <span className="text-[8px] text-cyan-300/80 font-bold tracking-widest mt-1 uppercase">
+                      PREMIUM COLLECTIBLES
                     </span>
                   </div>
 
@@ -379,38 +379,38 @@ export function CloveSummoningAnimation({
                 repeat: stage === 'idle' ? Infinity : 0,
                 ease: 'easeInOut',
               }}
-              className="relative w-full flex-1 rounded-b-lg bg-gradient-to-b from-slate-800 via-slate-900 to-slate-950 border-b border-x border-white/20 shadow-xl overflow-hidden flex flex-col items-center justify-between p-3.5 z-10 -mt-0.5"
+              className="relative w-full flex-1 rounded-b-xl bg-gradient-to-b from-slate-800 via-slate-900 to-slate-950 border-b border-x border-white/25 shadow-2xl overflow-hidden flex flex-col items-center justify-between p-4 z-10 -mt-0.5"
             >
               {/* 鋁箔金屬細膩微反光 (Soft Satin Sheen) */}
-              <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/8 to-transparent -translate-x-full animate-[shimmer_3.5s_infinite] pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent -translate-x-full animate-[shimmer_3.5s_infinite] pointer-events-none" />
 
               {/* 橫向鋁箔壓痕 (Embossed Foil Details) */}
-              <div className="absolute top-2 inset-x-3 h-px bg-white/10" />
-              <div className="absolute bottom-6 inset-x-3 h-px bg-white/10" />
+              <div className="absolute top-3 inset-x-4 h-px bg-white/15" />
+              <div className="absolute bottom-8 inset-x-4 h-px bg-white/15" />
 
-              {/* 卡包中央典雅盾牌燙金/燙銀徽章 (取代生硬的虛線旋轉圈圈) */}
-              <div className="relative flex flex-col items-center justify-center my-auto">
-                <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-b from-white/10 to-white/5 border border-white/15 backdrop-blur-xs flex items-center justify-center shadow-inner">
+              {/* 卡包中央典雅盾牌燙金/燙銀徽章 */}
+              <div className="relative flex flex-col items-center justify-center my-auto py-2">
+                <div className="relative w-18 h-18 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-b from-white/15 to-white/5 border border-white/20 backdrop-blur-xs flex items-center justify-center shadow-inner">
                   {/* 柔光環 */}
-                  <div className="absolute inset-1 rounded-xl border border-white/10 pointer-events-none" />
-                  <IconComponent className={cn("w-7 h-7 drop-shadow-md", tierConfig.color)} />
+                  <div className="absolute inset-1 rounded-xl border border-white/15 pointer-events-none" />
+                  <IconComponent className={cn("w-9 h-9 sm:w-10 sm:h-10 drop-shadow-lg", tierConfig.color)} />
                 </div>
 
                 {/* 品牌名稱 */}
-                <h3 className="mt-3 font-headline text-sm sm:text-base font-black text-white tracking-widest drop-shadow-sm">
+                <h3 className="mt-3.5 font-headline text-lg sm:text-xl font-black text-white tracking-widest drop-shadow-md">
                   P+ CARDER
                 </h3>
-                <p className="text-[8px] text-slate-400 font-medium tracking-widest uppercase mt-0.5">
+                <p className="text-[9px] sm:text-[10px] text-slate-300 font-bold tracking-widest uppercase mt-1">
                   PREMIUM TRADING CARDS
                 </p>
               </div>
 
               {/* 底部鋸齒壓邊封口 (Bottom Crimp Edge) */}
-              <div className="w-full text-center shrink-0">
-                <div className="h-0.5 w-full bg-gradient-to-r from-transparent via-white/25 to-transparent mb-1.5" />
-                <div className="flex justify-between overflow-hidden opacity-40 px-1">
-                  {[...Array(22)].map((_, i) => (
-                    <div key={i} className="w-1.5 h-1 border-b border-r border-slate-500/80 -rotate-45 shrink-0" />
+              <div className="w-full text-center shrink-0 pt-2">
+                <div className="h-0.5 w-full bg-gradient-to-r from-transparent via-white/25 to-transparent mb-2" />
+                <div className="flex justify-between overflow-hidden opacity-50 px-1">
+                  {[...Array(30)].map((_, i) => (
+                    <div key={i} className="w-1.5 h-1 border-b border-r border-slate-400 -rotate-45 shrink-0" />
                   ))}
                 </div>
               </div>
@@ -418,23 +418,23 @@ export function CloveSummoningAnimation({
           </div>
         </div>
 
-        {/* 底部互動指引膠囊 (Minimalist Frosted Pill - 溫潤磨砂質感，非生硬霓虹) */}
+        {/* 底部互動指引膠囊 (Minimalist Frosted Pill) */}
         <motion.div
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
-          className="mt-4 text-center space-y-1.5 w-full max-w-xs"
+          className="mt-5 text-center space-y-2 w-full max-w-sm"
         >
           {/* 卡包標題 */}
-          <div className={cn("text-xs sm:text-sm font-headline font-black tracking-widest drop-shadow-sm", tierConfig.color)}>
+          <div className={cn("text-sm sm:text-base font-headline font-black tracking-widest drop-shadow-md", tierConfig.color)}>
             ✦ {tierConfig.title} ✦
           </div>
 
           {/* 磨砂互動膠囊按鈕 */}
-          <div className="relative overflow-hidden w-full px-4 py-2.5 rounded-full bg-slate-900/75 border border-white/15 backdrop-blur-md shadow-md flex items-center justify-between text-slate-200 text-xs font-medium hover:border-white/30 transition-all">
+          <div className="relative overflow-hidden w-full px-5 py-3 rounded-full bg-slate-900/80 border border-white/20 backdrop-blur-md shadow-xl flex items-center justify-between text-slate-200 text-xs sm:text-sm font-bold hover:border-white/35 transition-all">
             {/* 滑動填充反饋 */}
             <div 
-              className="absolute inset-y-0 left-0 bg-white/15 pointer-events-none transition-all duration-100"
+              className="absolute inset-y-0 left-0 bg-white/20 pointer-events-none transition-all duration-100"
               style={{ width: `${swipeProgress}%` }}
             />
 

@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Loader2, Sparkles, Ticket } from 'lucide-react';
+import { Loader2, Sparkles, Ticket, Flame } from 'lucide-react';
 import { DiamondIcon, PPlusIcon } from '@/components/icons';
 
 import { CardPool } from '@/types/draw';
@@ -16,6 +16,7 @@ interface DrawButtonsProps {
     isTrialMode?: boolean;
     freeDrawTickets?: number;
     eventPoolTickets?: number;
+    onOpenPickNumber?: () => void;
 }
 
 export function DrawButtons({
@@ -28,7 +29,8 @@ export function DrawButtons({
     performTrialDraw,
     isTrialMode = false,
     freeDrawTickets = 0,
-    eventPoolTickets = 0
+    eventPoolTickets = 0,
+    onOpenPickNumber
 }: DrawButtonsProps) {
     const isPPoint = cardPool?.currency === 'p-point';
 
@@ -103,6 +105,23 @@ export function DrawButtons({
 
     return (
         <div className="flex flex-col gap-1.5 w-full">
+            {/* 🎯 一番賞自選號碼（挑籤）專屬按鈕 */}
+            {onOpenPickNumber && (
+                <Button 
+                    className={cn(
+                        "w-full h-11 sm:h-12 text-xs sm:text-sm font-black rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 shadow-lg",
+                        isTrialMode
+                            ? "bg-gradient-to-r from-purple-600 via-fuchsia-600 to-indigo-600 text-white shadow-purple-500/25 border border-purple-400/50 hover:brightness-110"
+                            : "bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 shadow-amber-500/25 hover:brightness-110 border border-yellow-300 animate-pulse"
+                    )}
+                    onClick={onOpenPickNumber}
+                    disabled={!isTrialMode && (isLoadingStats || (cardPool?.remainingPacks ?? 0) < 1)}
+                >
+                    <Flame className={cn("w-4 h-4", isTrialMode ? "text-amber-300 fill-amber-300" : "fill-slate-950")} />
+                    <span>{isTrialMode ? '🎯 試選號碼（模擬一番賞挑籤）' : '🎯 自選號碼（一番賞挑籤）'}</span>
+                </Button>
+            )}
+
             {/* 🎟️ 免費抽卡券專用再抽一次按鈕 (如果有免費券且卡池支援) */}
             {!isTrialMode && (cardPool?.allowFreeDraw !== false) && freeDrawTickets > 0 && (
                 <Button 

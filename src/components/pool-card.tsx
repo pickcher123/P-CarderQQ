@@ -579,6 +579,11 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                 🔒 僅限專屬券
                             </Badge>
                         )}
+                        {(pool.enablePickNumber || (pool.kujiTickets && pool.kujiTickets.length > 0)) && (
+                            <Badge className="bg-gradient-to-r from-amber-950/90 to-yellow-950/90 text-amber-300 border border-amber-500/50 font-black text-[10px] px-2.5 py-0.5 shadow-sm">
+                                🎯 支援自選號碼（一番賞挑籤）
+                            </Badge>
+                        )}
                     </div>
 
                     {/* 卡池名稱與說明 */}
@@ -1010,7 +1015,19 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                         })()}
                     </div>
                 ) : (
-                    <div className="grid grid-cols-3 gap-2 sm:gap-2.5 relative">
+                    <div className="space-y-2">
+                        {(pool.enablePickNumber || (pool.kujiTickets && pool.kujiTickets.length > 0)) && (
+                            <Button 
+                                className="w-full h-10 sm:h-11 text-xs sm:text-sm font-black rounded-xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 shadow-md shadow-amber-500/20 hover:brightness-110 flex items-center justify-center gap-1.5 transition-all cursor-pointer border border-yellow-300 active:scale-95 animate-pulse"
+                                onClick={() => router.push(`/draw/open?poolId=${pool.id}&pick=true`)}
+                                disabled={poolStatus.disabled || isDrawing}
+                            >
+                                <Sparkles className="w-4 h-4 fill-slate-950" />
+                                <span>🎯 自選號碼（一番賞挑籤／支援免費試抽）</span>
+                            </Button>
+                        )}
+
+                        <div className="grid grid-cols-3 gap-2 sm:gap-2.5 relative">
                         {isDrawing && (
                             <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm rounded-xl">
                                 <div className="flex space-x-1.5">
@@ -1073,6 +1090,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                 </Button>
                             )
                         })}
+                    </div>
                     </div>
                 )}
 

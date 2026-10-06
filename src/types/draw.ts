@@ -19,6 +19,16 @@ export interface PointPrize {
     name?: string;
 }
 
+export interface KujiTicketItem {
+    number: number;
+    cardId?: string;
+    pointPrizeId?: string;
+    isDrawn: boolean;
+    drawnBy?: string;
+    drawnByName?: string;
+    drawnAt?: any;
+}
+
 export interface CardPool {
     id: string;
     price?: number;
@@ -45,8 +55,12 @@ export interface CardPool {
     eventTicketName?: string;
     eventRules?: string;
     eventMaxDrawsPerUser?: number;
+    // 一番賞自選號碼模式 (Pick a number)
+    enablePickNumber?: boolean;
+    totalTicketsCount?: number;
+    kujiTickets?: KujiTicketItem[];
 }
 
-export type DrawnPrize = (Card & { rarity: Rarity; type: 'card' | 'last-prize'; serialNumber?: string }) | (PointPrize & { type: 'points'; rarity: Rarity });
+export type DrawnPrize = (Card & { rarity: Rarity; type: 'card' | 'last-prize'; serialNumber?: string; ticketNumber?: number }) | (PointPrize & { type: 'points'; rarity: Rarity; ticketNumber?: number });
 
 export type Step = 'init-loading' | 'waiting-to-start' | 'loading' | 'summoning' | 'ready-to-reveal' | 'revealing' | 'done' | 'error';
