@@ -87,7 +87,7 @@ export function BonusDoubleBanner({
         <div className="absolute bottom-0 left-1/3 w-60 h-28 bg-rose-500/15 blur-2xl pointer-events-none rounded-full" />
         
         {/* 頂部霓虹光線 */}
-        <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-transparent via-amber-400 to-transparent animate-pulse shadow-[0_0_12px_#fbbf24]" />
+        <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_12px_#fbbf24]" />
 
         <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-4">
           
@@ -97,15 +97,14 @@ export function BonusDoubleBanner({
             <div className="relative shrink-0 flex items-center justify-center">
               <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-amber-400 via-orange-500 to-red-600 p-[2px] shadow-[0_0_25px_rgba(245,158,11,0.6)] group-hover:scale-105 transition-transform">
                 <div className="w-full h-full rounded-[14px] bg-slate-950 flex flex-col items-center justify-center">
-                  <Flame className="w-4 h-4 text-amber-400 fill-amber-400 animate-bounce" />
+                  <Flame className="w-4 h-4 text-amber-400 fill-amber-400" />
                   <span className="font-headline font-black text-sm sm:text-base text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-200 tracking-tighter">
                     {multiplier}X
                   </span>
                 </div>
               </div>
               <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-400"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-400 shadow-sm"></span>
               </span>
             </div>
 
@@ -170,7 +169,7 @@ export function BonusDoubleBanner({
           <DialogHeader className="text-center space-y-2">
             <div className="mx-auto w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 p-0.5 shadow-[0_0_25px_rgba(245,158,11,0.6)] flex items-center justify-center">
               <div className="w-full h-full rounded-[14px] bg-slate-950 flex items-center justify-center">
-                <Flame className="w-6 h-6 text-amber-400 fill-amber-400 animate-pulse" />
+                <Flame className="w-6 h-6 text-amber-400 fill-amber-400" />
               </div>
             </div>
             <DialogTitle className="text-lg sm:text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-100 to-amber-300 font-headline">

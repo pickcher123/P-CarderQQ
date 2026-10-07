@@ -97,31 +97,38 @@ export function RevealComponent({
                         isChanging ? "opacity-0" : "opacity-100"
                     )}>
                         {currentPrize && (
-                            (currentPrize.type === 'card' || currentPrize.type === 'last-prize') && !currentPrize.name?.includes('隨機球員') && !currentPrize.isPoints ? (
-                                <div className="relative w-full h-full rounded-xl overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)]">
-                                    <CardItem 
-                                        name={currentPrize.name} 
-                                        imageUrl={currentPrize.imageUrl} 
-                                        backImageUrl={currentPrize.backImageUrl} 
-                                        imageHint={currentPrize.name} 
-                                        rarity={currentPrize.rarity} 
-                                        serialNumber={currentPrize.serialNumber} 
-                                        isFlippable={true} 
-                                        priority 
-                                        className="w-full h-full aspect-[2.5/4]"
-                                    />
-                                </div>
-                            ) : (
-                                <div className="relative w-full h-full rounded-xl overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)]">
-                                    <RandomPlayerCard 
-                                        rarity={currentPrize.rarity} 
-                                        points={currentPrize.points} 
-                                        title={currentPrize.name}
-                                        showBuybackHint={false}
-                                        className="w-full h-full aspect-[2.5/4] !rounded-xl"
-                                    />
-                                </div>
-                            )
+                            <>
+                                {currentPrize.ticketNumber && (
+                                    <div className="absolute top-2.5 left-2.5 z-40 px-2 py-0.5 rounded-lg bg-amber-400 text-slate-950 font-black text-[11px] shadow-lg border border-yellow-200 flex items-center gap-1 leading-tight">
+                                        <span>🎯 籤號 #{currentPrize.ticketNumber}</span>
+                                    </div>
+                                )}
+                                {(currentPrize.type === 'card' || currentPrize.type === 'last-prize') && !currentPrize.name?.includes('隨機球員') && !currentPrize.isPoints ? (
+                                    <div className="relative w-full h-full rounded-xl overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+                                        <CardItem 
+                                            name={currentPrize.name} 
+                                            imageUrl={currentPrize.imageUrl} 
+                                            backImageUrl={currentPrize.backImageUrl} 
+                                            imageHint={currentPrize.name} 
+                                            rarity={currentPrize.rarity} 
+                                            serialNumber={currentPrize.serialNumber} 
+                                            isFlippable={true} 
+                                            priority 
+                                            className="w-full h-full aspect-[2.5/4]"
+                                        />
+                                    </div>
+                                ) : (
+                                    <div className="relative w-full h-full rounded-xl overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+                                        <RandomPlayerCard 
+                                            rarity={currentPrize.rarity} 
+                                            points={currentPrize.points} 
+                                            title={currentPrize.name} 
+                                            showBuybackHint={false}
+                                            className="w-full h-full aspect-[2.5/4] !rounded-xl"
+                                        />
+                                    </div>
+                                )}
+                            </>
                         )}
                     </div>
                     
@@ -137,11 +144,11 @@ export function RevealComponent({
                         <div className="absolute -bottom-2 left-2 right-2 h-2 bg-primary/20 rounded-b-lg shadow-lg" />
                         
                         <div className="relative">
-                            <div className="absolute inset-0 bg-primary blur-xl opacity-30 animate-pulse" />
+                            <div className="absolute inset-0 bg-primary/30 blur-xl" />
                             <Disc3 className="w-12 h-12 text-primary animate-spin-slow mb-3 relative z-10" />
                         </div>
                         <span className="font-headline text-sm font-black text-primary tracking-[0.3em] italic drop-shadow-md">P+ CARDER</span>
-                        <p className="text-[9px] text-primary/60 mt-4 animate-pulse uppercase font-black tracking-widest">往上掀開</p>
+                        <p className="text-[9px] text-primary/70 mt-4 uppercase font-black tracking-widest">往上掀開</p>
                     </div>
                 </div>
             </div>
@@ -152,7 +159,7 @@ export function RevealComponent({
                     onClick={completeReveal}
                     className="mt-4 h-8 px-6 rounded-full bg-white/10 border border-white/20 text-[10px] font-black text-primary uppercase tracking-[0.2em] hover:bg-primary/20 transition-all shadow-xl"
                 >
-                    <FastForward className="w-3 h-3 mr-1.5 animate-pulse" /> 快速開獎 SKIP
+                    <FastForward className="w-3 h-3 mr-1.5" /> 快速開獎 SKIP
                 </Button>
             )}
         </motion.div>

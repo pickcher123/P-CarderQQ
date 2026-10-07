@@ -170,6 +170,28 @@ export default function OpenPackPage() {
     const initialDrawCount = parseInt(searchParams.get('draws') || '1', 10);
     const isUsingTicket = searchParams.get('useTicket') === 'true';
     const isUsingEventTicket = searchParams.get('useEventTicket') === 'true';
+    const isTrialParam = searchParams.get('trial') === 'true';
+    
+    const numbersParam = searchParams.get('numbers');
+    const parsedInitialNumbers = useMemo(() => {
+        if (!numbersParam) return [];
+        return numbersParam.split(',')
+            .map(n => parseInt(n.trim(), 10))
+            .filter(n => !isNaN(n) && n > 0);
+    }, [numbersParam]);
+    const [selectedNumbers, setSelectedNumbers] = useState<number[]>(parsedInitialNumbers);
+
+    useEffect(() => {
+        if (parsedInitialNumbers.length > 0) {
+            setSelectedNumbers(parsedInitialNumbers);
+        }
+    }, [parsedInitialNumbers]);
+
+    useEffect(() => {
+        if (isTrialParam) {
+            setIsTrialMode(true);
+        }
+    }, [isTrialParam]);
     
     const systemConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'systemConfig', 'main') : null, [firestore]);
     const { data: systemConfig } = useDoc<SystemConfig>(systemConfigRef);
@@ -283,14 +305,15 @@ export default function OpenPackPage() {
         }));
     }, [allCardsMap]);
 
-    const performTrialDraw = useCallback((count: number, selectedNumbers?: number[]) => {
+    const performTrialDraw = useCallback((count: number, chosenNumbers?: number[]) => {
         if (!cardPool) return;
         setIsTrialMode(true);
         let drawn: any[] = [];
-        const isKujiPool = !!(cardPool.enablePickNumber || (cardPool.kujiTickets && cardPool.kujiTickets.length > 0));
+        const numbersToDraw = (chosenNumbers && chosenNumbers.length > 0) ? chosenNumbers : (selectedNumbers.length > 0 ? selectedNumbers : undefined);
+        const isKujiPool = !!(cardPool.enablePickNumber || (cardPool.kujiTickets && cardPool.kujiTickets.length > 0) || (numbersToDraw && numbersToDraw.length > 0));
 
-        if (isKujiPool && selectedNumbers && selectedNumbers.length > 0) {
-            const kujiRes = drawKujiTickets(cardPool, selectedNumbers, selectedNumbers.length, allCardsMap);
+        if (numbersToDraw && numbersToDraw.length > 0) {
+            const kujiRes = drawKujiTickets(cardPool, numbersToDraw, numbersToDraw.length, allCardsMap);
             drawn = kujiRes.drawn;
         } else {
             const { drawn: normalDrawn } = drawFromPool(cardPool, count, allCardsMap, true);
@@ -310,19 +333,12 @@ export default function OpenPackPage() {
         setLandingVFX('none');
         setStep('summoning');
         toast({
-            title: selectedNumbers && selectedNumbers.length > 0
-                ? `🎯 試抽自選號碼 (#${selectedNumbers.join(', #')})`
+            title: numbersToDraw && numbersToDraw.length > 0
+                ? `🎯 試抽自選號碼 (#${numbersToDraw.join(', #')})`
                 : '🧪 免費試手氣模式啟動',
             description: '此為純模擬開獎體驗，完全未扣除點數，亦不會派發卡牌與扣減庫存！',
         });
-    }, [cardPool, allCardsMap, toast]);
-
-    // Auto-trigger trial if URL param has trial=true (only after cardPool and allCards are ready)
-    useEffect(() => {
-        if (cardPool && !isLoadingCards && (allCards?.length || 0) >= 0 && searchParams.get('trial') === 'true' && step === 'waiting-to-start') {
-            performTrialDraw(initialDrawCount);
-        }
-    }, [cardPool, isLoadingCards, allCards, searchParams, step, initialDrawCount, performTrialDraw]);
+    }, [cardPool, allCardsMap, toast, selectedNumbers]);
 
     // Auto-trigger pick number dialog if URL param has pick=true
     useEffect(() => {
@@ -335,8 +351,9 @@ export default function OpenPackPage() {
         count: number, 
         forceUseTicket?: boolean, 
         forceUseEventTicket?: boolean,
-        selectedNumbers?: number[]
+        chosenNumbers?: number[]
     ) => {
+        const numbersToDraw = (chosenNumbers && chosenNumbers.length > 0) ? chosenNumbers : (selectedNumbers.length > 0 ? selectedNumbers : undefined);
         const isEventExclusive = !!(cardPool?.isEventPool && cardPool?.exclusiveTicketOnly);
         const useEventTicketMode = forceUseEventTicket !== undefined 
             ? forceUseEventTicket 
@@ -447,15 +464,15 @@ export default function OpenPackPage() {
                 let updatedPointPrizes: any[] = [];
                 let updatedTickets: any[] | undefined = undefined;
 
-                if (isKujiPool && poolData.kujiTickets && poolData.kujiTickets.length > 0) {
-                    if (selectedNumbers && selectedNumbers.length > 0) {
-                        for (const num of selectedNumbers) {
+                if (isKujiPool || (numbersToDraw && numbersToDraw.length > 0)) {
+                    if (poolData.kujiTickets && poolData.kujiTickets.length > 0 && numbersToDraw && numbersToDraw.length > 0) {
+                        for (const num of numbersToDraw) {
                             const found = poolData.kujiTickets.find(t => t.number === num);
                             if (!found) throw new Error(`號碼 #${num} 不存在於此卡池中。`);
                             if (found.isDrawn) throw new Error(`號碼 #${num} 剛剛已被其他玩家抽走，請重新挑選其他號碼！`);
                         }
                     }
-                    const kujiRes = drawKujiTickets(poolData, selectedNumbers, actualDrawCount, allCardsMap);
+                    const kujiRes = drawKujiTickets(poolData, numbersToDraw, actualDrawCount, allCardsMap);
                     drawn = kujiRes.drawn;
                     updatedCards = kujiRes.updatedCards;
                     updatedPointPrizes = kujiRes.updatedPointPrizes;
@@ -686,7 +703,8 @@ export default function OpenPackPage() {
                 <div className="relative z-10 w-full h-full flex flex-col justify-center items-center">
                     <PackPreview 
                         cardPool={cardPool}
-                        initialDrawCount={initialDrawCount}
+                        initialDrawCount={selectedNumbers.length > 0 ? selectedNumbers.length : initialDrawCount}
+                        selectedNumbers={selectedNumbers}
                         isLevelMet={isLevelMet}
                         isLimitReachedForInitial={isLimitReachedForInitial}
                         isLoadingStats={isLoadingStats}
@@ -694,8 +712,8 @@ export default function OpenPackPage() {
                         isUsingEventTicket={isUsingEventTicket || !!(cardPool.isEventPool && cardPool.exclusiveTicketOnly)}
                         eventPoolTickets={poolId && userProfile?.eventPoolTickets ? (userProfile.eventPoolTickets[poolId] || 0) : 0}
                         freeDrawTickets={getEffectiveTicketCount(userProfile)}
-                        performDraw={(count, forceTicket, forceEventTicket) => performDraw(count, forceTicket, forceEventTicket)}
-                        performTrialDraw={(count) => performTrialDraw(count)}
+                        performDraw={(count, forceTicket, forceEventTicket, numbers) => performDraw(count, forceTicket, forceEventTicket, numbers || selectedNumbers)}
+                        performTrialDraw={(count, numbers) => performTrialDraw(count, numbers || selectedNumbers)}
                         onOpenPickNumber={
                             (cardPool.enablePickNumber || (cardPool.kujiTickets && cardPool.kujiTickets.length > 0))
                                 ? () => setIsPickNumberOpen(true)
@@ -730,6 +748,7 @@ export default function OpenPackPage() {
                 drawCount={drawnPrizes.length}
                 poolName={cardPool?.name || '頂級卡包'}
                 backgroundUrl={activeBackgroundUrl}
+                selectedNumbers={selectedNumbers.length > 0 ? selectedNumbers : undefined}
                 onAnimationComplete={() => {
                     setStep('ready-to-reveal');
                 }}
@@ -928,31 +947,37 @@ export default function OpenPackPage() {
                                     style={{ transform: `translateY(-${revealPercent}%)` }} 
                                 >
                                     <div className="relative">
-                                        <div className="absolute inset-0 bg-primary blur-xl opacity-30 animate-pulse" />
+                                        <div className="absolute inset-0 bg-primary/25 blur-xl" />
                                         <Disc3 className="w-10 h-10 sm:w-12 sm:h-12 text-primary animate-spin-slow mb-2 sm:mb-3 relative z-10" />
                                     </div>
                                     <span className="font-headline text-xs sm:text-sm font-black text-primary tracking-[0.25em] italic drop-shadow-md">P+ CARDER</span>
-                                    <p className="text-[9px] text-primary/60 mt-2 sm:mt-3 animate-pulse uppercase font-black tracking-widest">往上掀開</p>
+                                    <p className="text-[9px] text-primary/70 mt-2 sm:mt-3 uppercase font-black tracking-widest">往上掀開</p>
                                 </div>
                             </div>
                         </div>
 
+                        {currentPrize?.ticketNumber && (
+                            <div className="mt-1.5 px-3 py-1 rounded-full bg-amber-400 text-slate-950 font-black text-xs shadow-md border border-yellow-200 flex items-center gap-1">
+                                <span>🎯 一番賞番號 #{currentPrize.ticketNumber}</span>
+                            </div>
+                        )}
+
                         {step === 'ready-to-reveal' && (
-                            <div className="flex items-center gap-2 mt-3 sm:mt-4 shrink-0">
+                            <div className="flex items-center gap-2 mt-2 sm:mt-3 shrink-0">
                                 <Button 
                                     variant="ghost" 
                                     size="sm" 
                                     onClick={completeReveal}
-                                    className="h-7 sm:h-8 px-3 sm:px-4 rounded-full bg-white/10 border border-white/20 text-[9px] sm:text-[10px] font-black text-primary uppercase tracking-wider hover:bg-primary/20 transition-all shadow-lg shrink-0"
+                                    className="h-7 sm:h-8 px-3 sm:px-4 rounded-full bg-white/10 border border-white/20 text-[9px] sm:text-[10px] font-black text-primary uppercase tracking-wider hover:bg-primary/20 transition-all shadow-lg shrink-0 cursor-pointer"
                                 >
-                                    <FastForward className="w-3 h-3 mr-1 animate-pulse" /> 翻開本張
+                                    <FastForward className="w-3 h-3 mr-1" /> 翻開本張
                                 </Button>
                                 {drawnPrizes.length > 1 && (
                                     <Button 
                                         variant="ghost" 
                                         size="sm" 
                                         onClick={skipAllToDone}
-                                        className="h-7 sm:h-8 px-3 sm:px-4 rounded-full bg-amber-500/20 border border-amber-500/40 text-[9px] sm:text-[10px] font-black text-amber-300 uppercase tracking-wider hover:bg-amber-500/30 transition-all shadow-lg shrink-0"
+                                        className="h-7 sm:h-8 px-3 sm:px-4 rounded-full bg-amber-500/20 border border-amber-500/40 text-[9px] sm:text-[10px] font-black text-amber-300 uppercase tracking-wider hover:bg-amber-500/30 transition-all shadow-lg shrink-0 cursor-pointer"
                                     >
                                         <Zap className="w-3 h-3 mr-1 text-amber-400 fill-amber-400" /> 全部跳過結算
                                     </Button>
@@ -971,9 +996,14 @@ export default function OpenPackPage() {
                         {sessionPrizes.map((p, i) => (
                             <div 
                                 key={i} 
-                                className="animate-fade-in-up snap-center w-[125px] sm:w-[170px] md:w-[200px] flex-shrink-0" 
+                                className="animate-fade-in-up snap-center w-[125px] sm:w-[170px] md:w-[200px] flex-shrink-0 relative" 
                                 style={{ animationDelay: `${i * 70}ms` }}
                             >
+                                {p.ticketNumber && (
+                                    <div className="absolute top-2 left-2 z-30 px-2 py-0.5 rounded-md bg-amber-400 text-slate-950 font-black text-[10px] shadow-md border border-yellow-200 pointer-events-none">
+                                        🎯 #{p.ticketNumber}
+                                    </div>
+                                )}
                                 {p.type === 'points' || p.isPoints || p.name?.includes('隨機球員') ? (
                                     <div className="w-full aspect-[2.5/4]">
                                         <RandomPlayerCard 
@@ -1077,8 +1107,8 @@ export default function OpenPackPage() {
                                             canDraw3={canDraw3}
                                             canDraw10={canDraw10}
                                             cardPool={cardPool}
-                                            performDraw={performDraw}
-                                            performTrialDraw={performTrialDraw}
+                                            performDraw={(count, forceTicket, forceEventTicket) => performDraw(count, forceTicket, forceEventTicket, selectedNumbers)}
+                                            performTrialDraw={(count) => performTrialDraw(count, selectedNumbers)}
                                             isTrialMode={isTrialMode}
                                             freeDrawTickets={userProfile?.freeDrawTickets || 0}
                                             eventPoolTickets={poolId && userProfile?.eventPoolTickets ? (userProfile.eventPoolTickets[poolId] || 0) : 0}
@@ -1121,13 +1151,23 @@ export default function OpenPackPage() {
                 onClose={() => setIsPickNumberOpen(false)}
                 cardPool={cardPool}
                 isTrialMode={isTrialMode}
+                initialSelectedNumbers={selectedNumbers}
                 userBalance={
                     userProfile 
                         ? (cardPool?.currency === 'p-point' ? (userProfile.bonusPoints || 0) : (userProfile.points || 0))
                         : 0
                 }
                 isDrawing={step === 'loading'}
+                onSelectNumbersOnly={(chosenNumbers) => {
+                    setSelectedNumbers(chosenNumbers);
+                    setIsPickNumberOpen(false);
+                    toast({
+                        title: '🎯 已鎖定自選號碼',
+                        description: `已選取番號：#${chosenNumbers.join(', #')}，點擊下方「啟動開獎」即可開始抽卡！`,
+                    });
+                }}
                 onConfirmDraw={(chosenNumbers, asTrial) => {
+                    setSelectedNumbers(chosenNumbers);
                     setIsPickNumberOpen(false);
                     if (asTrial || isTrialMode) {
                         performTrialDraw(chosenNumbers.length, chosenNumbers);

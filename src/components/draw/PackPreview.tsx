@@ -24,20 +24,22 @@ export function PackPreview({
     isUsingEventTicket = false,
     eventPoolTickets = 0,
     freeDrawTickets = 0,
-    onOpenPickNumber
+    onOpenPickNumber,
+    selectedNumbers
 }: {
     cardPool: CardPool,
     initialDrawCount: number,
     isLevelMet: boolean,
     isLimitReachedForInitial: boolean,
     isLoadingStats: boolean,
-    performDraw: (_count: number, _forceUseTicket?: boolean, _forceUseEventTicket?: boolean) => void,
-    performTrialDraw?: (_count: number) => void,
+    performDraw: (_count: number, _forceUseTicket?: boolean, _forceUseEventTicket?: boolean, _selectedNumbers?: number[]) => void,
+    performTrialDraw?: (_count: number, _selectedNumbers?: number[]) => void,
     isUsingTicket?: boolean,
     isUsingEventTicket?: boolean,
     eventPoolTickets?: number,
     freeDrawTickets?: number,
-    onOpenPickNumber?: () => void
+    onOpenPickNumber?: () => void,
+    selectedNumbers?: number[]
 }) {
     const [useTicketMode, setUseTicketMode] = useState<boolean>(isUsingTicket);
     const [isPromoModalOpen, setIsPromoModalOpen] = useState(false);
@@ -46,8 +48,9 @@ export function PackPreview({
     const isEventExclusive = !!(cardPool.isEventPool && cardPool.exclusiveTicketOnly);
     const isEventMode = isUsingEventTicket || isEventExclusive;
 
+    const countToDraw = (selectedNumbers && selectedNumbers.length > 0) ? selectedNumbers.length : initialDrawCount;
     const effectiveTickets = Math.max(freeDrawTickets, getEffectiveTicketCount());
-    const actualDrawCount = isEventMode ? initialDrawCount : (useTicketMode ? 1 : initialDrawCount);
+    const actualDrawCount = isEventMode ? countToDraw : (useTicketMode ? 1 : countToDraw);
 
     const isPPoint = cardPool.currency === 'p-point';
     const cost = (isEventMode || useTicketMode) ? 0 : (actualDrawCount === 3 && cardPool.price3Draws ? cardPool.price3Draws : (cardPool.price || 0) * actualDrawCount);
@@ -271,6 +274,37 @@ export function PackPreview({
                         </ul>
                     </div>
 
+                    {/* 🎯 已選一番賞號碼展示卡片 */}
+                    {selectedNumbers && selectedNumbers.length > 0 && (
+                        <div className="p-3 rounded-2xl bg-gradient-to-r from-amber-950/70 via-slate-900 to-amber-950/70 border-2 border-amber-400/60 shadow-lg shadow-amber-500/15 flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                                <div className="w-8 h-8 rounded-xl bg-amber-400/20 border border-amber-400/40 flex items-center justify-center text-amber-300 font-black text-sm shrink-0">
+                                    🎯
+                                </div>
+                                <div className="min-w-0">
+                                    <div className="text-[10px] text-amber-300 font-black uppercase tracking-wider">已鎖定自選號碼</div>
+                                    <div className="flex flex-wrap gap-1 mt-0.5 max-h-16 overflow-y-auto">
+                                        {selectedNumbers.map(n => (
+                                            <span key={n} className="bg-amber-400 text-slate-950 font-black text-xs px-2 py-0.5 rounded-lg shadow-sm">
+                                                #{n}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                            {onOpenPickNumber && (
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={onOpenPickNumber}
+                                    className="h-8 px-2.5 text-[11px] font-bold rounded-xl border-amber-400/40 text-amber-300 hover:bg-amber-400/10 cursor-pointer shrink-0"
+                                >
+                                    更換號碼
+                                </Button>
+                            )}
+                        </div>
+                    )}
+
                     {/* CTA Action Buttons */}
                     <div className="space-y-2">
                         {!isEventMode && useTicketMode && !hasEnoughTickets && (
@@ -278,18 +312,18 @@ export function PackPreview({
                                 type="button"
                                 variant="outline"
                                 onClick={() => setIsPromoModalOpen(true)}
-                                className="w-full h-11 text-xs sm:text-sm font-black rounded-2xl border-emerald-500/60 bg-emerald-950/60 text-emerald-300 hover:bg-emerald-900/80 shadow-md shadow-emerald-950/50 flex items-center justify-center gap-1.5 cursor-pointer animate-pulse"
+                                className="w-full h-11 text-xs sm:text-sm font-black rounded-2xl border-emerald-500/60 bg-emerald-950/60 text-emerald-300 hover:bg-emerald-900/80 shadow-md shadow-emerald-950/50 flex items-center justify-center gap-1.5 cursor-pointer"
                             >
                                 <Sparkles className="w-4 h-4 text-amber-300" />
                                 <span>點此免費領取 1 抽活動券</span>
                             </Button>
                         )}
 
-                        {/* 🎯 一番賞自選號碼（挑籤） */}
-                        {onOpenPickNumber && !isEventMode && (
+                        {/* 🎯 一番賞自選號碼（挑籤）- 若尚未選號則顯示 */}
+                        {onOpenPickNumber && !isEventMode && (!selectedNumbers || selectedNumbers.length === 0) && (
                             <Button
                                 size="lg"
-                                className="w-full h-11 sm:h-12 text-sm sm:text-base font-black rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 border border-yellow-300 shadow-xl shadow-amber-500/25 hover:brightness-110 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95 animate-pulse"
+                                className="w-full h-11 sm:h-12 text-sm sm:text-base font-black rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 border border-yellow-300 shadow-xl shadow-amber-500/25 hover:brightness-110 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95"
                                 onClick={onOpenPickNumber}
                                 disabled={!isLevelMet || isLoadingStats}
                             >
@@ -316,7 +350,7 @@ export function PackPreview({
                                     return;
                                 }
                                 if (canStart) {
-                                    performDraw(actualDrawCount, !isEventMode && useTicketMode, isEventMode);
+                                    performDraw(actualDrawCount, !isEventMode && useTicketMode, isEventMode, selectedNumbers);
                                 }
                             }}
                             disabled={!canStart && (isEventMode ? true : (!useTicketMode || hasEnoughTickets))}
@@ -337,6 +371,8 @@ export function PackPreview({
                                 <><Ticket className="mr-2 h-5 w-5 sm:h-6 sm:w-6 text-amber-300" /> 🎟️ 尚未領取免費券（點此領取）</>
                             ) : useTicketMode ? (
                                 <><Ticket className="mr-2 h-5 w-5 sm:h-6 sm:w-6 text-slate-950 fill-slate-950" /> 🎟️ 消耗免費券啟動開獎 (1抽)</>
+                            ) : selectedNumbers && selectedNumbers.length > 0 ? (
+                                <><Zap className="mr-2 h-5 w-5 sm:h-6 sm:w-6 fill-slate-950" /> 啟動自選開獎 ({selectedNumbers.map(n => '#' + n).join(', ')})</>
                             ) : (
                                 <><Zap className="mr-2 h-5 w-5 sm:h-6 sm:w-6 fill-slate-950" /> 啟動正式開獎 ({cost.toLocaleString()} {isPPoint ? 'P點' : '鑽'})</>
                             )}
@@ -347,10 +383,10 @@ export function PackPreview({
                                 size="lg"
                                 variant="outline"
                                 className="w-full h-10 sm:h-11 text-xs sm:text-sm font-black rounded-2xl border-purple-500/50 bg-purple-950/40 text-purple-200 hover:bg-purple-900/60 hover:border-purple-400 shadow-lg shadow-purple-950/40 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-                                onClick={() => performTrialDraw(initialDrawCount)}
+                                onClick={() => performTrialDraw(actualDrawCount, selectedNumbers)}
                             >
-                                <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-300 animate-pulse" />
-                                <span>🎲 免費試手氣（純模擬不扣點）</span>
+                                <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-300" />
+                                <span>{selectedNumbers && selectedNumbers.length > 0 ? `🎲 模擬試開自選號碼 (${selectedNumbers.map(n => '#' + n).join(', ')})` : '🎲 免費試手氣（純模擬不扣點）'}</span>
                             </Button>
                         )}
                     </div>

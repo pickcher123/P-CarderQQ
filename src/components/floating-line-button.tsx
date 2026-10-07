@@ -125,7 +125,6 @@ export function FloatingLineButton({ systemConfig }: { systemConfig: SystemConfi
             <div className="relative flex items-center justify-center">
               <Radio className="w-5 h-5 sm:w-5.5 sm:h-5.5 text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.9)]" />
               <span className="absolute -top-1 -right-1 flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-white shadow-sm"></span>
               </span>
             </div>
@@ -168,7 +167,6 @@ export function FloatingLineButton({ systemConfig }: { systemConfig: SystemConfi
             <div className="relative flex items-center justify-center">
               <MessageCircleCode className="w-5 h-5 sm:w-5.5 sm:h-5.5 text-[#06C755] drop-shadow-[0_0_8px_rgba(6,199,85,0.9)]" />
               <span className="absolute -top-1 -right-1 flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#06C755] opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-[#06C755] shadow-sm"></span>
               </span>
             </div>

@@ -4,7 +4,9 @@ const nextConfig = {
   compress: true,
   poweredByHeader: false,
   transpilePackages: ['firebase'],
-  serverExternalPackages: ['firebase-admin'],
+  experimental: {
+    serverComponentsExternalPackages: ['firebase-admin'],
+  },
   images: {
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 2592000, // 30 天快取

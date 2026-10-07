@@ -112,7 +112,7 @@ export function DrawButtons({
                         "w-full h-11 sm:h-12 text-xs sm:text-sm font-black rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 shadow-lg",
                         isTrialMode
                             ? "bg-gradient-to-r from-purple-600 via-fuchsia-600 to-indigo-600 text-white shadow-purple-500/25 border border-purple-400/50 hover:brightness-110"
-                            : "bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 shadow-amber-500/25 hover:brightness-110 border border-yellow-300 animate-pulse"
+                            : "bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 shadow-amber-500/25 hover:brightness-110 border border-yellow-300"
                     )}
                     onClick={onOpenPickNumber}
                     disabled={!isTrialMode && (isLoadingStats || (cardPool?.remainingPacks ?? 0) < 1)}
@@ -136,35 +136,31 @@ export function DrawButtons({
             <div className="flex gap-1.5 w-full">
                 <Button 
                     className={cn(
-                        "flex-1 h-12 sm:h-14 text-xs sm:text-sm font-black border-2 transition-all shadow-xl rounded-xl sm:rounded-2xl flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1 px-1 py-1",
+                        "flex-1 h-12 sm:h-14 text-xs sm:text-sm font-black border-2 transition-all shadow-md rounded-xl sm:rounded-2xl flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1 px-1 py-1 cursor-pointer",
                         isTrialMode 
                             ? "bg-purple-950 text-purple-100 border-purple-600 hover:bg-purple-900" 
-                            : isLoadingStats ? "bg-slate-900 text-slate-500 border-slate-800 opacity-50" : isPPoint ? "bg-amber-950/80 text-amber-100 border border-amber-800/80 hover:border-amber-600 hover:bg-amber-900/80" : "bg-slate-950 text-slate-200 border border-slate-800 hover:border-slate-600 hover:bg-slate-900"
+                            : isLoadingStats ? "bg-slate-900 text-slate-500 border-slate-800 opacity-60" : isPPoint ? "bg-amber-950/80 text-amber-100 border border-amber-800/80 hover:border-amber-600 hover:bg-amber-900/80" : "bg-slate-950 text-slate-200 border border-slate-800 hover:border-slate-600 hover:bg-slate-900"
                     )}
                     onClick={() => handleButtonClick(1)} 
                     disabled={!isTrialMode && (isLoadingStats || (cardPool?.remainingPacks ?? 0) < 1)}
                 >
-                    {isLoadingStats && !isTrialMode ? <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" /> : 
-                        <>
-                            <span className="text-[10px] sm:text-xs opacity-90 whitespace-nowrap">{isTrialMode ? '試 1抽' : '1抽'}</span>
-                            <span className="text-[11px] sm:text-xs flex items-center font-headline truncate font-bold">
-                                <CurrencyIcon />
-                                {isTrialMode ? '免費' : cardPool?.price}
-                            </span>
-                        </>
-                    }
+                    <span className="text-[10px] sm:text-xs opacity-90 whitespace-nowrap">{isTrialMode ? '試 1抽' : '1抽'}</span>
+                    <span className="text-[11px] sm:text-xs flex items-center font-headline truncate font-bold">
+                        <CurrencyIcon />
+                        {isTrialMode ? '免費' : cardPool?.price}
+                    </span>
                 </Button>
                 <Button 
                     className={cn(
-                        "flex-1 h-12 sm:h-14 text-xs sm:text-sm font-black rounded-xl sm:rounded-2xl transition-all shadow-xl flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1 px-1 py-1",
+                        "flex-1 h-12 sm:h-14 text-xs sm:text-sm font-black rounded-xl sm:rounded-2xl transition-all shadow-md flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1 px-1 py-1 cursor-pointer",
                         isTrialMode 
                             ? "bg-purple-900 text-purple-100 border-purple-500 hover:bg-purple-800" 
-                            : (isLoadingStats || !canDraw3) ? "bg-slate-900 text-slate-500 border border-slate-800 opacity-50" : isPPoint ? "bg-amber-900 text-amber-100 border border-amber-700 hover:bg-amber-800" : "bg-indigo-950 text-indigo-100 border border-indigo-800 hover:bg-indigo-900 hover:border-indigo-700"
+                            : (isLoadingStats || !canDraw3) ? "bg-slate-900 text-slate-500 border border-slate-800 opacity-60" : isPPoint ? "bg-amber-900 text-amber-100 border border-amber-700 hover:bg-amber-800" : "bg-indigo-950 text-indigo-100 border border-indigo-800 hover:bg-indigo-900 hover:border-indigo-700"
                     )}
                     onClick={() => handleButtonClick(3)} 
                     disabled={!isTrialMode && (isLoadingStats || (cardPool?.remainingPacks ?? 0) < 3 || !canDraw3)}
                 >
-                    {isLoadingStats && !isTrialMode ? <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" /> : (!isTrialMode && !canDraw3) ? <span className="text-[10px] text-rose-400">額度不足</span> : 
+                    {(!isTrialMode && !canDraw3 && !isLoadingStats) ? <span className="text-[10px] text-rose-400">額度不足</span> : 
                         <>
                             <span className="text-[10px] sm:text-xs opacity-90 whitespace-nowrap">{isTrialMode ? '試 3連' : '3 連抽'}</span>
                             <span className="text-[11px] sm:text-xs flex items-center font-headline truncate font-bold">
@@ -176,15 +172,15 @@ export function DrawButtons({
                 </Button>
                 <Button 
                     className={cn(
-                        "flex-1 h-12 sm:h-14 text-xs sm:text-sm font-black rounded-xl sm:rounded-2xl transition-all shadow-xl flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1 px-1 py-1",
+                        "flex-1 h-12 sm:h-14 text-xs sm:text-sm font-black rounded-xl sm:rounded-2xl transition-all shadow-md flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1 px-1 py-1 cursor-pointer",
                         isTrialMode 
                             ? "bg-fuchsia-950 text-fuchsia-100 border-fuchsia-500 hover:bg-fuchsia-900" 
-                            : (isLoadingStats || !canDraw10) ? "bg-slate-900 text-slate-500 border border-slate-800 opacity-50" : isPPoint ? "bg-yellow-950 text-yellow-100 border border-yellow-700 hover:bg-yellow-900" : "bg-amber-950 text-amber-100 border border-amber-800 hover:bg-amber-900 hover:border-amber-700"
+                            : (isLoadingStats || !canDraw10) ? "bg-slate-900 text-slate-500 border border-slate-800 opacity-60" : isPPoint ? "bg-yellow-950 text-yellow-100 border border-yellow-700 hover:bg-yellow-900" : "bg-amber-950 text-amber-100 border border-amber-800 hover:bg-amber-900 hover:border-amber-700"
                     )}
                     onClick={() => handleButtonClick(10)} 
                     disabled={!isTrialMode && (isLoadingStats || (cardPool?.remainingPacks ?? 0) < 10 || !canDraw10)}
                 >
-                    {isLoadingStats && !isTrialMode ? <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" /> : (!isTrialMode && !canDraw10) ? <span className="text-[10px] text-rose-400">額度不足</span> : 
+                    {(!isTrialMode && !canDraw10 && !isLoadingStats) ? <span className="text-[10px] text-rose-400">額度不足</span> : 
                         <>
                             <span className="text-[10px] sm:text-xs opacity-90 whitespace-nowrap">{isTrialMode ? '試 10連' : '10 連抽'}</span>
                             <span className="text-[11px] sm:text-xs flex items-center font-headline truncate font-bold">

@@ -13,6 +13,7 @@ export interface CloveSummoningAnimationProps {
   poolName?: string;
   backgroundUrl?: string;
   onAnimationComplete: () => void;
+  selectedNumbers?: number[];
 }
 
 type Stage = 'idle' | 'tearing' | 'burst';
@@ -23,6 +24,7 @@ export function CloveSummoningAnimation({
   poolName = '典藏卡包',
   backgroundUrl,
   onAnimationComplete,
+  selectedNumbers,
 }: CloveSummoningAnimationProps) {
   const [stage, setStage] = useState<Stage>('idle');
   const [hasTapped, setHasTapped] = useState(false);
@@ -187,7 +189,7 @@ export function CloveSummoningAnimation({
 
       {/* 頂部極簡卡池資訊與跳過按鈕 */}
       <div className="w-full max-w-3xl px-4 flex items-center justify-between z-30 shrink-0">
-        <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/70 border border-white/10 backdrop-blur-md shadow-sm">
+        <div className="flex flex-wrap items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/70 border border-white/10 backdrop-blur-md shadow-sm">
           <Layers className="w-3.5 h-3.5 text-slate-300" />
           <span className="text-xs font-semibold text-slate-200 truncate max-w-[150px] sm:max-w-[220px]">
             {poolName}
@@ -195,6 +197,11 @@ export function CloveSummoningAnimation({
           <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/10 text-white font-mono font-bold">
             {drawCount} 抽
           </span>
+          {selectedNumbers && selectedNumbers.length > 0 && (
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 font-black">
+              🎯 番號 {selectedNumbers.map(n => '#' + n).join(', ')}
+            </span>
+          )}
         </div>
 
         <Button

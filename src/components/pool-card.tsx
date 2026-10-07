@@ -17,6 +17,7 @@ import { userLevels } from '@/components/member-level-crown';
 import { VerifyAgeModal } from '@/components/verify-age-modal';
 import { PromoRedeemModal } from '@/components/events/PromoRedeemModal';
 import { getEffectiveTicketCount, syncLocalPromoClaimsToFirestore } from '@/lib/promo-draw-service';
+import { KujiNumberPickerDialog } from '@/components/draw/kuji-number-picker-dialog';
 
 // (Re-adding interfaces and constants as in the file)
 const RARITIES = ['legendary', 'rare', 'common'] as const;
@@ -91,6 +92,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
     const [isPromoModalOpen, setIsPromoModalOpen] = useState(false);
     const [localTicketRefresh, setLocalTicketRefresh] = useState(0);
     const [selectedPrizeIndex, setSelectedPrizeIndex] = useState(0);
+    const [isPickNumberOpen, setIsPickNumberOpen] = useState(false);
 
     // 🌟 3D 陀螺儀微傾斜與雷射流光 (Holo Foil) 互動狀態
     const [cardTilt, setCardTilt] = useState<{ x: number; y: number; active: boolean; mouseX: number; mouseY: number }>({
@@ -436,7 +438,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
 
                         {/* 標題與圖示 */}
                         <div className="space-y-1.5 pt-1">
-                            <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-400/50 mx-auto flex items-center justify-center text-2xl shadow-inner animate-bounce">
+                            <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-400/50 mx-auto flex items-center justify-center text-2xl shadow-inner">
                                 🎟️
                             </div>
                             <h3 className="text-lg sm:text-xl font-black text-white font-headline">
@@ -579,7 +581,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                 🔒 僅限專屬券
                             </Badge>
                         )}
-                        {(pool.enablePickNumber || (pool.kujiTickets && pool.kujiTickets.length > 0)) && (
+                        {pool.enablePickNumber !== false && (
                             <Badge className="bg-gradient-to-r from-amber-950/90 to-yellow-950/90 text-amber-300 border border-amber-500/50 font-black text-[10px] px-2.5 py-0.5 shadow-sm">
                                 🎯 支援自選號碼（一番賞挑籤）
                             </Badge>
@@ -1016,10 +1018,10 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                     </div>
                 ) : (
                     <div className="space-y-2">
-                        {(pool.enablePickNumber || (pool.kujiTickets && pool.kujiTickets.length > 0)) && (
+                        {pool.enablePickNumber !== false && (
                             <Button 
-                                className="w-full h-10 sm:h-11 text-xs sm:text-sm font-black rounded-xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 shadow-md shadow-amber-500/20 hover:brightness-110 flex items-center justify-center gap-1.5 transition-all cursor-pointer border border-yellow-300 active:scale-95 animate-pulse"
-                                onClick={() => router.push(`/draw/open?poolId=${pool.id}&pick=true`)}
+                                className="w-full h-11 sm:h-12 text-xs sm:text-sm font-black rounded-xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 shadow-md shadow-amber-500/20 hover:brightness-110 flex items-center justify-center gap-1.5 transition-all cursor-pointer border border-yellow-300 active:scale-95"
+                                onClick={() => setIsPickNumberOpen(true)}
                                 disabled={poolStatus.disabled || isDrawing}
                             >
                                 <Sparkles className="w-4 h-4 fill-slate-950" />
@@ -1226,7 +1228,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                                     {/* 剩餘數量膠囊 Badge */}
                                                     {!c.isSoldOut ? (
                                                         <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-cyan-950/80 border border-cyan-400/40 text-cyan-300 shadow-[0_0_10px_rgba(34,211,238,0.15)] flex items-center gap-1">
-                                                            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
+                                                            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
                                                             剩餘: {c.quantity} 包
                                                         </span>
                                                     ) : (
@@ -1253,7 +1255,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                         onClick={e => e.stopPropagation()}
                     >
                         {/* 頂部動態流光邊框 */}
-                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-400 via-fuchsia-500 to-amber-400 bg-[length:200%_100%] animate-shimmer rounded-t-3xl" />
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-400 via-fuchsia-500 to-amber-400 bg-[length:200%_100%] rounded-t-3xl" />
 
                         <div className="text-center w-full">
                             <span className={cn(
@@ -1278,7 +1280,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                         </div>
 
                         {!previewCard.isPoints && (
-                            <p className="text-[10px] text-cyan-400 font-bold uppercase animate-pulse flex items-center gap-1">
+                            <p className="text-[10px] text-cyan-400 font-bold uppercase flex items-center gap-1">
                                 <Sparkles className="w-3 h-3" /> 點擊卡片可翻轉看背面
                             </p>
                         )}
@@ -1294,6 +1296,33 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                     </div>
                 </div>
             )}
+
+            {/* 一番賞自選號碼挑籤彈窗 (挑完號碼後再進入抽卡) */}
+            <KujiNumberPickerDialog
+                isOpen={isPickNumberOpen}
+                onClose={() => setIsPickNumberOpen(false)}
+                cardPool={pool as any}
+                userBalance={
+                    userProfile 
+                        ? (pool.currency === 'p-point' ? (userProfile.bonusPoints || 0) : (userProfile.points || 0))
+                        : 0
+                }
+                isDrawing={isDrawing}
+                onSelectNumbersOnly={(chosenNumbers) => {
+                    setIsPickNumberOpen(false);
+                    const numbersParam = chosenNumbers.join(',');
+                    router.push(`/draw/open?poolId=${pool.id}&numbers=${numbersParam}&draws=${chosenNumbers.length}`);
+                }}
+                onConfirmDraw={(chosenNumbers, asTrial) => {
+                    setIsPickNumberOpen(false);
+                    const numbersParam = chosenNumbers.join(',');
+                    if (asTrial) {
+                        router.push(`/draw/open?poolId=${pool.id}&numbers=${numbersParam}&draws=${chosenNumbers.length}&trial=true`);
+                    } else {
+                        router.push(`/draw/open?poolId=${pool.id}&numbers=${numbersParam}&draws=${chosenNumbers.length}`);
+                    }
+                }}
+            />
         </div>
     );
 }

@@ -273,7 +273,7 @@ export default function Home() {
           <div className="flex flex-col items-center justify-center animate-fade-in-up pt-4 sm:pt-6 max-w-lg mx-auto">
             <Button size="lg" asChild className="w-full sm:w-auto h-12 sm:h-14 px-8 text-base sm:text-lg font-black rounded-2xl group bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-slate-950 shadow-[0_0_35px_rgba(245,158,11,0.45)] hover:shadow-[0_0_50px_rgba(245,158,11,0.7)] border border-amber-300/70 relative overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98]">
               <Link href="/draw" className="flex items-center justify-center gap-2.5">
-                <Sparkles className="w-5 h-5 text-slate-950 fill-slate-950 animate-pulse" />
+                <Sparkles className="w-5 h-5 text-slate-950 fill-slate-950" />
                 <span className="tracking-wide">立即前往卡池</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform" />
               </Link>
@@ -293,7 +293,7 @@ export default function Home() {
           <div className="p-3 sm:p-4 rounded-2xl bg-gradient-to-r from-slate-900/90 via-slate-950/90 to-slate-900/90 border border-slate-800/80 backdrop-blur-xl flex items-center justify-between gap-3 mb-6 sm:mb-8 shadow-lg">
             <div className="flex items-center gap-2.5">
               <div className="p-2 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30 text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
-                <Flame className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 animate-pulse" />
+                <Flame className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
               </div>
               <div>
                 <h2 className="text-base sm:text-lg font-black font-headline tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-100 to-yellow-400 drop-shadow-[0_0_12px_rgba(245,158,11,0.3)]">

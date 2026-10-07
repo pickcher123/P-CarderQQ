@@ -35,6 +35,8 @@ interface KujiNumberPickerDialogProps {
   onConfirmDraw: (selectedNumbers: number[], isTrial?: boolean) => void;
   isDrawing?: boolean;
   isTrialMode?: boolean;
+  initialSelectedNumbers?: number[];
+  onSelectNumbersOnly?: (selectedNumbers: number[]) => void;
 }
 
 export function KujiNumberPickerDialog({
@@ -45,8 +47,19 @@ export function KujiNumberPickerDialog({
   onConfirmDraw,
   isDrawing = false,
   isTrialMode = false,
+  initialSelectedNumbers = [],
+  onSelectNumbersOnly,
 }: KujiNumberPickerDialogProps) {
-  const [selectedNumbers, setSelectedNumbers] = useState<number[]>([]);
+  const [selectedNumbers, setSelectedNumbers] = useState<number[]>(initialSelectedNumbers);
+
+  // Sync initialSelectedNumbers when dialog opens
+  React.useEffect(() => {
+    if (isOpen) {
+      if (initialSelectedNumbers && initialSelectedNumbers.length > 0) {
+        setSelectedNumbers(initialSelectedNumbers);
+      }
+    }
+  }, [isOpen, initialSelectedNumbers]);
 
   // 取得現有籤表，如果尚未產生則自動即時預覽 1~80 號
   const tickets: KujiTicketItem[] = useMemo(() => {
@@ -286,41 +299,57 @@ export function KujiNumberPickerDialog({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-center gap-2">
             <Button
               variant="outline"
               onClick={onClose}
               disabled={isDrawing}
-              className="flex-1 h-11 rounded-xl border-white/10 text-slate-300 hover:bg-white/5"
+              className="w-full sm:w-auto h-11 px-4 rounded-xl border-white/10 text-slate-300 hover:bg-white/5"
             >
               取消
             </Button>
 
             {isTrialMode ? (
-              <Button
-                onClick={() => onConfirmDraw(selectedNumbers, true)}
-                disabled={selectedNumbers.length === 0 || isDrawing}
-                className={cn(
-                  'flex-[2] h-11 rounded-xl font-black text-sm tracking-wide shadow-xl flex items-center justify-center gap-2',
-                  selectedNumbers.length > 0
-                    ? 'bg-gradient-to-r from-purple-500 via-fuchsia-500 to-indigo-500 text-white hover:brightness-110 shadow-purple-500/25 cursor-pointer active:scale-95'
-                    : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+              <div className="flex items-center gap-2 w-full sm:flex-1">
+                {onSelectNumbersOnly && (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      if (selectedNumbers.length === 0 || isDrawing) return;
+                      onSelectNumbersOnly(selectedNumbers);
+                      onClose();
+                    }}
+                    disabled={selectedNumbers.length === 0 || isDrawing}
+                    className="flex-1 h-11 rounded-xl font-bold text-xs border-purple-500/40 bg-purple-950/40 text-purple-200 hover:bg-purple-900/60 transition-all"
+                  >
+                    ✅ 鎖定所選號碼
+                  </Button>
                 )}
-              >
-                <Sparkles className="w-4 h-4 text-amber-300" />
-                {selectedNumbers.length === 0
-                  ? '請先點選號碼牌'
-                  : `🎯 免費模擬開籤 (${selectedNumbers.length} 籤)`}
-              </Button>
+                <Button
+                  onClick={() => onConfirmDraw(selectedNumbers, true)}
+                  disabled={selectedNumbers.length === 0 || isDrawing}
+                  className={cn(
+                    'flex-[2] h-11 rounded-xl font-black text-xs sm:text-sm tracking-wide shadow-xl flex items-center justify-center gap-2',
+                    selectedNumbers.length > 0
+                      ? 'bg-gradient-to-r from-purple-500 via-fuchsia-500 to-indigo-500 text-white hover:brightness-110 shadow-purple-500/25 cursor-pointer active:scale-95'
+                      : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                  )}
+                >
+                  <Sparkles className="w-4 h-4 text-amber-300" />
+                  {selectedNumbers.length === 0
+                    ? '請先點選號碼牌'
+                    : `🎯 免費模擬開籤 (${selectedNumbers.length} 籤)`}
+                </Button>
+              </div>
             ) : (
-              <>
-                {/* 非試抽模式下，也提供免費試抽按鈕 */}
+              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:flex-1">
+                {/* 免費試抽按鈕 */}
                 <Button
                   variant="outline"
                   onClick={() => onConfirmDraw(selectedNumbers, true)}
                   disabled={selectedNumbers.length === 0 || isDrawing}
                   className={cn(
-                    'flex-1 h-11 rounded-xl font-bold text-xs border-purple-500/40 bg-purple-950/40 text-purple-300 hover:bg-purple-900/60 hover:text-purple-200 transition-all flex items-center justify-center gap-1',
+                    'h-11 px-3 rounded-xl font-bold text-xs border-purple-500/40 bg-purple-950/40 text-purple-300 hover:bg-purple-900/60 hover:text-purple-200 transition-all flex items-center justify-center gap-1 shrink-0',
                     selectedNumbers.length === 0 && 'opacity-40 cursor-not-allowed'
                   )}
                 >
@@ -328,24 +357,41 @@ export function KujiNumberPickerDialog({
                   <span>試手氣模擬</span>
                 </Button>
 
+                {/* 挑完號碼先鎖定並確認 */}
+                {onSelectNumbersOnly && (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      if (selectedNumbers.length === 0 || isDrawing) return;
+                      onSelectNumbersOnly(selectedNumbers);
+                      onClose();
+                    }}
+                    disabled={selectedNumbers.length === 0 || isDrawing}
+                    className="flex-1 h-11 rounded-xl font-bold text-xs border-amber-500/50 bg-amber-950/30 text-amber-300 hover:bg-amber-900/50 hover:text-amber-200 transition-all"
+                  >
+                    ✅ 鎖定號碼
+                  </Button>
+                )}
+
+                {/* 直接確認開獎 */}
                 <Button
                   onClick={handleConfirm}
                   disabled={selectedNumbers.length === 0 || !hasEnoughBalance || isDrawing}
                   className={cn(
-                    'flex-[2] h-11 rounded-xl font-black text-sm tracking-wide shadow-xl flex items-center justify-center gap-2',
+                    'flex-[2] h-11 rounded-xl font-black text-xs sm:text-sm tracking-wide shadow-xl flex items-center justify-center gap-1.5',
                     selectedNumbers.length > 0 && hasEnoughBalance
-                      ? 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 hover:brightness-110 shadow-amber-500/25 cursor-pointer animate-pulse'
+                      ? 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 hover:brightness-110 shadow-amber-500/25 cursor-pointer'
                       : 'bg-slate-800 text-slate-500 cursor-not-allowed'
                   )}
                 >
                   <Sparkles className="w-4 h-4" />
                   {selectedNumbers.length === 0
-                    ? '請先點選號碼牌'
+                    ? '請先點選號碼'
                     : !hasEnoughBalance
                     ? '點數餘額不足'
                     : `確認開獎 (${selectedNumbers.length} 籤)`}
                 </Button>
-              </>
+              </div>
             )}
           </div>
         </div>
