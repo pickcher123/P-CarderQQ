@@ -57,13 +57,20 @@ export function generateKujiTickets(
     items[j] = temp;
   }
 
-  // 生成帶有 1~N 號碼的 KujiTicketItem 清單
-  return items.slice(0, targetTotal).map((item, idx) => ({
-    number: idx + 1,
-    cardId: item.cardId,
-    pointPrizeId: item.pointPrizeId,
-    isDrawn: false,
-  }));
+  // 生成帶有 1~N 號碼的 KujiTicketItem 清單，嚴格杜絕 undefined 屬性
+  return items.slice(0, targetTotal).map((item, idx) => {
+    const ticket: KujiTicketItem = {
+      number: idx + 1,
+      isDrawn: false,
+    };
+    if (item.cardId) {
+      ticket.cardId = item.cardId;
+    }
+    if (item.pointPrizeId) {
+      ticket.pointPrizeId = item.pointPrizeId;
+    }
+    return ticket;
+  });
 }
 
 /**
@@ -80,11 +87,40 @@ export function drawKujiTickets(
   updatedCards: { cardId: string; quantity: number }[];
   updatedPointPrizes: { prizeId: string; points: number; quantity: number; rarity: Rarity }[];
 } {
-  const currentTickets = poolData.kujiTickets && poolData.kujiTickets.length > 0 
-    ? poolData.kujiTickets.map(t => ({ ...t })) 
+  const currentTickets: KujiTicketItem[] = poolData.kujiTickets && poolData.kujiTickets.length > 0 
+    ? poolData.kujiTickets.map(t => {
+        const ticket: KujiTicketItem = {
+          number: t.number,
+          isDrawn: !!t.isDrawn,
+        };
+        if (t.cardId) ticket.cardId = t.cardId;
+        if (t.pointPrizeId) ticket.pointPrizeId = t.pointPrizeId;
+        if (t.drawnBy) ticket.drawnBy = t.drawnBy;
+        if (t.drawnByName) ticket.drawnByName = t.drawnByName;
+        if (t.drawnAt) ticket.drawnAt = t.drawnAt;
+        return ticket;
+      })
     : generateKujiTickets(poolData, poolData.totalPacks || poolData.remainingPacks || 80);
-  const updatedCards = poolData.cards ? poolData.cards.map((c: any) => ({ ...c })) : [];
-  const updatedPointPrizes = poolData.pointPrizes ? poolData.pointPrizes.map((p: any) => ({ ...p })) : [];
+
+  const updatedCards = poolData.cards 
+    ? poolData.cards.map((c: any) => ({
+        cardId: c.cardId,
+        quantity: Math.max(0, c.quantity || 0),
+      })) 
+    : [];
+
+  const updatedPointPrizes = poolData.pointPrizes 
+    ? poolData.pointPrizes.map((p: any) => {
+        const prizeObj: any = {
+          prizeId: p.prizeId,
+          points: p.points || 0,
+          quantity: Math.max(0, p.quantity || 0),
+          rarity: (p.rarity as Rarity) || 'common',
+        };
+        if (p.name) prizeObj.name = p.name;
+        return prizeObj;
+      }) 
+    : [];
   const drawn: DrawnPrize[] = [];
 
   // 確定要抽的號碼
@@ -188,8 +224,25 @@ export function drawFromPool(
   updatedPointPrizes: { prizeId: string; points: number; quantity: number; rarity: Rarity }[];
 } {
   const drawn: DrawnPrize[] = [];
-  const updatedCards = poolData.cards ? poolData.cards.map((c: any) => ({ ...c })) : [];
-  const updatedPointPrizes = poolData.pointPrizes ? poolData.pointPrizes.map((p: any) => ({ ...p })) : [];
+  const updatedCards = poolData.cards 
+    ? poolData.cards.map((c: any) => ({
+        cardId: c.cardId,
+        quantity: Math.max(0, c.quantity || 0),
+      })) 
+    : [];
+
+  const updatedPointPrizes = poolData.pointPrizes 
+    ? poolData.pointPrizes.map((p: any) => {
+        const item: any = {
+          prizeId: p.prizeId,
+          points: p.points || 0,
+          quantity: Math.max(0, p.quantity || 0),
+          rarity: (p.rarity as Rarity) || 'common',
+        };
+        if (p.name) item.name = p.name;
+        return item;
+      }) 
+    : [];
 
   for (let i = 0; i < count; i++) {
     // Helper to get item rarity

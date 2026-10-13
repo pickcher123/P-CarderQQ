@@ -491,18 +491,21 @@ export default function OpenPackPage() {
                     // 儲存卡片到使用者收藏
                     const newUserCardRef = doc(collection(firestore, 'users', user.uid, 'userCards'));
                     const serialNumber = `${Math.floor(Math.random() * 9000) + 1000}`;
-                    transaction.set(newUserCardRef, {
-                        cardId: (prize as any).id,
+                    const cardPayload: any = {
+                        cardId: (prize as any).id || '',
                         userId: user.uid,
-                        category: (prize as any).category,
-                        rarity: (prize as any).rarity,
+                        category: (prize as any).category || 'normal',
+                        rarity: (prize as any).rarity || 'common',
                         isFoil: (prize as any).rarity === 'legendary',
                         source: useEventTicketMode ? 'event_ticket_draw' : (useTicketMode ? 'promo_ticket_draw' : 'draw'),
                         poolId: poolId,
                         serialNumber: serialNumber,
-                        ticketNumber: (prize as any).ticketNumber || null,
                         createdAt: serverTimestamp()
-                    });
+                    };
+                    if ((prize as any).ticketNumber !== undefined && (prize as any).ticketNumber !== null) {
+                        cardPayload.ticketNumber = (prize as any).ticketNumber;
+                    }
+                    transaction.set(newUserCardRef, cleanFirestoreData(cardPayload));
                     // 同步更新本地顯示的 ID
                     (prize as any).serialNumber = serialNumber;
                 }
@@ -519,9 +522,9 @@ export default function OpenPackPage() {
                 } else {
                     updateFields.points = increment(-cost);
                 }
-                transaction.update(userDocRef, updateFields);
+                transaction.update(userDocRef, cleanFirestoreData(updateFields));
 
-                // 5. 更新卡池資料
+                // 5. 更新卡池資料 (全面清理 undefined 屬性，杜絕 Transaction.update 錯誤)
                 const poolUpdates: any = {
                     remainingPacks: increment(-drawn.length),
                     cards: updatedCards
@@ -529,10 +532,10 @@ export default function OpenPackPage() {
                 if (updatedPointPrizes && updatedPointPrizes.length > 0) {
                     poolUpdates.pointPrizes = updatedPointPrizes;
                 }
-                if (updatedTickets) {
+                if (updatedTickets && updatedTickets.length > 0) {
                     poolUpdates.kujiTickets = updatedTickets;
                 }
-                transaction.update(poolDocRef, poolUpdates);
+                transaction.update(poolDocRef, cleanFirestoreData(poolUpdates));
 
                 // 6. 紀錄交易日誌
                 const transactionRef = doc(collection(firestore, 'transactions'));
@@ -603,7 +606,7 @@ export default function OpenPackPage() {
                 });
             }
         }
-    }, [poolId, firestore, user, cardPool, isUsingTicket, isUsingEventTicket, toast, allCardsMap]);
+    }, [poolId, firestore, user, cardPool, isUsingTicket, isUsingEventTicket, toast, allCardsMap, selectedNumbers]);
 
     const handleSqueezeStart = (e: React.PointerEvent) => { 
         if (step !== 'ready-to-reveal' || isChanging) return; 

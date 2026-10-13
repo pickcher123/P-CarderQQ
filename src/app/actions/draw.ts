@@ -3,6 +3,7 @@
 import { adminDb } from '@/lib/firebase-admin';
 import * as admin from 'firebase-admin';
 import { drawFromPool } from '@/lib/draw-utils';
+import { cleanFirestoreData } from '@/lib/utils';
 
 export async function performDrawAction(userId: string, poolId: string, count: number) {
   try {
@@ -76,7 +77,7 @@ export async function performDrawAction(userId: string, poolId: string, count: n
       if (updatedPointPrizes && updatedPointPrizes.length > 0) {
         poolUpdates.pointPrizes = updatedPointPrizes;
       }
-      transaction.update(poolRef, poolUpdates);
+      transaction.update(poolRef, cleanFirestoreData(poolUpdates));
 
       return { drawn, userData: userSnap.data()! };
     });
