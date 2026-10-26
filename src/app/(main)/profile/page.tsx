@@ -50,6 +50,7 @@ import { InteractiveAchievementWall, InteractiveAchievement } from "@/components
 import type { UserProfile } from "@/types/user-profile";
 import type { DailyMission, UserMissionProgress } from '@/types/missions';
 import type { SystemConfig } from "@/types/system";
+import { getBonusMultiplier } from "@/lib/bonus-event";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -379,13 +380,28 @@ function CompactDailyCheckIn() {
   const { toast } = useToast();
   const userDocRef = useMemoFirebase(() => (firestore && user) ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
   const { data: userProfile } = useDoc<UserProfile>(userDocRef);
+  const systemConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'systemConfig', 'main') : null, [firestore]);
+  const { data: systemConfig } = useDoc<SystemConfig>(systemConfigRef);
   const missionsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'dailyMissions'), where('type', '==', 'login'), limit(1)) : null, [firestore]);
   const progressQuery = useMemoFirebase(() => (firestore && user) ? collection(firestore, `users/${user.uid}/missionProgress`) : null, [firestore, user]);
   const { data: missions } = useCollection<DailyMission>(missionsQuery);
   const { data: progress, forceRefetch } = useCollection<UserMissionProgress>(progressQuery);
   const [claimingId, setClaimingId] = useState<string | null>(null);
+  
   const loginMission = useMemo(() => missions?.[0] || null, [missions]);
-  const userProgress = useMemo(() => progress?.find(p => p.id === loginMission?.id), [progress, loginMission]);
+  const missionId = loginMission?.id || 'daily-login';
+  const baseRewardPoints = loginMission?.rewardPoints ?? 10;
+
+  // 🔥 活動期間紅利加倍倍率
+  const bonusMultiplier = useMemo(() => {
+    return getBonusMultiplier(systemConfig?.bonusEvent, 'checkIn');
+  }, [systemConfig]);
+
+  const rewardPoints = useMemo(() => {
+    return Math.max(1, Math.round(baseRewardPoints * bonusMultiplier));
+  }, [baseRewardPoints, bonusMultiplier]);
+
+  const userProgress = useMemo(() => progress?.find(p => p.id === missionId || p.id === loginMission?.id), [progress, missionId, loginMission]);
   const todayStr = format(new Date(), 'yyyy-MM-dd');
   const hasClaimedToday = useMemo(() => {
     if (userProfile?.lastCheckInDate === todayStr) return true;
@@ -394,12 +410,12 @@ function CompactDailyCheckIn() {
   }, [userProgress, userProfile?.lastCheckInDate, todayStr]);
 
   const handleCheckIn = useCallback(async () => {
-    if (!user || !firestore || !loginMission) return;
-    setClaimingId(loginMission.id);
+    if (!user || !firestore) return;
+    setClaimingId(missionId);
     try {
       await runTransaction(firestore, async (transaction) => {
         const userRef = doc(firestore, 'users', user.uid);
-        const progressRef = doc(firestore, `users/${user.uid}/missionProgress`, loginMission.id);
+        const progressRef = doc(firestore, `users/${user.uid}/missionProgress`, missionId);
         const [userDoc, existingProgress] = await Promise.all([transaction.get(userRef), transaction.get(progressRef)]);
         const currentToday = format(new Date(), 'yyyy-MM-dd');
         const userData = userDoc.data();
@@ -407,24 +423,47 @@ function CompactDailyCheckIn() {
           throw new Error("今日已領取");
         }
         transaction.update(userRef, { 
-          bonusPoints: increment(loginMission.rewardPoints),
+          bonusPoints: increment(rewardPoints),
           lastCheckInDate: currentToday
         });
-        if (!existingProgress.exists()) transaction.set(progressRef, { progress: 1, lastCompleted: currentToday, userId: user.uid });
-        else transaction.update(progressRef, { progress: increment(1), lastCompleted: currentToday });
+        if (!existingProgress.exists()) {
+          transaction.set(progressRef, { progress: 1, lastCompleted: currentToday, userId: user.uid, updatedAt: new Date().toISOString() });
+        } else {
+          transaction.update(progressRef, { progress: increment(1), lastCompleted: currentToday, updatedAt: new Date().toISOString() });
+        }
       });
-      toast({ title: '簽到成功！' });
+      toast({ 
+        title: '🎉 簽到成功！', 
+        description: `恭喜獲得 +${rewardPoints} 紅利 P+ 點數！${bonusMultiplier > 1 ? `（含 ${bonusMultiplier}X 活動加倍）` : ''}` 
+      });
       if(forceRefetch) forceRefetch();
-    } catch (e: any) { toast({ variant: 'destructive', title: '簽到失敗', description: e.message }); } finally { setClaimingId(null); }
-  }, [user, firestore, toast, forceRefetch, loginMission]);
+    } catch (e: any) { 
+      toast({ variant: 'destructive', title: '簽到失敗', description: e.message || '請稍後再試' }); 
+    } finally { 
+      setClaimingId(null); 
+    }
+  }, [user, firestore, toast, forceRefetch, missionId, rewardPoints, bonusMultiplier]);
 
-  if (!loginMission) return null;
   return (
-    <Button variant="outline" className={cn("h-7 sm:h-8 w-full px-2 rounded-lg border-primary/30 transition-all text-xs", hasClaimedToday ? "bg-white/5 opacity-60 text-white/40" : "bg-primary/10 hover:bg-primary/20 shadow-[0_0_10px_rgba(6,182,212,0.1)] text-white")} disabled={hasClaimedToday || !loginMission.isActive || !!claimingId} onClick={handleCheckIn}>
+    <Button 
+      variant="outline" 
+      className={cn("h-7 sm:h-8 w-full px-2 rounded-lg border-primary/30 transition-all text-xs", hasClaimedToday ? "bg-white/5 opacity-60 text-white/40" : "bg-primary/10 hover:bg-primary/20 shadow-[0_0_10px_rgba(6,182,212,0.1)] text-white")} 
+      disabled={hasClaimedToday || (loginMission && !loginMission.isActive) || !!claimingId} 
+      onClick={handleCheckIn}
+    >
         <div className="flex items-center justify-center gap-1.5 w-full">
-            {claimingId === loginMission.id ? <Loader2 className="animate-spin h-3.5 w-3.5 text-primary" /> : hasClaimedToday ? <CheckCircle2 className="h-3.5 w-3.5 text-green-500" /> : <CalendarCheck className="h-3.5 w-3.5 text-primary" />}
+            {claimingId ? <Loader2 className="animate-spin h-3.5 w-3.5 text-primary" /> : hasClaimedToday ? <CheckCircle2 className="h-3.5 w-3.5 text-green-500" /> : <CalendarCheck className="h-3.5 w-3.5 text-primary" />}
             <span className="text-[10px] font-black uppercase tracking-wider">{hasClaimedToday ? '今日已領取' : '每日簽到'}</span>
-            {!hasClaimedToday && <span className="text-[10px] text-accent font-black font-code">+{loginMission.rewardPoints}</span>}
+            {!hasClaimedToday && (
+              <span className="text-[10px] text-accent font-black font-code flex items-center gap-1">
+                +{rewardPoints}
+                {bonusMultiplier > 1 && (
+                  <span className="text-[9px] text-amber-300 font-bold bg-amber-500/20 px-1 rounded border border-amber-500/30">
+                    {bonusMultiplier}X
+                  </span>
+                )}
+              </span>
+            )}
         </div>
     </Button>
   );

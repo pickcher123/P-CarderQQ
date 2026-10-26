@@ -48,7 +48,7 @@ export function RandomPlayerCard({
       />
 
       {/* Grid line texture overlay */}
-      <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,#fff_2px,#fff_4px)] opacity-5 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-tr from-white/5 via-transparent to-white/5 opacity-40 pointer-events-none" />
 
       {/* Card Header: Category & PPlus logo */}
       <div className="relative z-10 flex items-center justify-between w-full">

@@ -77,10 +77,10 @@ export function getBonusMultiplier(
     return 1;
   }
 
-  // 確保紅利加倍活動期間，倍率至少為 2X 雙倍（消除歷史 1.5X 誤差）
+  // 取得有效加倍倍率
   const rawMult = Number(effectiveConfig.multiplier);
-  if (isNaN(rawMult) || rawMult < 2) {
-    return 2;
+  if (isNaN(rawMult) || rawMult <= 0) {
+    return 1;
   }
 
   return rawMult;

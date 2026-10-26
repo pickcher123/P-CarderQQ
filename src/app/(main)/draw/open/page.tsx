@@ -428,7 +428,27 @@ export default function OpenPackPage() {
                 }
 
                 const actualDrawCount = useTicketMode ? 1 : count;
-                const cost = (useEventTicketMode || useTicketMode) ? 0 : (actualDrawCount === 3 && cardPool.price3Draws ? cardPool.price3Draws : (cardPool.price || 0) * actualDrawCount);
+
+                // 檢查卡池剩餘庫存包數，防止超抽
+                if (poolData.remainingPacks !== undefined && poolData.remainingPacks !== null) {
+                    if (poolData.remainingPacks <= 0) {
+                        throw new Error('此卡池已全數售罄！');
+                    }
+                    if (poolData.remainingPacks < actualDrawCount) {
+                        throw new Error(`卡池目前僅剩餘 ${poolData.remainingPacks} 包，無法抽取 ${actualDrawCount} 包！`);
+                    }
+                }
+
+                const basePrice = poolData.price || cardPool.price || 0;
+                const cost = (useEventTicketMode || useTicketMode) 
+                    ? 0 
+                    : (actualDrawCount === 1 
+                        ? basePrice 
+                        : actualDrawCount === 3 
+                            ? (poolData.price3Draws || cardPool.price3Draws || basePrice * 3) 
+                            : actualDrawCount === 10 
+                                ? (poolData.price10Draws || cardPool.price10Draws || basePrice * 10) 
+                                : basePrice * actualDrawCount);
                 const currencyField = cardPool.currency === 'p-point' ? 'bonusPoints' : 'points';
                 const balance = (userData as any)[currencyField] || 0;
                 const tickets = (userData as any).freeDrawTickets || 0;
@@ -539,7 +559,7 @@ export default function OpenPackPage() {
 
                 // 6. 紀錄交易日誌
                 const transactionRef = doc(collection(firestore, 'transactions'));
-                transaction.set(transactionRef, {
+                transaction.set(transactionRef, cleanFirestoreData({
                     userId: user.uid,
                     transactionType: 'Draw',
                     currency: useEventTicketMode ? 'event_ticket' : (useTicketMode ? 'free_ticket' : (cardPool.currency || 'diamond')),
@@ -551,11 +571,11 @@ export default function OpenPackPage() {
                             : `在卡池 [${cardPool.name}] 進行 ${count} 連抽`),
                     transactionDate: serverTimestamp(),
                     section: 'draw'
-                });
+                }));
 
                 // 紀錄抽卡日誌
                 const logRef = doc(collection(firestore, 'drawnCardLogs'));
-                transaction.set(logRef, {
+                transaction.set(logRef, cleanFirestoreData({
                     userId: user.uid,
                     poolId: poolId,
                     agentId: cardPool.agentId || null,
@@ -565,18 +585,18 @@ export default function OpenPackPage() {
                     isTicket: useTicketMode || useEventTicketMode,
                     isEventTicket: useEventTicketMode,
                     eventTicketName: useEventTicketMode ? (cardPool.eventTicketName || '活動專屬抽卡券') : null
-                });
+                }));
                 
                 // 7. 更新統計
                 const todayStr = format(new Date(), 'yyyy-MM-dd');
                 const poolStatsData = poolStatsSnap.exists() ? poolStatsSnap.data() : { count: 0, totalCount: 0, lastDrawDate: '' };
                 const newCount = (poolStatsData.lastDrawDate === todayStr ? (poolStatsData.count || 0) : 0) + drawn.length;
                 const newTotalCount = (poolStatsData.totalCount || poolStatsData.count || 0) + drawn.length;
-                transaction.set(poolStatsRef, {
+                transaction.set(poolStatsRef, cleanFirestoreData({
                   count: newCount,
                   totalCount: newTotalCount,
                   lastDrawDate: todayStr
-                }, { merge: true });
+                }), { merge: true });
 
                 return { drawn };
             });
@@ -1180,13 +1200,17 @@ export default function OpenPackPage() {
                 }}
             />
 
-            {/* Full Screen Card Zoom Dialog */}
+            {/* Full Screen Card Zoom Dialog (典藏級卡磚預覽) */}
             <Dialog open={!!previewCard} onOpenChange={(open) => !open && setPreviewCard(null)}>
-                <DialogContent className="max-w-[min(92vw,400px)] bg-slate-950/95 backdrop-blur-2xl border border-white/20 rounded-3xl p-4 flex flex-col items-center justify-center gap-3 [&>button:last-child]:hidden z-[200]">
+                <DialogContent className="max-w-[min(92vw,360px)] bg-slate-950/95 backdrop-blur-2xl border border-white/10 rounded-[28px] p-5 flex flex-col items-center justify-center gap-3.5 [&>button:last-child]:hidden z-[200] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] overflow-hidden">
                     <DialogTitle><VisuallyHiddenPrimitive.Root>卡片預覽</VisuallyHiddenPrimitive.Root></DialogTitle>
                     {previewCard && (
-                        <div className="w-full flex flex-col items-center gap-2">
-                            <div className="w-full max-w-[260px] aspect-[2.5/4]">
+                        <div className="w-full flex flex-col items-center gap-3">
+                            {/* 卡片標題 */}
+                            <div className="text-center w-full px-2">
+                                <p className="text-xs font-black text-white leading-snug line-clamp-2">{previewCard.name}</p>
+                            </div>
+                            <div className="w-full max-w-[230px] aspect-[2.5/3.5] drop-shadow-[0_15px_30px_rgba(0,0,0,0.85)]">
                                 {previewCard.isPoints || previewCard.type === 'points' || previewCard.name?.includes('隨機球員') ? (
                                     <RandomPlayerCard 
                                         rarity={previewCard.rarity} 
@@ -1198,10 +1222,15 @@ export default function OpenPackPage() {
                                     <CardItem name={previewCard.name} imageUrl={previewCard.imageUrl} backImageUrl={previewCard.backImageUrl} imageHint={previewCard.name} rarity={previewCard.rarity} isFlippable={true}/>
                                 )}
                             </div>
-                            {!previewCard.isPoints && <p className="text-[10px] text-primary font-bold uppercase animate-pulse">點擊翻轉卡片</p>}
+                            {!previewCard.isPoints && (
+                                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[11px] font-semibold text-slate-300">
+                                    <Sparkles className="w-3 h-3 text-amber-400 animate-pulse" />
+                                    <span>點擊卡片可 3D 翻面觀看背卡</span>
+                                </div>
+                            )}
                         </div>
                     )}
-                    <Button variant="ghost" size="icon" className="rounded-full bg-white/10 h-9 w-9 text-white hover:bg-white/20" onClick={() => setPreviewCard(null)}>
+                    <Button variant="ghost" size="icon" className="rounded-full bg-white/5 hover:bg-white/15 border border-white/10 h-9 w-9 text-slate-300 hover:text-white transition-all" onClick={() => setPreviewCard(null)}>
                         <X className="h-4 w-4" />
                     </Button>
                 </DialogContent>

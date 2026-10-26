@@ -198,6 +198,11 @@ export default function RewardsAdminPage() {
                             <PPlusIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" />
                             <Input type="number" value={checkInPoints} onChange={e => setCheckInPoints(Number(e.target.value))} className="h-12 pl-10 border-slate-200 font-bold bg-white text-slate-900" />
                         </div>
+                        {bonusEvent?.isActive && (bonusEvent?.targets?.checkIn ?? true) && (
+                            <p className="text-xs text-amber-600 font-medium bg-amber-50 border border-amber-200/60 rounded-lg p-2.5">
+                                🔥 <strong>紅利加倍活動生效中</strong>：前台實際發放 <span className="font-bold font-mono text-amber-700">{Math.round(checkInPoints * (bonusEvent.multiplier || 1))}</span> 點（含 {bonusEvent.multiplier || 1}X 加倍）
+                            </p>
+                        )}
                     </div>
                     <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100"><Label className="font-bold">功能啟用</Label><Switch checked={isCheckInActive} onCheckedChange={setIsCheckInActive} /></div>
                     <Button onClick={handleSaveCheckIn} className="w-full h-12 rounded-xl bg-slate-900 text-white font-bold" disabled={isProcessing}>{isProcessing ? <Loader2 className="animate-spin h-4 w-4"/> : '儲存設定'}</Button>
@@ -225,18 +230,19 @@ export default function RewardsAdminPage() {
                 <CardContent className="space-y-6">
                     {/* 活動加倍倍率 */}
                     <div className="space-y-2">
-                        <Label className="text-xs font-bold text-slate-500">加倍倍率 (例如：2 代表 2X 雙倍，3 代表 3X)</Label>
+                        <Label className="text-xs font-bold text-slate-500">加倍倍率 (例如：1.5 代表 1.5X，2 代表 2X 雙倍，3 代表 3X)</Label>
                         <div className="flex items-center gap-3">
                             <Input 
                                 type="number" 
                                 min={1} 
                                 max={10} 
+                                step="0.1"
                                 value={bonusEvent.multiplier} 
                                 onChange={e => setBonusEvent(prev => ({ ...prev, multiplier: Math.max(1, Number(e.target.value)) }))} 
                                 className="h-12 w-32 border-slate-200 font-bold bg-white text-slate-900 text-center text-lg" 
                             />
-                            <div className="flex items-center gap-1.5">
-                                {[2, 3, 5].map(m => (
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                                {[1.5, 2, 3, 5].map(m => (
                                     <Button
                                         key={m}
                                         type="button"

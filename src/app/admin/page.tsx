@@ -28,7 +28,9 @@ import {
   Layers,
   ShoppingBag,
   Palette,
-  Home
+  Home,
+  Wrench,
+  ShieldAlert
 } from 'lucide-react';
 import { useRequest, useFirestore, useMemoFirebase, useDoc, useUser } from "@/firebase";
 import { collection, doc, updateDoc, query, where, getDocs, writeBatch, setDoc } from "firebase/firestore";
@@ -238,11 +240,76 @@ export default function AdminDashboardPage() {
   const systemConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'systemConfig', 'main') : null, [firestore]);
   const { data: systemConfig, forceRefetch } = useDoc<SystemConfig>(systemConfigRef);
   const [announcement, setAnnouncement] = useState('');
-  const [isSavingAnnouncement, setIsSavingAnnouncement] = useState(false);
+  // 🚧 全站維護模式狀態
+  const [maintenanceEnabled, setMaintenanceEnabled] = useState(false);
+  const [maintenanceTitle, setMaintenanceTitle] = useState('');
+  const [maintenanceMessage, setMaintenanceMessage] = useState('');
+  const [maintenanceEndTime, setMaintenanceEndTime] = useState('');
+  const [maintenanceContactUrl, setMaintenanceContactUrl] = useState('');
+  const [isSavingMaintenance, setIsSavingMaintenance] = useState(false);
   
   useEffect(() => {
     if (systemConfig?.announcement) setAnnouncement(systemConfig.announcement);
+    if (systemConfig?.maintenance) {
+      setMaintenanceEnabled(Boolean(systemConfig.maintenance.enabled));
+      setMaintenanceTitle(systemConfig.maintenance.title || '');
+      setMaintenanceMessage(systemConfig.maintenance.message || '');
+      setMaintenanceEndTime(systemConfig.maintenance.estimatedEndTime || '');
+      setMaintenanceContactUrl(systemConfig.maintenance.contactUrl || '');
+    }
   }, [systemConfig]);
+
+  const handleToggleMaintenance = async (enabled: boolean) => {
+    if (!systemConfigRef) return;
+    try {
+      await setDoc(systemConfigRef, {
+        maintenance: {
+          enabled,
+          title: maintenanceTitle.trim() || '系統例行維護升級中',
+          message: maintenanceMessage.trim() || '為維護最佳抽卡機台連線品質與系統安全，平台目前正在進行例行升級與維護作業。維護期間暫時關閉前台各項服務，預計很快恢復，造成不便敬請見諒！',
+          estimatedEndTime: maintenanceEndTime.trim(),
+          contactUrl: maintenanceContactUrl.trim(),
+          lastUpdated: new Date().toISOString(),
+          updatedBy: currentUser?.email || 'admin',
+        }
+      }, { merge: true });
+      setMaintenanceEnabled(enabled);
+      toast({
+        title: enabled ? '🚧 全站維護模式已開啟' : '✅ 全站維護模式已解除',
+        description: enabled ? '前台訪客目前已全面被攔截，僅會看到維護中頁面。' : '前台已重新開放正常訪問！',
+      });
+      if (forceRefetch) forceRefetch();
+    } catch (error) {
+      toast({ variant: 'destructive', title: '維護狀態更新失敗' });
+    }
+  };
+
+  const handleSaveMaintenanceSettings = async () => {
+    if (!systemConfigRef) return;
+    setIsSavingMaintenance(true);
+    try {
+      await setDoc(systemConfigRef, {
+        maintenance: {
+          enabled: maintenanceEnabled,
+          title: maintenanceTitle.trim() || '系統例行維護升級中',
+          message: maintenanceMessage.trim() || '為維護最佳抽卡機台連線品質與系統安全，平台目前正在進行例行升級與維護作業。維護期間暫時關閉前台各項服務，預計很快恢復，造成不便敬請見諒！',
+          estimatedEndTime: maintenanceEndTime.trim(),
+          contactUrl: maintenanceContactUrl.trim(),
+          lastUpdated: new Date().toISOString(),
+          updatedBy: currentUser?.email || 'admin',
+        }
+      }, { merge: true });
+      toast({
+        title: '維護模式設定已儲存',
+        description: maintenanceEnabled ? '目前維護中，前台訪客已即時同步看見最新維護公告。' : '設定已保存，維護模式目前為關閉狀態。',
+      });
+      if (forceRefetch) forceRefetch();
+    } catch (error) {
+      toast({ variant: 'destructive', title: '儲存失敗' });
+    } finally {
+      setIsSavingMaintenance(false);
+    }
+  };
 
   const isSuperAdmin = currentUser?.email === SUPER_ADMIN_EMAIL;
 
@@ -321,6 +388,38 @@ export default function AdminDashboardPage() {
           </Button>
         </div>
       </div>
+
+      {/* 🚧 Maintenance Warning Banner (當維護中開啟時置頂高亮警示) */}
+      {systemConfig?.maintenance?.enabled && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl bg-amber-500/15 border-2 border-amber-500/80 text-amber-950 text-xs shadow-md gap-3 animate-pulse">
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-lg bg-amber-500 text-slate-950 flex items-center justify-center shrink-0 shadow-sm">
+              <ShieldAlert className="h-5 w-5 fill-slate-950 text-amber-400" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-black text-amber-950 text-sm">【全站維護中】目前前台已全面對外封鎖</span>
+                <span className="bg-amber-500 text-slate-950 font-black text-[10px] px-2 py-0.5 rounded-full">
+                  一般訪客僅能看見維護畫面
+                </span>
+              </div>
+              <p className="text-amber-900 text-xs mt-0.5 font-medium">
+                標題：「{systemConfig.maintenance.title || '系統例行維護升級中'}」
+                {systemConfig.maintenance.estimatedEndTime && ` · 預計恢復時間：${systemConfig.maintenance.estimatedEndTime}`}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              size="sm"
+              onClick={() => handleToggleMaintenance(false)}
+              className="bg-amber-600 hover:bg-amber-700 text-white font-black text-xs h-8 px-4 rounded-lg shadow-sm cursor-pointer"
+            >
+              一鍵解除維護，開放前台訪問
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Action Notice (Pending Shipping Orders) */}
       {pendingCount > 0 && (
@@ -464,9 +563,22 @@ export default function AdminDashboardPage() {
 
       {/* Main Tabbed Management Center */}
       <Tabs defaultValue="modules" className="space-y-4">
-        <TabsList className="bg-slate-100/90 p-1 rounded-lg border border-slate-200/80">
+        <TabsList className="bg-slate-100/90 p-1 rounded-lg border border-slate-200/80 flex-wrap">
           <TabsTrigger value="modules" className="rounded-md text-xs font-semibold data-[state=active]:bg-white data-[state=active]:shadow-xs px-3.5 py-1.5">
             功能模組導覽
+          </TabsTrigger>
+          <TabsTrigger 
+            value="maintenance" 
+            className={cn(
+              "rounded-md text-xs font-bold data-[state=active]:bg-white data-[state=active]:shadow-xs px-3.5 py-1.5 flex items-center gap-1.5",
+              maintenanceEnabled ? "text-amber-700 bg-amber-50/80 data-[state=active]:text-amber-800" : "text-slate-700"
+            )}
+          >
+            <Wrench className="w-3.5 h-3.5 text-amber-600" />
+            <span>全站維護模式</span>
+            {maintenanceEnabled && (
+              <span className="h-2 w-2 rounded-full bg-amber-500 animate-ping ml-0.5" />
+            )}
           </TabsTrigger>
           <TabsTrigger value="flags" className="rounded-md text-xs font-semibold data-[state=active]:bg-white data-[state=active]:shadow-xs px-3.5 py-1.5">
             前台模組開關
@@ -478,6 +590,187 @@ export default function AdminDashboardPage() {
             系統資訊與安全
           </TabsTrigger>
         </TabsList>
+
+        {/* Tab 0: Maintenance Mode (全站維護模式專屬管理) */}
+        <TabsContent value="maintenance" className="space-y-4">
+          <Card className="border-amber-200/90 shadow-xs bg-white rounded-xl overflow-hidden">
+            <CardHeader className="p-5 pb-3 border-b border-amber-100 bg-amber-50/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <CardTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <Wrench className="h-5 w-5 text-amber-600" />
+                  <span>全站網頁維護中模式 (Maintenance Mode)</span>
+                </CardTitle>
+                <CardDescription className="text-xs text-slate-500 mt-0.5">
+                  開啟後，所有外部訪客將無法查看前台任何網頁內容與卡池，只會看到全螢幕「正在維護中」畫面。
+                </CardDescription>
+              </div>
+
+              {/* 即時開關狀態指示 */}
+              <div className="flex items-center gap-3 bg-white p-2 rounded-xl border border-amber-200 shadow-2xs shrink-0">
+                <div className="flex flex-col text-right">
+                  <span className="text-[11px] font-bold text-slate-700">維護狀態</span>
+                  <span className={cn(
+                    "text-[10px] font-black",
+                    maintenanceEnabled ? "text-amber-600" : "text-emerald-600"
+                  )}>
+                    {maintenanceEnabled ? "● 維護中（對外封鎖）" : "● 正常對外開放"}
+                  </span>
+                </div>
+                <Switch 
+                  checked={maintenanceEnabled}
+                  onCheckedChange={handleToggleMaintenance}
+                  className="data-[state=checked]:bg-amber-500"
+                />
+              </div>
+            </CardHeader>
+
+            <CardContent className="p-5 space-y-5">
+              {/* 狀態說明橫幅 */}
+              <div className={cn(
+                "p-4 rounded-xl border text-xs flex items-start gap-3",
+                maintenanceEnabled 
+                  ? "bg-amber-50/80 border-amber-200 text-amber-900" 
+                  : "bg-slate-50 border-slate-200 text-slate-700"
+              )}>
+                <ShieldAlert className={cn(
+                  "h-5 w-5 shrink-0 mt-0.5",
+                  maintenanceEnabled ? "text-amber-600" : "text-slate-400"
+                )} />
+                <div className="space-y-1">
+                  <p className="font-bold">
+                    {maintenanceEnabled ? "⚠️ 警告：全站維護中模式目前處於【開啟】狀態" : "ℹ️ 全站維護模式目前處於【關閉】狀態"}
+                  </p>
+                  <p className="text-[11px] text-slate-500 leading-relaxed">
+                    {maintenanceEnabled 
+                      ? "所有造訪網站首頁、抽卡池、商城、會員中心等頁面的外部訪客均會被自動攔截，僅能看到下方設定的維護公告畫面與客服按鈕。管理員登入後可保有前台預覽權限。"
+                      : "外部訪客目前可正常自由造訪網站全部功能。若您預計進行重大卡池更新或系統備份，可隨時開啟上方開關阻絕外部造訪。"}
+                  </p>
+                </div>
+              </div>
+
+              {/* 維護公告表單設定 */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-slate-700">維護公告主標題</Label>
+                  <Input 
+                    value={maintenanceTitle}
+                    onChange={(e) => setMaintenanceTitle(e.target.value)}
+                    placeholder="例：系統例行維護升級中"
+                    className="text-xs bg-slate-50 border-slate-200"
+                  />
+                  <p className="text-[10px] text-slate-400">訪客進入畫面後最醒目的一級標題</p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-slate-700">預計恢復時間（選填）</Label>
+                  <Input 
+                    value={maintenanceEndTime}
+                    onChange={(e) => setMaintenanceEndTime(e.target.value)}
+                    placeholder="例：今日 18:00 或 2026-10-21 20:00"
+                    className="text-xs bg-slate-50 border-slate-200"
+                  />
+                  <p className="text-[10px] text-slate-400">若填寫將會在維護畫面上顯示時鐘與預計恢復提示</p>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-xs text-slate-500">
+                  <Label className="text-xs font-bold text-slate-700">詳細維護說明文案</Label>
+                  <span className="text-[11px] text-slate-400">{maintenanceMessage.length} 字元</span>
+                </div>
+                <textarea 
+                  className="w-full min-h-[90px] p-3 rounded-lg border border-slate-200 font-normal text-xs focus:ring-1 focus:ring-amber-400 focus:border-amber-400 outline-none transition-colors resize-none placeholder:text-slate-400 bg-slate-50"
+                  value={maintenanceMessage}
+                  onChange={(e) => setMaintenanceMessage(e.target.value)}
+                  placeholder="請輸入給訪客看的維護公告說明..."
+                />
+              </div>
+
+              {/* 常用範本快捷填入 */}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[11px] text-slate-400 font-medium">常用文案範本快捷套用：</span>
+                {[
+                  {
+                    label: '例行升級',
+                    title: '系統例行維護升級中',
+                    msg: '為維護最佳抽卡機台連線品質與系統安全，平台目前正在進行例行升級與維護作業。維護期間暫時關閉前台各項服務，預計很快恢復，造成不便敬請見諒！'
+                  },
+                  {
+                    label: '緊急修復',
+                    title: '伺服器緊急維護中',
+                    msg: '工程團隊目前正進行臨時性線路與資料庫效能優化，維護期間全站暫時停止訪問，預計 30 分鐘內恢復服務，感謝您的耐心等候！'
+                  },
+                  {
+                    label: '新卡池改版',
+                    title: '新卡池與全新活動籌備中',
+                    msg: '全新特典卡池與全新福利機制即將震撼上架！目前正進行機台獎品上架與驗證測試，敬請鎖定官方社群，即刻見證最新發布！'
+                  },
+                ].map((tpl) => (
+                  <button
+                    key={tpl.label}
+                    type="button"
+                    onClick={() => {
+                      setMaintenanceTitle(tpl.title);
+                      setMaintenanceMessage(tpl.msg);
+                    }}
+                    className="text-[11px] text-slate-600 bg-slate-100 hover:bg-amber-100 hover:text-amber-800 px-2.5 py-1 rounded-md transition-colors border border-slate-200"
+                  >
+                    {tpl.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-slate-700">維護期間客服聯絡連結（選填）</Label>
+                <Input 
+                  value={maintenanceContactUrl}
+                  onChange={(e) => setMaintenanceContactUrl(e.target.value)}
+                  placeholder="例：https://line.me/ti/p/@your_line 或官方社群"
+                  className="text-xs bg-slate-50 border-slate-200"
+                />
+                <p className="text-[10px] text-slate-400">訪客在維護頁面點擊「官方客服諮詢」時跳轉的網址</p>
+              </div>
+
+              {/* 訪客維護中畫面即時預覽 */}
+              <div className="p-4 rounded-xl bg-slate-950 text-white border border-slate-800 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                    <Sparkles className="w-3 h-3" /> 前台訪客所見畫面即時預覽
+                  </span>
+                  <span className="text-[10px] text-slate-400">全螢幕黑金深色風格</span>
+                </div>
+                <div className="p-4 rounded-lg bg-[#0d121f] border border-amber-500/30 text-center space-y-2">
+                  <div className="h-8 w-8 mx-auto rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center">
+                    <Wrench className="w-4 h-4 animate-spin" />
+                  </div>
+                  <h4 className="font-bold text-sm text-white">
+                    {maintenanceTitle || '系統例行維護升級中'}
+                  </h4>
+                  <p className="text-xs text-slate-300 max-w-md mx-auto line-clamp-2">
+                    {maintenanceMessage || '為維護最佳連線品質與系統安全，平台目前正在進行例行升級作業...'}
+                  </p>
+                  {maintenanceEndTime && (
+                    <span className="inline-block px-2.5 py-0.5 rounded bg-slate-900 border border-amber-500/30 text-[10px] text-amber-300 font-mono">
+                      預計恢復時間：{maintenanceEndTime}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* 儲存按鈕 */}
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                <Button 
+                  disabled={isSavingMaintenance}
+                  onClick={handleSaveMaintenanceSettings}
+                  className="bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg text-xs h-9 px-5 shadow-sm"
+                >
+                  {isSavingMaintenance ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : null}
+                  儲存並發布維護設定
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         {/* Tab 1: Module Jump Grid */}
         <TabsContent value="modules" className="space-y-6">
@@ -518,7 +811,42 @@ export default function AdminDashboardPage() {
         </TabsContent>
 
         {/* Tab 2: Feature Flags */}
-        <TabsContent value="flags">
+        <TabsContent value="flags" className="space-y-4">
+          {/* 置頂全站維護模式快捷條 */}
+          <div className={cn(
+            "p-4 rounded-xl border flex items-center justify-between gap-4 transition-colors shadow-2xs",
+            maintenanceEnabled ? "bg-amber-50 border-amber-300 text-amber-950" : "bg-white border-slate-200"
+          )}>
+            <div className="flex items-center gap-3">
+              <div className={cn(
+                "h-9 w-9 rounded-lg flex items-center justify-center shrink-0 shadow-2xs",
+                maintenanceEnabled ? "bg-amber-500 text-slate-950 font-bold" : "bg-slate-100 text-slate-600"
+              )}>
+                <Wrench className="h-5 w-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-xs font-black text-slate-900">【全站最高層級】網頁正在維護中模式</h3>
+                  <span className={cn(
+                    "text-[10px] px-2 py-0.5 rounded-full font-black",
+                    maintenanceEnabled ? "bg-amber-500 text-slate-950 animate-pulse" : "bg-slate-100 text-slate-500"
+                  )}>
+                    {maintenanceEnabled ? "維護中 (全站對外封鎖)" : "正常營運中"}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  開啟後，外部訪客造訪任何網址均只會看到維護中頁面，無法瀏覽卡池或使用功能。
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 shrink-0">
+              <Switch
+                checked={maintenanceEnabled}
+                onCheckedChange={handleToggleMaintenance}
+                className="data-[state=checked]:bg-amber-500"
+              />
+            </div>
+          </div>
           <Card className="border-slate-200/90 shadow-xs bg-white rounded-xl">
             <CardHeader className="p-5 pb-3 border-b border-slate-100 flex flex-row items-center justify-between">
               <div>

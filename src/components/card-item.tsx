@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { useState, useRef } from 'react';
 import { RotateCw, Gem, Search } from 'lucide-react';
 import { PLACEHOLDER_CARD_IMAGE } from '@/lib/placeholders';
+import { useAutoMatteImage } from '@/hooks/use-auto-matte-image';
 
 type Rarity = 'common' | 'rare' | 'legendary';
 
@@ -23,16 +24,16 @@ type CardItemProps = {
 
 const rarityStyles = {
   common: {
-    glow: 'border-white/10',
-    text: 'text-slate-300'
+    glow: 'border-white/20 shadow-[0_4px_25px_rgba(255,255,255,0.06)] ring-1 ring-white/10',
+    text: 'text-slate-200'
   },
   rare: {
-    glow: 'border-primary/40 shadow-[0_0_20px_rgba(6,182,212,0.2)]',
-    text: 'text-primary'
+    glow: 'border-sky-400/40 shadow-[0_8px_30px_rgba(56,189,248,0.25)] ring-1 ring-sky-400/25',
+    text: 'text-sky-300'
   },
   legendary: {
-    glow: 'border-accent/50 shadow-[0_0_25px_rgba(234,179,8,0.3)]',
-    text: 'text-accent'
+    glow: 'border-amber-400/50 shadow-[0_8px_35px_rgba(245,158,11,0.3)] ring-1 ring-amber-400/30',
+    text: 'text-amber-300'
   },
 };
 
@@ -58,8 +59,19 @@ export function CardItem({
   const isFrontValid = Boolean(imageUrl && typeof imageUrl === 'string' && imageUrl.trim() !== '');
   const isBackValid = Boolean(backImageUrl && typeof backImageUrl === 'string' && backImageUrl.trim() !== '');
 
-  const currentImageUrl = (imgError || !isFrontValid) ? fallbackUrl : imageUrl!.trim();
-  const currentBackImageUrl = (backImgError || !isBackValid) ? fallbackUrl : backImageUrl!.trim();
+  const mattedImageUrl = useAutoMatteImage(isFrontValid ? imageUrl : fallbackUrl, {
+    darkThreshold: 45,
+    trimInset: 2,
+    feather: true,
+  });
+  const mattedBackImageUrl = useAutoMatteImage(isBackValid ? backImageUrl : undefined, {
+    darkThreshold: 45,
+    trimInset: 2,
+    feather: true,
+  });
+
+  const currentImageUrl = (imgError || !isFrontValid) ? fallbackUrl : (mattedImageUrl || imageUrl!.trim());
+  const currentBackImageUrl = (backImgError || !isBackValid) ? fallbackUrl : (mattedBackImageUrl || backImageUrl!.trim());
 
   const handleCardClick = (e: React.MouseEvent) => {
     if (isFlippable) {
@@ -119,15 +131,19 @@ export function CardItem({
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
         >
-          <div className="absolute inset-0 flex items-center justify-center">
+          {/* 🌟 典藏級微透光卡面背景 (消除生硬灰底，保留純淨微光與邊框) */}
+          <div className="absolute inset-0 rounded-xl bg-slate-950/40 backdrop-blur-[2px] border border-white/10 shadow-[0_0_15px_rgba(255,255,255,0.05)] pointer-events-none" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_25%,rgba(245,158,11,0.1),transparent_70%)] pointer-events-none rounded-xl" />
+
+          <div className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-xl">
             <SafeImage
-                src={isFrontValid ? imageUrl : fallbackUrl}
+                src={currentImageUrl}
                 fallbackSrc={fallbackUrl}
                 alt={name || '卡片'}
                 fill
                 sizes="(max-width: 640px) 40vw, (max-width: 1024px) 25vw, 15vw"
                 className={cn(
-                    "object-cover rounded-xl transition-all duration-300",
+                    "object-contain p-1 rounded-xl transition-all duration-300 relative z-10 drop-shadow-[0_4px_12px_rgba(0,0,0,0.35)]",
                     (zoomPos && !isFlipped) ? "opacity-0" : "opacity-100"
                 )}
                 data-ai-hint={imageHint || name}
@@ -138,7 +154,7 @@ export function CardItem({
           {/* Magnifying Glass Icon (Hover only) */}
           {!isFlippable && (
               <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none">
-                 <div className="p-2 rounded-full bg-black/50 backdrop-blur-sm border border-white/20">
+                 <div className="p-2 rounded-full bg-slate-900/70 backdrop-blur-md border border-white/20 shadow-lg">
                      <Search className="w-5 h-5 text-white" />
                  </div>
               </div>
@@ -147,7 +163,7 @@ export function CardItem({
           {/* Magnifying Glass Interaction Overlay (Zoom, only if flipped/flippable mode) */}
           {zoomPos && isFlippable && !isFlipped && (
                 <div 
-                    className="absolute inset-0 z-10 cursor-zoom-in"
+                    className="absolute inset-0 z-20 cursor-zoom-in"
                     style={{
                         backgroundImage: `url(${currentImageUrl})`,
                         backgroundPosition: `${zoomPos.x}% ${zoomPos.y}%`,
@@ -155,27 +171,25 @@ export function CardItem({
                         backgroundRepeat: 'no-repeat'
                     }}
                 >
-                    <div className="absolute bottom-2 right-2 bg-black/60 backdrop-blur-md rounded-full p-1 border border-white/20">
-                        <Search className="w-3 h-3 text-white" />
+                    <div className="absolute bottom-2 right-2 bg-slate-900/80 backdrop-blur-md rounded-full p-1.5 border border-white/20 shadow-md">
+                        <Search className="w-3.5 h-3.5 text-white" />
                     </div>
                 </div>
             )}
           </div>
           
-          <div className="absolute inset-0 bg-gradient-to-t from-black/5 via-transparent to-transparent pointer-events-none" />
-          
-          {/* Digital Serial Number Badge (Removed) */}
+          <div className="absolute inset-0 bg-gradient-to-t from-white/5 via-transparent to-transparent pointer-events-none z-10" />
           
           {isFlippable && (
             <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
-                <div className="p-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/10">
+                <div className="p-1.5 rounded-full bg-slate-900/80 backdrop-blur-md border border-white/20 shadow-sm">
                     <RotateCw className="w-3 h-3 text-white animate-spin-slow" />
                 </div>
             </div>
           )}
 
-          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-1000 [transform:translateZ(1px)] pointer-events-none">
-             <div className="absolute inset-[-150%] rounded-full [background:radial-gradient(circle_at_var(--mouse-x)_var(--mouse-y),rgba(255,255,255,0.1),transparent_40%)]" 
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-1000 [transform:translateZ(1px)] pointer-events-none z-10">
+             <div className="absolute inset-[-150%] rounded-full [background:radial-gradient(circle_at_var(--mouse-x)_var(--mouse-y),rgba(255,255,255,0.12),transparent_40%)]" 
                 style={ { '--mouse-x': '0px', '--mouse-y': '0px' } as React.CSSProperties }
              />
           </div>
@@ -183,14 +197,14 @@ export function CardItem({
 
         {/* Card Back */}
         <div 
-          className="absolute w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] rounded-xl overflow-hidden border border-white/5 bg-slate-950 backdrop-blur-md"
+          className="absolute w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] rounded-xl overflow-hidden border border-white/15 bg-gradient-to-b from-slate-800 via-slate-900 to-slate-950 backdrop-blur-md"
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
         >
            {isBackValid ? (
              <div className="w-full h-full relative flex items-center justify-center">
                 <SafeImage
-                    src={backImageUrl}
+                    src={currentBackImageUrl}
                     fallbackSrc={fallbackUrl}
                     alt={`${name || '卡片'} back`}
                     fill
@@ -235,10 +249,7 @@ export function CardItem({
                     <p className="text-xs font-black text-white px-4 text-center line-clamp-2">{name}</p>
                     <div className="mt-4 text-[8px] text-muted-foreground uppercase tracking-[0.4em] font-code opacity-40">Verified Digital Asset</div>
                 </div>
-                <div className="absolute top-2 left-2 w-3 h-3 border-t border-l border-primary/20" />
-                <div className="absolute top-2 right-2 w-3 h-3 border-t border-r border-primary/20" />
-                <div className="absolute bottom-2 left-2 w-3 h-3 border-b border-l border-primary/20" />
-                <div className="absolute bottom-2 right-2 w-3 h-3 border-b border-r border-primary/20" />
+
              </div>
            )}
         </div>

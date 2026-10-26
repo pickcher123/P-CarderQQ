@@ -39,8 +39,10 @@ import {
   Compass,
   Home,
   ScanLine,
-  LogIn
+  LogIn,
+  Wrench
 } from 'lucide-react';
+import type { SystemConfig } from '@/types/system';
 import { usePathname } from 'next/navigation';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -208,7 +210,7 @@ function SidebarNav({
   );
 }
 
-function MobileHeader({ permissions, isSuperAdmin }: { permissions?: string[]; isSuperAdmin: boolean }) {
+function MobileHeader({ permissions, isSuperAdmin, isMaintenanceActive }: { permissions?: string[]; isSuperAdmin: boolean; isMaintenanceActive?: boolean }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const currentPage = sidebarNavItems.flatMap(s => s.items).find(item => 
@@ -262,13 +264,21 @@ function MobileHeader({ permissions, isSuperAdmin }: { permissions?: string[]; i
         </div>
       </div>
       
-      <Link 
-        href="/" 
-        className="text-xs font-semibold text-slate-700 hover:text-slate-900 flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition-colors border border-slate-200/80 shadow-2xs"
-      >
-        <Home className="h-3.5 w-3.5 text-slate-600" />
-        <span>返回前台</span>
-      </Link>
+      <div className="flex items-center gap-2">
+        {isMaintenanceActive && (
+          <span className="text-[10px] font-black text-amber-900 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full flex items-center gap-1">
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-ping" />
+            維護中
+          </span>
+        )}
+        <Link 
+          href="/" 
+          className="text-xs font-semibold text-slate-700 hover:text-slate-900 flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-lg transition-colors border border-slate-200/80 shadow-2xs"
+        >
+          <Home className="h-3.5 w-3.5 text-slate-600" />
+          <span>前台</span>
+        </Link>
+      </div>
     </header>
   );
 }
@@ -290,6 +300,10 @@ export default function AdminLayout({
   }, [firestore, user]);
 
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
+
+  const systemConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'systemConfig', 'main') : null, [firestore]);
+  const { data: systemConfig } = useDoc<SystemConfig>(systemConfigRef);
+  const isMaintenanceActive = Boolean(systemConfig?.maintenance?.enabled);
 
   const superAdmins = useMemo(() => ['pickcher123@gmail.com'], []);
   const isSuperAdmin = useMemo(() => user?.email && superAdmins.includes(user.email), [user, superAdmins]);
@@ -453,7 +467,11 @@ export default function AdminLayout({
 
       {/* Main Content Area */}
       <div className="flex flex-col flex-1 h-screen overflow-hidden">
-        <MobileHeader permissions={userProfile?.permissions} isSuperAdmin={isSuperAdmin}/>
+        <MobileHeader 
+          permissions={userProfile?.permissions} 
+          isSuperAdmin={isSuperAdmin}
+          isMaintenanceActive={isMaintenanceActive}
+        />
         
         {/* Desktop Header */}
         <header className="hidden md:flex h-12 items-center justify-between px-6 border-b border-slate-200 bg-white shrink-0">
@@ -474,6 +492,17 @@ export default function AdminLayout({
           </div>
 
           <div className="flex items-center gap-3 text-xs">
+            {isMaintenanceActive && (
+              <Link 
+                href="/admin"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-500/15 border border-amber-500/40 text-amber-800 text-[11px] font-black animate-pulse hover:bg-amber-500/25 transition-colors"
+                title="目前全站處於維護模式，外部訪客已被全面阻斷"
+              >
+                <Wrench className="h-3.5 w-3.5 text-amber-600 animate-spin" />
+                <span>🚧 全站維護模式運行中</span>
+              </Link>
+            )}
+
             <div className="flex items-center gap-1.5 text-slate-600 mr-1">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>

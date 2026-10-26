@@ -152,9 +152,9 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                           <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-cyan-300 animate-ping opacity-75 pointer-events-none" />
                         </div>
                         {isProfileLoading ? (
-                          <span className="font-numbers text-xs text-cyan-300/50 animate-pulse translate-y-[1.5px] sm:translate-y-[1px]">...</span>
+                          <span className="font-numbers text-xs text-cyan-300/50 animate-pulse leading-none">...</span>
                         ) : (
-                          <div className="flex items-center translate-y-[1.5px] sm:translate-y-[1px]">
+                          <div className="flex items-center justify-center leading-none">
                             <RefinedPoints 
                               value={userProfile?.points ?? 0}
                               currency="diamond"
@@ -164,7 +164,7 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                             />
                           </div>
                         )}
-                        <ChevronDown className="h-3 w-3 text-cyan-400/70 group-hover:text-cyan-300 group-hover:translate-y-0.5 transition-all duration-200 ml-0.5 shrink-0" />
+                        <ChevronDown className="h-3 w-3 text-cyan-400/70 group-hover:text-cyan-300 transition-colors duration-200 ml-0.5 shrink-0" />
                       </button>
                     </PopoverTrigger>
                     

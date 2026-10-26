@@ -83,13 +83,27 @@ export function FloatingLineButton({ systemConfig }: { systemConfig: SystemConfi
     }
   };
 
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
   if (!isLiveVisible && !isSupportVisible && !isCommunityVisible) return null;
 
   return (
     <div className={cn(
-      "fixed right-3.5 bottom-[calc(max(env(safe-area-inset-bottom),0px)+5.5rem)] md:right-7 md:bottom-8 z-40",
-      "flex flex-col gap-2.5 sm:gap-3 items-end pointer-events-auto"
+      "fixed right-2 sm:right-3.5 bottom-[calc(max(env(safe-area-inset-bottom),0px)+5.8rem)] md:right-7 md:bottom-8 z-40",
+      "flex flex-col gap-2 items-end pointer-events-auto transition-all duration-300"
     )}>
+      {/* 手機版快速收折/展開切換標籤 (防止遮擋卡池抽卡按鈕) */}
+      <button
+        type="button"
+        onClick={() => setIsCollapsed(!isCollapsed)}
+        className="md:hidden flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-950/80 border border-slate-700/80 text-[10px] text-slate-400 hover:text-cyan-300 hover:border-cyan-500/40 shadow-md backdrop-blur-md transition-all cursor-pointer mb-0.5"
+        title={isCollapsed ? "展開社群與客服" : "收折以防遮擋"}
+      >
+        <span className="text-[9px] font-bold">{isCollapsed ? "快捷客服 ◀" : "收折 ▶"}</span>
+      </button>
+
+      {!isCollapsed && (
+        <>
       {/* Live 直播跳球 */}
       {systemConfig?.isLiveEnabled && systemConfig.liveYoutubeUrl && isLiveVisible && (
         <div className="relative group/live">
@@ -213,6 +227,8 @@ export function FloatingLineButton({ systemConfig }: { systemConfig: SystemConfi
             </div>
           </Link>
         </div>
+      )}
+        </>
       )}
     </div>
   );

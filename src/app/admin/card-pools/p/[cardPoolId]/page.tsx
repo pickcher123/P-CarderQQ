@@ -36,7 +36,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
+import { cn, cleanFirestoreData } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -494,8 +494,8 @@ export default function CardPoolDetailPage() {
   const handleUpdatePoolDetails = async (field: keyof CardPool, value: any) => {
     if (!cardPoolRef) return;
     try {
-        const updateData: Partial<CardPool> = { [field]: value };
-        await updateDoc(cardPoolRef, updateData);
+        const updateData: Partial<CardPool> = { [field]: value === undefined ? null : value };
+        await updateDoc(cardPoolRef, cleanFirestoreData(updateData));
         toast({ title: '成功', description: `卡池設定已更新。` });
     } catch(e) {
         console.error(e);
@@ -513,11 +513,11 @@ export default function CardPoolDetailPage() {
       enablePickNumber: true,
       totalTicketsCount: countToUse,
     }));
-    await updateDoc(cardPoolRef, {
+    await updateDoc(cardPoolRef, cleanFirestoreData({
       kujiTickets: newTickets,
       enablePickNumber: true,
       totalTicketsCount: countToUse,
-    });
+    }));
     toast({
       title: '一番賞籤位產生成功！',
       description: `已成功隨機打散生成 ${newTickets.length} 張番號籤牌，玩家前台已可即時挑號抽卡。`,
@@ -526,15 +526,20 @@ export default function CardPoolDetailPage() {
 
   const handleResetKujiTickets = async () => {
     if (!cardPoolRef || !poolDetails.kujiTickets) return;
-    const resetTickets = poolDetails.kujiTickets.map(t => ({
-      ...t,
-      isDrawn: false,
-      drawnBy: null,
-      drawnByName: null,
-      drawnAt: null,
-    }));
+    const resetTickets = poolDetails.kujiTickets.map(t => {
+      const item: any = {
+        number: t.number,
+        isDrawn: false,
+        drawnBy: null,
+        drawnByName: null,
+        drawnAt: null,
+      };
+      if (t.cardId) item.cardId = t.cardId;
+      if (t.pointPrizeId) item.pointPrizeId = t.pointPrizeId;
+      return item;
+    });
     setPoolDetails(prev => ({ ...prev, kujiTickets: resetTickets }));
-    await updateDoc(cardPoolRef, { kujiTickets: resetTickets });
+    await updateDoc(cardPoolRef, cleanFirestoreData({ kujiTickets: resetTickets }));
     toast({
       title: '一番賞籤位已重置',
       description: '全數號碼已恢復為未開出狀態！',
@@ -626,12 +631,12 @@ export default function CardPoolDetailPage() {
                 addedCount += 1;
             });
 
-            transaction.update(cardPoolRef, {
+            transaction.update(cardPoolRef, cleanFirestoreData({
                 cards: existingCards,
                 cardRarities: existingRarities,
                 totalPacks: (pData.totalPacks || 0) + addedCount,
                 remainingPacks: (pData.remainingPacks || 0) + addedCount
-            });
+            }));
         });
 
         toast({ title: '成功', description: `${selectedCardsToAdd.length} 張卡片已加入卡池。`});
@@ -714,11 +719,11 @@ export default function CardPoolDetailPage() {
                 .sort((a, b) => (b.points || 0) - (a.points || 0));
             const newRemainingPacks = (currentPool.remainingPacks || 0) + prizeToAdd.quantity;
             
-            transaction.update(cardPoolRef, {
+            transaction.update(cardPoolRef, cleanFirestoreData({
                 pointPrizes: newPointPrizes,
                 totalPacks: (currentPool.totalPacks || 0) + prizeToAdd.quantity,
                 remainingPacks: newRemainingPacks
-            });
+            }));
         });
         toast({ title: '成功', description: '紅利 P 點獎項已新增。' });
         setNewPointPrize({ points: 100, quantity: 10, rarity: 'common' });
@@ -763,11 +768,11 @@ export default function CardPoolDetailPage() {
               const newPointPrizes = (currentPool.pointPrizes || []).filter(p => p && p.prizeId !== prizeId);
               const newRemainingPacks = Math.max(0, (currentPool.remainingPacks || 0) - prizeToRemove.quantity);
 
-              transaction.update(cardPoolRef, {
+              transaction.update(cardPoolRef, cleanFirestoreData({
                   pointPrizes: newPointPrizes,
                   totalPacks: Math.max(0, (currentPool.totalPacks || 0) - prizeToRemove.quantity),
                   remainingPacks: newRemainingPacks
-              });
+              }));
           });
           toast({ title: '成功', description: '獎項已移除。' });
       } catch (error) {

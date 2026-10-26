@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Loader2, Sparkles, Ticket, Flame } from 'lucide-react';
@@ -133,64 +134,116 @@ export function DrawButtons({
                 </Button>
             )}
 
-            <div className="flex gap-1.5 w-full">
-                <Button 
-                    className={cn(
-                        "flex-1 h-12 sm:h-14 text-xs sm:text-sm font-black border-2 transition-all shadow-md rounded-xl sm:rounded-2xl flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1 px-1 py-1 cursor-pointer",
-                        isTrialMode 
-                            ? "bg-purple-950 text-purple-100 border-purple-600 hover:bg-purple-900" 
-                            : isLoadingStats ? "bg-slate-900 text-slate-500 border-slate-800 opacity-60" : isPPoint ? "bg-amber-950/80 text-amber-100 border border-amber-800/80 hover:border-amber-600 hover:bg-amber-900/80" : "bg-slate-950 text-slate-200 border border-slate-800 hover:border-slate-600 hover:bg-slate-900"
-                    )}
-                    onClick={() => handleButtonClick(1)} 
-                    disabled={!isTrialMode && (isLoadingStats || (cardPool?.remainingPacks ?? 0) < 1)}
-                >
-                    <span className="text-[10px] sm:text-xs opacity-90 whitespace-nowrap">{isTrialMode ? '試 1抽' : '1抽'}</span>
-                    <span className="text-[11px] sm:text-xs flex items-center font-headline truncate font-bold">
-                        <CurrencyIcon />
-                        {isTrialMode ? '免費' : cardPool?.price}
-                    </span>
-                </Button>
-                <Button 
-                    className={cn(
-                        "flex-1 h-12 sm:h-14 text-xs sm:text-sm font-black rounded-xl sm:rounded-2xl transition-all shadow-md flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1 px-1 py-1 cursor-pointer",
-                        isTrialMode 
-                            ? "bg-purple-900 text-purple-100 border-purple-500 hover:bg-purple-800" 
-                            : (isLoadingStats || !canDraw3) ? "bg-slate-900 text-slate-500 border border-slate-800 opacity-60" : isPPoint ? "bg-amber-900 text-amber-100 border border-amber-700 hover:bg-amber-800" : "bg-indigo-950 text-indigo-100 border border-indigo-800 hover:bg-indigo-900 hover:border-indigo-700"
-                    )}
-                    onClick={() => handleButtonClick(3)} 
-                    disabled={!isTrialMode && (isLoadingStats || (cardPool?.remainingPacks ?? 0) < 3 || !canDraw3)}
-                >
-                    {(!isTrialMode && !canDraw3 && !isLoadingStats) ? <span className="text-[10px] text-rose-400">額度不足</span> : 
-                        <>
-                            <span className="text-[10px] sm:text-xs opacity-90 whitespace-nowrap">{isTrialMode ? '試 3連' : '3 連抽'}</span>
-                            <span className="text-[11px] sm:text-xs flex items-center font-headline truncate font-bold">
-                                <CurrencyIcon />
-                                {isTrialMode ? '免費' : cardPool?.price3Draws}
-                            </span>
-                        </>
-                    }
-                </Button>
-                <Button 
-                    className={cn(
-                        "flex-1 h-12 sm:h-14 text-xs sm:text-sm font-black rounded-xl sm:rounded-2xl transition-all shadow-md flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1 px-1 py-1 cursor-pointer",
-                        isTrialMode 
-                            ? "bg-fuchsia-950 text-fuchsia-100 border-fuchsia-500 hover:bg-fuchsia-900" 
-                            : (isLoadingStats || !canDraw10) ? "bg-slate-900 text-slate-500 border border-slate-800 opacity-60" : isPPoint ? "bg-yellow-950 text-yellow-100 border border-yellow-700 hover:bg-yellow-900" : "bg-amber-950 text-amber-100 border border-amber-800 hover:bg-amber-900 hover:border-amber-700"
-                    )}
-                    onClick={() => handleButtonClick(10)} 
-                    disabled={!isTrialMode && (isLoadingStats || (cardPool?.remainingPacks ?? 0) < 10 || !canDraw10)}
-                >
-                    {(!isTrialMode && !canDraw10 && !isLoadingStats) ? <span className="text-[10px] text-rose-400">額度不足</span> : 
-                        <>
-                            <span className="text-[10px] sm:text-xs opacity-90 whitespace-nowrap">{isTrialMode ? '試 10連' : '10 連抽'}</span>
-                            <span className="text-[11px] sm:text-xs flex items-center font-headline truncate font-bold">
-                                <CurrencyIcon />
-                                {isTrialMode ? '免費' : ((cardPool as any)?.price10Draws || (cardPool?.price || 0) * 10)}
-                            </span>
-                        </>
-                    }
-                </Button>
-            </div>
+            {/* 抽卡按鈕列 (根據卡池剩餘包數自動調整選項，避免剩餘不足10包時出現10抽) */}
+            {(() => {
+                const remainingPacks = cardPool?.remainingPacks ?? 0;
+                const basePrice = cardPool?.price || 0;
+                const p3 = cardPool?.price3Draws || basePrice * 3;
+                const p10 = (cardPool as any)?.price10Draws || basePrice * 10;
+
+                let configs: Array<{
+                    count: number;
+                    label: string;
+                    isAllIn: boolean;
+                    price: number;
+                    canDraw: boolean;
+                    isThird: boolean;
+                }> = [];
+
+                if (isTrialMode) {
+                    configs = [
+                        { count: 1, label: '試 1抽', isAllIn: false, price: 0, canDraw: true, isThird: false },
+                        { count: 3, label: '試 3連', isAllIn: false, price: 0, canDraw: true, isThird: false },
+                        { count: 10, label: '試 10連', isAllIn: false, price: 0, canDraw: true, isThird: true },
+                    ];
+                } else if (remainingPacks <= 1) {
+                    configs = [
+                        { count: 1, label: remainingPacks === 1 ? '1 抽 (最後1包)' : '1 抽', isAllIn: remainingPacks === 1, price: basePrice, canDraw: remainingPacks >= 1, isThird: false },
+                    ];
+                } else if (remainingPacks === 2) {
+                    configs = [
+                        { count: 1, label: '1 抽', isAllIn: false, price: basePrice, canDraw: remainingPacks >= 1, isThird: false },
+                        { count: 2, label: '2 連抽 (全包)', isAllIn: true, price: basePrice * 2, canDraw: remainingPacks >= 2, isThird: true },
+                    ];
+                } else if (remainingPacks === 3) {
+                    configs = [
+                        { count: 1, label: '1 抽', isAllIn: false, price: basePrice, canDraw: remainingPacks >= 1, isThird: false },
+                        { count: 3, label: '3 連抽 (全包)', isAllIn: true, price: p3, canDraw: remainingPacks >= 3 && canDraw3, isThird: true },
+                    ];
+                } else if (remainingPacks < 10) {
+                    // 例如：剩餘 5 包 => [1 抽, 3 連抽, 5 連抽 (全包)]
+                    configs = [
+                        { count: 1, label: '1 抽', isAllIn: false, price: basePrice, canDraw: remainingPacks >= 1, isThird: false },
+                        { count: 3, label: '3 連抽', isAllIn: false, price: p3, canDraw: remainingPacks >= 3 && canDraw3, isThird: false },
+                        { count: remainingPacks, label: `${remainingPacks} 連抽 (全包)`, isAllIn: true, price: basePrice * remainingPacks, canDraw: remainingPacks >= remainingPacks, isThird: true },
+                    ];
+                } else {
+                    // 剩餘 >= 10 包
+                    configs = [
+                        { count: 1, label: '1 抽', isAllIn: false, price: basePrice, canDraw: remainingPacks >= 1, isThird: false },
+                        { count: 3, label: '3 連抽', isAllIn: false, price: p3, canDraw: remainingPacks >= 3 && canDraw3, isThird: false },
+                        { count: 10, label: '10 連抽', isAllIn: false, price: p10, canDraw: remainingPacks >= 10 && canDraw10, isThird: true },
+                    ];
+                }
+
+                return (
+                    <div className="flex gap-1.5 w-full">
+                        {configs.map((cfg) => {
+                            const isDisabled = !isTrialMode && (isLoadingStats || !cfg.canDraw);
+                            return (
+                                <Button
+                                    key={cfg.count}
+                                    className={cn(
+                                        "flex-1 h-12 sm:h-14 text-xs sm:text-sm font-black border-2 transition-all shadow-md rounded-xl sm:rounded-2xl flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1 px-1 py-1 cursor-pointer",
+                                        isTrialMode
+                                            ? cfg.isThird
+                                                ? "bg-fuchsia-950 text-fuchsia-100 border-fuchsia-500 hover:bg-fuchsia-900"
+                                                : cfg.count === 3
+                                                    ? "bg-purple-900 text-purple-100 border-purple-500 hover:bg-purple-800"
+                                                    : "bg-purple-950 text-purple-100 border-purple-600 hover:bg-purple-900"
+                                            : isDisabled
+                                                ? "bg-slate-900 text-slate-500 border-slate-800 opacity-60"
+                                                : cfg.isAllIn
+                                                    ? "bg-gradient-to-r from-amber-950 via-rose-950 to-amber-950 text-amber-200 border-amber-500/80 hover:border-amber-400 hover:bg-amber-900 shadow-amber-500/20"
+                                                    : cfg.isThird
+                                                        ? isPPoint 
+                                                            ? "bg-yellow-950 text-yellow-100 border border-yellow-700 hover:bg-yellow-900" 
+                                                            : "bg-amber-950 text-amber-100 border border-amber-800 hover:bg-amber-900 hover:border-amber-700"
+                                                        : cfg.count === 3
+                                                            ? isPPoint 
+                                                                ? "bg-amber-900 text-amber-100 border border-amber-700 hover:bg-amber-800" 
+                                                                : "bg-indigo-950 text-indigo-100 border border-indigo-800 hover:bg-indigo-900 hover:border-indigo-700"
+                                                            : isPPoint 
+                                                                ? "bg-amber-950/80 text-amber-100 border border-amber-800/80 hover:border-amber-600 hover:bg-amber-900/80" 
+                                                                : "bg-slate-950 text-slate-200 border border-slate-800 hover:border-slate-600 hover:bg-slate-900"
+                                    )}
+                                    onClick={() => handleButtonClick(cfg.count)}
+                                    disabled={isDisabled}
+                                >
+                                    {(!isTrialMode && !cfg.canDraw && !isLoadingStats) ? (
+                                        <span className="text-[10px] text-rose-400">
+                                            {remainingPacks < cfg.count ? '剩餘不足' : '額度不足'}
+                                        </span>
+                                    ) : (
+                                        <>
+                                            <span className={cn(
+                                                "text-[10px] sm:text-xs opacity-90 whitespace-nowrap",
+                                                cfg.isAllIn && "text-amber-300 font-black animate-pulse"
+                                            )}>
+                                                {cfg.label}
+                                            </span>
+                                            <span className="text-[11px] sm:text-xs flex items-center font-headline truncate font-bold">
+                                                <CurrencyIcon />
+                                                {isTrialMode ? '免費' : cfg.price.toLocaleString()}
+                                            </span>
+                                        </>
+                                    )}
+                                </Button>
+                            );
+                        })}
+                    </div>
+                );
+            })()}
 
             {isTrialMode ? (
                 <Button 

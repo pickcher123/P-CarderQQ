@@ -44,7 +44,7 @@ export interface ScannedCardItem {
 export async function cropImageFromSource(
   imageElement: HTMLImageElement,
   cropBox: CropBox,
-  mimeType: string = 'image/jpeg',
+  mimeType: string = 'image/png',
   quality: number = 0.95
 ): Promise<{ blob: Blob; dataUrl: string; optimizedDataUrl: string }> {
   return new Promise((resolve, reject) => {
@@ -96,7 +96,76 @@ export async function cropImageFromSource(
       );
       ctx.restore();
 
-      // 另行生成輕量化、極高清晰度的儲存專用 Data URL（最大寬度 720px，避免超出文檔上限且無損視覺）
+      // 🌟 智慧外圍去黑底與消除黑邊處理 (防止拍照時黑色桌面或裁切邊縫導致黑邊)
+      try {
+        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imgData.data;
+        const w = canvas.width;
+        const h = canvas.height;
+        const total = w * h;
+        const isBg = new Uint8Array(total);
+        const visited = new Uint8Array(total);
+        const queue: number[] = [];
+
+        const isDark = (idx: number) => {
+          const a = data[idx + 3];
+          if (a < 15) return true;
+          const r = data[idx];
+          const g = data[idx + 1];
+          const b = data[idx + 2];
+          const bright = r * 0.299 + g * 0.587 + b * 0.114;
+          const maxDiff = Math.max(Math.abs(r - g), Math.abs(g - b), Math.abs(b - r));
+          return bright < 45 && maxDiff < 25;
+        };
+
+        for (let x = 0; x < w; x++) {
+          const top = x;
+          if (isDark(top * 4)) { visited[top] = 1; isBg[top] = 1; queue.push(top); }
+          const btm = (h - 1) * w + x;
+          if (isDark(btm * 4)) { visited[btm] = 1; isBg[btm] = 1; queue.push(btm); }
+        }
+        for (let y = 0; y < h; y++) {
+          const left = y * w;
+          if (!visited[left] && isDark(left * 4)) { visited[left] = 1; isBg[left] = 1; queue.push(left); }
+          const right = y * w + (w - 1);
+          if (!visited[right] && isDark(right * 4)) { visited[right] = 1; isBg[right] = 1; queue.push(right); }
+        }
+
+        let qHead = 0;
+        while (qHead < queue.length) {
+          const curr = queue[qHead++];
+          const cx = curr % w;
+          const cy = Math.floor(curr / w);
+          const neighbors = [
+            cy > 0 ? (cy - 1) * w + cx : -1,
+            cy < h - 1 ? (cy + 1) * w + cx : -1,
+            cx > 0 ? cy * w + (cx - 1) : -1,
+            cx < width - 1 ? cy * w + (cx + 1) : -1,
+          ];
+          for (const n of neighbors) {
+            if (n >= 0 && !visited[n]) {
+              visited[n] = 1;
+              if (isDark(n * 4)) {
+                isBg[n] = 1;
+                queue.push(n);
+              }
+            }
+          }
+        }
+
+        if (queue.length > 0) {
+          for (let i = 0; i < total; i++) {
+            if (isBg[i]) {
+              data[i * 4 + 3] = 0; // Alpha 設為 0 完全透明
+            }
+          }
+          ctx.putImageData(imgData, 0, 0);
+        }
+      } catch (cleanErr) {
+        console.warn('Auto remove black border during crop skipped:', cleanErr);
+      }
+
+      // 另行生成輕量化、極高清晰度且保留透明通道的儲存專用 Data URL（最大寬度 720px）
       let optimizedDataUrl = '';
       try {
         const optMaxW = 720;
@@ -112,7 +181,8 @@ export async function cropImageFromSource(
         const optCtx = optCanvas.getContext('2d');
         if (optCtx) {
           optCtx.drawImage(canvas, 0, 0, optW, optH);
-          optimizedDataUrl = optCanvas.toDataURL('image/jpeg', 0.85);
+          // 使用 webp 或 png 保留 Alpha 透明度通道，避免產生醜陋黑邊或黑角
+          optimizedDataUrl = optCanvas.toDataURL('image/webp', 0.9) || optCanvas.toDataURL('image/png');
         }
       } catch (optErr) {
         console.warn('Optimized dataUrl generation fallback:', optErr);

@@ -103,23 +103,27 @@ export function drawKujiTickets(
     : generateKujiTickets(poolData, poolData.totalPacks || poolData.remainingPacks || 80);
 
   const updatedCards = poolData.cards 
-    ? poolData.cards.map((c: any) => ({
-        cardId: c.cardId,
-        quantity: Math.max(0, c.quantity || 0),
-      })) 
+    ? poolData.cards
+        .filter((c: any) => c && c.cardId)
+        .map((c: any) => ({
+          cardId: String(c.cardId),
+          quantity: Math.max(0, c.quantity || 0),
+        })) 
     : [];
 
   const updatedPointPrizes = poolData.pointPrizes 
-    ? poolData.pointPrizes.map((p: any) => {
-        const prizeObj: any = {
-          prizeId: p.prizeId,
-          points: p.points || 0,
-          quantity: Math.max(0, p.quantity || 0),
-          rarity: (p.rarity as Rarity) || 'common',
-        };
-        if (p.name) prizeObj.name = p.name;
-        return prizeObj;
-      }) 
+    ? poolData.pointPrizes
+        .filter((p: any) => p && (p.prizeId || p.points))
+        .map((p: any) => {
+          const prizeObj: any = {
+            prizeId: String(p.prizeId || `points_${p.points || 0}`),
+            points: p.points || 0,
+            quantity: Math.max(0, p.quantity || 0),
+            rarity: (p.rarity as Rarity) || 'common',
+          };
+          if (p.name) prizeObj.name = p.name;
+          return prizeObj;
+        }) 
     : [];
   const drawn: DrawnPrize[] = [];
 
@@ -225,23 +229,27 @@ export function drawFromPool(
 } {
   const drawn: DrawnPrize[] = [];
   const updatedCards = poolData.cards 
-    ? poolData.cards.map((c: any) => ({
-        cardId: c.cardId,
-        quantity: Math.max(0, c.quantity || 0),
-      })) 
+    ? poolData.cards
+        .filter((c: any) => c && c.cardId)
+        .map((c: any) => ({
+          cardId: String(c.cardId),
+          quantity: Math.max(0, c.quantity || 0),
+        })) 
     : [];
 
   const updatedPointPrizes = poolData.pointPrizes 
-    ? poolData.pointPrizes.map((p: any) => {
-        const item: any = {
-          prizeId: p.prizeId,
-          points: p.points || 0,
-          quantity: Math.max(0, p.quantity || 0),
-          rarity: (p.rarity as Rarity) || 'common',
-        };
-        if (p.name) item.name = p.name;
-        return item;
-      }) 
+    ? poolData.pointPrizes
+        .filter((p: any) => p && (p.prizeId || p.points))
+        .map((p: any) => {
+          const item: any = {
+            prizeId: String(p.prizeId || `points_${p.points || 0}`),
+            points: p.points || 0,
+            quantity: Math.max(0, p.quantity || 0),
+            rarity: (p.rarity as Rarity) || 'common',
+          };
+          if (p.name) item.name = p.name;
+          return item;
+        }) 
     : [];
 
   for (let i = 0; i < count; i++) {

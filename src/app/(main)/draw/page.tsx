@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { SafeImage } from '@/components/safe-image';
 import { Button } from '@/components/ui/button';
-import { Layers, Gem, Package, Disc3, Info, Sparkles, ChevronRight, Star, Trophy, Clock, Settings, Dices, Target } from 'lucide-react';
+import { Layers, Gem, Package, Disc3, Info, Sparkles, ChevronRight, Star, Trophy, Clock, Settings, Dices, Target, Search, X } from 'lucide-react';
 import { useCollection, useRequest, useFirestore, useMemoFirebase, useDoc, useUser } from "@/firebase";
 import { collection, query, orderBy, doc } from "firebase/firestore";
 import { Skeleton } from '@/components/ui/skeleton';
@@ -96,6 +96,8 @@ export default function DrawPage() {
   }, [categories, cardPools]);
 
   const [sortOption, setSortOption] = useState<'price-high' | 'price-low' | 'latest'>('latest');
+  const [selectedCategoryTab, setSelectedCategoryTab] = useState<string>('all');
+  const [searchKeyword, setSearchKeyword] = useState<string>('');
 
   const allPools = useMemo(() => {
     if (!cardPools || cardPools.length === 0) return [];
@@ -113,6 +115,20 @@ export default function DrawPage() {
         return 0;
     });
   }, [cardPools, sortOption]);
+
+  const displayPools = useMemo(() => {
+    let list = allPools;
+    if (selectedCategoryTab === 'featured') {
+      list = list.filter(p => p.isFeatured);
+    } else if (selectedCategoryTab !== 'all') {
+      list = list.filter(p => p.categoryId === selectedCategoryTab);
+    }
+    if (searchKeyword.trim()) {
+      const q = searchKeyword.toLowerCase();
+      list = list.filter(p => p.name?.toLowerCase().includes(q) || p.description?.toLowerCase().includes(q));
+    }
+    return list;
+  }, [allPools, selectedCategoryTab, searchKeyword]);
 
   const finalIsLoading = isLoadingCategories || isLoadingPools || isLoading;
 
@@ -358,49 +374,118 @@ export default function DrawPage() {
         {/* 全部卡池專區 */}
         {!finalIsLoading && (
             <div className="space-y-4 sm:space-y-6 animate-fade-in-up">
-                {/* 頂部 Header & 排序控制列 */}
-                <div className="p-3 sm:p-4 rounded-2xl bg-gradient-to-r from-slate-900/90 via-slate-950/90 to-slate-900/90 border border-slate-800/80 backdrop-blur-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
-                    <div className="flex items-center gap-2.5">
-                        <div className="p-2 rounded-xl bg-gradient-to-br from-cyan-500/20 to-amber-500/20 border border-cyan-500/30 text-amber-400 shadow-[0_0_15px_rgba(6,182,212,0.15)]">
-                            <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
-                        </div>
-                        <div>
-                            <div className="flex items-center gap-2">
-                                <h2 className="text-base sm:text-lg font-black font-headline text-white tracking-widest">
-                                    全部卡池
-                                </h2>
-                                <span className="text-[10px] font-bold text-cyan-300 bg-cyan-500/10 px-2 py-0.5 rounded-full border border-cyan-500/30">
-                                    共 {allPools.length} 款
-                                </span>
+                {/* 頂部 Header & 控制列 (整合即時搜尋與排序) */}
+                <div className="p-3 sm:p-4 rounded-2xl bg-gradient-to-r from-slate-900/95 via-slate-950/95 to-slate-900/95 border border-slate-800/80 backdrop-blur-xl flex flex-col gap-3 shadow-lg">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-center gap-2.5">
+                            <div className="p-2 rounded-xl bg-gradient-to-br from-cyan-500/20 to-amber-500/20 border border-cyan-500/30 text-amber-400 shadow-[0_0_15px_rgba(6,182,212,0.15)]">
+                                <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
                             </div>
-                            <p className="text-[11px] text-slate-400 hidden sm:block">即時連線機台 · 公平公正透明抽取</p>
+                            <div>
+                                <div className="flex items-center gap-2">
+                                    <h2 className="text-base sm:text-lg font-black font-headline text-white tracking-widest">
+                                        全部卡池機台
+                                    </h2>
+                                    <span className="text-[10px] font-bold text-cyan-300 bg-cyan-500/10 px-2 py-0.5 rounded-full border border-cyan-500/30">
+                                        共 {displayPools.length} 款
+                                    </span>
+                                </div>
+                                <p className="text-[11px] text-slate-400 hidden sm:block">即時連線機台 · 公平公正透明抽取 · 支援一番賞挑籤</p>
+                            </div>
+                        </div>
+
+                        {/* 搜尋欄與排序器 */}
+                        <div className="flex items-center gap-2 w-full sm:w-auto">
+                            {/* 搜尋卡池 */}
+                            <div className="relative flex-1 sm:w-52">
+                                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                                <input
+                                    type="text"
+                                    value={searchKeyword}
+                                    onChange={(e) => setSearchKeyword(e.target.value)}
+                                    placeholder="搜尋卡池名稱..."
+                                    className="w-full bg-slate-900/90 text-xs text-white pl-8 pr-7 py-1.5 rounded-xl border border-slate-800 focus:border-amber-400 focus:outline-none transition-colors placeholder:text-slate-500 shadow-inner"
+                                />
+                                {searchKeyword && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setSearchKeyword('')}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                                    >
+                                        <X className="w-3 h-3" />
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* 排序選擇器 */}
+                            <div className="relative shrink-0">
+                                <select 
+                                    className="appearance-none bg-slate-900 text-xs font-bold text-slate-200 pl-3 pr-7 py-1.5 rounded-xl border border-slate-700/80 hover:border-amber-400/60 focus:border-amber-400 focus:outline-none transition-colors cursor-pointer shadow-sm"
+                                    value={sortOption}
+                                    onChange={(e) => setSortOption(e.target.value as any)}
+                                >
+                                    <option value="latest">⚡ 最新上架</option>
+                                    <option value="price-high">💎 點數高至低</option>
+                                    <option value="price-low">🪙 點數低至高</option>
+                                </select>
+                                <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-[10px]">
+                                    ▼
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    {/* 排序選擇器 */}
-                    <div className="flex items-center justify-between sm:justify-end gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-800">
-                         <span className="text-xs text-slate-400 font-medium">排序方式</span>
-                         <div className="relative">
-                             <select 
-                                className="appearance-none bg-slate-900 text-xs font-bold text-slate-200 pl-3 pr-8 py-1.5 rounded-xl border border-slate-700/80 hover:border-amber-400/60 focus:border-amber-400 focus:outline-none transition-colors cursor-pointer shadow-sm"
-                                value={sortOption}
-                                onChange={(e) => setSortOption(e.target.value as any)}
-                             >
-                                 <option value="latest">⚡ 最新上架</option>
-                                 <option value="price-high">💎 點數：由高至低</option>
-                                 <option value="price-low">🪙 點數：由低至高</option>
-                             </select>
-                             <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                 ▼
-                             </div>
-                         </div>
+                    {/* 快速分類切換膠囊 (手機版支援平滑橫向滾動，電腦版整齊排列) */}
+                    <div className="pt-2 border-t border-slate-800/70 flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth">
+                        <button
+                            type="button"
+                            onClick={() => setSelectedCategoryTab('all')}
+                            className={cn(
+                                "px-3 py-1 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 border",
+                                selectedCategoryTab === 'all'
+                                    ? "bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 border-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.3)] scale-[1.02]"
+                                    : "bg-slate-900/80 text-slate-400 hover:text-slate-200 border-slate-800 hover:border-slate-700"
+                            )}
+                        >
+                            全部卡池 ({allPools.length})
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => setSelectedCategoryTab('featured')}
+                            className={cn(
+                                "px-3 py-1 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 border flex items-center gap-1",
+                                selectedCategoryTab === 'featured'
+                                    ? "bg-gradient-to-r from-amber-500 to-rose-500 text-slate-950 border-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.3)] scale-[1.02]"
+                                    : "bg-slate-900/80 text-slate-400 hover:text-slate-200 border-slate-800 hover:border-slate-700"
+                            )}
+                        >
+                            <Sparkles className="w-3 h-3 text-amber-400" />
+                            <span>HOT 精選 ({allPools.filter(p => p.isFeatured).length})</span>
+                        </button>
+
+                        {categoriesWithCounts.map(cat => (
+                            <button
+                                key={cat.id}
+                                type="button"
+                                onClick={() => setSelectedCategoryTab(cat.id)}
+                                className={cn(
+                                    "px-3 py-1 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 border",
+                                    selectedCategoryTab === cat.id
+                                        ? "bg-cyan-500 text-slate-950 border-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.3)] scale-[1.02]"
+                                        : "bg-slate-900/80 text-slate-400 hover:text-slate-200 border-slate-800 hover:border-slate-700"
+                                )}
+                            >
+                                {cat.name} ({cat.poolCount})
+                            </button>
+                        ))}
                     </div>
                 </div>
 
-                {/* 卡池列表 */}
-                {allPools.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6 sm:gap-8 max-w-7xl mx-auto">
-                        {allPools.map((pool) => (
+                {/* 卡池列表 (手機版 max-w-md 居中適配防拉扯，電腦版 2~3 欄優雅展示) */}
+                {displayPools.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-5 sm:gap-7 max-w-md sm:max-w-none mx-auto">
+                        {displayPools.map((pool) => (
                             <div key={pool.id} className="relative w-full">
                                 {pool.isFeatured && (
                                     <div className="absolute -top-2.5 -left-2 z-20">
@@ -415,10 +500,27 @@ export default function DrawPage() {
                         ))}
                     </div>
                 ) : (
-                    <div className="py-16 text-center bg-slate-950/40 rounded-3xl border border-dashed border-slate-800 p-8 space-y-3">
-                        <Package className="w-12 h-12 text-slate-600 mx-auto animate-pulse" />
-                        <h3 className="text-base font-bold text-slate-300">目前暫無開放中的卡池</h3>
-                        <p className="text-xs text-slate-500">新卡池正在籌備中，敬請期待最新公告！</p>
+                    <div className="py-14 text-center bg-slate-950/40 rounded-3xl border border-dashed border-slate-800 p-8 space-y-3 max-w-lg mx-auto">
+                        <Package className="w-10 h-10 text-slate-600 mx-auto animate-pulse" />
+                        <h3 className="text-base font-bold text-slate-300">
+                            {searchKeyword || selectedCategoryTab !== 'all' ? '未找到符合條件的卡池' : '目前暫無開放中的卡池'}
+                        </h3>
+                        <p className="text-xs text-slate-500">
+                            {searchKeyword || selectedCategoryTab !== 'all' ? '您可以嘗試清除搜尋關鍵字或切換其他分類' : '新卡池正在籌備中，敬請期待最新公告！'}
+                        </p>
+                        {(searchKeyword || selectedCategoryTab !== 'all') && (
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                    setSearchKeyword('');
+                                    setSelectedCategoryTab('all');
+                                }}
+                                className="mt-2 text-xs rounded-xl border-amber-500/40 text-amber-300 hover:bg-amber-500/10"
+                            >
+                                重設篩選條件
+                            </Button>
+                        )}
                     </div>
                 )}
             </div>

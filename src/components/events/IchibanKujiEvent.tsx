@@ -657,22 +657,26 @@ export function IchibanKujiEvent() {
                     >
                         撕 1 抽 (${pricePerDraw})
                     </Button>
-                    <Button
-                        size="sm"
-                        onClick={() => handleBatchOpenTickets(5)}
-                        disabled={isOpeningBatch || stats.remaining < 1}
-                        className="rounded-xl font-black text-xs bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 border border-rose-400/30"
-                    >
-                        ⚡ 5 連抽 (${pricePerDraw * Math.min(5, stats.remaining)})
-                    </Button>
-                    <Button
-                        size="sm"
-                        onClick={() => handleBatchOpenTickets(10)}
-                        disabled={isOpeningBatch || stats.remaining < 1}
-                        className="rounded-xl font-black text-xs bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 border border-purple-400/30"
-                    >
-                        💥 10 連抽 (${pricePerDraw * Math.min(10, stats.remaining)})
-                    </Button>
+                    {stats.remaining >= 5 && (
+                        <Button
+                            size="sm"
+                            onClick={() => handleBatchOpenTickets(5)}
+                            disabled={isOpeningBatch || stats.remaining < 5}
+                            className="rounded-xl font-black text-xs bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 border border-rose-400/30"
+                        >
+                            ⚡ 5 連抽 (${pricePerDraw * 5})
+                        </Button>
+                    )}
+                    {stats.remaining >= 10 && (
+                        <Button
+                            size="sm"
+                            onClick={() => handleBatchOpenTickets(10)}
+                            disabled={isOpeningBatch || stats.remaining < 10}
+                            className="rounded-xl font-black text-xs bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 border border-purple-400/30"
+                        >
+                            💥 10 連抽 (${pricePerDraw * 10})
+                        </Button>
+                    )}
                 </div>
 
                 <div className="flex items-center gap-3">

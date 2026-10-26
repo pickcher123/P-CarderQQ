@@ -5,11 +5,13 @@ import { Sparkles, Flame, Clock, Gift, ArrowRight, Wallet, Layers, ChevronRight,
 import { PPlusIcon } from '@/components/icons';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { MarqueeContainer } from '@/components/ui/marquee-container';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
+import { doc, collection, query, where, limit } from 'firebase/firestore';
 import type { SystemConfig } from '@/types/system';
+import type { DailyMission } from '@/types/missions';
 import { DEFAULT_BONUS_EVENT, isBonusEventActive, getBonusMultiplier, type BonusEventConfig } from '@/lib/bonus-event';
 
 interface BonusDoubleBannerProps {
@@ -27,6 +29,9 @@ export function BonusDoubleBanner({
   const systemConfigRef = useMemoFirebase(() => (firestore ? doc(firestore, 'systemConfig', 'main') : null), [firestore]);
   const { data: systemConfig } = useDoc<SystemConfig>(systemConfigRef);
 
+  const missionsQuery = useMemoFirebase(() => (firestore ? query(collection(firestore, 'dailyMissions'), where('type', '==', 'login'), limit(1)) : null), [firestore]);
+  const { data: missions } = useCollection<DailyMission>(missionsQuery);
+
   const eventConfig: BonusEventConfig = useMemo(() => {
     return {
       ...DEFAULT_BONUS_EVENT,
@@ -37,6 +42,8 @@ export function BonusDoubleBanner({
   // 確保活動預設啟動，絕不因非同步載入而白屏或隱藏
   const isActive = eventConfig.isActive !== false;
   const multiplier = eventConfig.multiplier || 2;
+  const baseCheckInPoints = missions?.[0]?.rewardPoints ?? 10;
+  const checkInRewardPoints = Math.round(baseCheckInPoints * multiplier);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number }>({
     days: 14,
@@ -194,7 +201,7 @@ export function BonusDoubleBanner({
                     <Badge className="bg-amber-500 text-slate-950 font-black text-[9px] px-1.5 py-0 h-4">{multiplier}X 加倍</Badge>
                   </h4>
                   <p className="text-[11px] text-slate-400 mt-0.5">
-                    平時簽到領 10 點，活動期間狂送 <strong className="text-amber-300">{10 * multiplier} 點</strong>！
+                    平時簽到領 {baseCheckInPoints} 點，活動期間狂送 <strong className="text-amber-300">{checkInRewardPoints} 點</strong>！
                   </p>
                 </div>
               </div>
@@ -300,17 +307,36 @@ export function BonusDoubleHeroPill({ onOpenDetail }: { onOpenDetail?: () => voi
   return (
     <div 
       onClick={onOpenDetail}
-      className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500/20 via-orange-500/25 to-amber-500/20 border border-amber-400/50 backdrop-blur-md shadow-[0_0_20px_rgba(245,158,11,0.35)] cursor-pointer group hover:scale-105 transition-all mx-auto select-none"
+      className="w-full max-w-[340px] sm:max-w-max mx-auto px-3.5 py-2 sm:px-4 sm:py-1.5 rounded-2xl sm:rounded-full bg-gradient-to-r from-amber-500/20 via-orange-500/25 to-amber-500/20 border border-amber-400/50 backdrop-blur-md shadow-[0_0_20px_rgba(245,158,11,0.3)] cursor-pointer group hover:scale-[1.02] active:scale-[0.98] transition-all select-none"
     >
-      <span className="flex items-center justify-center w-5 h-5 rounded-full bg-gradient-to-br from-amber-400 to-red-600 text-slate-950 font-black text-[10px] shadow-sm animate-pulse">
-        {multiplier}X
-      </span>
-      <span className="text-xs sm:text-sm font-black text-amber-300 drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]">
-        🔥 全站紅利加倍盛典狂飆中！簽到、儲值、回收一律 {multiplier} 倍
-      </span>
-      <span className="text-[10px] text-amber-200/90 font-bold hidden sm:inline flex items-center">
-        查看特權 <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
-      </span>
+      {/* 📱 手機版排版：精緻兩行對稱佈局，防止圓角截斷與標章外溢 */}
+      <div className="flex sm:hidden flex-col items-center gap-1 w-full text-center">
+        <div className="flex items-center justify-between w-full px-0.5">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-rose-500 text-slate-950 font-black text-[10px] shadow-sm shrink-0">
+            <Flame className="w-3 h-3 fill-slate-950" />
+            {multiplier}X 加倍盛典
+          </span>
+          <span className="text-[10px] text-amber-300 font-bold flex items-center gap-0.5">
+            查看特權 <ChevronRight className="w-3 h-3" />
+          </span>
+        </div>
+        <p className="text-[11px] font-bold text-amber-200/95 tracking-wide leading-tight">
+          簽到、儲值、回收一律享 <strong className="text-amber-300 font-black">{multiplier} 倍</strong> 點數
+        </p>
+      </div>
+
+      {/* 💻 桌面版排版：大器單行膠囊流光 */}
+      <div className="hidden sm:inline-flex items-center gap-2.5">
+        <span className="flex items-center justify-center w-5 h-5 rounded-full bg-gradient-to-br from-amber-400 to-red-600 text-slate-950 font-black text-[10px] shadow-sm animate-pulse shrink-0">
+          {multiplier}X
+        </span>
+        <span className="text-xs sm:text-sm font-black text-amber-300 drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]">
+          🔥 全站紅利加倍盛典狂飆中！簽到、儲值、回收一律 {multiplier} 倍
+        </span>
+        <span className="text-[10px] text-amber-200/90 font-bold flex items-center shrink-0">
+          查看特權 <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+        </span>
+      </div>
     </div>
   );
 }
@@ -323,6 +349,9 @@ export function BonusDoubleTicker({ onOpenDetail }: { onOpenDetail?: () => void 
   const systemConfigRef = useMemoFirebase(() => (firestore ? doc(firestore, 'systemConfig', 'main') : null), [firestore]);
   const { data: systemConfig } = useDoc<SystemConfig>(systemConfigRef);
 
+  const missionsQuery = useMemoFirebase(() => (firestore ? query(collection(firestore, 'dailyMissions'), where('type', '==', 'login'), limit(1)) : null), [firestore]);
+  const { data: missions } = useCollection<DailyMission>(missionsQuery);
+
   const eventConfig: BonusEventConfig = useMemo(() => {
     return {
       ...DEFAULT_BONUS_EVENT,
@@ -332,23 +361,38 @@ export function BonusDoubleTicker({ onOpenDetail }: { onOpenDetail?: () => void 
 
   if (eventConfig.isActive === false) return null;
   const multiplier = eventConfig.multiplier || 2;
+  const baseCheckInPoints = missions?.[0]?.rewardPoints ?? 10;
+  const checkInRewardPoints = Math.round(baseCheckInPoints * multiplier);
 
   return (
     <div 
       onClick={onOpenDetail}
-      className="w-full bg-gradient-to-r from-amber-950/90 via-orange-950/90 to-amber-950/90 border-b border-amber-500/40 py-1.5 px-3 flex items-center justify-between text-xs text-amber-200 cursor-pointer hover:bg-amber-900/60 transition-colors shadow-sm relative z-30"
+      className="w-full bg-gradient-to-r from-amber-950/95 via-orange-950/95 to-amber-950/95 border-b border-amber-500/40 py-1.5 px-2.5 sm:px-3 flex items-center justify-between text-xs text-amber-200 cursor-pointer hover:bg-amber-900/60 transition-colors shadow-sm relative z-30 select-none"
     >
-      <div className="container max-w-7xl mx-auto flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="px-1.5 py-0.2 rounded bg-gradient-to-r from-amber-400 to-rose-500 text-slate-950 font-black text-[9px] shrink-0 animate-pulse">
+      <div className="container max-w-7xl mx-auto flex items-center justify-between gap-2 overflow-hidden">
+        <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
+          <span className="px-1.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-rose-500 text-slate-950 font-black text-[9px] shrink-0 shadow-sm animate-pulse">
             🔥 {multiplier}X 加倍
           </span>
-          <p className="truncate font-medium text-[11px] sm:text-xs text-amber-200">
-            <strong>【限時狂歡】</strong> 全站紅利加倍開啟！每日簽到送 {10 * multiplier} 點、儲值贈點翻倍、卡片轉點享雙倍 P+ 點數！
+
+          {/* 📱 行動端：平滑跑馬燈滾動，完整呈現內容且杜絕每日...截斷 */}
+          <div className="flex-1 overflow-hidden sm:hidden">
+            <MarqueeContainer speed="slow">
+              <span className="font-medium text-[11px] text-amber-200 pr-8 inline-block whitespace-nowrap">
+                <strong className="text-amber-300">【限時狂歡】</strong> 全站紅利加倍開啟！每日簽到送 {checkInRewardPoints} 點、儲值贈點翻倍、卡片轉點享雙倍 P+ 點數！
+              </span>
+            </MarqueeContainer>
+          </div>
+
+          {/* 💻 桌面端：完整清晰文字 */}
+          <p className="hidden sm:block truncate font-medium text-xs text-amber-200">
+            <strong className="text-amber-300">【限時狂歡】</strong> 全站紅利加倍開啟！每日簽到送 {checkInRewardPoints} 點、儲值贈點翻倍、卡片轉點享雙倍 P+ 點數！
           </p>
         </div>
-        <span className="text-[11px] font-black text-amber-400 hover:text-amber-300 underline shrink-0 whitespace-nowrap hidden sm:inline">
-          點擊查看活動特權 &gt;
+
+        <span className="text-[10px] sm:text-[11px] font-black text-amber-400 hover:text-amber-300 shrink-0 whitespace-nowrap flex items-center gap-0.5">
+          <span className="hidden sm:inline underline">點擊查看活動特權 &gt;</span>
+          <span className="sm:hidden px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">特權 &gt;</span>
         </span>
       </div>
     </div>

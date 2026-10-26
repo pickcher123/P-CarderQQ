@@ -23,7 +23,7 @@ import {
   RotateCcw,
   Layers,
   Flame,
-  HelpCircle
+  HelpCircle,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -173,10 +173,10 @@ export function KujiNumberPickerDialog({
           </div>
         </DialogHeader>
 
-        {/* 快捷選號工具列 */}
+        {/* 系統選號工具列 */}
         <div className="flex flex-wrap items-center justify-between gap-2 px-1">
           <div className="flex items-center gap-1.5">
-            <span className="text-[11px] text-slate-400 font-bold">快速挑籤：</span>
+            <span className="text-[11px] text-slate-400 font-bold">系統選號：</span>
             <Button
               size="sm"
               variant="outline"
@@ -185,7 +185,7 @@ export function KujiNumberPickerDialog({
               className="h-7 text-xs px-2.5 rounded-lg border-white/10 bg-white/5 hover:bg-white/10 hover:text-cyan-400"
             >
               <Shuffle className="w-3 h-3 mr-1" />
-              自選 1 抽
+              系統選號 1 抽
             </Button>
             <Button
               size="sm"
@@ -195,7 +195,7 @@ export function KujiNumberPickerDialog({
               className="h-7 text-xs px-2.5 rounded-lg border-white/10 bg-white/5 hover:bg-white/10 hover:text-cyan-400"
             >
               <Layers className="w-3 h-3 mr-1" />
-              自選 3 抽
+              系統選號 3 抽
             </Button>
             <Button
               size="sm"
@@ -204,7 +204,7 @@ export function KujiNumberPickerDialog({
               disabled={isDrawing || availableTickets.length < 5}
               className="h-7 text-xs px-2.5 rounded-lg border-white/10 bg-white/5 hover:bg-white/10 hover:text-cyan-400 hidden sm:inline-flex"
             >
-              自選 5 抽
+              系統選號 5 抽
             </Button>
           </div>
 
@@ -235,23 +235,23 @@ export function KujiNumberPickerDialog({
                   disabled={isDrawn || isDrawing}
                   onClick={() => toggleSelectNumber(ticket.number)}
                   className={cn(
-                    'relative aspect-square rounded-xl flex flex-col items-center justify-center p-1 transition-all duration-200 select-none cursor-pointer group',
+                    'relative aspect-square rounded-xl flex items-center justify-center p-1 transition-all duration-200 select-none cursor-pointer group',
                     isDrawn
-                      ? 'bg-slate-900/80 border border-white/5 text-slate-600 cursor-not-allowed opacity-40 line-through'
+                      ? 'bg-slate-900/60 border border-white/5 text-slate-600 cursor-not-allowed opacity-40'
                       : isSelected
                       ? 'bg-gradient-to-b from-amber-400 to-yellow-500 text-slate-950 font-black border-2 border-amber-200 shadow-[0_0_15px_rgba(251,191,36,0.5)] scale-105 z-10'
                       : 'bg-gradient-to-b from-slate-800/80 to-slate-900/90 text-slate-200 border border-cyan-500/20 hover:border-cyan-400 hover:bg-cyan-950/40 hover:scale-105 shadow-sm'
                   )}
                 >
                   <span className={cn(
-                    'text-xs sm:text-sm font-black tracking-tight',
-                    isSelected ? 'text-slate-950' : isDrawn ? 'text-slate-600' : 'text-cyan-200 group-hover:text-cyan-100'
+                    'text-xs sm:text-sm font-black font-mono tracking-tight text-center leading-none flex items-center justify-center',
+                    isSelected ? 'text-slate-950' : isDrawn ? 'text-slate-600 line-through' : 'text-cyan-200 group-hover:text-cyan-100'
                   )}>
                     {ticket.number}
                   </span>
 
                   {isDrawn && (
-                    <span className="text-[9px] scale-75 text-slate-500 font-bold block -mt-1">
+                    <span className="text-[8px] font-bold text-slate-500 absolute bottom-0.5 left-1/2 -translate-x-1/2 leading-none whitespace-nowrap scale-90">
                       已開
                     </span>
                   )}

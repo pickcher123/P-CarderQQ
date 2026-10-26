@@ -738,15 +738,23 @@ export function LuckBagDetailView({ luckBag }: { luckBag: LuckBagWithCount }) {
                 </div>
             </div>
             
-            {/* 卡片大圖預覽 Modal */}
+            {/* 卡片大圖預覽 Modal (典藏級卡磚預覽) */}
             <Dialog open={!!previewCard} onOpenChange={(open) => !open && setPreviewCard(null)}>
-                <DialogContent className="max-w-[min(95vw,420px)] bg-transparent border-none p-0 flex flex-col items-center justify-center gap-4 sm:gap-6 [&>button:last-child]:hidden">
+                <DialogContent className="max-w-[min(92vw,360px)] bg-slate-950/95 backdrop-blur-2xl border border-white/10 rounded-[28px] p-5 flex flex-col items-center justify-center gap-3.5 [&>button:last-child]:hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] overflow-hidden">
                     <DialogTitle asChild>
                         <VisuallyHidden>卡片大圖鑑賞</VisuallyHidden>
                     </DialogTitle>
                     {previewCard && (
-                        <div className="w-full flex flex-col items-center gap-4 pt-4">
-                            <div className="w-[85%] sm:w-full max-w-[320px] aspect-[4/5] drop-shadow-[0_15px_35px_rgba(0,0,0,0.9)]">
+                        <div className="w-full flex flex-col items-center gap-3">
+                            <div className="text-center w-full px-2">
+                                <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-300 inline-block mb-1">
+                                    福袋大賞品項
+                                </span>
+                                <h3 className="font-headline font-black text-sm sm:text-base text-white tracking-tight text-center leading-snug line-clamp-2">
+                                    {previewCard.name}
+                                </h3>
+                            </div>
+                            <div className="w-full max-w-[240px] aspect-[2.5/3.5] drop-shadow-[0_15px_30px_rgba(0,0,0,0.85)]">
                                 <CardItem 
                                     name={previewCard.name} 
                                     imageUrl={previewCard.imageUrl} 
@@ -756,15 +764,19 @@ export function LuckBagDetailView({ luckBag }: { luckBag: LuckBagWithCount }) {
                                     isFlippable={true}
                                 />
                             </div>
+                            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[11px] font-semibold text-slate-300">
+                                <Sparkles className="w-3 h-3 text-amber-400 animate-pulse" />
+                                <span>點擊卡片可 3D 翻面觀看背卡</span>
+                            </div>
                         </div>
                     )}
                     <Button 
                         variant="ghost" 
                         size="icon" 
-                        className="rounded-full bg-slate-900/90 hover:bg-slate-800 border border-white/20 h-11 w-11 text-white shadow-xl" 
+                        className="rounded-full bg-white/5 hover:bg-white/15 border border-white/10 h-9 w-9 text-slate-300 hover:text-white transition-all" 
                         onClick={() => setPreviewCard(null)}
                     >
-                        <X className="h-5 w-5" />
+                        <X className="h-4 w-4" />
                     </Button>
                 </DialogContent>
             </Dialog>

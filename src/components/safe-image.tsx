@@ -77,7 +77,7 @@ export function SafeImage({
       {showSkeleton && !isLoaded && (
         <div 
           className={cn(
-            "absolute inset-0 bg-slate-900/80 animate-pulse pointer-events-none rounded-inherit z-0",
+            "absolute inset-0 bg-slate-800/30 backdrop-blur-sm animate-pulse pointer-events-none rounded-inherit z-0",
             props.fill ? "w-full h-full" : ""
           )} 
         />

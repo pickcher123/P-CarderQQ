@@ -339,7 +339,7 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
     }, [systemConfig]);
 
     const rewardPoints = useMemo(() => {
-        return baseRewardPoints * bonusMultiplier;
+        return Math.max(1, Math.round(baseRewardPoints * bonusMultiplier));
     }, [baseRewardPoints, bonusMultiplier]);
 
     const userLoginProgress = useMemo(() => {
@@ -421,7 +421,7 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
 
             toast({
                 title: '🎉 簽到成功！',
-                description: `恭喜獲得 +${rewardPoints} 紅利 P+ 點數！`,
+                description: `恭喜獲得 +${rewardPoints} 紅利 P+ 點數！${bonusMultiplier > 1 ? `（含 ${bonusMultiplier}X 活動加倍）` : ''}`,
             });
 
             if (refetchProgress) refetchProgress();
@@ -435,7 +435,7 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
         } finally {
             setIsCheckingIn(false);
         }
-    }, [user, firestore, hasClaimedCheckInToday, missionId, rewardPoints, refetchProgress, toast]);
+    }, [user, firestore, hasClaimedCheckInToday, missionId, rewardPoints, bonusMultiplier, refetchProgress, toast]);
 
     // 載入本地兌換歷史並在開啟時自動同步至 Firestore
     useEffect(() => {

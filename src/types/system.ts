@@ -6,6 +6,17 @@ export interface LevelBenefit {
     cashbackRate: number; // 百分比，例如 1 代表 1%
 }
 
+export interface MaintenanceConfig {
+    enabled: boolean;
+    title?: string;
+    message?: string;
+    estimatedEndTime?: string; // 預計恢復時間，例如 "2026-10-21 18:00"
+    allowAdminBypass?: boolean; // 管理員是否可穿透預覽（預設為 true）
+    contactUrl?: string; // 維護期間緊急客服或官方 LINE 連結
+    lastUpdated?: string;
+    updatedBy?: string;
+}
+
 export interface SystemConfig {
     logoUrl?: string;
     backgroundUrl?: string;
@@ -22,6 +33,7 @@ export interface SystemConfig {
     isSupportEnabled?: boolean;
     communityUrl?: string;
     isCommunityEnabled?: boolean;
+    maintenance?: MaintenanceConfig; // 🚧 全站維護模式配置
     featureFlags?: {
         isDrawEnabled?: boolean;
         isLuckyBagEnabled?: boolean;

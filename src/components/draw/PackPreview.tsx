@@ -48,9 +48,16 @@ export function PackPreview({
     const isEventExclusive = !!(cardPool.isEventPool && cardPool.exclusiveTicketOnly);
     const isEventMode = isUsingEventTicket || isEventExclusive;
 
-    const countToDraw = (selectedNumbers && selectedNumbers.length > 0) ? selectedNumbers.length : initialDrawCount;
+    const remainingPacks = cardPool.remainingPacks ?? 0;
+    const requestedCount = (selectedNumbers && selectedNumbers.length > 0) ? selectedNumbers.length : initialDrawCount;
+    // 如果剩餘包數小於請求抽數 (例如剩餘5包但URL帶了draws=10)，自動調整為剩餘全部包數 (全包)
+    const countToDraw = (remainingPacks > 0 && remainingPacks < requestedCount) ? remainingPacks : requestedCount;
+    const isAutoAdjusted = remainingPacks > 0 && remainingPacks < requestedCount;
     const effectiveTickets = Math.max(freeDrawTickets, getEffectiveTicketCount());
     const actualDrawCount = isEventMode ? countToDraw : (useTicketMode ? 1 : countToDraw);
+
+    const isSoldOut = remainingPacks <= 0;
+    const isOverPacks = remainingPacks > 0 && actualDrawCount > remainingPacks;
 
     const isPPoint = cardPool.currency === 'p-point';
     const cost = (isEventMode || useTicketMode) ? 0 : (actualDrawCount === 3 && cardPool.price3Draws ? cardPool.price3Draws : (cardPool.price || 0) * actualDrawCount);
@@ -58,7 +65,7 @@ export function PackPreview({
     const hasEnoughTickets = isEventMode 
         ? eventPoolTickets >= actualDrawCount 
         : (!useTicketMode || effectiveTickets >= 1);
-    const canStart = isLevelMet && !isLimitReachedForInitial && !isLoadingStats && hasEnoughTickets && isFreeDrawAllowed;
+    const canStart = !isSoldOut && !isOverPacks && isLevelMet && !isLimitReachedForInitial && !isLoadingStats && hasEnoughTickets && isFreeDrawAllowed;
 
     const canToggleTicket = !isEventMode && cardPool.allowFreeDraw !== false;
 
@@ -175,7 +182,14 @@ export function PackPreview({
                     <div className="grid grid-cols-2 gap-2 sm:gap-3 p-2.5 sm:p-3 bg-slate-950/90 rounded-2xl border border-slate-800/80 shadow-inner">
                         <div className="p-2 sm:p-3 bg-slate-900/80 rounded-xl border border-slate-800 text-center space-y-0.5">
                             <span className="text-[9px] sm:text-[10px] text-slate-400 font-extrabold block uppercase tracking-wider">本次抽數</span>
-                            <span className="text-base sm:text-lg font-black text-white font-code">{actualDrawCount} 包</span>
+                            <div className="flex items-center justify-center gap-1">
+                                <span className="text-base sm:text-lg font-black text-white font-code">{actualDrawCount} 包</span>
+                                {isAutoAdjusted && (
+                                    <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1.5 py-0.5 rounded-full font-bold">
+                                        剩餘全包
+                                    </span>
+                                )}
+                            </div>
                         </div>
                         <div className="p-2 sm:p-3 bg-slate-900/80 rounded-xl border border-slate-800 text-center space-y-0.5">
                             <span className="text-[9px] sm:text-[10px] text-slate-400 font-extrabold block uppercase tracking-wider">花費金額</span>
@@ -305,7 +319,7 @@ export function PackPreview({
                         </div>
                     )}
 
-                    {/* CTA Action Buttons */}
+                    {/* CTA Action Buttons - 僅保留自選號碼開獎，版面簡潔不花俏 */}
                     <div className="space-y-2">
                         {!isEventMode && useTicketMode && !hasEnoughTickets && (
                             <Button
@@ -319,74 +333,66 @@ export function PackPreview({
                             </Button>
                         )}
 
-                        {/* 🎯 一番賞自選號碼（挑籤）- 若尚未選號則顯示 */}
-                        {onOpenPickNumber && !isEventMode && (!selectedNumbers || selectedNumbers.length === 0) && (
+                        {/* 🎯 僅保留自選號碼開獎（未選號時點擊開啟挑籤，已選號後點擊啟動自選開獎） */}
+                        {onOpenPickNumber && !isEventMode && (!selectedNumbers || selectedNumbers.length === 0) ? (
                             <Button
                                 size="lg"
-                                className="w-full h-11 sm:h-12 text-sm sm:text-base font-black rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 border border-yellow-300 shadow-xl shadow-amber-500/25 hover:brightness-110 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95"
+                                className="w-full h-12 sm:h-14 text-base sm:text-lg font-black rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 border border-yellow-300 shadow-xl shadow-amber-500/25 hover:brightness-110 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95"
                                 onClick={onOpenPickNumber}
-                                disabled={!isLevelMet || isLoadingStats}
+                                disabled={!isLevelMet || isLoadingStats || isSoldOut || isOverPacks}
                             >
-                                <Sparkles className="w-4 h-4 fill-slate-950" />
-                                <span>🎯 自選號碼開獎（一番賞挑籤）</span>
+                                <Sparkles className="w-5 h-5 fill-slate-950" />
+                                <span>🎯 自選號碼開獎</span>
                             </Button>
-                        )}
-
-                        <Button
-                            size="lg"
-                            className={cn(
-                                "w-full h-12 sm:h-14 text-base sm:text-lg font-black rounded-2xl shadow-2xl transition-all border-b-4 active:translate-y-1 active:border-b-0 cursor-pointer",
-                                canStart 
-                                    ? isEventMode
-                                        ? "bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 text-white border-purple-900 hover:brightness-110 shadow-purple-500/30"
-                                        : useTicketMode
-                                            ? "bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-slate-950 border-emerald-800 hover:brightness-110 shadow-emerald-500/30"
-                                            : "bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-slate-950 border-amber-800 hover:brightness-110 shadow-amber-500/20" 
-                                    : "bg-slate-800 text-slate-500 border-slate-950 cursor-not-allowed opacity-60"
-                            )}
-                            onClick={() => {
-                                if (!isEventMode && useTicketMode && !hasEnoughTickets) {
-                                    setIsPromoModalOpen(true);
-                                    return;
-                                }
-                                if (canStart) {
-                                    performDraw(actualDrawCount, !isEventMode && useTicketMode, isEventMode, selectedNumbers);
-                                }
-                            }}
-                            disabled={!canStart && (isEventMode ? true : (!useTicketMode || hasEnoughTickets))}
-                        >
-                            {isLoadingStats ? (
-                                <><Loader2 className="animate-spin mr-2 h-5 w-5 sm:h-6 sm:w-6" /> 驗證中...</>
-                            ) : isLimitReachedForInitial ? (
-                                <><Ban className="mr-2 h-5 w-5 sm:h-6 sm:w-6 text-rose-400" /> 今日次數已用完</>
-                            ) : !isLevelMet ? (
-                                <><Ban className="mr-2 h-5 w-5 sm:h-6 sm:w-6 text-rose-400" /> 權限不足 ({cardPool.minLevel})</>
-                            ) : isEventMode && !hasEnoughTickets ? (
-                                <><Ban className="mr-2 h-5 w-5 sm:h-6 sm:w-6 text-rose-400" /> 專屬券不足 (持有 {eventPoolTickets} 張 / 需 {actualDrawCount} 張)</>
-                            ) : isEventMode ? (
-                                <><Ticket className="mr-2 h-5 w-5 sm:h-6 sm:w-6 text-amber-300" /> 🎪 消耗專屬券啟動開獎 ({actualDrawCount} 抽)</>
-                            ) : useTicketMode && !isFreeDrawAllowed ? (
-                                <><Ban className="mr-2 h-5 w-5 sm:h-6 sm:w-6 text-rose-400" /> 此卡池未開放免費券兌換</>
-                            ) : useTicketMode && !hasEnoughTickets ? (
-                                <><Ticket className="mr-2 h-5 w-5 sm:h-6 sm:w-6 text-amber-300" /> 🎟️ 尚未領取免費券（點此領取）</>
-                            ) : useTicketMode ? (
-                                <><Ticket className="mr-2 h-5 w-5 sm:h-6 sm:w-6 text-slate-950 fill-slate-950" /> 🎟️ 消耗免費券啟動開獎 (1抽)</>
-                            ) : selectedNumbers && selectedNumbers.length > 0 ? (
-                                <><Zap className="mr-2 h-5 w-5 sm:h-6 sm:w-6 fill-slate-950" /> 啟動自選開獎 ({selectedNumbers.map(n => '#' + n).join(', ')})</>
-                            ) : (
-                                <><Zap className="mr-2 h-5 w-5 sm:h-6 sm:w-6 fill-slate-950" /> 啟動正式開獎 ({cost.toLocaleString()} {isPPoint ? 'P點' : '鑽'})</>
-                            )}
-                        </Button>
-
-                        {performTrialDraw && (
+                        ) : (
                             <Button
                                 size="lg"
-                                variant="outline"
-                                className="w-full h-10 sm:h-11 text-xs sm:text-sm font-black rounded-2xl border-purple-500/50 bg-purple-950/40 text-purple-200 hover:bg-purple-900/60 hover:border-purple-400 shadow-lg shadow-purple-950/40 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-                                onClick={() => performTrialDraw(actualDrawCount, selectedNumbers)}
+                                className={cn(
+                                    "w-full h-12 sm:h-14 text-base sm:text-lg font-black rounded-2xl shadow-2xl transition-all border-b-4 active:translate-y-1 active:border-b-0 cursor-pointer",
+                                    canStart 
+                                        ? isEventMode
+                                            ? "bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 text-white border-purple-900 hover:brightness-110 shadow-purple-500/30"
+                                            : useTicketMode
+                                                ? "bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-slate-950 border-emerald-800 hover:brightness-110 shadow-emerald-500/30"
+                                                : "bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 border-amber-700 hover:brightness-110 shadow-amber-500/25" 
+                                        : "bg-slate-800 text-slate-500 border-slate-950 cursor-not-allowed opacity-60"
+                                )}
+                                onClick={() => {
+                                    if (!isEventMode && useTicketMode && !hasEnoughTickets) {
+                                        setIsPromoModalOpen(true);
+                                        return;
+                                    }
+                                    if (canStart) {
+                                        performDraw(actualDrawCount, !isEventMode && useTicketMode, isEventMode, selectedNumbers);
+                                    }
+                                }}
+                                disabled={!canStart && (isEventMode ? true : (!useTicketMode || hasEnoughTickets))}
                             >
-                                <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-300" />
-                                <span>{selectedNumbers && selectedNumbers.length > 0 ? `🎲 模擬試開自選號碼 (${selectedNumbers.map(n => '#' + n).join(', ')})` : '🎲 免費試手氣（純模擬不扣點）'}</span>
+                                {isLoadingStats ? (
+                                    <><Loader2 className="animate-spin mr-2 h-5 w-5 sm:h-6 sm:w-6" /> 驗證中...</>
+                                ) : isSoldOut ? (
+                                    <><Ban className="mr-2 h-5 w-5 sm:h-6 sm:w-6 text-rose-400" /> 此卡池已售罄</>
+                                ) : isOverPacks ? (
+                                    <><Ban className="mr-2 h-5 w-5 sm:h-6 sm:w-6 text-rose-400" /> 庫存不足 (剩餘 {remainingPacks} 包)</>
+                                ) : isLimitReachedForInitial ? (
+                                    <><Ban className="mr-2 h-5 w-5 sm:h-6 sm:w-6 text-rose-400" /> 今日次數已用完</>
+                                ) : !isLevelMet ? (
+                                    <><Ban className="mr-2 h-5 w-5 sm:h-6 sm:w-6 text-rose-400" /> 權限不足 ({cardPool.minLevel})</>
+                                ) : isEventMode && !hasEnoughTickets ? (
+                                    <><Ban className="mr-2 h-5 w-5 sm:h-6 sm:w-6 text-rose-400" /> 專屬券不足 (持有 {eventPoolTickets} 張 / 需 {actualDrawCount} 張)</>
+                                ) : isEventMode ? (
+                                    <><Ticket className="mr-2 h-5 w-5 sm:h-6 sm:w-6 text-amber-300" /> 🎪 消耗專屬券啟動開獎 ({actualDrawCount} 抽)</>
+                                ) : useTicketMode && !isFreeDrawAllowed ? (
+                                    <><Ban className="mr-2 h-5 w-5 sm:h-6 sm:w-6 text-rose-400" /> 此卡池未開放免費券兌換</>
+                                ) : useTicketMode && !hasEnoughTickets ? (
+                                    <><Ticket className="mr-2 h-5 w-5 sm:h-6 sm:w-6 text-amber-300" /> 🎟️ 尚未領取免費券（點此領取）</>
+                                ) : useTicketMode ? (
+                                    <><Ticket className="mr-2 h-5 w-5 sm:h-6 sm:w-6 text-slate-950 fill-slate-950" /> 🎟️ 消耗免費券啟動開獎 (1抽)</>
+                                ) : selectedNumbers && selectedNumbers.length > 0 ? (
+                                    <><Zap className="mr-2 h-5 w-5 sm:h-6 sm:w-6 fill-slate-950" /> 🎯 啟動自選開獎 ({selectedNumbers.map(n => '#' + n).join(', ')})</>
+                                ) : (
+                                    <><Zap className="mr-2 h-5 w-5 sm:h-6 sm:w-6 fill-slate-950" /> 啟動正式開獎 ({cost.toLocaleString()} {isPPoint ? 'P點' : '鑽'})</>
+                                )}
                             </Button>
                         )}
                     </div>
