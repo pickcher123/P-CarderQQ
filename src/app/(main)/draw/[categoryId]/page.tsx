@@ -106,7 +106,7 @@ export default function DrawCategoryPage() {
     const isLoading = isLoadingPools || isLoadingCategory;
 
     return (
-        <div className="container py-12 md:py-20 relative">
+        <div className="container pt-6 sm:pt-10 md:pt-14 pb-36 sm:pb-40 md:pb-24 relative px-3 sm:px-4 md:px-8">
             {/* 背景裝飾光源 */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-primary/5 blur-[120px] pointer-events-none" />
 

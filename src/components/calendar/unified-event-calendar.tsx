@@ -447,7 +447,7 @@ export function UnifiedEventCalendar({
     };
 
     return (
-        <div className="w-full space-y-6">
+        <div className="w-full space-y-4 sm:space-y-6">
             
             {/* === HERO SECTION: 賽博卡展/賽事（與福袋/團拆風格統一） === */}
             {!hideHeader && (
@@ -458,13 +458,13 @@ export function UnifiedEventCalendar({
                     {/* Top Glow Accent Bar */}
                     <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_15px_#f59e0b]" />
                     
-                    <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-3 sm:gap-6 md:gap-12">
-                        <div className="space-y-2 sm:space-y-3 text-center lg:text-left max-w-2xl">
-                            <h1 className="font-headline text-2xl sm:text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-yellow-200 to-orange-400 drop-shadow-[0_0_20px_rgba(245,158,11,0.4)] tracking-tight leading-none uppercase">
+                    <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-3.5 sm:gap-6 md:gap-12">
+                        <div className="space-y-2 sm:space-y-3 text-center lg:text-left w-full lg:max-w-2xl">
+                            <h1 className="font-headline text-2xl sm:text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-yellow-200 to-orange-400 drop-shadow-[0_0_20px_rgba(245,158,11,0.4)] tracking-tight leading-tight uppercase">
                                 卡展/賽事
                             </h1>
 
-                            <p className="text-xs sm:text-sm md:text-base text-slate-300 font-medium leading-normal">
+                            <p className="text-xs sm:text-sm md:text-base text-slate-300 font-medium leading-relaxed max-w-xl mx-auto lg:mx-0">
                                 全台卡展巡迴展訊與熱門賽事對決行程，即時連線掌握最新展期與競猜預測。
                             </p>
 
@@ -472,54 +472,54 @@ export function UnifiedEventCalendar({
                             <div className="pt-1 flex flex-wrap items-center justify-center lg:justify-start gap-2">
                                 <Dialog>
                                     <DialogTrigger asChild>
-                                        <Button className="h-8 sm:h-10 px-4 sm:px-5 rounded-lg sm:rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 text-xs sm:text-sm font-black shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all gap-1.5 group cursor-pointer">
+                                        <Button className="h-8 sm:h-10 px-3.5 sm:px-5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 text-xs sm:text-sm font-black shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all gap-1.5 group cursor-pointer">
                                             <Dices className="w-3.5 h-3.5 text-slate-950 group-hover:rotate-45 transition-transform" />
                                             <span>玩法說明</span>
                                         </Button>
                                     </DialogTrigger>
-                                    <DialogContent className="rounded-[2rem] bg-slate-950 border border-amber-500/30 text-white max-w-2xl backdrop-blur-2xl shadow-2xl">
+                                    <DialogContent className="rounded-3xl bg-slate-950 border border-amber-500/30 text-white max-w-2xl backdrop-blur-2xl shadow-2xl p-4 sm:p-6">
                                         <DialogHeader>
-                                            <DialogTitle className="text-xl md:text-2xl font-black text-amber-400 flex items-center gap-2 font-headline">
-                                                <Target className="w-6 h-6 text-amber-400" />
+                                            <DialogTitle className="text-lg sm:text-2xl font-black text-amber-400 flex items-center gap-2 font-headline">
+                                                <Target className="w-5 h-5 sm:w-6 sm:h-6 text-amber-400" />
                                                 卡展與賽事行事曆機制說明
                                             </DialogTitle>
                                             <DialogDescription className="text-xs text-slate-400 pt-1">
                                                 整合全台卡展巡迴日程與體育賽事對決預測，一站掌握完整玩卡生態。
                                             </DialogDescription>
                                         </DialogHeader>
-                                        <div className="space-y-4 py-3 text-sm text-slate-300">
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
-                                                    <div className="flex items-center gap-2 text-cyan-400 font-bold">
-                                                        <MapPin className="w-4 h-4" /> 全台實體卡展巡迴
+                                        <div className="space-y-3 sm:space-y-4 py-2 sm:py-3 text-xs sm:text-sm text-slate-300">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
+                                                <div className="p-3 sm:p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1">
+                                                    <div className="flex items-center gap-1.5 text-cyan-400 font-bold text-xs sm:text-sm">
+                                                        <MapPin className="w-4 h-4 shrink-0" /> 全台實體卡展巡迴
                                                     </div>
-                                                    <p className="text-xs text-slate-400">完整收錄台北、台中、高雄等各大展會與卡聚，支援一鍵地圖導航與日程提醒。</p>
+                                                    <p className="text-[11px] sm:text-xs text-slate-400">完整收錄台北、台中、高雄等各大展會與卡聚，支援一鍵地圖導航與日程提醒。</p>
                                                 </div>
-                                                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
-                                                    <div className="flex items-center gap-2 text-amber-400 font-bold">
-                                                        <Trophy className="w-4 h-4" /> 熱門賽事即時預測
+                                                <div className="p-3 sm:p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1">
+                                                    <div className="flex items-center gap-1.5 text-amber-400 font-bold text-xs sm:text-sm">
+                                                        <Trophy className="w-4 h-4 shrink-0" /> 熱門賽事即時預測
                                                     </div>
-                                                    <p className="text-xs text-slate-400">包含 NBA、MLB、職足與職棒焦點大賽，開賽前自由參與競猜，瓜分海量點數。</p>
+                                                    <p className="text-[11px] sm:text-xs text-slate-400">包含 NBA、MLB、職足與職棒焦點大賽，開賽前自由參與競猜，瓜分海量點數。</p>
                                                 </div>
-                                                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
-                                                    <div className="flex items-center gap-2 text-purple-400 font-bold">
-                                                        <Layers className="w-4 h-4" /> 雙模式切換瀏覽
+                                                <div className="p-3 sm:p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1">
+                                                    <div className="flex items-center gap-1.5 text-purple-400 font-bold text-xs sm:text-sm">
+                                                        <Layers className="w-4 h-4 shrink-0" /> 雙模式切換瀏覽
                                                     </div>
-                                                    <p className="text-xs text-slate-400">自由切換月曆方格檢視或時間軸清單，快速按分類與關鍵字檢索活動。</p>
+                                                    <p className="text-[11px] sm:text-xs text-slate-400">自由切換月曆方格檢視或時間軸清單，快速按分類與關鍵字檢索活動。</p>
                                                 </div>
-                                                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
-                                                    <div className="flex items-center gap-2 text-emerald-400 font-bold">
-                                                        <ShieldCheck className="w-4 h-4" /> 自動結算獎勵入庫
+                                                <div className="p-3 sm:p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1">
+                                                    <div className="flex items-center gap-1.5 text-emerald-400 font-bold text-xs sm:text-sm">
+                                                        <ShieldCheck className="w-4 h-4 shrink-0" /> 自動結算獎勵入庫
                                                     </div>
-                                                    <p className="text-xs text-slate-400">賽果自動官方公正核定，獲勝玩家紅利與獎勵點數即時自動派發至會員帳號。</p>
+                                                    <p className="text-[11px] sm:text-xs text-slate-400">賽果自動官方公正核定，獲勝玩家紅利與獎勵點數即時自動派發至會員帳號。</p>
                                                 </div>
                                             </div>
                                         </div>
                                     </DialogContent>
                                 </Dialog>
 
-                                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg sm:rounded-xl bg-white/5 border border-white/10 text-[11px] text-slate-300">
-                                    <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+                                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-[11px] text-slate-300">
+                                    <ShieldCheck className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                                     <span>系統自動開獎保障</span>
                                 </div>
                             </div>
@@ -527,7 +527,7 @@ export function UnifiedEventCalendar({
 
                         {/* Live Stats Widget */}
                         <div className="grid grid-cols-2 gap-2 sm:gap-3 w-full lg:w-auto shrink-0">
-                            <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-[#0b1329] border border-amber-500/30 flex flex-col items-center justify-center text-center shadow-[0_4px_20px_rgba(245,158,11,0.15)] min-w-[110px] sm:min-w-[130px]">
+                            <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-[#0b1329] border border-amber-500/30 flex flex-col items-center justify-center text-center shadow-[0_4px_20px_rgba(245,158,11,0.15)] min-w-0">
                                 <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">進行中展訊</span>
                                 <span className="text-xl sm:text-3xl font-black font-headline text-amber-400 mt-0.5 sm:mt-1">
                                     {exhibitionEventsCount}
@@ -535,7 +535,7 @@ export function UnifiedEventCalendar({
                                 <span className="text-[9px] sm:text-[10px] text-slate-400 mt-0.5">全台巡迴展出</span>
                             </div>
 
-                            <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-[#0b1329] border border-purple-500/30 flex flex-col items-center justify-center text-center shadow-[0_4px_20px_rgba(168,85,247,0.15)] min-w-[110px] sm:min-w-[130px]">
+                            <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-[#0b1329] border border-purple-500/30 flex flex-col items-center justify-center text-center shadow-[0_4px_20px_rgba(168,85,247,0.15)] min-w-0">
                                 <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">熱門賽事</span>
                                 <span className="text-xl sm:text-3xl font-black font-headline text-purple-400 mt-0.5 sm:mt-1">
                                     {matchEventsCount}
@@ -551,43 +551,43 @@ export function UnifiedEventCalendar({
             {/* 上面區域：最近一場卡展的資訊 × 最近一場預測賽事的資訊 */}
             {/* ========================================================================= */}
             {showSpotlight && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5 sm:gap-4">
                     {/* 卡片 1: 最近一場卡展資訊 */}
                     {nearestExhibition ? (
                         <div 
                             onClick={() => setActiveModalEvent(nearestExhibition)}
-                            className="group relative cursor-pointer overflow-hidden rounded-3xl bg-gradient-to-br from-cyan-950/40 via-slate-900/95 to-slate-950 border border-cyan-500/30 hover:border-cyan-400/80 p-4 sm:p-5 transition-all duration-300 shadow-xl shadow-cyan-950/30 hover:shadow-cyan-500/10 flex flex-col justify-between gap-3.5"
+                            className="group relative cursor-pointer overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-cyan-950/40 via-slate-900/95 to-slate-950 border border-cyan-500/30 hover:border-cyan-400/80 p-3.5 sm:p-5 transition-all duration-300 shadow-xl shadow-cyan-950/30 hover:shadow-cyan-500/10 flex flex-col justify-between gap-3"
                         >
                             {/* 背景霓虹光暈 */}
                             <div className="absolute top-0 right-0 w-44 h-44 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none group-hover:bg-cyan-500/20 transition-all" />
 
-                            <div className="relative z-10 space-y-3">
+                            <div className="relative z-10 space-y-2.5 sm:space-y-3">
                                 {/* 頂部標籤列 */}
-                                <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center justify-between gap-1.5 flex-wrap">
                                     <div className="flex items-center gap-1.5 flex-wrap">
-                                        <Badge className="bg-cyan-500/20 border-cyan-500/40 text-cyan-300 text-xs font-black px-2.5 py-0.5 rounded-lg flex items-center gap-1">
-                                            <Tag className="w-3.5 h-3.5" />
+                                        <Badge className="bg-cyan-500/20 border-cyan-500/40 text-cyan-300 text-[11px] sm:text-xs font-black px-2 sm:px-2.5 py-0.5 rounded-lg flex items-center gap-1">
+                                            <Tag className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                                             最近一場卡展
                                         </Badge>
-                                        <Badge variant="outline" className="border-slate-700 bg-slate-900/80 text-slate-300 text-[11px] px-2 py-0.5">
+                                        <Badge variant="outline" className="border-slate-700 bg-slate-900/80 text-slate-300 text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-0.5">
                                             {extractCity(nearestExhibition.location)}
                                         </Badge>
                                     </div>
 
                                     {exhCountdown && (
-                                        <span className={cn("text-[11px] font-bold px-2.5 py-0.5 rounded-full border shrink-0", exhCountdown.badgeClass)}>
+                                        <span className={cn("text-[10px] sm:text-[11px] font-bold px-2 sm:px-2.5 py-0.5 rounded-full border shrink-0", exhCountdown.badgeClass)}>
                                             {exhCountdown.text}
                                         </span>
                                     )}
                                 </div>
 
                                 {/* 卡展標題 */}
-                                <h3 className="text-base sm:text-lg font-black text-white group-hover:text-cyan-300 transition-colors line-clamp-1 leading-snug">
+                                <h3 className="text-sm sm:text-lg font-black text-white group-hover:text-cyan-300 transition-colors line-clamp-1 leading-snug break-words">
                                     {nearestExhibition.title}
                                 </h3>
 
                                 {/* 重點資訊列表 */}
-                                <div className="space-y-1.5 text-xs text-slate-300 bg-slate-950/70 p-3 rounded-2xl border border-slate-800/80">
+                                <div className="space-y-1.5 text-xs text-slate-300 bg-slate-950/70 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border border-slate-800/80">
                                     <div className="flex items-center gap-2">
                                         <CalendarIcon className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
                                         <span className="font-mono text-cyan-200 font-semibold">{nearestExhibition.timeStr}</span>
@@ -608,15 +608,15 @@ export function UnifiedEventCalendar({
 
                             {/* 底部動作列 */}
                             <div className="relative z-10 flex items-center justify-between gap-2 pt-2 border-t border-slate-800/80">
-                                <span className="text-[11px] text-slate-400 font-medium">點擊卡片瀏覽特展內容</span>
-                                <div className="flex items-center gap-2">
+                                <span className="text-[10px] sm:text-[11px] text-slate-400 font-medium truncate">點擊卡片瀏覽特展</span>
+                                <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                                     {nearestExhibition.location && (
                                         <a
                                             href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(nearestExhibition.location)}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             onClick={(e) => e.stopPropagation()}
-                                            className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-slate-300 hover:text-white bg-slate-900 border border-slate-700/80 hover:border-slate-600 flex items-center gap-1 transition-all"
+                                            className="px-2 sm:px-2.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold text-slate-300 hover:text-white bg-slate-900 border border-slate-700/80 hover:border-slate-600 flex items-center gap-1 transition-all"
                                         >
                                             <Navigation className="w-3 h-3 text-cyan-400" />
                                             <span>導航</span>
@@ -624,7 +624,7 @@ export function UnifiedEventCalendar({
                                     )}
                                     <Button
                                         size="sm"
-                                        className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black rounded-xl text-xs h-8 px-3 shadow-md shadow-cyan-500/20"
+                                        className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black rounded-xl text-[11px] sm:text-xs h-7 sm:h-8 px-2.5 sm:px-3 shadow-md shadow-cyan-500/20"
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             setActiveModalEvent(nearestExhibition);
@@ -637,7 +637,7 @@ export function UnifiedEventCalendar({
                             </div>
                         </div>
                     ) : (
-                        <div className="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 text-center space-y-1.5 flex flex-col items-center justify-center">
+                        <div className="p-5 sm:p-6 rounded-2xl sm:rounded-3xl bg-slate-900/60 border border-slate-800 text-center space-y-1.5 flex flex-col items-center justify-center">
                             <Tag className="w-6 h-6 text-slate-600" />
                             <p className="text-xs text-slate-400 font-bold">目前無即將舉行的卡展</p>
                         </div>
@@ -647,39 +647,39 @@ export function UnifiedEventCalendar({
                     {nearestPrediction ? (
                         <div 
                             onClick={() => setActiveModalEvent(nearestPrediction)}
-                            className="group relative cursor-pointer overflow-hidden rounded-3xl bg-gradient-to-br from-amber-950/40 via-slate-900/95 to-slate-950 border border-amber-500/30 hover:border-amber-400/80 p-4 sm:p-5 transition-all duration-300 shadow-xl shadow-amber-950/30 hover:shadow-amber-500/10 flex flex-col justify-between gap-3.5"
+                            className="group relative cursor-pointer overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-amber-950/40 via-slate-900/95 to-slate-950 border border-amber-500/30 hover:border-amber-400/80 p-3.5 sm:p-5 transition-all duration-300 shadow-xl shadow-amber-950/30 hover:shadow-amber-500/10 flex flex-col justify-between gap-3"
                         >
                             {/* 背景霓虹光暈 */}
                             <div className="absolute top-0 right-0 w-44 h-44 bg-amber-500/10 rounded-full blur-3xl pointer-events-none group-hover:bg-amber-500/20 transition-all" />
 
-                            <div className="relative z-10 space-y-3">
+                            <div className="relative z-10 space-y-2.5 sm:space-y-3">
                                 {/* 頂部標籤列 */}
-                                <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center justify-between gap-1.5 flex-wrap">
                                     <div className="flex items-center gap-1.5 flex-wrap">
-                                        <Badge className="bg-amber-500/20 border-amber-500/40 text-amber-300 text-xs font-black px-2.5 py-0.5 rounded-lg flex items-center gap-1">
-                                            <Trophy className="w-3.5 h-3.5" />
+                                        <Badge className="bg-amber-500/20 border-amber-500/40 text-amber-300 text-[11px] sm:text-xs font-black px-2 sm:px-2.5 py-0.5 rounded-lg flex items-center gap-1">
+                                            <Trophy className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                                             最近一場預測賽事
                                         </Badge>
-                                        <Badge variant="outline" className="border-slate-700 bg-slate-900/80 text-amber-200 text-[11px] px-2 py-0.5 font-bold">
+                                        <Badge variant="outline" className="border-slate-700 bg-slate-900/80 text-amber-200 text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-0.5 font-bold">
                                             {nearestPrediction.categoryLabel}
                                         </Badge>
                                     </div>
 
                                     {predMatchCountdown && (
-                                        <span className={cn("text-[11px] font-bold px-2.5 py-0.5 rounded-full border shrink-0", predMatchCountdown.badgeClass)}>
+                                        <span className={cn("text-[10px] sm:text-[11px] font-bold px-2 sm:px-2.5 py-0.5 rounded-full border shrink-0", predMatchCountdown.badgeClass)}>
                                             {predMatchCountdown.text}
                                         </span>
                                     )}
                                 </div>
 
                                 {/* 賽事標題 */}
-                                <h3 className="text-base sm:text-lg font-black text-white group-hover:text-amber-300 transition-colors line-clamp-1 leading-snug">
+                                <h3 className="text-sm sm:text-lg font-black text-white group-hover:text-amber-300 transition-colors line-clamp-1 leading-snug break-words">
                                     {nearestPrediction.title}
                                 </h3>
 
                                 {/* 重點資訊列表 */}
-                                <div className="space-y-1.5 text-xs text-slate-300 bg-slate-950/70 p-3 rounded-2xl border border-slate-800/80">
-                                    <div className="flex items-center justify-between">
+                                <div className="space-y-1.5 text-xs text-slate-300 bg-slate-950/70 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border border-slate-800/80">
+                                    <div className="flex items-center justify-between gap-2 flex-wrap">
                                         <div className="flex items-center gap-2">
                                             <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                                             <span className="font-mono text-amber-200 font-semibold">
@@ -687,18 +687,18 @@ export function UnifiedEventCalendar({
                                             </span>
                                         </div>
                                         {nearestPrediction.rawPrediction?.poolPoints && (
-                                            <div className="flex items-center gap-1 text-[11px] text-amber-300 font-bold shrink-0">
+                                            <div className="flex items-center gap-1 text-[10px] sm:text-[11px] text-amber-300 font-bold shrink-0">
                                                 <Coins className="w-3 h-3 text-amber-400" />
                                                 <span>{(nearestPrediction.rawPrediction.poolPoints).toLocaleString()} P+ 獎池</span>
                                             </div>
                                         )}
                                     </div>
                                     {nearestPrediction.rawPrediction?.options && nearestPrediction.rawPrediction.options.length > 0 && (
-                                        <div className="flex items-center gap-2 pt-0.5">
-                                            <span className="text-[11px] text-slate-400 shrink-0">熱門競猜：</span>
-                                            <div className="flex items-center gap-1.5 truncate">
+                                        <div className="flex items-center gap-1.5 pt-0.5">
+                                            <span className="text-[10px] sm:text-[11px] text-slate-400 shrink-0">熱門競猜：</span>
+                                            <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-0.5">
                                                 {nearestPrediction.rawPrediction.options.map((opt: any, idx: number) => (
-                                                    <span key={idx} className="text-[11px] bg-slate-900 px-2 py-0.5 rounded-md text-slate-300 border border-slate-800">
+                                                    <span key={idx} className="text-[10px] sm:text-[11px] bg-slate-900 px-2 py-0.5 rounded-md text-slate-300 border border-slate-800 shrink-0 whitespace-nowrap">
                                                         {opt.text} <span className="text-amber-400 font-mono font-bold">x{opt.odds}</span>
                                                     </span>
                                                 ))}
@@ -710,12 +710,12 @@ export function UnifiedEventCalendar({
 
                             {/* 底部動作列 */}
                             <div className="relative z-10 flex items-center justify-between gap-2 pt-2 border-t border-slate-800/80">
-                                <span className="text-[11px] text-slate-400 font-medium">競猜瓜分海量點數獎池</span>
-                                <div className="flex items-center gap-2">
+                                <span className="text-[10px] sm:text-[11px] text-slate-400 font-medium truncate">競猜瓜分點數</span>
+                                <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        className="border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-200 font-bold rounded-xl text-xs h-8 px-3"
+                                        className="border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-200 font-bold rounded-xl text-[11px] sm:text-xs h-7 sm:h-8 px-2 sm:px-3"
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             setActiveModalEvent(nearestPrediction);
@@ -725,7 +725,7 @@ export function UnifiedEventCalendar({
                                     </Button>
                                     <Button
                                         size="sm"
-                                        className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs h-8 px-3 shadow-md shadow-amber-500/20 cursor-pointer"
+                                        className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-[11px] sm:text-xs h-7 sm:h-8 px-2.5 sm:px-3 shadow-md shadow-amber-500/20 cursor-pointer"
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             handleOpenPredictionModal(nearestPrediction);
@@ -738,7 +738,7 @@ export function UnifiedEventCalendar({
                             </div>
                         </div>
                     ) : (
-                        <div className="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 text-center space-y-1.5 flex flex-col items-center justify-center">
+                        <div className="p-5 sm:p-6 rounded-2xl sm:rounded-3xl bg-slate-900/60 border border-slate-800 text-center space-y-1.5 flex flex-col items-center justify-center">
                             <Trophy className="w-6 h-6 text-slate-600" />
                             <p className="text-xs text-slate-400 font-bold">目前無即將進行的賽事預測</p>
                         </div>
@@ -747,17 +747,17 @@ export function UnifiedEventCalendar({
             )}
 
             {/* 控制列：模式切換、搜尋、篩選按鈕群 */}
-            <div className="bg-slate-900/90 p-3 sm:p-4 rounded-3xl border border-slate-800/90 shadow-xl backdrop-blur-xl space-y-3.5">
+            <div className="bg-slate-900/90 p-3 sm:p-4 rounded-2xl sm:rounded-3xl border border-slate-800/90 shadow-xl backdrop-blur-xl space-y-3">
                 
-                {/* 第一列：檢視模式 + 關鍵字搜尋 */}
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                {/* 第一列：檢視模式 + 關鍵字搜尋 + 捷徑按鈕 */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3">
                     {/* 月曆網格 vs 時間軸切換 */}
-                    <div className="flex items-center bg-slate-950 p-1 rounded-2xl border border-slate-800 shrink-0">
+                    <div className="grid grid-cols-2 sm:flex items-center bg-slate-950 p-1 rounded-2xl border border-slate-800 w-full sm:w-auto shrink-0">
                         <button
                             type="button"
                             onClick={() => setViewMode('grid')}
                             className={cn(
-                                "flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer",
+                                "flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer",
                                 viewMode === 'grid'
                                     ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-slate-950 shadow-md shadow-cyan-500/20"
                                     : "text-slate-400 hover:text-white"
@@ -770,7 +770,7 @@ export function UnifiedEventCalendar({
                             type="button"
                             onClick={() => setViewMode('agenda')}
                             className={cn(
-                                "flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer",
+                                "flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer",
                                 viewMode === 'agenda'
                                     ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-slate-950 shadow-md shadow-cyan-500/20"
                                     : "text-slate-400 hover:text-white"
@@ -782,23 +782,23 @@ export function UnifiedEventCalendar({
                     </div>
 
                     {/* 搜尋框 */}
-                    <div className="relative flex-1 max-w-md">
+                    <div className="relative w-full sm:flex-1 sm:max-w-md">
                         <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                         <Input
                             placeholder="搜尋卡展名稱、NBA/MLB球隊、場館城市..."
                             value={keyword}
                             onChange={(e) => setKeyword(e.target.value)}
-                            className="bg-slate-950 border-slate-800 text-white pl-10 pr-4 h-10 rounded-2xl text-xs placeholder:text-slate-500 focus-visible:ring-cyan-500"
+                            className="bg-slate-950 border-slate-800 text-white pl-10 pr-4 h-9 sm:h-10 rounded-xl sm:rounded-2xl text-xs placeholder:text-slate-500 focus-visible:ring-cyan-500 w-full"
                         />
                     </div>
 
                     {/* 回到今天捷徑與賽事競猜快速按鈕 */}
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="grid grid-cols-2 sm:flex items-center gap-2 w-full sm:w-auto shrink-0">
                         <Button
                             variant="outline"
                             size="sm"
                             onClick={goToToday}
-                            className="border-slate-700/80 bg-slate-950 hover:bg-slate-800 text-cyan-400 font-bold rounded-xl h-10 px-3 text-xs shrink-0 cursor-pointer"
+                            className="border-slate-700/80 bg-slate-950 hover:bg-slate-800 text-cyan-400 font-bold rounded-xl h-9 sm:h-10 px-3 text-xs w-full sm:w-auto cursor-pointer flex items-center justify-center"
                         >
                             <CalendarCheck className="w-3.5 h-3.5 mr-1" />
                             回到今天
@@ -806,7 +806,7 @@ export function UnifiedEventCalendar({
                         <Button
                             size="sm"
                             onClick={() => handleOpenPredictionModal()}
-                            className="bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-xl h-10 px-3.5 text-xs shadow-md shadow-amber-500/20 cursor-pointer flex items-center gap-1.5 shrink-0"
+                            className="bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-xl h-9 sm:h-10 px-3.5 text-xs shadow-md shadow-amber-500/20 cursor-pointer flex items-center justify-center gap-1.5 w-full sm:w-auto"
                         >
                             <Trophy className="w-3.5 h-3.5" />
                             <span>賽事競猜</span>
@@ -815,7 +815,7 @@ export function UnifiedEventCalendar({
                 </div>
 
                 {/* 第二列：快速分類徽章按鈕 */}
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs -mx-1 px-1 sm:mx-0 sm:px-0">
                     {[
                         { id: 'ALL', label: '🌟 全部精彩', color: 'border-slate-700 text-slate-300' },
                         { id: 'HOT', label: '🔥 熱門焦點', color: 'border-rose-500/40 text-rose-300' },
@@ -828,7 +828,7 @@ export function UnifiedEventCalendar({
                             key={item.id}
                             onClick={() => setFilterCategory(item.id)}
                             className={cn(
-                                "px-3 py-1.5 rounded-xl font-bold transition-all whitespace-nowrap cursor-pointer border text-xs flex items-center gap-1",
+                                "px-2.5 sm:px-3 py-1.5 rounded-xl font-bold transition-all whitespace-nowrap cursor-pointer border text-[11px] sm:text-xs flex items-center gap-1 shrink-0",
                                 filterCategory === item.id
                                     ? "bg-slate-800 border-cyan-400 text-cyan-300 shadow-sm"
                                     : `bg-slate-950/70 hover:bg-slate-800/80 ${item.color}`
@@ -844,27 +844,28 @@ export function UnifiedEventCalendar({
             {/* 視圖 A：月曆網格矩陣 (Month Grid Matrix) */}
             {/* ========================================================================= */}
             {viewMode === 'grid' && (
-                <div className="space-y-5">
+                <div className="space-y-4 sm:space-y-5">
                     {/* 月曆主卡片 */}
-                    <div className="rounded-3xl bg-slate-900/90 border border-slate-800/90 p-4 sm:p-6 shadow-2xl backdrop-blur-xl">
+                    <div className="rounded-2xl sm:rounded-3xl bg-slate-900/90 border border-slate-800/90 p-3 sm:p-6 shadow-2xl backdrop-blur-xl">
                         
                         {/* 月份導覽列 */}
-                        <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-800">
-                            <div className="flex items-center gap-3">
-                                <h2 className="text-xl sm:text-2xl font-black text-white font-headline">
+                        <div className="flex items-center justify-between mb-4 sm:mb-6 pb-3 sm:pb-4 border-b border-slate-800 gap-2">
+                            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                                <h2 className="text-base sm:text-2xl font-black text-white font-headline truncate">
                                     {format(currentMonth, 'yyyy 年 M 月')}
                                 </h2>
-                                <Badge className="bg-cyan-500/10 text-cyan-400 border-cyan-500/30 text-[11px] font-mono">
-                                    {filteredEvents.length} 項排定活動
+                                <Badge className="bg-cyan-500/10 text-cyan-400 border-cyan-500/30 text-[10px] sm:text-[11px] font-mono shrink-0 px-2 py-0.5">
+                                    <span className="sm:hidden">{filteredEvents.length} 項</span>
+                                    <span className="hidden sm:inline">{filteredEvents.length} 項排定活動</span>
                                 </Badge>
                             </div>
 
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                                 <Button
                                     variant="outline"
                                     size="icon"
                                     onClick={prevMonth}
-                                    className="w-9 h-9 rounded-xl border-slate-800 bg-slate-950 hover:bg-slate-800 text-slate-300"
+                                    className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl border-slate-800 bg-slate-950 hover:bg-slate-800 text-slate-300"
                                 >
                                     <ChevronLeft className="w-4 h-4" />
                                 </Button>
@@ -872,7 +873,7 @@ export function UnifiedEventCalendar({
                                     variant="outline"
                                     size="icon"
                                     onClick={nextMonth}
-                                    className="w-9 h-9 rounded-xl border-slate-800 bg-slate-950 hover:bg-slate-800 text-slate-300"
+                                    className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl border-slate-800 bg-slate-950 hover:bg-slate-800 text-slate-300"
                                 >
                                     <ChevronRight className="w-4 h-4" />
                                 </Button>
@@ -880,16 +881,17 @@ export function UnifiedEventCalendar({
                         </div>
 
                         {/* 星期標頭 */}
-                        <div className="grid grid-cols-7 gap-1.5 sm:gap-2 mb-2 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">
+                        <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-1.5 text-center text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
                             {['日', '一', '二', '三', '四', '五', '六'].map((day, idx) => (
-                                <div key={day} className={cn("py-1", (idx === 0 || idx === 6) && "text-rose-400/90")}>
-                                    週{day}
+                                <div key={day} className={cn("py-0.5 sm:py-1", (idx === 0 || idx === 6) && "text-rose-400/90")}>
+                                    <span className="sm:hidden">{day}</span>
+                                    <span className="hidden sm:inline">週{day}</span>
                                 </div>
                             ))}
                         </div>
 
                         {/* 日期網格 */}
-                        <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+                        <div className="grid grid-cols-7 gap-1 sm:gap-2">
                             {daysMatrix.map((dayItem, index) => {
                                 const isCurrentMonth = isSameMonth(dayItem, currentMonth);
                                 const isTodayDate = isToday(dayItem);
@@ -901,32 +903,52 @@ export function UnifiedEventCalendar({
                                         key={index}
                                         onClick={() => setSelectedDate(dayItem)}
                                         className={cn(
-                                            "min-h-[85px] sm:min-h-[110px] p-1.5 sm:p-2 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between group relative overflow-hidden",
-                                            isCurrentMonth ? "bg-slate-950/60" : "bg-slate-950/20 opacity-40",
+                                            "min-h-[50px] xs:min-h-[56px] sm:min-h-[110px] p-1 sm:p-2 rounded-xl sm:rounded-2xl border transition-all cursor-pointer flex flex-col justify-between group relative overflow-hidden",
+                                            isCurrentMonth ? "bg-slate-950/60" : "bg-slate-950/20 opacity-30",
                                             isSelected 
-                                                ? "border-cyan-400 ring-2 ring-cyan-500/30 bg-cyan-950/20 shadow-lg" 
+                                                ? "border-cyan-400 ring-2 ring-cyan-500/40 bg-cyan-950/30 shadow-lg shadow-cyan-950/50" 
                                                 : "border-slate-800/80 hover:border-slate-700 hover:bg-slate-900/60",
-                                            isTodayDate && !isSelected && "border-amber-500/60 bg-amber-950/10"
+                                            isTodayDate && !isSelected && "border-amber-500/60 bg-amber-950/15"
                                         )}
                                     >
                                         {/* 日期數字與當日徽章 */}
                                         <div className="flex items-center justify-between">
                                             <span className={cn(
-                                                "text-xs sm:text-sm font-black w-6 h-6 rounded-lg flex items-center justify-center",
+                                                "text-[11px] xs:text-xs sm:text-sm font-black w-5 h-5 xs:w-5.5 xs:h-5.5 sm:w-6 sm:h-6 rounded-md sm:rounded-lg flex items-center justify-center shrink-0",
                                                 isTodayDate ? "bg-amber-500 text-slate-950 font-black shadow-sm" : (isSelected ? "bg-cyan-500 text-slate-950" : "text-slate-300")
                                             )}>
                                                 {format(dayItem, 'd')}
                                             </span>
 
                                             {dayEvents.length > 0 && (
-                                                <span className="text-[10px] font-bold text-slate-400 font-mono">
+                                                <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 font-mono">
                                                     {dayEvents.length}
                                                 </span>
                                             )}
                                         </div>
 
-                                        {/* 格子內迷你活動標籤列表 (最多顯示 2 筆，其他以 +N 表示) */}
-                                        <div className="space-y-1 my-1 overflow-hidden">
+                                        {/* 手機端專屬：微型發光活動圓點指示器 (Dots) - 徹底根絕窄螢幕文字溢出破版 */}
+                                        <div className="flex sm:hidden items-center justify-center gap-1 my-auto py-0.5">
+                                            {dayEvents.slice(0, 3).map((ev) => (
+                                                <span
+                                                    key={ev.id}
+                                                    className={cn(
+                                                        "w-1.5 h-1.5 rounded-full shrink-0",
+                                                        ev.type === 'exhibition' 
+                                                            ? "bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.9)]" 
+                                                            : "bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.9)]"
+                                                    )}
+                                                />
+                                            ))}
+                                            {dayEvents.length > 3 && (
+                                                <span className="text-[8px] text-slate-500 font-mono font-bold leading-none">
+                                                    +
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {/* 平板與電腦端專屬：豐富活動標籤列表 (Cards) */}
+                                        <div className="hidden sm:block space-y-1 my-1 overflow-hidden">
                                             {dayEvents.slice(0, 2).map((ev) => {
                                                 const isExh = ev.type === 'exhibition';
                                                 return (
@@ -958,11 +980,11 @@ export function UnifiedEventCalendar({
                                         </div>
 
                                         {/* 底部微型進度裝飾 */}
-                                        <div className="h-0.5 w-full bg-slate-800/40 rounded-full overflow-hidden">
+                                        <div className="h-0.5 sm:h-1 w-full bg-slate-800/40 rounded-full overflow-hidden">
                                             {dayEvents.length > 0 && (
                                                 <div 
                                                     className={cn(
-                                                        "h-full rounded-full",
+                                                        "h-full rounded-full transition-all",
                                                         dayEvents.some(e => e.type === 'exhibition') ? "bg-cyan-400" : "bg-amber-400"
                                                     )} 
                                                     style={{ width: `${Math.min(100, dayEvents.length * 35)}%` }}
@@ -976,17 +998,17 @@ export function UnifiedEventCalendar({
                     </div>
 
                     {/* 下方聯動選中日期行程詳情 (Selected Date Detail Panel) */}
-                    <div className="rounded-3xl bg-slate-900/90 border border-slate-800 p-5 sm:p-6 shadow-xl backdrop-blur-xl space-y-4">
+                    <div className="rounded-2xl sm:rounded-3xl bg-slate-900/90 border border-slate-800 p-3.5 sm:p-6 shadow-xl backdrop-blur-xl space-y-3.5 sm:space-y-4">
                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
-                            <div className="flex items-center gap-2.5">
-                                <div className="p-2 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400">
-                                    <Clock className="w-4 h-4" />
+                            <div className="flex items-center gap-2 sm:gap-2.5">
+                                <div className="p-1.5 sm:p-2 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400">
+                                    <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                 </div>
-                                <div>
-                                    <h3 className="text-base sm:text-lg font-black text-white">
+                                <div className="min-w-0 flex-1">
+                                    <h3 className="text-sm sm:text-lg font-black text-white break-words">
                                         {format(selectedDate, 'yyyy 年 MM 月 dd 日')} ({['週日', '週一', '週二', '週三', '週四', '週五', '週六'][selectedDate.getDay()]}) 行程活動
                                     </h3>
-                                    <span className="text-xs text-slate-400">
+                                    <span className="text-[11px] sm:text-xs text-slate-400">
                                         當日排定 {selectedDayEvents.length} 場精彩活動 (卡展 / 賽事預測)
                                     </span>
                                 </div>
@@ -995,23 +1017,23 @@ export function UnifiedEventCalendar({
 
                         {/* 活動卡片清單 */}
                         {selectedDayEvents.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 pt-1">
                                 {selectedDayEvents.map(ev => (
                                     <div
                                         key={ev.id}
                                         onClick={() => setActiveModalEvent(ev)}
                                         className={cn(
-                                            "p-4 rounded-2xl border transition-all cursor-pointer relative overflow-hidden flex flex-col justify-between group",
+                                            "p-3 sm:p-4 rounded-xl sm:rounded-2xl border transition-all cursor-pointer relative overflow-hidden flex flex-col justify-between group",
                                             ev.type === 'exhibition'
                                                 ? "bg-slate-950/80 border-cyan-500/30 hover:border-cyan-400 hover:shadow-cyan-500/10"
                                                 : "bg-slate-950/80 border-amber-500/30 hover:border-amber-400 hover:shadow-amber-500/10",
                                             "hover:shadow-lg"
                                         )}
                                     >
-                                        <div className="space-y-2">
-                                            <div className="flex items-center justify-between gap-2">
+                                        <div className="space-y-1.5 sm:space-y-2">
+                                            <div className="flex items-center justify-between gap-1.5">
                                                 <Badge className={cn(
-                                                    "text-[10px] font-black px-2 py-0.5",
+                                                    "text-[10px] font-black px-2 py-0.5 shrink-0",
                                                     ev.type === 'exhibition'
                                                         ? "bg-cyan-500/20 text-cyan-300 border-cyan-500/40"
                                                         : "bg-amber-500/20 text-amber-300 border-amber-500/40"
@@ -1019,34 +1041,34 @@ export function UnifiedEventCalendar({
                                                     {ev.categoryLabel}
                                                 </Badge>
 
-                                                <span className="text-xs font-mono text-slate-400 flex items-center gap-1">
+                                                <span className="text-[11px] sm:text-xs font-mono text-slate-400 flex items-center gap-1 shrink-0">
                                                     <Clock className="w-3 h-3" />
                                                     {ev.timeStr}
                                                 </span>
                                             </div>
 
-                                            <h4 className="text-sm font-black text-white group-hover:text-cyan-300 transition-colors line-clamp-2">
+                                            <h4 className="text-xs sm:text-sm font-black text-white group-hover:text-cyan-300 transition-colors line-clamp-2 break-words">
                                                 {ev.title}
                                             </h4>
 
                                             {ev.location && (
-                                                <p className="text-xs text-slate-400 flex items-center gap-1 truncate">
+                                                <p className="text-[11px] sm:text-xs text-slate-400 flex items-center gap-1 truncate">
                                                     <MapPin className="w-3 h-3 text-rose-400 shrink-0" />
                                                     <span className="truncate">{ev.location}</span>
                                                 </p>
                                             )}
                                         </div>
 
-                                        <div className="pt-3 mt-3 border-t border-slate-800/80 flex items-center justify-between text-xs">
-                                            <span className="text-[11px] text-slate-500">點擊查看詳情</span>
+                                        <div className="pt-2.5 sm:pt-3 mt-2.5 sm:mt-3 border-t border-slate-800/80 flex items-center justify-between text-xs">
+                                            <span className="text-[10px] sm:text-[11px] text-slate-500">點擊查看詳情</span>
                                             {ev.type === 'exhibition' ? (
-                                                <span className="text-cyan-400 font-bold flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+                                                <span className="text-cyan-400 font-bold flex items-center gap-1 group-hover:translate-x-0.5 transition-transform text-[11px] sm:text-xs">
                                                     展訊詳情 ➜
                                                 </span>
                                             ) : (
                                                 <button
                                                     type="button"
-                                                    className="text-amber-400 hover:text-amber-300 font-black flex items-center gap-1 group-hover:translate-x-0.5 transition-transform cursor-pointer"
+                                                    className="text-amber-400 hover:text-amber-300 font-black flex items-center gap-1 group-hover:translate-x-0.5 transition-transform cursor-pointer text-[11px] sm:text-xs"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         handleOpenPredictionModal(ev);
@@ -1060,10 +1082,10 @@ export function UnifiedEventCalendar({
                                 ))}
                             </div>
                         ) : (
-                            <div className="p-8 rounded-2xl bg-slate-950/50 border border-slate-800/60 text-center space-y-2">
-                                <CalendarIcon className="w-8 h-8 text-slate-600 mx-auto" />
+                            <div className="p-6 sm:p-8 rounded-2xl bg-slate-950/50 border border-slate-800/60 text-center space-y-2">
+                                <CalendarIcon className="w-7 h-7 sm:w-8 sm:h-8 text-slate-600 mx-auto" />
                                 <p className="text-xs sm:text-sm text-slate-400 font-bold">該日期暫無排定的公開活動或賽事</p>
-                                <p className="text-[11px] text-slate-500">歡迎點擊其他有彩色標籤的日期，或直接查看下方「行程時間軸」。</p>
+                                <p className="text-[10px] sm:text-[11px] text-slate-500">點擊上方其他有彩色圓點的日期，或切換至「行程時間軸」瀏覽全部日程。</p>
                             </div>
                         )}
                     </div>
@@ -1074,7 +1096,7 @@ export function UnifiedEventCalendar({
             {/* 視圖 B：行程時間軸清單 (Agenda Timeline View) */}
             {/* ========================================================================= */}
             {viewMode === 'agenda' && (
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                     {filteredEvents.length > 0 ? (
                         filteredEvents.map((ev) => {
                             const isExh = ev.type === 'exhibition';
@@ -1083,61 +1105,63 @@ export function UnifiedEventCalendar({
                                     key={ev.id}
                                     onClick={() => setActiveModalEvent(ev)}
                                     className={cn(
-                                        "p-4 sm:p-5 rounded-3xl border transition-all cursor-pointer relative overflow-hidden backdrop-blur-xl group flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4",
+                                        "p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border transition-all cursor-pointer relative overflow-hidden backdrop-blur-xl group flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4",
                                         isExh
                                             ? "bg-slate-900/90 border-slate-800 hover:border-cyan-500/50 hover:shadow-cyan-500/10 shadow-lg"
                                             : "bg-slate-900/90 border-slate-800 hover:border-amber-500/50 hover:shadow-amber-500/10 shadow-lg"
                                     )}
                                 >
-                                    {/* 左側日期標籤 */}
-                                    <div className="flex items-center gap-3 shrink-0">
+                                    {/* 左側日期標籤與活動標題 */}
+                                    <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
                                         <div className={cn(
-                                            "w-14 h-14 rounded-2xl flex flex-col items-center justify-center text-center p-1 border",
+                                            "w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex flex-col items-center justify-center text-center p-1 border shrink-0",
                                             isExh
                                                 ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-400"
                                                 : "bg-amber-500/10 border-amber-500/30 text-amber-400"
                                         )}>
-                                            <span className="text-[10px] font-bold uppercase">
+                                            <span className="text-[9px] sm:text-[10px] font-bold uppercase">
                                                 {format(ev.startDate, 'MMM')}
                                             </span>
-                                            <span className="text-lg font-black leading-none">
+                                            <span className="text-base sm:text-lg font-black leading-none">
                                                 {format(ev.startDate, 'd')}
                                             </span>
                                         </div>
 
-                                        <div>
-                                            <div className="flex items-center gap-2">
+                                        <div className="min-w-0 flex-1">
+                                            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                                                 <Badge className={cn(
-                                                    "text-[10px] font-black px-2 py-0.5",
+                                                    "text-[10px] font-black px-1.5 sm:px-2 py-0.5 shrink-0",
                                                     isExh
                                                         ? "bg-cyan-500/20 text-cyan-300 border-cyan-500/40"
                                                         : "bg-amber-500/20 text-amber-300 border-amber-500/40"
                                                 )}>
                                                     {ev.categoryLabel}
                                                 </Badge>
-                                                <span className="text-xs text-slate-400 font-mono">
+                                                <span className="text-[11px] sm:text-xs text-slate-400 font-mono truncate">
                                                     {ev.timeStr}
                                                 </span>
                                             </div>
-                                            <h3 className="text-sm sm:text-base font-black text-white mt-1 group-hover:text-cyan-300 transition-colors">
+                                            <h3 className="text-xs sm:text-base font-black text-white mt-1 group-hover:text-cyan-300 transition-colors line-clamp-1 break-words">
                                                 {ev.title}
                                             </h3>
                                         </div>
                                     </div>
 
                                     {/* 右側地點與操作按鈕 */}
-                                    <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-800">
-                                        {ev.location && (
-                                            <div className="text-xs text-slate-400 flex items-center gap-1 truncate max-w-[200px]">
-                                                <MapPin className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                                    <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto border-t sm:border-t-0 pt-2.5 sm:pt-0 border-slate-800 shrink-0">
+                                        {ev.location ? (
+                                            <div className="text-[11px] sm:text-xs text-slate-400 flex items-center gap-1 truncate max-w-[160px] sm:max-w-[200px]">
+                                                <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-rose-400 shrink-0" />
                                                 <span className="truncate">{ev.location}</span>
                                             </div>
+                                        ) : (
+                                            <div />
                                         )}
 
                                         <Button
                                             size="sm"
                                             className={cn(
-                                                "font-black rounded-xl text-xs h-9 px-4 shrink-0 shadow-md cursor-pointer",
+                                                "font-black rounded-xl text-[11px] sm:text-xs h-8 sm:h-9 px-3 sm:px-4 shrink-0 shadow-md cursor-pointer",
                                                 isExh
                                                     ? "bg-cyan-500 hover:bg-cyan-400 text-slate-950"
                                                     : "bg-amber-500 hover:bg-amber-400 text-slate-950"
@@ -1152,7 +1176,7 @@ export function UnifiedEventCalendar({
                                             }}
                                         >
                                             {isExh ? '查看展訊' : '前往競猜'}
-                                            <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                                            <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5 ml-1" />
                                         </Button>
                                     </div>
                                 </div>
@@ -1172,7 +1196,7 @@ export function UnifiedEventCalendar({
             {/* 活動詳細彈窗 (Detail Modal) */}
             {/* ========================================================================= */}
             <Dialog open={Boolean(activeModalEvent)} onOpenChange={(open) => !open && setActiveModalEvent(null)}>
-                <DialogContent className="max-w-lg bg-slate-950 text-white border-slate-800 p-0 rounded-3xl overflow-hidden shadow-2xl">
+                <DialogContent className="max-w-lg w-[92vw] sm:w-full max-h-[88vh] overflow-y-auto bg-slate-950 text-white border-slate-800 p-0 rounded-2xl sm:rounded-3xl shadow-2xl">
                     {activeModalEvent && (
                         <div>
                             {/* 頂部彩色條 */}
@@ -1183,7 +1207,7 @@ export function UnifiedEventCalendar({
                                     : "bg-gradient-to-r from-amber-500 to-yellow-500"
                             )} />
 
-                            <div className="p-6 space-y-4">
+                            <div className="p-4 sm:p-6 space-y-3.5 sm:space-y-4">
                                 <DialogHeader className="space-y-2">
                                     <div className="flex items-center justify-between">
                                         <Badge className={cn(

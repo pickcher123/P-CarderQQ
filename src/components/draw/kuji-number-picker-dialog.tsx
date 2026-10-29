@@ -37,6 +37,7 @@ interface KujiNumberPickerDialogProps {
   isTrialMode?: boolean;
   initialSelectedNumbers?: number[];
   onSelectNumbersOnly?: (selectedNumbers: number[]) => void;
+  targetPickCount?: number;
 }
 
 export function KujiNumberPickerDialog({
@@ -49,17 +50,9 @@ export function KujiNumberPickerDialog({
   isTrialMode = false,
   initialSelectedNumbers = [],
   onSelectNumbersOnly,
+  targetPickCount,
 }: KujiNumberPickerDialogProps) {
   const [selectedNumbers, setSelectedNumbers] = useState<number[]>(initialSelectedNumbers);
-
-  // Sync initialSelectedNumbers when dialog opens
-  React.useEffect(() => {
-    if (isOpen) {
-      if (initialSelectedNumbers && initialSelectedNumbers.length > 0) {
-        setSelectedNumbers(initialSelectedNumbers);
-      }
-    }
-  }, [isOpen, initialSelectedNumbers]);
 
   // 取得現有籤表，如果尚未產生則自動即時預覽 1~80 號
   const tickets: KujiTicketItem[] = useMemo(() => {
@@ -81,6 +74,26 @@ export function KujiNumberPickerDialog({
 
   // 統計未開出與已開出
   const availableTickets = useMemo(() => tickets.filter(t => !t.isDrawn), [tickets]);
+
+  // Sync initialSelectedNumbers 或依 targetPickCount 自動預選抽數號碼
+  React.useEffect(() => {
+    if (isOpen) {
+      if (initialSelectedNumbers && initialSelectedNumbers.length > 0) {
+        setSelectedNumbers(initialSelectedNumbers);
+      } else if (targetPickCount && targetPickCount > 0) {
+        const poolOfAvailable = availableTickets.map(t => t.number);
+        if (poolOfAvailable.length > 0) {
+          const shuffled = [...poolOfAvailable];
+          for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+          }
+          const chosen = shuffled.slice(0, Math.min(targetPickCount, shuffled.length));
+          setSelectedNumbers(chosen);
+        }
+      }
+    }
+  }, [isOpen, initialSelectedNumbers, targetPickCount, availableTickets]);
   const drawnTicketsCount = tickets.length - availableTickets.length;
 
   // 計算價格
@@ -142,33 +155,30 @@ export function KujiNumberPickerDialog({
   return (
     <Dialog open={isOpen} onOpenChange={open => !open && !isDrawing && onClose()}>
       <DialogContent className="max-w-[min(94vw,680px)] max-h-[90vh] bg-slate-950/95 border border-cyan-500/30 text-white rounded-3xl p-4 sm:p-6 flex flex-col gap-4 shadow-[0_0_50px_rgba(6,182,212,0.15)] backdrop-blur-2xl overflow-hidden z-[150]">
-        <DialogHeader className="space-y-1.5 text-left border-b border-white/10 pb-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-300 flex items-center justify-center text-slate-950 shadow-lg shadow-amber-500/20">
-                <Flame className="w-5 h-5 fill-slate-950" />
-              </div>
-              <div>
+        <DialogHeader className="space-y-1.5 text-left border-b border-white/10 pb-3 pr-12">
+          <div className="flex items-start gap-2.5 sm:gap-3">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-300 flex items-center justify-center text-slate-950 shadow-lg shadow-amber-500/20 shrink-0 mt-0.5">
+              <Flame className="w-4 h-4 sm:w-5 sm:h-5 fill-slate-950" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
                 <DialogTitle className={cn(
-                  "text-lg sm:text-xl font-black tracking-wide text-transparent bg-clip-text",
+                  "text-base sm:text-lg md:text-xl font-black tracking-wide text-transparent bg-clip-text",
                   isTrialMode 
                     ? "bg-gradient-to-r from-purple-300 via-fuchsia-300 to-indigo-300"
                     : "bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-500"
                 )}>
                   {isTrialMode ? '一番賞番號選號盤 🧪 試抽模擬' : '一番賞番號選號盤'}
                 </DialogTitle>
-                <DialogDescription className="text-xs text-slate-400">
-                  {isTrialMode 
-                    ? '自由挑選專屬幸運號碼，模擬測試該號碼開出的獎品（純模擬不扣點數）！'
-                    : '挑選專屬幸運號碼，親手揭曉卡池大賞！'}
-                </DialogDescription>
+                <Badge variant="outline" className="border-amber-500/50 bg-amber-500/15 text-amber-300 text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full whitespace-nowrap shadow-sm">
+                  剩餘 {availableTickets.length} / {tickets.length} 籤
+                </Badge>
               </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="border-amber-500/40 bg-amber-500/10 text-amber-300 text-xs px-2.5 py-1">
-                剩餘 {availableTickets.length} / {tickets.length} 籤
-              </Badge>
+              <DialogDescription className="text-xs text-slate-400 mt-1 line-clamp-1 sm:line-clamp-none">
+                {isTrialMode 
+                  ? '自由挑選專屬幸運號碼，模擬測試該號碼開出的獎品（純模擬不扣點數）！'
+                  : '挑選專屬幸運號碼，親手揭曉卡池大賞！'}
+              </DialogDescription>
             </div>
           </div>
         </DialogHeader>

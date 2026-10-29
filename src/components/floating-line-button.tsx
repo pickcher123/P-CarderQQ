@@ -89,17 +89,17 @@ export function FloatingLineButton({ systemConfig }: { systemConfig: SystemConfi
 
   return (
     <div className={cn(
-      "fixed right-2 sm:right-3.5 bottom-[calc(max(env(safe-area-inset-bottom),0px)+5.8rem)] md:right-7 md:bottom-8 z-40",
-      "flex flex-col gap-2 items-end pointer-events-auto transition-all duration-300"
+      "fixed right-2.5 sm:right-4 md:right-7 bottom-32 sm:bottom-36 md:bottom-8 z-40",
+      "flex flex-col gap-2.5 items-end pointer-events-auto transition-all duration-300 select-none"
     )}>
-      {/* 手機版快速收折/展開切換標籤 (防止遮擋卡池抽卡按鈕) */}
+      {/* 手機版快速收折/展開切換標籤 (優化位置至 bottom-32，避免遮擋卡池自選與抽卡按鈕) */}
       <button
         type="button"
         onClick={() => setIsCollapsed(!isCollapsed)}
-        className="md:hidden flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-950/80 border border-slate-700/80 text-[10px] text-slate-400 hover:text-cyan-300 hover:border-cyan-500/40 shadow-md backdrop-blur-md transition-all cursor-pointer mb-0.5"
-        title={isCollapsed ? "展開社群與客服" : "收折以防遮擋"}
+        className="md:hidden flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-900/90 border border-cyan-500/40 text-[10px] text-cyan-300 hover:text-white hover:bg-slate-800 shadow-[0_4px_12px_rgba(0,0,0,0.5)] backdrop-blur-md transition-all cursor-pointer active:scale-95"
+        title={isCollapsed ? "展開社群與客服" : "收折浮動捷徑"}
       >
-        <span className="text-[9px] font-bold">{isCollapsed ? "快捷客服 ◀" : "收折 ▶"}</span>
+        <span className="text-[10px] font-bold tracking-tight">{isCollapsed ? "快捷客服 ◀" : "收折 ❯"}</span>
       </button>
 
       {!isCollapsed && (

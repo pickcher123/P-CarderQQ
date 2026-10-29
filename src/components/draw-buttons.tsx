@@ -17,7 +17,7 @@ interface DrawButtonsProps {
     isTrialMode?: boolean;
     freeDrawTickets?: number;
     eventPoolTickets?: number;
-    onOpenPickNumber?: () => void;
+    onOpenPickNumber?: (_targetCount?: number) => void;
 }
 
 export function DrawButtons({
@@ -89,8 +89,12 @@ export function DrawButtons({
         );
     }
 
-    // In trial mode, primary buttons trigger performTrialDraw to prevent accidental point deduction
+    // 點擊 1抽、3抽、多抽 時：若支援選籤則開啟選籤盤並帶入抽數，否則直接執行抽卡
     const handleButtonClick = (count: number) => {
+        if (onOpenPickNumber) {
+            onOpenPickNumber(count);
+            return;
+        }
         if (isTrialMode && performTrialDraw) {
             performTrialDraw(count);
         } else {
@@ -106,23 +110,6 @@ export function DrawButtons({
 
     return (
         <div className="flex flex-col gap-1.5 w-full">
-            {/* 🎯 一番賞自選號碼（挑籤）專屬按鈕 */}
-            {onOpenPickNumber && (
-                <Button 
-                    className={cn(
-                        "w-full h-11 sm:h-12 text-xs sm:text-sm font-black rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 shadow-lg",
-                        isTrialMode
-                            ? "bg-gradient-to-r from-purple-600 via-fuchsia-600 to-indigo-600 text-white shadow-purple-500/25 border border-purple-400/50 hover:brightness-110"
-                            : "bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 shadow-amber-500/25 hover:brightness-110 border border-yellow-300"
-                    )}
-                    onClick={onOpenPickNumber}
-                    disabled={!isTrialMode && (isLoadingStats || (cardPool?.remainingPacks ?? 0) < 1)}
-                >
-                    <Flame className={cn("w-4 h-4", isTrialMode ? "text-amber-300 fill-amber-300" : "fill-slate-950")} />
-                    <span>{isTrialMode ? '🎯 試選號碼（模擬一番賞挑籤）' : '🎯 自選號碼（一番賞挑籤）'}</span>
-                </Button>
-            )}
-
             {/* 🎟️ 免費抽卡券專用再抽一次按鈕 (如果有免費券且卡池支援) */}
             {!isTrialMode && (cardPool?.allowFreeDraw !== false) && freeDrawTickets > 0 && (
                 <Button 
@@ -245,7 +232,7 @@ export function DrawButtons({
                 );
             })()}
 
-            {isTrialMode ? (
+            {isTrialMode && (
                 <Button 
                     className="w-full h-9 sm:h-10 text-xs font-black rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-slate-950 border-b-2 border-amber-800 shadow-[0_0_15px_rgba(245,158,11,0.4)] hover:brightness-110 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                     onClick={() => performDraw(1)}
@@ -253,17 +240,6 @@ export function DrawButtons({
                     <Sparkles className="w-3.5 h-3.5 fill-slate-950" />
                     <span>⚡ 轉為正式開獎 (扣 {isPPoint ? 'P點' : '鑽石'} 派發真卡)</span>
                 </Button>
-            ) : (
-                performTrialDraw && (
-                    <Button 
-                        variant="outline"
-                        className="w-full h-8 sm:h-9 text-xs font-bold rounded-xl border-purple-500/40 bg-purple-950/30 text-purple-300 hover:bg-purple-900/50 hover:border-purple-400 flex items-center justify-center gap-1 transition-all cursor-pointer"
-                        onClick={() => performTrialDraw(1)}
-                    >
-                        <Sparkles className="w-3 h-3 text-purple-400" />
-                        <span>免費試手氣 🎲 (純模擬不扣點)</span>
-                    </Button>
-                )
             )}
         </div>
     );

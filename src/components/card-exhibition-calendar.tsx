@@ -133,32 +133,38 @@ export function CardExhibitionCalendar({
         <div className={cn("text-white space-y-6 w-full", !hideHeader && "py-2 sm:py-4")}>
             
             {/* 方案 A / 經典清單 雙軌切換按鈕 */}
-            <div className="flex items-center justify-between bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800 backdrop-blur-xl max-w-md mx-auto shadow-lg">
+            <div className="flex items-center justify-between bg-slate-900/90 p-1 sm:p-1.5 rounded-2xl border border-slate-800 backdrop-blur-xl max-w-md mx-auto shadow-lg">
                 <button
                     type="button"
                     onClick={() => setCalendarMode('unified')}
                     className={cn(
-                        "flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none",
+                        "flex-1 py-1.5 sm:py-2 px-2 sm:px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer select-none",
                         calendarMode === 'unified'
                             ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-slate-950 shadow-md shadow-cyan-500/20"
                             : "text-slate-400 hover:text-white"
                     )}
                 >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>雙軌全能日曆 (方案 A)</span>
+                    <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                    <span>
+                        <span className="sm:hidden">雙軌日曆</span>
+                        <span className="hidden sm:inline">雙軌全能行事曆</span>
+                    </span>
                 </button>
                 <button
                     type="button"
                     onClick={() => setCalendarMode('classic')}
                     className={cn(
-                        "flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none",
+                        "flex-1 py-1.5 sm:py-2 px-2 sm:px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer select-none",
                         calendarMode === 'classic'
                             ? "bg-slate-800 text-white font-black shadow-sm"
                             : "text-slate-400 hover:text-white"
                     )}
                 >
-                    <Layers className="w-3.5 h-3.5" />
-                    <span>純卡展專屬清單</span>
+                    <Layers className="w-3.5 h-3.5 shrink-0" />
+                    <span>
+                        <span className="sm:hidden">純卡展清單</span>
+                        <span className="hidden sm:inline">純卡展專屬清單</span>
+                    </span>
                 </button>
             </div>
 

@@ -360,3 +360,97 @@
   animation: card-energy-pulse 2.8s ease-in-out infinite;
 }
 
+/* 🌟 卡池科技動態背景系統 (Card Pool Ambient Cyber Animations) */
+@keyframes cyber-scanline {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.65;
+  }
+  85% {
+    opacity: 0.65;
+  }
+  100% {
+    transform: translateY(1000%);
+    opacity: 0;
+  }
+}
+
+@keyframes cyber-circuit-dash {
+  0% {
+    stroke-dashoffset: 100;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes cyber-orb-drift-1 {
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1);
+    opacity: 0.35;
+  }
+  50% {
+    transform: translate(15px, -20px) scale(1.15);
+    opacity: 0.55;
+  }
+}
+
+@keyframes cyber-orb-drift-2 {
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translate(-20px, 15px) scale(1.1);
+    opacity: 0.5;
+  }
+}
+
+@keyframes cyber-particle-float {
+  0% {
+    transform: translateY(0px) scale(0.8);
+    opacity: 0.2;
+  }
+  50% {
+    transform: translateY(-25px) scale(1.1);
+    opacity: 0.85;
+  }
+  100% {
+    transform: translateY(-50px) scale(0.6);
+    opacity: 0;
+  }
+}
+
+.animate-cyber-scan {
+  animation: cyber-scanline 7s ease-in-out infinite;
+}
+
+.animate-circuit-dash {
+  stroke-dasharray: 20 60;
+  animation: cyber-circuit-dash 12s linear infinite;
+}
+
+.animate-orb-1 {
+  animation: cyber-orb-drift-1 9s ease-in-out infinite;
+}
+
+.animate-orb-2 {
+  animation: cyber-orb-drift-2 11s ease-in-out infinite;
+}
+
+.animate-particle-1 {
+  animation: cyber-particle-float 4.5s ease-in-out infinite;
+}
+
+.animate-particle-2 {
+  animation: cyber-particle-float 5.8s ease-in-out infinite 1.5s;
+}
+
+.animate-particle-3 {
+  animation: cyber-particle-float 6.2s ease-in-out infinite 2.8s;
+}
+
+

@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { CardItem } from '@/components/card-item';
 import { RandomPlayerCard } from '@/components/random-player-card';
-import { cn } from '@/lib/utils';
+import { cn, cleanFirestoreData } from '@/lib/utils';
 import Image from 'next/image';
 import {
   Dialog,
@@ -135,6 +135,7 @@ export default function OpenPackPage() {
     const [landingVFX, setLandingVFX] = useState<'none' | 'rare' | 'legendary'>('none');
     const [previewCard, setPreviewCard] = useState<any | null>(null);
     const [isPickNumberOpen, setIsPickNumberOpen] = useState(false);
+    const [targetPickCount, setTargetPickCount] = useState<number>(1);
 
     const topRarityCelebration = useMemo(() => {
         if (drawnPrizes.length === 0) return 'none';
@@ -1137,7 +1138,10 @@ export default function OpenPackPage() {
                                             eventPoolTickets={poolId && userProfile?.eventPoolTickets ? (userProfile.eventPoolTickets[poolId] || 0) : 0}
                                             onOpenPickNumber={
                                                 (cardPool?.enablePickNumber || (cardPool?.kujiTickets && cardPool.kujiTickets.length > 0))
-                                                    ? () => setIsPickNumberOpen(true)
+                                                    ? (count) => {
+                                                        setTargetPickCount(count || 1);
+                                                        setIsPickNumberOpen(true);
+                                                    }
                                                     : undefined
                                             }
                                         />
@@ -1175,6 +1179,7 @@ export default function OpenPackPage() {
                 cardPool={cardPool}
                 isTrialMode={isTrialMode}
                 initialSelectedNumbers={selectedNumbers}
+                targetPickCount={targetPickCount}
                 userBalance={
                     userProfile 
                         ? (cardPool?.currency === 'p-point' ? (userProfile.bonusPoints || 0) : (userProfile.points || 0))

@@ -152,7 +152,7 @@ export default function DrawPage() {
   }
 
   return (
-    <div className="container py-4 sm:py-8 md:py-10 relative overflow-hidden px-3 sm:px-4 md:px-8 max-w-7xl mx-auto">
+    <div className="container pt-3 sm:pt-6 md:pt-8 pb-36 sm:pb-40 md:pb-24 relative overflow-hidden px-3 sm:px-4 md:px-8 max-w-7xl mx-auto">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-gradient-to-b from-amber-500/10 via-cyan-500/5 to-transparent blur-[120px] pointer-events-none" />
         
         {/* === HERO SECTION: 頂級抽卡專區 === */}
