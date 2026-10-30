@@ -37,7 +37,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { MemberLevelCrown } from '@/components/member-level-crown';
-import { cn } from '@/lib/utils';
+import { cn, toSafeDate } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { PPlusIcon } from '@/components/icons';
@@ -180,12 +180,12 @@ function UserDetailsDialog({ user }: { user: UserProfile }) {
                                             <div className="mt-6 w-full space-y-3 text-xs">
                                                 <div className="flex justify-between border-b border-slate-100 pb-2">
                                                     <span className="text-slate-500 font-black uppercase text-[9px]">註冊日期</span>
-                                                    <span className="font-code font-bold text-slate-700">{user.createdAt ? format((user.createdAt as any).toDate(), 'yyyy-MM-dd') : '-'}</span>
+                                                    <span className="font-code font-bold text-slate-700">{toSafeDate(user.createdAt) ? format(toSafeDate(user.createdAt)!, 'yyyy-MM-dd') : '-'}</span>
                                                 </div>
                                                 <div className="flex justify-between border-b border-slate-100 pb-2">
                                                     <span className="text-slate-500 font-black uppercase text-[9px]">最近登入</span>
                                                     <span className="font-code font-bold text-slate-700">
-                                                        {(user as any).lastLoginAt ? format(((user as any).lastLoginAt as any).toDate(), 'yyyy-MM-dd HH:mm') : ((user as any).lastLoginTime ? (user as any).lastLoginTime.slice(0, 16).replace('T', ' ') : '無紀錄')}
+                                                        {toSafeDate((user as any).lastLoginAt) ? format(toSafeDate((user as any).lastLoginAt)!, 'yyyy-MM-dd HH:mm') : ((user as any).lastLoginTime ? (user as any).lastLoginTime.slice(0, 16).replace('T', ' ') : '無紀錄')}
                                                     </span>
                                                 </div>
                                                 <div className="text-left"><p className="text-slate-500 text-[9px] font-black uppercase mb-1">UID</p><p className="font-mono text-[10px] font-bold break-all bg-slate-50 p-2 rounded border border-slate-100">{user.id}</p></div>
@@ -276,7 +276,7 @@ function UserDetailsDialog({ user }: { user: UserProfile }) {
                                                                     {tx.currency === 'free-ticket' ? '🎟️張' : tx.currency === 'p-point' ? 'P' : '💎'}
                                                                 </TableCell>
                                                                 <TableCell className="text-[10px] text-slate-500 font-bold text-right pr-6">
-                                                                    {tx.transactionDate ? format((tx.transactionDate as any).toDate(), 'MM-dd HH:mm') : '-'}
+                                                                    {toSafeDate(tx.transactionDate) ? format(toSafeDate(tx.transactionDate)!, 'MM-dd HH:mm') : '-'}
                                                                 </TableCell>
                                                             </TableRow>
                                                         ))
@@ -309,7 +309,7 @@ function UserDetailsDialog({ user }: { user: UserProfile }) {
                                                     ) : (
                                                         rawOrders?.map(order => (
                                                             <TableRow key={order.id} className="hover:bg-slate-50 border-b-slate-100">
-                                                                <TableCell className="text-[10px] font-code text-slate-600 font-bold pl-6">{order.createdAt ? format((order.createdAt as any).toDate(), 'MM-dd') : '-'}</TableCell>
+                                                                <TableCell className="text-[10px] font-code text-slate-600 font-bold pl-6">{toSafeDate(order.createdAt) ? format(toSafeDate(order.createdAt)!, 'MM-dd') : '-'}</TableCell>
                                                                 <TableCell className="text-xs font-black text-slate-900">{order.cardCount} 張</TableCell>
                                                                 <TableCell><Badge variant="secondary" className="text-[9px] h-5 uppercase font-black bg-slate-900 text-white border-none">{order.status}</Badge></TableCell>
                                                                 <TableCell className="text-[10px] text-right font-mono text-cyan-700 font-black pr-6">{order.trackingNumber || '--'}</TableCell>

@@ -54,3 +54,31 @@ export function cleanFirestoreData<T>(obj: T): T {
   return result as T;
 }
 
+/**
+ * 安全地將 Firestore Timestamp、Date、ISO 字串或包含 seconds 的物件轉換為 JavaScript Date 物件
+ */
+export function toSafeDate(val: any): Date | null {
+  if (!val) return null;
+  if (typeof val?.toDate === 'function') {
+    try {
+      const d = val.toDate();
+      if (d instanceof Date && !isNaN(d.getTime())) return d;
+    } catch {
+      // ignore
+    }
+  }
+  if (val instanceof Date) {
+    return isNaN(val.getTime()) ? null : val;
+  }
+  if (typeof val?.seconds === 'number') {
+    return new Date(val.seconds * 1000);
+  }
+  if (typeof val?._seconds === 'number') {
+    return new Date(val._seconds * 1000);
+  }
+  if (typeof val === 'string' || typeof val === 'number') {
+    const d = new Date(val);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  return null;
+}

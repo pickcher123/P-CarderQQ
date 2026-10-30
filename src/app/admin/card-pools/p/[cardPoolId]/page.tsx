@@ -36,7 +36,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
-import { cn, cleanFirestoreData } from '@/lib/utils';
+import { cn, cleanFirestoreData, toSafeDate } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -357,10 +357,12 @@ export default function CardPoolDetailPage() {
       };
       setPoolDetails(details);
       if (cardPool.expiresAt) {
-          setTimeValue(format(cardPool.expiresAt.toDate(), "HH:mm"));
+          const expDate = toSafeDate(cardPool.expiresAt);
+          if (expDate) setTimeValue(format(expDate, "HH:mm"));
       }
       if (cardPool.startsAt) {
-          setStartTimeValue(format(cardPool.startsAt.toDate(), "HH:mm"));
+          const startDate = toSafeDate(cardPool.startsAt);
+          if (startDate) setStartTimeValue(format(startDate, "HH:mm"));
       }
     }
   }, [cardPool]);
@@ -558,8 +560,9 @@ export default function CardPoolDetailPage() {
   const handleTimeChange = (e: ChangeEvent<HTMLInputElement>) => {
       const newTime = e.target.value;
       setTimeValue(newTime);
-      if (poolDetails.expiresAt) {
-          const newDate = poolDetails.expiresAt.toDate();
+      const expDate = toSafeDate(poolDetails.expiresAt);
+      if (expDate) {
+          const newDate = new Date(expDate);
           const [hours, minutes] = newTime.split(':').map(Number);
           newDate.setHours(hours, minutes);
           const newTimestamp = Timestamp.fromDate(newDate);
@@ -580,8 +583,9 @@ export default function CardPoolDetailPage() {
   const handleStartTimeChange = (e: ChangeEvent<HTMLInputElement>) => {
       const newTime = e.target.value;
       setStartTimeValue(newTime);
-      if (poolDetails.startsAt) {
-          const newDate = poolDetails.startsAt.toDate();
+      const startDate = toSafeDate(poolDetails.startsAt);
+      if (startDate) {
+          const newDate = new Date(startDate);
           const [hours, minutes] = newTime.split(':').map(Number);
           newDate.setHours(hours, minutes);
           const newTimestamp = Timestamp.fromDate(newDate);
@@ -1173,11 +1177,11 @@ export default function CardPoolDetailPage() {
                                     <Popover>
                                         <PopoverTrigger asChild>
                                             <Button variant="outline" className="w-full h-12 justify-start text-left font-bold border-slate-200 bg-white">
-                                                {poolDetails.pointMultiplierExpiresAt ? format(poolDetails.pointMultiplierExpiresAt.toDate(), "PPP HH:mm") : "選擇結束時間"}
+                                                {toSafeDate(poolDetails.pointMultiplierExpiresAt) ? format(toSafeDate(poolDetails.pointMultiplierExpiresAt)!, "PPP HH:mm") : "選擇結束時間"}
                                             </Button>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-auto p-0">
-                                            <Calendar mode="single" selected={poolDetails.pointMultiplierExpiresAt?.toDate()} onSelect={(date) => {
+                                            <Calendar mode="single" selected={toSafeDate(poolDetails.pointMultiplierExpiresAt) || undefined} onSelect={(date) => {
                                                 if (!date) return;
                                                 // reuse same time as regular expiresAt or default to midnight
                                                 date.setHours(23, 59);
@@ -1306,13 +1310,13 @@ export default function CardPoolDetailPage() {
                                                 )}
                                             >
                                                 <GripVertical className="mr-2 h-4 w-4" />
-                                                {poolDetails.startsAt ? format(poolDetails.startsAt.toDate(), "PPP") : <span>選擇日期</span>}
+                                                {toSafeDate(poolDetails.startsAt) ? format(toSafeDate(poolDetails.startsAt)!, "PPP") : <span>選擇日期</span>}
                                             </Button>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-auto p-0">
                                             <Calendar
                                                 mode="single"
-                                                selected={poolDetails.startsAt?.toDate()}
+                                                selected={toSafeDate(poolDetails.startsAt) || undefined}
                                                 onSelect={handleStartDateSelect}
                                                 captionLayout="dropdown-buttons"
                                                 fromYear={new Date().getFullYear()}
@@ -1337,13 +1341,13 @@ export default function CardPoolDetailPage() {
                                                 )}
                                             >
                                                 <GripVertical className="mr-2 h-4 w-4" />
-                                                {poolDetails.expiresAt ? format(poolDetails.expiresAt.toDate(), "PPP") : <span>選擇日期</span>}
+                                                {toSafeDate(poolDetails.expiresAt) ? format(toSafeDate(poolDetails.expiresAt)!, "PPP") : <span>選擇日期</span>}
                                             </Button>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-auto p-0">
                                             <Calendar
                                                 mode="single"
-                                                selected={poolDetails.expiresAt?.toDate()}
+                                                selected={toSafeDate(poolDetails.expiresAt) || undefined}
                                                 onSelect={handleDateSelect}
                                                 captionLayout="dropdown-buttons"
                                                 fromYear={new Date().getFullYear()}

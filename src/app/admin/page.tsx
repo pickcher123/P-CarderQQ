@@ -240,6 +240,7 @@ export default function AdminDashboardPage() {
   const systemConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'systemConfig', 'main') : null, [firestore]);
   const { data: systemConfig, forceRefetch } = useDoc<SystemConfig>(systemConfigRef);
   const [announcement, setAnnouncement] = useState('');
+  const [isSavingAnnouncement, setIsSavingAnnouncement] = useState(false);
   // 🚧 全站維護模式狀態
   const [maintenanceEnabled, setMaintenanceEnabled] = useState(false);
   const [maintenanceTitle, setMaintenanceTitle] = useState('');

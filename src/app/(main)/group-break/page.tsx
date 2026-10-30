@@ -260,35 +260,21 @@ export default function GroupBreakPage() {
                             </DialogContent>
                         </Dialog>
 
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg sm:rounded-xl bg-white/5 border border-emerald-500/20 text-[11px] text-slate-300">
-                            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                            <span>即時直播保護</span>
+                        {/* 開團中場次 - 放在玩法說明右邊 */}
+                        <div className="h-8 sm:h-10 px-3 sm:px-4 rounded-lg sm:rounded-xl bg-[#091512]/90 border border-emerald-500/35 flex items-center gap-2 shadow-[0_0_15px_rgba(16,185,129,0.15)] backdrop-blur-sm">
+                            <Radio className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400 shrink-0" />
+                            <span className="text-xs sm:text-sm text-slate-300 font-medium">開團中場次</span>
+                            <span className="font-headline font-black text-emerald-400 text-sm sm:text-base px-1.5 py-0.5 bg-emerald-400/10 rounded-md border border-emerald-400/20 leading-none">
+                                {isLoading ? '--' : publishedBreaks.length}
+                            </span>
                         </div>
-                    </div>
-                </div>
 
-                {/* Live Stats Widget */}
-                <div className="grid grid-cols-2 gap-2 sm:gap-3 w-full lg:w-auto shrink-0">
-                    <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-[#091512] border border-emerald-500/30 flex flex-col items-center justify-center text-center shadow-[0_4px_20px_rgba(16,185,129,0.15)]">
-                        <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">開團中場次</span>
-                        <span className="text-xl sm:text-3xl font-black font-headline text-emerald-400 mt-0.5 sm:mt-1">
-                            {isLoading ? '--' : publishedBreaks.length}
-                        </span>
-                        <span className="text-[9px] sm:text-[10px] text-slate-400 mt-0.5">熱烈募集中</span>
-                    </div>
-
-                    <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-[#091512] border border-teal-500/30 flex flex-col items-center justify-center text-center shadow-[0_4px_20px_rgba(20,184,166,0.15)]">
-                        <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">歷史團拆</span>
-                        <span className="text-xl sm:text-3xl font-black font-headline text-teal-300 mt-0.5 sm:mt-1">
-                            {isLoading ? '--' : completedBreaks.length}
-                        </span>
-                        <span className="text-[9px] sm:text-[10px] text-slate-400 mt-0.5">精彩回顧</span>
-                    </div>
-
-                    <div className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-[#091512] border border-emerald-500/30 flex flex-col items-center justify-center text-center shadow-lg col-span-2">
-                        <div className="flex items-center gap-1.5">
-                            <Gem className="w-3.5 h-3.5 text-emerald-400 animate-bounce" />
-                            <span className="text-[11px] sm:text-xs font-bold text-emerald-300">線上直播 • 公平拆卡</span>
+                        {/* 已完結場次 */}
+                        <div className="h-8 sm:h-10 px-2.5 sm:px-3 rounded-lg sm:rounded-xl bg-[#091512]/60 border border-teal-500/25 flex items-center gap-1.5 text-xs text-slate-300">
+                            <span className="text-[11px] sm:text-xs text-slate-400 font-medium">已完結</span>
+                            <span className="font-headline font-bold text-teal-400 text-xs sm:text-sm">
+                                {isLoading ? '--' : completedBreaks.length}
+                            </span>
                         </div>
                     </div>
                 </div>

@@ -52,7 +52,7 @@ import type { DailyMission, UserMissionProgress } from '@/types/missions';
 import type { SystemConfig } from "@/types/system";
 import { getBonusMultiplier } from "@/lib/bonus-event";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { cn } from "@/lib/utils";
+import { cn, toSafeDate } from "@/lib/utils";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -615,10 +615,12 @@ export default function UnifiedMemberCenterPage() {
         
         let daysJoined = 0;
         if (userProfile.createdAt) {
-            const createdDate = userProfile.createdAt.toDate ? userProfile.createdAt.toDate() : new Date((userProfile.createdAt as any).seconds * 1000);
-            const now = new Date();
-            const diffTime = Math.abs(now.getTime() - createdDate.getTime());
-            daysJoined = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            const createdDate = toSafeDate(userProfile.createdAt);
+            if (createdDate) {
+                const now = new Date();
+                const diffTime = Math.abs(now.getTime() - createdDate.getTime());
+                daysJoined = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            }
         }
 
         return { 

@@ -218,21 +218,14 @@ export default function DrawPage() {
                             </DialogContent>
                         </Dialog>
 
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg sm:rounded-xl bg-white/5 border border-amber-500/20 text-[11px] text-slate-300">
-                            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                            <span>即時開獎入庫</span>
+                        {/* 開放中卡池 - 放在遊戲規則右邊 */}
+                        <div className="h-8 sm:h-10 px-3 sm:px-4 rounded-lg sm:rounded-xl bg-[#0b1329]/90 border border-amber-500/35 flex items-center gap-2 shadow-[0_0_15px_rgba(245,158,11,0.15)] backdrop-blur-sm">
+                            <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 shrink-0" />
+                            <span className="text-xs sm:text-sm text-slate-300 font-medium">開放中卡池</span>
+                            <span className="font-headline font-black text-amber-400 text-sm sm:text-base px-1.5 py-0.5 bg-amber-400/10 rounded-md border border-amber-400/20 leading-none">
+                                {finalIsLoading ? '--' : allPools.length}
+                            </span>
                         </div>
-                    </div>
-                </div>
-
-                {/* Live Stats Widget */}
-                <div className="flex items-center justify-center w-full lg:w-auto shrink-0">
-                    <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-[#0b1329] border border-amber-500/30 flex flex-col items-center justify-center text-center shadow-[0_4px_20px_rgba(245,158,11,0.15)] min-w-[130px] sm:min-w-[150px]">
-                        <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">開放中卡池</span>
-                        <span className="text-xl sm:text-3xl font-black font-headline text-amber-400 mt-0.5 sm:mt-1">
-                            {finalIsLoading ? '--' : allPools.length}
-                        </span>
-                        <span className="text-[9px] sm:text-[10px] text-slate-400 mt-0.5">熱門主題專區</span>
                     </div>
                 </div>
             </div>

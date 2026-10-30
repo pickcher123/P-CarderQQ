@@ -4,7 +4,7 @@ import { Progress } from '@/components/ui/progress';
 import { 
   Users, Gem, Trophy, Package, ChevronDown, ChevronUp, Sparkles, ChevronRight, 
   Settings, Disc3, Info, Flame, ShieldCheck, ArrowRight, Zap, Target,
-  Dices, Percent, Award, Coins
+  Dices, Percent, Award, Coins, Crown
 } from 'lucide-react';
 import { LuckyBagIcon, PPlusIcon } from '@/components/icons';
 import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
@@ -73,48 +73,74 @@ const LuckBagCard = ({ bag, priority = false, index }: { bag: LuckBagWithCount, 
     const isDone = bag.status === '已開獎';
     const currency = bag.currency || 'p-point';
     const progress = Math.min(100, Math.round((bag.participantCount / (bag.totalParticipants || 1)) * 100));
+    const isNearFull = progress >= 80 && !isDone;
+    const remainingSlots = Math.max(0, (bag.totalParticipants || 0) - (bag.participantCount || 0));
 
     return (
         <Link 
             href={`/lucky-bags/${bag.id}`}
             className={cn(
-                "group relative flex flex-col lg:flex-row p-4 sm:p-6 bg-slate-950/80 border rounded-3xl backdrop-blur-xl shadow-2xl transition-all duration-500 hover:-translate-y-1.5 cursor-pointer overflow-hidden select-none",
+                "group relative flex flex-col lg:flex-row p-4 sm:p-6 md:p-7 rounded-2xl sm:rounded-3xl border transition-all duration-500 cursor-pointer overflow-hidden select-none",
+                "bg-gradient-to-b from-[#0f172a]/95 via-[#090d16]/95 to-[#040711]/98 backdrop-blur-xl",
                 isDone 
-                    ? "border-slate-800/80 hover:border-slate-700 opacity-85" 
-                    : progress >= 80 
-                        ? "border-amber-500/50 hover:border-amber-400 shadow-[0_0_35px_rgba(245,158,11,0.15)]" 
-                        : "border-slate-800/80 hover:border-amber-400/60 hover:shadow-[0_12px_40px_rgba(0,0,0,0.6)]",
-                "animate-fade-in-up"
+                    ? "border-slate-800/80 hover:border-slate-700 opacity-80" 
+                    : isNearFull
+                        ? "border-amber-500/50 hover:border-amber-400 shadow-[0_10px_35px_rgba(0,0,0,0.8)] hover:shadow-[0_0_35px_rgba(245,158,11,0.25)]" 
+                        : "border-amber-500/20 hover:border-amber-400/60 shadow-[0_10px_30px_rgba(0,0,0,0.8)] hover:shadow-[0_0_35px_rgba(245,158,11,0.2)]",
+                "hover:-translate-y-1.5"
             )}>
             
-            {/* 背景科技流光 */}
-            <div className="absolute top-0 right-1/4 w-72 h-72 bg-amber-500/5 rounded-full blur-[100px] pointer-events-none group-hover:bg-amber-500/10 transition-colors" />
-            <div className="absolute -bottom-10 -left-10 w-60 h-60 bg-purple-500/5 rounded-full blur-[90px] pointer-events-none" />
+            {/* 頂部微光裝飾線 (衝刺滿額時轉為金紅流光) */}
+            <div className={cn(
+                "absolute top-0 left-0 w-full h-[2.5px] z-20 transition-all duration-500",
+                isNearFull
+                    ? "bg-gradient-to-r from-amber-500 via-rose-500 to-amber-500 animate-pulse"
+                    : "bg-gradient-to-r from-transparent via-amber-400/80 to-transparent"
+            )} />
+
+            {/* 背景科技流光與微暗角 */}
+            <div className="absolute top-0 right-1/4 w-80 h-80 bg-amber-500/5 rounded-full blur-[100px] pointer-events-none group-hover:bg-amber-500/10 transition-colors" />
+            <div className="absolute -bottom-10 -left-10 w-64 h-64 bg-purple-500/5 rounded-full blur-[90px] pointer-events-none" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(245,158,11,0.08),transparent_70%)] pointer-events-none" />
 
             {/* 左側：大獎展示櫥窗 */}
-            <div className="relative flex-[1.2] flex flex-col sm:flex-row items-center sm:items-stretch gap-3 sm:gap-5 p-3.5 sm:p-5 rounded-2xl bg-gradient-to-br from-slate-900/95 via-slate-950/95 to-slate-900/95 border border-slate-800/80 shadow-inner overflow-hidden">
-                {/* 狀態角標 */}
-                <div className="absolute top-2.5 left-2.5 z-20 flex items-center gap-1.5">
+            <div className="relative flex-[1.2] flex flex-col sm:flex-row items-center sm:items-stretch gap-4 sm:gap-6 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-slate-900/90 via-[#0a0f1d]/95 to-slate-950/90 border border-amber-500/20 shadow-inner overflow-hidden">
+                
+                {/* 狀態角標列 */}
+                <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5 flex-wrap">
                     <Badge className={cn(
-                        "text-[9px] sm:text-[10px] font-black px-2 sm:px-2.5 py-0.5 rounded-md border shadow-md font-mono",
+                        "text-[10px] sm:text-[11px] font-black px-2.5 py-0.5 rounded-full border shadow-sm font-mono flex items-center gap-1",
                         isDone 
                             ? "bg-slate-800/90 text-slate-300 border-slate-700" 
                             : bag.revealLottery 
                                 ? "bg-rose-500 text-white border-rose-400 animate-pulse" 
-                                : "bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 border-amber-400 font-bold"
+                                : "bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 border-0 font-black shadow-[0_0_10px_rgba(245,158,11,0.3)]"
                     )}>
-                        {isDone ? '已開獎' : bag.revealLottery ? '🔥 開獎中' : '✨ 募集中'}
+                        {isDone ? (
+                            <span>已開獎</span>
+                        ) : bag.revealLottery ? (
+                            <>
+                                <Flame className="w-3 h-3 fill-white" />
+                                <span>開獎中</span>
+                            </>
+                        ) : (
+                            <>
+                                <Sparkles className="w-3 h-3 fill-slate-950" />
+                                <span>募集中</span>
+                            </>
+                        )}
                     </Badge>
-                    {progress >= 80 && !isDone && (
-                        <Badge className="bg-rose-500/20 text-rose-300 border-rose-500/40 text-[9px] sm:text-[10px] font-bold animate-pulse px-1.5 py-0.5">
-                            即將滿額
+                    {isNearFull && !isDone && (
+                        <Badge className="bg-rose-950/90 text-rose-300 border border-rose-500/50 text-[10px] sm:text-[11px] font-black animate-pulse px-2 py-0.5 rounded-full flex items-center gap-1">
+                            <Flame className="w-3 h-3 text-rose-400" />
+                            <span>衝刺 (剩 {remainingSlots} 格)</span>
                         </Badge>
                     )}
                 </div>
 
-                {/* 卡片封面 */}
+                {/* 卡片封面展台 */}
                 <div className={cn(
-                    "relative w-28 sm:w-36 aspect-[2.5/3.7] shrink-0 rounded-xl overflow-hidden border border-slate-700/80 bg-slate-950 shadow-2xl mt-6 sm:mt-0 transition-transform duration-500 group-hover:scale-105 mx-auto sm:mx-0",
+                    "relative w-32 sm:w-36 md:w-40 aspect-[2.5/3.7] shrink-0 rounded-xl overflow-hidden border border-amber-500/40 bg-gradient-to-b from-slate-900 to-black shadow-[0_12px_30px_rgba(0,0,0,0.8)] mt-7 sm:mt-0 transition-transform duration-500 group-hover:scale-105 mx-auto sm:mx-0 group/card",
                     isDone && "opacity-60 grayscale-[40%]"
                 )}>
                     {bag.prizeCards.first ? (
@@ -122,45 +148,53 @@ const LuckBagCard = ({ bag, priority = false, index }: { bag: LuckBagWithCount, 
                             src={bag.prizeCards.first.imageUrl} 
                             alt={bag.prizeCards.first.name}
                             fill
-                            className="object-contain p-1"
+                            className="object-contain p-1.5 transition-transform duration-500 group-hover:scale-105"
                             priority={priority}
-                            sizes="160px"
+                            sizes="(max-width: 640px) 140px, 180px"
                         />
                     ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center p-2 text-center bg-slate-900">
-                            <LuckyBagIcon className="w-8 h-8 sm:w-10 sm:h-10 text-amber-400/40 mb-1" />
-                            <span className="text-[9px] sm:text-[10px] text-slate-500 font-mono">頂級頭獎</span>
+                        <div className="w-full h-full flex flex-col items-center justify-center p-2 text-center bg-slate-900/80">
+                            <LuckyBagIcon className="w-10 h-10 text-amber-400/50 mb-1" />
+                            <span className="text-[10px] text-slate-400 font-mono font-bold">頂級頭獎</span>
                         </div>
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent pointer-events-none" />
-                    <div className="absolute bottom-1 inset-x-1 text-center">
-                        <span className="text-[8px] sm:text-[9px] font-mono font-black text-amber-300 bg-black/85 px-1.5 py-0.5 rounded border border-amber-500/40 backdrop-blur-sm shadow-sm inline-block">
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent pointer-events-none" />
+                    <div className="absolute bottom-1.5 inset-x-1.5 text-center">
+                        <span className="text-[9px] font-mono font-black text-amber-300 bg-black/90 px-2 py-0.5 rounded-md border border-amber-500/40 backdrop-blur-md shadow-md inline-flex items-center gap-1">
+                            <Crown className="w-2.5 h-2.5 text-amber-400" />
                             TOP JACKPOT
                         </span>
                     </div>
                 </div>
 
                 {/* 福袋標題與大獎資訊 */}
-                <div className="w-full min-w-0 flex-1 flex flex-col justify-between text-center sm:text-left space-y-2 py-0.5">
-                    <div className="space-y-1">
-                        <span className="text-[9px] sm:text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest block">
-                            LIMITED EDITION
-                        </span>
-                        <h3 className="text-base sm:text-xl font-black font-headline text-white group-hover:text-amber-300 transition-colors line-clamp-2 leading-snug">
+                <div className="w-full min-w-0 flex-1 flex flex-col justify-between text-center sm:text-left space-y-3 py-1">
+                    <div className="space-y-1.5">
+                        <div className="flex items-center justify-center sm:justify-start gap-1.5">
+                            <span className="text-[10px] font-mono font-black text-amber-400/80 uppercase tracking-[0.2em]">
+                                LIMITED EDITION
+                            </span>
+                            <span className="w-1 h-1 rounded-full bg-amber-400/40" />
+                            <span className="text-[10px] font-mono text-slate-400">
+                                限量福袋
+                            </span>
+                        </div>
+                        <h3 className="text-base sm:text-xl font-black font-headline text-white group-hover:text-amber-300 transition-colors line-clamp-2 leading-snug drop-shadow-sm">
                             {bag.name}
                         </h3>
                     </div>
 
                     {bag.prizeCards.first && (
-                        <div className="w-full min-w-0 flex items-center gap-2 text-xs text-slate-300 bg-slate-950/80 p-2 sm:p-2.5 rounded-xl border border-amber-500/30 shadow-inner text-left">
-                            <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shrink-0">
-                                <Trophy className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
+                        <div className="w-full min-w-0 flex items-center gap-2.5 text-xs text-slate-200 bg-gradient-to-r from-amber-500/15 via-slate-950/80 to-slate-950/80 p-2.5 sm:p-3 rounded-xl border border-amber-500/35 shadow-inner text-left">
+                            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center shrink-0 shadow-[0_0_10px_rgba(245,158,11,0.2)]">
+                                <Trophy className="w-4 h-4 text-amber-400" />
                             </div>
                             <div className="min-w-0 flex-1">
-                                <span className="text-[8px] sm:text-[9px] font-black text-amber-400/90 uppercase tracking-wider block leading-none mb-0.5">
-                                    👑 頂級頭獎
+                                <span className="text-[9px] font-black text-amber-400 uppercase tracking-wider block leading-none mb-1 flex items-center gap-1">
+                                    <Crown className="w-2.5 h-2.5 text-amber-400" />
+                                    頂級頭獎卡牌
                                 </span>
-                                <p className="truncate text-[11px] sm:text-xs font-bold text-slate-100 group-hover:text-amber-200 transition-colors">
+                                <p className="truncate text-xs font-bold text-slate-100 group-hover:text-amber-200 transition-colors">
                                     {bag.prizeCards.first.name}
                                 </p>
                             </div>
@@ -168,8 +202,8 @@ const LuckBagCard = ({ bag, priority = false, index }: { bag: LuckBagWithCount, 
                     )}
 
                     {isDone && bag.winners?.first && (
-                        <div className="text-[10px] sm:text-[11px] font-mono font-black text-amber-400 bg-amber-500/10 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg border border-amber-500/30 inline-flex items-center gap-1.5 w-fit mx-auto sm:mx-0">
-                            <Sparkles className="w-3 h-3 text-amber-400" />
+                        <div className="text-[11px] font-mono font-black text-amber-400 bg-amber-500/10 px-3 py-1 rounded-lg border border-amber-500/30 inline-flex items-center gap-1.5 w-fit mx-auto sm:mx-0 shadow-sm">
+                            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                             <span>頭獎幸運兒：#{bag.winners.first} 號位</span>
                         </div>
                     )}
@@ -177,7 +211,7 @@ const LuckBagCard = ({ bag, priority = false, index }: { bag: LuckBagWithCount, 
             </div>
 
             {/* 右側：參與進度與控制面板 */}
-            <div className="flex-1 flex flex-col justify-between p-4 sm:p-6 text-white mt-4 lg:mt-0 space-y-5">
+            <div className="flex-1 flex flex-col justify-between p-2 sm:p-5 text-white mt-4 lg:mt-0 space-y-5">
                 <div className="space-y-4">
                     {/* 價格與當前募集 */}
                     <div className="flex justify-between items-end border-b border-slate-800/80 pb-4">
@@ -186,7 +220,7 @@ const LuckBagCard = ({ bag, priority = false, index }: { bag: LuckBagWithCount, 
                                 ENTRY PRICE / 格
                             </p>
                             <div className="flex items-center gap-2">
-                                <p className="text-2xl sm:text-4xl font-black text-amber-400 font-code tracking-tight">
+                                <p className="text-2xl sm:text-4xl font-black text-amber-400 font-headline tracking-tight">
                                     {(bag.price || 0).toLocaleString()}
                                 </p>
                                 {currency === 'diamond' ? (
@@ -200,28 +234,38 @@ const LuckBagCard = ({ bag, priority = false, index }: { bag: LuckBagWithCount, 
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] font-mono">
                                 PARTICIPATION
                             </p>
-                            <p className="text-base sm:text-xl font-black text-white font-code">
+                            <p className="text-base sm:text-2xl font-black text-white font-headline">
                                 <span className="text-amber-400">{bag.participantCount}</span> 
-                                <span className="text-slate-500 font-normal"> / {bag.totalParticipants} 格</span>
+                                <span className="text-slate-500 font-normal text-sm sm:text-base"> / {bag.totalParticipants} 格</span>
                             </p>
                         </div>
                     </div>
 
                     {/* 進度條 */}
                     <div className="space-y-2">
-                        <div className="flex justify-between text-xs font-mono font-bold">
-                            <span className="text-slate-400">募集進度</span>
-                            <span className={progress >= 80 ? "text-rose-400" : "text-amber-400"}>{progress}%</span>
+                        <div className="flex justify-between items-center text-xs font-mono font-bold">
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-slate-400">募集進度</span>
+                                <span className="text-[10px] text-slate-500 font-normal">
+                                    (剩 {remainingSlots} 格即開獎)
+                                </span>
+                            </div>
+                            <span className={cn(
+                                "font-headline font-black text-sm",
+                                isNearFull ? "text-rose-400" : "text-amber-400"
+                            )}>
+                                {progress}%
+                            </span>
                         </div>
-                        <div className="w-full bg-slate-900 h-3 rounded-full overflow-hidden border border-slate-800 p-0.5 shadow-inner">
+                        <div className="w-full bg-slate-950 h-3 rounded-full overflow-hidden border border-slate-800 p-0.5 shadow-inner">
                             <div 
                                 className={cn(
                                     "h-full rounded-full transition-all duration-1000 ease-out",
                                     isDone 
                                         ? "bg-slate-700" 
-                                        : progress >= 80 
+                                        : isNearFull 
                                             ? "bg-gradient-to-r from-orange-500 to-rose-500 animate-pulse shadow-[0_0_12px_rgba(244,63,94,0.5)]" 
-                                            : "bg-gradient-to-r from-amber-500 to-yellow-400 shadow-[0_0_12px_rgba(245,158,11,0.4)]"
+                                            : "bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-400 shadow-[0_0_12px_rgba(245,158,11,0.4)]"
                                 )} 
                                 style={{ width: `${progress}%` }} 
                             />
@@ -236,7 +280,7 @@ const LuckBagCard = ({ bag, priority = false, index }: { bag: LuckBagWithCount, 
                         <span>公平亂數配獎 • 即時存證</span>
                     </div>
 
-                    <div className="w-full sm:w-auto flex items-center justify-center gap-2 font-bold text-xs sm:text-sm text-slate-950 bg-gradient-to-r from-amber-400 to-yellow-500 px-4 sm:px-5 py-2.5 rounded-xl shadow-lg shadow-amber-500/20 group-hover:from-amber-300 group-hover:to-yellow-400 group-hover:shadow-amber-500/40 transition-all font-headline whitespace-nowrap shrink-0">
+                    <div className="w-full sm:w-auto flex items-center justify-center gap-2 font-black text-xs sm:text-sm text-slate-950 bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-500 px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl shadow-[0_4px_20px_rgba(245,158,11,0.3)] group-hover:from-amber-300 group-hover:to-yellow-400 group-hover:shadow-[0_4px_25px_rgba(245,158,11,0.45)] group-hover:brightness-110 active:scale-[0.98] transition-all font-headline whitespace-nowrap shrink-0">
                         <span>{isDone ? '查看開獎結果' : '立即選位參與'}</span>
                         <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform shrink-0" />
                     </div>
@@ -244,7 +288,7 @@ const LuckBagCard = ({ bag, priority = false, index }: { bag: LuckBagWithCount, 
             </div>
         </Link>
     );
-}
+};
 
 export default function LuckyBagsPage() {
     const firestore = useFirestore();
@@ -401,29 +445,14 @@ export default function LuckyBagsPage() {
                                   </DialogContent>
                               </Dialog>
 
-                              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg sm:rounded-xl bg-white/5 border border-white/10 text-[11px] text-slate-300">
-                                  <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
-                                  <span>系統自動開獎保障</span>
+                              {/* 進行中福袋 - 放在玩法說明右邊 */}
+                              <div className="h-8 sm:h-10 px-3 sm:px-4 rounded-lg sm:rounded-xl bg-[#0b1329]/90 border border-amber-500/35 flex items-center gap-2 shadow-[0_0_15px_rgba(245,158,11,0.15)] backdrop-blur-sm">
+                                  <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 shrink-0" />
+                                  <span className="text-xs sm:text-sm text-slate-300 font-medium">進行中福袋</span>
+                                  <span className="font-headline font-black text-amber-400 text-sm sm:text-base px-1.5 py-0.5 bg-amber-400/10 rounded-md border border-amber-400/20 leading-none">
+                                      {finalIsLoading ? '--' : inProgressBags.length}
+                                  </span>
                               </div>
-                          </div>
-                      </div>
-
-                      {/* Live Stats Widget */}
-                      <div className="grid grid-cols-2 gap-2 sm:gap-3 w-full lg:w-auto shrink-0">
-                          <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-[#0b1329] border border-amber-500/30 flex flex-col items-center justify-center text-center shadow-[0_4px_20px_rgba(245,158,11,0.15)]">
-                              <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">進行中福袋</span>
-                              <span className="text-xl sm:text-3xl font-black font-headline text-amber-400 mt-0.5 sm:mt-1">
-                                  {finalIsLoading ? '--' : inProgressBags.length}
-                              </span>
-                              <span className="text-[9px] sm:text-[10px] text-slate-400 mt-0.5">熱烈募集中</span>
-                          </div>
-
-                          <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-[#0b1329] border border-purple-500/30 flex flex-col items-center justify-center text-center shadow-[0_4px_20px_rgba(168,85,247,0.15)]">
-                              <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">歷史開獎</span>
-                              <span className="text-xl sm:text-3xl font-black font-headline text-purple-400 mt-0.5 sm:mt-1">
-                                  {finalIsLoading ? '--' : completedBags.length}
-                              </span>
-                              <span className="text-[9px] sm:text-[10px] text-slate-400 mt-0.5">已全數派發</span>
                           </div>
                       </div>
                   </div>

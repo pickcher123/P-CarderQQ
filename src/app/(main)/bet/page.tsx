@@ -305,32 +305,18 @@ export default function BetLandingPage() {
                                     </DialogContent>
                                 </Dialog>
 
-                                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg sm:rounded-xl bg-white/5 border border-white/10 text-[11px] text-slate-300">
-                                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                                    <span>即時防搶保護</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Live Pool Quick Stats Widget */}
-                        <div className="flex flex-col gap-2 sm:gap-2.5 w-full lg:w-auto shrink-0 items-center">
-                            <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-[#1a0c16] border border-pink-500/30 flex flex-col items-center justify-center text-center shadow-[0_4px_20px_rgba(244,63,94,0.15)] w-full min-w-[140px] sm:min-w-[170px]">
-                                <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">剩餘可拼</span>
-                                <span className="text-2xl sm:text-4xl font-black font-headline text-pink-300 mt-0.5 sm:mt-1">
-                                    {finalIsLoading ? '--' : stats.availableItems}
-                                </span>
-                                <span className="text-[9px] sm:text-[10px] text-slate-400 mt-0.5">球員卡</span>
-                            </div>
-
-                            <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-[#1a0c16] border border-amber-500/30 flex items-center justify-center text-center shadow-lg w-full">
-                                <div className="flex items-center gap-1.5">
-                                    <DiamondIcon className="w-3.5 h-3.5 text-amber-400" />
-                                    <span className="text-[11px] sm:text-xs font-bold text-amber-300">單注卡價 10% • 隨機公平</span>
-                                </div>
-                            </div>
+                        {/* 剩餘可拼 - 放在玩法說明右邊 */}
+                        <div className="h-8 sm:h-10 px-3 sm:px-4 rounded-lg sm:rounded-xl bg-[#1a0c16]/90 border border-pink-500/35 flex items-center gap-2 shadow-[0_0_15px_rgba(244,63,94,0.15)] backdrop-blur-sm">
+                            <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-pink-400 shrink-0" />
+                            <span className="text-xs sm:text-sm text-slate-300 font-medium">剩餘可拼</span>
+                            <span className="font-headline font-black text-pink-300 text-sm sm:text-base px-1.5 py-0.5 bg-pink-500/10 rounded-md border border-pink-500/20 leading-none">
+                                {finalIsLoading ? '--' : stats.availableItems}
+                            </span>
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
 
                 {/* === 主題卡池分類專區 === */}
                 <div className="mb-3 sm:mb-5 flex items-center justify-between animate-fade-in-up px-0.5 sm:px-1">

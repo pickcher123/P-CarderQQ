@@ -518,29 +518,22 @@ export function UnifiedEventCalendar({
                                     </DialogContent>
                                 </Dialog>
 
-                                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-[11px] text-slate-300">
-                                    <ShieldCheck className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                                    <span>系統自動開獎保障</span>
+                                {/* 進行中展訊 */}
+                                <div className="h-8 sm:h-10 px-3 sm:px-4 rounded-lg sm:rounded-xl bg-[#0b1329]/90 border border-amber-500/35 flex items-center gap-2 shadow-[0_0_15px_rgba(245,158,11,0.15)] backdrop-blur-sm">
+                                    <CalendarIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 shrink-0" />
+                                    <span className="text-xs sm:text-sm text-slate-300 font-medium">進行中展訊</span>
+                                    <span className="font-headline font-black text-amber-400 text-sm sm:text-base px-1.5 py-0.5 bg-amber-400/10 rounded-md border border-amber-400/20 leading-none">
+                                        {exhibitionEventsCount}
+                                    </span>
                                 </div>
-                            </div>
-                        </div>
 
-                        {/* Live Stats Widget */}
-                        <div className="grid grid-cols-2 gap-2 sm:gap-3 w-full lg:w-auto shrink-0">
-                            <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-[#0b1329] border border-amber-500/30 flex flex-col items-center justify-center text-center shadow-[0_4px_20px_rgba(245,158,11,0.15)] min-w-0">
-                                <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">進行中展訊</span>
-                                <span className="text-xl sm:text-3xl font-black font-headline text-amber-400 mt-0.5 sm:mt-1">
-                                    {exhibitionEventsCount}
-                                </span>
-                                <span className="text-[9px] sm:text-[10px] text-slate-400 mt-0.5">全台巡迴展出</span>
-                            </div>
-
-                            <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-[#0b1329] border border-purple-500/30 flex flex-col items-center justify-center text-center shadow-[0_4px_20px_rgba(168,85,247,0.15)] min-w-0">
-                                <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">熱門賽事</span>
-                                <span className="text-xl sm:text-3xl font-black font-headline text-purple-400 mt-0.5 sm:mt-1">
-                                    {matchEventsCount}
-                                </span>
-                                <span className="text-[9px] sm:text-[10px] text-slate-400 mt-0.5">即時競猜中</span>
+                                {/* 熱門賽事 */}
+                                <div className="h-8 sm:h-10 px-2.5 sm:px-3 rounded-lg sm:rounded-xl bg-[#0b1329]/60 border border-purple-500/25 flex items-center gap-1.5 text-xs text-slate-300">
+                                    <span className="text-[11px] sm:text-xs text-slate-400 font-medium">熱門賽事</span>
+                                    <span className="font-headline font-bold text-purple-400 text-xs sm:text-sm">
+                                        {matchEventsCount}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>

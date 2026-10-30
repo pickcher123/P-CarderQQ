@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { FileText, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { toSafeDate } from '@/lib/utils';
 
 export default function ActivityLogsPage() {
     const firestore = useFirestore();
@@ -33,7 +34,7 @@ export default function ActivityLogsPage() {
                         ) : logs?.map(log => (
                             <TableRow key={log.id}>
                                 <TableCell className="font-code text-xs font-bold text-slate-500">
-                                    {log.createdAt ? format(log.createdAt.toDate(), 'MM-dd HH:mm:ss') : '-'}
+                                    {toSafeDate(log.createdAt) ? format(toSafeDate(log.createdAt)!, 'MM-dd HH:mm:ss') : '-'}
                                 </TableCell>
                                 <TableCell className="font-bold text-slate-900 text-sm">
                                     {log.userName || log.userEmail || '系統'}

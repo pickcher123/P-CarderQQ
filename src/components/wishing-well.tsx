@@ -9,6 +9,7 @@ import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebas
 import { collection, addDoc, serverTimestamp, query, where, orderBy, limit } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { toSafeDate } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -160,7 +161,7 @@ export function WishingWell() {
                                                 {WISH_TYPES.find(t => t.value === wish.type)?.label}
                                             </Badge>
                                             <span className="text-[10px] font-code text-muted-foreground">
-                                                {wish.createdAt ? format((wish.createdAt as any).toDate(), 'yyyy-MM-dd') : ''}
+                                                {toSafeDate(wish.createdAt) ? format(toSafeDate(wish.createdAt)!, 'yyyy-MM-dd') : ''}
                                             </span>
                                         </div>
                                         <p className="text-xs text-foreground/90 leading-relaxed font-medium">
