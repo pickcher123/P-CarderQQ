@@ -165,14 +165,23 @@ export function PackPreview({
                                     type="button"
                                     onClick={() => setUseTicketMode(false)}
                                     className={cn(
-                                        "py-2 px-2 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1 cursor-pointer",
+                                        "py-2 px-2.5 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer",
                                         !useTicketMode 
                                             ? "bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-md" 
                                             : "text-slate-400 hover:text-slate-200"
                                     )}
                                 >
-                                    {!useTicketMode && <Check className="w-3 h-3 stroke-[3]" />}
-                                    <span>{isPPoint ? '💎 P點扣點' : '💎 鑽石扣點'}</span>
+                                    {!useTicketMode && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                                    {isPPoint ? (
+                                        <span className="inline-flex items-center gap-1">
+                                            <PPlusIcon className={cn("w-3.5 h-3.5", !useTicketMode ? "text-slate-950" : "text-amber-400")} />
+                                            <span>P點扣點</span>
+                                        </span>
+                                    ) : (
+                                        <span className="inline-flex items-center gap-1">
+                                            <span>💎 鑽石扣點</span>
+                                        </span>
+                                    )}
                                 </button>
                             </div>
                         </div>
@@ -333,17 +342,35 @@ export function PackPreview({
                             </Button>
                         )}
 
-                        {/* 🎯 僅保留自選號碼開獎（未選號時點擊開啟挑籤，已選號後點擊啟動自選開獎） */}
+                        {/* 🎯 一番賞自選號碼模式（未選號時點擊開啟挑籤，亦可一鍵隨機直接開獎） */}
                         {onOpenPickNumber && !isEventMode && (!selectedNumbers || selectedNumbers.length === 0) ? (
-                            <Button
-                                size="lg"
-                                className="w-full h-12 sm:h-14 text-base sm:text-lg font-black rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 border border-yellow-300 shadow-xl shadow-amber-500/25 hover:brightness-110 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95"
-                                onClick={onOpenPickNumber}
-                                disabled={!isLevelMet || isLoadingStats || isSoldOut || isOverPacks}
-                            >
-                                <Sparkles className="w-5 h-5 fill-slate-950" />
-                                <span>🎯 自選號碼開獎</span>
-                            </Button>
+                            <div className="space-y-2">
+                                <Button
+                                    size="lg"
+                                    className="w-full h-12 sm:h-14 text-base sm:text-lg font-black rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 border border-yellow-300 shadow-xl shadow-amber-500/25 hover:brightness-110 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95"
+                                    onClick={onOpenPickNumber}
+                                    disabled={!isLevelMet || isLoadingStats || isSoldOut || isOverPacks}
+                                >
+                                    <Sparkles className="w-5 h-5 fill-slate-950" />
+                                    <span>🎯 自選號碼開獎</span>
+                                </Button>
+
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="ghost"
+                                    className="w-full h-9 text-xs text-slate-400 hover:text-amber-300 font-bold hover:bg-slate-900/80 rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                                    onClick={() => {
+                                        if (canStart) {
+                                            performDraw(actualDrawCount, !isEventMode && useTicketMode, isEventMode, undefined);
+                                        }
+                                    }}
+                                    disabled={!canStart}
+                                >
+                                    <Zap className="w-3.5 h-3.5 text-amber-400" />
+                                    <span>或直接開獎 (由系統隨機出籤)</span>
+                                </Button>
+                            </div>
                         ) : (
                             <Button
                                 size="lg"

@@ -388,6 +388,17 @@ export default function CardPoolDetailPage() {
     return { cardsInPool: cards, cardsInPoolIds: idSet };
   }, [allCards, cardPool]);
 
+  // 🎯 一番賞真實獎品總量（卡牌張數 + 點數獎項個數）自動連動
+  const totalCardsCount = useMemo(() => {
+    return (poolDetails.cards || []).reduce((sum, c) => sum + (c.quantity || 0), 0);
+  }, [poolDetails.cards]);
+
+  const totalPointPrizesCount = useMemo(() => {
+    return (poolDetails.pointPrizes || []).reduce((sum, p) => sum + (p.quantity || 0), 0);
+  }, [poolDetails.pointPrizes]);
+
+  const totalPrizesCount = totalCardsCount + totalPointPrizesCount;
+
   // 計算推薦價格
   const recommendedPrices = useMemo(() => {
     if (!allCards || !poolDetails || !poolDetails.totalPacks) return null;
@@ -505,24 +516,46 @@ export default function CardPoolDetailPage() {
     }
   }
 
-  const handleGenerateKujiTickets = async (customCount?: number) => {
+  const handleGenerateKujiTickets = async () => {
     if (!cardPoolRef || !cardPool) return;
-    const countToUse = customCount || poolDetails.totalTicketsCount || poolDetails.remainingPacks || 80;
-    const newTickets = generateKujiTickets(cardPool, countToUse);
+    const cardsTotal = (poolDetails.cards || []).reduce((sum, c) => sum + (c.quantity || 0), 0);
+    const pointsTotal = (poolDetails.pointPrizes || []).reduce((sum, p) => sum + (p.quantity || 0), 0);
+    const exactTotalPrizes = cardsTotal + pointsTotal;
+    
+    if (exactTotalPrizes <= 0) {
+      toast({
+        variant: 'destructive',
+        title: '無法產生籤位',
+        description: '卡池中尚未配置任何卡牌或點數獎品，請先在上方獎品區加入卡片或點數獎項。',
+      });
+      return;
+    }
+
+    // 嚴格依據實際獎品總數 1:1 生成一番賞籤位，每張籤牌精確對應卡池中的真實獎品
+    const newTickets = generateKujiTickets({
+      ...cardPool,
+      cards: poolDetails.cards,
+      pointPrizes: poolDetails.pointPrizes,
+    }, exactTotalPrizes);
+
+    const updatePayload = {
+      kujiTickets: newTickets,
+      enablePickNumber: true,
+      totalTicketsCount: exactTotalPrizes,
+      totalPacks: exactTotalPrizes,
+      remainingPacks: newTickets.filter(t => !t.isDrawn).length,
+    };
+
     setPoolDetails(prev => ({
       ...prev,
-      kujiTickets: newTickets,
-      enablePickNumber: true,
-      totalTicketsCount: countToUse,
+      ...updatePayload,
     }));
-    await updateDoc(cardPoolRef, cleanFirestoreData({
-      kujiTickets: newTickets,
-      enablePickNumber: true,
-      totalTicketsCount: countToUse,
-    }));
+
+    await updateDoc(cardPoolRef, cleanFirestoreData(updatePayload));
+
     toast({
       title: '一番賞籤位產生成功！',
-      description: `已成功隨機打散生成 ${newTickets.length} 張番號籤牌，玩家前台已可即時挑號抽卡。`,
+      description: `已成功與獎品數量（共 ${exactTotalPrizes} 個獎項：卡牌 ${cardsTotal} 張、點數獎 ${pointsTotal} 個）1:1 綁定生成 ${newTickets.length} 張番號籤牌！`,
     });
   };
 
@@ -950,26 +983,30 @@ export default function CardPoolDetailPage() {
                                 <div className="space-y-4 pt-1">
                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                         <div className="space-y-1 sm:col-span-1">
-                                            <Label className="text-xs font-bold text-slate-700">總籤數 (套籤容量)</Label>
-                                            <div className="flex items-center gap-2">
-                                                <Input
-                                                    type="number"
-                                                    value={poolDetails.totalTicketsCount || 80}
-                                                    onChange={e => setPoolDetails({ ...poolDetails, totalTicketsCount: Number(e.target.value) })}
-                                                    onBlur={e => handleUpdatePoolDetails('totalTicketsCount', Number(e.target.value))}
-                                                    className="h-9 font-bold bg-white border-amber-200"
-                                                />
+                                            <Label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                                                <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                                                總籤數 (自動綁定獎品總數)
+                                            </Label>
+                                            <div className="h-9 px-3 rounded-xl font-black text-sm bg-amber-100/70 border border-amber-300 text-amber-950 flex items-center justify-between shadow-inner">
+                                                <span className="font-code text-base font-black text-amber-950">
+                                                    {totalPrizesCount} 籤
+                                                </span>
+                                                <span className="text-[10px] font-bold text-amber-800 bg-white/70 px-2 py-0.5 rounded-md">
+                                                    卡牌 {totalCardsCount} + 點數 {totalPointPrizesCount}
+                                                </span>
                                             </div>
-                                            <p className="text-[10px] text-slate-500">標準一番賞通常為 60~100 籤</p>
+                                            <p className="text-[10px] text-amber-800 font-medium">
+                                                籤紙數量 100% 依據上方卡牌與點數獎品總數自動連動
+                                            </p>
                                         </div>
 
                                         <div className="sm:col-span-2 flex flex-wrap items-end gap-2">
                                             <Button
-                                                onClick={() => handleGenerateKujiTickets(poolDetails.totalTicketsCount || 80)}
+                                                onClick={handleGenerateKujiTickets}
                                                 className="h-9 text-xs font-black bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-md shadow-amber-500/20"
                                             >
                                                 <Shuffle className="w-3.5 h-3.5 mr-1" />
-                                                🎲 一鍵隨機打散洗籤 (生成籤表)
+                                                🎲 一鍵隨機打散洗籤 (生成 {totalPrizesCount} 張籤表)
                                             </Button>
 
                                             {poolDetails.kujiTickets && poolDetails.kujiTickets.length > 0 && (

@@ -745,6 +745,39 @@ export default function OpenPackPage() {
                         }
                     />
                 </div>
+
+                {/* 🎯 一番賞自選號碼彈窗（確保在開獎確認頁面點擊開獎/選號時立即響應彈出） */}
+                <KujiNumberPickerDialog
+                    isOpen={isPickNumberOpen}
+                    onClose={() => setIsPickNumberOpen(false)}
+                    cardPool={cardPool}
+                    isTrialMode={isTrialMode}
+                    initialSelectedNumbers={selectedNumbers}
+                    targetPickCount={targetPickCount}
+                    userBalance={
+                        userProfile 
+                            ? (cardPool?.currency === 'p-point' ? (userProfile.bonusPoints || 0) : (userProfile.points || 0))
+                            : 0
+                    }
+                    isDrawing={step === 'loading'}
+                    onSelectNumbersOnly={(chosenNumbers) => {
+                        setSelectedNumbers(chosenNumbers);
+                        setIsPickNumberOpen(false);
+                        toast({
+                            title: '🎯 已鎖定自選號碼',
+                            description: `已選取番號：#${chosenNumbers.join(', #')}，點擊下方「啟動開獎」即可開始抽卡！`,
+                        });
+                    }}
+                    onConfirmDraw={(chosenNumbers, asTrial) => {
+                        setSelectedNumbers(chosenNumbers);
+                        setIsPickNumberOpen(false);
+                        if (asTrial || isTrialMode) {
+                            performTrialDraw(chosenNumbers.length, chosenNumbers);
+                        } else {
+                            performDraw(chosenNumbers.length, false, false, chosenNumbers);
+                        }
+                    }}
+                />
             </div>
         );
     }
