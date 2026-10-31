@@ -273,14 +273,9 @@ const LuckBagCard = ({ bag, priority = false, index }: { bag: LuckBagWithCount, 
                     </div>
                 </div>
 
-                {/* 底部行動按鈕提示 */}
-                <div className="pt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                    <div className="flex items-center gap-1.5 text-[11px] sm:text-xs text-slate-400 font-mono shrink-0">
-                        <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400 shrink-0" />
-                        <span>公平亂數配獎 • 即時存證</span>
-                    </div>
-
-                    <div className="w-full sm:w-auto flex items-center justify-center gap-2 font-black text-xs sm:text-sm text-slate-950 bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-500 px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl shadow-[0_4px_20px_rgba(245,158,11,0.3)] group-hover:from-amber-300 group-hover:to-yellow-400 group-hover:shadow-[0_4px_25px_rgba(245,158,11,0.45)] group-hover:brightness-110 active:scale-[0.98] transition-all font-headline whitespace-nowrap shrink-0">
+                {/* 底部行動按鈕 */}
+                <div className="pt-2 flex items-center justify-end">
+                    <div className="w-full flex items-center justify-center gap-2 font-black text-xs sm:text-sm text-slate-950 bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-500 px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl shadow-[0_4px_20px_rgba(245,158,11,0.3)] group-hover:from-amber-300 group-hover:to-yellow-400 group-hover:shadow-[0_4px_25px_rgba(245,158,11,0.45)] group-hover:brightness-110 active:scale-[0.98] transition-all font-headline whitespace-nowrap">
                         <span>{isDone ? '查看開獎結果' : '立即選位參與'}</span>
                         <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform shrink-0" />
                     </div>
