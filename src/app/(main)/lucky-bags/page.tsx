@@ -104,7 +104,7 @@ const LuckBagCard = ({ bag, priority = false, index }: { bag: LuckBagWithCount, 
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(245,158,11,0.08),transparent_70%)] pointer-events-none" />
 
             {/* 左側：大獎展示櫥窗 */}
-            <div className="relative flex-[1.2] flex flex-col sm:flex-row items-center sm:items-stretch gap-4 sm:gap-6 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-slate-900/90 via-[#0a0f1d]/95 to-slate-950/90 border border-amber-500/20 shadow-inner overflow-hidden">
+            <div className="relative w-full lg:flex-[1.2] flex flex-col sm:flex-row items-center sm:items-stretch gap-4 sm:gap-6 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-slate-900/90 via-[#0a0f1d]/95 to-slate-950/90 border border-amber-500/20 shadow-inner">
                 
                 {/* 狀態角標列 */}
                 <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5 flex-wrap">
@@ -138,9 +138,9 @@ const LuckBagCard = ({ bag, priority = false, index }: { bag: LuckBagWithCount, 
                     )}
                 </div>
 
-                {/* 卡片封面展台 */}
+                {/* 卡片封面展台 (卡磚大氣呈現) */}
                 <div className={cn(
-                    "relative w-32 sm:w-36 md:w-40 aspect-[2.5/3.7] shrink-0 rounded-xl overflow-hidden border border-amber-500/40 bg-gradient-to-b from-slate-900 to-black shadow-[0_12px_30px_rgba(0,0,0,0.8)] mt-7 sm:mt-0 transition-transform duration-500 group-hover:scale-105 mx-auto sm:mx-0 group/card",
+                    "relative w-36 sm:w-48 md:w-52 aspect-[2.5/3.6] shrink-0 rounded-2xl overflow-hidden border-2 border-amber-500/50 bg-gradient-to-b from-slate-900 to-black shadow-[0_12px_30px_rgba(0,0,0,0.9)] mt-6 sm:mt-0 transition-transform duration-500 group-hover:scale-105 mx-auto sm:mx-0 group/card",
                     isDone && "opacity-60 grayscale-[40%]"
                 )}>
                     {bag.prizeCards.first ? (
@@ -148,58 +148,50 @@ const LuckBagCard = ({ bag, priority = false, index }: { bag: LuckBagWithCount, 
                             src={bag.prizeCards.first.imageUrl} 
                             alt={bag.prizeCards.first.name}
                             fill
-                            className="object-contain p-1.5 transition-transform duration-500 group-hover:scale-105"
+                            className="object-contain p-0.5 transition-transform duration-500 group-hover:scale-105"
                             priority={priority}
-                            sizes="(max-width: 640px) 140px, 180px"
+                            sizes="(max-width: 640px) 180px, 240px"
                         />
                     ) : (
                         <div className="w-full h-full flex flex-col items-center justify-center p-2 text-center bg-slate-900/80">
-                            <LuckyBagIcon className="w-10 h-10 text-amber-400/50 mb-1" />
-                            <span className="text-[10px] text-slate-400 font-mono font-bold">頂級頭獎</span>
+                            <LuckyBagIcon className="w-12 h-12 text-amber-400/50 mb-1" />
+                            <span className="text-xs text-slate-400 font-bold">頂級頭獎</span>
                         </div>
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent pointer-events-none" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent pointer-events-none" />
                     <div className="absolute bottom-1.5 inset-x-1.5 text-center">
-                        <span className="text-[9px] font-mono font-black text-amber-300 bg-black/90 px-2 py-0.5 rounded-md border border-amber-500/40 backdrop-blur-md shadow-md inline-flex items-center gap-1">
-                            <Crown className="w-2.5 h-2.5 text-amber-400" />
-                            TOP JACKPOT
+                        <span className="text-[10px] font-bold text-amber-300 bg-black/90 px-2.5 py-0.5 rounded-md border border-amber-500/40 backdrop-blur-md shadow-md inline-flex items-center gap-1">
+                            <Crown className="w-3 h-3 text-amber-400" />
+                            頂級頭獎
                         </span>
                     </div>
                 </div>
 
-                {/* 福袋標題與大獎資訊 */}
+                {/* 福袋標題與大獎資訊 (卡片名稱手機版清晰完整展示，絕不被截斷) */}
                 <div className="w-full min-w-0 flex-1 flex flex-col justify-between text-center sm:text-left space-y-3 py-1">
-                    <div className="space-y-1.5">
-                        <div className="flex items-center justify-center sm:justify-start gap-1.5">
-                            <span className="text-[10px] font-mono font-black text-amber-400/80 uppercase tracking-[0.2em]">
-                                LIMITED EDITION
-                            </span>
-                            <span className="w-1 h-1 rounded-full bg-amber-400/40" />
-                            <span className="text-[10px] font-mono text-slate-400">
-                                限量福袋
-                            </span>
-                        </div>
+                    <div>
                         <h3 className="text-base sm:text-xl font-black font-headline text-white group-hover:text-amber-300 transition-colors line-clamp-2 leading-snug drop-shadow-sm">
                             {bag.name}
                         </h3>
                     </div>
 
-                    {bag.prizeCards.first && (
-                        <div className="w-full min-w-0 flex items-center gap-2.5 text-xs text-slate-200 bg-gradient-to-r from-amber-500/15 via-slate-950/80 to-slate-950/80 p-2.5 sm:p-3 rounded-xl border border-amber-500/35 shadow-inner text-left">
-                            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center shrink-0 shadow-[0_0_10px_rgba(245,158,11,0.2)]">
-                                <Trophy className="w-4 h-4 text-amber-400" />
+                    {/* 頂級頭獎卡牌名稱 (手機版清晰完整展示，杜絕被切斷) */}
+                    {bag.prizeCards?.first ? (
+                        <div className="w-full min-w-0 flex items-start sm:items-center gap-2.5 text-xs text-slate-200 bg-gradient-to-r from-amber-500/15 via-slate-950/90 to-slate-950/90 p-2.5 sm:p-3 rounded-xl border border-amber-500/40 shadow-inner text-left">
+                            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center shrink-0 shadow-[0_0_10px_rgba(245,158,11,0.2)] mt-0.5 sm:mt-0">
+                                <Trophy className="w-3.5 h-3.5 text-amber-400" />
                             </div>
                             <div className="min-w-0 flex-1">
-                                <span className="text-[9px] font-black text-amber-400 uppercase tracking-wider block leading-none mb-1 flex items-center gap-1">
-                                    <Crown className="w-2.5 h-2.5 text-amber-400" />
+                                <span className="text-[10px] font-black text-amber-400 tracking-wider block leading-none mb-1 flex items-center gap-1">
+                                    <Crown className="w-3 h-3 text-amber-400" />
                                     頂級頭獎卡牌
                                 </span>
-                                <p className="truncate text-xs font-bold text-slate-100 group-hover:text-amber-200 transition-colors">
+                                <p className="text-xs sm:text-sm font-bold text-white group-hover:text-amber-200 transition-colors leading-snug break-words">
                                     {bag.prizeCards.first.name}
                                 </p>
                             </div>
                         </div>
-                    )}
+                    ) : null}
 
                     {isDone && bag.winners?.first && (
                         <div className="text-[11px] font-mono font-black text-amber-400 bg-amber-500/10 px-3 py-1 rounded-lg border border-amber-500/30 inline-flex items-center gap-1.5 w-fit mx-auto sm:mx-0 shadow-sm">
@@ -210,16 +202,16 @@ const LuckBagCard = ({ bag, priority = false, index }: { bag: LuckBagWithCount, 
                 </div>
             </div>
 
-            {/* 右側：參與進度與控制面板 */}
-            <div className="flex-1 flex flex-col justify-between p-2 sm:p-5 text-white mt-4 lg:mt-0 space-y-5">
-                <div className="space-y-4">
+            {/* 右側：參與進度與控制面板 (消除巨大垂直空白，緊密流暢) */}
+            <div className="w-full lg:flex-1 flex flex-col justify-start lg:justify-between p-2 sm:p-5 text-white mt-3 lg:mt-0 gap-3.5 sm:gap-5">
+                <div className="space-y-3.5 sm:space-y-4">
                     {/* 價格與當前募集 */}
-                    <div className="flex justify-between items-end border-b border-slate-800/80 pb-4">
-                        <div className="space-y-1">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] font-mono">
-                                ENTRY PRICE / 格
+                    <div className="flex justify-between items-end border-b border-slate-800/80 pb-3 sm:pb-4">
+                        <div className="space-y-0.5 sm:space-y-1">
+                            <p className="text-[11px] font-bold text-slate-400">
+                                每格金額
                             </p>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1.5 sm:gap-2">
                                 <p className="text-2xl sm:text-4xl font-black text-amber-400 font-headline tracking-tight">
                                     {(bag.price || 0).toLocaleString()}
                                 </p>
@@ -230,9 +222,9 @@ const LuckBagCard = ({ bag, priority = false, index }: { bag: LuckBagWithCount, 
                                 )}
                             </div>
                         </div>
-                        <div className="text-right space-y-1">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] font-mono">
-                                PARTICIPATION
+                        <div className="text-right space-y-0.5 sm:space-y-1">
+                            <p className="text-[11px] font-bold text-slate-400">
+                                認購名額
                             </p>
                             <p className="text-base sm:text-2xl font-black text-white font-headline">
                                 <span className="text-amber-400">{bag.participantCount}</span> 
@@ -242,7 +234,7 @@ const LuckBagCard = ({ bag, priority = false, index }: { bag: LuckBagWithCount, 
                     </div>
 
                     {/* 進度條 */}
-                    <div className="space-y-2">
+                    <div className="space-y-1.5 sm:space-y-2">
                         <div className="flex justify-between items-center text-xs font-mono font-bold">
                             <div className="flex items-center gap-1.5">
                                 <span className="text-slate-400">募集進度</span>
@@ -273,8 +265,8 @@ const LuckBagCard = ({ bag, priority = false, index }: { bag: LuckBagWithCount, 
                     </div>
                 </div>
 
-                {/* 底部行動按鈕 */}
-                <div className="pt-2 flex items-center justify-end">
+                {/* 底部行動按鈕 (緊接進度條，消除多餘死區) */}
+                <div className="pt-1 sm:pt-2 flex items-center justify-end">
                     <div className="w-full flex items-center justify-center gap-2 font-black text-xs sm:text-sm text-slate-950 bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-500 px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl shadow-[0_4px_20px_rgba(245,158,11,0.3)] group-hover:from-amber-300 group-hover:to-yellow-400 group-hover:shadow-[0_4px_25px_rgba(245,158,11,0.45)] group-hover:brightness-110 active:scale-[0.98] transition-all font-headline whitespace-nowrap">
                         <span>{isDone ? '查看開獎結果' : '立即選位參與'}</span>
                         <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform shrink-0" />

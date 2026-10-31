@@ -61,10 +61,6 @@ export function WhyChooseBentoGrid({
 
       {/* 區塊標題區 */}
       <div className="text-center mb-8 sm:mb-14 space-y-3 sm:space-y-4 relative z-10">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-mono font-bold tracking-widest uppercase">
-          <Sparkles className="w-3.5 h-3.5 animate-pulse" />
-          <span>Next-Gen Trading Card Platform</span>
-        </div>
         <h2 className="text-2xl sm:text-4xl md:text-5xl font-black font-headline tracking-tight text-white drop-shadow-sm">
           為什麼選擇 <span className="bg-clip-text text-transparent bg-gradient-to-r from-amber-300 via-amber-400 to-yellow-400 drop-shadow-[0_0_25px_rgba(245,158,11,0.4)]">P+Carder</span>
         </h2>

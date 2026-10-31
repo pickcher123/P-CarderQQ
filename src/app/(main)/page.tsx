@@ -245,7 +245,7 @@ export default function Home() {
             </div>
             
             <p className="text-sm sm:text-base md:text-xl text-slate-300 max-w-xl mx-auto font-medium tracking-wider leading-relaxed px-2">
-                頂級球員卡福袋平台 · 即時連線公平抽取<br />
+                頂級球員卡福袋平台<br />
                 <span className="text-amber-400 font-bold drop-shadow-[0_0_12px_rgba(245,158,11,0.4)]">打造屬於你的極致玩卡與收藏體驗</span>
             </p>
 

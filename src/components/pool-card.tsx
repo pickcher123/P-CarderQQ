@@ -160,17 +160,47 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
     }, [pool.pointMultiplier, pool.pointMultiplierExpiresAt, currentTime]);
 
     const poolStatus = useMemo(() => {
+        const parseSafeDate = (val: any): Date | null => {
+            if (!val) return null;
+            try {
+                if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
+                if (typeof val?.toDate === 'function') {
+                    const d = val.toDate();
+                    return isNaN(d.getTime()) ? null : d;
+                }
+                if (typeof val?.seconds === 'number') {
+                    const d = new Date(val.seconds * 1000);
+                    return isNaN(d.getTime()) ? null : d;
+                }
+                if (typeof val === 'string' || typeof val === 'number') {
+                    const d = new Date(val);
+                    return isNaN(d.getTime()) ? null : d;
+                }
+            } catch {
+                return null;
+            }
+            return null;
+        };
+
         const isSoldOut = (pool.remainingPacks ?? 0) <= 0;
         if (isSoldOut) return { status: 'sold-out', disabled: true, message: '已全數售罄' };
-        if (pool.expiresAt && currentTime > new Date(pool.expiresAt.seconds * 1000)) return { status: 'expired', disabled: true, message: '已結束' };
-        if (pool.startsAt) {
-            const start = new Date(pool.startsAt.seconds * 1000);
-            if (currentTime < start) return { status: 'not-started', disabled: true, message: format(start, "MM-dd HH:mm") + ' 開放' };
+
+        const expiresAtDate = parseSafeDate(pool.expiresAt);
+        if (expiresAtDate && currentTime > expiresAtDate) {
+            return { status: 'expired', disabled: true, message: '已結束' };
         }
+
+        const startsAtDate = parseSafeDate(pool.startsAt);
+        if (startsAtDate && currentTime < startsAtDate) {
+            try {
+                return { status: 'not-started', disabled: true, message: format(startsAtDate, "MM-dd HH:mm") + ' 開放' };
+            } catch {
+                return { status: 'not-started', disabled: true, message: '即將開放' };
+            }
+        }
+
         if (pool.hasProtection !== false && pool.lockedAt) {
-            const lockTime = typeof (pool.lockedAt as any).seconds === 'number'
-                ? new Date((pool.lockedAt as any).seconds * 1000)
-                : ((pool.lockedAt as any) instanceof Date ? (pool.lockedAt as any) : new Date());
+            const lockTime = parseSafeDate(pool.lockedAt) || new Date();
             const diff = Math.floor((currentTime.getTime() - lockTime.getTime()) / 1000);
             if (diff < LOCK_DURATION) {
                 return { status: pool.lockedBy === user?.uid ? 'locked-by-me' : 'locked', disabled: pool.lockedBy !== user?.uid, message: `${LOCK_DURATION - diff}秒` };

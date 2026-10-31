@@ -428,12 +428,16 @@ export function UnifiedEventCalendar({
         }
     }, [nearestPrediction]);
 
-    const exhibitionEventsCount = useMemo(() => {
-        return allUnifiedEvents.filter(e => e.type === 'exhibition').length;
-    }, [allUnifiedEvents]);
-
-    const matchEventsCount = useMemo(() => {
-        return allUnifiedEvents.filter(e => e.type !== 'exhibition').length;
+    const unstartedExhibitionsCount = useMemo(() => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const unstarted = allUnifiedEvents.filter(e => {
+            if (e.type !== 'exhibition') return false;
+            const start = new Date(e.startDate);
+            start.setHours(0, 0, 0, 0);
+            return start > today;
+        });
+        return unstarted.length > 0 ? unstarted.length : allUnifiedEvents.filter(e => e.type === 'exhibition').length;
     }, [allUnifiedEvents]);
 
     const formatMatchDate = (date: Date) => {
@@ -518,20 +522,12 @@ export function UnifiedEventCalendar({
                                     </DialogContent>
                                 </Dialog>
 
-                                {/* 進行中展訊 */}
+                                {/* 尚未開始卡展 */}
                                 <div className="h-8 sm:h-10 px-3 sm:px-4 rounded-lg sm:rounded-xl bg-[#0b1329]/90 border border-amber-500/35 flex items-center gap-2 shadow-[0_0_15px_rgba(245,158,11,0.15)] backdrop-blur-sm">
                                     <CalendarIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 shrink-0" />
-                                    <span className="text-xs sm:text-sm text-slate-300 font-medium">進行中展訊</span>
+                                    <span className="text-xs sm:text-sm text-slate-300 font-medium">尚未開始卡展</span>
                                     <span className="font-headline font-black text-amber-400 text-sm sm:text-base px-1.5 py-0.5 bg-amber-400/10 rounded-md border border-amber-400/20 leading-none">
-                                        {exhibitionEventsCount}
-                                    </span>
-                                </div>
-
-                                {/* 熱門賽事 */}
-                                <div className="h-8 sm:h-10 px-2.5 sm:px-3 rounded-lg sm:rounded-xl bg-[#0b1329]/60 border border-purple-500/25 flex items-center gap-1.5 text-xs text-slate-300">
-                                    <span className="text-[11px] sm:text-xs text-slate-400 font-medium">熱門賽事</span>
-                                    <span className="font-headline font-bold text-purple-400 text-xs sm:text-sm">
-                                        {matchEventsCount}
+                                        {unstartedExhibitionsCount}
                                     </span>
                                 </div>
                             </div>

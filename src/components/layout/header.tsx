@@ -334,43 +334,6 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                           </div>
                       </DropdownMenuLabel>
 
-                      <DropdownMenuSeparator className="hidden sm:block bg-white/10" />
-
-                      {/* 🎪 活動與福利專區（僅桌面端顯示，手機版已由頂部按鈕與底部導覽列承載） */}
-                      <div className="hidden sm:block p-1 space-y-1">
-                          <div className="px-2 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                            <Sparkles className="w-3 h-3 text-amber-400" />
-                            <span>活動與福利專區</span>
-                          </div>
-
-                          {/* 卡展/賽事行事曆 */}
-                          <DropdownMenuItem asChild className="rounded-xl cursor-pointer text-slate-200 hover:text-white focus:bg-cyan-500/15 focus:text-cyan-300 transition-colors">
-                              <Link href="/exhibitions" className="flex items-center justify-between w-full py-1.5">
-                                <div className="flex items-center">
-                                  <Calendar className="mr-2.5 h-4 w-4 text-cyan-400" />
-                                  <span className="font-semibold text-xs">卡展/賽事行事曆</span>
-                                </div>
-                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
-                                  雙軌行事曆
-                                </span>
-                              </Link>
-                          </DropdownMenuItem>
-
-                          {/* 簽到/領券 (兌換碼) */}
-                          <DropdownMenuItem 
-                              onClick={() => setIsPromoModalOpen(true)}
-                              className="rounded-xl cursor-pointer text-slate-200 hover:text-white focus:bg-white/10 font-medium transition-colors py-1.5 flex items-center justify-between"
-                          >
-                              <div className="flex items-center">
-                                <CalendarCheck className="mr-2.5 h-4 w-4 text-pink-400" />
-                                <span className="text-xs">簽到/領券 (兌換碼)</span>
-                              </div>
-                              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 border border-pink-500/30">
-                                福利
-                              </span>
-                          </DropdownMenuItem>
-                      </div>
-
                       <DropdownMenuSeparator className="bg-white/10" />
 
                       {/* 個人功能選單（手機版純粹精簡：會員中心與關於我們） */}
