@@ -38,6 +38,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { SafeImage } from '@/components/safe-image';
+import { AIImageGeneratorDialog } from '@/components/admin/ai-image-generator-dialog';
 
 interface BettingCategory {
     id?: string;
@@ -249,9 +250,21 @@ export default function BettingAdminPage() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label className="text-xs font-bold text-slate-500 uppercase tracking-widest">封面圖片</Label>
+                            <div className="flex items-center justify-between">
+                                <Label className="text-xs font-bold text-slate-500 uppercase tracking-widest">封面圖片</Label>
+                                <AIImageGeneratorDialog
+                                    initialTitle={categoryName || ''}
+                                    initialCategory={categoryName || '拼卡分類'}
+                                    defaultType="category"
+                                    defaultAspectRatio="3:4"
+                                    onImageGenerated={(url) => {
+                                        setPreviewUrl(url);
+                                        setSelectedFile(null);
+                                    }}
+                                />
+                            </div>
                             <div className="flex flex-col gap-4">
-                                <div className="aspect-[4/5] relative w-32 mx-auto bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 overflow-hidden flex items-center justify-center">
+                                <div className="aspect-[3/4] relative w-32 mx-auto bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 overflow-hidden flex items-center justify-center">
                                     {previewUrl ? (
                                         <SafeImage src={previewUrl} alt="preview" fill className="object-cover" />
                                     ) : (
@@ -295,9 +308,21 @@ export default function BettingAdminPage() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label className="text-xs font-bold text-slate-500 uppercase tracking-widest">封面圖片</Label>
+                            <div className="flex items-center justify-between">
+                                <Label className="text-xs font-bold text-slate-500 uppercase tracking-widest">封面圖片</Label>
+                                <AIImageGeneratorDialog
+                                    initialTitle={categoryName || ''}
+                                    initialCategory={categoryName || '拼卡分類'}
+                                    defaultType="category"
+                                    defaultAspectRatio="3:4"
+                                    onImageGenerated={(url) => {
+                                        setPreviewUrl(url);
+                                        setSelectedFile(null);
+                                    }}
+                                />
+                            </div>
                             <div className="flex flex-col gap-4">
-                                <div className="aspect-[4/5] relative w-32 mx-auto bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 overflow-hidden flex items-center justify-center">
+                                <div className="aspect-[3/4] relative w-32 mx-auto bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 overflow-hidden flex items-center justify-center">
                                     {previewUrl ? (
                                         <SafeImage src={previewUrl} alt="preview" fill className="object-cover" />
                                     ) : (
@@ -386,7 +411,7 @@ export default function BettingAdminPage() {
                                     />
                                 </TableCell>
                                 <TableCell>
-                                    <div className="relative h-12 w-16 rounded-lg bg-slate-50 overflow-hidden border border-slate-200 shadow-sm">
+                                    <div className="relative h-16 w-12 rounded-xl bg-slate-50 overflow-hidden border border-slate-200 shadow-sm">
                                         <SafeImage src={category.imageUrl} alt={category.name} fill className="object-cover" />
                                     </div>
                                 </TableCell>

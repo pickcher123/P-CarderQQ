@@ -31,6 +31,11 @@ export function FloatingCardsBackground() {
   const springY = useSpring(mouseY, { stiffness: 50, damping: 20 });
 
   useEffect(() => {
+    // 觸控裝置跳過 mousemove 監聽以節省 CPU
+    if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) {
+      return;
+    }
+
     const handleMouseMove = (e: MouseEvent) => {
       const { clientX, clientY } = e;
       const { innerWidth, innerHeight } = window;
@@ -38,7 +43,7 @@ export function FloatingCardsBackground() {
       mouseY.set((clientY / innerHeight) - 0.5);
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, [mouseX, mouseY]);
 
@@ -48,25 +53,26 @@ export function FloatingCardsBackground() {
       ? dbCards.map(c => c.imageUrl) 
       : FALLBACK_IMAGES;
 
-    const count = 10;
+    const isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
+    const count = isMobile ? 4 : 7;
     
     return Array.from({ length: count }).map((_, i) => ({
       id: i,
       image: images[i % images.length],
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      rotate: Math.random() * 80 - 40,
-      scale: 0.3 + Math.random() * 0.7,
-      delay: Math.random() * 5,
-      duration: 15 + Math.random() * 12,
-      floatRange: 40 + Math.random() * 60,
-      depth: 0.8 + Math.random() * 2.5,
-      opacity: 0.15 + Math.random() * 0.15, // Slightly higher opacity for better visibility
+      x: Math.random() * 90 + 5,
+      y: Math.random() * 85 + 5,
+      rotate: Math.random() * 50 - 25,
+      scale: 0.35 + Math.random() * 0.45,
+      delay: Math.random() * 4,
+      duration: 16 + Math.random() * 10,
+      floatRange: 25 + Math.random() * 35,
+      depth: 0.6 + Math.random() * 1.6,
+      opacity: 0.16 + Math.random() * 0.14,
     }));
   }, [dbCards]);
 
   return (
-    <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none" style={{ perspective: '1200px' }}>
+    <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none" style={{ perspective: '1000px' }}>
       {/* Background Gradients for subtle depth without obscuring bottom floor details */}
       <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-transparent to-transparent z-[1]" />
       
@@ -83,8 +89,8 @@ export function FloatingCardsBackground() {
       </div>
 
       {/* Decorative large circles for depth */}
-      <div className="absolute top-1/4 -left-20 w-[600px] h-[600px] bg-primary/20 rounded-full blur-[120px] mix-blend-screen animate-pulse-slow" />
-      <div className="absolute bottom-1/4 -right-20 w-[500px] h-[500px] bg-accent/10 rounded-full blur-[100px] mix-blend-screen animate-blob" />
+      <div className="absolute top-1/4 -left-20 w-[450px] h-[450px] bg-primary/15 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute bottom-1/4 -right-20 w-[400px] h-[400px] bg-accent/10 rounded-full blur-[80px] pointer-events-none" />
 
       {/* Subtle bottom soft blend that doesn't abruptly cut the floor platform */}
       <div className="absolute bottom-0 inset-x-0 h-28 bg-gradient-to-t from-slate-950/60 via-slate-950/20 to-transparent pointer-events-none z-[2]" />
@@ -93,35 +99,31 @@ export function FloatingCardsBackground() {
 }
 
 function FloatingCard({ card, springX, springY }: { card: any, springX: any, springY: any }) {
-  // Parallax movement based on mouse and card depth
-  const moveX = useTransform(springX, (v: number) => v * 220 * card.depth); // Increased parallax
-  const moveY = useTransform(springY, (v: number) => v * 220 * card.depth);
+  const moveX = useTransform(springX, (v: number) => v * 120 * card.depth);
+  const moveY = useTransform(springY, (v: number) => v * 120 * card.depth);
 
   return (
     <motion.div
-      className="absolute rounded-xl overflow-hidden border border-white/30 shadow-2xl" // Brighter border
+      className="absolute rounded-xl overflow-hidden border border-white/20 shadow-xl"
       style={{
         left: `${card.x}%`,
         top: `${card.y}%`,
-        width: `${190 * card.scale}px`, // Slightly larger
+        width: `${175 * card.scale}px`,
         aspectRatio: '2/3',
         opacity: card.opacity,
         x: moveX,
         y: moveY,
+        willChange: 'transform',
       }}
-      initial={{ opacity: 0, scale: 0.1, rotateX: card.rotate, rotateY: card.rotate / 2 }}
+      initial={{ opacity: 0, scale: card.scale, rotate: card.rotate }}
       animate={{
-        opacity: [card.opacity, card.opacity * 1.6, card.opacity],
-        scale: card.scale,
-        rotateZ: [card.rotate - 12, card.rotate + 12, card.rotate - 12],
-        rotateX: [card.rotate / 2, -card.rotate / 2, card.rotate / 2],
+        opacity: [card.opacity, card.opacity * 1.4, card.opacity],
+        rotate: [card.rotate - 6, card.rotate + 6, card.rotate - 6],
         translateY: [-card.floatRange, card.floatRange, -card.floatRange],
       }}
       transition={{
         opacity: { duration: 6, repeat: Infinity, ease: "linear" },
-        scale: { duration: card.duration, repeat: Infinity, ease: "easeInOut" },
-        rotateZ: { duration: card.duration, repeat: Infinity, ease: "linear" },
-        rotateX: { duration: card.duration * 1.2, repeat: Infinity, ease: "easeInOut" },
+        rotate: { duration: card.duration, repeat: Infinity, ease: "easeInOut" },
         translateY: { duration: card.duration, repeat: Infinity, ease: "easeInOut", delay: card.delay },
       }}
     >
@@ -129,23 +131,9 @@ function FloatingCard({ card, springX, springY }: { card: any, springX: any, spr
         src={card.image}
         alt=""
         fill
-        className="object-cover h-full w-full brightness-110 contrast-110 saturate-[1.1]" // Enhanced visual
-        sizes="200px"
+        className="object-cover h-full w-full brightness-110 contrast-105"
+        sizes="160px"
         referrerPolicy="no-referrer"
-      />
-      {/* Holographic reflection effect */}
-      <motion.div 
-        className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent" // Stronger reflection
-        animate={{
-          x: ['-200%', '200%'],
-          y: ['-200%', '200%'],
-        }}
-        transition={{
-          duration: card.duration / 3,
-          repeat: Infinity,
-          ease: "linear",
-          delay: card.delay,
-        }}
       />
     </motion.div>
   );

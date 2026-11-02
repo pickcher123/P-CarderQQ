@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Trophy, Sparkles, Newspaper, Calendar, ShieldCheck, Zap, Target, Megaphone, Users2, Disc3, ArrowRight, Flame, Gift, Image as ImageIcon, FileText } from 'lucide-react';
+import { ChevronRight, Trophy, Sparkles, Newspaper, Calendar, ShieldCheck, Zap, Target, Megaphone, Users2, Disc3, ArrowRight, Flame, Gift, Image as ImageIcon, FileText, Radio } from 'lucide-react';
 import { LuckyBagIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { useAuth, useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
@@ -318,38 +318,79 @@ export default function Home() {
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-amber-500/5 rounded-full blur-[120px] pointer-events-none" />
         <div className="container relative z-10 px-3 sm:px-4 max-w-7xl mx-auto">
             
-            {/* Header - 手機版與桌面版完美平衡的美化標題列 */}
-            <div className="relative p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl bg-gradient-to-r from-slate-900/95 via-slate-950/95 to-slate-900/95 border border-slate-800/90 backdrop-blur-2xl mb-6 sm:mb-8 shadow-[0_12px_40px_rgba(0,0,0,0.6)] ring-1 ring-white/5 overflow-hidden">
-                <div className="absolute -top-16 left-1/3 w-64 h-32 bg-amber-500/10 blur-3xl rounded-full pointer-events-none" />
-                
-                <div className="relative z-10 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2.5 sm:gap-4 min-w-0">
-                        <div className="p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-400/20 via-amber-500/10 to-amber-600/5 border border-amber-400/30 text-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.2)] shrink-0 flex items-center justify-center">
-                            <Newspaper className="w-4 h-4 sm:w-6 sm:h-6 text-amber-300 drop-shadow-[0_0_8px_rgba(245,158,11,0.6)]" />
+            {/* Header - 奢華全息通訊廣播站 (Cyber Broadcast Terminal Header) */}
+            <div className="relative p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-gradient-to-r from-[#12182b]/95 via-[#0c1222]/98 to-[#151c33]/95 border border-amber-500/35 backdrop-blur-2xl mb-6 sm:mb-8 shadow-[0_20px_50px_rgba(0,0,0,0.8),0_0_25px_rgba(245,158,11,0.12)] overflow-hidden group">
+                {/* 科技幾何網格背景 */}
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,#f59e0b0d_1px,transparent_1px),linear-gradient(to_bottom,#f59e0b0d_1px,transparent_1px)] bg-[size:28px_28px] pointer-events-none opacity-60" />
+
+                {/* 頂部全息雷射貫穿光條 */}
+                <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_15px_#f59e0b]" />
+
+                {/* 科技燙金飾角 (Corner Accents) */}
+                <div className="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-amber-400/60 pointer-events-none" />
+                <div className="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-amber-400/60 pointer-events-none" />
+                <div className="absolute bottom-2 left-2 w-3 h-3 border-b-2 border-l-2 border-amber-400/60 pointer-events-none" />
+                <div className="absolute bottom-2 right-2 w-3 h-3 border-b-2 border-r-2 border-amber-400/60 pointer-events-none" />
+
+                {/* 背景柔光霓虹泡泡 */}
+                <div className="absolute -top-16 left-1/4 w-80 h-32 bg-amber-500/15 blur-[60px] pointer-events-none group-hover:bg-amber-500/20 transition-all duration-700" />
+                <div className="absolute -bottom-16 right-1/4 w-80 h-32 bg-cyan-500/10 blur-[60px] pointer-events-none" />
+
+                <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6">
+                    {/* 左側：廣播節點圖標 + 標題與標籤列 */}
+                    <div className="flex items-center gap-3.5 sm:gap-5 min-w-0">
+                        {/* 廣播終端動態節點徽章 */}
+                        <div className="relative shrink-0">
+                            <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-400 opacity-40 blur-sm group-hover:opacity-75 transition-opacity duration-500" />
+                            <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-amber-400/25 via-amber-500/15 to-slate-950 border border-amber-400/40 text-amber-300 flex items-center justify-center shadow-inner">
+                                <Radio className="w-5 h-5 sm:w-6 sm:h-6 text-amber-300 animate-pulse drop-shadow-[0_0_10px_rgba(245,158,11,0.8)]" />
+                                {/* 右上角微型雷達波點 */}
+                                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399] animate-ping" />
+                                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-400" />
+                            </div>
                         </div>
-                        <div className="min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                                <h2 className="text-base sm:text-2xl md:text-3xl font-black font-headline tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-100 to-yellow-400 drop-shadow-[0_2px_15px_rgba(245,158,11,0.3)] truncate">
+
+                        {/* 標題與標籤內容 */}
+                        <div className="min-w-0 space-y-1">
+                            <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
+                                <h2 className="text-lg sm:text-2xl md:text-3xl font-black font-headline tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-100 to-amber-400 drop-shadow-[0_2px_15px_rgba(245,158,11,0.4)] truncate">
                                     最新消息中心
                                 </h2>
-                                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[10px] sm:text-[11px] font-bold shadow-sm shrink-0">
+
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-400/40 text-emerald-300 text-[10px] sm:text-[11px] font-black shadow-[0_0_10px_rgba(16,185,129,0.25)] shrink-0">
                                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                                    即時快訊
+                                    即時快訊連線
+                                </span>
+
+                                <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[10px] font-mono font-bold shrink-0">
+                                    <Sparkles className="w-3 h-3 text-amber-400" />
+                                    OFFICIAL DISPATCH
                                 </span>
                             </div>
-                            <p className="text-[11px] sm:text-xs md:text-sm text-slate-400 font-medium truncate mt-0.5">
-                                官方即時資訊 · 掌握第一手活動快訊與公告
+
+                            <p className="text-xs sm:text-sm text-slate-300 font-medium leading-relaxed truncate">
+                                官方即時資訊 · 掌握第一手活動盛典、機台更新與限定福利
                             </p>
                         </div>
                     </div>
 
-                    <Button variant="ghost" asChild className="h-8 sm:h-10 px-3 sm:px-4 rounded-xl font-bold text-amber-300 hover:text-amber-200 border border-amber-500/25 hover:border-amber-400/50 bg-slate-900/80 hover:bg-slate-800 shadow-md text-xs transition-all duration-300 hover:shadow-[0_0_20px_rgba(245,158,11,0.2)] shrink-0">
-                        <Link href="/news" className="flex items-center gap-1 sm:gap-2">
-                            <span className="hidden sm:inline">完整消息庫</span>
-                            <span className="sm:hidden">全部消息</span>
-                            <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                        </Link>
-                    </Button>
+                    {/* 右側：奢華微光操作按鈕 */}
+                    <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto shrink-0 border-t sm:border-t-0 pt-3 sm:pt-0 border-amber-500/15">
+                        <div className="text-[11px] font-mono text-amber-300/80 hidden lg:flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                            <span>{effectiveNews.length} 則即時快報</span>
+                        </div>
+
+                        <Button 
+                            asChild 
+                            className="h-9 sm:h-11 px-4 sm:px-5 rounded-xl font-black text-slate-950 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 hover:from-amber-300 hover:to-yellow-200 shadow-[0_0_20px_rgba(245,158,11,0.35)] hover:shadow-[0_0_28px_rgba(245,158,11,0.5)] border border-yellow-200 text-xs sm:text-sm transition-all duration-300 active:scale-95 cursor-pointer w-full sm:w-auto group/btn"
+                        >
+                            <Link href="/news" className="flex items-center justify-center gap-1.5 sm:gap-2">
+                                <span>完整消息庫</span>
+                                <ArrowRight className="h-4 w-4 text-slate-950 transition-transform group-hover/btn:translate-x-1" />
+                            </Link>
+                        </Button>
+                    </div>
                 </div>
             </div>
             

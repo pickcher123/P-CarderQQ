@@ -96,17 +96,10 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
     const [selectedPrizeIndex, setSelectedPrizeIndex] = useState(0);
     const [isPickNumberOpen, setIsPickNumberOpen] = useState(false);
 
-    // 🌟 3D 陀螺儀微傾斜與雷射流光 (Holo Foil) 互動狀態
-    const [cardTilt, setCardTilt] = useState<{ x: number; y: number; active: boolean; mouseX: number; mouseY: number }>({
-        x: 0,
-        y: 0,
-        active: false,
-        mouseX: 50,
-        mouseY: 50,
-    });
-
+    // 🌟 3D 陀螺儀微傾斜與雷射流光 (Holo Foil) - 透過純 DOM 與 CSS 變數處理，零 React 重繪
     const handleCardMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-        const rect = e.currentTarget.getBoundingClientRect();
+        const el = e.currentTarget;
+        const rect = el.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
         const centerX = rect.width / 2;
@@ -115,11 +108,17 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
         const rotateY = ((x - centerX) / centerX) * 12;
         const mousePercentX = Math.round((x / rect.width) * 100);
         const mousePercentY = Math.round((y / rect.height) * 100);
-        setCardTilt({ x: rotateX, y: rotateY, active: true, mouseX: mousePercentX, mouseY: mousePercentY });
+
+        el.style.transform = `perspective(700px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+        el.style.setProperty('--sheen-x', `${mousePercentX}%`);
+        el.style.setProperty('--sheen-y', `${mousePercentY}%`);
+        el.style.setProperty('--sheen-opacity', '0.9');
     };
 
-    const handleCardMouseLeave = () => {
-        setCardTilt({ x: 0, y: 0, active: false, mouseX: 50, mouseY: 50 });
+    const handleCardMouseLeave = (e: React.MouseEvent<HTMLDivElement>) => {
+        const el = e.currentTarget;
+        el.style.transform = 'perspective(700px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+        el.style.setProperty('--sheen-opacity', '0');
     };
 
     const effectiveTickets = useMemo(() => {
@@ -140,9 +139,12 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
     const { data: poolStats, isLoading: isLoadingStats } = useDoc<any>(poolStatsRef);
 
     useEffect(() => {
-        const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+        // 僅當卡池有倒數過期或加倍過期時才啟動秒級更新，避免無謂的全域重繪
+        const hasExpiry = Boolean(pool.expiresAt || pool.pointMultiplierExpiresAt);
+        if (!hasExpiry) return;
+        const timer = setInterval(() => setCurrentTime(new Date()), 5000);
         return () => clearInterval(timer);
-    }, []);
+    }, [pool.expiresAt, pool.pointMultiplierExpiresAt]);
 
     const todayDrawCount = useMemo(() => {
         if (!poolStats || poolStats.lastDrawDate !== todayStr) return 0;
@@ -832,10 +834,8 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                 onMouseMove={handleCardMouseMove}
                                 onMouseLeave={handleCardMouseLeave}
                                 style={{
-                                    transform: cardTilt.active 
-                                        ? `perspective(700px) rotateX(${cardTilt.x}deg) rotateY(${cardTilt.y}deg) scale3d(1.02, 1.02, 1.02)` 
-                                        : 'perspective(700px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)',
-                                    transition: cardTilt.active ? 'transform 0.1s ease-out' : 'transform 0.4s ease-out',
+                                    willChange: 'transform',
+                                    transition: 'transform 0.15s ease-out',
                                 }}
                                 className="group/card relative w-full h-[220px] xs:h-[250px] sm:h-[285px] rounded-t-2xl overflow-hidden cursor-pointer flex items-center justify-center select-none"
                             >
@@ -856,14 +856,11 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                     <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
                                 </div>
                                 
-                                {/* 實體卡面雷射彩虹折射層 */}
+                                {/* 實體卡面雷射彩虹折射層 (純 CSS 變數動態流光，零重繪) */}
                                 <div 
-                                    className={cn(
-                                        "absolute inset-0 pointer-events-none transition-opacity duration-200 z-20 mix-blend-color-dodge",
-                                        cardTilt.active ? "opacity-90" : "opacity-0 group-hover/card:opacity-40"
-                                    )}
+                                    className="absolute inset-0 pointer-events-none transition-opacity duration-200 z-20 mix-blend-color-dodge opacity-[var(--sheen-opacity,0)] group-hover/card:opacity-90"
                                     style={{
-                                        background: `radial-gradient(circle at ${cardTilt.mouseX}% ${cardTilt.mouseY}%, rgba(255,255,255,0.75) 0%, rgba(255,215,0,0.45) 25%, rgba(168,85,247,0.35) 50%, rgba(34,211,238,0.25) 75%, transparent 100%)`,
+                                        background: 'radial-gradient(circle at var(--sheen-x,50%) var(--sheen-y,50%), rgba(255,255,255,0.75) 0%, rgba(255,215,0,0.45) 25%, rgba(168,85,247,0.35) 50%, rgba(34,211,238,0.25) 75%, transparent 100%)',
                                     }}
                                 />
 

@@ -56,8 +56,41 @@ export function GoldDustParticles({
       { fill: '#F5E6CA', glow: 'rgba(245, 230, 202, 0.3)' },  // 溫潤微暖白金
     ];
 
+    // 🚀 效能巨幅升級：在離屏 Canvas 預先快取粒子光斑精靈圖 (Pre-baked Offscreen Sprites)
+    // 徹底消除每一影格重複調用 46 次 ctx.createRadialGradient 導致的 GPU 頻寬浪費與垃圾回收延遲
+    const spriteCanvases = goldPalette.map((palette) => {
+      const sprite = document.createElement('canvas');
+      const sSize = 48;
+      sprite.width = sSize;
+      sprite.height = sSize;
+      const sCtx = sprite.getContext('2d');
+      if (sCtx) {
+        const sCenter = sSize / 2;
+        const sHalo = sSize / 2;
+        const grad = sCtx.createRadialGradient(sCenter, sCenter, 2, sCenter, sCenter, sHalo);
+        grad.addColorStop(0, palette.fill);
+        grad.addColorStop(0.35, palette.glow);
+        grad.addColorStop(1, 'rgba(212, 175, 55, 0)');
+        sCtx.fillStyle = grad;
+        sCtx.beginPath();
+        sCtx.arc(sCenter, sCenter, sHalo, 0, Math.PI * 2);
+        sCtx.fill();
+
+        // 核心光點
+        sCtx.fillStyle = palette.fill;
+        sCtx.beginPath();
+        sCtx.arc(sCenter, sCenter, 3.5, 0, Math.PI * 2);
+        sCtx.fill();
+      }
+      return sprite;
+    });
+
+    const isMobile = window.innerWidth < 768;
+    const effectiveCount = isMobile ? Math.min(particleCount, 22) : particleCount;
+
     const updateDimensions = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      // 行動端限制 DPR 為 1~1.25，避免巨大像素緩衝區佔用手機 GPU
+      const dpr = isMobile ? 1 : Math.min(window.devicePixelRatio || 1, 1.5);
       const w = window.innerWidth;
       const h = window.innerHeight;
       canvas.width = Math.floor(w * dpr);
@@ -69,24 +102,37 @@ export function GoldDustParticles({
 
     updateDimensions();
 
-    const createParticle = (isInitial = false): Particle => {
+    interface FastParticle {
+      x: number;
+      y: number;
+      size: number;
+      paletteIndex: number;
+      alpha: number;
+      baseAlpha: number;
+      speedY: number;
+      speedX: number;
+      swaySpeed: number;
+      swayDist: number;
+      swayAngle: number;
+      twinkleSpeed: number;
+      twinkleAngle: number;
+    }
+
+    const createParticle = (isInitial = false): FastParticle => {
       const { w, h } = sizeRef.current;
       const width = w || window.innerWidth;
       const height = h || window.innerHeight;
 
-      const palette = goldPalette[Math.floor(Math.random() * goldPalette.length)];
-      // 微米級細膩粒子：直徑 0.9px ~ 2.0px，微光雅緻不搶佔視覺焦點
+      const paletteIndex = Math.floor(Math.random() * goldPalette.length);
       const isSlightlyLarger = Math.random() < 0.16;
       const size = isSlightlyLarger ? 1.7 + Math.random() * 0.6 : 0.9 + Math.random() * 0.9;
-      // 柔和基準透明度，若隱若現
       const baseAlpha = 0.24 + Math.random() * 0.35;
 
       return {
         x: Math.random() * width,
         y: isInitial ? Math.random() * height : height + Math.random() * 15,
         size,
-        color: palette.fill,
-        glowColor: palette.glow,
+        paletteIndex,
         alpha: baseAlpha,
         baseAlpha,
         speedY: -(0.12 + Math.random() * 0.24) * speedMultiplier,
@@ -99,7 +145,7 @@ export function GoldDustParticles({
       };
     };
 
-    let particles: Particle[] = Array.from({ length: particleCount }, () => createParticle(true));
+    let particles: FastParticle[] = Array.from({ length: effectiveCount }, () => createParticle(true));
 
     const handleResize = () => {
       updateDimensions();
@@ -143,31 +189,16 @@ export function GoldDustParticles({
           continue;
         }
 
-        ctx.save();
+        // 🚀 使用預快取精靈圖直接繪製，零額外 GC 物件分配
         ctx.globalAlpha = Math.min(p.alpha, 0.65);
-
-        // 細膩微光光暈
-        const haloRadius = p.size * 1.8;
-        const grad = ctx.createRadialGradient(
-          p.x, p.y, p.size * 0.1,
-          p.x, p.y, haloRadius
+        const renderSize = p.size * 3.6;
+        ctx.drawImage(
+          spriteCanvases[p.paletteIndex],
+          p.x - renderSize / 2,
+          p.y - renderSize / 2,
+          renderSize,
+          renderSize
         );
-        grad.addColorStop(0, p.color);
-        grad.addColorStop(0.4, p.glowColor);
-        grad.addColorStop(1, 'rgba(212, 175, 55, 0)');
-
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, haloRadius, 0, Math.PI * 2);
-        ctx.fill();
-
-        // 粒子核心細微光點
-        ctx.fillStyle = p.color;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.restore();
       }
 
       animationFrameId = requestAnimationFrame(render);

@@ -34,7 +34,8 @@ import {
   Layers, 
   Flame, 
   Tv, 
-  Gift
+  Gift,
+  Gamepad2
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { SafeImage } from '@/components/safe-image';
@@ -84,10 +85,18 @@ const PRESET_TEMPLATES = [
     prompt: 'Ethereal Japanese anime collectible trading card illustration, sparkling cherry blossom petals, vibrant celestial light beams, hyper detailed character art',
     style: 'anime',
   },
+  {
+    id: 'pixel-art',
+    name: '👾 復古像素風格 (Pixel Art)',
+    icon: Gamepad2,
+    prompt: 'Vibrant 16-bit retro pixel art collectible sports trading card, crisp pixel grid aesthetic, nostalgic 90s arcade game champion vibes, glowing neon pixel outline, clean pixel sprite composition',
+    style: 'pixel-art',
+  },
 ];
 
 const STYLES = [
   { value: 'cinematic', label: '🎬 奢華寫實 (Cinematic Luxury)' },
+  { value: 'pixel-art', label: '👾 像素風格 (Pixel Art / 16-bit 復古)' },
   { value: 'holographic', label: '✨ 雷射金屬全息 (Holographic Laser)' },
   { value: '3d-render', label: '💎 3D 精緻渲染 (3D Studio Render)' },
   { value: 'cyberpunk', label: '⚡ 賽博霓虹 (Cyberpunk Neon)' },
@@ -95,9 +104,9 @@ const STYLES = [
 ];
 
 const ASPECT_RATIOS = [
+  { value: '3:4', label: '3:4 (主題分類封面 / 直式卡磚)' },
   { value: '16:9', label: '16:9 (最新消息橫幅 / 首頁輪播)' },
-  { value: '4:3', label: '4:3 (卡池分類 / 精選封面)' },
-  { value: '3:4', label: '3:4 (直式球員卡 / 海報)' },
+  { value: '4:3', label: '4:3 (標準寬螢幕 / 抽卡橫卡)' },
   { value: '1:1', label: '1:1 (正方形圖示 / 商品照)' },
   { value: '9:16', label: '9:16 (手機全螢幕滿版)' },
 ];
@@ -106,15 +115,16 @@ export function AIImageGeneratorDialog({
   initialTitle = '',
   initialCategory = '',
   defaultType = 'card-pool',
-  defaultAspectRatio = '16:9',
+  defaultAspectRatio,
   onImageGenerated,
   triggerButton,
 }: AIImageGeneratorDialogProps) {
+  const initialRatio = defaultAspectRatio || (defaultType === 'category' ? '3:4' : '16:9');
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState(initialTitle);
   const [prompt, setPrompt] = useState('');
   const [style, setStyle] = useState('cinematic');
-  const [aspectRatio, setAspectRatio] = useState<string>(defaultAspectRatio);
+  const [aspectRatio, setAspectRatio] = useState<string>(initialRatio);
   const [enhancePrompt, setEnhancePrompt] = useState(true);
   
   const [isGenerating, setIsGenerating] = useState(false);
@@ -123,11 +133,12 @@ export function AIImageGeneratorDialog({
 
   const { toast } = useToast();
 
-  // 當使用者開啟彈窗時同步外部標題
+  // 當使用者開啟彈窗時同步外部標題與寬高比
   const handleOpenChange = (isOpen: boolean) => {
     if (isOpen) {
       if (!title && initialTitle) setTitle(initialTitle);
-      if (defaultAspectRatio) setAspectRatio(defaultAspectRatio);
+      const ratio = defaultAspectRatio || (defaultType === 'category' ? '3:4' : '16:9');
+      setAspectRatio(ratio);
     }
     setOpen(isOpen);
   };

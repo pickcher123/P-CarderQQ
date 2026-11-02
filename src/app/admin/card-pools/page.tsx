@@ -263,7 +263,7 @@ export default function DrawCategoriesAdminPage() {
                                     initialTitle={categoryName || ''}
                                     initialCategory={categoryName || '卡池分類'}
                                     defaultType="category"
-                                    defaultAspectRatio="4:3"
+                                    defaultAspectRatio="3:4"
                                     onImageGenerated={(url) => {
                                         setPreviewUrl(url);
                                         setSelectedFile(null);
@@ -271,7 +271,7 @@ export default function DrawCategoriesAdminPage() {
                                 />
                             </div>
                             <div className="flex flex-col gap-4">
-                                <div className="aspect-[4/5] relative w-32 mx-auto bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 overflow-hidden flex items-center justify-center group">
+                                <div className="aspect-[3/4] relative w-32 mx-auto bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 overflow-hidden flex items-center justify-center group">
                                     {previewUrl ? (
                                         <SafeImage src={previewUrl} alt="preview" fill className="object-cover group-hover:scale-110 transition-transform duration-500" />
                                     ) : (
@@ -321,7 +321,7 @@ export default function DrawCategoriesAdminPage() {
                                     initialTitle={categoryName || ''}
                                     initialCategory={categoryName || '卡池分類'}
                                     defaultType="category"
-                                    defaultAspectRatio="4:3"
+                                    defaultAspectRatio="3:4"
                                     onImageGenerated={(url) => {
                                         setPreviewUrl(url);
                                         setSelectedFile(null);
@@ -329,7 +329,7 @@ export default function DrawCategoriesAdminPage() {
                                 />
                             </div>
                             <div className="flex flex-col gap-4">
-                                <div className="aspect-[4/5] relative w-32 mx-auto bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 overflow-hidden flex items-center justify-center group">
+                                <div className="aspect-[3/4] relative w-32 mx-auto bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 overflow-hidden flex items-center justify-center group">
                                     {previewUrl ? (
                                         <SafeImage src={previewUrl} alt="preview" fill className="object-cover group-hover:scale-110 transition-transform duration-500" />
                                     ) : (
@@ -389,7 +389,7 @@ export default function DrawCategoriesAdminPage() {
                                     />
                                 </TableCell>
                                 <TableCell>
-                                    <div className="relative h-14 w-20 rounded-xl bg-slate-100 overflow-hidden border border-slate-200 shadow-sm group-hover:scale-105 transition-transform duration-500">
+                                    <div className="relative h-16 w-12 rounded-xl bg-slate-100 overflow-hidden border border-slate-200 shadow-sm group-hover:scale-105 transition-transform duration-500">
                                         <SafeImage src={category.imageUrl} alt={category.name} fill className="object-cover" />
                                     </div>
                                 </TableCell>

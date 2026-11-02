@@ -25,6 +25,16 @@ export async function POST(req: NextRequest) {
 
     let finalPrompt = prompt || title;
 
+    const styleDescriptions: Record<string, string> = {
+      'pixel-art': 'Pixel Art style, authentic 16-bit retro arcade game sprite aesthetic, crisp pixel grid, vibrant nostalgic 90s console gaming colors, pixelated sports card collectibles',
+      'cinematic': 'Cinematic luxury, hyper-realistic, dramatic stadium volumetric lighting, glistening metallic gold foil textures',
+      'holographic': 'Holographic laser, rainbow prism reflections, chrome metallic shine',
+      '3d-render': '3D studio render, octane render, smooth glossy materials, hyper-detailed reflections',
+      'cyberpunk': 'Cyberpunk neon, glowing electric blue and magenta, futuristic metropolis glow',
+      'anime': 'Ethereal Japanese anime illustration, celestial light beams, sparkling particle effects',
+    };
+    const currentStyleGuide = styleDescriptions[style] || style;
+
     // 如果使用者只輸入簡短文字或勾選了 AI 擴寫潤飾，先用 gemini-3.7-flash 將 prompt 轉化為極致質感的生圖指令
     if (enhancePrompt && finalPrompt) {
       try {
@@ -34,13 +44,13 @@ Context Type: ${type}
 Target Title/Topic: ${title}
 Category: ${category}
 User Notes: ${prompt}
-Style Preference: ${style} (e.g. Cinematic, Photorealistic Luxury, Holographic Laser, Cyberpunk Neon, Anime Fantasy, etc.)
+Style Preference: ${style} (${currentStyleGuide})
 
 TASK:
 Write a single, vivid, high-impact English prompt (under 120 words) for the image generator.
 Focus on:
-- Subject: Ultra-detailed subject (e.g. pristine luxury sports card packs, sparkling championship trophies, glowing stadium lights, dynamic action posing, metallic foil textures).
-- Lighting & Atmosphere: Dramatic volumetric lighting, neon glow, gold particle sparks, cinematic lens flare, 8k resolution, photorealistic studio lighting.
+- Subject: Detailed subject (e.g. pristine luxury sports card packs, championship trophies, collectible trading cards). ${style === 'pixel-art' ? 'CRITICAL REQUIREMENT: Strictly ensure authentic 16-bit retro pixel art aesthetic with visible pixel grid, sharp pixel edges, and retro arcade game graphics. Do NOT make it smooth or photorealistic.' : ''}
+- Lighting & Atmosphere: Dramatic lighting and color palette matching the requested ${style} style.
 - NO text, letters, or spelling inside the image. Clean, professional composition suitable for a ${aspectRatio} banner or cover.
 
 Output ONLY the prompt text in English, no introductory or concluding remarks.`;
@@ -57,6 +67,8 @@ Output ONLY the prompt text in English, no introductory or concluding remarks.`;
       } catch (enhanceErr) {
         console.warn('Prompt enhancement fallback to original:', enhanceErr);
       }
+    } else if (style === 'pixel-art' && !finalPrompt.toLowerCase().includes('pixel')) {
+      finalPrompt = `${finalPrompt}, 16-bit retro pixel art style, crisp arcade pixel graphics`;
     }
 
     // 呼叫生圖模型

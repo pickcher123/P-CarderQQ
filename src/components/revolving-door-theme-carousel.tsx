@@ -295,7 +295,7 @@ export function RevolvingDoorThemeCarousel({
             return (
               <motion.div
                 key={category.id || category.name}
-                className="absolute w-[180px] h-[270px] sm:w-[225px] sm:h-[335px] md:w-[245px] md:h-[365px] origin-center cursor-pointer select-none"
+                className="absolute w-[180px] h-[240px] sm:w-[240px] sm:h-[320px] md:w-[270px] md:h-[360px] origin-center cursor-pointer select-none"
                 style={{
                   zIndex,
                 }}

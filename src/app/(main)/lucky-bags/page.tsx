@@ -97,7 +97,10 @@ export default function LuckyBagsPage() {
     const fetchExtraData = useCallback(async () => {
         if (!allLuckyBags || !firestore || !allCards) return;
 
-        setIsLoading(true);
+        // 僅在初次無資料時展示骨架屏，後續背景更新靜默平滑更新，杜絕頁面閃爍鈍感
+        if (luckyBagsWithData.length === 0) {
+            setIsLoading(true);
+        }
         try {
             const cardMap = new Map(allCards.map(c => [c.id, c]));
 
@@ -140,13 +143,13 @@ export default function LuckyBagsPage() {
         } finally {
             setIsLoading(false);
         }
-    }, [allLuckyBags, allCards, firestore]);
+    }, [allLuckyBags, allCards, firestore, luckyBagsWithData.length]);
 
     useEffect(() => {
         if (!isLoadingBags && !isLoadingCards && allLuckyBags) {
             fetchExtraData();
         }
-    }, [allLuckyBags, allCards, firestore, isLoadingBags, isLoadingCards, fetchExtraData]);
+    }, [allLuckyBags, allCards, isLoadingBags, isLoadingCards, fetchExtraData]);
 
     const { inProgressBags, completedBags } = useMemo(() => {
         const inProgress = luckyBagsWithData.filter(bag => bag.status !== '已開獎');
@@ -154,7 +157,7 @@ export default function LuckyBagsPage() {
         return { inProgressBags: inProgress, completedBags: completed };
     }, [luckyBagsWithData]);
 
-    const finalIsLoading = isLoadingBags || isLoadingCards || isLoading;
+    const finalIsLoading = (isLoadingBags || isLoadingCards || isLoading) && luckyBagsWithData.length === 0;
 
     // 當前旋轉門聚焦的紅包福袋
     const currentActiveBag = inProgressBags[activeCarouselIndex] || inProgressBags[0];

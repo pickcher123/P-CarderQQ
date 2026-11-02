@@ -44,8 +44,12 @@ import {
     Target,
     ShieldCheck,
     Award,
-    Dices
+    Dices,
+    Swords,
+    Radio
 } from 'lucide-react';
+import Image from 'next/image';
+import { PPlusIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -428,18 +432,6 @@ export function UnifiedEventCalendar({
         }
     }, [nearestPrediction]);
 
-    const unstartedExhibitionsCount = useMemo(() => {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const unstarted = allUnifiedEvents.filter(e => {
-            if (e.type !== 'exhibition') return false;
-            const start = new Date(e.startDate);
-            start.setHours(0, 0, 0, 0);
-            return start > today;
-        });
-        return unstarted.length > 0 ? unstarted.length : allUnifiedEvents.filter(e => e.type === 'exhibition').length;
-    }, [allUnifiedEvents]);
-
     const formatMatchDate = (date: Date) => {
         const days = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
         const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -452,143 +444,78 @@ export function UnifiedEventCalendar({
 
     return (
         <div className="w-full space-y-4 sm:space-y-6">
-            
-            {/* === HERO SECTION: 賽博卡展/賽事（與福袋/團拆風格統一） === */}
-            {!hideHeader && (
-                <div className="relative rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] p-3.5 sm:p-6 md:p-8 overflow-hidden border border-amber-500/20 bg-gradient-to-b from-slate-900/90 via-[#0a0f1d]/95 to-[#050811] shadow-[0_20px_60px_rgba(0,0,0,0.8)] backdrop-blur-2xl">
-                    {/* Background Grid Pattern */}
-                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#f59e0b10_1px,transparent_1px),linear-gradient(to_bottom,#f59e0b10_1px,transparent_1px)] bg-[size:32px_32px] opacity-60 pointer-events-none" />
-                    
-                    {/* Top Glow Accent Bar */}
-                    <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_15px_#f59e0b]" />
-                    
-                    <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-3.5 sm:gap-6 md:gap-12">
-                        <div className="space-y-2 sm:space-y-3 text-center lg:text-left w-full lg:max-w-2xl">
-                            <h1 className="font-headline text-2xl sm:text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-yellow-200 to-orange-400 drop-shadow-[0_0_20px_rgba(245,158,11,0.4)] tracking-tight leading-tight uppercase">
-                                卡展/賽事
-                            </h1>
-
-                            <p className="text-xs sm:text-sm md:text-base text-slate-300 font-medium leading-relaxed max-w-xl mx-auto lg:mx-0">
-                                全台卡展巡迴展訊與熱門賽事對決行程，即時連線掌握最新展期與競猜預測。
-                            </p>
-
-                            {/* Rules Quick Dialog Button */}
-                            <div className="pt-1 flex flex-wrap items-center justify-center lg:justify-start gap-2">
-                                <Dialog>
-                                    <DialogTrigger asChild>
-                                        <Button className="h-8 sm:h-10 px-3.5 sm:px-5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 text-xs sm:text-sm font-black shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all gap-1.5 group cursor-pointer">
-                                            <Dices className="w-3.5 h-3.5 text-slate-950 group-hover:rotate-45 transition-transform" />
-                                            <span>玩法說明</span>
-                                        </Button>
-                                    </DialogTrigger>
-                                    <DialogContent className="rounded-3xl bg-slate-950 border border-amber-500/30 text-white max-w-2xl backdrop-blur-2xl shadow-2xl p-4 sm:p-6">
-                                        <DialogHeader>
-                                            <DialogTitle className="text-lg sm:text-2xl font-black text-amber-400 flex items-center gap-2 font-headline">
-                                                <Target className="w-5 h-5 sm:w-6 sm:h-6 text-amber-400" />
-                                                卡展與賽事行事曆機制說明
-                                            </DialogTitle>
-                                            <DialogDescription className="text-xs text-slate-400 pt-1">
-                                                整合全台卡展巡迴日程與體育賽事對決預測，一站掌握完整玩卡生態。
-                                            </DialogDescription>
-                                        </DialogHeader>
-                                        <div className="space-y-3 sm:space-y-4 py-2 sm:py-3 text-xs sm:text-sm text-slate-300">
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
-                                                <div className="p-3 sm:p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1">
-                                                    <div className="flex items-center gap-1.5 text-cyan-400 font-bold text-xs sm:text-sm">
-                                                        <MapPin className="w-4 h-4 shrink-0" /> 全台實體卡展巡迴
-                                                    </div>
-                                                    <p className="text-[11px] sm:text-xs text-slate-400">完整收錄台北、台中、高雄等各大展會與卡聚，支援一鍵地圖導航與日程提醒。</p>
-                                                </div>
-                                                <div className="p-3 sm:p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1">
-                                                    <div className="flex items-center gap-1.5 text-amber-400 font-bold text-xs sm:text-sm">
-                                                        <Trophy className="w-4 h-4 shrink-0" /> 熱門賽事即時預測
-                                                    </div>
-                                                    <p className="text-[11px] sm:text-xs text-slate-400">包含 NBA、MLB、職足與職棒焦點大賽，開賽前自由參與競猜，瓜分海量點數。</p>
-                                                </div>
-                                                <div className="p-3 sm:p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1">
-                                                    <div className="flex items-center gap-1.5 text-purple-400 font-bold text-xs sm:text-sm">
-                                                        <Layers className="w-4 h-4 shrink-0" /> 雙模式切換瀏覽
-                                                    </div>
-                                                    <p className="text-[11px] sm:text-xs text-slate-400">自由切換月曆方格檢視或時間軸清單，快速按分類與關鍵字檢索活動。</p>
-                                                </div>
-                                                <div className="p-3 sm:p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1">
-                                                    <div className="flex items-center gap-1.5 text-emerald-400 font-bold text-xs sm:text-sm">
-                                                        <ShieldCheck className="w-4 h-4 shrink-0" /> 自動結算獎勵入庫
-                                                    </div>
-                                                    <p className="text-[11px] sm:text-xs text-slate-400">賽果自動官方公正核定，獲勝玩家紅利與獎勵點數即時自動派發至會員帳號。</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </DialogContent>
-                                </Dialog>
-
-                                {/* 尚未開始卡展 */}
-                                <div className="h-8 sm:h-10 px-3 sm:px-4 rounded-lg sm:rounded-xl bg-[#0b1329]/90 border border-amber-500/35 flex items-center gap-2 shadow-[0_0_15px_rgba(245,158,11,0.15)] backdrop-blur-sm">
-                                    <CalendarIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 shrink-0" />
-                                    <span className="text-xs sm:text-sm text-slate-300 font-medium">尚未開始卡展</span>
-                                    <span className="font-headline font-black text-amber-400 text-sm sm:text-base px-1.5 py-0.5 bg-amber-400/10 rounded-md border border-amber-400/20 leading-none">
-                                        {unstartedExhibitionsCount}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
 
             {/* ========================================================================= */}
-            {/* 上面區域：最近一場卡展的資訊 × 最近一場預測賽事的資訊 */}
+            {/* 焦點專區：最近一場卡展（實體 VIP 通行證） × 最近一場賽事（對決擂台卡） */}
             {/* ========================================================================= */}
             {showSpotlight && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5 sm:gap-4">
-                    {/* 卡片 1: 最近一場卡展資訊 */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
+                    {/* 卡片 1: 最近一場卡展 (實體票根 / VIP EXPO PASS 風格) */}
                     {nearestExhibition ? (
                         <div 
                             onClick={() => setActiveModalEvent(nearestExhibition)}
-                            className="group relative cursor-pointer overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-cyan-950/40 via-slate-900/95 to-slate-950 border border-cyan-500/30 hover:border-cyan-400/80 p-3.5 sm:p-5 transition-all duration-300 shadow-xl shadow-cyan-950/30 hover:shadow-cyan-500/10 flex flex-col justify-between gap-3"
+                            className="group relative cursor-pointer overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-[#08152e] via-[#060e20] to-[#040813] border border-cyan-400/40 hover:border-cyan-300 p-4 sm:p-5 transition-all duration-300 shadow-[0_15px_40px_rgba(0,0,0,0.8),0_0_25px_rgba(6,182,212,0.18)] hover:shadow-[0_20px_50px_rgba(0,0,0,0.9),0_0_35px_rgba(6,182,212,0.35)] flex flex-col justify-between gap-3.5 select-none hover:-translate-y-1"
                         >
-                            {/* 背景霓虹光暈 */}
-                            <div className="absolute top-0 right-0 w-44 h-44 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none group-hover:bg-cyan-500/20 transition-all" />
+                            {/* 頂部全息極光飾條 */}
+                            <div className="absolute top-0 inset-x-0 h-[2.5px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_12px_#22d3ee]" />
 
-                            <div className="relative z-10 space-y-2.5 sm:space-y-3">
+                            {/* 票券左右兩側穿孔圓弧切角 (Perforated Ticket Stubs) */}
+                            <div className="absolute top-1/2 -translate-y-1/2 -left-2.5 w-5 h-8 bg-slate-950 rounded-r-full border-r border-cyan-500/50 shadow-inner pointer-events-none" />
+                            <div className="absolute top-1/2 -translate-y-1/2 -right-2.5 w-5 h-8 bg-slate-950 rounded-l-full border-l border-cyan-500/50 shadow-inner pointer-events-none" />
+
+                            {/* 展會全息暗紋背景 */}
+                            <div className="absolute -top-12 -right-12 w-48 h-48 bg-cyan-500/10 rounded-full blur-[80px] pointer-events-none group-hover:bg-cyan-500/20 transition-all" />
+
+                            <div className="relative z-10 space-y-3">
                                 {/* 頂部標籤列 */}
                                 <div className="flex items-center justify-between gap-1.5 flex-wrap">
                                     <div className="flex items-center gap-1.5 flex-wrap">
-                                        <Badge className="bg-cyan-500/20 border-cyan-500/40 text-cyan-300 text-[11px] sm:text-xs font-black px-2 sm:px-2.5 py-0.5 rounded-lg flex items-center gap-1">
-                                            <Tag className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                                            最近一場卡展
+                                        <Badge className="bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-black text-[11px] sm:text-xs px-2.5 py-0.5 rounded-lg flex items-center gap-1 shadow-[0_0_12px_rgba(6,182,212,0.4)] border-0">
+                                            <Tag className="w-3.5 h-3.5 fill-slate-950" />
+                                            <span>VIP 展會通行證</span>
                                         </Badge>
-                                        <Badge variant="outline" className="border-slate-700 bg-slate-900/80 text-slate-300 text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-0.5">
-                                            {extractCity(nearestExhibition.location)}
+                                        <Badge variant="outline" className="border-cyan-500/40 bg-cyan-950/40 text-cyan-200 font-bold text-[10px] sm:text-[11px] px-2 py-0.5">
+                                            📍 {extractCity(nearestExhibition.location)} 展館
                                         </Badge>
                                     </div>
 
                                     {exhCountdown && (
-                                        <span className={cn("text-[10px] sm:text-[11px] font-bold px-2 sm:px-2.5 py-0.5 rounded-full border shrink-0", exhCountdown.badgeClass)}>
+                                        <span className={cn("text-[10px] sm:text-[11px] font-black px-2.5 py-0.5 rounded-full border shrink-0 font-mono shadow-sm", exhCountdown.badgeClass)}>
                                             {exhCountdown.text}
                                         </span>
                                     )}
                                 </div>
 
                                 {/* 卡展標題 */}
-                                <h3 className="text-sm sm:text-lg font-black text-white group-hover:text-cyan-300 transition-colors line-clamp-1 leading-snug break-words">
+                                <h3 className="text-base sm:text-xl font-black text-white group-hover:text-cyan-300 transition-colors line-clamp-1 leading-snug break-words drop-shadow-md">
                                     {nearestExhibition.title}
                                 </h3>
 
-                                {/* 重點資訊列表 */}
-                                <div className="space-y-1.5 text-xs text-slate-300 bg-slate-950/70 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border border-slate-800/80">
+                                {/* 重點資訊方塊 (含票券虛線分隔感) */}
+                                <div className="space-y-2 text-xs text-slate-300 bg-slate-950/80 p-3 rounded-2xl border border-cyan-500/20 shadow-inner">
                                     <div className="flex items-center gap-2">
-                                        <CalendarIcon className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                                        <span className="font-mono text-cyan-200 font-semibold">{nearestExhibition.timeStr}</span>
+                                        <div className="w-6 h-6 rounded-lg bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-cyan-300 shrink-0">
+                                            <CalendarIcon className="w-3.5 h-3.5" />
+                                        </div>
+                                        <div className="min-w-0 flex-1 flex items-center justify-between">
+                                            <span className="text-slate-400 text-[11px]">展會日程</span>
+                                            <span className="font-mono text-cyan-200 font-bold text-xs sm:text-sm">{nearestExhibition.timeStr}</span>
+                                        </div>
                                     </div>
+
                                     {nearestExhibition.location && (
-                                        <div className="flex items-center gap-2 truncate">
-                                            <MapPin className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-                                            <span className="truncate text-slate-300">{nearestExhibition.location}</span>
+                                        <div className="flex items-center gap-2 pt-1 border-t border-slate-800/80">
+                                            <div className="w-6 h-6 rounded-lg bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400 shrink-0">
+                                                <MapPin className="w-3.5 h-3.5" />
+                                            </div>
+                                            <div className="min-w-0 flex-1 truncate">
+                                                <span className="truncate text-slate-200 font-medium block">{nearestExhibition.location}</span>
+                                            </div>
                                         </div>
                                     )}
+
                                     {nearestExhibition.rawExhibition?.description && (
-                                        <p className="text-[11px] text-slate-400 line-clamp-1 pt-0.5">
+                                        <p className="text-[11px] text-slate-400 line-clamp-1 pt-1 border-t border-slate-800/80">
                                             {nearestExhibition.rawExhibition.description}
                                         </p>
                                     )}
@@ -596,159 +523,197 @@ export function UnifiedEventCalendar({
                             </div>
 
                             {/* 底部動作列 */}
-                            <div className="relative z-10 flex items-center justify-between gap-2 pt-2 border-t border-slate-800/80">
-                                <span className="text-[10px] sm:text-[11px] text-slate-400 font-medium truncate">點擊卡片瀏覽特展</span>
-                                <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                            <div className="relative z-10 flex items-center justify-between gap-2 pt-2.5 border-t border-cyan-500/20">
+                                <span className="text-[10px] sm:text-[11px] text-cyan-400/80 font-mono font-bold tracking-wider">
+                                    #EXPO-PASS-2026
+                                </span>
+                                <div className="flex items-center gap-2 shrink-0">
                                     {nearestExhibition.location && (
                                         <a
                                             href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(nearestExhibition.location)}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             onClick={(e) => e.stopPropagation()}
-                                            className="px-2 sm:px-2.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold text-slate-300 hover:text-white bg-slate-900 border border-slate-700/80 hover:border-slate-600 flex items-center gap-1 transition-all"
+                                            className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-slate-200 hover:text-white bg-slate-900 border border-slate-700 hover:border-cyan-400 flex items-center gap-1.5 transition-all shadow-sm"
                                         >
-                                            <Navigation className="w-3 h-3 text-cyan-400" />
+                                            <Navigation className="w-3.5 h-3.5 text-cyan-400" />
                                             <span>導航</span>
                                         </a>
                                     )}
                                     <Button
                                         size="sm"
-                                        className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black rounded-xl text-[11px] sm:text-xs h-7 sm:h-8 px-2.5 sm:px-3 shadow-md shadow-cyan-500/20"
+                                        className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 font-black rounded-xl text-xs h-8 px-3.5 shadow-md shadow-cyan-500/30 cursor-pointer"
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             setActiveModalEvent(nearestExhibition);
                                         }}
                                     >
                                         <span>查看展訊</span>
-                                        <ArrowRight className="w-3 h-3 ml-1" />
+                                        <ArrowRight className="w-3.5 h-3.5 ml-1" />
                                     </Button>
                                 </div>
                             </div>
                         </div>
                     ) : (
-                        <div className="p-5 sm:p-6 rounded-2xl sm:rounded-3xl bg-slate-900/60 border border-slate-800 text-center space-y-1.5 flex flex-col items-center justify-center">
-                            <Tag className="w-6 h-6 text-slate-600" />
-                            <p className="text-xs text-slate-400 font-bold">目前無即將舉行的卡展</p>
+                        <div className="p-6 rounded-2xl sm:rounded-3xl bg-slate-900/60 border border-slate-800 text-center space-y-2 flex flex-col items-center justify-center min-h-[220px]">
+                            <Tag className="w-8 h-8 text-slate-600" />
+                            <p className="text-sm text-slate-400 font-bold">目前無即將舉行的卡展</p>
                         </div>
                     )}
 
-                    {/* 卡片 2: 最近一場預測賽事資訊 */}
-                    {nearestPrediction ? (
-                        <div 
-                            onClick={() => setActiveModalEvent(nearestPrediction)}
-                            className="group relative cursor-pointer overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-amber-950/40 via-slate-900/95 to-slate-950 border border-amber-500/30 hover:border-amber-400/80 p-3.5 sm:p-5 transition-all duration-300 shadow-xl shadow-amber-950/30 hover:shadow-amber-500/10 flex flex-col justify-between gap-3"
-                        >
-                            {/* 背景霓虹光暈 */}
-                            <div className="absolute top-0 right-0 w-44 h-44 bg-amber-500/10 rounded-full blur-3xl pointer-events-none group-hover:bg-amber-500/20 transition-all" />
+                    {/* 卡片 2: 最近一場賽事 (體育競技對決擂台風格 - ARENA DUEL MATCH) */}
+                    {nearestPrediction ? (() => {
+                        const matchMeta = resolveMatchTeamsAndLogos({
+                            matchName: nearestPrediction.rawPrediction?.matchName || nearestPrediction.title,
+                            homeTeam: nearestPrediction.rawPrediction?.teamA,
+                            awayTeam: nearestPrediction.rawPrediction?.teamB,
+                            sportCategory: nearestPrediction.rawPrediction?.category
+                        });
 
-                            <div className="relative z-10 space-y-2.5 sm:space-y-3">
-                                {/* 頂部標籤列 */}
-                                <div className="flex items-center justify-between gap-1.5 flex-wrap">
-                                    <div className="flex items-center gap-1.5 flex-wrap">
-                                        <Badge className="bg-amber-500/20 border-amber-500/40 text-amber-300 text-[11px] sm:text-xs font-black px-2 sm:px-2.5 py-0.5 rounded-lg flex items-center gap-1">
-                                            <Trophy className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                                            最近一場預測賽事
-                                        </Badge>
-                                        <Badge variant="outline" className="border-slate-700 bg-slate-900/80 text-amber-200 text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-0.5 font-bold">
-                                            {nearestPrediction.categoryLabel}
-                                        </Badge>
+                        return (
+                            <div 
+                                onClick={() => setActiveModalEvent(nearestPrediction)}
+                                className="group relative cursor-pointer overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-[#241505] via-[#140c03] to-[#070913] border border-amber-400/40 hover:border-amber-300 p-4 sm:p-5 transition-all duration-300 shadow-[0_15px_40px_rgba(0,0,0,0.8),0_0_25px_rgba(245,158,11,0.18)] hover:shadow-[0_20px_50px_rgba(0,0,0,0.9),0_0_35px_rgba(245,158,11,0.35)] flex flex-col justify-between gap-3.5 select-none hover:-translate-y-1"
+                            >
+                                {/* 頂部金色雷射光帶 */}
+                                <div className="absolute top-0 inset-x-0 h-[2.5px] bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_12px_#f59e0b]" />
+                                <div className="absolute -top-12 -right-12 w-48 h-48 bg-amber-500/10 rounded-full blur-[80px] pointer-events-none group-hover:bg-amber-500/20 transition-all" />
+
+                                <div className="relative z-10 space-y-3">
+                                    {/* 頂部標籤列 */}
+                                    <div className="flex items-center justify-between gap-1.5 flex-wrap">
+                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                            <Badge className="bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 font-black text-[11px] sm:text-xs px-2.5 py-0.5 rounded-lg flex items-center gap-1 shadow-[0_0_12px_rgba(245,158,11,0.4)] border-0">
+                                                <Trophy className="w-3.5 h-3.5 fill-slate-950" />
+                                                <span>焦點對決預測</span>
+                                            </Badge>
+                                            <Badge variant="outline" className="border-amber-500/40 bg-amber-950/40 text-amber-200 font-bold text-[10px] sm:text-[11px] px-2 py-0.5">
+                                                {nearestPrediction.categoryLabel}
+                                            </Badge>
+                                        </div>
+
+                                        {predMatchCountdown && (
+                                            <span className={cn("text-[10px] sm:text-[11px] font-black px-2.5 py-0.5 rounded-full border shrink-0 font-mono shadow-sm", predMatchCountdown.badgeClass)}>
+                                                {predMatchCountdown.text}
+                                            </span>
+                                        )}
                                     </div>
 
-                                    {predMatchCountdown && (
-                                        <span className={cn("text-[10px] sm:text-[11px] font-bold px-2 sm:px-2.5 py-0.5 rounded-full border shrink-0", predMatchCountdown.badgeClass)}>
-                                            {predMatchCountdown.text}
-                                        </span>
-                                    )}
-                                </div>
-
-                                {/* 賽事標題 */}
-                                <h3 className="text-sm sm:text-lg font-black text-white group-hover:text-amber-300 transition-colors line-clamp-1 leading-snug break-words">
-                                    {nearestPrediction.title}
-                                </h3>
-
-                                {/* 重點資訊列表 */}
-                                <div className="space-y-1.5 text-xs text-slate-300 bg-slate-950/70 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border border-slate-800/80">
-                                    <div className="flex items-center justify-between gap-2 flex-wrap">
-                                        <div className="flex items-center gap-2">
-                                            <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                                            <span className="font-mono text-amber-200 font-semibold">
-                                                {formatMatchDate(nearestPrediction.startDate)}
+                                    {/* 🏟️ 雙雄對決對陣橫幅 (Team A vs Team B with Official Logos) */}
+                                    <div className="p-3 rounded-2xl bg-slate-950/85 border border-amber-500/30 flex items-center justify-between shadow-inner gap-2">
+                                        {/* 主隊 */}
+                                        <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
+                                            <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-slate-900 border border-white/10 p-1 flex items-center justify-center shrink-0 shadow-md">
+                                                <Image 
+                                                    src={matchMeta.homeTeamLogo} 
+                                                    alt={matchMeta.homeTeam} 
+                                                    width={36} 
+                                                    height={36} 
+                                                    className="object-contain max-h-full max-w-full"
+                                                />
+                                            </div>
+                                            <span className="font-black text-xs sm:text-sm text-white truncate drop-shadow">
+                                                {matchMeta.homeTeam}
                                             </span>
                                         </div>
+
+                                        {/* 中央 VS 徽章 */}
+                                        <div className="flex flex-col items-center justify-center shrink-0 px-1 sm:px-2">
+                                            <div className="px-2 py-0.5 rounded-lg bg-gradient-to-r from-amber-500 to-rose-500 text-slate-950 font-black text-[10px] sm:text-xs font-headline shadow-[0_0_10px_rgba(245,158,11,0.5)]">
+                                                VS
+                                            </div>
+                                        </div>
+
+                                        {/* 客隊 */}
+                                        <div className="flex items-center justify-end gap-2 sm:gap-2.5 min-w-0 flex-1 text-right">
+                                            <span className="font-black text-xs sm:text-sm text-white truncate drop-shadow">
+                                                {matchMeta.awayTeam}
+                                            </span>
+                                            <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-slate-900 border border-white/10 p-1 flex items-center justify-center shrink-0 shadow-md">
+                                                <Image 
+                                                    src={matchMeta.awayTeamLogo} 
+                                                    alt={matchMeta.awayTeam} 
+                                                    width={36} 
+                                                    height={36} 
+                                                    className="object-contain max-h-full max-w-full"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* 獎池與比賽時間 */}
+                                    <div className="flex items-center justify-between text-xs text-slate-300 px-1">
+                                        <div className="flex items-center gap-1.5 font-mono text-amber-200 text-xs">
+                                            <Clock className="w-3.5 h-3.5 text-amber-400" />
+                                            <span>{formatMatchDate(nearestPrediction.startDate)}</span>
+                                        </div>
+
                                         {nearestPrediction.rawPrediction?.poolPoints && (
-                                            <div className="flex items-center gap-1 text-[10px] sm:text-[11px] text-amber-300 font-bold shrink-0">
-                                                <Coins className="w-3 h-3 text-amber-400" />
+                                            <div className="flex items-center gap-1.5 bg-amber-500/15 border border-amber-400/30 px-2 py-0.5 rounded-lg font-headline font-black text-xs text-amber-300">
+                                                <Coins className="w-3.5 h-3.5 text-amber-400" />
                                                 <span>{(nearestPrediction.rawPrediction.poolPoints).toLocaleString()} P+ 獎池</span>
                                             </div>
                                         )}
                                     </div>
-                                    {nearestPrediction.rawPrediction?.options && nearestPrediction.rawPrediction.options.length > 0 && (
-                                        <div className="flex items-center gap-1.5 pt-0.5">
-                                            <span className="text-[10px] sm:text-[11px] text-slate-400 shrink-0">熱門競猜：</span>
-                                            <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-0.5">
-                                                {nearestPrediction.rawPrediction.options.map((opt: any, idx: number) => (
-                                                    <span key={idx} className="text-[10px] sm:text-[11px] bg-slate-900 px-2 py-0.5 rounded-md text-slate-300 border border-slate-800 shrink-0 whitespace-nowrap">
-                                                        {opt.text} <span className="text-amber-400 font-mono font-bold">x{opt.odds}</span>
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
                                 </div>
-                            </div>
 
-                            {/* 底部動作列 */}
-                            <div className="relative z-10 flex items-center justify-between gap-2 pt-2 border-t border-slate-800/80">
-                                <span className="text-[10px] sm:text-[11px] text-slate-400 font-medium truncate">競猜瓜分點數</span>
-                                <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-200 font-bold rounded-xl text-[11px] sm:text-xs h-7 sm:h-8 px-2 sm:px-3"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setActiveModalEvent(nearestPrediction);
-                                        }}
-                                    >
-                                        <span>對決情報</span>
-                                    </Button>
-                                    <Button
-                                        size="sm"
-                                        className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-[11px] sm:text-xs h-7 sm:h-8 px-2.5 sm:px-3 shadow-md shadow-amber-500/20 cursor-pointer"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleOpenPredictionModal(nearestPrediction);
-                                        }}
-                                    >
-                                        <span>前往競猜</span>
-                                        <ArrowRight className="w-3 h-3 ml-1" />
-                                    </Button>
+                                {/* 底部動作列 */}
+                                <div className="relative z-10 flex items-center justify-between gap-2 pt-2.5 border-t border-amber-500/20">
+                                    <span className="text-[10px] sm:text-[11px] text-amber-400/80 font-mono font-bold tracking-wider">
+                                        #LIVE-PREDICTION
+                                    </span>
+                                    <div className="flex items-center gap-2 shrink-0">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-200 font-bold rounded-xl text-xs h-8 px-3"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setActiveModalEvent(nearestPrediction);
+                                            }}
+                                        >
+                                            <span>對決情報</span>
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            className="bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black rounded-xl text-xs h-8 px-3.5 shadow-md shadow-amber-500/30 cursor-pointer border border-yellow-200"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleOpenPredictionModal(nearestPrediction);
+                                            }}
+                                        >
+                                            <span>前往競猜</span>
+                                            <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                                        </Button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ) : (
-                        <div className="p-5 sm:p-6 rounded-2xl sm:rounded-3xl bg-slate-900/60 border border-slate-800 text-center space-y-1.5 flex flex-col items-center justify-center">
-                            <Trophy className="w-6 h-6 text-slate-600" />
-                            <p className="text-xs text-slate-400 font-bold">目前無即將進行的賽事預測</p>
+                        );
+                    })() : (
+                        <div className="p-6 rounded-2xl sm:rounded-3xl bg-slate-900/60 border border-slate-800 text-center space-y-2 flex flex-col items-center justify-center min-h-[220px]">
+                            <Trophy className="w-8 h-8 text-slate-600" />
+                            <p className="text-sm text-slate-400 font-bold">目前無即將進行的賽事預測</p>
                         </div>
                     )}
                 </div>
             )}
 
-            {/* 控制列：模式切換、搜尋、篩選按鈕群 */}
-            <div className="bg-slate-900/90 p-3 sm:p-4 rounded-2xl sm:rounded-3xl border border-slate-800/90 shadow-xl backdrop-blur-xl space-y-3">
+            {/* 控制列：模式切換、搜尋、篩選按鈕群 (Cyber Command Strip) */}
+            <div className="relative rounded-2xl sm:rounded-3xl bg-gradient-to-b from-slate-900/95 via-slate-950/90 to-slate-950 p-3.5 sm:p-5 border border-slate-800/90 shadow-[0_10px_35px_rgba(0,0,0,0.6)] backdrop-blur-xl space-y-3.5 overflow-hidden">
+                {/* 裝飾微光線條 */}
+                <div className="absolute top-0 inset-x-8 h-px bg-gradient-to-r from-transparent via-cyan-500/40 to-transparent" />
                 
                 {/* 第一列：檢視模式 + 關鍵字搜尋 + 捷徑按鈕 */}
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3">
-                    {/* 月曆網格 vs 時間軸切換 */}
-                    <div className="grid grid-cols-2 sm:flex items-center bg-slate-950 p-1 rounded-2xl border border-slate-800 w-full sm:w-auto shrink-0">
+                    {/* 月曆網格 vs 時間軸切換 (高科技雙檔切換開關) */}
+                    <div className="grid grid-cols-2 sm:flex items-center bg-slate-950/90 p-1 rounded-2xl border border-slate-800/80 shadow-inner w-full sm:w-auto shrink-0">
                         <button
                             type="button"
                             onClick={() => setViewMode('grid')}
                             className={cn(
-                                "flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer",
+                                "flex items-center justify-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-black transition-all duration-200 cursor-pointer",
                                 viewMode === 'grid'
-                                    ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-slate-950 shadow-md shadow-cyan-500/20"
+                                    ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-slate-950 shadow-[0_0_15px_rgba(6,182,212,0.4)]"
                                     : "text-slate-400 hover:text-white"
                             )}
                         >
@@ -759,9 +724,9 @@ export function UnifiedEventCalendar({
                             type="button"
                             onClick={() => setViewMode('agenda')}
                             className={cn(
-                                "flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer",
+                                "flex items-center justify-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-black transition-all duration-200 cursor-pointer",
                                 viewMode === 'agenda'
-                                    ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-slate-950 shadow-md shadow-cyan-500/20"
+                                    ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-slate-950 shadow-[0_0_15px_rgba(6,182,212,0.4)]"
                                     : "text-slate-400 hover:text-white"
                             )}
                         >
@@ -772,22 +737,74 @@ export function UnifiedEventCalendar({
 
                     {/* 搜尋框 */}
                     <div className="relative w-full sm:flex-1 sm:max-w-md">
-                        <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                        <Search className="w-4 h-4 text-cyan-400/70 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                         <Input
                             placeholder="搜尋卡展名稱、NBA/MLB球隊、場館城市..."
                             value={keyword}
                             onChange={(e) => setKeyword(e.target.value)}
-                            className="bg-slate-950 border-slate-800 text-white pl-10 pr-4 h-9 sm:h-10 rounded-xl sm:rounded-2xl text-xs placeholder:text-slate-500 focus-visible:ring-cyan-500 w-full"
+                            className="bg-slate-950/90 border-slate-800/90 text-white pl-10 pr-4 h-9 sm:h-10 rounded-xl sm:rounded-2xl text-xs placeholder:text-slate-500 focus-visible:ring-cyan-500/50 focus-visible:border-cyan-500 w-full shadow-inner"
                         />
                     </div>
 
-                    {/* 回到今天捷徑與賽事競猜快速按鈕 */}
-                    <div className="grid grid-cols-2 sm:flex items-center gap-2 w-full sm:w-auto shrink-0">
+                    {/* 玩法說明、回到今天與賽事競猜按鈕群 */}
+                    <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 flex-wrap sm:flex-nowrap">
+                        <Dialog>
+                            <DialogTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="border-slate-800 bg-slate-950 hover:bg-slate-850 hover:border-amber-500/40 text-amber-300 font-bold rounded-xl h-9 sm:h-10 px-3 text-xs flex-1 sm:flex-none cursor-pointer flex items-center justify-center transition-all shadow-sm"
+                                >
+                                    <Dices className="w-3.5 h-3.5 mr-1 text-amber-400" />
+                                    <span>玩法說明</span>
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="rounded-3xl bg-[#090d1a] border border-amber-500/40 text-white max-w-2xl backdrop-blur-2xl shadow-[0_0_60px_rgba(0,0,0,0.9)] p-4 sm:p-6">
+                                <DialogHeader>
+                                    <DialogTitle className="text-lg sm:text-2xl font-black text-amber-400 flex items-center gap-2 font-headline">
+                                        <Target className="w-5 h-5 sm:w-6 sm:h-6 text-amber-400" />
+                                        卡展與賽事行事曆指南
+                                    </DialogTitle>
+                                    <DialogDescription className="text-xs text-slate-400 pt-1">
+                                        整合全台巡迴展會日程與熱門體育賽事對決預測，一站掌握完整玩卡生態。
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <div className="space-y-3 sm:space-y-4 py-2 sm:py-3 text-xs sm:text-sm text-slate-300">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
+                                        <div className="p-3.5 sm:p-4 rounded-2xl bg-white/5 border border-cyan-500/25 space-y-1.5">
+                                            <div className="flex items-center gap-1.5 text-cyan-400 font-bold text-xs sm:text-sm">
+                                                <MapPin className="w-4 h-4 shrink-0 text-rose-400" /> 全台實體卡展巡迴
+                                            </div>
+                                            <p className="text-[11px] sm:text-xs text-slate-400 leading-relaxed">完整收錄台北、台中、高雄等各大展會與卡聚，支援一鍵 Google 地圖 GPS 導航與日程提醒。</p>
+                                        </div>
+                                        <div className="p-3.5 sm:p-4 rounded-2xl bg-white/5 border border-amber-500/25 space-y-1.5">
+                                            <div className="flex items-center gap-1.5 text-amber-400 font-bold text-xs sm:text-sm">
+                                                <Trophy className="w-4 h-4 shrink-0 text-amber-400" /> 熱門賽事即時預測
+                                            </div>
+                                            <p className="text-[11px] sm:text-xs text-slate-400 leading-relaxed">包含 NBA、MLB、職足與職棒焦點大賽，開賽前自由參與競猜，猜中瓜分海量 P+ 點數。</p>
+                                        </div>
+                                        <div className="p-3.5 sm:p-4 rounded-2xl bg-white/5 border border-purple-500/25 space-y-1.5">
+                                            <div className="flex items-center gap-1.5 text-purple-400 font-bold text-xs sm:text-sm">
+                                                <Layers className="w-4 h-4 shrink-0" /> 雙模式切換瀏覽
+                                            </div>
+                                            <p className="text-[11px] sm:text-xs text-slate-400 leading-relaxed">自由切換月曆方格檢視或時間軸清單，快速按分類與關鍵字檢索特定活動與隊伍。</p>
+                                        </div>
+                                        <div className="p-3.5 sm:p-4 rounded-2xl bg-white/5 border border-emerald-500/25 space-y-1.5">
+                                            <div className="flex items-center gap-1.5 text-emerald-400 font-bold text-xs sm:text-sm">
+                                                <ShieldCheck className="w-4 h-4 shrink-0" /> 自動結算公正核獎
+                                            </div>
+                                            <p className="text-[11px] sm:text-xs text-slate-400 leading-relaxed">賽事結果由官方公正即時核定，獲勝玩家紅利與獎勵點數即時自動派發至帳號中。</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </DialogContent>
+                        </Dialog>
+
                         <Button
                             variant="outline"
                             size="sm"
                             onClick={goToToday}
-                            className="border-slate-700/80 bg-slate-950 hover:bg-slate-800 text-cyan-400 font-bold rounded-xl h-9 sm:h-10 px-3 text-xs w-full sm:w-auto cursor-pointer flex items-center justify-center"
+                            className="border-slate-800 bg-slate-950 hover:bg-slate-850 hover:border-cyan-500/40 text-cyan-400 font-bold rounded-xl h-9 sm:h-10 px-3 text-xs flex-1 sm:flex-none cursor-pointer flex items-center justify-center transition-all shadow-sm"
                         >
                             <CalendarCheck className="w-3.5 h-3.5 mr-1" />
                             回到今天
@@ -795,32 +812,32 @@ export function UnifiedEventCalendar({
                         <Button
                             size="sm"
                             onClick={() => handleOpenPredictionModal()}
-                            className="bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-xl h-9 sm:h-10 px-3.5 text-xs shadow-md shadow-amber-500/20 cursor-pointer flex items-center justify-center gap-1.5 w-full sm:w-auto"
+                            className="bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black rounded-xl h-9 sm:h-10 px-3.5 text-xs shadow-[0_0_15px_rgba(245,158,11,0.3)] cursor-pointer flex items-center justify-center gap-1.5 flex-1 sm:flex-none transition-transform active:scale-95"
                         >
-                            <Trophy className="w-3.5 h-3.5" />
+                            <Trophy className="w-3.5 h-3.5 fill-slate-950" />
                             <span>賽事競猜</span>
                         </Button>
                     </div>
                 </div>
 
                 {/* 第二列：快速分類徽章按鈕 */}
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs -mx-1 px-1 sm:mx-0 sm:px-0">
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none text-xs -mx-1 px-1 sm:mx-0 sm:px-0 pt-0.5">
                     {[
-                        { id: 'ALL', label: '🌟 全部精彩', color: 'border-slate-700 text-slate-300' },
-                        { id: 'HOT', label: '🔥 熱門焦點', color: 'border-rose-500/40 text-rose-300' },
-                        { id: 'EXHIBITION', label: '🏷️ 卡片展覽', color: 'border-cyan-500/40 text-cyan-300' },
-                        { id: 'BASKETBALL', label: '🏀 籃球賽事', color: 'border-amber-500/40 text-amber-300' },
-                        { id: 'BASEBALL', label: '⚾ 棒球賽事', color: 'border-emerald-500/40 text-emerald-300' },
-                        { id: 'SOCCER', label: '⚽ 足球賽事', color: 'border-indigo-500/40 text-indigo-300' },
+                        { id: 'ALL', label: '🌟 全部排程', activeClass: 'border-cyan-400 text-cyan-300 bg-cyan-950/60 shadow-[0_0_10px_rgba(6,182,212,0.3)]' },
+                        { id: 'HOT', label: '🔥 熱門焦點', activeClass: 'border-rose-400 text-rose-300 bg-rose-950/60 shadow-[0_0_10px_rgba(244,63,94,0.3)]' },
+                        { id: 'EXHIBITION', label: '🏷️ 卡片展覽', activeClass: 'border-cyan-400 text-cyan-300 bg-cyan-950/60 shadow-[0_0_10px_rgba(6,182,212,0.3)]' },
+                        { id: 'BASKETBALL', label: '🏀 籃球賽事', activeClass: 'border-amber-400 text-amber-300 bg-amber-950/60 shadow-[0_0_10px_rgba(245,158,11,0.3)]' },
+                        { id: 'BASEBALL', label: '⚾ 棒球賽事', activeClass: 'border-emerald-400 text-emerald-300 bg-emerald-950/60 shadow-[0_0_10px_rgba(16,185,129,0.3)]' },
+                        { id: 'SOCCER', label: '⚽ 足球賽事', activeClass: 'border-indigo-400 text-indigo-300 bg-indigo-950/60 shadow-[0_0_10px_rgba(99,102,241,0.3)]' },
                     ].map(item => (
                         <button
                             key={item.id}
                             onClick={() => setFilterCategory(item.id)}
                             className={cn(
-                                "px-2.5 sm:px-3 py-1.5 rounded-xl font-bold transition-all whitespace-nowrap cursor-pointer border text-[11px] sm:text-xs flex items-center gap-1 shrink-0",
+                                "px-3 py-1.5 rounded-xl font-bold transition-all whitespace-nowrap cursor-pointer border text-[11px] sm:text-xs flex items-center gap-1 shrink-0",
                                 filterCategory === item.id
-                                    ? "bg-slate-800 border-cyan-400 text-cyan-300 shadow-sm"
-                                    : `bg-slate-950/70 hover:bg-slate-800/80 ${item.color}`
+                                    ? item.activeClass
+                                    : "bg-slate-950/80 border-slate-800/80 text-slate-400 hover:text-slate-200 hover:border-slate-700"
                             )}
                         >
                             {item.label}
@@ -835,17 +852,18 @@ export function UnifiedEventCalendar({
             {viewMode === 'grid' && (
                 <div className="space-y-4 sm:space-y-5">
                     {/* 月曆主卡片 */}
-                    <div className="rounded-2xl sm:rounded-3xl bg-slate-900/90 border border-slate-800/90 p-3 sm:p-6 shadow-2xl backdrop-blur-xl">
+                    <div className="rounded-2xl sm:rounded-3xl bg-gradient-to-b from-slate-900/95 via-slate-950 to-slate-950 border border-slate-800/90 p-3 sm:p-6 shadow-[0_15px_40px_rgba(0,0,0,0.7)] backdrop-blur-xl">
                         
                         {/* 月份導覽列 */}
-                        <div className="flex items-center justify-between mb-4 sm:mb-6 pb-3 sm:pb-4 border-b border-slate-800 gap-2">
-                            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                                <h2 className="text-base sm:text-2xl font-black text-white font-headline truncate">
+                        <div className="flex items-center justify-between mb-4 sm:mb-6 pb-3 sm:pb-4 border-b border-slate-800/80 gap-2">
+                            <div className="flex items-center gap-2 sm:gap-3.5 min-w-0">
+                                <div className="w-2.5 h-6 rounded-full bg-gradient-to-b from-cyan-400 to-blue-500 shadow-[0_0_10px_#22d3ee]" />
+                                <h2 className="text-base sm:text-2xl font-black text-white font-headline truncate tracking-wide">
                                     {format(currentMonth, 'yyyy 年 M 月')}
                                 </h2>
-                                <Badge className="bg-cyan-500/10 text-cyan-400 border-cyan-500/30 text-[10px] sm:text-[11px] font-mono shrink-0 px-2 py-0.5">
+                                <Badge className="bg-cyan-500/15 text-cyan-300 border-cyan-500/30 text-[10px] sm:text-xs font-mono shrink-0 px-2.5 py-0.5 shadow-sm">
                                     <span className="sm:hidden">{filteredEvents.length} 項</span>
-                                    <span className="hidden sm:inline">{filteredEvents.length} 項排定活動</span>
+                                    <span className="hidden sm:inline">{filteredEvents.length} 場排定活動</span>
                                 </Badge>
                             </div>
 
@@ -854,7 +872,8 @@ export function UnifiedEventCalendar({
                                     variant="outline"
                                     size="icon"
                                     onClick={prevMonth}
-                                    className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl border-slate-800 bg-slate-950 hover:bg-slate-800 text-slate-300"
+                                    className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl border-slate-800 bg-slate-950 hover:bg-slate-850 hover:border-cyan-500/40 text-slate-300 transition-all cursor-pointer"
+                                    aria-label="上個月"
                                 >
                                     <ChevronLeft className="w-4 h-4" />
                                 </Button>
@@ -862,7 +881,8 @@ export function UnifiedEventCalendar({
                                     variant="outline"
                                     size="icon"
                                     onClick={nextMonth}
-                                    className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl border-slate-800 bg-slate-950 hover:bg-slate-800 text-slate-300"
+                                    className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl border-slate-800 bg-slate-950 hover:bg-slate-850 hover:border-cyan-500/40 text-slate-300 transition-all cursor-pointer"
+                                    aria-label="下個月"
                                 >
                                     <ChevronRight className="w-4 h-4" />
                                 </Button>
@@ -870,9 +890,9 @@ export function UnifiedEventCalendar({
                         </div>
 
                         {/* 星期標頭 */}
-                        <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-1.5 text-center text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
+                        <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-2 text-center text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-wider">
                             {['日', '一', '二', '三', '四', '五', '六'].map((day, idx) => (
-                                <div key={day} className={cn("py-0.5 sm:py-1", (idx === 0 || idx === 6) && "text-rose-400/90")}>
+                                <div key={day} className={cn("py-1 rounded-lg bg-slate-950/40 border border-slate-900", (idx === 0 || idx === 6) && "text-rose-400 font-black")}>
                                     <span className="sm:hidden">{day}</span>
                                     <span className="hidden sm:inline">週{day}</span>
                                 </div>
@@ -886,37 +906,46 @@ export function UnifiedEventCalendar({
                                 const isTodayDate = isToday(dayItem);
                                 const isSelected = isSameDay(dayItem, selectedDate);
                                 const dayEvents = getEventsForDay(dayItem);
+                                const hasExhibition = dayEvents.some(e => e.type === 'exhibition');
+                                const hasPrediction = dayEvents.some(e => e.type !== 'exhibition');
 
                                 return (
                                     <div
                                         key={index}
                                         onClick={() => setSelectedDate(dayItem)}
                                         className={cn(
-                                            "min-h-[50px] xs:min-h-[56px] sm:min-h-[110px] p-1 sm:p-2 rounded-xl sm:rounded-2xl border transition-all cursor-pointer flex flex-col justify-between group relative overflow-hidden",
-                                            isCurrentMonth ? "bg-slate-950/60" : "bg-slate-950/20 opacity-30",
+                                            "min-h-[52px] xs:min-h-[58px] sm:min-h-[110px] p-1.5 sm:p-2 rounded-xl sm:rounded-2xl border transition-all duration-200 cursor-pointer flex flex-col justify-between group relative overflow-hidden select-none",
+                                            isCurrentMonth ? "bg-slate-950/70" : "bg-slate-950/20 opacity-30",
                                             isSelected 
-                                                ? "border-cyan-400 ring-2 ring-cyan-500/40 bg-cyan-950/30 shadow-lg shadow-cyan-950/50" 
+                                                ? "border-cyan-400 ring-2 ring-cyan-500/50 bg-gradient-to-b from-cyan-950/40 to-slate-950 shadow-[0_0_20px_rgba(6,182,212,0.3)] z-10" 
                                                 : "border-slate-800/80 hover:border-slate-700 hover:bg-slate-900/60",
-                                            isTodayDate && !isSelected && "border-amber-500/60 bg-amber-950/15"
+                                            isTodayDate && !isSelected && "border-amber-400/80 bg-amber-950/20 shadow-[0_0_15px_rgba(245,158,11,0.2)]"
                                         )}
                                     >
                                         {/* 日期數字與當日徽章 */}
                                         <div className="flex items-center justify-between">
                                             <span className={cn(
-                                                "text-[11px] xs:text-xs sm:text-sm font-black w-5 h-5 xs:w-5.5 xs:h-5.5 sm:w-6 sm:h-6 rounded-md sm:rounded-lg flex items-center justify-center shrink-0",
-                                                isTodayDate ? "bg-amber-500 text-slate-950 font-black shadow-sm" : (isSelected ? "bg-cyan-500 text-slate-950" : "text-slate-300")
+                                                "text-[11px] xs:text-xs sm:text-sm font-black w-5 h-5 xs:w-5.5 xs:h-5.5 sm:w-6 sm:h-6 rounded-md sm:rounded-lg flex items-center justify-center shrink-0 transition-transform",
+                                                isSelected 
+                                                    ? "bg-cyan-400 text-slate-950 font-black shadow-md shadow-cyan-400/40" 
+                                                    : (isTodayDate 
+                                                        ? "bg-amber-400 text-slate-950 font-black shadow-md shadow-amber-400/40" 
+                                                        : "text-slate-300 group-hover:text-white")
                                             )}>
                                                 {format(dayItem, 'd')}
                                             </span>
 
                                             {dayEvents.length > 0 && (
-                                                <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 font-mono">
+                                                <span className={cn(
+                                                    "text-[9px] sm:text-[10px] font-black font-mono px-1 rounded",
+                                                    isSelected ? "text-cyan-300" : "text-slate-400"
+                                                )}>
                                                     {dayEvents.length}
                                                 </span>
                                             )}
                                         </div>
 
-                                        {/* 手機端專屬：微型發光活動圓點指示器 (Dots) - 徹底根絕窄螢幕文字溢出破版 */}
+                                        {/* 手機端專屬：微型發光活動圓點指示器 (Cyber Gem Dots) */}
                                         <div className="flex sm:hidden items-center justify-center gap-1 my-auto py-0.5">
                                             {dayEvents.slice(0, 3).map((ev) => (
                                                 <span
@@ -930,13 +959,13 @@ export function UnifiedEventCalendar({
                                                 />
                                             ))}
                                             {dayEvents.length > 3 && (
-                                                <span className="text-[8px] text-slate-500 font-mono font-bold leading-none">
+                                                <span className="text-[8px] text-cyan-400 font-mono font-black leading-none">
                                                     +
                                                 </span>
                                             )}
                                         </div>
 
-                                        {/* 平板與電腦端專屬：豐富活動標籤列表 (Cards) */}
+                                        {/* 平板與電腦端專屬：精緻標籤列表 (Mini Cyber Chips) */}
                                         <div className="hidden sm:block space-y-1 my-1 overflow-hidden">
                                             {dayEvents.slice(0, 2).map((ev) => {
                                                 const isExh = ev.type === 'exhibition';
@@ -948,33 +977,35 @@ export function UnifiedEventCalendar({
                                                             setActiveModalEvent(ev);
                                                         }}
                                                         className={cn(
-                                                            "text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded truncate font-bold flex items-center gap-1 transition-transform hover:scale-[1.02]",
+                                                            "text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded truncate font-bold flex items-center gap-1 transition-all hover:scale-[1.02]",
                                                             isExh 
-                                                                ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30" 
-                                                                : "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                                                                ? "bg-cyan-950/70 text-cyan-300 border-l-2 border-l-cyan-400 border-r border-t border-b border-cyan-500/20 hover:border-cyan-400" 
+                                                                : "bg-amber-950/70 text-amber-300 border-l-2 border-l-amber-400 border-r border-t border-b border-amber-500/20 hover:border-amber-400"
                                                         )}
                                                         title={ev.title}
                                                     >
-                                                        {isExh ? <Tag className="w-2.5 h-2.5 shrink-0" /> : <Trophy className="w-2.5 h-2.5 shrink-0" />}
+                                                        {isExh ? <Tag className="w-2.5 h-2.5 shrink-0 text-cyan-400" /> : <Trophy className="w-2.5 h-2.5 shrink-0 text-amber-400" />}
                                                         <span className="truncate">{ev.title}</span>
                                                     </div>
                                                 );
                                             })}
 
                                             {dayEvents.length > 2 && (
-                                                <div className="text-[9px] text-slate-400 font-bold text-center">
-                                                    +{dayEvents.length - 2} 更多
+                                                <div className="text-[9px] text-slate-400 font-black text-center font-mono">
+                                                    +{dayEvents.length - 2} 更多活動
                                                 </div>
                                             )}
                                         </div>
 
-                                        {/* 底部微型進度裝飾 */}
-                                        <div className="h-0.5 sm:h-1 w-full bg-slate-800/40 rounded-full overflow-hidden">
+                                        {/* 底部微型光譜進度條 */}
+                                        <div className="h-0.5 sm:h-1 w-full bg-slate-900 rounded-full overflow-hidden">
                                             {dayEvents.length > 0 && (
                                                 <div 
                                                     className={cn(
                                                         "h-full rounded-full transition-all",
-                                                        dayEvents.some(e => e.type === 'exhibition') ? "bg-cyan-400" : "bg-amber-400"
+                                                        hasExhibition && hasPrediction
+                                                            ? "bg-gradient-to-r from-cyan-400 to-amber-400"
+                                                            : (hasExhibition ? "bg-cyan-400" : "bg-amber-400")
                                                     )} 
                                                     style={{ width: `${Math.min(100, dayEvents.length * 35)}%` }}
                                                 />
@@ -986,78 +1017,156 @@ export function UnifiedEventCalendar({
                         </div>
                     </div>
 
-                    {/* 下方聯動選中日期行程詳情 (Selected Date Detail Panel) */}
-                    <div className="rounded-2xl sm:rounded-3xl bg-slate-900/90 border border-slate-800 p-3.5 sm:p-6 shadow-xl backdrop-blur-xl space-y-3.5 sm:space-y-4">
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
-                            <div className="flex items-center gap-2 sm:gap-2.5">
-                                <div className="p-1.5 sm:p-2 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400">
-                                    <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    {/* 下方聯動選中日期行程詳情 (Selected Date Detail Panel - 高階票券/對決卡佈局) */}
+                    <div className="rounded-2xl sm:rounded-3xl bg-gradient-to-b from-slate-900/95 via-slate-950 to-slate-950 border border-slate-800/90 p-4 sm:p-6 shadow-2xl backdrop-blur-xl space-y-4">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-3.5">
+                            <div className="flex items-center gap-2.5 sm:gap-3">
+                                <div className="p-2 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/40 text-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.25)]">
+                                    <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                    <h3 className="text-sm sm:text-lg font-black text-white break-words">
-                                        {format(selectedDate, 'yyyy 年 MM 月 dd 日')} ({['週日', '週一', '週二', '週三', '週四', '週五', '週六'][selectedDate.getDay()]}) 行程活動
+                                    <h3 className="text-sm sm:text-lg font-black text-white break-words font-headline flex items-center gap-2">
+                                        <span>{format(selectedDate, 'yyyy 年 MM 月 dd 日')}</span>
+                                        <span className="text-xs px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 font-sans font-bold">
+                                            {['週日', '週一', '週二', '週三', '週四', '週五', '週六'][selectedDate.getDay()]}
+                                        </span>
                                     </h3>
-                                    <span className="text-[11px] sm:text-xs text-slate-400">
-                                        當日排定 {selectedDayEvents.length} 場精彩活動 (卡展 / 賽事預測)
+                                    <span className="text-[11px] sm:text-xs text-slate-400 font-mono">
+                                        排定 {selectedDayEvents.length} 場精彩活動 (實體卡展 / 賽事預測競猜)
                                     </span>
                                 </div>
                             </div>
                         </div>
 
-                        {/* 活動卡片清單 */}
+                        {/* 活動卡片清單 (VIP Pass & Arena Duel Cards) */}
                         {selectedDayEvents.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 pt-1">
-                                {selectedDayEvents.map(ev => (
-                                    <div
-                                        key={ev.id}
-                                        onClick={() => setActiveModalEvent(ev)}
-                                        className={cn(
-                                            "p-3 sm:p-4 rounded-xl sm:rounded-2xl border transition-all cursor-pointer relative overflow-hidden flex flex-col justify-between group",
-                                            ev.type === 'exhibition'
-                                                ? "bg-slate-950/80 border-cyan-500/30 hover:border-cyan-400 hover:shadow-cyan-500/10"
-                                                : "bg-slate-950/80 border-amber-500/30 hover:border-amber-400 hover:shadow-amber-500/10",
-                                            "hover:shadow-lg"
-                                        )}
-                                    >
-                                        <div className="space-y-1.5 sm:space-y-2">
-                                            <div className="flex items-center justify-between gap-1.5">
-                                                <Badge className={cn(
-                                                    "text-[10px] font-black px-2 py-0.5 shrink-0",
-                                                    ev.type === 'exhibition'
-                                                        ? "bg-cyan-500/20 text-cyan-300 border-cyan-500/40"
-                                                        : "bg-amber-500/20 text-amber-300 border-amber-500/40"
-                                                )}>
-                                                    {ev.categoryLabel}
-                                                </Badge>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4 pt-1">
+                                {selectedDayEvents.map(ev => {
+                                    const isExh = ev.type === 'exhibition';
 
-                                                <span className="text-[11px] sm:text-xs font-mono text-slate-400 flex items-center gap-1 shrink-0">
-                                                    <Clock className="w-3 h-3" />
-                                                    {ev.timeStr}
-                                                </span>
+                                    if (isExh) {
+                                        return (
+                                            <div
+                                                key={ev.id}
+                                                onClick={() => setActiveModalEvent(ev)}
+                                                className="group relative cursor-pointer overflow-hidden rounded-2xl bg-gradient-to-br from-[#0a1426] via-[#070e1c] to-[#040813] border border-cyan-500/30 hover:border-cyan-400 p-4 transition-all duration-300 shadow-lg hover:shadow-cyan-500/15 flex flex-col justify-between gap-3"
+                                            >
+                                                {/* 穿孔打洞裝飾 */}
+                                                <div className="absolute top-1/2 -translate-y-1/2 -left-2 w-4 h-6 bg-slate-950 rounded-r-full border-r border-cyan-500/40 pointer-events-none" />
+                                                <div className="absolute top-1/2 -translate-y-1/2 -right-2 w-4 h-6 bg-slate-950 rounded-l-full border-l border-cyan-500/40 pointer-events-none" />
+
+                                                <div className="space-y-2">
+                                                    <div className="flex items-center justify-between gap-1.5">
+                                                        <Badge className="bg-cyan-500/20 text-cyan-300 border-cyan-500/40 text-[10px] font-black px-2 py-0.5">
+                                                            {ev.categoryLabel}
+                                                        </Badge>
+                                                        <span className="text-[11px] font-mono text-cyan-200/90 flex items-center gap-1">
+                                                            <Clock className="w-3 h-3 text-cyan-400" />
+                                                            {ev.timeStr}
+                                                        </span>
+                                                    </div>
+
+                                                    <h4 className="text-sm font-black text-white group-hover:text-cyan-300 transition-colors line-clamp-2">
+                                                        {ev.title}
+                                                    </h4>
+
+                                                    {ev.location && (
+                                                        <p className="text-xs text-slate-300 flex items-center gap-1.5 truncate">
+                                                            <MapPin className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                                                            <span className="truncate">{ev.location}</span>
+                                                        </p>
+                                                    )}
+                                                </div>
+
+                                                <div className="pt-2 border-t border-cyan-500/20 flex items-center justify-between text-xs">
+                                                    <span className="text-[10px] text-cyan-400/80 font-mono font-bold tracking-wider">
+                                                        #VIP-EXPO-PASS
+                                                    </span>
+                                                    <span className="text-cyan-400 font-black flex items-center gap-1 group-hover:translate-x-0.5 transition-transform text-xs">
+                                                        展訊詳情 ➜
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        );
+                                    }
+
+                                    // 賽事預測卡 (Arena Duel)
+                                    const matchMeta = resolveMatchTeamsAndLogos({
+                                        matchName: ev.rawPrediction?.matchName || ev.title,
+                                        homeTeam: ev.rawPrediction?.teamA,
+                                        awayTeam: ev.rawPrediction?.teamB,
+                                        sportCategory: ev.rawPrediction?.category
+                                    });
+
+                                    return (
+                                        <div
+                                            key={ev.id}
+                                            onClick={() => setActiveModalEvent(ev)}
+                                            className="group relative cursor-pointer overflow-hidden rounded-2xl bg-gradient-to-br from-[#1c1306] via-[#120c04] to-[#080914] border border-amber-500/30 hover:border-amber-400 p-4 transition-all duration-300 shadow-lg hover:shadow-amber-500/15 flex flex-col justify-between gap-3"
+                                        >
+                                            <div className="space-y-2">
+                                                <div className="flex items-center justify-between gap-1.5">
+                                                    <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/40 text-[10px] font-black px-2 py-0.5">
+                                                        {ev.categoryLabel}
+                                                    </Badge>
+                                                    <span className="text-[11px] font-mono text-amber-200/90 flex items-center gap-1">
+                                                        <Clock className="w-3 h-3 text-amber-400" />
+                                                        {ev.timeStr}
+                                                    </span>
+                                                </div>
+
+                                                {/* 對陣兩隊與隊徽 */}
+                                                <div className="p-2 rounded-xl bg-slate-950/80 border border-amber-500/20 flex items-center justify-between gap-1.5">
+                                                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                                                        <div className="w-7 h-7 rounded-lg bg-slate-900 border border-white/10 p-0.5 flex items-center justify-center shrink-0">
+                                                            <Image 
+                                                                src={matchMeta.homeTeamLogo} 
+                                                                alt={matchMeta.homeTeam} 
+                                                                width={24} 
+                                                                height={24} 
+                                                                className="object-contain max-h-full max-w-full"
+                                                            />
+                                                        </div>
+                                                        <span className="font-bold text-xs text-white truncate">
+                                                            {matchMeta.homeTeam}
+                                                        </span>
+                                                    </div>
+
+                                                    <div className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-black font-headline">
+                                                        VS
+                                                    </div>
+
+                                                    <div className="flex items-center justify-end gap-2 min-w-0 flex-1 text-right">
+                                                        <span className="font-bold text-xs text-white truncate">
+                                                            {matchMeta.awayTeam}
+                                                        </span>
+                                                        <div className="w-7 h-7 rounded-lg bg-slate-900 border border-white/10 p-0.5 flex items-center justify-center shrink-0">
+                                                            <Image 
+                                                                src={matchMeta.awayTeamLogo} 
+                                                                alt={matchMeta.awayTeam} 
+                                                                width={24} 
+                                                                height={24} 
+                                                                className="object-contain max-h-full max-w-full"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {ev.rawPrediction?.poolPoints && (
+                                                    <div className="flex items-center gap-1 text-[11px] text-amber-300 font-mono font-bold">
+                                                        <Coins className="w-3 h-3 text-amber-400" />
+                                                        <span>{ev.rawPrediction.poolPoints.toLocaleString()} P+ 點數獎池</span>
+                                                    </div>
+                                                )}
                                             </div>
 
-                                            <h4 className="text-xs sm:text-sm font-black text-white group-hover:text-cyan-300 transition-colors line-clamp-2 break-words">
-                                                {ev.title}
-                                            </h4>
-
-                                            {ev.location && (
-                                                <p className="text-[11px] sm:text-xs text-slate-400 flex items-center gap-1 truncate">
-                                                    <MapPin className="w-3 h-3 text-rose-400 shrink-0" />
-                                                    <span className="truncate">{ev.location}</span>
-                                                </p>
-                                            )}
-                                        </div>
-
-                                        <div className="pt-2.5 sm:pt-3 mt-2.5 sm:mt-3 border-t border-slate-800/80 flex items-center justify-between text-xs">
-                                            <span className="text-[10px] sm:text-[11px] text-slate-500">點擊查看詳情</span>
-                                            {ev.type === 'exhibition' ? (
-                                                <span className="text-cyan-400 font-bold flex items-center gap-1 group-hover:translate-x-0.5 transition-transform text-[11px] sm:text-xs">
-                                                    展訊詳情 ➜
+                                            <div className="pt-2 border-t border-amber-500/20 flex items-center justify-between text-xs">
+                                                <span className="text-[10px] text-amber-400/80 font-mono font-bold tracking-wider">
+                                                    #ARENA-DUEL
                                                 </span>
-                                            ) : (
                                                 <button
                                                     type="button"
-                                                    className="text-amber-400 hover:text-amber-300 font-black flex items-center gap-1 group-hover:translate-x-0.5 transition-transform cursor-pointer text-[11px] sm:text-xs"
+                                                    className="text-amber-400 hover:text-amber-300 font-black flex items-center gap-1 group-hover:translate-x-0.5 transition-transform cursor-pointer text-xs"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         handleOpenPredictionModal(ev);
@@ -1065,107 +1174,190 @@ export function UnifiedEventCalendar({
                                                 >
                                                     前往競猜 ➜
                                                 </button>
-                                            )}
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         ) : (
-                            <div className="p-6 sm:p-8 rounded-2xl bg-slate-950/50 border border-slate-800/60 text-center space-y-2">
-                                <CalendarIcon className="w-7 h-7 sm:w-8 sm:h-8 text-slate-600 mx-auto" />
-                                <p className="text-xs sm:text-sm text-slate-400 font-bold">該日期暫無排定的公開活動或賽事</p>
-                                <p className="text-[10px] sm:text-[11px] text-slate-500">點擊上方其他有彩色圓點的日期，或切換至「行程時間軸」瀏覽全部日程。</p>
+                            <div className="p-8 sm:p-10 rounded-2xl bg-slate-950/50 border border-slate-800/80 text-center space-y-2.5">
+                                <CalendarIcon className="w-8 h-8 text-slate-600 mx-auto" />
+                                <p className="text-sm text-slate-400 font-bold">該日期暫無排定的公開活動或賽事</p>
+                                <p className="text-xs text-slate-500">點擊上方其他有發光圓點的日期，或切換至「行程時間軸」瀏覽全部日程。</p>
                             </div>
                         )}
                     </div>
                 </div>
             )}
-
             {/* ========================================================================= */}
-            {/* 視圖 B：行程時間軸清單 (Agenda Timeline View) */}
+            {/* 視圖 B：行程時間軸清單 (Agenda Timeline View - VIP Pass & Arena Duels) */}
             {/* ========================================================================= */}
             {viewMode === 'agenda' && (
                 <div className="space-y-3 sm:space-y-4">
                     {filteredEvents.length > 0 ? (
                         filteredEvents.map((ev) => {
                             const isExh = ev.type === 'exhibition';
+
+                            if (isExh) {
+                                return (
+                                    <div
+                                        key={ev.id}
+                                        onClick={() => setActiveModalEvent(ev)}
+                                        className="group relative cursor-pointer overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-r from-[#09152b] via-[#060e1e] to-[#040813] border border-cyan-500/30 hover:border-cyan-400 p-3.5 sm:p-5 transition-all duration-300 shadow-[0_10px_25px_rgba(0,0,0,0.6)] hover:shadow-[0_15px_35px_rgba(6,182,212,0.2)] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 select-none hover:-translate-y-0.5"
+                                    >
+                                        {/* 票券打洞 */}
+                                        <div className="hidden sm:block absolute top-1/2 -translate-y-1/2 -left-2 w-4 h-6 bg-slate-950 rounded-r-full border-r border-cyan-500/40 pointer-events-none" />
+                                        <div className="hidden sm:block absolute top-1/2 -translate-y-1/2 -right-2 w-4 h-6 bg-slate-950 rounded-l-full border-l border-cyan-500/40 pointer-events-none" />
+
+                                        {/* 左側日期標籤與活動標題 */}
+                                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                                            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-b from-cyan-950/80 to-slate-950 border border-cyan-500/40 text-cyan-400 flex flex-col items-center justify-center text-center p-1 shrink-0 shadow-inner">
+                                                <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-cyan-300/80">
+                                                    {format(ev.startDate, 'MMM')}
+                                                </span>
+                                                <span className="text-base sm:text-xl font-black leading-none font-headline">
+                                                    {format(ev.startDate, 'd')}
+                                                </span>
+                                            </div>
+
+                                            <div className="min-w-0 flex-1 space-y-1">
+                                                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                                                    <Badge className="bg-cyan-500/20 text-cyan-300 border-cyan-500/40 text-[10px] font-black px-2 py-0.5 shrink-0">
+                                                        {ev.categoryLabel}
+                                                    </Badge>
+                                                    <span className="text-[11px] sm:text-xs text-cyan-200/90 font-mono flex items-center gap-1">
+                                                        <Clock className="w-3 h-3 text-cyan-400" />
+                                                        {ev.timeStr}
+                                                    </span>
+                                                </div>
+                                                <h3 className="text-xs sm:text-base font-black text-white group-hover:text-cyan-300 transition-colors line-clamp-1 break-words font-headline">
+                                                    {ev.title}
+                                                </h3>
+                                            </div>
+                                        </div>
+
+                                        {/* 右側地點與操作按鈕 */}
+                                        <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto border-t sm:border-t-0 pt-2.5 sm:pt-0 border-cyan-500/20 shrink-0">
+                                            {ev.location ? (
+                                                <div className="text-[11px] sm:text-xs text-slate-300 flex items-center gap-1.5 truncate max-w-[160px] sm:max-w-[220px]">
+                                                    <MapPin className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                                                    <span className="truncate">{ev.location}</span>
+                                                </div>
+                                            ) : (
+                                                <div />
+                                            )}
+
+                                            <Button
+                                                size="sm"
+                                                className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 font-black rounded-xl text-xs h-8 sm:h-9 px-3.5 sm:px-4 shrink-0 shadow-md shadow-cyan-500/20 cursor-pointer transition-all"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setActiveModalEvent(ev);
+                                                }}
+                                            >
+                                                <span>查看展訊</span>
+                                                <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                );
+                            }
+
+                            // 賽事預測卡 (Arena Match)
+                            const matchMeta = resolveMatchTeamsAndLogos({
+                                matchName: ev.rawPrediction?.matchName || ev.title,
+                                homeTeam: ev.rawPrediction?.teamA,
+                                awayTeam: ev.rawPrediction?.teamB,
+                                sportCategory: ev.rawPrediction?.category
+                            });
+
                             return (
                                 <div
                                     key={ev.id}
                                     onClick={() => setActiveModalEvent(ev)}
-                                    className={cn(
-                                        "p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border transition-all cursor-pointer relative overflow-hidden backdrop-blur-xl group flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4",
-                                        isExh
-                                            ? "bg-slate-900/90 border-slate-800 hover:border-cyan-500/50 hover:shadow-cyan-500/10 shadow-lg"
-                                            : "bg-slate-900/90 border-slate-800 hover:border-amber-500/50 hover:shadow-amber-500/10 shadow-lg"
-                                    )}
+                                    className="group relative cursor-pointer overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-r from-[#1c1205] via-[#100b03] to-[#080914] border border-amber-500/30 hover:border-amber-400 p-3.5 sm:p-5 transition-all duration-300 shadow-[0_10px_25px_rgba(0,0,0,0.6)] hover:shadow-[0_15px_35px_rgba(245,158,11,0.2)] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 select-none hover:-translate-y-0.5"
                                 >
-                                    {/* 左側日期標籤與活動標題 */}
-                                    <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
-                                        <div className={cn(
-                                            "w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex flex-col items-center justify-center text-center p-1 border shrink-0",
-                                            isExh
-                                                ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-400"
-                                                : "bg-amber-500/10 border-amber-500/30 text-amber-400"
-                                        )}>
-                                            <span className="text-[9px] sm:text-[10px] font-bold uppercase">
+                                    {/* 左側日期與隊伍對抗 */}
+                                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                                        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-b from-amber-950/80 to-slate-950 border border-amber-500/40 text-amber-400 flex flex-col items-center justify-center text-center p-1 shrink-0 shadow-inner">
+                                            <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-amber-300/80">
                                                 {format(ev.startDate, 'MMM')}
                                             </span>
-                                            <span className="text-base sm:text-lg font-black leading-none">
+                                            <span className="text-base sm:text-xl font-black leading-none font-headline">
                                                 {format(ev.startDate, 'd')}
                                             </span>
                                         </div>
 
-                                        <div className="min-w-0 flex-1">
+                                        <div className="min-w-0 flex-1 space-y-1.5">
                                             <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                                                <Badge className={cn(
-                                                    "text-[10px] font-black px-1.5 sm:px-2 py-0.5 shrink-0",
-                                                    isExh
-                                                        ? "bg-cyan-500/20 text-cyan-300 border-cyan-500/40"
-                                                        : "bg-amber-500/20 text-amber-300 border-amber-500/40"
-                                                )}>
+                                                <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/40 text-[10px] font-black px-2 py-0.5 shrink-0">
                                                     {ev.categoryLabel}
                                                 </Badge>
-                                                <span className="text-[11px] sm:text-xs text-slate-400 font-mono truncate">
+                                                <span className="text-[11px] sm:text-xs text-amber-200/90 font-mono flex items-center gap-1">
+                                                    <Clock className="w-3 h-3 text-amber-400" />
                                                     {ev.timeStr}
                                                 </span>
                                             </div>
-                                            <h3 className="text-xs sm:text-base font-black text-white mt-1 group-hover:text-cyan-300 transition-colors line-clamp-1 break-words">
-                                                {ev.title}
-                                            </h3>
+
+                                            {/* 隊伍雙標誌對決顯示 */}
+                                            <div className="flex items-center gap-2">
+                                                <div className="flex items-center gap-1.5 min-w-0">
+                                                    <div className="w-6 h-6 rounded-md bg-slate-900 border border-white/10 p-0.5 flex items-center justify-center shrink-0">
+                                                        <Image 
+                                                            src={matchMeta.homeTeamLogo} 
+                                                            alt={matchMeta.homeTeam} 
+                                                            width={20} 
+                                                            height={20} 
+                                                            className="object-contain max-h-full max-w-full"
+                                                        />
+                                                    </div>
+                                                    <span className="text-xs sm:text-sm font-black text-white truncate">
+                                                        {matchMeta.homeTeam}
+                                                    </span>
+                                                </div>
+
+                                                <span className="text-[10px] font-black text-amber-400 px-1 py-0.5 rounded bg-amber-500/20 font-headline shrink-0">
+                                                    VS
+                                                </span>
+
+                                                <div className="flex items-center gap-1.5 min-w-0">
+                                                    <span className="text-xs sm:text-sm font-black text-white truncate">
+                                                        {matchMeta.awayTeam}
+                                                    </span>
+                                                    <div className="w-6 h-6 rounded-md bg-slate-900 border border-white/10 p-0.5 flex items-center justify-center shrink-0">
+                                                        <Image 
+                                                            src={matchMeta.awayTeamLogo} 
+                                                            alt={matchMeta.awayTeam} 
+                                                            width={20} 
+                                                            height={20} 
+                                                            className="object-contain max-h-full max-w-full"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
 
-                                    {/* 右側地點與操作按鈕 */}
-                                    <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto border-t sm:border-t-0 pt-2.5 sm:pt-0 border-slate-800 shrink-0">
-                                        {ev.location ? (
-                                            <div className="text-[11px] sm:text-xs text-slate-400 flex items-center gap-1 truncate max-w-[160px] sm:max-w-[200px]">
-                                                <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-rose-400 shrink-0" />
-                                                <span className="truncate">{ev.location}</span>
+                                    {/* 右側獎池與競猜按鈕 */}
+                                    <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto border-t sm:border-t-0 pt-2.5 sm:pt-0 border-amber-500/20 shrink-0">
+                                        {ev.rawPrediction?.poolPoints && (
+                                            <div className="flex items-center gap-1.5 bg-amber-500/15 border border-amber-400/30 px-2.5 py-1 rounded-xl font-headline font-black text-xs text-amber-300">
+                                                <Coins className="w-3.5 h-3.5 text-amber-400" />
+                                                <span>{(ev.rawPrediction.poolPoints).toLocaleString()} P+</span>
                                             </div>
-                                        ) : (
-                                            <div />
                                         )}
 
                                         <Button
                                             size="sm"
-                                            className={cn(
-                                                "font-black rounded-xl text-[11px] sm:text-xs h-8 sm:h-9 px-3 sm:px-4 shrink-0 shadow-md cursor-pointer",
-                                                isExh
-                                                    ? "bg-cyan-500 hover:bg-cyan-400 text-slate-950"
-                                                    : "bg-amber-500 hover:bg-amber-400 text-slate-950"
-                                            )}
+                                            className="bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black rounded-xl text-xs h-8 sm:h-9 px-3.5 sm:px-4 shrink-0 shadow-md shadow-amber-500/30 cursor-pointer border border-yellow-200 transition-all"
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                if (isExh) {
-                                                    setActiveModalEvent(ev);
-                                                } else {
-                                                    handleOpenPredictionModal(ev);
-                                                }
+                                                handleOpenPredictionModal(ev);
                                             }}
                                         >
-                                            {isExh ? '查看展訊' : '前往競猜'}
-                                            <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5 ml-1" />
+                                            <Trophy className="w-3.5 h-3.5 mr-1 fill-slate-950" />
+                                            <span>前往競猜</span>
+                                            <ArrowRight className="w-3.5 h-3.5 ml-1" />
                                         </Button>
                                     </div>
                                 </div>
@@ -1175,7 +1367,7 @@ export function UnifiedEventCalendar({
                         <div className="p-12 rounded-3xl bg-slate-900/60 border border-slate-800 text-center space-y-3">
                             <Search className="w-10 h-10 text-slate-600 mx-auto" />
                             <p className="text-sm text-slate-300 font-bold">沒有找到符合條件的活動或賽事</p>
-                            <p className="text-xs text-slate-500">嘗試清除搜尋條件或選擇「全部精彩」分類。</p>
+                            <p className="text-xs text-slate-500">嘗試清除搜尋條件或選擇「全部排程」分類。</p>
                         </div>
                     )}
                 </div>

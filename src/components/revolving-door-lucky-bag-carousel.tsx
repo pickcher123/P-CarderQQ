@@ -83,7 +83,7 @@ export function RevolvingDoorLuckyBagCarousel({
     }
   };
 
-  // 手機滑動手勢
+  // 手機滑動手勢 - 靈敏度優化 (從 35px 降至 22px，大幅提升輕拂時的順暢度)
   const onTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
     touchDeltaX.current = 0;
@@ -98,9 +98,9 @@ export function RevolvingDoorLuckyBagCarousel({
   const onTouchEnd = () => {
     if (!isDragging.current) return;
     isDragging.current = false;
-    if (touchDeltaX.current < -35) {
+    if (touchDeltaX.current < -22) {
       handleNext();
-    } else if (touchDeltaX.current > 35) {
+    } else if (touchDeltaX.current > 22) {
       handlePrev();
     }
     touchStartX.current = null;
@@ -154,7 +154,7 @@ export function RevolvingDoorLuckyBagCarousel({
     <div className={cn("relative select-none w-full max-w-5xl mx-auto py-3", className)}>
       {/* 3D 旋轉門紅包袋舞台視角區 */}
       <div
-        className="relative w-full h-[510px] sm:h-[560px] md:h-[590px] flex items-center justify-center overflow-hidden perspective-[1200px] focus:outline-none"
+        className="relative w-full h-[510px] sm:h-[560px] md:h-[590px] flex items-center justify-center overflow-hidden perspective-[1200px] focus:outline-none touch-pan-y"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         onTouchStart={onTouchStart}
@@ -271,6 +271,8 @@ export function RevolvingDoorLuckyBagCarousel({
                 className="absolute w-[245px] h-[445px] sm:w-[285px] sm:h-[490px] md:w-[305px] md:h-[515px] origin-center cursor-pointer select-none"
                 style={{
                   zIndex,
+                  willChange: 'transform, opacity',
+                  transform: 'translateZ(0)',
                 }}
                 animate={{
                   rotateY,
@@ -281,8 +283,9 @@ export function RevolvingDoorLuckyBagCarousel({
                 }}
                 transition={{
                   type: 'spring',
-                  stiffness: 260,
-                  damping: 25,
+                  stiffness: 300,
+                  damping: 26,
+                  mass: 0.8,
                 }}
                 onClick={() => handleBagClick(bag, index)}
               >
