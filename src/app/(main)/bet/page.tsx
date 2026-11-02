@@ -241,83 +241,65 @@ export default function BetLandingPage() {
 
             <div className="container px-3 sm:px-6 py-3 sm:py-8 max-w-7xl mx-auto space-y-5 sm:space-y-10">
                 
-                {/* === HERO SECTION: 頂級賽博拼卡殿堂 === */}
-                <div className="relative rounded-2xl sm:rounded-3xl md:rounded-[2.5rem] p-3.5 sm:p-6 md:p-8 overflow-hidden border border-rose-500/25 bg-gradient-to-b from-[#180a14]/90 via-[#0f070e]/95 to-[#080408] shadow-[0_20px_60px_rgba(0,0,0,0.8)] backdrop-blur-2xl">
-                    {/* Background Grid Pattern */}
-                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#f43f5e10_1px,transparent_1px),linear-gradient(to_bottom,#f43f5e10_1px,transparent_1px)] bg-[size:32px_32px] opacity-60 pointer-events-none" />
-                    
-                    {/* Top Glow Accent Bar */}
-                    <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-rose-400 to-transparent shadow-[0_0_15px_#fb7185]" />
-                    
-                    <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-3 sm:gap-6 md:gap-12">
-                        <div className="space-y-2 sm:space-y-3 text-center lg:text-left max-w-2xl">
-                            <h1 className="font-headline text-2xl sm:text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-rose-400 via-pink-200 to-amber-300 drop-shadow-[0_0_20px_rgba(244,63,94,0.4)] tracking-tight leading-none uppercase">
-                                幸運拼卡
-                            </h1>
-
-                            <p className="text-xs sm:text-sm md:text-base text-slate-300 font-medium leading-normal">
-                                10% 機率一擊入魂，支援鑽石與 P+ 雙幣參與。
-                            </p>
-
-                            {/* Rules Quick Dialog Button */}
-                            <div className="pt-1 flex flex-wrap items-center justify-center lg:justify-start gap-2">
-                                <Dialog>
-                                    <DialogTrigger asChild>
-                                        <Button className="h-8 sm:h-10 px-4 sm:px-5 rounded-lg sm:rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-400 hover:to-pink-400 text-white text-xs sm:text-sm font-black shadow-[0_0_20px_rgba(244,63,94,0.3)] transition-all gap-1.5 group cursor-pointer">
-                                            <Dices className="w-3.5 h-3.5 text-white group-hover:rotate-45 transition-transform" />
-                                            <span>玩法說明</span>
-                                        </Button>
-                                    </DialogTrigger>
-                                    <DialogContent className="rounded-[2rem] bg-slate-950 border border-rose-500/30 text-white max-w-2xl backdrop-blur-2xl shadow-2xl">
-                                        <DialogHeader>
-                                            <DialogTitle className="text-xl md:text-2xl font-black text-rose-400 flex items-center gap-2 font-headline">
-                                                <Target className="w-6 h-6 text-rose-400" />
-                                                拼卡機制
-                                            </DialogTitle>
-                                        </DialogHeader>
-                                        <div className="space-y-4 py-3 text-sm text-slate-300">
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
-                                                    <div className="flex items-center gap-2 text-rose-400 font-bold">
-                                                        <Percent className="w-4 h-4" /> 1/10 命中率
-                                                    </div>
-                                                    <p className="text-xs text-slate-400">每次 1~10 隨機搖號，命中直接帶走卡片。</p>
-                                                </div>
-                                                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
-                                                    <div className="flex items-center gap-2 text-purple-400 font-bold">
-                                                        <Coins className="w-4 h-4" /> 雙幣參與
-                                                    </div>
-                                                    <p className="text-xs text-slate-400">支援鑽石 💎 或 P+ 點數（鑽石與 P+ 1:10）。</p>
-                                                </div>
-                                                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
-                                                    <div className="flex items-center gap-2 text-amber-400 font-bold">
-                                                        <Award className="w-4 h-4" /> 10% 成本
-                                                    </div>
-                                                    <p className="text-xs text-slate-400">單次只需卡片價值的 1/10 低成本博大獎。</p>
-                                                </div>
-                                                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
-                                                    <div className="flex items-center gap-2 text-emerald-400 font-bold">
-                                                        <ShieldCheck className="w-4 h-4" /> 即時入庫
-                                                    </div>
-                                                    <p className="text-xs text-slate-400">中獎即刻存入個人卡庫，隨時申請實體出貨。</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </DialogContent>
-                                </Dialog>
-
-                        {/* 剩餘可拼 - 放在玩法說明右邊 */}
-                        <div className="h-8 sm:h-10 px-3 sm:px-4 rounded-lg sm:rounded-xl bg-[#1a0c16]/90 border border-pink-500/35 flex items-center gap-2 shadow-[0_0_15px_rgba(244,63,94,0.15)] backdrop-blur-sm">
-                            <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-pink-400 shrink-0" />
-                            <span className="text-xs sm:text-sm text-slate-300 font-medium">剩餘可拼</span>
-                            <span className="font-headline font-black text-pink-300 text-sm sm:text-base px-1.5 py-0.5 bg-pink-500/10 rounded-md border border-pink-500/20 leading-none">
-                                {finalIsLoading ? '--' : stats.availableItems}
-                            </span>
+                {/* 頂部單獨角落：玩法說明與即時概況 */}
+                <div className="flex items-center justify-between mb-2 sm:mb-4 px-1">
+                    <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-900/80 border border-slate-800 text-[11px] font-medium text-slate-300">
+                            <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+                            <span>幸運拼卡專區</span>
+                            <span className="text-rose-400 font-bold ml-1">{finalIsLoading ? '--' : stats.availableItems} 款可拼</span>
                         </div>
                     </div>
+
+                    {/* 單獨角落【玩法說明】按鈕 */}
+                    <Dialog>
+                        <DialogTrigger asChild>
+                            <button 
+                                type="button"
+                                className="flex items-center gap-1.5 h-8 px-3.5 rounded-full bg-gradient-to-r from-rose-500/15 via-pink-500/10 to-rose-500/15 hover:from-rose-500/25 hover:to-pink-500/20 text-rose-300 hover:text-rose-200 border border-rose-500/40 text-xs font-bold transition-all shadow-[0_0_12px_rgba(244,63,94,0.15)] cursor-pointer group shrink-0"
+                            >
+                                <Dices className="w-3.5 h-3.5 text-rose-400 group-hover:rotate-45 transition-transform" />
+                                <span>玩法說明</span>
+                            </button>
+                        </DialogTrigger>
+                        <DialogContent className="rounded-[2rem] bg-slate-950 border border-rose-500/30 text-white max-w-2xl backdrop-blur-2xl shadow-2xl">
+                            <DialogHeader>
+                                <DialogTitle className="text-xl md:text-2xl font-black text-rose-400 flex items-center gap-2 font-headline">
+                                    <Target className="w-6 h-6 text-rose-400" />
+                                    拼卡機制
+                                </DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4 py-3 text-sm text-slate-300">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
+                                        <div className="flex items-center gap-2 text-rose-400 font-bold">
+                                            <Percent className="w-4 h-4" /> 1/10 命中率
+                                        </div>
+                                        <p className="text-xs text-slate-400">每次 1~10 隨機搖號，命中直接帶走卡片。</p>
+                                    </div>
+                                    <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
+                                        <div className="flex items-center gap-2 text-purple-400 font-bold">
+                                            <Coins className="w-4 h-4" /> 雙幣參與
+                                        </div>
+                                        <p className="text-xs text-slate-400">支援鑽石 💎 或 P+ 點數（鑽石與 P+ 1:10）。</p>
+                                    </div>
+                                    <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
+                                        <div className="flex items-center gap-2 text-amber-400 font-bold">
+                                            <Award className="w-4 h-4" /> 10% 成本
+                                        </div>
+                                        <p className="text-xs text-slate-400">單次只需卡片價值的 1/10 低成本博大獎。</p>
+                                    </div>
+                                    <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
+                                        <div className="flex items-center gap-2 text-emerald-400 font-bold">
+                                            <ShieldCheck className="w-4 h-4" /> 即時入庫
+                                        </div>
+                                        <p className="text-xs text-slate-400">中獎即刻存入個人卡庫，隨時申請實體出貨。</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </DialogContent>
+                    </Dialog>
                 </div>
-            </div>
-        </div>
 
                 {/* 3D 旋轉門主題呈現專區 */}
                 <div className="mb-8 sm:mb-12">

@@ -37,26 +37,23 @@ export function RevealComponent({
 
     return (
         <motion.div 
-            initial={{ y: -800, opacity: 0, scale: 0.2, rotate: -45, filter: 'blur(50px)' }}
+            initial={{ y: -400, opacity: 0, scale: 0.5, rotate: -15 }}
             animate={isLegendaryRevealed ? { 
-                y: [0, -18, 6, -3, 0], 
-                scale: [1, 1.18, 0.95, 1.07, 1], 
-                rotate: [0, -4, 4, -2, 2, 0], 
-                filter: 'blur(0px)', 
+                y: [0, -14, 4, 0], 
+                scale: [1, 1.1, 0.98, 1], 
+                rotate: [0, -2, 2, 0], 
                 opacity: 1 
-            } : { y: 0, opacity: 1, scale: 1, rotate: 0, filter: 'blur(0px)' }}
+            } : { y: 0, opacity: 1, scale: 1, rotate: 0 }}
             transition={isLegendaryRevealed ? {
-                duration: 0.85,
+                duration: 0.6,
                 ease: "easeOut",
-                times: [0, 0.2, 0.45, 0.75, 1]
             } : { 
                 type: 'spring', 
-                stiffness: 120, 
-                damping: 10,
-                mass: 1.5,
-                duration: 1.2
+                stiffness: 180, 
+                damping: 16,
+                mass: 1.0,
             }}
-            className="flex flex-col items-center w-full max-w-[170px] md:max-w-[220px] relative"
+            className="flex flex-col items-center w-full max-w-[170px] md:max-w-[220px] relative transform-gpu will-change-transform"
         >
             {/* 傳奇震撼身後向外擴散雙重黃金衝擊波 */}
             {isLegendaryRevealed && (

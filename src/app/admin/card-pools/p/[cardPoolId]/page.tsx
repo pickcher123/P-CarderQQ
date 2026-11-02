@@ -856,6 +856,37 @@ export default function CardPoolDetailPage() {
                             <Label htmlFor="pool-description" className="text-[10px] font-black uppercase text-slate-500 tracking-widest">活動描述</Label>
                             <Textarea id="pool-description" value={poolDetails.description || ''} onChange={e => setPoolDetails({...poolDetails, description: e.target.value})} onBlur={e => handleUpdatePoolDetails('description', e.target.value)} className="min-h-[100px] border-slate-200 font-medium bg-white" />
                         </div>
+
+                        <div className="space-y-2 p-3 bg-amber-50/50 rounded-xl border border-amber-200/60">
+                            <div className="flex items-center justify-between">
+                                <Label htmlFor="pool-pack-image" className="text-xs font-black uppercase text-slate-700 tracking-wider flex items-center gap-1.5">
+                                    <Package className="w-4 h-4 text-amber-500" />
+                                    <span>📦 卡包包裝封面圖 (選填)</span>
+                                </Label>
+                                <span className="text-[10px] text-slate-400 font-bold">若未填寫則自動生成頂級黑金實體鋁箔卡包</span>
+                            </div>
+                            <Input 
+                                id="pool-pack-image" 
+                                placeholder="https://... 或 /assets/... 填入專屬卡包包裝圖片網址" 
+                                value={poolDetails.imageUrl || ''} 
+                                onChange={e => setPoolDetails({...poolDetails, imageUrl: e.target.value})} 
+                                onBlur={e => handleUpdatePoolDetails('imageUrl', e.target.value)} 
+                                className="h-11 border-slate-200 font-mono text-xs text-slate-900 bg-white" 
+                            />
+                            {poolDetails.imageUrl && (
+                                <div className="mt-2 flex items-center gap-3 p-2 bg-white rounded-lg border border-slate-200 shadow-sm">
+                                    <div className="relative w-14 h-20 rounded-md overflow-hidden border border-slate-200 bg-black shrink-0">
+                                        <SafeImage src={poolDetails.imageUrl} alt="卡包預覽" fill className="object-cover" />
+                                    </div>
+                                    <div className="text-xs space-y-0.5">
+                                        <p className="font-bold text-slate-800 flex items-center gap-1">
+                                            <Check className="w-3.5 h-3.5 text-emerald-600" /> 卡包封面套用中
+                                        </p>
+                                        <p className="text-[11px] text-slate-500">前台卡池展示機台將會直接呈現此卡包包裝外觀。</p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100 shadow-inner">

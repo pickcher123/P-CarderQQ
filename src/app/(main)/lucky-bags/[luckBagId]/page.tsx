@@ -99,20 +99,24 @@ export default function LuckyBagPage() {
     }
 
     return (
-        <div className="min-h-[calc(100vh-4rem)] w-full py-4 sm:py-8 px-3 sm:px-6 lg:px-8 max-w-7xl mx-auto animate-fade-in">
-            <div className="mb-6 flex items-center justify-between">
+        <div className="min-h-[calc(100vh-4rem)] w-full py-3 sm:py-6 px-3 sm:px-6 lg:px-8 max-w-7xl mx-auto animate-fade-in relative">
+            {/* 喜慶暖金環境氛圍光 (Festive Warm Gold Ambient Lighting) */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[360px] bg-gradient-to-b from-amber-500/15 via-yellow-600/10 to-transparent blur-[120px] pointer-events-none -z-10" />
+
+            {/* 頂部操作列 */}
+            <div className="mb-4 sm:mb-6 flex items-center justify-between">
                 <Button 
                     variant="ghost" 
                     onClick={() => router.push('/lucky-bags')} 
-                    className="hover:bg-white/10 font-bold text-slate-200 hover:text-white group rounded-xl px-4 py-2 text-sm bg-slate-900/60 border border-white/10 backdrop-blur-md shadow-sm transition-all"
+                    className="hover:bg-amber-500/20 font-black text-amber-200 hover:text-yellow-200 group rounded-xl px-4 py-2 text-xs sm:text-sm bg-[#181308]/90 border border-amber-500/40 backdrop-blur-md shadow-[0_2px_12px_rgba(0,0,0,0.5)] transition-all cursor-pointer"
                 >
                     <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform text-amber-400" /> 
-                    返回福袋清單
+                    返回福袋專區
                 </Button>
                 
-                <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-slate-400 hidden sm:inline-block">公平募集制福袋</span>
-                    <div className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#181308]/90 border border-amber-500/30 text-amber-300 text-xs font-bold shadow-sm">
+                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                    <span>公平募集 · 金禧福袋</span>
                 </div>
             </div>
 

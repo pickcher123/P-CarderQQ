@@ -173,14 +173,11 @@ export function RevolvingDoorThemeCarousel({
 
   return (
     <div className={cn("relative select-none w-full max-w-5xl mx-auto py-2", className)}>
-      {/* 標題區塊：與設計圖完全一致 (Centered Clean Header) */}
+      {/* 標題區塊：黑金奢華質感 (Centered Clean Header) */}
       <div className="text-center mb-4 sm:mb-6">
-        <h2 className="text-xl sm:text-2xl font-black text-white font-headline tracking-wider drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
+        <h2 className="text-xl sm:text-2xl font-black font-headline tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 drop-shadow-[0_2px_15px_rgba(245,158,11,0.35)]">
           選擇主題卡池
         </h2>
-        <p className="text-xs sm:text-sm text-slate-400 mt-1 font-medium tracking-wide">
-          共 {total} 個專區
-        </p>
       </div>
 
       {/* 3D 旋轉門舞台視角區 */}
@@ -194,29 +191,29 @@ export function RevolvingDoorThemeCarousel({
         onKeyDown={handleKeyDown}
         tabIndex={0}
       >
-        {/* 3D 旋轉門底座：同心霓虹青光光圈舞台 (Turntable Glow Floor) */}
+        {/* 3D 旋轉門底座：同心金曜光圈舞台 (Turntable Glow Floor) */}
         <div className="absolute bottom-6 sm:bottom-8 w-[280px] sm:w-[480px] md:w-[620px] h-[65px] sm:h-[95px] pointer-events-none flex items-center justify-center">
           {/* 外圈高亮軌道光圈 */}
-          <div className="absolute inset-0 rounded-[100%] border border-cyan-400/50 shadow-[0_0_35px_rgba(6,182,212,0.45)] transform rotate-x-[75deg]" />
+          <div className="absolute inset-0 rounded-[100%] border border-amber-400/50 shadow-[0_0_35px_rgba(245,158,11,0.45)] transform rotate-x-[75deg]" />
           
           {/* 軌道星點亮點 */}
-          <div className="absolute inset-0 rounded-[100%] border border-cyan-300/30 transform rotate-x-[75deg] flex items-center justify-between px-3">
-            <span className="w-1.5 h-1.5 rounded-full bg-cyan-300 shadow-[0_0_8px_#22d3ee]" />
+          <div className="absolute inset-0 rounded-[100%] border border-yellow-300/30 transform rotate-x-[75deg] flex items-center justify-between px-3">
+            <span className="w-1.5 h-1.5 rounded-full bg-yellow-300 shadow-[0_0_8px_#fde047]" />
             <span className="w-1.5 h-1.5 rounded-full bg-cyan-300 shadow-[0_0_8px_#22d3ee]" />
           </div>
 
           {/* 內圈旋轉光帶 */}
-          <div className="absolute w-[80%] h-[80%] rounded-[100%] border border-cyan-400/25 border-dashed transform rotate-x-[75deg]" />
+          <div className="absolute w-[80%] h-[80%] rounded-[100%] border border-amber-400/30 border-dashed transform rotate-x-[75deg]" />
 
           {/* 地面中心環境漫反射暈光 */}
-          <div className="absolute w-[55%] h-[55%] rounded-[100%] bg-cyan-500/20 blur-xl transform rotate-x-[75deg]" />
+          <div className="absolute w-[55%] h-[55%] rounded-[100%] bg-gradient-to-r from-cyan-500/15 via-amber-500/25 to-cyan-500/15 blur-xl transform rotate-x-[75deg]" />
         </div>
 
         {/* 左側旋轉切換箭頭 */}
         <button
           type="button"
           onClick={handlePrev}
-          className="absolute left-2 sm:left-6 z-40 p-2 sm:p-3 text-cyan-400 hover:text-white transition-all cursor-pointer hover:scale-125 active:scale-95 drop-shadow-[0_0_12px_rgba(6,182,212,0.8)]"
+          className="absolute left-2 sm:left-6 z-40 p-2 sm:p-3 text-amber-300 hover:text-yellow-200 transition-all cursor-pointer hover:scale-125 active:scale-95 drop-shadow-[0_0_14px_rgba(245,158,11,0.9)]"
           aria-label="上一主題"
         >
           <ChevronLeft className="w-7 h-7 sm:w-9 sm:h-9" />
@@ -226,7 +223,7 @@ export function RevolvingDoorThemeCarousel({
         <button
           type="button"
           onClick={handleNext}
-          className="absolute right-2 sm:right-6 z-40 p-2 sm:p-3 text-cyan-400 hover:text-white transition-all cursor-pointer hover:scale-125 active:scale-95 drop-shadow-[0_0_12px_rgba(6,182,212,0.8)]"
+          className="absolute right-2 sm:right-6 z-40 p-2 sm:p-3 text-amber-300 hover:text-yellow-200 transition-all cursor-pointer hover:scale-125 active:scale-95 drop-shadow-[0_0_14px_rgba(245,158,11,0.9)]"
           aria-label="下一主題"
         >
           <ChevronRight className="w-7 h-7 sm:w-9 sm:h-9" />
@@ -320,8 +317,8 @@ export function RevolvingDoorThemeCarousel({
                   className={cn(
                     "w-full h-full relative rounded-2xl sm:rounded-3xl overflow-hidden flex flex-col justify-between p-3.5 sm:p-5 transition-all duration-300 group bg-slate-950",
                     isCenter
-                      ? "border-2 border-cyan-400 shadow-[0_0_35px_rgba(6,182,212,0.65),inset_0_0_20px_rgba(6,182,212,0.2)]"
-                      : "border border-cyan-500/30 hover:border-cyan-400/60 shadow-xl"
+                      ? "border-2 border-amber-400 shadow-[0_0_35px_rgba(245,158,11,0.65),inset_0_0_20px_rgba(245,158,11,0.25)]"
+                      : "border border-amber-500/30 hover:border-amber-400/60 shadow-xl"
                   )}
                 >
                   {/* 背景封面運動員圖 (High Impact Sports Background) */}
@@ -338,27 +335,32 @@ export function RevolvingDoorThemeCarousel({
                   />
 
                   {/* 賽博暗黑漸層遮罩 */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/35 to-black/30 pointer-events-none" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/30 pointer-events-none" />
                   
-                  {/* 中心卡額外青藍氛圍聚光 */}
+                  {/* 中心卡額外暖金氛圍聚光 */}
                   {isCenter && (
-                    <div className="absolute inset-0 bg-gradient-to-tr from-cyan-950/40 via-transparent to-cyan-500/10 pointer-events-none" />
+                    <div className="absolute inset-0 bg-gradient-to-tr from-amber-950/40 via-transparent to-amber-500/15 pointer-events-none" />
                   )}
 
-                  {/* 右上角數量徽章 (與 Mockup 一致：黑底玻璃 1款 / 2款) */}
+                  {/* 右上角數量徽章 (黑底金邊玻璃 1款 / 2款) */}
                   <div className="relative z-10 flex items-center justify-end w-full">
-                    <span className="text-[11px] sm:text-xs font-mono font-bold text-white bg-black/65 backdrop-blur-md px-2.5 py-0.5 rounded-full border border-white/20 shadow-md">
-                      {count !== undefined ? `${count}款` : '專區'}
+                    <span className="text-[11px] sm:text-xs font-mono font-black text-amber-300 bg-black/75 backdrop-blur-md px-2.5 py-0.5 rounded-full border border-amber-400/50 shadow-md">
+                      {count !== undefined ? `${count} 款開放中` : '專區'}
                     </span>
                   </div>
 
-                  {/* 底部卡牌名稱與「進入專區 >」 */}
-                  <div className="relative z-10 flex flex-col items-center justify-center text-center space-y-1">
-                    <h3 className="font-headline font-black text-xl sm:text-2xl md:text-3xl text-white tracking-widest drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]">
+                  {/* 底部卡牌名稱與「進入專區 >」金色標籤按鈕 */}
+                  <div className="relative z-10 flex flex-col items-center justify-center text-center space-y-1.5">
+                    <h3 className="font-headline font-black text-xl sm:text-2xl md:text-3xl text-white tracking-widest drop-shadow-[0_2px_12px_rgba(0,0,0,0.95)]">
                       {category.name}
                     </h3>
 
-                    <div className="text-xs sm:text-sm text-cyan-300 font-bold tracking-wide flex items-center justify-center gap-1 group-hover:text-cyan-200 transition-colors drop-shadow-[0_0_8px_rgba(6,182,212,0.6)]">
+                    <div className={cn(
+                      "text-xs sm:text-sm font-black tracking-wide flex items-center justify-center gap-1.5 transition-all drop-shadow-md rounded-full px-3.5 py-1",
+                      isCenter
+                        ? "bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-500 text-slate-950 shadow-[0_0_15px_rgba(245,158,11,0.5)] border border-yellow-200"
+                        : "bg-black/60 text-amber-300 border border-amber-500/40 group-hover:bg-amber-500/20"
+                    )}>
                       <span>進入專區</span>
                       <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                     </div>
@@ -370,14 +372,6 @@ export function RevolvingDoorThemeCarousel({
         </div>
       </div>
 
-      {/* 底部提示文字：與 Mockup 完全一致 (< 左右撥動 ── 旋轉門 >) */}
-      <div className="text-center mt-1 flex items-center justify-center">
-        <p className="text-xs sm:text-sm text-cyan-300/85 font-medium tracking-widest flex items-center gap-2 drop-shadow-[0_0_10px_rgba(6,182,212,0.6)]">
-          <span>&lt;</span>
-          <span>左右撥動 ── 旋轉門</span>
-          <span>&gt;</span>
-        </p>
-      </div>
     </div>
   );
 }

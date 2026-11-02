@@ -446,31 +446,35 @@ export function BettingGameDialog({
                                 <span className="text-[11px] text-slate-400 flex items-center gap-1">1 <DiamondIcon className="w-3 h-3" /> = 10 P+ 點</span>
                             </div>
                             
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-2 gap-2 sm:gap-3">
                                 <button 
                                     type="button"
                                     onClick={() => !isOutOfStock && !isSpinning && setPaymentCurrency('diamond')}
                                     disabled={isOutOfStock || isSpinning}
                                     className={cn(
-                                        "relative flex items-center justify-between p-3 rounded-2xl border transition-all duration-300 cursor-pointer text-left",
+                                        "relative flex items-center p-2 sm:p-3 rounded-2xl border transition-all duration-300 cursor-pointer text-left min-w-0 overflow-hidden",
                                         paymentCurrency === 'diamond' 
                                             ? 'bg-cyan-950/60 border-cyan-400 text-cyan-100 shadow-[0_0_25px_rgba(6,182,212,0.25)] ring-1 ring-cyan-400/40' 
                                              : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:bg-slate-800/80 hover:text-slate-200',
                                         (isOutOfStock || isSpinning) && 'opacity-50 cursor-not-allowed'
                                     )}
                                 >
-                                    <div className="flex items-center gap-2.5">
-                                        <div className={cn("p-2 rounded-xl border", paymentCurrency === 'diamond' ? 'bg-cyan-500/20 border-cyan-500/40 text-cyan-300' : 'bg-slate-800 border-slate-700 text-slate-400')}>
-                                            <DiamondIcon className="w-5 h-5" />
+                                    <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0 w-full pr-3.5 sm:pr-0">
+                                        <div className={cn("w-7 h-7 sm:w-9 sm:h-9 rounded-xl border flex items-center justify-center shrink-0", paymentCurrency === 'diamond' ? 'bg-cyan-500/20 border-cyan-500/40 text-cyan-300' : 'bg-slate-800 border-slate-700 text-slate-400')}>
+                                            <DiamondIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                         </div>
-                                        <div>
-                                            <div className="font-black text-sm text-slate-100">鑽石支付</div>
-                                            <div className="text-xs font-mono text-cyan-400 font-bold flex items-center gap-1">
-                                                {diamondUnitPrice.toLocaleString()} <DiamondIcon className="w-3 h-3" /> / 注
+                                        <div className="min-w-0 flex-1">
+                                            <div className="font-black text-xs sm:text-sm text-slate-100 whitespace-nowrap leading-tight">鑽石支付</div>
+                                            <div className="text-[10px] sm:text-xs font-mono text-cyan-400 font-bold flex items-center gap-0.5 sm:gap-1 whitespace-nowrap leading-tight mt-0.5">
+                                                <span>{diamondUnitPrice.toLocaleString()}</span>
+                                                <DiamondIcon className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" />
+                                                <span>/ 注</span>
                                             </div>
                                         </div>
                                     </div>
-                                    {paymentCurrency === 'diamond' && <CheckCircle2 className="w-5 h-5 text-cyan-400 shrink-0" />}
+                                    {paymentCurrency === 'diamond' && (
+                                        <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-cyan-400 absolute top-1.5 right-1.5 sm:top-2 sm:right-2 shrink-0 pointer-events-none" />
+                                    )}
                                 </button>
                                 
                                 <button 
@@ -478,23 +482,27 @@ export function BettingGameDialog({
                                     onClick={() => !isOutOfStock && !isSpinning && setPaymentCurrency('pplus')}
                                     disabled={isOutOfStock || isSpinning}
                                     className={cn(
-                                        "relative flex items-center justify-between p-3 rounded-2xl border transition-all duration-300 cursor-pointer text-left",
+                                        "relative flex items-center p-2 sm:p-3 rounded-2xl border transition-all duration-300 cursor-pointer text-left min-w-0 overflow-hidden",
                                         paymentCurrency === 'pplus' 
                                             ? 'bg-amber-950/60 border-amber-400 text-amber-100 shadow-[0_0_25px_rgba(245,158,11,0.25)] ring-1 ring-amber-400/40' 
                                             : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:bg-slate-800/80 hover:text-slate-200',
                                         (isOutOfStock || isSpinning) && 'opacity-50 cursor-not-allowed'
                                     )}
                                 >
-                                    <div className="flex items-center gap-2.5">
-                                        <div className={cn("p-2 rounded-xl border", paymentCurrency === 'pplus' ? 'bg-amber-500/20 border-amber-500/40 text-amber-300' : 'bg-slate-800 border-slate-700 text-slate-400')}>
-                                            <PPlusIcon className="w-5 h-5" />
+                                    <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0 w-full pr-3.5 sm:pr-0">
+                                        <div className={cn("w-7 h-7 sm:w-9 sm:h-9 rounded-xl border flex items-center justify-center shrink-0", paymentCurrency === 'pplus' ? 'bg-amber-500/20 border-amber-500/40 text-amber-300' : 'bg-slate-800 border-slate-700 text-slate-400')}>
+                                            <PPlusIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                         </div>
-                                        <div>
-                                            <div className="font-black text-sm text-slate-100">P+ 點數</div>
-                                            <div className="text-xs font-mono text-amber-400 font-bold">{(diamondUnitPrice * 10).toLocaleString()} P+ / 注</div>
+                                        <div className="min-w-0 flex-1">
+                                            <div className="font-black text-xs sm:text-sm text-slate-100 whitespace-nowrap leading-tight">P+ 點數</div>
+                                            <div className="text-[10px] sm:text-xs font-mono text-amber-400 font-bold whitespace-nowrap leading-tight mt-0.5">
+                                                {(diamondUnitPrice * 10).toLocaleString()} P+ / 注
+                                            </div>
                                         </div>
                                     </div>
-                                    {paymentCurrency === 'pplus' && <CheckCircle2 className="w-5 h-5 text-amber-400 shrink-0" />}
+                                    {paymentCurrency === 'pplus' && (
+                                        <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 absolute top-1.5 right-1.5 sm:top-2 sm:right-2 shrink-0 pointer-events-none" />
+                                    )}
                                 </button>
                             </div>
                         </div>
@@ -506,15 +514,15 @@ export function BettingGameDialog({
                                     <span className="bg-cyan-500 text-slate-950 font-black px-2.5 py-0.5 text-[10px] rounded-md tracking-wider">
                                         STEP 2
                                     </span>
-                                    <span className="text-cyan-300 font-bold text-sm">挑選幸運號碼 (1~10)</span>
+                                    <span className="text-cyan-300 font-bold text-xs sm:text-sm">挑選幸運號碼 (1~10)</span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <span className="text-xs font-bold text-slate-300 bg-slate-900/90 px-3 py-1 rounded-lg border border-slate-800 flex items-center gap-1.5">
-                                        <span>已選 <strong className="text-cyan-400 font-mono text-sm">{selectedNumbers.length}</strong> 注</span>
+                                    <span className="text-[11px] sm:text-xs font-bold text-slate-300 bg-slate-900/90 px-2.5 sm:px-3 py-1 rounded-lg border border-slate-800 flex items-center gap-1 sm:gap-1.5">
+                                        <span>已選 <strong className="text-cyan-400 font-mono text-xs sm:text-sm">{selectedNumbers.length}</strong> 注</span>
                                         <span className="text-slate-600">|</span>
                                         <span className="flex items-center gap-1">
                                             <Percent className="w-3 h-3 text-emerald-400" />
-                                            勝率 <strong className={cn("font-mono text-sm", winProbability >= 50 ? "text-amber-300" : "text-emerald-400")}>{winProbability}%</strong>
+                                            勝率 <strong className={cn("font-mono text-xs sm:text-sm", winProbability >= 50 ? "text-amber-300" : "text-emerald-400")}>{winProbability}%</strong>
                                         </span>
                                     </span>
                                 </div>
@@ -525,7 +533,7 @@ export function BettingGameDialog({
                                 <div 
                                     className="h-full bg-gradient-to-r from-rose-500 via-pink-400 to-amber-400 rounded-full transition-all duration-300 shadow-[0_0_10px_rgba(244,63,94,0.5)]" 
                                     style={{ width: `${winProbability}%` }}
-                                />
+                                    />
                             </div>
 
                             {/* 快捷按鈕 */}
@@ -535,20 +543,20 @@ export function BettingGameDialog({
                                     onClick={() => handleQuickSelect('all')}
                                     disabled={isOutOfStock || isSpinning}
                                     className={cn(
-                                        "px-2.5 py-1 rounded-lg text-xs font-black transition-all flex items-center gap-1 border cursor-pointer",
+                                        "px-2 sm:px-2.5 py-1 rounded-lg text-[11px] sm:text-xs font-black transition-all flex items-center gap-1 border cursor-pointer whitespace-nowrap",
                                         selectedNumbers.length === 10 
                                             ? "bg-amber-500 border-amber-400 text-slate-950 shadow-[0_0_15px_rgba(245,158,11,0.5)]" 
                                             : "bg-amber-500/15 hover:bg-amber-500/25 border-amber-500/30 text-amber-300"
                                     )}
                                 >
-                                    <Trophy className="w-3 h-3 text-amber-400" />
-                                    100% 包牌必得
+                                    <Trophy className="w-3 h-3 text-amber-400 shrink-0" />
+                                    <span>100% 包牌必得</span>
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => handleQuickSelect('odd')}
                                     disabled={isOutOfStock || isSpinning}
-                                    className="px-2.5 py-1 rounded-lg bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-bold transition-colors cursor-pointer"
+                                    className="px-2 sm:px-2.5 py-1 rounded-lg bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-300 text-[11px] sm:text-xs font-bold transition-colors cursor-pointer whitespace-nowrap"
                                 >
                                     單數 (5注/50%)
                                 </button>
@@ -556,7 +564,7 @@ export function BettingGameDialog({
                                     type="button"
                                     onClick={() => handleQuickSelect('even')}
                                     disabled={isOutOfStock || isSpinning}
-                                    className="px-2.5 py-1 rounded-lg bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-bold transition-colors cursor-pointer"
+                                    className="px-2 sm:px-2.5 py-1 rounded-lg bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-300 text-[11px] sm:text-xs font-bold transition-colors cursor-pointer whitespace-nowrap"
                                 >
                                     雙數 (5注/50%)
                                 </button>
@@ -564,20 +572,20 @@ export function BettingGameDialog({
                                     type="button"
                                     onClick={() => handleQuickSelect('random')}
                                     disabled={isOutOfStock || isSpinning}
-                                    className="px-2.5 py-1 rounded-lg bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer"
+                                    className="px-2 sm:px-2.5 py-1 rounded-lg bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-300 text-[11px] sm:text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap"
                                 >
-                                    <Dices className="w-3 h-3 text-rose-400" />
-                                    隨機 1 注
+                                    <Dices className="w-3 h-3 text-rose-400 shrink-0" />
+                                    <span>隨機 1 注</span>
                                 </button>
                                 {selectedNumbers.length > 0 && (
                                     <button
                                         type="button"
                                         onClick={() => handleQuickSelect('clear')}
                                         disabled={isOutOfStock || isSpinning}
-                                        className="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 text-xs font-bold transition-colors ml-auto flex items-center gap-1 cursor-pointer"
+                                        className="px-2 sm:px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 text-[11px] sm:text-xs font-bold transition-colors ml-auto flex items-center gap-1 cursor-pointer whitespace-nowrap"
                                     >
-                                        <RotateCcw className="w-3 h-3" />
-                                        清空
+                                        <RotateCcw className="w-3 h-3 shrink-0" />
+                                        <span>清空</span>
                                     </button>
                                 )}
                             </div>

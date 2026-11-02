@@ -13,29 +13,29 @@ export function CelebrationVFX({ type }: CelebrationVFXProps) {
   const isNone = type === 'none';
   const isLegendary = type === 'legendary';
   const colorClass = isLegendary ? 'text-amber-300' : 'text-cyan-400';
-  const starCount = isLegendary ? 56 : 28;
+  const starCount = isLegendary ? 22 : 12;
 
-  // Memoize particle bursts
+  // Memoize particle bursts (GPU-friendly count)
   const stars = useMemo(() => {
     if (isNone) return [];
     return Array.from({ length: starCount }).map((_, i) => ({
       id: i,
-      rotation: i * (360 / starCount) + (Math.random() * 15 - 7.5),
-      translation: 90 + Math.random() * (isLegendary ? 520 : 280),
-      delay: Math.random() * 0.5,
-      size: isLegendary ? (i % 3 === 0 ? "w-6 h-6 sm:w-8 sm:h-8" : "w-4 h-4 sm:w-5 sm:h-5") : "w-3 h-3 sm:w-4 sm:h-4",
+      rotation: i * (360 / starCount) + (Math.random() * 12 - 6),
+      translation: 80 + Math.random() * (isLegendary ? 380 : 220),
+      delay: Math.random() * 0.35,
+      size: isLegendary ? (i % 3 === 0 ? "w-5 h-5 sm:w-6 sm:h-6" : "w-3.5 h-3.5 sm:w-4 sm:h-4") : "w-3 h-3 sm:w-3.5 sm:h-3.5",
     }));
   }, [starCount, isLegendary, isNone]);
 
   // Floating ambient embers
   const embers = useMemo(() => {
     if (!isLegendary) return [];
-    return Array.from({ length: 24 }).map((_, i) => ({
+    return Array.from({ length: 12 }).map((_, i) => ({
       id: i,
       left: Math.random() * 100,
-      size: 4 + Math.random() * 6,
-      duration: 2.5 + Math.random() * 2,
-      delay: Math.random() * 1.5,
+      size: 4 + Math.random() * 4,
+      duration: 2.0 + Math.random() * 1.5,
+      delay: Math.random() * 1.0,
     }));
   }, [isLegendary]);
 
@@ -168,7 +168,7 @@ export function CelebrationVFX({ type }: CelebrationVFXProps) {
       {stars.map((star) => (
         <div 
           key={star.id} 
-          className={cn("absolute animate-firework z-30", colorClass)}
+          className={cn("absolute animate-firework z-30 pointer-events-none will-change-transform transform-gpu", colorClass)}
           style={{ 
             left: '50%', 
             top: '50%',
@@ -177,7 +177,7 @@ export function CelebrationVFX({ type }: CelebrationVFXProps) {
             opacity: 0
           }}
         >
-          <Star className={cn(star.size, "fill-current drop-shadow-[0_0_14px_currentColor]")} />
+          <Star className={cn(star.size, "fill-current opacity-90")} />
         </div>
       ))}
 
@@ -202,7 +202,7 @@ export function CelebrationVFX({ type }: CelebrationVFXProps) {
             repeat: Infinity,
             ease: "easeOut"
           }}
-          className="absolute rounded-full bg-gradient-to-t from-amber-400 to-yellow-200 shadow-[0_0_12px_rgba(251,191,36,0.9)] z-20 pointer-events-none"
+          className="absolute rounded-full bg-gradient-to-t from-amber-400 to-yellow-200 z-20 pointer-events-none will-change-transform transform-gpu"
           style={{
             width: ember.size,
             height: ember.size,

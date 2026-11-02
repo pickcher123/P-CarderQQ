@@ -383,43 +383,43 @@ export default function BettingCategoryPage() {
                 </div>
 
                 {/* Category Hero Banner */}
-                <div className="relative rounded-3xl p-6 md:p-8 overflow-hidden border border-rose-500/25 bg-gradient-to-b from-[#180a14]/90 via-[#0e070d]/95 to-[#060408] shadow-2xl backdrop-blur-xl">
+                <div className="relative rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 overflow-hidden border border-rose-500/25 bg-gradient-to-b from-[#180a14]/90 via-[#0e070d]/95 to-[#060408] shadow-2xl backdrop-blur-xl">
                     <div className="absolute inset-0 bg-[linear-gradient(to_right,#f43f5e10_1px,transparent_1px),linear-gradient(to_bottom,#f43f5e10_1px,transparent_1px)] bg-[size:28px_28px] opacity-40 pointer-events-none" />
                     
-                    <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
-                        <div className="space-y-3 text-center md:text-left">
+                    <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6">
+                        <div className="space-y-1.5 sm:space-y-3 text-center md:text-left w-full md:w-auto">
                             <h1 className="font-headline text-2xl sm:text-4xl md:text-5xl font-black text-white tracking-tight">
                                 {currentCategoryInfo?.name || decodedCategory}
                             </h1>
-                            <p className="text-xs sm:text-sm text-slate-300">
+                            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
                                 專屬卡池精選卡片 • 每張卡片均支援 1/10 幸運拉霸與直接收藏
                             </p>
                         </div>
 
-                        {/* Pool Dashboard Stats */}
-                        <div className="flex items-center gap-3 w-full md:w-auto">
-                            <div className="flex-1 md:flex-none p-4 rounded-2xl bg-white/5 border border-white/10 text-center min-w-[110px]">
-                                <span className="text-[10px] font-bold text-slate-400 uppercase">總卡量</span>
-                                <p className="text-xl sm:text-2xl font-black font-headline text-white mt-0.5">{totalPoolCount}</p>
+                        {/* Pool Dashboard Stats (3等分自適應網格，徹底解決手機切邊跑版) */}
+                        <div className="grid grid-cols-3 gap-2 sm:gap-3 w-full md:w-auto shrink-0">
+                            <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-white/5 border border-white/10 text-center flex flex-col justify-center">
+                                <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider">總卡量</span>
+                                <p className="text-base sm:text-2xl font-black font-headline text-white mt-0.5 leading-none">{totalPoolCount}</p>
                             </div>
-                            <div className="flex-1 md:flex-none p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-center min-w-[110px]">
-                                <span className="text-[10px] font-bold text-rose-400 uppercase">剩餘可拼</span>
-                                <p className="text-xl sm:text-2xl font-black font-headline text-rose-300 mt-0.5">{availableCount}</p>
+                            <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-rose-500/10 border border-rose-500/30 text-center flex flex-col justify-center shadow-inner">
+                                <span className="text-[9px] sm:text-[10px] font-bold text-rose-400 uppercase tracking-wider">剩餘可拼</span>
+                                <p className="text-base sm:text-2xl font-black font-headline text-rose-300 mt-0.5 leading-none">{availableCount}</p>
                             </div>
-                            <div className="flex-1 md:flex-none p-4 rounded-2xl bg-white/5 border border-white/10 text-center min-w-[110px]">
-                                <span className="text-[10px] font-bold text-slate-400 uppercase">已抽出</span>
-                                <p className="text-xl sm:text-2xl font-black font-headline text-destructive mt-0.5">{soldCount}</p>
+                            <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-white/5 border border-white/10 text-center flex flex-col justify-center">
+                                <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider">已抽出</span>
+                                <p className="text-base sm:text-2xl font-black font-headline text-rose-400 mt-0.5 leading-none">{soldCount}</p>
                             </div>
                         </div>
                     </div>
 
                     {/* Progress Bar */}
-                    <div className="mt-6 pt-4 border-t border-white/10">
+                    <div className="mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-white/10">
                         <div className="flex items-center justify-between text-xs text-slate-400 mb-1.5">
-                            <span>卡池抽出進度</span>
-                            <span className="font-mono text-rose-400 font-bold">{progressPercent}%</span>
+                            <span className="text-[11px] sm:text-xs">卡池抽出進度</span>
+                            <span className="font-mono text-rose-400 font-bold text-[11px] sm:text-xs">{progressPercent}%</span>
                         </div>
-                        <div className="w-full h-2.5 rounded-full bg-white/10 overflow-hidden">
+                        <div className="w-full h-2 sm:h-2.5 rounded-full bg-white/10 overflow-hidden">
                             <div 
                                 className="h-full bg-gradient-to-r from-rose-500 via-pink-400 to-amber-400 rounded-full transition-all duration-500 shadow-[0_0_12px_#f43f5e]" 
                                 style={{ width: `${progressPercent}%` }} 

@@ -902,46 +902,44 @@ export default function OpenPackPage() {
             {step !== 'done' ? (
                 <div className="flex-1 flex flex-col items-center justify-center w-full relative z-[20] min-h-0 py-1">
                     <motion.div 
-                        initial={{ y: -600, opacity: 0, scale: 0.3, rotate: -30, filter: 'blur(30px)' }}
+                        initial={{ y: -300, opacity: 0, scale: 0.6, rotate: -8 }}
                         animate={isLegendaryRevealed ? { 
-                            y: [0, -18, 6, -3, 0], 
-                            scale: [1, 1.18, 0.95, 1.07, 1], 
-                            rotate: [0, -4, 4, -2, 2, 0], 
-                            filter: 'blur(0px)', 
+                            y: [0, -12, 4, 0], 
+                            scale: [1, 1.1, 0.98, 1], 
+                            rotate: [0, -2, 2, 0], 
                             opacity: 1 
-                        } : { y: 0, opacity: 1, scale: 1, rotate: 0, filter: 'blur(0px)' }}
+                        } : { y: 0, opacity: 1, scale: 1, rotate: 0 }}
                         onAnimationComplete={() => {
                             if (topRarityCelebration !== 'none' && landingVFX === 'none') {
                                 setLandingVFX(topRarityCelebration);
-                                setTimeout(() => setLandingVFX('none'), 2000);
+                                setTimeout(() => setLandingVFX('none'), 1800);
                             }
                         }}
                         transition={isLegendaryRevealed ? {
-                            duration: 0.85,
+                            duration: 0.55,
                             ease: "easeOut",
-                            times: [0, 0.2, 0.45, 0.75, 1]
                         } : { 
                             type: 'spring', 
-                            stiffness: 140, 
-                            damping: 12,
-                            mass: 1.2
+                            stiffness: 200, 
+                            damping: 18,
+                            mass: 0.9
                         }}
-                        className="flex flex-col items-center w-[min(65vw,215px)] sm:w-[235px] relative"
+                        className="flex flex-col items-center w-[min(65vw,215px)] sm:w-[235px] relative transform-gpu will-change-transform"
                     >
-                        {/* 傳奇卡片身後向外擴散的雙重黃金衝擊波 (Concentric Shockwaves) */}
+                        {/* 傳奇卡片身後向外擴散的雙重黃金衝擊波 */}
                         {isLegendaryRevealed && (
                             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[-1]">
                                 <motion.div
-                                    initial={{ scale: 0.7, opacity: 1 }}
-                                    animate={{ scale: [0.7, 2.3, 2.8], opacity: [1, 0.7, 0] }}
-                                    transition={{ duration: 1.2, ease: "easeOut", repeat: Infinity, repeatDelay: 0.5 }}
-                                    className="absolute w-full h-full rounded-[2.2rem] border-2 border-amber-300 shadow-[0_0_50px_rgba(251,191,36,0.9)]"
+                                    initial={{ scale: 0.8, opacity: 0.9 }}
+                                    animate={{ scale: [0.8, 2.2], opacity: [0.9, 0] }}
+                                    transition={{ duration: 1.1, ease: "easeOut", repeat: Infinity, repeatDelay: 0.4 }}
+                                    className="absolute w-full h-full rounded-[2.2rem] border-2 border-amber-300 shadow-[0_0_30px_rgba(251,191,36,0.6)] transform-gpu will-change-transform"
                                 />
                                 <motion.div
-                                    initial={{ scale: 0.7, opacity: 1 }}
-                                    animate={{ scale: [0.7, 2.8, 3.5], opacity: [1, 0.5, 0] }}
-                                    transition={{ duration: 1.5, ease: "easeOut", delay: 0.25, repeat: Infinity, repeatDelay: 0.5 }}
-                                    className="absolute w-full h-full rounded-[2.8rem] border border-yellow-200 shadow-[0_0_70px_rgba(245,158,11,0.7)]"
+                                    initial={{ scale: 0.8, opacity: 0.7 }}
+                                    animate={{ scale: [0.8, 2.7], opacity: [0.7, 0] }}
+                                    transition={{ duration: 1.3, ease: "easeOut", delay: 0.2, repeat: Infinity, repeatDelay: 0.4 }}
+                                    className="absolute w-full h-full rounded-[2.8rem] border border-yellow-200 shadow-[0_0_40px_rgba(245,158,11,0.5)] transform-gpu will-change-transform"
                                 />
                             </div>
                         )}

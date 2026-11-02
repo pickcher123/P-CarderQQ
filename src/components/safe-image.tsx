@@ -71,6 +71,8 @@ export function SafeImage({
 
   const safePriority = Boolean(priority && isPreloadable);
 
+  const shouldUnoptimize = props.unoptimized ?? (typeof effectiveSrc === 'string' && (effectiveSrc.startsWith('/api/') || effectiveSrc.startsWith('data:')));
+
   return (
     <>
       {/* 載入中骨架屏佔位微光 */}
@@ -85,6 +87,7 @@ export function SafeImage({
 
       <Image
         {...props}
+        unoptimized={shouldUnoptimize}
         src={effectiveSrc}
         alt={alt || 'Card Image'}
         referrerPolicy="no-referrer"

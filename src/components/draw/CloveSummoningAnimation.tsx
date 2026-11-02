@@ -78,22 +78,22 @@ export function CloveSummoningAnimation({
     };
   }, [isLegendary, isRare]);
 
-  // 觸發撕開動效（柔和、順暢推進）
+  // 觸發撕開動效（極速順暢流暢推進，零卡頓）
   const executeOpen = () => {
     if (stage !== 'idle' || hasTapped) return;
     setHasTapped(true);
     setSwipeProgress(100);
     setStage('tearing');
 
-    // 階段一：鋁箔封口自然撕裂掀開 (600ms)
+    // 階段一：鋁箔封口自然撕裂掀開 (280ms 快速俐落)
     setTimeout(() => {
       setStage('burst');
-    }, 600);
+    }, 280);
 
-    // 階段二：內部卡片柔和升起，銜接進入開牌畫面 (1800ms)
+    // 階段二：內部卡片柔和升起，迅速進入開牌畫面 (700ms 總時長)
     setTimeout(() => {
       onAnimationComplete();
-    }, 1800);
+    }, 700);
   };
 
   // 觸控滑動支援
@@ -165,9 +165,9 @@ export function CloveSummoningAnimation({
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
-      className="fixed inset-0 z-[120] flex flex-col items-center justify-between select-none overflow-hidden touch-none cursor-pointer py-4 sm:py-6"
+      className="fixed inset-0 z-[120] flex flex-col items-center justify-between select-none overflow-hidden touch-none cursor-pointer py-4 sm:py-6 transform-gpu"
     >
-      {/* 1. 溫潤展示背景 (去除生硬科技網格，呈現高級展示台質感) */}
+      {/* 1. 溫潤展示背景 */}
       <div className="absolute inset-0 -z-50 pointer-events-none">
         <SafeImage
           src="/draw_background.png"
@@ -178,18 +178,18 @@ export function CloveSummoningAnimation({
         />
       </div>
 
-      {/* 柔光暗場壓暗遮罩 */}
-      <div className="absolute inset-0 bg-slate-950/65 backdrop-blur-[3px] -z-40 pointer-events-none" />
+      {/* 柔光暗場壓暗遮罩 (不使用昂貴的 backdrop-blur，直接使用純色半透明) */}
+      <div className="absolute inset-0 bg-slate-950/80 -z-40 pointer-events-none" />
 
-      {/* 柔和聚光燈環境光暈 (柔美擴散) */}
+      {/* 柔和聚光燈環境光暈 */}
       <div
-        className="absolute inset-0 transition-opacity duration-1000 pointer-events-none -z-30"
+        className="absolute inset-0 pointer-events-none -z-30 opacity-70"
         style={{ background: tierConfig.ambientGradient }}
       />
 
       {/* 頂部極簡卡池資訊與跳過按鈕 */}
       <div className="w-full max-w-3xl px-4 flex items-center justify-between z-30 shrink-0">
-        <div className="flex flex-wrap items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/70 border border-white/10 backdrop-blur-md shadow-sm">
+        <div className="flex flex-wrap items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/85 border border-white/10 shadow-sm">
           <Layers className="w-3.5 h-3.5 text-slate-300" />
           <span className="text-xs font-semibold text-slate-200 truncate max-w-[150px] sm:max-w-[220px]">
             {poolName}
@@ -208,52 +208,50 @@ export function CloveSummoningAnimation({
           onClick={handleSkip}
           variant="ghost"
           size="sm"
-          className="h-8 px-3.5 rounded-full bg-slate-900/60 hover:bg-white/15 border border-white/10 text-slate-200 hover:text-white font-semibold text-xs tracking-wider gap-1.5 backdrop-blur-md active:scale-95 transition-all"
+          className="h-8 px-3.5 rounded-full bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-200 hover:text-white font-black text-xs tracking-wider gap-1.5 active:scale-95 transition-all shadow-md"
         >
-          <FastForward className="w-3 h-3 text-slate-300" />
-          <span>跳過</span>
+          <FastForward className="w-3.5 h-3.5 text-amber-300" />
+          <span>⚡ 跳過動畫</span>
         </Button>
       </div>
 
       {/* 中心舞台：實體鋁箔卡包與撕包動效 */}
       <div className="relative flex-1 flex flex-col items-center justify-center z-20 w-full max-w-lg px-4 min-h-0">
         
-        <div className="relative w-[280px] h-[430px] sm:w-[320px] sm:h-[490px] flex items-center justify-center">
+        <div className="relative w-[280px] h-[430px] sm:w-[320px] sm:h-[490px] flex items-center justify-center transform-gpu">
           
-          {/* 卡包背後柔美微光暈 */}
+          {/* 卡包背後柔光 (硬體加速) */}
           <div 
-            className="absolute w-[260px] h-[390px] sm:w-[300px] sm:h-[450px] rounded-3xl blur-2xl opacity-40 pointer-events-none transition-all duration-700"
+            className="absolute w-[260px] h-[390px] sm:w-[300px] sm:h-[450px] rounded-3xl opacity-40 pointer-events-none transition-transform duration-300 will-change-transform transform-gpu"
             style={{ 
               background: tierConfig.glowColor,
-              transform: stage === 'burst' ? 'scale(1.4)' : 'scale(1)',
-              opacity: stage === 'burst' ? 0.85 : 0.4 
+              transform: stage === 'burst' ? 'scale(1.25)' : 'scale(1)',
+              opacity: stage === 'burst' ? 0.7 : 0.35 
             }}
           />
 
-          {/* 溫潤金粉星塵飄散 (柔和緩慢升騰) */}
+          {/* 輕量金粉飄散 (減少至 6 個，極速流暢無重繪負擔) */}
           <div className="absolute inset-0 pointer-events-none overflow-visible">
-            {[...Array(isLegendary ? 16 : 10)].map((_, i) => (
+            {[...Array(6)].map((_, i) => (
               <motion.div
                 key={i}
-                className="absolute rounded-full pointer-events-none bg-white"
+                className="absolute rounded-full pointer-events-none bg-amber-200 will-change-transform transform-gpu"
                 style={{
-                  width: (i % 3 === 0 ? 3 : 2) + 'px',
-                  height: (i % 3 === 0 ? 3 : 2) + 'px',
-                  left: `${15 + (i * 19) % 70}%`,
-                  top: `${20 + (i * 23) % 65}%`,
-                  boxShadow: `0 0 8px ${isLegendary ? '#fbbf24' : '#93c5fd'}`,
-                  opacity: 0.6,
+                  width: '3px',
+                  height: '3px',
+                  left: `${20 + i * 12}%`,
+                  top: `${25 + (i * 15) % 50}%`,
+                  opacity: 0.7,
                 }}
                 animate={{
-                  y: [0, -45 - (i % 4) * 10],
-                  opacity: [0.2, 0.85, 0],
-                  scale: [0.8, 1.3, 0.4],
+                  y: [0, -35],
+                  opacity: [0.3, 0.9, 0],
                 }}
                 transition={{
-                  duration: 2.2 + (i % 3) * 0.6,
+                  duration: 1.8,
                   repeat: Infinity,
-                  ease: 'easeInOut',
-                  delay: (i * 0.18),
+                  ease: 'easeOut',
+                  delay: i * 0.25,
                 }}
               />
             ))}
@@ -262,7 +260,7 @@ export function CloveSummoningAnimation({
           {/* 實體鋁箔卡包容器 (AUTHENTIC FOIL BOOSTER PACK - 標準比例 1:1.6) */}
           <div className="relative z-10 w-[240px] h-[380px] sm:w-[270px] sm:h-[430px] flex flex-col items-center drop-shadow-[0_25px_50px_rgba(0,0,0,0.85)]">
             
-            {/* 1. 卡包頂部封口：帶有真實鋸齒壓紋 (Crimped Seal Top) */}
+            {/* 1. 卡包頂部封口 (Crimped Seal Top) */}
             <motion.div
               initial={{ y: 0, x: 0, rotate: 0, opacity: 1 }}
               animate={
@@ -282,22 +280,12 @@ export function CloveSummoningAnimation({
                   : { opacity: 0, y: -70, x: 120 }
               }
               transition={{
-                duration: stage === 'idle' ? 2.8 : 0.6,
+                duration: stage === 'idle' ? 2.5 : 0.35,
                 repeat: stage === 'idle' ? Infinity : 0,
                 ease: [0.22, 1, 0.36, 1],
               }}
-              className="relative w-full h-14 sm:h-16 rounded-t-xl bg-gradient-to-b from-slate-700 via-slate-800 to-slate-900 border-t border-x border-white/25 shadow-lg overflow-hidden flex flex-col justify-between p-2.5 z-20 shrink-0"
+              className="relative w-full h-14 sm:h-16 rounded-t-xl bg-gradient-to-b from-slate-700 via-slate-800 to-slate-900 border-t border-x border-white/25 shadow-lg overflow-hidden flex flex-col justify-between p-2.5 z-20 shrink-0 will-change-transform transform-gpu"
             >
-              {/* 頂部鋸齒紋路 (Zigzag Foil Edge) */}
-              <div className="absolute top-0 inset-x-0 h-1 flex justify-between overflow-hidden opacity-60">
-                {[...Array(32)].map((_, i) => (
-                  <div key={i} className="w-1.5 h-1 border-t border-r border-slate-400 -rotate-45 shrink-0" />
-                ))}
-              </div>
-
-              {/* 柔和鋁箔流光 */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent -translate-x-full animate-[shimmer_3.5s_infinite] pointer-events-none" />
-
               {/* 頂部精簡資訊 */}
               <div className="flex items-center justify-between w-full px-1 pt-1">
                 <span className="text-[9px] sm:text-[10px] font-bold tracking-wider text-slate-300 uppercase">
@@ -308,7 +296,7 @@ export function CloveSummoningAnimation({
                 </span>
               </div>
 
-              {/* 典雅撕紙虛線引導 (Soft Perforation Line) */}
+              {/* 典雅撕紙虛線引導 */}
               <div className="relative flex items-center justify-between border-t border-dashed border-amber-300/40 pt-1.5 mt-0.5">
                 <div className="flex items-center gap-1.5">
                   <Scissors className="w-3 h-3 text-amber-300" />
@@ -340,10 +328,10 @@ export function CloveSummoningAnimation({
                     }
                   : { opacity: 0 }
               }
-              transition={{ duration: stage === 'burst' ? 0.75 : 0.5, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute top-2 w-[190px] sm:w-[215px] aspect-[2.5/3.5] z-10 pointer-events-none flex items-center justify-center"
+              transition={{ duration: stage === 'burst' ? 0.35 : 0.3, ease: [0.16, 1, 0.3, 1] }}
+              className="absolute top-2 w-[190px] sm:w-[215px] aspect-[2.5/3.5] z-10 pointer-events-none flex items-center justify-center will-change-transform transform-gpu"
             >
-              {/* 精緻深色卡背：呈現品牌高雅質感 */}
+              {/* 精緻深色卡背 */}
               <div className="relative p-1.5 bg-slate-950/95 border-2 border-slate-700 rounded-2xl shadow-2xl overflow-hidden w-full aspect-[2.5/3.5] flex items-center justify-center">
                 <div className="relative w-full h-full bg-slate-900 rounded-xl border border-cyan-500/30 flex flex-col items-center justify-center pointer-events-none select-none overflow-hidden p-3">
                   <div className="absolute inset-0 bg-gradient-to-b from-cyan-950/40 via-slate-900 to-slate-950" />
@@ -358,14 +346,11 @@ export function CloveSummoningAnimation({
                       PREMIUM COLLECTIBLES
                     </span>
                   </div>
-
-                  {/* 柔和流光 */}
-                  <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent -translate-x-full animate-[shimmer_2s_infinite] pointer-events-none" />
                 </div>
               </div>
             </motion.div>
 
-            {/* 3. 卡包本體 (REALISTIC METALLIC FOIL PACK BODY) */}
+            {/* 3. 卡包本體 */}
             <motion.div
               animate={
                 stage === 'idle'
@@ -376,17 +361,16 @@ export function CloveSummoningAnimation({
                       scale: [1, 1.01, 1],
                     }
                   : { 
-                      scale: [1, 1.08, 0.95],
-                      opacity: [1, 0.6, 0],
-                      filter: 'brightness(1.5)',
+                      scale: [1, 1.05, 0.95],
+                      opacity: [1, 0.5, 0],
                     }
               }
               transition={{
-                duration: stage === 'idle' ? 2.8 : 0.5,
+                duration: stage === 'idle' ? 2.5 : 0.35,
                 repeat: stage === 'idle' ? Infinity : 0,
                 ease: 'easeInOut',
               }}
-              className="relative w-full flex-1 rounded-b-xl bg-gradient-to-b from-slate-800 via-slate-900 to-slate-950 border-b border-x border-white/25 shadow-2xl overflow-hidden flex flex-col items-center justify-between p-4 z-10 -mt-0.5"
+              className="relative w-full flex-1 rounded-b-xl bg-gradient-to-b from-slate-800 via-slate-900 to-slate-950 border-b border-x border-white/25 shadow-2xl overflow-hidden flex flex-col items-center justify-between p-4 z-10 -mt-0.5 will-change-transform transform-gpu"
             >
               {/* 鋁箔金屬細膩微反光 (Soft Satin Sheen) */}
               <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent -translate-x-full animate-[shimmer_3.5s_infinite] pointer-events-none" />

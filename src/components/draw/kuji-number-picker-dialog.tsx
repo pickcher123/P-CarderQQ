@@ -162,22 +162,15 @@ export function KujiNumberPickerDialog({
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <DialogTitle className={cn(
-                  "text-base sm:text-lg md:text-xl font-black tracking-wide text-transparent bg-clip-text",
-                  isTrialMode 
-                    ? "bg-gradient-to-r from-purple-300 via-fuchsia-300 to-indigo-300"
-                    : "bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-500"
-                )}>
-                  {isTrialMode ? '一番賞番號選號盤 🧪 試抽模擬' : '一番賞番號選號盤'}
+                <DialogTitle className="text-base sm:text-lg md:text-xl font-black tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-500">
+                  一番賞番號選號盤
                 </DialogTitle>
                 <Badge variant="outline" className="border-amber-500/50 bg-amber-500/15 text-amber-300 text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full whitespace-nowrap shadow-sm">
                   剩餘 {availableTickets.length} / {tickets.length} 籤
                 </Badge>
               </div>
               <DialogDescription className="text-xs text-slate-400 mt-1 line-clamp-1 sm:line-clamp-none">
-                {isTrialMode 
-                  ? '自由挑選專屬幸運號碼，模擬測試該號碼開出的獎品（純模擬不扣點數）！'
-                  : '挑選專屬幸運號碼，親手揭曉卡池大賞！'}
+                挑選專屬幸運號碼，親手揭曉卡池大賞！
               </DialogDescription>
             </div>
           </div>
@@ -352,43 +345,13 @@ export function KujiNumberPickerDialog({
                 </Button>
               </div>
             ) : (
-              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:flex-1">
-                {/* 免費試抽按鈕 */}
-                <Button
-                  variant="outline"
-                  onClick={() => onConfirmDraw(selectedNumbers, true)}
-                  disabled={selectedNumbers.length === 0 || isDrawing}
-                  className={cn(
-                    'h-11 px-3 rounded-xl font-bold text-xs border-purple-500/40 bg-purple-950/40 text-purple-300 hover:bg-purple-900/60 hover:text-purple-200 transition-all flex items-center justify-center gap-1 shrink-0',
-                    selectedNumbers.length === 0 && 'opacity-40 cursor-not-allowed'
-                  )}
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-                  <span>試手氣模擬</span>
-                </Button>
-
-                {/* 挑完號碼先鎖定並確認 */}
-                {onSelectNumbersOnly && (
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      if (selectedNumbers.length === 0 || isDrawing) return;
-                      onSelectNumbersOnly(selectedNumbers);
-                      onClose();
-                    }}
-                    disabled={selectedNumbers.length === 0 || isDrawing}
-                    className="flex-1 h-11 rounded-xl font-bold text-xs border-amber-500/50 bg-amber-950/30 text-amber-300 hover:bg-amber-900/50 hover:text-amber-200 transition-all"
-                  >
-                    ✅ 鎖定號碼
-                  </Button>
-                )}
-
+              <div className="flex items-center gap-2 w-full sm:flex-1">
                 {/* 直接確認開獎 */}
                 <Button
                   onClick={handleConfirm}
                   disabled={selectedNumbers.length === 0 || !hasEnoughBalance || isDrawing}
                   className={cn(
-                    'flex-[2] h-11 rounded-xl font-black text-xs sm:text-sm tracking-wide shadow-xl flex items-center justify-center gap-1.5',
+                    'flex-1 h-11 rounded-xl font-black text-xs sm:text-sm tracking-wide shadow-xl flex items-center justify-center gap-1.5',
                     selectedNumbers.length > 0 && hasEnoughBalance
                       ? 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 hover:brightness-110 shadow-amber-500/25 cursor-pointer'
                       : 'bg-slate-800 text-slate-500 cursor-not-allowed'

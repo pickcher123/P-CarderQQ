@@ -476,13 +476,6 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
         setIsFreeTicketConfirmOpen(true);
     };
 
-    const handleTrialDraw = () => {
-        setIsDrawing(true);
-        setTimeout(() => {
-            router.push(`/draw/open?poolId=${pool.id}&draws=1&trial=true`);
-        }, 300);
-    };
-
     return (
         <div className="relative font-sans text-slate-100">
             <PromoRedeemModal 
@@ -584,87 +577,155 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
             )}
             
             <div className={cn(
-                "relative w-full bg-[#0a0c10]/95 backdrop-blur-2xl border rounded-2xl sm:rounded-3xl shadow-2xl hover:shadow-[0_20px_50px_rgba(0,0,0,0.95),0_0_35px_rgba(245,158,11,0.3)] overflow-hidden p-3 sm:p-5 flex flex-col justify-between transition-all duration-300 group hover:-translate-y-0.5",
-                isLastChance 
-                    ? "border-amber-500/80 shadow-[0_0_35px_rgba(245,158,11,0.35)] ring-1 ring-amber-400/50" 
-                    : "border-amber-500/30 hover:border-amber-400/60 ring-1 ring-amber-400/10"
+                "relative w-full flex flex-col justify-between transition-all duration-300 group hover:-translate-y-1 select-none",
+                "shadow-[0_18px_45px_rgba(0,0,0,0.85),0_0_25px_rgba(245,158,11,0.2)] hover:shadow-[0_24px_55px_rgba(0,0,0,0.95),0_0_35px_rgba(245,158,11,0.35)] rounded-2xl sm:rounded-3xl border border-amber-400/40 hover:border-amber-400/75"
             )}>
-                {/* 🌟 頂級曜石黑鈦金屬與科技動態背景系統 (動態電路、全像掃描光、呼吸光暈與浮游金粒) */}
-                <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl sm:rounded-3xl z-0">
-                    {/* 底層：曜石黑鈦金屬與母板底圖 */}
-                    <SafeImage 
-                        src="/images/card_pool_bg.jpg" 
-                        alt="card-pool-bg" 
-                        fill 
-                        sizes="(max-width: 640px) 100vw, 420px" 
-                        className="object-cover opacity-75 scale-100 transition-transform duration-700 group-hover:scale-105" 
-                    />
-
-                    {/* 微米級科技細線網格 (Cyber Matrix Grid) */}
-                    <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(245,158,11,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(245,158,11,0.06)_1px,transparent_1px)] bg-[size:32px_32px] opacity-60" />
-
-                    {/* 動態呼吸光球 1：頂部暖金/琥珀聚光暈 */}
-                    <div className={cn(
-                        "absolute -top-16 left-1/4 w-72 h-72 rounded-full blur-3xl pointer-events-none transition-all duration-1000",
-                        isLastChance 
-                            ? "bg-gradient-to-br from-rose-500/25 via-amber-500/30 to-transparent animate-pulse" 
-                            : "bg-gradient-to-br from-amber-400/20 via-yellow-500/15 to-transparent animate-orb-1"
-                    )} />
-
-                    {/* 動態呼吸光球 2：右下方微霓虹科技青藍冷光 */}
-                    <div className="absolute -bottom-16 -right-12 w-64 h-64 rounded-full bg-gradient-to-tl from-cyan-500/15 via-blue-500/10 to-transparent blur-3xl pointer-events-none animate-orb-2" />
-
-                    {/* 科技動態線路光束 SVG (Circuit Traces with dynamic pulse) */}
-                    <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-40" xmlns="http://www.w3.org/2000/svg">
-                        <defs>
-                            <linearGradient id="cyberTraceGold" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.8" />
-                                <stop offset="50%" stopColor="#fef08a" stopOpacity="1" />
-                                <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.6" />
-                            </linearGradient>
-                        </defs>
-                        <path 
-                            d="M 10 30 L 70 30 L 90 50 L 160 50" 
-                            stroke="url(#cyberTraceGold)" 
-                            strokeWidth="1.2" 
-                            fill="none" 
-                            className="animate-circuit-dash" 
-                        />
-                        <path 
-                            d="M 280 20 L 320 60 L 320 140" 
-                            stroke="url(#cyberTraceGold)" 
-                            strokeWidth="1" 
-                            fill="none" 
-                            className="animate-circuit-dash" 
-                            style={{ animationDelay: '3s' }}
-                        />
-                        <circle cx="160" cy="50" r="2.5" fill="#fde047" className="animate-pulse" />
-                        <circle cx="320" cy="140" r="2" fill="#22d3ee" className="animate-pulse" />
-                    </svg>
-
-                    {/* 全像雷射掃描掃光線 (Holographic Laser Sweep) */}
-                    <div className="absolute inset-x-0 h-16 pointer-events-none animate-cyber-scan bg-gradient-to-b from-transparent via-amber-400/10 to-transparent blur-[1px]" />
-
-                    {/* 懸浮金燦動態粒子 (Floating Stardust Particles) */}
-                    <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                        <span className="absolute bottom-10 left-[18%] w-1.5 h-1.5 rounded-full bg-amber-300 blur-[0.4px] animate-particle-1" />
-                        <span className="absolute bottom-16 right-[22%] w-1.2 h-1.2 rounded-full bg-cyan-300 blur-[0.4px] animate-particle-2" />
-                        <span className="absolute bottom-6 left-[62%] w-1 h-1 rounded-full bg-yellow-200 blur-[0.3px] animate-particle-3" />
-                        <span className="absolute top-28 left-[35%] w-1 h-1 rounded-full bg-amber-400 blur-[0.5px] animate-particle-2" />
+                {/* ================= 1. 卡包頂部熱壓封口 (TOP SOFT CRIMPED FOIL SEAL) ================= */}
+                <div className="relative w-full shrink-0 z-20 pointer-events-none rounded-t-2xl sm:rounded-t-3xl overflow-hidden">
+                    {/* 頂部柔和微波熱壓切邊 (Soft Scalloped / Wavy Foil Crimp) */}
+                    <div className="w-full h-2 overflow-hidden flex items-center justify-between opacity-80 pointer-events-none bg-slate-950">
+                        <svg className="w-full h-2 block text-slate-900" viewBox="0 0 400 6" preserveAspectRatio="none">
+                            <path 
+                                d="M0,6 Q5,1 10,6 Q15,1 20,6 Q25,1 30,6 Q35,1 40,6 Q45,1 50,6 Q55,1 60,6 Q65,1 70,6 Q75,1 80,6 Q85,1 90,6 Q95,1 100,6 Q105,1 110,6 Q115,1 120,6 Q125,1 130,6 Q135,1 140,6 Q145,1 150,6 Q155,1 160,6 Q165,1 170,6 Q175,1 180,6 Q185,1 190,6 Q195,1 200,6 Q205,1 210,6 Q215,1 220,6 Q225,1 230,6 Q235,1 240,6 Q245,1 250,6 Q255,1 260,6 Q265,1 270,6 Q275,1 280,6 Q285,1 290,6 Q295,1 300,6 Q305,1 310,6 Q315,1 320,6 Q325,1 330,6 Q335,1 340,6 Q345,1 350,6 Q355,1 360,6 Q365,1 370,6 Q375,1 380,6 Q385,1 390,6 Q395,1 400,6 Z" 
+                                fill="currentColor" 
+                                stroke="#f59e0b" 
+                                strokeWidth="0.8" 
+                                strokeOpacity="0.6"
+                            />
+                        </svg>
                     </div>
 
-                    {/* 微光暗角與深邃光影融合遮罩 (確保前景文字、卡牌與按鈕 100% 銳利清晰) */}
-                    <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/75" />
-                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(245,158,11,0.18),transparent_70%)]" />
+                    {/* 頂部鋁箔熱壓密封板身 (圓潤柔和倒角與金曜漸層) */}
+                    <div className={cn(
+                        "relative w-full px-3.5 py-2.5 bg-gradient-to-b from-[#1a1c26] via-[#10131d] to-[#0a0c14] border-x border-t border-amber-400/40 flex items-center justify-between",
+                        isLastChance && "border-amber-400/60 bg-gradient-to-b from-amber-950/70 via-[#10131d] to-[#0a0c14]"
+                    )}>
+                        {/* 垂直細密柔和熱壓封口紋理 */}
+                        <div className="absolute inset-0 bg-[repeating-linear-gradient(90deg,rgba(245,158,11,0.06)_0px,rgba(245,158,11,0.06)_1px,transparent_1px,transparent_5px)] pointer-events-none opacity-70" />
+
+                        {/* 左側微型柔和撕口提示 */}
+                        <div className="relative z-10 flex items-center gap-1 text-[8px] font-bold text-amber-300/80 tracking-wider">
+                            <span className="w-1 h-1 rounded-full bg-amber-400/70" />
+                            <span className="hidden sm:inline">PULL</span>
+                        </div>
+
+                        {/* 中央柔和圓角歐規吊掛槽 (Soft Pill Slot) */}
+                        <div className="relative z-10 flex items-center justify-center">
+                            <div className="w-14 sm:w-16 h-2.5 rounded-full bg-slate-950/90 border border-white/20 shadow-[inset_0_1px_2px_rgba(0,0,0,0.8),0_0_8px_rgba(245,158,11,0.15)] flex items-center justify-center">
+                                <div className="w-2.5 h-1 rounded-t-full border-t border-white/20 bg-black/50 -mt-0.5" />
+                            </div>
+                        </div>
+
+                        {/* 右側微型柔和撕口提示 */}
+                        <div className="relative z-10 flex items-center gap-1 text-[8px] font-bold text-amber-300/80 tracking-wider">
+                            <span className="hidden sm:inline">OPEN</span>
+                            <span className="w-1 h-1 rounded-full bg-amber-400/70" />
+                        </div>
+
+                        {/* 頂部密封條下緣柔和微折線 */}
+                        <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-amber-400/50 to-transparent" />
+                    </div>
                 </div>
 
-                {/* 頂部微光裝飾線 (衝刺時轉為燃燒金紅流光) */}
+                {/* ================= 2. 卡包袋身主體 (BOOSTER PACK MAIN BODY) ================= */}
                 <div className={cn(
-                    "absolute top-0 left-0 w-full h-[2.5px] z-10 transition-all duration-500",
+                    "relative w-full bg-[#0a0c10]/95 backdrop-blur-2xl border-x border-amber-400/25 p-3 sm:p-5 flex flex-col justify-between transition-all duration-300 overflow-hidden shadow-xl",
                     isLastChance 
-                        ? "bg-gradient-to-r from-amber-500 via-rose-500 to-amber-500 animate-pulse" 
-                        : "bg-gradient-to-r from-transparent via-amber-400/80 to-transparent"
-                )}></div>
+                        ? "border-amber-500/70 shadow-[0_0_35px_rgba(245,158,11,0.3)]" 
+                        : "hover:border-amber-400/50"
+                )}>
+                    {/* 卡包左右兩側溫潤柔和高光 (Soft Metallic Cushion Highlights) */}
+                    <div className="absolute inset-y-0 left-0 w-1.5 bg-gradient-to-r from-white/10 via-amber-300/15 to-transparent pointer-events-none z-10" />
+                    <div className="absolute inset-y-0 right-0 w-1.5 bg-gradient-to-l from-white/10 via-amber-300/15 to-transparent pointer-events-none z-10" />
+
+                    {/* 鋁箔斜向反光流光 (Holographic Foil Sheen on Hover) */}
+                    <div className="absolute -inset-full bg-gradient-to-tr from-transparent via-white/10 to-transparent rotate-12 pointer-events-none -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out z-10" />
+
+                    {/* 🌟 卡包一體化背景系統 (深黑曜石拉絲鋁箔、菱形光柵折射、卡片專屬聚光台與卡包立體摺痕) */}
+                    <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+                        {/* 1. 底層：深黑曜石拉絲金屬鋁箔基底 (Obsidian Brushed Foil Base) */}
+                        <div className="absolute inset-0 bg-gradient-to-b from-[#080a10] via-[#0d121c] to-[#07090f]" />
+
+                        {/* 2. 實體卡包微菱格鋁箔折射紋理 (Prism Diamond Foil Micro-Pattern) */}
+                        <div 
+                            className="absolute inset-0 opacity-[0.14] group-hover:opacity-[0.22] transition-opacity duration-700"
+                            style={{
+                                backgroundImage: `
+                                    linear-gradient(45deg, rgba(245, 158, 11, 0.25) 25%, transparent 25%),
+                                    linear-gradient(-45deg, rgba(245, 158, 11, 0.25) 25%, transparent 25%),
+                                    linear-gradient(45deg, transparent 75%, rgba(245, 158, 11, 0.25) 75%),
+                                    linear-gradient(-45deg, transparent 75%, rgba(245, 158, 11, 0.25) 75%)
+                                `,
+                                backgroundSize: '16px 16px',
+                                backgroundPosition: '0 0, 0 8px, 8px -8px, -8px 0px'
+                            }}
+                        />
+
+                        {/* 3. 卡包中央大獎卡專屬展台聚光光錐 (Center Spotlight Flare) */}
+                        <div 
+                            className={cn(
+                                "absolute top-[18%] left-1/2 -translate-x-1/2 w-[280px] sm:w-[320px] h-[280px] rounded-full blur-2xl pointer-events-none transition-all duration-700",
+                                isLastChance 
+                                    ? "bg-[radial-gradient(circle,rgba(244,63,94,0.3)_0%,rgba(245,158,11,0.25)_40%,transparent_70%)] animate-pulse" 
+                                    : "bg-[radial-gradient(circle,rgba(245,158,11,0.22)_0%,rgba(251,191,36,0.12)_35%,rgba(6,182,212,0.06)_55%,transparent_72%)]"
+                            )} 
+                        />
+
+                        {/* 3.5. 🌟 背景 P+Carder 典藏卡包立體文字 LOGO 浮水印 (使用者指定紅圈位置：中下段橫跨卡片腰部，精緻縮小) */}
+                        <div className="absolute top-[45%] -translate-y-1/2 inset-x-0 flex flex-col items-center justify-center pointer-events-none select-none z-[1] opacity-[0.20] group-hover:opacity-[0.30] transition-all duration-700">
+                            <span className="font-headline font-black text-xl xs:text-2xl sm:text-[28px] tracking-[0.2em] text-transparent bg-clip-text bg-gradient-to-b from-amber-100 via-amber-300 to-amber-600 drop-shadow-[0_2px_10px_rgba(245,158,11,0.5)] italic">
+                                P+CARDER
+                            </span>
+                            <span className="font-mono text-[6.5px] sm:text-[7.5px] font-black tracking-[0.35em] text-amber-200/90 uppercase -mt-0.5">
+                                AUTHENTIC TRADING CARDS
+                            </span>
+                        </div>
+
+                        {/* 4. 卡包幾何防偽線條與金屬折角飾線 (Booster Pack Prismatic Geometric Lines) */}
+                        <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-30 group-hover:opacity-45 transition-opacity duration-500" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <linearGradient id="foilGoldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.8" />
+                                    <stop offset="50%" stopColor="#fde047" stopOpacity="1" />
+                                    <stop offset="100%" stopColor="#d97706" stopOpacity="0.5" />
+                                </linearGradient>
+                            </defs>
+                            {/* 左上方幾何折角紋路 */}
+                            <path d="M 0 45 L 35 45 L 55 25 L 90 25" stroke="url(#foilGoldGradient)" strokeWidth="0.8" fill="none" />
+                            {/* 右上方幾何折角紋路 */}
+                            <path d="M 380 45 L 345 45 L 325 25 L 290 25" stroke="url(#foilGoldGradient)" strokeWidth="0.8" fill="none" />
+                            {/* 中央展台兩側防偽輔助線 */}
+                            <line x1="20" y1="180" x2="60" y2="180" stroke="url(#foilGoldGradient)" strokeWidth="0.6" strokeDasharray="2 3" />
+                            <line x1="340" y1="180" x2="380" y2="180" stroke="url(#foilGoldGradient)" strokeWidth="0.6" strokeDasharray="2 3" />
+                            {/* 幾何微光飾點 */}
+                            <circle cx="55" cy="25" r="1.5" fill="#fde047" />
+                            <circle cx="325" cy="25" r="1.5" fill="#fde047" />
+                        </svg>
+
+                        {/* 5. 頂部熱壓封口交界陰影 (Top Seam Shadow: 營造真實卡包接縫立體感) */}
+                        <div className="absolute top-0 inset-x-0 h-4 bg-gradient-to-b from-black/80 to-transparent pointer-events-none" />
+
+                        {/* 6. 底部熱壓封口交界陰影 (Bottom Seam Shadow) */}
+                        <div className="absolute bottom-0 inset-x-0 h-4 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
+
+                        {/* 7. 卡包典藏金粉火花 (Floating Gold Stardust) */}
+                        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                            <span className="absolute bottom-12 left-[15%] w-1.2 h-1.2 rounded-full bg-amber-300 blur-[0.3px] animate-particle-1" />
+                            <span className="absolute bottom-20 right-[18%] w-1 h-1 rounded-full bg-yellow-200 blur-[0.2px] animate-particle-2" />
+                            <span className="absolute top-24 left-[30%] w-1 h-1 rounded-full bg-amber-400 blur-[0.3px] animate-particle-3" />
+                        </div>
+
+                        {/* 8. 柔和微暗角，確保中央卡片與文字高對比度 */}
+                        <div className="absolute inset-0 bg-radial-gradient from-transparent via-black/25 to-black/60 pointer-events-none" />
+                    </div>
+
+                    {/* 頂部微光裝飾線 (衝刺時轉為燃燒金紅流光) */}
+                    <div className={cn(
+                        "absolute top-0 left-0 w-full h-[2px] z-10 transition-all duration-500",
+                        isLastChance 
+                            ? "bg-gradient-to-r from-amber-500 via-rose-500 to-amber-500 animate-pulse" 
+                            : "bg-gradient-to-r from-transparent via-amber-400/70 to-transparent"
+                    )}></div>
 
                 {/* 內部核心內容 (提升至 z-10 確保文字與互動按鈕清晰) */}
                 <div className="relative z-10 flex flex-col justify-between flex-1 w-full">
@@ -914,9 +975,9 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                     );
                 })()}
 
-                        {/* 📊 賞別微統計與剩餘進度條（點擊傳說/稀有/普通即可查看該賞別剩下什麼卡） */}
-                        <div className="mb-2 bg-gradient-to-b from-slate-950/90 via-black/90 to-slate-950/90 backdrop-blur-xl rounded-xl border border-amber-500/20 p-2 sm:p-2.5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.06),0_4px_20px_rgba(0,0,0,0.5)]">
-                            {/* 3 欄可點擊賞別數據 */}
+                        {/* 📊 賞別微統計與剩餘進度條（黑金卡包金屬質感，點擊傳說/稀有/普通即可查看該賞別剩下什麼卡） */}
+                        <div className="mb-2 bg-gradient-to-b from-slate-950/95 via-black/95 to-slate-950/95 backdrop-blur-xl rounded-xl border border-amber-500/30 p-2 sm:p-2.5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.08),0_4px_20px_rgba(0,0,0,0.6)]">
+                            {/* 3 欄可點擊賞別數據 (傳說金 / 稀有紫 / 普通銀) */}
                             <div className="grid grid-cols-3 gap-1.5 text-center font-mono">
                                 {RARITIES.map((r) => {
                                     const detail = rarityDetails[r];
@@ -933,17 +994,20 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                             }}
                                             title={`點擊查看${rarityStyles[r].label}剩餘卡牌`}
                                             className={cn(
-                                                "flex items-center justify-center gap-1.5 py-1.5 px-1 rounded-lg border text-xs transition-all cursor-pointer group/rarity active:scale-95 select-none",
+                                                "flex items-center justify-center gap-1.5 py-1.5 px-1 rounded-lg border text-xs transition-all cursor-pointer group/rarity active:scale-95 select-none relative overflow-hidden",
                                                 isSoldOut
                                                     ? "bg-slate-950/60 border-slate-900 text-slate-600 opacity-60 hover:opacity-100 hover:border-slate-700"
                                                     : r === 'legendary' 
-                                                    ? "bg-amber-500/[0.12] border-amber-500/40 text-amber-300 font-black shadow-[0_0_10px_rgba(245,158,11,0.15)] hover:border-amber-400 hover:bg-amber-500/20 hover:scale-[1.02]" 
+                                                    ? "bg-gradient-to-b from-amber-500/20 via-amber-950/35 to-black/80 border-amber-400/60 text-amber-300 font-black shadow-[0_0_12px_rgba(245,158,11,0.2)] hover:border-amber-300 hover:bg-amber-500/30 hover:scale-[1.02]" 
                                                     : r === 'rare' 
-                                                    ? "bg-purple-500/[0.12] border-purple-500/40 text-purple-300 font-bold hover:border-purple-400 hover:bg-purple-500/20 hover:scale-[1.02]" 
-                                                    : "bg-cyan-500/[0.12] border-cyan-500/40 text-cyan-300 font-bold hover:border-cyan-400 hover:bg-cyan-500/20 hover:scale-[1.02]"
+                                                    ? "bg-gradient-to-b from-purple-500/20 via-purple-950/35 to-black/80 border-purple-400/50 text-purple-200 font-bold shadow-[0_0_12px_rgba(168,85,247,0.18)] hover:border-purple-300 hover:bg-purple-500/30 hover:scale-[1.02]" 
+                                                    : "bg-gradient-to-b from-slate-700/20 via-slate-900/40 to-black/80 border-slate-600/60 text-slate-200 font-bold hover:border-slate-400 hover:bg-slate-800/40 hover:scale-[1.02]"
                                             )}
                                         >
-                                            <RarityIcon className="w-3 h-3 shrink-0 group-hover/rarity:scale-110 transition-transform" />
+                                            <RarityIcon className={cn(
+                                                "w-3 h-3 shrink-0 group-hover/rarity:scale-110 transition-transform",
+                                                r === 'common' && "text-slate-300"
+                                            )} />
                                             <span className="text-[10px] font-black">{rarityStyles[r].label.replace('賞', '')}</span>
                                             <span className="font-black text-xs">{detail.count}</span>
                                         </button>
@@ -951,30 +1015,35 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                 })}
                             </div>
 
-                    {/* 剩餘進度條 */}
-                    <div className="mt-2 pt-2 border-t border-amber-500/10">
+                    {/* 剩餘進度條 (香檳金卡包流光風格) */}
+                    <div className="mt-2 pt-2 border-t border-amber-500/15">
                         <div className="flex justify-between items-center text-[10px] mb-1.5 font-mono">
-                            <span className={cn("font-bold flex items-center gap-1", isLastChance ? "text-amber-400" : "text-slate-300")}>
-                                <span className={cn("w-1.5 h-1.5 rounded-full", isLastChance ? "bg-rose-500 animate-ping" : "bg-cyan-400")} />
+                            <span className={cn("font-bold flex items-center gap-1", isLastChance ? "text-amber-400" : "text-amber-200/90")}>
+                                <span className={cn("w-1.5 h-1.5 rounded-full", isLastChance ? "bg-rose-500 animate-ping" : "bg-amber-400 animate-pulse")} />
                                 {isLastChance ? '🔥 搶包中' : '剩餘包數'}
                             </span>
                             <div className="flex items-center gap-1">
-                                <span className={cn("font-black", isLastChance ? "text-amber-300" : "text-white")}>
+                                <span className={cn("font-black", isLastChance ? "text-amber-300" : "text-amber-100")}>
                                     {pool.remainingPacks}
                                 </span>
                                 <span className="text-slate-500">/{pool.totalPacks}</span>
-                                <span className={cn("font-black ml-1 px-1 py-0.2 rounded text-[9px]", isLastChance ? "bg-rose-950/80 text-rose-300 border border-rose-500/30" : "bg-cyan-950/80 text-cyan-300 border border-cyan-500/30")}>
+                                <span className={cn(
+                                    "font-black ml-1 px-1.5 py-0.2 rounded text-[9px]", 
+                                    isLastChance 
+                                        ? "bg-rose-950/80 text-rose-300 border border-rose-500/40" 
+                                        : "bg-amber-950/80 text-amber-300 border border-amber-500/40 shadow-sm"
+                                )}>
                                     {remainingPercent}%
                                 </span>
                             </div>
                         </div>
-                        <div className="h-2 w-full rounded-full overflow-hidden bg-black/90 border border-slate-800/90 p-[0.5px]">
+                        <div className="h-2 w-full rounded-full overflow-hidden bg-black/95 border border-amber-500/25 p-[0.5px]">
                             <div 
                                 className={cn(
                                     "h-full rounded-full transition-all duration-500 shadow-sm",
                                     isLastChance 
                                         ? "bg-gradient-to-r from-amber-400 via-rose-500 to-red-600 animate-pulse" 
-                                        : "bg-gradient-to-r from-amber-400 via-cyan-400 to-blue-500"
+                                        : "bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-300 shadow-[0_0_8px_rgba(245,158,11,0.5)]"
                                 )}
                                 style={{ width: `${remainingPercent}%` }}
                             />
@@ -1121,22 +1190,25 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                     key={drawCount}
                                     disabled={!canDraw || isDrawing}
                                     className={cn(
-                                        "relative h-auto min-h-[46px] sm:min-h-[50px] py-1.5 px-1 flex flex-col items-center justify-center rounded-xl transition-all active:scale-95 overflow-hidden border group cursor-pointer shadow-sm select-none",
+                                        "relative h-auto min-h-[48px] sm:min-h-[52px] py-1.5 px-1 flex flex-col items-center justify-center rounded-xl transition-all active:scale-95 overflow-hidden border group cursor-pointer shadow-md select-none",
                                         isHighlighted
                                             ? opt.isAllIn
-                                                ? "bg-gradient-to-b from-amber-950/60 via-slate-950 to-slate-950 border-amber-500/80 hover:border-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.2)]"
-                                                : "bg-gradient-to-b from-cyan-950/50 via-slate-950 to-slate-950 border-cyan-500/70 hover:border-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.2)]"
-                                            : "bg-slate-950/80 border-slate-800 hover:border-amber-500/40 hover:bg-slate-900"
+                                                ? "bg-gradient-to-b from-amber-500/35 via-amber-950/60 to-slate-950 border-2 border-amber-400 hover:border-yellow-300 shadow-[0_0_20px_rgba(245,158,11,0.4)] hover:brightness-110"
+                                                : "bg-gradient-to-b from-amber-500/25 via-amber-950/40 to-slate-950 border-2 border-amber-400 hover:border-amber-300 shadow-[0_0_18px_rgba(245,158,11,0.35)] hover:brightness-110"
+                                            : "bg-gradient-to-b from-slate-900/90 via-slate-950 to-black border border-amber-500/35 hover:border-amber-400/70 hover:bg-slate-900/90 shadow-sm"
                                     )}
                                     onClick={() => handleDraw(drawCount)}
                                 >
-                                    {/* 優惠/全包極簡角標 (緊湊嵌合右上角，平滑倒角不破壞按鈕輪廓) */}
+                                    {/* 按鈕頂部金屬倒角高光線 */}
+                                    <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-amber-300/40 to-transparent pointer-events-none" />
+
+                                    {/* 優惠/全包極簡角標 (緊湊嵌合右上角，金屬黑金倒角) */}
                                     {opt.isAllIn ? (
                                         <span className="absolute top-0 right-0 bg-gradient-to-r from-amber-400 to-rose-500 text-slate-950 font-black text-[8px] px-1.5 py-0.5 rounded-bl-md leading-none z-10 shadow-sm animate-pulse">
                                             全包
                                         </span>
                                     ) : savings > 0 ? (
-                                        <span className="absolute top-0 right-0 bg-amber-400 text-slate-950 font-black text-[8px] px-1.5 py-0.5 rounded-bl-md leading-none z-10 shadow-sm">
+                                        <span className="absolute top-0 right-0 bg-gradient-to-r from-amber-400 to-yellow-300 text-slate-950 font-black text-[8px] px-1.5 py-0.5 rounded-bl-md leading-none z-10 shadow-sm">
                                             省{savings >= 10000 ? `${(savings / 1000).toFixed(0)}k` : savings}
                                         </span>
                                     ) : null}
@@ -1145,19 +1217,19 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                     <span className={cn(
                                         "font-black text-xs sm:text-sm tracking-tight leading-tight",
                                         isHighlighted 
-                                            ? opt.isAllIn ? "text-amber-200" : "text-cyan-200" 
-                                            : "text-slate-100 group-hover:text-white"
+                                            ? "text-amber-200 drop-shadow-[0_1px_4px_rgba(245,158,11,0.4)]" 
+                                            : "text-slate-100 group-hover:text-amber-100 transition-colors"
                                     )}>
                                         {label}
                                     </span>
                                     
                                     {/* 價格標示 */}
                                     <span className="flex items-center justify-center text-white font-mono font-black text-xs sm:text-sm tracking-tight mt-0.5 leading-none">
-                                        <span>{price.toLocaleString()}</span>
+                                        <span className={cn(isHighlighted && "text-amber-100")}>{price.toLocaleString()}</span>
                                         {isPPoint ? (
                                             <PPlusIcon className="w-3.5 h-3.5 ml-0.5 shrink-0 text-amber-400" />
                                         ) : (
-                                            <DiamondIcon className={cn("w-3.5 h-3.5 ml-0.5 shrink-0", isHighlighted ? (opt.isAllIn ? "text-amber-300" : "text-cyan-300") : "text-cyan-400")} />
+                                            <DiamondIcon className="w-3.5 h-3.5 ml-0.5 shrink-0 text-amber-300" />
                                         )}
                                     </span>
                                 </Button>
@@ -1166,17 +1238,58 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                     </div>
                     </div>
                 )}
+                </div>
+                </div>
 
-                {/* 模擬試抽（極簡微型次要按鈕） */}
-                <Button 
-                    variant="ghost" 
-                    className="w-full mt-1.5 h-6 sm:h-7 text-[10px] sm:text-[11px] font-medium text-slate-400 hover:text-amber-300 hover:bg-slate-900/60 flex items-center justify-center gap-1 transition-all cursor-pointer"
-                    onClick={handleTrialDraw}
-                    disabled={isDrawing}
-                >
-                    <Sparkles className="w-3 h-3 text-cyan-400/80" />
-                    <span>模擬試抽</span>
-                </Button>
+                {/* ================= 3. 卡包底部熱壓封口 (BOTTOM SOFT CRIMPED FOIL SEAL) ================= */}
+                <div className="relative w-full shrink-0 z-20 pointer-events-none mt-auto rounded-b-2xl sm:rounded-b-3xl overflow-hidden">
+                    {/* 底部熱壓密封板身 (圓潤柔和倒角) */}
+                    <div className={cn(
+                        "relative w-full px-3.5 py-1.5 bg-gradient-to-t from-slate-800/90 via-slate-850/95 to-slate-900 border-x border-b border-amber-400/30 flex items-center justify-between",
+                        isLastChance && "border-amber-400/50 bg-gradient-to-t from-amber-950/60 via-slate-850 to-slate-900"
+                    )}>
+                        {/* 頂緣金屬熱壓摺線 */}
+                        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-amber-400/50 to-transparent" />
+
+                        {/* 垂直細密柔和熱壓封口紋理 */}
+                        <div className="absolute inset-0 bg-[repeating-linear-gradient(90deg,rgba(255,255,255,0.04)_0px,rgba(255,255,255,0.04)_1px,transparent_1px,transparent_5px)] pointer-events-none opacity-50" />
+
+                        {/* 左側微型條碼 (Micro Barcode Lines) */}
+                        <div className="relative z-10 flex items-center gap-[1.5px] opacity-50">
+                            <span className="w-[1px] h-2.5 bg-slate-300" />
+                            <span className="w-[2px] h-2.5 bg-slate-300" />
+                            <span className="w-[1px] h-2.5 bg-slate-300" />
+                            <span className="w-[2.5px] h-2.5 bg-slate-300" />
+                            <span className="w-[1px] h-2.5 bg-slate-300" />
+                            <span className="w-[1.5px] h-2.5 bg-slate-300" />
+                            <span className="w-[1px] h-2.5 bg-slate-300" />
+                        </div>
+
+                        {/* 中央卡包正版官方認證印記 (Authentic Booster Stamp) */}
+                        <div className="relative z-10 text-center">
+                            <span className="text-[7.5px] sm:text-[8px] font-bold text-amber-300/80 tracking-[0.25em] uppercase font-mono drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+                                ✦ P+ CARDER OFFICIAL PACK ✦
+                            </span>
+                        </div>
+
+                        {/* 右側防偽標識 */}
+                        <div className="relative z-10 font-mono text-[7px] text-slate-400/80 font-bold tracking-wider">
+                            VERIFIED
+                        </div>
+                    </div>
+
+                    {/* 底部柔和微波熱壓切邊 (Soft Scalloped Wavy Foil Edge) */}
+                    <div className="w-full h-2 overflow-hidden flex items-center justify-between opacity-60 pointer-events-none bg-slate-950/80 -mt-px">
+                        <svg className="w-full h-2 block text-slate-800" viewBox="0 0 400 6" preserveAspectRatio="none">
+                            <path 
+                                d="M0,0 Q5,5 10,0 Q15,5 20,0 Q25,5 30,0 Q35,5 40,0 Q45,5 50,0 Q55,5 60,0 Q65,5 70,0 Q75,5 80,0 Q85,5 90,0 Q95,5 100,0 Q105,5 110,0 Q115,5 120,0 Q125,5 130,0 Q135,5 140,0 Q145,5 150,0 Q155,5 160,0 Q165,5 170,0 Q175,5 180,0 Q185,5 190,0 Q195,5 200,0 Q205,5 210,0 Q215,5 220,0 Q225,5 230,0 Q235,5 240,0 Q245,5 250,0 Q255,5 260,0 Q265,5 270,0 Q275,5 280,0 Q285,5 290,0 Q295,5 300,0 Q305,5 310,0 Q315,5 320,0 Q325,5 330,0 Q335,5 340,0 Q345,5 350,0 Q355,5 360,0 Q365,5 370,0 Q375,5 380,0 Q385,5 390,0 Q395,5 400,0 Z" 
+                                fill="currentColor" 
+                                stroke="#f59e0b" 
+                                strokeWidth="0.6" 
+                                strokeOpacity="0.4"
+                            />
+                        </svg>
+                    </div>
                 </div>
             </div>
             
