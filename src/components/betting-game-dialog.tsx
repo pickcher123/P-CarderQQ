@@ -30,6 +30,7 @@ import type { UserProfile } from '@/types/user-profile';
 import type { LevelBenefit } from '@/types/system';
 import { RefinedPoints } from '@/components/ui/refined-points';
 import Link from 'next/link';
+import { createProvablyFairRound, type ProvablyFairData } from '@/lib/provably-fair';
 
 interface CardData {
     id: string;
@@ -93,6 +94,7 @@ export function BettingGameDialog({
     const [finalResult, setFinalResult] = useState<{ spot: number; won: boolean } | null>(null);
     const [wheelStrip, setWheelStrip] = useState<number[]>([]);
     const [spinTranslateY, setSpinTranslateY] = useState(0);
+    const [currentRoundFairness, setCurrentRoundFairness] = useState<ProvablyFairData | null>(null);
 
     const { user } = useUser();
     const firestore = useFirestore();
@@ -220,6 +222,19 @@ export function BettingGameDialog({
                 }
                 transaction.update(userRef, updateObj);
 
+                // 產生 Provably Fair 密碼學參數
+                const pfData = await createProvablyFairRound({
+                    clientSeed: `${user.uid.substring(0, 8)}_${Date.now()}`,
+                    outcomeType: 'bet'
+                });
+                const fullFairness: ProvablyFairData = {
+                    ...pfData,
+                    winningSpot,
+                    isWin: didWin,
+                    luckyNumber: (winningSpot - 1) * 1000 + 500,
+                    luckyPercent: Number((((winningSpot - 1) * 10) + 5).toFixed(2))
+                };
+
                 // 寫入交易紀錄
                 const winText = didWin ? '中獎' : '未中獎';
                 const detailString = `【拼卡】${card.name} (${paymentCurrency === 'diamond' ? '鑽石' : 'P+'}) 下注:[${selectedNumbers.join(',')}] 開出:[${winningSpot}] 結果:${winText}`;
@@ -232,6 +247,7 @@ export function BettingGameDialog({
                     currency: paymentCurrency,
                     amount: -totalPrice,
                     details: detailString,
+                    provablyFair: fullFairness,
                     transactionDate: serverTimestamp()
                 });
 
@@ -267,7 +283,8 @@ export function BettingGameDialog({
 
                 return {
                     won: didWin,
-                    spot: winningSpot
+                    spot: winningSpot,
+                    fairness: fullFairness
                 };
             });
 
@@ -298,6 +315,7 @@ export function BettingGameDialog({
                         setIsSpinning(false);
                         setSpinActive(false);
                         setFinalResult(transactionResult);
+                        setCurrentRoundFairness(transactionResult.fairness);
 
                         if (transactionResult.won) {
                             toast({
@@ -344,7 +362,7 @@ export function BettingGameDialog({
             <DialogTrigger asChild disabled={disabled}>
                 {children}
             </DialogTrigger>
-            <DialogContent className="max-w-[96vw] lg:max-w-5xl p-0 overflow-hidden rounded-3xl bg-[#070b16]/98 backdrop-blur-2xl border border-cyan-500/30 shadow-[0_0_80px_rgba(6,182,212,0.25)] text-slate-100 max-h-[94vh] overflow-y-auto custom-scrollbar [&>button:last-child]:hidden">
+            <DialogContent className="max-w-[96vw] lg:max-w-5xl p-0 overflow-hidden rounded-[2rem] bg-gradient-to-b from-[#180c1b] via-[#0e0712] to-[#08040a] backdrop-blur-2xl border border-rose-500/40 shadow-[0_0_80px_rgba(244,63,94,0.25),0_25px_60px_rgba(0,0,0,0.95)] text-slate-100 max-h-[94vh] overflow-y-auto custom-scrollbar [&>button:last-child]:hidden">
                 <VisuallyHidden>
                     <DialogTitle>1/10 命運拼卡競技場 - {card.name}</DialogTitle>
                 </VisuallyHidden>
@@ -438,7 +456,7 @@ export function BettingGameDialog({
                         <div className="space-y-2">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
-                                    <span className="bg-cyan-500 text-slate-950 font-black px-2.5 py-0.5 text-[10px] rounded-md tracking-wider">
+                                    <span className="bg-gradient-to-r from-cyan-400 to-cyan-500 text-slate-950 font-black px-2.5 py-0.5 text-[10px] rounded-md tracking-wider shadow-sm">
                                         STEP 1
                                     </span>
                                     <span className="text-cyan-300 font-bold text-sm">選擇支付幣別</span>
@@ -511,7 +529,7 @@ export function BettingGameDialog({
                         <div className="space-y-2.5">
                             <div className="flex items-center justify-between flex-wrap gap-2">
                                 <div className="flex items-center gap-2">
-                                    <span className="bg-cyan-500 text-slate-950 font-black px-2.5 py-0.5 text-[10px] rounded-md tracking-wider">
+                                    <span className="bg-gradient-to-r from-cyan-400 to-cyan-500 text-slate-950 font-black px-2.5 py-0.5 text-[10px] rounded-md tracking-wider shadow-sm">
                                         STEP 2
                                     </span>
                                     <span className="text-cyan-300 font-bold text-xs sm:text-sm">挑選幸運號碼 (1~10)</span>
@@ -590,8 +608,8 @@ export function BettingGameDialog({
                                 )}
                             </div>
                             
-                            {/* 1 ~ 10 號碼按鈕矩陣 */}
-                            <div className="grid grid-cols-5 gap-2 sm:gap-2.5">
+                            {/* 1 ~ 10 號碼按鈕矩陣 (精緻賽博微晶按鈕，數字適度縮小更精煉) */}
+                            <div className="grid grid-cols-5 gap-1.5 sm:gap-2 p-2 sm:p-2.5 rounded-2xl bg-black/40 border border-white/5 shadow-inner">
                                 {numbers.map(num => {
                                     const isSelected = selectedNumbers.includes(num);
                                     return (
@@ -601,17 +619,31 @@ export function BettingGameDialog({
                                             onClick={() => toggleNumber(num)}
                                             disabled={isOutOfStock || isSpinning}
                                             className={cn(
-                                                "relative aspect-[1.15/1] sm:aspect-square flex flex-col items-center justify-center rounded-2xl text-lg font-black font-mono transition-all duration-300 border cursor-pointer select-none",
+                                                "relative h-11 sm:h-12 flex flex-col items-center justify-center rounded-xl text-sm sm:text-base font-black font-mono transition-all duration-200 border cursor-pointer select-none group/num overflow-hidden",
                                                 isOutOfStock || isSpinning 
-                                                    ? 'bg-slate-900/40 border-slate-800 text-slate-600 cursor-not-allowed' 
+                                                    ? 'bg-slate-950/40 border-slate-900 text-slate-600 cursor-not-allowed' 
                                                     : isSelected 
-                                                    ? 'bg-gradient-to-b from-rose-500 to-pink-500 border-rose-300 text-white shadow-[0_0_20px_rgba(244,63,94,0.6)] scale-[1.03] z-10' 
-                                                    : 'bg-slate-900/90 border-slate-800/90 text-slate-300 hover:bg-slate-800 hover:border-rose-500/40 hover:text-white'
+                                                    ? 'bg-gradient-to-b from-rose-500 via-pink-600 to-rose-700 border-rose-300/90 text-white shadow-[0_0_18px_rgba(244,63,94,0.65)] scale-[1.02] z-10' 
+                                                    : 'bg-gradient-to-b from-[#170e1b]/90 to-[#0e0712]/90 border-rose-500/20 text-slate-300 hover:border-rose-400/60 hover:text-white hover:bg-rose-950/30'
                                             )}
                                         >
-                                            <span>{num}</span>
                                             {isSelected && (
-                                                <span className="text-[9px] font-sans font-black -mt-0.5 tracking-tighter">已押注</span>
+                                                <div className="absolute top-0 inset-x-0 h-[2px] bg-white shadow-[0_0_6px_#ffffff]" />
+                                            )}
+                                            <span className={cn(
+                                                "leading-none transition-transform",
+                                                isSelected ? "text-white font-black scale-105" : "text-slate-300 group-hover/num:text-rose-200"
+                                            )}>
+                                                {num < 10 ? '0' + String(num) : num}
+                                            </span>
+                                            {isSelected ? (
+                                                <span className="text-[8px] font-sans font-black tracking-tighter text-rose-100 opacity-90 mt-0.5">
+                                                    已選
+                                                </span>
+                                            ) : (
+                                                <span className="text-[7.5px] font-mono text-slate-500 uppercase tracking-tighter mt-0.5 group-hover/num:text-rose-400/70">
+                                                    10%
+                                                </span>
                                             )}
                                         </button>
                                     );
@@ -623,7 +655,7 @@ export function BettingGameDialog({
                         <div className="space-y-3">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
-                                    <span className="bg-amber-500 text-slate-950 font-black px-2.5 py-0.5 text-[10px] rounded-md tracking-wider">
+                                    <span className="bg-gradient-to-r from-amber-400 to-yellow-400 text-slate-950 font-black px-2.5 py-0.5 text-[10px] rounded-md tracking-wider shadow-sm">
                                         STEP 3
                                     </span>
                                     <span className="text-amber-300 font-bold text-sm">命運老虎機開獎</span>
@@ -642,7 +674,7 @@ export function BettingGameDialog({
                             </div>
 
                             {/* 老虎機視窗 */}
-                            <div className="relative w-full h-[110px] bg-slate-950 rounded-2xl border-2 border-slate-800/90 shadow-[inset_0_5px_25px_rgba(0,0,0,0.9)] overflow-hidden flex items-center justify-center">
+                            <div className="relative w-full h-[110px] bg-gradient-to-b from-[#140817] via-slate-950 to-[#0c040e] rounded-2xl border-2 border-rose-500/40 shadow-[inset_0_5px_30px_rgba(0,0,0,0.95),0_0_20px_rgba(244,63,94,0.15)] overflow-hidden flex items-center justify-center">
                                 {/* 頂部反光與陰影 */}
                                 <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black/80 pointer-events-none z-20" />
 
@@ -719,12 +751,115 @@ export function BettingGameDialog({
                                     ) : (
                                         <button
                                             type="button"
-                                            onClick={() => { setFinalResult(null); }}
+                                            onClick={() => { setFinalResult(null); setCurrentRoundFairness(null); }}
                                             className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-colors cursor-pointer"
                                         >
                                             再拼一次
                                         </button>
                                     )}
+                                </div>
+                            )}
+
+                            {/* 本局 Provably Fair 密碼學開獎明細與參數複製面板 */}
+                            {finalResult && currentRoundFairness && (
+                                <div className="p-3.5 rounded-2xl bg-black/60 border border-emerald-500/30 space-y-2.5 animate-in fade-in duration-300">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-400">
+                                            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                                            <span>本局 Provably Fair 密碼學開獎明細</span>
+                                        </div>
+                                        <Button
+                                            asChild
+                                            size="sm"
+                                            variant="ghost"
+                                            className="h-6 px-2.5 text-[11px] font-bold text-emerald-300 hover:text-emerald-200 hover:bg-emerald-950/40 rounded-lg"
+                                        >
+                                            <Link
+                                                href={`/fairness?serverSeed=${encodeURIComponent(currentRoundFairness.serverSeed)}&serverHash=${encodeURIComponent(currentRoundFairness.serverHash)}&clientSeed=${encodeURIComponent(currentRoundFairness.clientSeed)}&nonce=${currentRoundFairness.nonce}&tab=bet&prob=10`}
+                                                target="_blank"
+                                            >
+                                                帶入線上驗證器 ↗
+                                            </Link>
+                                        </Button>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] font-mono">
+                                        <div className="p-2 rounded-xl bg-slate-950/80 border border-white/5 space-y-0.5">
+                                            <div className="text-slate-400 flex items-center justify-between font-sans text-[10px]">
+                                                <span>Server Seed (未雜湊)</span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        navigator.clipboard.writeText(currentRoundFairness.serverSeed);
+                                                        toast({ title: '已複製 Server Seed' });
+                                                    }}
+                                                    className="text-emerald-400 hover:underline cursor-pointer"
+                                                >
+                                                    複製
+                                                </button>
+                                            </div>
+                                            <div className="text-emerald-300 truncate text-[10px]" title={currentRoundFairness.serverSeed}>
+                                                {currentRoundFairness.serverSeed}
+                                            </div>
+                                        </div>
+
+                                        <div className="p-2 rounded-xl bg-slate-950/80 border border-white/5 space-y-0.5">
+                                            <div className="text-slate-400 flex items-center justify-between font-sans text-[10px]">
+                                                <span>Server Hash (承諾)</span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        navigator.clipboard.writeText(currentRoundFairness.serverHash);
+                                                        toast({ title: '已複製 Server Hash' });
+                                                    }}
+                                                    className="text-emerald-400 hover:underline cursor-pointer"
+                                                >
+                                                    複製
+                                                </button>
+                                            </div>
+                                            <div className="text-slate-200 truncate text-[10px]" title={currentRoundFairness.serverHash}>
+                                                {currentRoundFairness.serverHash}
+                                            </div>
+                                        </div>
+
+                                        <div className="p-2 rounded-xl bg-slate-950/80 border border-white/5 space-y-0.5">
+                                            <div className="text-slate-400 flex items-center justify-between font-sans text-[10px]">
+                                                <span>Client Seed (玩家種子)</span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        navigator.clipboard.writeText(currentRoundFairness.clientSeed);
+                                                        toast({ title: '已複製 Client Seed' });
+                                                    }}
+                                                    className="text-cyan-400 hover:underline cursor-pointer"
+                                                >
+                                                    複製
+                                                </button>
+                                            </div>
+                                            <div className="text-cyan-300 truncate text-[10px]" title={currentRoundFairness.clientSeed}>
+                                                {currentRoundFairness.clientSeed}
+                                            </div>
+                                        </div>
+
+                                        <div className="p-2 rounded-xl bg-slate-950/80 border border-white/5 space-y-0.5">
+                                            <div className="text-slate-400 flex items-center justify-between font-sans text-[10px]">
+                                                <span>局數 Nonce</span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        navigator.clipboard.writeText(String(currentRoundFairness.nonce));
+                                                        toast({ title: '已複製 Nonce' });
+                                                    }}
+                                                    className="text-amber-400 hover:underline cursor-pointer"
+                                                >
+                                                    複製
+                                                </button>
+                                            </div>
+                                            <div className="text-amber-300 text-[10px]">
+                                                {currentRoundFairness.nonce}
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             )}
 
@@ -749,7 +884,7 @@ export function BettingGameDialog({
                                                 isInsufficientFunds 
                                                     ? 'bg-rose-950/60 border border-rose-500/40 text-rose-300 cursor-not-allowed'
                                                     : selectedNumbers.length > 0 && !isSpinning 
-                                                    ? 'bg-gradient-to-r from-rose-500 via-pink-500 to-rose-500 hover:brightness-110 text-white font-black shadow-[0_0_35px_rgba(244,63,94,0.4)] border border-rose-300' 
+                                                    ? 'bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 hover:brightness-110 text-white font-black shadow-[0_0_35px_rgba(244,63,94,0.6)] border border-rose-200/80' 
                                                     : 'bg-slate-900 text-slate-500 border border-slate-800 cursor-not-allowed'
                                             )}
                                         >

@@ -151,7 +151,7 @@ export function RevolvingDoorLuckyBagCarousel({
   };
 
   return (
-    <div className={cn("relative select-none w-full max-w-5xl mx-auto py-3", className)}>
+    <div className={cn("relative select-none w-full max-w-5xl mx-auto pt-0 pb-1 sm:py-3 -mt-3 sm:mt-0", className)}>
       {/* 3D 旋轉門紅包袋舞台視角區 */}
       <div
         className="relative w-full h-[510px] sm:h-[560px] md:h-[590px] flex items-center justify-center overflow-hidden perspective-[1200px] focus:outline-none touch-pan-y"

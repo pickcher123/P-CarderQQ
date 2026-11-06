@@ -85,7 +85,7 @@ export interface UnifiedCalendarEvent {
 }
 
 // 預設卡展資料（當 Firestore 暫時為空或載入中時提供即時豐富預覽）
-const FALLBACK_EXHIBITIONS: Partial<Exhibition>[] = [
+const FALLBACK_EXHIBITIONS: Partial<Exhibition>[] = []; const _UNUSED_EXHIBITIONS: Partial<Exhibition>[] = [
     {
         id: 'fb-exh-1',
         title: '2026 台北春季國際球員卡博覽會 (TCCE)',
@@ -114,7 +114,7 @@ const FALLBACK_EXHIBITIONS: Partial<Exhibition>[] = [
 ];
 
 // 預設賽事預測資料（確保日曆隨時有賽事可看）
-const FALLBACK_PREDICTIONS = [
+const FALLBACK_PREDICTIONS: any[] = []; const _UNUSED_PREDICTIONS = [
     {
         id: 'fb-pred-1',
         matchName: '金州勇士 vs 洛杉磯湖人',
@@ -224,7 +224,7 @@ export function UnifiedEventCalendar({
         const events: UnifiedCalendarEvent[] = [];
 
         // 處理卡展
-        const exList = (rawExhibitions && rawExhibitions.length > 0) ? rawExhibitions : FALLBACK_EXHIBITIONS;
+        const exList = (rawExhibitions && rawExhibitions.length > 0) ? rawExhibitions : [];
         exList.forEach((exh: any) => {
             if (!exh.date?.seconds && !exh.date) return;
             const startDate = exh.date?.seconds ? new Date(exh.date.seconds * 1000) : new Date(exh.date);
@@ -246,7 +246,7 @@ export function UnifiedEventCalendar({
         });
 
         // 處理賽事預測
-        const predList = (rawPredictions && rawPredictions.length > 0) ? rawPredictions : FALLBACK_PREDICTIONS;
+        const predList = (rawPredictions && rawPredictions.length > 0) ? rawPredictions : [];
         predList.forEach((pred: any) => {
             let eventDate: Date;
             if (pred.targetDate) {

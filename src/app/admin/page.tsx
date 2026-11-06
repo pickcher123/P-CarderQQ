@@ -1,4 +1,5 @@
 'use client';
+import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { 
   Users, 
@@ -43,7 +44,8 @@ import { useState, useEffect, useMemo } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import type { SystemConfig } from "@/types/system";
-import { APP_VERSION } from "@/lib/version";
+import { APP_VERSION, formatAppVersion, getAppVersionFromSystem } from "@/lib/version";
+import type { AppVersionConfig } from "@/types/system";
 import { cn } from "@/lib/utils";
 import Link from 'next/link';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -239,7 +241,53 @@ export default function AdminDashboardPage() {
   
   const systemConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'systemConfig', 'main') : null, [firestore]);
   const { data: systemConfig, forceRefetch } = useDoc<SystemConfig>(systemConfigRef);
-  const [announcement, setAnnouncement] = useState('');
+  // 🚀 全站版本切換（公測版 / 正式版）
+  const [versionStage, setVersionStage] = useState<'beta' | 'production' | 'rc'>('beta');
+  const [versionNumber, setVersionNumber] = useState('6.0');
+  const [versionCustomDisplay, setVersionCustomDisplay] = useState('');
+  const [isSavingVersion, setIsSavingVersion] = useState(false);
+
+  useEffect(() => {
+    if (systemConfig?.appVersionConfig) {
+      setVersionStage(systemConfig.appVersionConfig.stage || 'beta');
+      setVersionNumber(systemConfig.appVersionConfig.versionNumber || '6.0');
+      setVersionCustomDisplay(systemConfig.appVersionConfig.customDisplay || '');
+    }
+  }, [systemConfig?.appVersionConfig]);
+
+  const handleSaveVersionConfig = async () => {
+    if (!systemConfigRef) return;
+    setIsSavingVersion(true);
+    try {
+      const stageName = versionStage === 'production' ? '正式版' : (versionStage === 'rc' ? '候選版' : '公測版');
+      const num = versionNumber.trim() || '6.0';
+      const calculatedDisplay = versionCustomDisplay.trim() || (stageName + ' ' + num);
+      
+      const newVersionConfig: AppVersionConfig = {
+        stage: versionStage,
+        versionNumber: num,
+        customDisplay: calculatedDisplay,
+        updatedAt: new Date().toISOString(),
+        updatedBy: currentUser?.email || 'admin',
+      };
+
+      await setDoc(systemConfigRef, {
+        appVersionConfig: newVersionConfig,
+      }, { merge: true });
+
+      toast({
+        title: '✅ 全站版本設定已成功更新！',
+        description: '當前全站已切換為：【' + calculatedDisplay + '】',
+      });
+      if (forceRefetch) forceRefetch();
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: '更新失敗', description: err?.message || '請稍後再試' });
+    } finally {
+      setIsSavingVersion(false);
+    }
+  };
+
+    const [announcement, setAnnouncement] = useState('');
   const [isSavingAnnouncement, setIsSavingAnnouncement] = useState(false);
   // 🚧 全站維護模式狀態
   const [maintenanceEnabled, setMaintenanceEnabled] = useState(false);
@@ -366,7 +414,7 @@ export default function AdminDashboardPage() {
           <div className="flex items-center gap-2.5">
             <h1 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tight">營運總覽控制台</h1>
             <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
-              v{APP_VERSION}
+              {getAppVersionFromSystem(systemConfig)}
             </span>
           </div>
           <p className="mt-1 text-xs text-slate-500">
@@ -981,6 +1029,108 @@ export default function AdminDashboardPage() {
 
         {/* Tab 4: System Information */}
         <TabsContent value="system" className="space-y-4">
+          {/* 🚀 全站版本即時切換控制卡 */}
+          <Card className="border-slate-200/90 shadow-xs bg-white rounded-xl overflow-hidden">
+            <CardHeader className="p-5 pb-3 border-b border-slate-100 bg-gradient-to-r from-amber-50/50 via-white to-slate-50/50">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-lg bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                    <Sparkles className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-sm font-bold text-slate-900">全站版本控制中心</CardTitle>
+                    <p className="text-xs text-slate-500">隨時切換全站為「公測版本」或「正式版本」，即時同步更新全站各處徽章與頁尾顯示。</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                  <span className="text-xs font-semibold text-slate-500">目前版本：</span>
+                  <Badge className="bg-amber-100 text-amber-900 border-amber-300 font-mono font-bold text-xs px-2.5 py-0.5">
+                    {getAppVersionFromSystem(systemConfig)}
+                  </Badge>
+                </div>
+              </div>
+            </CardHeader>
+
+            <CardContent className="p-5 space-y-5">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* 階段切換 */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700">版本階段 (Stage)</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setVersionStage('beta')}
+                      className={cn(
+                        "p-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer",
+                        versionStage === 'beta'
+                          ? "bg-amber-500 text-slate-950 border-amber-400 shadow-xs font-black"
+                          : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                      )}
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>公測版本 (Beta)</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setVersionStage('production')}
+                      className={cn(
+                        "p-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer",
+                        versionStage === 'production'
+                          ? "bg-emerald-600 text-white border-emerald-500 shadow-xs font-black"
+                          : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                      )}
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>正式版本 (Prod)</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* 版本號碼 */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700">版本號碼 (Version Code)</label>
+                  <Input
+                    placeholder="例如：6.0 或 6.1"
+                    value={versionNumber}
+                    onChange={(e) => setVersionNumber(e.target.value)}
+                    className="h-10 font-mono text-sm"
+                  />
+                  <p className="text-[11px] text-slate-400">標準語意版號，如 6.0、6.1、1.0.0 等</p>
+                </div>
+
+                {/* 自訂完整名稱 */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700">自訂前台完整顯示 (選填)</label>
+                  <Input
+                    placeholder={versionStage === "production" ? "例如：正式版 " + (versionNumber || "1.0") : "例如：公測版 " + (versionNumber || "6.0")}
+                    value={versionCustomDisplay}
+                    onChange={(e) => setVersionCustomDisplay(e.target.value)}
+                    className="h-10 text-sm"
+                  />
+                  <p className="text-[11px] text-slate-400">留空時系統會自動依階段組合（如：公測版 6.0 或 正式版 1.0）</p>
+                </div>
+              </div>
+
+              {/* 預覽與儲存按鈕 */}
+              <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2 text-xs text-slate-600">
+                  <span>儲存後前台將顯示：</span>
+                  <span className="font-bold font-mono text-slate-900 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200">
+                    {versionCustomDisplay.trim() || ((versionStage === "production" ? "正式版" : "公測版") + " " + (versionNumber.trim() || "6.0"))}
+                  </span>
+                </div>
+                <Button
+                  onClick={handleSaveVersionConfig}
+                  disabled={isSavingVersion}
+                  className="bg-slate-900 hover:bg-slate-800 text-white font-bold h-9 px-5 rounded-lg text-xs cursor-pointer shadow-sm"
+                >
+                  {isSavingVersion ? '正在更新版本...' : '儲存全站版本設定'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+
           <Card className="border-slate-200/90 shadow-xs bg-white rounded-xl">
             <CardHeader className="p-5 pb-3 border-b border-slate-100">
               <CardTitle className="text-sm font-bold text-slate-900 flex items-center gap-2">
@@ -991,7 +1141,7 @@ export default function AdminDashboardPage() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="p-3 rounded-lg border border-slate-200 bg-slate-50/50">
                   <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">應用程式版本</p>
-                  <p className="text-sm font-bold text-slate-800 mt-1 font-mono">v{APP_VERSION}</p>
+                  <p className="text-sm font-bold text-slate-800 mt-1 font-mono">{getAppVersionFromSystem(systemConfig)}</p>
                 </div>
                 <div className="p-3 rounded-lg border border-slate-200 bg-slate-50/50">
                   <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">資料庫連線</p>

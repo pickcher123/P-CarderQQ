@@ -1,3 +1,11 @@
+export interface AppVersionConfig {
+    stage: 'beta' | 'production' | 'rc'; // 階段：公測版 (beta) / 正式版 (production) / 候選發行版 (rc)
+    versionNumber: string; // 版本號，例如 '6.0'、'6.1'
+    customDisplay?: string; // 自訂名稱，若無則依 stage + versionNumber 自動組合（例如 '公測版 6.0' 或 '正式版 6.0'）
+    updatedAt?: string;
+    updatedBy?: string;
+}
+
 export interface LevelBenefit {
     level: string;
     threshold: number;
@@ -34,6 +42,7 @@ export interface SystemConfig {
     communityUrl?: string;
     isCommunityEnabled?: boolean;
     maintenance?: MaintenanceConfig; // 🚧 全站維護模式配置
+    appVersionConfig?: AppVersionConfig; // 🚀 全站版本設定（公測版 / 正式版）
     featureFlags?: {
         isDrawEnabled?: boolean;
         isLuckyBagEnabled?: boolean;

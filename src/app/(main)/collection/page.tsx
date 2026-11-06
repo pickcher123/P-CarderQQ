@@ -40,7 +40,7 @@ import {
   Users, Users2, MapPin, SearchCode, X, Sparkles, ChevronRight, Package, 
   Library, Hash, Info, AlertTriangle, RotateCcw, Filter, ArrowUpDown, 
   RotateCw, ArrowLeft, Search, Check, Flame, SlidersHorizontal, Layers, Eye,
-  Coins, Truck, ShieldCheck, HelpCircle
+  Coins, Truck, ShieldCheck, HelpCircle, Crown, Award, Grid3X3, Grid2X2, CheckCheck
 } from 'lucide-react';
 import { useCollection, useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { getBonusMultiplier, isBonusEventActive } from '@/lib/bonus-event';
@@ -104,6 +104,10 @@ export default function CollectionPage() {
   const [previewCard, setPreviewCard] = useState<MergedCard | null>(null);
   const [isReportOpen, setIsReportOpen] = useState(false);
   
+  // View mode & Rarity Filter
+  const [viewMode, setViewMode] = useState<'grid' | 'compact'>('grid');
+  const [filterRarity, setFilterRarity] = useState<'all' | 'legendary' | 'rare' | 'common'>('all');
+
   // Random Player Card Bulk Management States
   const [randomSellQty, setRandomSellQty] = useState<number>(1);
   const [randomShipQty, setRandomShipQty] = useState<number>(1);
@@ -187,6 +191,15 @@ export default function CollectionPage() {
     return Array.from(cats);
   }, [mergedCards]);
 
+  // Collector Tier Calculation
+  const collectorTier = useMemo(() => {
+    const count = mergedCards.length;
+    if (count >= 50) return { level: 4, name: '傳奇卡神', title: 'Mythic Titan', color: 'from-amber-400 via-yellow-200 to-amber-500 text-amber-300', bgGlow: 'bg-amber-500/15 border-amber-400/40 text-amber-300' };
+    if (count >= 20) return { level: 3, name: '名人堂名家', title: 'Hall of Fame', color: 'from-purple-400 via-pink-300 to-purple-500 text-purple-300', bgGlow: 'bg-purple-500/15 border-purple-400/40 text-purple-300' };
+    if (count >= 5) return { level: 2, name: '資深藏家', title: 'Pro Collector', color: 'from-cyan-400 via-sky-300 to-blue-500 text-cyan-300', bgGlow: 'bg-cyan-500/15 border-cyan-400/40 text-cyan-300' };
+    return { level: 1, name: '新秀鑑賞家', title: 'Rookie Collector', color: 'from-emerald-400 via-teal-300 to-emerald-500 text-emerald-300', bgGlow: 'bg-emerald-500/15 border-emerald-400/40 text-emerald-300' };
+  }, [mergedCards.length]);
+
   const isRandomPlayerCard = (card: MergedCard) => {
     return (
       card.name?.includes('隨機球員') ||
@@ -204,6 +217,9 @@ export default function CollectionPage() {
       if (activeTab === 'break' && card.source !== 'group-break') return false;
       if (activeTab === 'random' && !isRandomPlayerCard(card)) return false;
 
+      // Rarity filter
+      if (filterRarity !== 'all' && card.rarity !== filterRarity) return false;
+
       // Category filter
       if (filterCategory && card.category !== filterCategory) return false;
 
@@ -219,7 +235,7 @@ export default function CollectionPage() {
 
       return true;
     });
-  }, [mergedCards, activeTab, filterCategory, searchQuery]);
+  }, [mergedCards, activeTab, filterCategory, filterRarity, searchQuery]);
 
   // Sort Logic
   const sortedMergedCards = useMemo(() => {
@@ -600,66 +616,87 @@ export default function CollectionPage() {
 
   return (
     <TooltipProvider>
-      <div className="min-h-screen bg-transparent text-white pb-32">
+      <div className="min-h-screen bg-transparent text-white pb-40">
         {/* Glow Effects */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-[350px] bg-gradient-to-b from-cyan-500/10 via-purple-500/5 to-transparent blur-[120px] pointer-events-none -z-10" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-[380px] bg-gradient-to-b from-cyan-500/15 via-purple-500/10 to-transparent blur-[140px] pointer-events-none -z-10" />
 
         <div className="container px-3.5 sm:px-6 py-4 max-w-7xl mx-auto space-y-5 sm:space-y-7">
           
-          {/* === TOP HERO / STATS HEADER === */}
-          <div className="relative rounded-2xl sm:rounded-3xl p-5 sm:p-8 overflow-hidden border border-cyan-500/20 bg-gradient-to-b from-slate-900/95 via-[#0b101f]/95 to-[#060913] shadow-[0_20px_50px_rgba(0,0,0,0.8)] backdrop-blur-2xl">
-            {/* Grid pattern background */}
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,#06b6d408_1px,transparent_1px),linear-gradient(to_bottom,#06b6d408_1px,transparent_1px)] bg-[size:28px_28px] opacity-70 pointer-events-none" />
+          {/* === TOP HERO / STATS HEADER (賽博數位保險庫) === */}
+          <div className="relative rounded-2xl sm:rounded-3xl p-5 sm:p-7 overflow-hidden border border-cyan-500/25 bg-gradient-to-b from-slate-900/95 via-[#0b101f]/95 to-[#060913] shadow-[0_25px_60px_rgba(0,0,0,0.85)] backdrop-blur-2xl">
+            {/* Grid pattern background & Top Laser Line */}
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#06b6d408_1px,transparent_1px),linear-gradient(to_bottom,#06b6d408_1px,transparent_1px)] bg-[size:24px_24px] opacity-60 pointer-events-none" />
             <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_15px_#22d3ee]" />
 
-            <div className="relative z-10 flex flex-col items-center text-center justify-center gap-6">
+            <div className="relative z-10 flex flex-col items-center text-center justify-center gap-5 sm:gap-6">
               
-              {/* Centered Title & Subtitle */}
-              <div className="space-y-2 max-w-2xl mx-auto text-center">
-                <h1 className="font-headline text-2xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-200 to-amber-300 drop-shadow-[0_0_20px_rgba(6,182,212,0.4)] tracking-tight leading-none">
-                  我的卡牌收藏庫
+              {/* Centered Title, Collector Badge & Subtitle */}
+              <div className="space-y-2.5 max-w-2xl mx-auto text-center flex flex-col items-center">
+                
+                {/* Collector Rank Badge */}
+                <div className={cn(
+                  "inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-[11px] font-black uppercase tracking-wider shadow-md backdrop-blur-md",
+                  collectorTier.bgGlow
+                )}>
+                  <Crown className="w-3.5 h-3.5 animate-pulse" />
+                  <span>{collectorTier.name}</span>
+                  <span className="text-white/40">·</span>
+                  <span className="font-mono text-[10px] text-white/80">{collectorTier.title}</span>
+                </div>
+
+                <h1 className="font-headline text-2xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-200 to-amber-300 drop-shadow-[0_0_25px_rgba(6,182,212,0.45)] tracking-tight leading-none">
+                  我的卡牌典藏庫
                 </h1>
 
-                <p className="text-xs sm:text-sm text-slate-400 font-medium leading-relaxed">
-                  管理您的數位藏品與實體球員卡。支援 3D 鑑賞、AI 報告、一鍵批量出貨或極速轉點變現。
+                <p className="text-xs sm:text-sm text-slate-400 font-medium leading-relaxed max-w-xl">
+                  管理您的珍稀評級卡磚與數位藏品。支援 3D 正反面鑑賞、AI 鑑定報告、批次出貨或秒速轉點變現。
                 </p>
               </div>
 
-              {/* Centered Portfolio Live Stats */}
-              <div className="grid grid-cols-3 gap-2.5 sm:gap-4 w-full max-w-lg mx-auto shrink-0">
+              {/* Centered Portfolio Live Stats (奢華金屬數據儀表板) */}
+              <div className="grid grid-cols-3 gap-2.5 sm:gap-4 w-full max-w-xl mx-auto shrink-0">
                 {/* Total Cards Stat */}
-                <div className="p-3 rounded-xl sm:rounded-2xl bg-slate-900/90 border border-white/10 flex flex-col items-center justify-center text-center shadow-lg min-w-[95px] sm:min-w-[120px]">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">持有藏品</span>
-                  <span className="font-code text-xl sm:text-3xl font-black text-white mt-0.5">
+                <div className="relative p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-b from-slate-900/95 to-slate-950 border border-white/10 flex flex-col items-center justify-center text-center shadow-lg group hover:border-cyan-500/40 transition-colors">
+                  <div className="flex items-center gap-1 text-slate-400">
+                    <Layers className="w-3.5 h-3.5 text-cyan-400" />
+                    <span className="text-[10px] font-bold uppercase tracking-wider">持有藏品</span>
+                  </div>
+                  <span className="font-code text-xl sm:text-3xl font-black text-white mt-1">
                     {isLoadingUserCards ? '--' : portfolioStats.totalCards}
                   </span>
-                  <span className="text-[9px] text-cyan-400/90 font-bold mt-0.5">
-                    {portfolioStats.breakCount > 0 ? `含 ${portfolioStats.breakCount} 張團拆` : '張卡片'}
+                  <span className="text-[9.5px] text-cyan-300/90 font-bold mt-0.5 truncate max-w-full">
+                    {portfolioStats.breakCount > 0 ? `${portfolioStats.uniqueCount}個人 / ${portfolioStats.breakCount}團拆` : `${portfolioStats.uniqueCount} 張卡片`}
                   </span>
                 </div>
 
                 {/* Diamonds Recycle Value */}
-                <div className="p-3 rounded-xl sm:rounded-2xl bg-cyan-950/40 border border-cyan-500/30 flex flex-col items-center justify-center text-center shadow-lg min-w-[95px] sm:min-w-[120px]">
-                  <div className="flex items-center gap-1">
-                    <Gem className="w-3 h-3 text-cyan-400" />
-                    <span className="text-[10px] font-bold text-cyan-300 uppercase tracking-wider">預估鑽石</span>
+                <div className="relative p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-b from-cyan-950/40 to-slate-950 border border-cyan-500/30 flex flex-col items-center justify-center text-center shadow-lg group hover:border-cyan-400/60 transition-colors">
+                  <div className="flex items-center gap-1 text-cyan-300">
+                    <Gem className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
+                    <span className="text-[10px] font-bold uppercase tracking-wider">預估鑽石</span>
                   </div>
-                  <span className="font-code text-xl sm:text-3xl font-black text-cyan-400 mt-0.5 drop-shadow-[0_0_10px_rgba(6,182,212,0.3)]">
+                  <span className="font-code text-xl sm:text-3xl font-black text-cyan-400 mt-1 drop-shadow-[0_0_12px_rgba(6,182,212,0.35)]">
                     {isLoadingUserCards ? '--' : portfolioStats.totalDiamonds.toLocaleString()}
                   </span>
-                  <span className="text-[9px] text-slate-400 font-bold mt-0.5">變現回收值</span>
+                  <span className="text-[9.5px] text-slate-400 font-bold mt-0.5">即刻變現回估</span>
                 </div>
 
                 {/* P+ Points Recycle Value */}
-                <div className="p-3 rounded-xl sm:rounded-2xl bg-amber-950/40 border border-amber-500/30 flex flex-col items-center justify-center text-center shadow-lg min-w-[95px] sm:min-w-[120px]">
-                  <div className="flex items-center gap-1">
-                    <PPlusIcon className="w-3 h-3 text-amber-400" />
-                    <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wider">紅利點數</span>
+                <div className="relative p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-b from-amber-950/40 to-slate-950 border border-amber-500/30 flex flex-col items-center justify-center text-center shadow-lg group hover:border-amber-400/60 transition-colors">
+                  <div className="flex items-center gap-1 text-amber-300">
+                    <PPlusIcon className="w-3.5 h-3.5 text-amber-400" />
+                    <span className="text-[10px] font-bold uppercase tracking-wider">紅利點數</span>
                   </div>
-                  <span className="font-code text-xl sm:text-3xl font-black text-amber-400 mt-0.5 drop-shadow-[0_0_10px_rgba(245,158,11,0.3)]">
+                  <span className="font-code text-xl sm:text-3xl font-black text-amber-400 mt-1 drop-shadow-[0_0_12px_rgba(245,158,11,0.35)]">
                     {isLoadingUserCards ? '--' : portfolioStats.totalPPoints.toLocaleString()}
                   </span>
-                  <span className="text-[9px] text-slate-400 font-bold mt-0.5">紅利收益</span>
+                  <span className="text-[9.5px] font-bold mt-0.5 flex items-center gap-0.5 text-amber-300/90">
+                    {isBonusActive && bonusMultiplier > 1 ? (
+                      <span className="text-rose-400 animate-pulse">🔥 {bonusMultiplier}X 加倍收益</span>
+                    ) : (
+                      <span className="text-slate-400">紅利回饋累積</span>
+                    )}
+                  </span>
                 </div>
               </div>
             </div>
@@ -667,15 +704,15 @@ export default function CollectionPage() {
 
           {/* === INTERACTIVE FILTER & TOOLBAR === */}
           <div className="space-y-3">
-            {/* Top Row: Search, Tabs & Quick Actions */}
-            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+            {/* Top Row: Main Tabs, Search, Sort & View Mode Switcher */}
+            <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
               
               {/* Main Category Tabs */}
               <div className="flex items-center gap-1.5 p-1 bg-slate-900/90 border border-white/10 rounded-xl overflow-x-auto no-scrollbar shrink-0">
                 <button
                   onClick={() => { setActiveTab('all'); setFilterCategory(null); }}
                   className={cn(
-                    "px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 whitespace-nowrap",
+                    "px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer",
                     activeTab === 'all' && !filterCategory
                       ? "bg-gradient-to-r from-cyan-500 to-sky-400 text-slate-950 shadow-md shadow-cyan-500/20" 
                       : "text-slate-400 hover:text-white hover:bg-white/5"
@@ -694,7 +731,7 @@ export default function CollectionPage() {
                 <button
                   onClick={() => { setActiveTab('standard'); setFilterCategory(null); }}
                   className={cn(
-                    "px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 whitespace-nowrap",
+                    "px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer",
                     activeTab === 'standard' 
                       ? "bg-gradient-to-r from-cyan-500 to-sky-400 text-slate-950 shadow-md shadow-cyan-500/20" 
                       : "text-slate-400 hover:text-white hover:bg-white/5"
@@ -713,7 +750,7 @@ export default function CollectionPage() {
                 <button
                   onClick={() => { setActiveTab('break'); setFilterCategory(null); }}
                   className={cn(
-                    "px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 whitespace-nowrap",
+                    "px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer",
                     activeTab === 'break' 
                       ? "bg-gradient-to-r from-orange-500 to-amber-400 text-slate-950 shadow-md shadow-orange-500/20" 
                       : "text-slate-400 hover:text-white hover:bg-white/5"
@@ -732,7 +769,7 @@ export default function CollectionPage() {
                 <button
                   onClick={() => { setActiveTab('random'); setFilterCategory(null); }}
                   className={cn(
-                    "px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 whitespace-nowrap",
+                    "px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer",
                     activeTab === 'random' 
                       ? "bg-gradient-to-r from-purple-500 to-indigo-400 text-slate-950 shadow-md shadow-purple-500/20" 
                       : "text-slate-400 hover:text-white hover:bg-white/5"
@@ -749,21 +786,21 @@ export default function CollectionPage() {
                 </button>
               </div>
 
-              {/* Search & Sort Controls */}
-              <div className="flex items-center gap-2">
+              {/* Search, Sort & Display Density Controls */}
+              <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                 {/* Search Bar */}
-                <div className="relative flex-1 md:w-60">
+                <div className="relative flex-1 sm:w-56">
                   <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <Input 
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="搜尋卡名、球隊、編號..."
+                    placeholder="搜尋卡名、球隊、#編號..."
                     className="h-9 pl-9 pr-7 bg-slate-900/80 border-white/10 rounded-xl text-xs text-white placeholder:text-slate-500 focus:border-cyan-400"
                   />
                   {searchQuery && (
                     <button 
                       onClick={() => setSearchQuery('')}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white cursor-pointer"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -773,7 +810,7 @@ export default function CollectionPage() {
                 {/* Sort Dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-9 px-3 rounded-xl bg-slate-900/80 border-white/10 hover:bg-slate-800 text-slate-200 text-xs font-bold gap-1.5 shrink-0">
+                    <Button variant="outline" size="sm" className="h-9 px-3 rounded-xl bg-slate-900/80 border-white/10 hover:bg-slate-800 text-slate-200 text-xs font-bold gap-1.5 shrink-0 cursor-pointer">
                       <ArrowUpDown className="w-3.5 h-3.5 text-cyan-400" />
                       <span className="hidden sm:inline">排序：</span>
                       <span>
@@ -798,55 +835,127 @@ export default function CollectionPage() {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
+
+                {/* View Mode Toggle: Grid vs Compact */}
+                <div className="flex items-center p-1 bg-slate-900/80 border border-white/10 rounded-xl shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('grid')}
+                    title="卡磚大圖鑑賞模式"
+                    className={cn(
+                      "p-1.5 rounded-lg text-xs transition-colors cursor-pointer",
+                      viewMode === 'grid' ? "bg-cyan-500/20 text-cyan-300 font-bold" : "text-slate-400 hover:text-white"
+                    )}
+                  >
+                    <Grid2X2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('compact')}
+                    title="密排緊湊模式（快速批量管理）"
+                    className={cn(
+                      "p-1.5 rounded-lg text-xs transition-colors cursor-pointer",
+                      viewMode === 'compact' ? "bg-cyan-500/20 text-cyan-300 font-bold" : "text-slate-400 hover:text-white"
+                    )}
+                  >
+                    <Grid3X3 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* Bottom Row: Category Sub-filters & Bulk Checkbox Shortcuts */}
-            <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-white/5">
+            {/* Bottom Row: Category Sub-filters & Rarity Filter & Bulk Checkbox Shortcuts */}
+            <div className="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t border-white/5">
               
-              {/* Category Pills */}
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mr-1 flex items-center gap-1">
-                  <Filter className="w-3 h-3 text-slate-400" /> 標籤：
-                </span>
-                
-                <button
-                  onClick={() => setFilterCategory(null)}
-                  className={cn(
-                    "px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all",
-                    !filterCategory ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40" : "bg-white/5 text-slate-400 hover:text-white border border-transparent"
-                  )}
-                >
-                  全部
-                </button>
-
-                {allCategories.map(cat => (
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Rarity Filter */}
+                <div className="flex items-center gap-1 bg-slate-900/60 p-0.5 rounded-lg border border-white/10 text-[11px] font-bold">
+                  <span className="px-2 text-slate-500 flex items-center gap-1">稀有度:</span>
                   <button
-                    key={cat}
-                    onClick={() => setFilterCategory(filterCategory === cat ? null : cat)}
+                    onClick={() => setFilterRarity('all')}
                     className={cn(
-                      "px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all",
-                      filterCategory === cat 
-                        ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40" 
-                        : "bg-white/5 text-slate-400 hover:text-white border border-transparent"
+                      "px-2 py-0.5 rounded-md transition-all cursor-pointer",
+                      filterRarity === 'all' ? "bg-white/15 text-white font-black" : "text-slate-400 hover:text-white"
                     )}
                   >
-                    {cat}
+                    全部
                   </button>
-                ))}
+                  <button
+                    onClick={() => setFilterRarity('legendary')}
+                    className={cn(
+                      "px-2 py-0.5 rounded-md transition-all cursor-pointer flex items-center gap-1",
+                      filterRarity === 'legendary' ? "bg-amber-500/30 text-amber-300 border border-amber-400/50 font-black" : "text-amber-400/70 hover:text-amber-300"
+                    )}
+                  >
+                    <Sparkles className="w-2.5 h-2.5" /> 傳奇
+                  </button>
+                  <button
+                    onClick={() => setFilterRarity('rare')}
+                    className={cn(
+                      "px-2 py-0.5 rounded-md transition-all cursor-pointer",
+                      filterRarity === 'rare' ? "bg-sky-500/30 text-sky-300 border border-sky-400/50 font-black" : "text-sky-400/70 hover:text-sky-300"
+                    )}
+                  >
+                    稀有
+                  </button>
+                  <button
+                    onClick={() => setFilterRarity('common')}
+                    className={cn(
+                      "px-2 py-0.5 rounded-md transition-all cursor-pointer",
+                      filterRarity === 'common' ? "bg-slate-700/50 text-slate-200 border border-slate-500/50 font-black" : "text-slate-400 hover:text-white"
+                    )}
+                  >
+                    普通
+                  </button>
+                </div>
+
+                {/* Category Pills */}
+                {allCategories.length > 0 && (
+                  <div className="flex items-center gap-1 flex-wrap">
+                    <button
+                      onClick={() => setFilterCategory(null)}
+                      className={cn(
+                        "px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer",
+                        !filterCategory ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40" : "bg-white/5 text-slate-400 hover:text-white border border-transparent"
+                      )}
+                    >
+                      全部分類
+                    </button>
+
+                    {allCategories.map(cat => (
+                      <button
+                        key={cat}
+                        onClick={() => setFilterCategory(filterCategory === cat ? null : cat)}
+                        className={cn(
+                          "px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer",
+                          filterCategory === cat 
+                            ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40" 
+                            : "bg-white/5 text-slate-400 hover:text-white border border-transparent"
+                        )}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Bulk Selection Actions */}
               <div className="flex items-center gap-2 ml-auto">
+                {selectedCardIds.size > 0 && (
+                  <span className="text-xs text-cyan-400 font-bold font-code">
+                    已選 {selectedCardIds.size} 張
+                  </span>
+                )}
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleSelectAllVisible}
                   disabled={sortedMergedCards.length === 0}
-                  className="h-8 px-2.5 rounded-lg text-[11px] font-bold text-slate-300 hover:text-white bg-slate-900/80 hover:bg-slate-800 border border-white/10 gap-1.5 transition-all"
+                  className="h-8 px-2.5 rounded-lg text-[11px] font-bold text-slate-300 hover:text-white bg-slate-900/80 hover:bg-slate-800 border border-white/10 gap-1.5 transition-all cursor-pointer"
                 >
                   <CheckSquare className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>{isAllVisibleSelected ? '取消全選' : `全選目前 (${sortedMergedCards.length})`}</span>
+                  <span>{isAllVisibleSelected ? '取消全選' : `全選可見 (${sortedMergedCards.length})`}</span>
                 </Button>
               </div>
 
@@ -870,7 +979,7 @@ export default function CollectionPage() {
                       <Library className="w-4 h-4" />
                     </div>
                     <h2 className="text-base sm:text-lg font-black font-headline text-white tracking-wide flex items-center gap-2">
-                      <span>個人精選卡片藏品</span>
+                      <span>個人評級卡磚藏品</span>
                       <span className="text-[10px] font-code font-black text-cyan-300 bg-cyan-500/15 px-2 py-0.5 rounded-full border border-cyan-500/30">
                         {uniqueStandardCards.length} 張
                       </span>
@@ -879,26 +988,52 @@ export default function CollectionPage() {
                   <div className="h-px flex-1 mx-4 bg-gradient-to-r from-cyan-500/20 to-transparent hidden sm:block" />
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3 sm:gap-4">
+                {/* Card Gallery: Adaptive Grid / Compact Mode */}
+                <div className={cn(
+                  "gap-2.5 sm:gap-4",
+                  viewMode === 'grid' 
+                    ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-6" 
+                    : "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10"
+                )}>
                   {uniqueStandardCards.map((card, index) => {
                     const isSelected = selectedCardIds.has(card.id);
+                    const isLegendary = card.rarity === 'legendary';
+                    const isRare = card.rarity === 'rare';
+
                     return (
                       <motion.div
                         key={card.id}
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: Math.min(index * 0.02, 0.3) }}
+                        transition={{ delay: Math.min(index * 0.015, 0.25) }}
                         onClick={() => setPreviewCard(card)}
                         className={cn(
-                          "group relative flex flex-col rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 p-2",
-                          "bg-gradient-to-b from-[#13192a]/95 via-[#0c101d]/95 to-[#080b14]/95 border",
+                          "group relative flex flex-col rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 select-none",
+                          viewMode === 'grid' ? "p-2 sm:p-2.5" : "p-1.5",
+                          // Magnetic Acrylic Slab Styling
+                          "bg-gradient-to-b from-white/10 via-slate-900/95 to-slate-950 border backdrop-blur-md shadow-xl",
                           isSelected 
-                            ? "border-cyan-400 ring-2 ring-cyan-400/80 shadow-[0_0_20px_rgba(6,182,212,0.4)] bg-cyan-950/30 scale-[1.02]" 
-                            : "border-white/10 hover:border-cyan-500/50 hover:shadow-[0_0_20px_rgba(6,182,212,0.2)] hover:-translate-y-0.5"
+                            ? "border-cyan-400 ring-2 ring-cyan-400/80 shadow-[0_0_25px_rgba(6,182,212,0.45)] bg-cyan-950/40 scale-[1.02]" 
+                            : isLegendary
+                              ? "border-amber-400/50 hover:border-amber-300 hover:shadow-[0_0_25px_rgba(245,158,11,0.35)] hover:-translate-y-1"
+                              : isRare
+                                ? "border-sky-400/40 hover:border-sky-300 hover:shadow-[0_0_20px_rgba(56,189,248,0.3)] hover:-translate-y-1"
+                                : "border-white/15 hover:border-cyan-400/50 hover:shadow-[0_0_20px_rgba(6,182,212,0.2)] hover:-translate-y-0.5"
                         )}
                       >
+                        {/* Magnetic Case Slab Header Accent (螺絲仿真與標牌) */}
+                        {viewMode === 'grid' && (
+                          <div className="flex items-center justify-between px-1 pb-1.5 opacity-70 group-hover:opacity-100 transition-opacity">
+                            <div className="w-1.5 h-1.5 rounded-full bg-slate-400 border border-slate-600 shadow-sm" title="磁吸螺栓" />
+                            <span className="text-[7.5px] font-mono tracking-widest text-slate-400 uppercase">
+                              {card.category || 'PSA 10 GEM MINT'}
+                            </span>
+                            <div className="w-1.5 h-1.5 rounded-full bg-slate-400 border border-slate-600 shadow-sm" title="磁吸螺栓" />
+                          </div>
+                        )}
+
                         {/* Card Image Wrapper */}
-                        <div className="relative w-full aspect-[2.5/3.5] rounded-xl overflow-hidden bg-black/50">
+                        <div className="relative w-full aspect-[2.5/3.5] rounded-xl overflow-hidden bg-black/60 shadow-inner">
                           <CardItem 
                             name={card.name} 
                             imageUrl={card.imageUrl} 
@@ -911,51 +1046,58 @@ export default function CollectionPage() {
 
                           {/* Quick Selection Checkbox on Upper-Left */}
                           <div 
-                            className="absolute top-2 left-2 z-30" 
+                            className="absolute top-1.5 left-1.5 z-30" 
                             onClick={(e) => {
                               e.stopPropagation();
                               handleSelectCard(card.id, !isSelected);
                             }}
                           >
                             <div className={cn(
-                              "w-6 h-6 rounded-lg border transition-all flex items-center justify-center backdrop-blur-md cursor-pointer",
+                              "rounded-lg border transition-all flex items-center justify-center backdrop-blur-md cursor-pointer",
+                              viewMode === 'grid' ? "w-6 h-6" : "w-5 h-5",
                               isSelected 
-                                ? "bg-cyan-400 border-cyan-400 text-slate-950 shadow-[0_0_12px_rgba(6,182,212,0.8)]" 
-                                : "bg-black/60 border-white/30 hover:border-white/70 text-transparent"
+                                ? "bg-cyan-400 border-cyan-400 text-slate-950 shadow-[0_0_12px_rgba(6,182,212,0.9)]" 
+                                : "bg-black/65 border-white/35 hover:border-white/80 text-transparent"
                             )}>
-                              <Check className="w-3.5 h-3.5 stroke-[3]" />
+                              <Check className={cn("stroke-[3]", viewMode === 'grid' ? "w-3.5 h-3.5" : "w-3 h-3")} />
                             </div>
                           </div>
 
                           {/* Card Serial Number Badge */}
                           {card.serialNumber && card.serialNumber !== '0000' && (
-                            <div className="absolute top-2 right-2 z-20">
-                              <Badge className="bg-slate-950/80 backdrop-blur-md text-cyan-300 border border-cyan-500/30 font-mono text-[9px] px-1.5 py-0.2 shadow">
+                            <div className="absolute top-1.5 right-1.5 z-20">
+                              <span className="bg-slate-950/85 backdrop-blur-md text-cyan-300 border border-cyan-500/40 font-mono text-[8.5px] sm:text-[9px] px-1.5 py-0.2 rounded-md shadow-md font-bold">
                                 #{card.serialNumber}
-                              </Badge>
+                              </span>
                             </div>
                           )}
 
                           {/* Hover Action Hint */}
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none z-20">
-                            <div className="px-2.5 py-1 rounded-full bg-slate-900/90 border border-white/20 text-[10px] font-black text-white flex items-center gap-1 shadow-lg">
-                              <Eye className="w-3 h-3 text-cyan-400" /> 鑑賞卡片
+                          <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none z-20">
+                            <div className="px-2.5 py-1 rounded-full bg-slate-900/90 border border-cyan-400/40 text-[10px] font-black text-cyan-300 flex items-center gap-1 shadow-xl">
+                              <Eye className="w-3 h-3 text-cyan-400" /> 3D 鑑賞
                             </div>
                           </div>
                         </div>
 
                         {/* Card Info Footer */}
-                        <div className="mt-2 space-y-1">
-                          <h4 className="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors line-clamp-2 leading-tight min-h-[2rem]" title={card.name}>
+                        <div className={cn("mt-1.5 space-y-0.5", viewMode === 'compact' && "mt-1")}>
+                          <h4 
+                            className={cn(
+                              "font-bold text-white group-hover:text-cyan-300 transition-colors leading-tight truncate",
+                              viewMode === 'grid' ? "text-xs min-h-[1.25rem]" : "text-[10px]"
+                            )} 
+                            title={card.name}
+                          >
                             {card.name}
                           </h4>
                           
-                          <div className="flex items-center justify-between pt-0.5 text-[10px]">
-                            <span className="text-slate-400 truncate max-w-[70px]">
-                              {card.category || '一般卡'}
+                          <div className="flex items-center justify-between pt-0.5 text-[10px] sm:text-[11px]">
+                            <span className="text-slate-400 text-[9.5px] truncate max-w-[65px]">
+                              {card.category || '一般'}
                             </span>
                             <div className="flex items-center gap-1 font-code font-black text-cyan-400">
-                              <Gem className="w-2.5 h-2.5" />
+                              <Gem className="w-2.5 h-2.5 text-cyan-400" />
                               <span>{card.sellPrice || 10}</span>
                             </div>
                           </div>
@@ -967,7 +1109,7 @@ export default function CollectionPage() {
               </motion.section>
             )}
 
-            {/* 2. RANDOM PLAYER CARDS TEXT VAULT (普特卡 文字聚合獨立專區 - 與一般卡片完全分開) */}
+            {/* 2. RANDOM PLAYER CARDS TEXT VAULT (普特卡 典藏金庫專區) */}
             {randomPlayerCards.length > 0 && (activeTab === 'all' || activeTab === 'random') && (
               <motion.section
                 initial={{ opacity: 0, y: 12 }}
@@ -981,41 +1123,49 @@ export default function CollectionPage() {
                     <div className="w-full h-px bg-gradient-to-r from-transparent via-amber-500/30 to-transparent" />
                     <div className="absolute px-3 py-0.5 bg-[#0a0e1a] text-[10px] font-black text-amber-400 uppercase tracking-widest border border-amber-500/30 rounded-full flex items-center gap-1.5 shadow-md">
                       <Sparkles className="w-3 h-3 text-amber-400" />
-                      <span>普特卡專區 ({randomPlayerCards.length} 張)</span>
+                      <span>普特卡儲備金庫 ({randomPlayerCards.length} 張)</span>
                     </div>
                   </div>
                 )}
 
-                <div className="relative rounded-2xl sm:rounded-3xl p-4 sm:p-5 bg-gradient-to-b from-amber-950/40 via-slate-900/95 to-[#0c101d] border border-amber-500/30 shadow-[0_10px_35px_rgba(245,158,11,0.15)] overflow-hidden space-y-4">
+                <div className="relative rounded-2xl sm:rounded-3xl p-4 sm:p-6 bg-gradient-to-b from-amber-950/40 via-slate-900/95 to-[#0c101d] border border-amber-500/35 shadow-[0_15px_45px_rgba(245,158,11,0.18)] overflow-hidden space-y-4">
                   {/* Ambient Glow */}
-                  <div className="absolute -top-10 -right-10 w-48 h-48 bg-amber-500/10 blur-3xl pointer-events-none" />
+                  <div className="absolute -top-10 -right-10 w-56 h-56 bg-amber-500/12 blur-3xl pointer-events-none" />
                   
                   <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                    {/* Left: Card Identity & Stats */}
-                    <div className="flex items-center gap-3.5">
-                      <div className="w-14 h-20 sm:w-16 sm:h-22 rounded-xl overflow-hidden bg-gradient-to-br from-slate-900 via-slate-950 to-amber-950/90 border-2 border-amber-500/50 shrink-0 shadow-[0_0_15px_rgba(245,158,11,0.25)] relative flex flex-col items-center justify-between p-1.5 select-none">
-                        {/* Ambient glow */}
-                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.2),transparent_70%)] pointer-events-none" />
-                        <div className="w-full flex justify-between items-center relative z-10">
-                          <span className="text-[7px] font-black text-amber-400 bg-amber-500/20 px-1 py-0.2 rounded">P+</span>
-                          <span className="text-[7px] font-bold text-amber-300/80 font-code">普/特</span>
-                        </div>
-                        {/* Center Logo */}
-                        <div className="relative z-10 flex flex-col items-center justify-center my-auto">
-                          <PPlusIcon className="w-7 h-7 sm:w-8 sm:h-8 text-amber-400 drop-shadow-[0_0_10px_rgba(245,158,11,0.6)]" />
-                        </div>
-                        <div className="w-full flex justify-center relative z-10">
-                          <span className="text-[6px] font-black text-amber-300/90 tracking-wider uppercase font-headline">P+ CARDER</span>
+                    {/* Left: Card Stack Visual & Live Stats */}
+                    <div className="flex items-center gap-3.5 sm:gap-4">
+                      {/* Realistic 3D Card Stack Illusion */}
+                      <div className="relative w-14 h-20 sm:w-16 sm:h-22 shrink-0 select-none">
+                        {/* Background Stack Shadow Layers */}
+                        <div className="absolute inset-0 translate-x-1.5 -translate-y-1 rounded-xl bg-amber-900/40 border border-amber-500/30" />
+                        <div className="absolute inset-0 translate-x-0.5 -translate-y-0.5 rounded-xl bg-slate-900 border border-amber-500/40" />
+
+                        {/* Top Front Card */}
+                        <div className="relative w-full h-full rounded-xl overflow-hidden bg-gradient-to-br from-slate-900 via-slate-950 to-amber-950/90 border-2 border-amber-500/60 shadow-[0_0_20px_rgba(245,158,11,0.35)] flex flex-col items-center justify-between p-1.5">
+                          <div className="w-full flex justify-between items-center relative z-10">
+                            <span className="text-[7.5px] font-black text-amber-400 bg-amber-500/25 px-1 py-0.2 rounded">P+</span>
+                            <span className="text-[7.5px] font-bold text-amber-300 font-code">普/特</span>
+                          </div>
+                          {/* Center Logo */}
+                          <div className="relative z-10 flex flex-col items-center justify-center my-auto">
+                            <PPlusIcon className="w-7 h-7 sm:w-8 sm:h-8 text-amber-400 drop-shadow-[0_0_12px_rgba(245,158,11,0.7)]" />
+                          </div>
+                          <div className="w-full flex justify-center relative z-10">
+                            <span className="text-[6.5px] font-black text-amber-300/90 tracking-wider uppercase font-headline">P+ CARDER</span>
+                          </div>
                         </div>
                       </div>
 
                       <div className="space-y-1">
-                        <h3 className="text-lg sm:text-xl font-black text-white flex items-center gap-2 tracking-tight">
-                          <span>隨機球員 普/特 卡</span>
-                          <span className="font-code font-black text-amber-400 bg-amber-500/20 px-2.5 py-0.5 rounded-lg border border-amber-500/40 text-base sm:text-lg">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="text-lg sm:text-xl font-black text-white tracking-tight">
+                            隨機球員 普/特 卡金庫
+                          </h3>
+                          <span className="font-code font-black text-amber-400 bg-amber-500/20 px-2.5 py-0.5 rounded-lg border border-amber-500/40 text-sm sm:text-base">
                             x {randomPlayerCards.length} 張
                           </span>
-                        </h3>
+                        </div>
 
                         <div className="flex items-center gap-3 text-xs font-code pt-0.5 flex-wrap">
                           <span className="text-cyan-400 font-bold flex items-center gap-1">
@@ -1035,13 +1185,13 @@ export default function CollectionPage() {
                       <AlertDialog open={isRandomSellDialogOpen} onOpenChange={setIsRandomSellDialogOpen}>
                         <AlertDialogTrigger asChild>
                           <Button 
-                            className="h-10 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs gap-1.5 shadow-lg shadow-amber-500/20 active:scale-95 transition-all"
+                            className="h-10 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-xs gap-1.5 shadow-lg shadow-amber-500/20 active:scale-95 transition-all cursor-pointer"
                           >
                             <RefreshCw className="w-3.5 h-3.5" />
-                            <span>快速轉點變現</span>
+                            <span>批次轉點變現</span>
                           </Button>
                         </AlertDialogTrigger>
-                        <AlertDialogContent className="w-[94vw] max-w-md bg-slate-950 border border-amber-500/30 rounded-2xl p-5 sm:p-6 text-white space-y-4">
+                        <AlertDialogContent className="w-[94vw] max-w-md bg-slate-950 border border-amber-500/35 rounded-2xl p-5 sm:p-6 text-white space-y-4">
                           <AlertDialogHeader className="space-y-1 text-left">
                             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[10px] font-black uppercase w-fit">
                               <RefreshCw className="w-3 h-3 animate-spin-slow" />
@@ -1055,19 +1205,19 @@ export default function CollectionPage() {
                             </AlertDialogDescription>
                           </AlertDialogHeader>
 
-                          <div className="space-y-3 p-4 rounded-xl bg-slate-900/90 border border-white/10">
+                          <div className="space-y-3.5 p-4 rounded-xl bg-slate-900/90 border border-white/10">
                             <div className="flex items-center justify-between text-xs font-bold text-slate-300">
                               <span>欲轉點數量：</span>
                               <span className="text-amber-400 font-code font-black text-base">{randomSellQty} / {randomPlayerCards.length} 張</span>
                             </div>
 
-                            {/* Quantity Stepper & Quick Pills */}
+                            {/* Stepper Input */}
                             <div className="flex items-center gap-2">
                               <Button 
                                 variant="outline" 
                                 size="sm"
                                 onClick={() => setRandomSellQty(q => Math.max(1, q - 1))}
-                                className="h-9 w-9 rounded-lg bg-slate-800 border-white/10 text-white font-bold"
+                                className="h-9 w-9 rounded-lg bg-slate-800 border-white/10 text-white font-bold cursor-pointer"
                               >
                                 -1
                               </Button>
@@ -1086,37 +1236,43 @@ export default function CollectionPage() {
                                 variant="outline" 
                                 size="sm"
                                 onClick={() => setRandomSellQty(q => Math.min(randomPlayerCards.length, q + 1))}
-                                className="h-9 w-9 rounded-lg bg-slate-800 border-white/10 text-white font-bold"
+                                className="h-9 w-9 rounded-lg bg-slate-800 border-white/10 text-white font-bold cursor-pointer"
                               >
                                 +1
                               </Button>
                             </div>
 
+                            {/* Percentage Quick Select Buttons */}
                             <div className="grid grid-cols-4 gap-1.5 pt-1">
-                              {[1, 5, 10, randomPlayerCards.length].map((num, idx) => (
+                              {[
+                                { label: '25%', qty: Math.max(1, Math.round(randomPlayerCards.length * 0.25)) },
+                                { label: '50%', qty: Math.max(1, Math.round(randomPlayerCards.length * 0.5)) },
+                                { label: '75%', qty: Math.max(1, Math.round(randomPlayerCards.length * 0.75)) },
+                                { label: `全部 (${randomPlayerCards.length})`, qty: randomPlayerCards.length }
+                              ].map((item, idx) => (
                                 <button
                                   key={idx}
                                   type="button"
-                                  onClick={() => setRandomSellQty(Math.min(num, randomPlayerCards.length))}
+                                  onClick={() => setRandomSellQty(Math.min(item.qty, randomPlayerCards.length))}
                                   className={cn(
-                                    "py-1 rounded-lg text-xs font-bold font-code transition-all border",
-                                    randomSellQty === Math.min(num, randomPlayerCards.length)
-                                      ? "bg-amber-500/20 border-amber-400 text-amber-300 font-black"
+                                    "py-1.5 rounded-lg text-xs font-bold font-code transition-all border cursor-pointer",
+                                    randomSellQty === Math.min(item.qty, randomPlayerCards.length)
+                                      ? "bg-amber-500/25 border-amber-400 text-amber-300 font-black shadow-sm"
                                       : "bg-white/5 border-white/10 text-slate-400 hover:text-white"
                                   )}
                                 >
-                                  {idx === 3 ? `全部(${randomPlayerCards.length})` : `${num}張`}
+                                  {item.label}
                                 </button>
                               ))}
                             </div>
 
                             {/* Reward Preview */}
                             <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/10 text-center">
-                              <div className="p-2 rounded-lg bg-cyan-950/40 border border-cyan-500/30">
+                              <div className="p-2.5 rounded-lg bg-cyan-950/40 border border-cyan-500/30">
                                 <span className="text-[10px] text-slate-400 block font-bold">獲得鑽石</span>
                                 <span className="text-cyan-400 font-code font-black text-sm sm:text-base">+{randomSellQty * 10} 💎</span>
                               </div>
-                              <div className="p-2 rounded-lg bg-amber-950/40 border border-amber-500/30">
+                              <div className="p-2.5 rounded-lg bg-amber-950/40 border border-amber-500/30">
                                 <span className="text-[10px] text-slate-400 block font-bold">獲得紅利P點</span>
                                 <span className="text-amber-400 font-code font-black text-sm sm:text-base">+{(randomSellQty * 300).toLocaleString()} 🎁</span>
                               </div>
@@ -1124,13 +1280,13 @@ export default function CollectionPage() {
                           </div>
 
                           <AlertDialogFooter className="flex flex-row items-center justify-end gap-2 w-full">
-                            <AlertDialogCancel className="flex-1 h-10 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 border-white/10 font-bold text-xs">
+                            <AlertDialogCancel className="flex-1 h-10 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 border-white/10 font-bold text-xs cursor-pointer">
                               取消
                             </AlertDialogCancel>
                             <AlertDialogAction
                               onClick={() => handleQuickSellRandomCount(randomSellQty)}
                               disabled={isProcessing || randomSellQty <= 0}
-                              className="flex-1 h-10 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/20"
+                              className="flex-1 h-10 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/20 cursor-pointer"
                             >
                               {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : `確認轉點 ${randomSellQty} 張`}
                             </AlertDialogAction>
@@ -1141,10 +1297,10 @@ export default function CollectionPage() {
                       {/* Quick Ship Action */}
                       <div className="flex items-center gap-1.5">
                         <Input 
-                          type="number"
-                          min={1}
-                          max={randomPlayerCards.length}
-                          value={randomShipQty}
+                          type="number" 
+                          min={1} 
+                          max={randomPlayerCards.length} 
+                          value={randomShipQty} 
                           onChange={(e) => {
                             const val = parseInt(e.target.value) || 1;
                             setRandomShipQty(Math.min(Math.max(1, val), randomPlayerCards.length));
@@ -1155,7 +1311,7 @@ export default function CollectionPage() {
                         <Button 
                           onClick={() => handleSelectRandomForShipping(randomShipQty)}
                           variant="outline"
-                          className="h-10 px-3.5 rounded-xl border-cyan-500/40 bg-cyan-950/40 hover:bg-cyan-900/50 text-cyan-300 font-black text-xs gap-1.5 shadow-sm active:scale-95 transition-all"
+                          className="h-10 px-3.5 rounded-xl border-cyan-500/40 bg-cyan-950/40 hover:bg-cyan-900/50 text-cyan-300 font-black text-xs gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
                         >
                           <Ship className="w-3.5 h-3.5 text-cyan-400" />
                           <span>選取出貨 ({randomShipQty}張)</span>
@@ -1167,11 +1323,11 @@ export default function CollectionPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => setIsRandomCardsExpanded(!isRandomCardsExpanded)}
-                        className="h-10 px-2.5 rounded-xl text-slate-400 hover:text-white bg-white/5 border border-white/10 text-xs font-bold gap-1"
+                        className="h-10 px-2.5 rounded-xl text-slate-400 hover:text-white bg-white/5 border border-white/10 text-xs font-bold gap-1 cursor-pointer"
                         title="展開或收起每張卡片"
                       >
                         <Layers className="w-3.5 h-3.5 text-amber-400" />
-                        <span>{isRandomCardsExpanded ? '收起卡片清單' : '展開單張序號'}</span>
+                        <span>{isRandomCardsExpanded ? '收起序號清單' : '展開單張序號'}</span>
                       </Button>
                     </div>
                   </div>
@@ -1191,7 +1347,7 @@ export default function CollectionPage() {
                             key={card.id}
                             onClick={() => handleSelectCard(card.id, !isSelected)}
                             className={cn(
-                              "p-2 rounded-xl border flex flex-col items-center gap-1 cursor-pointer transition-all",
+                              "p-2 rounded-xl border flex flex-col items-center gap-1 cursor-pointer transition-all select-none",
                               isSelected 
                                 ? "bg-amber-500/20 border-amber-400 text-white shadow-md shadow-amber-500/20 scale-[1.02]" 
                                 : "bg-slate-900/80 border-white/10 text-slate-300 hover:bg-slate-800"
@@ -1255,7 +1411,12 @@ export default function CollectionPage() {
                   <div className="h-px flex-1 mx-4 bg-gradient-to-r from-orange-500/20 to-transparent hidden sm:block" />
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3 sm:gap-4">
+                <div className={cn(
+                  "gap-2.5 sm:gap-4",
+                  viewMode === 'grid' 
+                    ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-6" 
+                    : "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10"
+                )}>
                   {groupBreakCards.map((card, index) => {
                     const isSelected = selectedCardIds.has(card.id);
                     return (
@@ -1263,18 +1424,30 @@ export default function CollectionPage() {
                         key={card.id}
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: Math.min(index * 0.02, 0.3) }}
+                        transition={{ delay: Math.min(index * 0.015, 0.25) }}
                         onClick={() => setPreviewCard(card)}
                         className={cn(
-                          "group relative flex flex-col rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 p-2",
-                          "bg-gradient-to-b from-[#1c140e]/95 via-[#120d09]/95 to-[#0a0705]/95 border",
+                          "group relative flex flex-col rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 select-none",
+                          viewMode === 'grid' ? "p-2 sm:p-2.5" : "p-1.5",
+                          "bg-gradient-to-b from-[#1c140e]/95 via-[#120d09]/95 to-[#0a0705]/95 border backdrop-blur-md shadow-xl",
                           isSelected 
-                            ? "border-orange-400 ring-2 ring-orange-400/80 shadow-[0_0_20px_rgba(249,115,22,0.4)] bg-orange-950/30 scale-[1.02]" 
-                            : "border-white/10 hover:border-orange-500/50 hover:shadow-[0_0_20px_rgba(249,115,22,0.2)] hover:-translate-y-0.5"
+                            ? "border-orange-400 ring-2 ring-orange-400/80 shadow-[0_0_25px_rgba(249,115,22,0.45)] bg-orange-950/40 scale-[1.02]" 
+                            : "border-orange-500/30 hover:border-orange-400/70 hover:shadow-[0_0_20px_rgba(249,115,22,0.3)] hover:-translate-y-0.5"
                         )}
                       >
+                        {/* Header accent for Grid */}
+                        {viewMode === 'grid' && (
+                          <div className="flex items-center justify-between px-1 pb-1.5 opacity-70 group-hover:opacity-100 transition-opacity">
+                            <div className="w-1.5 h-1.5 rounded-full bg-orange-400/80 shadow-sm" />
+                            <span className="text-[7.5px] font-mono tracking-widest text-orange-300/80 uppercase">
+                              GROUP BREAK SLAB
+                            </span>
+                            <div className="w-1.5 h-1.5 rounded-full bg-orange-400/80 shadow-sm" />
+                          </div>
+                        )}
+
                         {/* Card Image Wrapper */}
-                        <div className="relative w-full aspect-[2.5/3.5] rounded-xl overflow-hidden bg-black/50">
+                        <div className="relative w-full aspect-[2.5/3.5] rounded-xl overflow-hidden bg-black/60 shadow-inner">
                           <CardItem 
                             name={card.name} 
                             imageUrl={card.imageUrl} 
@@ -1288,40 +1461,46 @@ export default function CollectionPage() {
 
                           {/* Quick Selection Checkbox on Upper-Left */}
                           <div 
-                            className="absolute top-2 left-2 z-30" 
+                            className="absolute top-1.5 left-1.5 z-30" 
                             onClick={(e) => {
                               e.stopPropagation();
                               handleSelectCard(card.id, !isSelected);
                             }}
                           >
                             <div className={cn(
-                              "w-6 h-6 rounded-lg border transition-all flex items-center justify-center backdrop-blur-md cursor-pointer",
+                              "rounded-lg border transition-all flex items-center justify-center backdrop-blur-md cursor-pointer",
+                              viewMode === 'grid' ? "w-6 h-6" : "w-5 h-5",
                               isSelected 
-                                ? "bg-orange-500 border-orange-500 text-slate-950 shadow-[0_0_12px_rgba(249,115,22,0.8)]" 
-                                : "bg-black/60 border-white/30 hover:border-white/70 text-transparent"
+                                ? "bg-orange-500 border-orange-500 text-slate-950 shadow-[0_0_12px_rgba(249,115,22,0.9)]" 
+                                : "bg-black/65 border-white/35 hover:border-white/80 text-transparent"
                             )}>
-                              <Check className="w-3.5 h-3.5 stroke-[3]" />
+                              <Check className={cn("stroke-[3]", viewMode === 'grid' ? "w-3.5 h-3.5" : "w-3 h-3")} />
                             </div>
                           </div>
 
                           {/* BREAK BADGE */}
-                          <div className="absolute top-2 right-2 z-20">
-                            <Badge className="bg-orange-500 text-slate-950 text-[9px] font-black px-1.5 py-0.2 shadow-md border-none">
+                          <div className="absolute top-1.5 right-1.5 z-20">
+                            <Badge className="bg-orange-500 text-slate-950 text-[8.5px] font-black px-1.5 py-0.2 shadow-md border-none">
                               BREAK
                             </Badge>
                           </div>
 
                           {/* Hover Action Hint */}
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none z-20">
-                            <div className="px-2.5 py-1 rounded-full bg-slate-900/90 border border-white/20 text-[10px] font-black text-white flex items-center gap-1 shadow-lg">
-                              <Eye className="w-3 h-3 text-orange-400" /> 鑑賞卡片
+                          <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none z-20">
+                            <div className="px-2.5 py-1 rounded-full bg-slate-900/90 border border-orange-400/40 text-[10px] font-black text-orange-300 flex items-center gap-1 shadow-xl">
+                              <Eye className="w-3 h-3 text-orange-400" /> 3D 鑑賞
                             </div>
                           </div>
                         </div>
 
                         {/* Card Info Footer */}
-                        <div className="mt-2 space-y-1">
-                          <h4 className="text-xs font-bold text-white group-hover:text-orange-300 transition-colors line-clamp-1">
+                        <div className={cn("mt-1.5 space-y-0.5", viewMode === 'compact' && "mt-1")}>
+                          <h4 
+                            className={cn(
+                              "font-bold text-white group-hover:text-orange-300 transition-colors leading-tight truncate",
+                              viewMode === 'grid' ? "text-xs" : "text-[10px]"
+                            )}
+                          >
                             {card.name}
                           </h4>
                           
@@ -1695,38 +1874,55 @@ export default function CollectionPage() {
             )}
           </AnimatePresence>
 
-          {/* === 3D SHOWROOM PREVIEW DIALOG === */}
+          {/* === 3D SHOWROOM PREVIEW DIALOG (全息卡磚鑑賞展廳) === */}
           <Dialog open={!!previewCard} onOpenChange={(open) => !open && setPreviewCard(null)}>
-            <DialogContent className="max-w-[min(92vw,380px)] bg-slate-950/95 backdrop-blur-2xl border border-cyan-500/30 shadow-2xl p-5 overflow-hidden flex flex-col items-center justify-center gap-4 rounded-3xl text-white">
+            <DialogContent className="max-w-[min(94vw,400px)] bg-slate-950/95 backdrop-blur-3xl border border-cyan-500/40 shadow-[0_25px_60px_rgba(0,0,0,0.9),0_0_35px_rgba(6,182,212,0.3)] p-5 sm:p-6 overflow-hidden flex flex-col items-center justify-center gap-4 rounded-3xl text-white">
               <DialogTitle><VisuallyHiddenPrimitive.Root>Card Showroom</VisuallyHiddenPrimitive.Root></DialogTitle>
               {previewCard && (
                 <div className="w-full flex flex-col items-center gap-4">
-                  
+                  {/* Spotlight Cone Background */}
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-48 bg-gradient-to-b from-cyan-400/20 via-sky-500/10 to-transparent blur-2xl pointer-events-none" />
+
                   {/* Card Title & Badges */}
-                  <div className="flex flex-col items-center text-center gap-1">
+                  <div className="flex flex-col items-center text-center gap-1.5 relative z-10">
                     <div className="flex items-center gap-1.5 flex-wrap justify-center">
-                      <Badge variant="outline" className="border-cyan-500/40 text-cyan-300 bg-cyan-500/10 px-2.5 py-0.5 font-bold tracking-wider uppercase text-[10px] rounded-full">
-                        {previewCard.category ? previewCard.category.toUpperCase() : 'GENERAL ASSET'}
-                      </Badge>
+                      <span className={cn(
+                        "px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border shadow-sm",
+                        previewCard.rarity === 'legendary' 
+                          ? "bg-amber-500/20 text-amber-300 border-amber-400/50" 
+                          : previewCard.rarity === 'rare'
+                            ? "bg-sky-500/20 text-sky-300 border-sky-400/50"
+                            : "bg-slate-800 text-slate-300 border-white/20"
+                      )}>
+                        {previewCard.rarity ? previewCard.rarity.toUpperCase() : 'COMMON'}
+                      </span>
+                      
+                      {previewCard.category && (
+                        <span className="bg-slate-900/90 text-cyan-300 border border-cyan-500/30 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                          {previewCard.category}
+                        </span>
+                      )}
+
                       {previewCard.serialNumber && previewCard.serialNumber !== '0000' && (
-                        <Badge className="bg-slate-900 text-cyan-300 border border-cyan-500/30 text-[10px] font-mono px-2 py-0.5">
+                        <span className="bg-slate-900 text-cyan-300 border border-cyan-500/40 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full shadow-inner">
                           #{previewCard.serialNumber}
-                        </Badge>
+                        </span>
                       )}
                     </div>
-                    <h2 className="text-base sm:text-lg font-black font-headline tracking-tight text-white uppercase max-w-xs text-center leading-snug mt-1">
+
+                    <h2 className="text-base sm:text-xl font-black font-headline tracking-tight text-white uppercase max-w-xs text-center leading-snug drop-shadow-md">
                       {previewCard.name}
                     </h2>
                   </div>
 
                   {/* 3D Flip Card Container */}
-                  <div className="w-full max-w-[190px] aspect-[2.5/3.5] perspective-1000 my-1">
+                  <div className="w-full max-w-[210px] aspect-[2.5/3.5] perspective-1000 my-1 relative z-10">
                     <motion.div 
                       initial={{ scale: 0.9, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       className="relative w-full h-full group"
                     >
-                      <div className="absolute -inset-4 bg-cyan-500/20 blur-xl opacity-70 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                      <div className="absolute -inset-4 bg-cyan-500/25 blur-xl opacity-75 group-hover:opacity-100 transition-opacity pointer-events-none" />
                       <CardItem 
                         name={previewCard.name} 
                         imageUrl={previewCard.imageUrl} 
@@ -1740,22 +1936,27 @@ export default function CollectionPage() {
                   </div>
 
                   {/* Valuation & Inspection Buttons */}
-                  <div className="flex flex-col items-center gap-2.5 w-full pt-1">
-                    <div className="flex items-center gap-2 bg-slate-900 border border-white/10 px-4 py-1.5 rounded-xl text-xs font-code font-black text-white shadow-md">
-                      <span className="text-slate-400 font-sans text-[11px]">估值:</span>
-                      <Gem className="w-3.5 h-3.5 text-cyan-400" />
-                      <span className="text-cyan-300">{previewCard.sellPrice || 10} 鑽石</span>
+                  <div className="flex flex-col items-center gap-2.5 w-full pt-1 relative z-10">
+                    <div className="flex items-center justify-between w-full bg-slate-900/90 border border-white/10 px-4 py-2 rounded-xl text-xs font-code font-black text-white shadow-md">
+                      <span className="text-slate-400 font-sans text-xs flex items-center gap-1">
+                        <Gem className="w-3.5 h-3.5 text-cyan-400" />
+                        變現估值:
+                      </span>
+                      <span className="text-cyan-300 text-sm font-bold">
+                        {previewCard.sellPrice || 10} 鑽石
+                      </span>
                     </div>
 
-                    <p className="text-[10px] font-bold text-slate-400 flex items-center gap-1">
-                      <RotateCw className="w-3 h-3 text-cyan-400 animate-spin-slow" /> 點擊卡片即可 3D 翻面觀看背卡
+                    <p className="text-[10.5px] font-bold text-slate-400 flex items-center gap-1.5">
+                      <RotateCw className="w-3.5 h-3.5 text-cyan-400 animate-spin-slow" /> 
+                      點擊卡片即可 3D 翻轉觀看背卡
                     </p>
 
                     <Button 
                       onClick={() => setIsReportOpen(true)} 
-                      className="h-10 w-full rounded-xl text-xs font-black bg-gradient-to-r from-cyan-500 to-sky-400 hover:from-cyan-400 text-slate-950 shadow-lg shadow-cyan-500/20 transition-all mt-1"
+                      className="h-10 w-full rounded-xl text-xs font-black bg-gradient-to-r from-cyan-500 via-sky-400 to-cyan-400 hover:from-cyan-400 hover:to-sky-300 text-slate-950 shadow-lg shadow-cyan-500/25 transition-all cursor-pointer mt-1"
                     >
-                      <Sparkles className="w-3.5 h-3.5 mr-1" /> 生成 AI 智能鑑定報告
+                      <Sparkles className="w-3.5 h-3.5 mr-1.5" /> 智能 AI 珍稀度鑑定報告
                     </Button>
                   </div>
                 </div>

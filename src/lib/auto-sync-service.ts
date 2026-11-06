@@ -105,7 +105,8 @@ export async function scrapeSportsMatches(): Promise<ScrapedMatch[]> {
   ];
 
   if (!apiKey || apiKey.trim() === '' || apiKey.includes('your_') || apiKey === 'YOUR_API_KEY') {
-    return fallbackMatches;
+    console.warn('[ScrapeSportsMatches] 無 GEMINI_API_KEY，不硬塞賽事');
+    return [];
   }
 
   try {
@@ -212,10 +213,10 @@ export async function scrapeSportsMatches(): Promise<ScrapedMatch[]> {
       });
     }
   } catch (error) {
-    console.error('[ScrapeSportsMatches] AI 搜尋失敗，切換為備援賽事:', error);
+    console.error('[ScrapeSportsMatches] AI 搜尋失敗，不硬塞賽事:', error);
   }
 
-  return fallbackMatches;
+  return [];
 }
 
 /**

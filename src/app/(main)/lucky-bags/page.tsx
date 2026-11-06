@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { 
   Users, Gem, Trophy, Package, ChevronDown, ChevronUp, Sparkles, ChevronRight, 
   Settings, Disc3, Info, Flame, ShieldCheck, ArrowRight, Zap, Target,
-  Dices, Percent, Award, Coins, Crown, LayoutGrid, RotateCw
+  Dices, Percent, Award, Coins, Crown, LayoutGrid, RotateCw, HelpCircle
 } from 'lucide-react';
 import { LuckyBagIcon, PPlusIcon } from '@/components/icons';
 import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dialog";
 import { RevolvingDoorLuckyBagCarousel } from '@/components/revolving-door-lucky-bag-carousel';
 import { LuckyBagRedPacketCard } from '@/components/lucky-bag-red-packet-card';
+import { BeginnerGuideDialog } from '@/components/beginner-guide-dialog';
 
 type LuckBagStatus = 'draft' | 'published' | '已開獎';
 
@@ -168,110 +169,12 @@ export default function LuckyBagsPage() {
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[500px] bg-gradient-to-b from-rose-900/25 via-amber-600/15 to-transparent blur-[150px] pointer-events-none -z-10" />
           <div className="absolute top-[600px] right-0 w-[600px] h-[600px] bg-rose-950/20 blur-[180px] pointer-events-none -z-10" />
 
-          <div className="container px-3 sm:px-6 py-3 sm:py-8 max-w-7xl mx-auto space-y-6 sm:space-y-10">
+          <div className="container px-2 sm:px-6 pt-0 sm:pt-4 pb-12 sm:pb-20 max-w-7xl mx-auto space-y-3 sm:space-y-10">
               
-              {/* === 頂部控制列：左側標題與右側玩法說明（同一橫行絕對不折行） === */}
-              <div className="flex items-center justify-between gap-1.5 sm:gap-3 pt-0.5 pb-1 w-full flex-nowrap">
-                  <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0 shrink">
-                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.3)] shrink-0">
-                          <Flame className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 animate-pulse" />
-                      </div>
-                      <h1 className="text-xs xs:text-sm sm:text-base md:text-lg font-black font-headline tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 drop-shadow-[0_0_10px_rgba(245,158,11,0.35)] whitespace-nowrap truncate">
-                          正在募集熱門福袋
-                      </h1>
-                      <span className="text-[10px] sm:text-xs font-mono font-bold text-yellow-300 bg-amber-500/20 px-1.5 sm:px-2 py-0.5 rounded-full border border-amber-400/40 shrink-0 whitespace-nowrap">
-                          {finalIsLoading ? '--' : inProgressBags.length} <span className="hidden sm:inline">款可選</span><span className="sm:hidden">款</span>
-                      </span>
-                  </div>
-
-                  {/* 玩法說明 按鈕與彈窗 (緊靠右側，與標題同一橫行) */}
-                  <Dialog>
-                      <DialogTrigger asChild>
-                          <Button 
-                              type="button"
-                              className="h-7 sm:h-8 px-2 sm:px-3.5 rounded-xl bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-500 hover:from-yellow-300 hover:to-amber-300 text-slate-950 text-[11px] sm:text-xs font-black shadow-[0_0_12px_rgba(245,158,11,0.35)] transition-all flex items-center gap-1 sm:gap-1.5 group cursor-pointer border border-yellow-200 shrink-0 whitespace-nowrap active:scale-95"
-                          >
-                              <Dices className="w-3.5 h-3.5 text-slate-950 group-hover:rotate-45 transition-transform shrink-0" />
-                              <span>玩法說明</span>
-                          </Button>
-                      </DialogTrigger>
-                      <DialogContent className="rounded-[2rem] bg-[#1a0205] border border-amber-500/40 text-white max-w-2xl backdrop-blur-2xl shadow-2xl">
-                          <DialogHeader>
-                              <DialogTitle className="text-xl md:text-2xl font-black text-amber-300 flex items-center gap-2 font-headline">
-                                  <Target className="w-6 h-6 text-amber-400" />
-                                  幸運紅包福袋機制說明
-                              </DialogTitle>
-                          </DialogHeader>
-                          <div className="space-y-4 py-3 text-sm text-amber-100/90">
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                  <div className="p-4 rounded-2xl bg-[#3f0713]/60 border border-amber-500/30 space-y-1.5">
-                                      <div className="flex items-center gap-2 text-amber-300 font-bold">
-                                          <Percent className="w-4 h-4 text-amber-400" /> 募集滿額即開獎
-                                      </div>
-                                      <p className="text-xs text-amber-200/70">達到指定認購名額與格數後，系統即刻公平公正自動開獎。</p>
-                                  </div>
-                                  <div className="p-4 rounded-2xl bg-[#3f0713]/60 border border-amber-500/30 space-y-1.5">
-                                      <div className="flex items-center gap-2 text-yellow-300 font-bold">
-                                          <Award className="w-4 h-4 text-yellow-400" /> 機率絕對均等
-                                      </div>
-                                      <p className="text-xs text-amber-200/70">每個號碼位置中獎機率完全相同，百分之百保證開出展示頭獎。</p>
-                                  </div>
-                                  <div className="p-4 rounded-2xl bg-[#3f0713]/60 border border-amber-500/30 space-y-1.5">
-                                      <div className="flex items-center gap-2 text-amber-300 font-bold">
-                                          <Coins className="w-4 h-4 text-amber-400" /> 雙幣自由參與
-                                      </div>
-                                      <p className="text-xs text-amber-200/70">支援鑽石 💎 與紅利 P+ 點數自由兌換參與，享受開袋驚喜。</p>
-                                  </div>
-                                  <div className="p-4 rounded-2xl bg-[#3f0713]/60 border border-amber-500/30 space-y-1.5">
-                                      <div className="flex items-center gap-2 text-yellow-300 font-bold">
-                                          <ShieldCheck className="w-4 h-4 text-yellow-400" /> 開獎自動入庫
-                                      </div>
-                                      <p className="text-xs text-amber-200/70">開獎後系統隨機配對，得獎卡片將即時自動入庫至個人卡庫。</p>
-                                  </div>
-                              </div>
-                          </div>
-                      </DialogContent>
-                  </Dialog>
-              </div>
-
-              {/* === 3D / 清單 檢視切換 (位於標題下方、福袋卡包正上方居中呈現) === */}
-              {inProgressBags.length > 1 && (
-                  <div className="flex justify-center -my-2 sm:-my-4">
-                      <div className="flex items-center bg-[#2a040b]/90 p-1 rounded-2xl border border-amber-500/40 shadow-[0_4px_20px_rgba(0,0,0,0.6)] backdrop-blur-md">
-                          <button
-                              type="button"
-                              onClick={() => setViewMode('carousel')}
-                              className={cn(
-                                  "flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer",
-                                  viewMode === 'carousel'
-                                      ? "bg-gradient-to-r from-yellow-400 to-amber-400 text-slate-950 shadow-md font-black"
-                                      : "text-amber-200/70 hover:text-white"
-                              )}
-                          >
-                              <RotateCw className="w-3.5 h-3.5" />
-                              <span>3D</span>
-                          </button>
-                          <button
-                              type="button"
-                              onClick={() => setViewMode('list')}
-                              className={cn(
-                                  "flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer",
-                                  viewMode === 'list'
-                                      ? "bg-gradient-to-r from-yellow-400 to-amber-400 text-slate-950 shadow-md font-black"
-                                      : "text-amber-200/70 hover:text-white"
-                              )}
-                          >
-                              <LayoutGrid className="w-3.5 h-3.5" />
-                              <span>清單</span>
-                          </button>
-                      </div>
-                  </div>
-              )}
-
-              {/* === 內容區塊 === */}
+                            {/* === 內容區塊 === */}
               <div className="space-y-8 sm:space-y-12">
                   {/* 正在募集中的福袋 (3D 旋轉門紅包袋舞台) */}
-                  <section className="space-y-3 sm:space-y-5">
+                  <section className="space-y-1 sm:space-y-5 -mt-2 sm:mt-0">
 
                       {/* 內容展台 */}
                       {finalIsLoading ? (

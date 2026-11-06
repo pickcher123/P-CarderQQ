@@ -1,6 +1,8 @@
 'use client';
 
 import { BettingGameDialog } from '@/components/betting-game-dialog';
+import { BeginnerGuideDialog } from '@/components/beginner-guide-dialog';
+import { ProvablyFairDialog } from '@/components/provably-fair-dialog';
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { SafeImage } from '@/components/safe-image';
@@ -12,7 +14,7 @@ import {
     Sparkles, ShoppingBag, Truck, Check, Package, 
     Settings, ChevronRight, Swords, Target, RefreshCcw, ShieldCheck, 
     XCircle, Search, Flame, Eye, Zap, Layers, Trophy, ArrowRight, 
-    Percent, Coins, Dices, Award, X, SlidersHorizontal, Disc3
+    Percent, Coins, Dices, Award, X, SlidersHorizontal, Disc3, HelpCircle
 } from 'lucide-react';
 import {
   Dialog,
@@ -239,148 +241,172 @@ export default function BetLandingPage() {
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1100px] h-[450px] bg-gradient-to-b from-rose-500/15 via-pink-500/10 to-transparent blur-[140px] pointer-events-none -z-10" />
             <div className="absolute top-[600px] right-0 w-[600px] h-[600px] bg-rose-500/10 blur-[160px] pointer-events-none -z-10" />
 
-            <div className="container px-3 sm:px-6 py-3 sm:py-8 max-w-7xl mx-auto space-y-5 sm:space-y-10">
+            <div className="container px-3 sm:px-6 pt-7 sm:pt-11 pb-20 max-w-7xl mx-auto space-y-6 sm:space-y-8">
                 
-                {/* 頂部單獨角落：玩法說明與即時概況 */}
-                <div className="flex items-center justify-between mb-2 sm:mb-4 px-1">
-                    <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-900/80 border border-slate-800 text-[11px] font-medium text-slate-300">
-                            <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
-                            <span>幸運拼卡專區</span>
-                            <span className="text-rose-400 font-bold ml-1">{finalIsLoading ? '--' : stats.availableItems} 款可拼</span>
-                        </div>
-                    </div>
-
-                    {/* 單獨角落【玩法說明】按鈕 */}
-                    <Dialog>
-                        <DialogTrigger asChild>
-                            <button 
-                                type="button"
-                                className="flex items-center gap-1.5 h-8 px-3.5 rounded-full bg-gradient-to-r from-rose-500/15 via-pink-500/10 to-rose-500/15 hover:from-rose-500/25 hover:to-pink-500/20 text-rose-300 hover:text-rose-200 border border-rose-500/40 text-xs font-bold transition-all shadow-[0_0_12px_rgba(244,63,94,0.15)] cursor-pointer group shrink-0"
-                            >
-                                <Dices className="w-3.5 h-3.5 text-rose-400 group-hover:rotate-45 transition-transform" />
-                                <span>玩法說明</span>
-                            </button>
-                        </DialogTrigger>
-                        <DialogContent className="rounded-[2rem] bg-slate-950 border border-rose-500/30 text-white max-w-2xl backdrop-blur-2xl shadow-2xl">
-                            <DialogHeader>
-                                <DialogTitle className="text-xl md:text-2xl font-black text-rose-400 flex items-center gap-2 font-headline">
-                                    <Target className="w-6 h-6 text-rose-400" />
-                                    拼卡機制
-                                </DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-4 py-3 text-sm text-slate-300">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
-                                        <div className="flex items-center gap-2 text-rose-400 font-bold">
-                                            <Percent className="w-4 h-4" /> 1/10 命中率
-                                        </div>
-                                        <p className="text-xs text-slate-400">每次 1~10 隨機搖號，命中直接帶走卡片。</p>
-                                    </div>
-                                    <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
-                                        <div className="flex items-center gap-2 text-purple-400 font-bold">
-                                            <Coins className="w-4 h-4" /> 雙幣參與
-                                        </div>
-                                        <p className="text-xs text-slate-400">支援鑽石 💎 或 P+ 點數（鑽石與 P+ 1:10）。</p>
-                                    </div>
-                                    <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
-                                        <div className="flex items-center gap-2 text-amber-400 font-bold">
-                                            <Award className="w-4 h-4" /> 10% 成本
-                                        </div>
-                                        <p className="text-xs text-slate-400">單次只需卡片價值的 1/10 低成本博大獎。</p>
-                                    </div>
-                                    <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
-                                        <div className="flex items-center gap-2 text-emerald-400 font-bold">
-                                            <ShieldCheck className="w-4 h-4" /> 即時入庫
-                                        </div>
-                                        <p className="text-xs text-slate-400">中獎即刻存入個人卡庫，隨時申請實體出貨。</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </DialogContent>
-                    </Dialog>
-                </div>
-
-                {/* 3D 旋轉門主題呈現專區 */}
-                <div className="mb-8 sm:mb-12">
+                {/* 3D 旋轉門主題呈現專區（右上角配有精緻的玩法說明與公平驗證，適度留白更顯大器） */}
+                <div className="relative mt-1 sm:mt-2">
                     <RevolvingDoorThemeCarousel
                         categories={categoriesWithCounts}
                         isLoading={finalIsLoading}
                         baseHref="/bet"
+                        headerAction={
+                            <Dialog>
+                            <DialogTrigger asChild>
+                                <button 
+                                    type="button"
+                                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-900/90 hover:bg-slate-800 text-rose-300 border border-rose-500/40 flex items-center justify-center transition-all shadow-[0_0_12px_rgba(244,63,94,0.25)] active:scale-95 cursor-pointer"
+                                    title="拼卡玩法說明"
+                                >
+                                    <HelpCircle className="w-4 h-4 text-rose-400" />
+                                </button>
+                            </DialogTrigger>
+                            <DialogContent className="rounded-[2rem] bg-slate-950 border border-rose-500/30 text-white max-w-2xl backdrop-blur-2xl shadow-2xl">
+                                <DialogHeader>
+                                    <DialogTitle className="text-xl md:text-2xl font-black text-rose-400 flex items-center gap-2 font-headline">
+                                        <Target className="w-6 h-6 text-rose-400" />
+                                        拼卡機制
+                                    </DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-4 py-3 text-sm text-slate-300">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
+                                            <div className="flex items-center gap-2 text-rose-400 font-bold">
+                                                <Percent className="w-4 h-4" /> 1/10 命中率
+                                            </div>
+                                            <p className="text-xs text-slate-400">每次 1~10 隨機搖號，命中直接帶走卡片。</p>
+                                        </div>
+                                        <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
+                                            <div className="flex items-center gap-2 text-purple-400 font-bold">
+                                                <Coins className="w-4 h-4" /> 雙幣參與
+                                            </div>
+                                            <p className="text-xs text-slate-400">支援鑽石 💎 或 P+ 點數（鑽石與 P+ 1:10）。</p>
+                                        </div>
+                                        <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
+                                            <div className="flex items-center gap-2 text-amber-400 font-bold">
+                                                <Award className="w-4 h-4" /> 10% 成本
+                                            </div>
+                                            <p className="text-xs text-slate-400">單次只需卡片價值的 1/10 低成本博大獎。</p>
+                                        </div>
+                                        <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
+                                            <div className="flex items-center gap-2 text-emerald-400 font-bold">
+                                                <ShieldCheck className="w-4 h-4" /> 即時入庫
+                                            </div>
+                                            <p className="text-xs text-slate-400">中獎即刻存入個人卡庫，隨時申請實體出貨。</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </DialogContent>
+                        </Dialog>
+                        }
                     />
                 </div>
 
                 {/* === 全部拼卡獎品區 (過濾 + 頂級卡磚) === */}
-                <div className="space-y-6 pt-4">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-4">
-                        <div>
-                            <h2 className="text-lg md:text-2xl font-black text-white tracking-wide font-headline flex items-center gap-2">
-                                <Sparkles className="w-5 h-5 text-rose-400" />
-                                焦點拼卡獎品
-                            </h2>
-                            <p className="text-xs text-slate-400 mt-1">
-                                挑選心儀卡牌 · 1/10 命運機率挑戰入庫
-                            </p>
-                        </div>
+                <div className="space-y-6 pt-2">
+                                        {/* 焦點拼卡獎品控制中樞 (Clean & Elegant Cyberpunk Prize Hub) */}
+                    <div className="relative rounded-2xl sm:rounded-3xl p-4 sm:p-6 bg-gradient-to-b from-[#180d1e]/95 via-[#0e0c16]/95 to-[#08070d] border border-rose-500/35 shadow-[0_20px_50px_rgba(0,0,0,0.85)] backdrop-blur-2xl overflow-hidden">
+                        {/* 頂部全息激光流光條 */}
+                        <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-rose-500 to-transparent shadow-[0_0_12px_#f43f5e]" />
+                        
+                        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            {/* 左側：精簡標題與卡數 */}
+                            <div className="flex items-center justify-between sm:justify-start gap-3">
+                                <div className="flex items-center gap-2.5">
+                                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-rose-500/30 to-amber-500/20 border border-rose-400/50 flex items-center justify-center text-rose-200 shrink-0 shadow-sm">
+                                        <Sparkles className="w-5 h-5 text-rose-300 fill-rose-400/50" />
+                                    </div>
+                                    <h2 className="text-xl sm:text-2xl md:text-3xl font-black font-headline tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-rose-300 to-amber-300">
+                                        焦點拼卡獎品
+                                    </h2>
+                                </div>
 
-                        {/* Filters & Search */}
-                        <div className="flex flex-wrap items-center gap-3">
-                            {/* Tab Filters */}
-                            <div className="flex items-center p-1 rounded-xl bg-white/5 border border-white/10">
-                                <button
-                                    onClick={() => setFilterTab('all')}
-                                    className={cn(
-                                        "px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer",
-                                        filterTab === 'all' ? "bg-rose-500 text-white shadow-sm" : "text-slate-400 hover:text-white"
-                                    )}
-                                >
-                                    全部
-                                </button>
-                                <button
-                                    onClick={() => setFilterTab('available')}
-                                    className={cn(
-                                        "px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer",
-                                        filterTab === 'available' ? "bg-rose-500 text-white shadow-sm" : "text-slate-400 hover:text-white"
-                                    )}
-                                >
-                                    未抽出
-                                </button>
-                                <button
-                                    onClick={() => setFilterTab('featured')}
-                                    className={cn(
-                                        "px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer",
-                                        filterTab === 'featured' ? "bg-rose-500 text-white shadow-sm" : "text-slate-400 hover:text-white"
-                                    )}
-                                >
-                                    🔥 HOT
-                                </button>
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-500/20 border border-rose-400/40 text-[11px] sm:text-xs font-black text-rose-200 font-mono shrink-0">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-ping" />
+                                    <span>{finalIsLoading ? "--" : (stats.availableItems + " 款在席")}</span>
+                                </span>
                             </div>
 
-                            {/* Sort Select */}
-                            <Select 
-                                value={sortOption} 
-                                onValueChange={(val) => setSortOption(val as any)}
-                            >
-                                <SelectTrigger className="h-9 bg-white/5 border-white/10 rounded-xl font-bold text-white text-xs w-[130px]">
-                                    <SelectValue placeholder="排序方式" />
-                                </SelectTrigger>
-                                <SelectContent className="bg-slate-900 border-white/10 text-white rounded-xl">
-                                    <SelectItem value="latest" className="font-bold cursor-pointer">推薦排序</SelectItem>
-                                    <SelectItem value="price-high" className="font-bold cursor-pointer">價值：高至低</SelectItem>
-                                    <SelectItem value="price-low" className="font-bold cursor-pointer">價值：低至高</SelectItem>
-                                    <SelectItem value="unsold" className="font-bold cursor-pointer">未抽出優先</SelectItem>
-                                </SelectContent>
-                            </Select>
+                            {/* 右側：篩選分頁、排序與搜尋 (高度整合、不溢出) */}
+                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                                {/* 分頁篩選 */}
+                                <div className="grid grid-cols-3 p-1 rounded-xl bg-slate-950/90 border border-white/15 shadow-inner">
+                                    <button
+                                        type="button"
+                                        onClick={() => setFilterTab('all')}
+                                        className={cn(
+                                            "py-1.5 px-2 rounded-lg text-xs font-black transition-all cursor-pointer text-center flex items-center justify-center gap-1",
+                                            filterTab === 'all' 
+                                                ? "bg-gradient-to-r from-rose-500 to-pink-600 text-white shadow-md border border-rose-300/40" 
+                                                : "text-slate-400 hover:text-white"
+                                        )}
+                                    >
+                                        <span>全部</span>
+                                        <span className="text-[10px] opacity-75 font-mono">({stats.totalItems})</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setFilterTab('available')}
+                                        className={cn(
+                                            "py-1.5 px-2 rounded-lg text-xs font-black transition-all cursor-pointer text-center flex items-center justify-center gap-1",
+                                            filterTab === 'available' 
+                                                ? "bg-gradient-to-r from-rose-500 to-pink-600 text-white shadow-md border border-rose-300/40" 
+                                                : "text-slate-400 hover:text-white"
+                                        )}
+                                    >
+                                        <span>未抽出</span>
+                                        <span className="text-[10px] opacity-75 font-mono">({stats.availableItems})</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setFilterTab('featured')}
+                                        className={cn(
+                                            "py-1.5 px-2 rounded-lg text-xs font-black transition-all cursor-pointer text-center flex items-center justify-center gap-1",
+                                            filterTab === 'featured' 
+                                                ? "bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-black shadow-md border border-yellow-200" 
+                                                : "text-slate-400 hover:text-white"
+                                        )}
+                                    >
+                                        <Flame className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                                        <span>HOT</span>
+                                    </button>
+                                </div>
 
-                            {/* Search Input */}
-                            <div className="relative w-full sm:w-56">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-                                <Input 
-                                    placeholder="搜尋球員/卡名..." 
-                                    className="pl-8 h-9 bg-white/5 rounded-xl border-white/10 text-xs text-white placeholder:text-slate-500 focus-visible:ring-rose-500" 
-                                    value={searchTerm} 
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                />
+                                {/* 下拉排序 + 搜尋欄並排 */}
+                                <div className="flex items-center gap-2">
+                                    <Select 
+                                        value={sortOption} 
+                                        onValueChange={(val) => setSortOption(val as any)}
+                                    >
+                                        <SelectTrigger className="h-9 bg-slate-950/90 border-rose-500/35 hover:border-rose-400/70 rounded-xl font-bold text-slate-200 text-xs w-[110px] sm:w-[125px] shadow-sm shrink-0 cursor-pointer">
+                                            <SelectValue placeholder="排序方式" />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-slate-950 border border-rose-500/30 text-white rounded-xl shadow-2xl">
+                                            <SelectItem value="latest" className="font-bold cursor-pointer hover:bg-rose-500/20">推薦排序</SelectItem>
+                                            <SelectItem value="price-high" className="font-bold cursor-pointer hover:bg-rose-500/20">價值：高至低</SelectItem>
+                                            <SelectItem value="price-low" className="font-bold cursor-pointer hover:bg-rose-500/20">價值：低至高</SelectItem>
+                                            <SelectItem value="unsold" className="font-bold cursor-pointer hover:bg-rose-500/20">未抽出優先</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+
+                                    <div className="relative flex-1 sm:w-48">
+                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-rose-400/80 pointer-events-none" />
+                                        <Input 
+                                            placeholder="搜尋球員/卡名..." 
+                                            className="pl-8.5 pr-7 h-9 bg-slate-950/80 rounded-xl border-rose-500/30 hover:border-rose-400/50 text-xs text-white placeholder:text-slate-500 focus-visible:ring-rose-500 shadow-inner w-full" 
+                                            value={searchTerm} 
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                        />
+                                        {searchTerm && (
+                                            <button 
+                                                type="button"
+                                                onClick={() => setSearchTerm('')}
+                                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white cursor-pointer"
+                                            >
+                                                <X className="w-3.5 h-3.5" />
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

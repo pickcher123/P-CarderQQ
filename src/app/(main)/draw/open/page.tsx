@@ -18,6 +18,7 @@ import { Gem, Sparkles, Loader2, RotateCcw, ArrowLeft, PlayCircle, FastForward, 
 import { PackPreview, RevealComponent, DrawResults, CelebrationVFX, CloveSummoningAnimation, KujiNumberPickerDialog } from '@/components/draw';
 import { rarityVisuals, pointPrizeRarityStyles } from '@/lib/draw-constants';
 import { drawFromPool, drawKujiTickets } from '@/lib/draw-utils';
+import { createProvablyFairRound } from '@/lib/provably-fair';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useUser, useAuth, useDoc, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
@@ -558,7 +559,19 @@ export default function OpenPackPage() {
                 }
                 transaction.update(poolDocRef, cleanFirestoreData(poolUpdates));
 
-                // 6. 紀錄交易日誌
+                // 6. 紀錄交易日誌與 Provably Fair 開獎參數
+                const pfRound = await createProvablyFairRound({
+                    clientSeed: `${user.uid.substring(0, 8)}_${Date.now()}`,
+                    outcomeType: 'pack',
+                    poolSize: cardPool.totalPacks || 80
+                });
+
+                const primaryPrize = drawn[0];
+                const primaryCardName = primaryPrize?.name || (primaryPrize as any)?.cardName || '卡牌';
+                const prizeSummaryText = drawn.length === 1
+                    ? `獲得【${primaryCardName}】`
+                    : `獲得【${primaryCardName}】等共 ${drawn.length} 張卡牌`;
+
                 const transactionRef = doc(collection(firestore, 'transactions'));
                 transaction.set(transactionRef, cleanFirestoreData({
                     userId: user.uid,
@@ -566,12 +579,22 @@ export default function OpenPackPage() {
                     currency: useEventTicketMode ? 'event_ticket' : (useTicketMode ? 'free_ticket' : (cardPool.currency || 'diamond')),
                     amount: (useEventTicketMode || useTicketMode) ? 0 : -cost,
                     details: useEventTicketMode
-                        ? `在活動卡池 [${cardPool.name}] 使用專屬抽卡券【${cardPool.eventTicketName || '活動券'}】 (${actualDrawCount} 抽，剩餘 ${Math.max(0, currentEventTickets - actualDrawCount)} 張)`
+                        ? `在活動卡池 [${cardPool.name}] 使用專屬抽卡券【${cardPool.eventTicketName || '活動券'}】 (${actualDrawCount} 抽) - ${prizeSummaryText}`
                         : (useTicketMode
-                            ? `在卡池 [${cardPool.name}] 使用活動免費抽卡券 (1抽)`
-                            : `在卡池 [${cardPool.name}] 進行 ${count} 連抽`),
+                            ? `在卡池 [${cardPool.name}] 使用活動免費抽卡券 (1抽) - ${prizeSummaryText}`
+                            : `在卡池 [${cardPool.name}] 進行 ${count} 連抽 - ${prizeSummaryText}`),
                     transactionDate: serverTimestamp(),
-                    section: 'draw'
+                    section: 'draw',
+                    provablyFair: {
+                        serverSeed: pfRound.serverSeed,
+                        serverHash: pfRound.serverHash,
+                        clientSeed: pfRound.clientSeed,
+                        nonce: pfRound.nonce,
+                        outcomeType: 'pack',
+                        cardName: primaryCardName,
+                        poolSize: cardPool.totalPacks || 80,
+                        timestamp: Date.now()
+                    }
                 }));
 
                 // 紀錄抽卡日誌
@@ -720,11 +743,11 @@ export default function OpenPackPage() {
         
         return (
             <div 
-                className="flex flex-col justify-between items-center h-[100dvh] min-h-[100dvh] w-full p-2 sm:p-4 relative overflow-hidden select-none" 
+                className="flex flex-col justify-center items-center min-h-[100dvh] w-full p-2 sm:p-4 relative overflow-y-auto select-none" 
                 style={{ backgroundImage: `url("${activeBackgroundUrl}")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
             >
                 <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-[5]" />
-                <div className="relative z-10 w-full h-full flex flex-col justify-center items-center">
+                <div className="relative z-10 w-full min-h-full flex flex-col justify-center items-center my-auto py-2">
                     <PackPreview 
                         cardPool={cardPool}
                         initialDrawCount={selectedNumbers.length > 0 ? selectedNumbers.length : initialDrawCount}

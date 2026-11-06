@@ -11,6 +11,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { PromoRedeemModal } from '@/components/events/PromoRedeemModal';
 import { getEffectiveTicketCount } from '@/lib/promo-draw-service';
+import { BeginnerGuideDialog } from '@/components/beginner-guide-dialog';
+import { ProvablyFairDialog } from '@/components/provably-fair-dialog';
 
 export function PackPreview({
     cardPool,
@@ -70,27 +72,27 @@ export function PackPreview({
     const canToggleTicket = !isEventMode && cardPool.allowFreeDraw !== false;
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-[100dvh] p-3 sm:p-4 py-4 sm:py-8 relative select-none w-full max-w-md mx-auto">
+        <div className="flex flex-col items-center justify-center w-full max-w-[390px] mx-auto py-2 sm:py-3 px-2.5 sm:px-3 select-none relative my-auto">
             {/* Background ambient glow */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none -z-10">
-                <div className="w-64 h-64 sm:w-72 sm:h-72 bg-amber-500/10 rounded-full blur-3xl animate-pulse" />
+                <div className="w-56 h-56 sm:w-64 sm:h-64 bg-amber-500/10 rounded-full blur-3xl animate-pulse" />
             </div>
 
-            <div className="w-full space-y-3 sm:space-y-4 animate-fade-in-up my-auto">
+            <div className="w-full space-y-2 sm:space-y-2.5 animate-fade-in-up my-auto">
                 {/* Main Card Container */}
-                <div className="relative p-4 sm:p-7 bg-slate-900/95 backdrop-blur-xl border-2 border-amber-500/30 rounded-3xl sm:rounded-[2.5rem] shadow-[0_20px_60px_rgba(0,0,0,0.85)] overflow-hidden space-y-3 sm:space-y-4">
+                <div className="relative p-3.5 sm:p-5 bg-slate-900/95 backdrop-blur-xl border border-amber-500/30 rounded-2xl sm:rounded-3xl shadow-[0_15px_50px_rgba(0,0,0,0.85)] overflow-hidden space-y-2.5">
                     {/* Header */}
-                    <div className="text-center space-y-1.5 sm:space-y-2">
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-950/80 border border-slate-800 shadow-inner">
-                            <Logo className="scale-75 opacity-90" asStatic />
+                    <div className="text-center space-y-1">
+                        <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-950/80 border border-slate-800 shadow-inner">
+                            <Logo className="scale-70 opacity-90" asStatic />
                         </div>
                         
                         <div className="space-y-0.5">
-                            <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-amber-400/80 flex items-center justify-center gap-1">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-amber-400/80 flex items-center justify-center gap-1">
                                 <Sparkles className="w-3 h-3 text-amber-400" />
                                 {isEventMode ? '🎪 活動限定專屬卡池開獎' : useTicketMode ? '🎟️ 活動免費兌換券開獎確認' : '拆卡抽賞確認'}
                             </p>
-                            <h2 className="text-base sm:text-xl font-headline font-black text-white italic tracking-tight line-clamp-2 px-1">
+                            <h2 className="text-base sm:text-lg font-headline font-black text-white italic tracking-tight line-clamp-1 px-1">
                                 {cardPool.name}
                             </h2>
                         </div>
@@ -98,14 +100,14 @@ export function PackPreview({
 
                     {/* 活動限定專屬券專用指示區塊 */}
                     {isEventMode ? (
-                        <div className="p-3 rounded-2xl bg-purple-950/70 border border-purple-500/40 text-left space-y-2">
-                            <div className="flex items-center justify-between flex-wrap gap-2">
-                                <span className="text-xs font-black text-purple-200 flex items-center gap-1.5">
-                                    <Ticket className="w-4 h-4 text-amber-400" />
+                        <div className="p-2.5 rounded-xl bg-purple-950/70 border border-purple-500/40 text-left space-y-1.5">
+                            <div className="flex items-center justify-between flex-wrap gap-1.5">
+                                <span className="text-[11px] font-black text-purple-200 flex items-center gap-1.5">
+                                    <Ticket className="w-3.5 h-3.5 text-amber-400" />
                                     <span>【{cardPool.eventTicketName || '專屬活動抽卡券'}】</span>
                                 </span>
                                 <span className={cn(
-                                    "font-mono font-black text-xs px-2.5 py-0.5 rounded-full border",
+                                    "font-mono font-black text-[11px] px-2 py-0.5 rounded-full border",
                                     eventPoolTickets >= actualDrawCount
                                         ? "bg-purple-900/80 border-purple-400/50 text-amber-300"
                                         : "bg-rose-950/80 border-rose-500/40 text-rose-300"
@@ -113,32 +115,32 @@ export function PackPreview({
                                     持有: {eventPoolTickets} 張 (需 {actualDrawCount} 張)
                                 </span>
                             </div>
-                            <p className="text-[11px] text-slate-300 leading-relaxed">
+                            <p className="text-[10px] text-slate-300 leading-snug">
                                 此為專屬限定活動卡池，僅限使用管理員審核派發之專屬抽卡券。
                             </p>
                             {cardPool.eventRules && (
-                                <p className="text-[11px] text-purple-200 leading-relaxed pt-1.5 border-t border-purple-500/20">
+                                <p className="text-[10px] text-purple-200 leading-snug pt-1 border-t border-purple-500/20">
                                     <span className="font-bold text-amber-300">活動規則：</span>{cardPool.eventRules}
                                 </p>
                             )}
                         </div>
                     ) : canToggleTicket ? (
                         /* 🎟️ 免費券使用詢問與切換區塊 (如果卡池支援且用戶持有免費券) */
-                        <div className="p-2.5 sm:p-3 rounded-2xl bg-slate-950/90 border border-emerald-500/30 space-y-2">
+                        <div className="p-2 sm:p-2.5 rounded-xl bg-slate-950/90 border border-emerald-500/30 space-y-1.5">
                             <div className="flex items-center justify-between px-1">
-                                <span className="text-[11px] font-bold text-slate-300 flex items-center gap-1.5">
-                                    <Ticket className="w-4 h-4 text-emerald-400" />
+                                <span className="text-[10px] sm:text-[11px] font-bold text-slate-300 flex items-center gap-1.5">
+                                    <Ticket className="w-3.5 h-3.5 text-emerald-400" />
                                     <span>活動免費抽卡券餘額</span>
                                 </span>
-                                <div className="flex items-center gap-2">
-                                    <span className="font-mono font-black text-emerald-300 text-xs sm:text-sm bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                                <div className="flex items-center gap-1.5">
+                                    <span className="font-mono font-black text-emerald-300 text-xs bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-500/30">
                                         {effectiveTickets} 張可用
                                     </span>
                                     {effectiveTickets <= 0 && (
                                         <button
                                             type="button"
                                             onClick={() => setIsPromoModalOpen(true)}
-                                            className="text-[11px] font-bold text-amber-300 hover:text-amber-200 underline underline-offset-2 cursor-pointer"
+                                            className="text-[10px] font-bold text-amber-300 hover:text-amber-200 underline underline-offset-2 cursor-pointer"
                                         >
                                             點此領取
                                         </button>
@@ -146,15 +148,15 @@ export function PackPreview({
                                 </div>
                             </div>
                             
-                            <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-900/90 rounded-xl border border-slate-800">
+                            <div className="grid grid-cols-2 gap-1 p-0.5 bg-slate-900/90 rounded-lg border border-slate-800">
                                 <button
                                     type="button"
                                     onClick={() => setUseTicketMode(true)}
                                     className={cn(
-                                        "py-2 px-2 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1 cursor-pointer",
+                                        "py-1.5 px-2 rounded-md text-[11px] font-black transition-all flex items-center justify-center gap-1 cursor-pointer",
                                         useTicketMode 
                                             ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 shadow-md" 
-                                            : "text-slate-400 hover:text-slate-200"
+                                             : "text-slate-400 hover:text-slate-200"
                                     )}
                                 >
                                     {useTicketMode && <Check className="w-3 h-3 stroke-[3]" />}
@@ -165,16 +167,16 @@ export function PackPreview({
                                     type="button"
                                     onClick={() => setUseTicketMode(false)}
                                     className={cn(
-                                        "py-2 px-2.5 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer",
+                                        "py-1.5 px-2 rounded-md text-[11px] font-black transition-all flex items-center justify-center gap-1 cursor-pointer",
                                         !useTicketMode 
                                             ? "bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-md" 
                                             : "text-slate-400 hover:text-slate-200"
                                     )}
                                 >
-                                    {!useTicketMode && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                                    {!useTicketMode && <Check className="w-3 h-3 stroke-[3]" />}
                                     {isPPoint ? (
                                         <span className="inline-flex items-center gap-1">
-                                            <PPlusIcon className={cn("w-3.5 h-3.5", !useTicketMode ? "text-slate-950" : "text-amber-400")} />
+                                            <PPlusIcon className={cn("w-3 h-3", !useTicketMode ? "text-slate-950" : "text-amber-400")} />
                                             <span>P點扣點</span>
                                         </span>
                                     ) : (
@@ -188,33 +190,33 @@ export function PackPreview({
                     ) : null}
 
                     {/* Stats Grid */}
-                    <div className="grid grid-cols-2 gap-2 sm:gap-3 p-2.5 sm:p-3 bg-slate-950/90 rounded-2xl border border-slate-800/80 shadow-inner">
-                        <div className="p-2 sm:p-3 bg-slate-900/80 rounded-xl border border-slate-800 text-center space-y-0.5">
-                            <span className="text-[9px] sm:text-[10px] text-slate-400 font-extrabold block uppercase tracking-wider">本次抽數</span>
+                    <div className="grid grid-cols-2 gap-2 p-1.5 sm:p-2 bg-slate-950/90 rounded-xl border border-slate-800/80 shadow-inner">
+                        <div className="p-1.5 sm:p-2 bg-slate-900/80 rounded-lg border border-slate-800 text-center space-y-0.5">
+                            <span className="text-[9px] text-slate-400 font-extrabold block uppercase tracking-wider">本次抽數</span>
                             <div className="flex items-center justify-center gap-1">
-                                <span className="text-base sm:text-lg font-black text-white font-code">{actualDrawCount} 包</span>
+                                <span className="text-sm sm:text-base font-black text-white font-code">{actualDrawCount} 包</span>
                                 {isAutoAdjusted && (
-                                    <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1.5 py-0.5 rounded-full font-bold">
-                                        剩餘全包
+                                    <span className="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1 py-0.2 rounded-full font-bold">
+                                        全包
                                     </span>
                                 )}
                             </div>
                         </div>
-                        <div className="p-2 sm:p-3 bg-slate-900/80 rounded-xl border border-slate-800 text-center space-y-0.5">
-                            <span className="text-[9px] sm:text-[10px] text-slate-400 font-extrabold block uppercase tracking-wider">花費金額</span>
-                            <div className="flex items-center justify-center gap-1 text-base sm:text-lg font-black text-amber-400 font-code">
+                        <div className="p-1.5 sm:p-2 bg-slate-900/80 rounded-lg border border-slate-800 text-center space-y-0.5">
+                            <span className="text-[9px] text-slate-400 font-extrabold block uppercase tracking-wider">花費金額</span>
+                            <div className="flex items-center justify-center gap-1 text-sm sm:text-base font-black text-amber-400 font-code">
                                 {isEventMode ? (
-                                    <span className="text-purple-300 font-black text-xs sm:text-sm flex items-center gap-1">
-                                        <Ticket className="w-3.5 h-3.5 text-amber-400" /> 0 點 (消耗 {actualDrawCount} 張專屬券)
+                                    <span className="text-purple-300 font-black text-xs flex items-center gap-1">
+                                        <Ticket className="w-3 h-3 text-amber-400" /> 0 點 ({actualDrawCount}張券)
                                     </span>
                                 ) : useTicketMode ? (
-                                    <span className="text-emerald-400 font-black text-xs sm:text-sm flex items-center gap-1">
-                                        <Ticket className="w-3.5 h-3.5 text-amber-400" /> 0 點 (消耗 1 張券)
+                                    <span className="text-emerald-400 font-black text-xs flex items-center gap-1">
+                                        <Ticket className="w-3 h-3 text-amber-400" /> 0 點 (1張券)
                                     </span>
                                 ) : isPPoint ? (
-                                    <><PPlusIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 shrink-0" />{cost.toLocaleString()} P</>
+                                    <><PPlusIcon className="w-3.5 h-3.5 text-amber-400 shrink-0" />{cost.toLocaleString()} P</>
                                 ) : (
-                                    <><DiamondIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-cyan-400 shrink-0" /> {cost.toLocaleString()}</>
+                                    <><DiamondIcon className="w-3.5 h-3.5 text-cyan-400 shrink-0" /> {cost.toLocaleString()}</>
                                 )}
                             </div>
                         </div>
@@ -223,92 +225,90 @@ export function PackPreview({
                     {/* Level requirement if any */}
                     {cardPool.minLevel && cardPool.minLevel !== '新手收藏家' && (
                         <div className={cn(
-                            "p-2 rounded-xl border flex items-center justify-center gap-1.5 font-black text-xs",
+                            "p-1.5 rounded-lg border flex items-center justify-center gap-1.5 font-black text-[11px]",
                             isLevelMet ? "bg-emerald-950/40 border-emerald-800/60 text-emerald-400" : "bg-rose-950/40 border-rose-800/60 text-rose-400"
                         )}>
-                            <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
+                            <ShieldCheck className="w-3 h-3 shrink-0" />
                             <span>等級限制: {cardPool.minLevel}</span>
                         </div>
                     )}
 
-                    {/* Terms Notice */}
-                    <div className="p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl border border-slate-800 bg-slate-950/80 space-y-1.5">
-                        <div className="flex items-center gap-1 text-amber-400">
-                            <Info className="w-3.5 h-3.5 shrink-0" />
-                            <p className="text-[11px] sm:text-xs font-black uppercase tracking-wider">購買條款告知</p>
+                    {/* Terms Notice - 精簡俐落單排條款說明，保留彈窗完整條款 */}
+                    <div className="p-2 sm:p-2.5 rounded-xl border border-slate-800/80 bg-slate-950/80 space-y-1">
+                        <div className="flex items-center justify-between text-[10px]">
+                            <span className="text-amber-400/90 font-black flex items-center gap-1">
+                                <Info className="w-3 h-3 shrink-0" /> 購買條款告知
+                            </span>
+                            <Dialog>
+                                <DialogTrigger asChild>
+                                    <button className="text-amber-400 hover:text-amber-300 font-bold underline decoration-amber-500/50 underline-offset-2 inline-flex items-center gap-0.5 cursor-pointer text-[10px]">
+                                        《平台服務與拆卡條款》
+                                    </button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-md bg-slate-900 border-slate-800 text-slate-200">
+                                    <DialogHeader>
+                                        <DialogTitle className="text-base font-black text-amber-400 flex items-center gap-1.5">
+                                            <Scale className="w-4 h-4" /> 平台服務與拆卡條款
+                                        </DialogTitle>
+                                        <DialogDescription className="text-xs text-slate-400">
+                                            請於開獎前詳閱以下權益條款
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <ScrollArea className="max-h-[60vh] pr-2 mt-2">
+                                        <div className="text-xs space-y-3 leading-relaxed text-slate-300">
+                                            <section className="space-y-1">
+                                                <h4 className="font-bold text-white">一、機率型商品說明</h4>
+                                                <p>本平台所提供之卡包拆卡與抽賞服務，皆屬於機率型商品。使用者於點擊開獎時即表示已知悉並同意抽中特定商品之機率，每次開獎結果皆由伺服器端密碼學安全隨機演算法即時運算產生，具有不可預測性。</p>
+                                            </section>
+                                            <section className="space-y-1">
+                                                <h4 className="font-bold text-white">二、無七日猶豫期聲明</h4>
+                                                <p>依據《消費者保護法》第十九條及《通訊交易解除權合理例外情事適用準則》，本服務一經啟動開獎程序，因涉及即時數位內容運算與庫存狀態即刻變更，一經交付或提供即不適用消費者保護法之七日鑑賞期（猶豫期）解除權，開獎後概不接受退貨、退款或更換。</p>
+                                            </section>
+                                            <section className="space-y-1">
+                                                <h4 className="font-bold text-white">三、防搶保護與伺服器結算</h4>
+                                                <p>為維護公平性，開獎過程中系統將鎖定該卡池防止其他使用者併行抽取。若因網路連線中斷或意外關閉視窗，伺服器仍會完整執行開獎並將獲得之卡片派發至您的背包，請至「我的背包/個人中心」查閱結果。</p>
+                                            </section>
+                                            <section className="space-y-1">
+                                                <h4 className="font-bold text-white">四、異常交易處置</h4>
+                                                <p>請避免於短時間內進行異常高頻交易或刷卡，以免被銀行風控系統凍結。如發現任何利用系統漏洞違規操作之行為，本平台有權暫停該帳戶服務。</p>
+                                            </section>
+                                        </div>
+                                    </ScrollArea>
+                                    <div className="mt-3 pt-3 border-t border-slate-800 flex items-center justify-between">
+                                        <Link 
+                                            href="/about" 
+                                            target="_blank" 
+                                            className="text-amber-400 hover:text-amber-300 font-bold text-xs flex items-center gap-1 transition-colors"
+                                        >
+                                            <FileText className="w-3.5 h-3.5" /> 前往「關於我們」查看完整條款頁面 <ChevronRight className="w-3 h-3" />
+                                        </Link>
+                                    </div>
+                                </DialogContent>
+                            </Dialog>
+
+                            <BeginnerGuideDialog
+                                triggerVariant="compact"
+                                buttonText="第一次玩？看這裡"
+                                triggerClassName="py-0.5 px-2 text-[10px] bg-amber-500/10 border-amber-500/30 text-amber-300 hover:text-white"
+                            />
                         </div>
-                        <ul className="text-[10px] sm:text-[11px] text-slate-400 font-medium space-y-1 pl-1 leading-relaxed">
-                            <li className="flex items-start gap-1">
-                                <span className="text-amber-500/80">•</span>
-                                <span>本站商品屬機率型抽選及數位機率內容。</span>
-                            </li>
-                            <li className="flex items-start gap-1">
-                                <span className="text-amber-500/80">•</span>
-                                <span>
-                                    啟動開獎即視為您已閱讀並同意{' '}
-                                    <Dialog>
-                                        <DialogTrigger asChild>
-                                            <button className="text-amber-400 hover:text-amber-300 font-bold underline decoration-amber-500/50 underline-offset-2 inline-flex items-center gap-0.5 cursor-pointer">
-                                                《平台服務與拆卡條款》
-                                            </button>
-                                        </DialogTrigger>
-                                        <DialogContent className="max-w-md bg-slate-900 border-slate-800 text-slate-200">
-                                            <DialogHeader>
-                                                <DialogTitle className="text-base font-black text-amber-400 flex items-center gap-1.5">
-                                                    <Scale className="w-4 h-4" /> 平台服務與拆卡條款
-                                                </DialogTitle>
-                                                <DialogDescription className="text-xs text-slate-400">
-                                                    請於開獎前詳閱以下權益條款
-                                                </DialogDescription>
-                                            </DialogHeader>
-                                            <ScrollArea className="max-h-[60vh] pr-2 mt-2">
-                                                <div className="text-xs space-y-3 leading-relaxed text-slate-300">
-                                                    <section className="space-y-1">
-                                                        <h4 className="font-bold text-white">一、機率型商品說明</h4>
-                                                        <p>本平台所提供之卡包拆卡與抽賞服務，皆屬於機率型商品。使用者於點擊開獎時即表示已知悉並同意抽中特定商品之機率，每次開獎結果皆由伺服器端密碼學安全隨機演算法即時運算產生，具有不可預測性。</p>
-                                                    </section>
-                                                    <section className="space-y-1">
-                                                        <h4 className="font-bold text-white">二、無七日猶豫期聲明</h4>
-                                                        <p>依據《消費者保護法》第十九條及《通訊交易解除權合理例外情事適用準則》，本服務一經啟動開獎程序，因涉及即時數位內容運算與庫存狀態即刻變更，一經交付或提供即不適用消費者保護法之七日鑑賞期（猶豫期）解除權，開獎後概不接受退貨、退款或更換。</p>
-                                                    </section>
-                                                    <section className="space-y-1">
-                                                        <h4 className="font-bold text-white">三、防搶保護與伺服器結算</h4>
-                                                        <p>為維護公平性，開獎過程中系統將鎖定該卡池防止其他使用者併行抽取。若因網路連線中斷或意外關閉視窗，伺服器仍會完整執行開獎並將獲得之卡片派發至您的背包，請至「我的背包/個人中心」查閱結果。</p>
-                                                    </section>
-                                                    <section className="space-y-1">
-                                                        <h4 className="font-bold text-white">四、異常交易處置</h4>
-                                                        <p>請避免於短時間內進行異常高頻交易或刷卡，以免被銀行風控系統凍結。如發現任何利用系統漏洞違規操作之行為，本平台有權暫停該帳戶服務。</p>
-                                                    </section>
-                                                </div>
-                                            </ScrollArea>
-                                            <div className="mt-3 pt-3 border-t border-slate-800 flex items-center justify-between">
-                                                <Link 
-                                                    href="/about" 
-                                                    target="_blank" 
-                                                    className="text-amber-400 hover:text-amber-300 font-bold text-xs flex items-center gap-1 transition-colors"
-                                                >
-                                                    <FileText className="w-3.5 h-3.5" /> 前往「關於我們」查看完整條款頁面 <ChevronRight className="w-3 h-3" />
-                                                </Link>
-                                            </div>
-                                        </DialogContent>
-                                    </Dialog>。
-                                </span>
-                            </li>
-                        </ul>
+                        <p className="text-[10px] text-slate-400 leading-snug">
+                            本商品屬數位機率型抽選內容，啟動開獎即視為您已閱讀並同意條款。
+                        </p>
                     </div>
 
                     {/* 🎯 已選一番賞號碼展示卡片 */}
                     {selectedNumbers && selectedNumbers.length > 0 && (
-                        <div className="p-3 rounded-2xl bg-gradient-to-r from-amber-950/70 via-slate-900 to-amber-950/70 border-2 border-amber-400/60 shadow-lg shadow-amber-500/15 flex items-center justify-between gap-2">
+                        <div className="p-2 sm:p-2.5 rounded-xl bg-gradient-to-r from-amber-950/70 via-slate-900 to-amber-950/70 border border-amber-400/50 shadow-md flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2 min-w-0">
-                                <div className="w-8 h-8 rounded-xl bg-amber-400/20 border border-amber-400/40 flex items-center justify-center text-amber-300 font-black text-sm shrink-0">
+                                <div className="w-7 h-7 rounded-lg bg-amber-400/20 border border-amber-400/40 flex items-center justify-center text-amber-300 font-black text-xs shrink-0">
                                     🎯
                                 </div>
                                 <div className="min-w-0">
-                                    <div className="text-[10px] text-amber-300 font-black uppercase tracking-wider">已鎖定自選號碼</div>
-                                    <div className="flex flex-wrap gap-1 mt-0.5 max-h-16 overflow-y-auto">
+                                    <div className="text-[9px] text-amber-300 font-black uppercase tracking-wider">已鎖定自選號碼</div>
+                                    <div className="flex flex-wrap gap-1 mt-0.5 max-h-12 overflow-y-auto">
                                         {selectedNumbers.map(n => (
-                                            <span key={n} className="bg-amber-400 text-slate-950 font-black text-xs px-2 py-0.5 rounded-lg shadow-sm">
+                                            <span key={n} className="bg-amber-400 text-slate-950 font-black text-[11px] px-1.5 py-0.2 rounded shadow-sm">
                                                 #{n}
                                             </span>
                                         ))}
@@ -320,7 +320,7 @@ export function PackPreview({
                                     size="sm"
                                     variant="outline"
                                     onClick={onOpenPickNumber}
-                                    className="h-8 px-2.5 text-[11px] font-bold rounded-xl border-amber-400/40 text-amber-300 hover:bg-amber-400/10 cursor-pointer shrink-0"
+                                    className="h-7 px-2 text-[10px] font-bold rounded-lg border-amber-400/40 text-amber-300 hover:bg-amber-400/10 cursor-pointer shrink-0"
                                 >
                                     更換號碼
                                 </Button>
@@ -329,29 +329,29 @@ export function PackPreview({
                     )}
 
                     {/* CTA Action Buttons - 僅保留自選號碼開獎，版面簡潔不花俏 */}
-                    <div className="space-y-2">
+                    <div className="space-y-1.5 pt-0.5">
                         {!isEventMode && useTicketMode && !hasEnoughTickets && (
                             <Button
                                 type="button"
                                 variant="outline"
                                 onClick={() => setIsPromoModalOpen(true)}
-                                className="w-full h-11 text-xs sm:text-sm font-black rounded-2xl border-emerald-500/60 bg-emerald-950/60 text-emerald-300 hover:bg-emerald-900/80 shadow-md shadow-emerald-950/50 flex items-center justify-center gap-1.5 cursor-pointer"
+                                className="w-full h-10 text-xs font-black rounded-xl border-emerald-500/60 bg-emerald-950/60 text-emerald-300 hover:bg-emerald-900/80 shadow-md shadow-emerald-950/50 flex items-center justify-center gap-1.5 cursor-pointer"
                             >
-                                <Sparkles className="w-4 h-4 text-amber-300" />
+                                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
                                 <span>點此免費領取 1 抽活動券</span>
                             </Button>
                         )}
 
                         {/* 🎯 一番賞自選號碼模式（未選號時點擊開啟挑籤，亦可一鍵隨機直接開獎） */}
                         {onOpenPickNumber && !isEventMode && (!selectedNumbers || selectedNumbers.length === 0) ? (
-                            <div className="space-y-2">
+                            <div className="space-y-1.5">
                                 <Button
                                     size="lg"
-                                    className="w-full h-12 sm:h-14 text-base sm:text-lg font-black rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 border border-yellow-300 shadow-xl shadow-amber-500/25 hover:brightness-110 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95"
+                                    className="w-full h-11 sm:h-12 text-sm sm:text-base font-black rounded-xl sm:rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 border border-yellow-300 shadow-xl shadow-amber-500/25 hover:brightness-110 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95"
                                     onClick={onOpenPickNumber}
                                     disabled={!isLevelMet || isLoadingStats || isSoldOut || isOverPacks}
                                 >
-                                    <Sparkles className="w-5 h-5 fill-slate-950" />
+                                    <Sparkles className="w-4 h-4 fill-slate-950" />
                                     <span>🎯 自選號碼開獎</span>
                                 </Button>
 
@@ -359,7 +359,7 @@ export function PackPreview({
                                     type="button"
                                     size="sm"
                                     variant="ghost"
-                                    className="w-full h-9 text-xs text-slate-400 hover:text-amber-300 font-bold hover:bg-slate-900/80 rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                                    className="w-full h-7 text-[11px] text-slate-400 hover:text-amber-300 font-bold hover:bg-slate-900/80 rounded-lg transition-colors flex items-center justify-center gap-1 cursor-pointer"
                                     onClick={() => {
                                         if (canStart) {
                                             performDraw(actualDrawCount, !isEventMode && useTicketMode, isEventMode, undefined);
@@ -367,7 +367,7 @@ export function PackPreview({
                                     }}
                                     disabled={!canStart}
                                 >
-                                    <Zap className="w-3.5 h-3.5 text-amber-400" />
+                                    <Zap className="w-3 h-3 text-amber-400" />
                                     <span>或直接開獎 (由系統隨機出籤)</span>
                                 </Button>
                             </div>
@@ -375,7 +375,7 @@ export function PackPreview({
                             <Button
                                 size="lg"
                                 className={cn(
-                                    "w-full h-12 sm:h-14 text-base sm:text-lg font-black rounded-2xl shadow-2xl transition-all border-b-4 active:translate-y-1 active:border-b-0 cursor-pointer",
+                                    "w-full h-11 sm:h-12 text-sm sm:text-base font-black rounded-xl sm:rounded-2xl shadow-xl transition-all border-b-2 active:translate-y-0.5 active:border-b-0 cursor-pointer",
                                     canStart 
                                         ? isEventMode
                                             ? "bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 text-white border-purple-900 hover:brightness-110 shadow-purple-500/30"
@@ -396,40 +396,57 @@ export function PackPreview({
                                 disabled={!canStart && (isEventMode ? true : (!useTicketMode || hasEnoughTickets))}
                             >
                                 {isLoadingStats ? (
-                                    <><Loader2 className="animate-spin mr-2 h-5 w-5 sm:h-6 sm:w-6" /> 驗證中...</>
+                                    <><Loader2 className="animate-spin mr-2 h-4 w-4" /> 驗證中...</>
                                 ) : isSoldOut ? (
-                                    <><Ban className="mr-2 h-5 w-5 sm:h-6 sm:w-6 text-rose-400" /> 此卡池已售罄</>
+                                    <><Ban className="mr-2 h-4 w-4 text-rose-400" /> 此卡池已售罄</>
                                 ) : isOverPacks ? (
-                                    <><Ban className="mr-2 h-5 w-5 sm:h-6 sm:w-6 text-rose-400" /> 庫存不足 (剩餘 {remainingPacks} 包)</>
+                                    <><Ban className="mr-2 h-4 w-4 text-rose-400" /> 庫存不足 (剩餘 {remainingPacks} 包)</>
                                 ) : isLimitReachedForInitial ? (
-                                    <><Ban className="mr-2 h-5 w-5 sm:h-6 sm:w-6 text-rose-400" /> 今日次數已用完</>
+                                    <><Ban className="mr-2 h-4 w-4 text-rose-400" /> 今日次數已用完</>
                                 ) : !isLevelMet ? (
-                                    <><Ban className="mr-2 h-5 w-5 sm:h-6 sm:w-6 text-rose-400" /> 權限不足 ({cardPool.minLevel})</>
+                                    <><Ban className="mr-2 h-4 w-4 text-rose-400" /> 權限不足 ({cardPool.minLevel})</>
                                 ) : isEventMode && !hasEnoughTickets ? (
-                                    <><Ban className="mr-2 h-5 w-5 sm:h-6 sm:w-6 text-rose-400" /> 專屬券不足 (持有 {eventPoolTickets} 張 / 需 {actualDrawCount} 張)</>
+                                    <><Ban className="mr-2 h-4 w-4 text-rose-400" /> 專屬券不足 (持有 {eventPoolTickets} 張 / 需 {actualDrawCount} 張)</>
                                 ) : isEventMode ? (
-                                    <><Ticket className="mr-2 h-5 w-5 sm:h-6 sm:w-6 text-amber-300" /> 🎪 消耗專屬券啟動開獎 ({actualDrawCount} 抽)</>
+                                    <><Ticket className="mr-2 h-4 w-4 text-amber-300" /> 🎪 消耗專屬券啟動開獎 ({actualDrawCount} 抽)</>
                                 ) : useTicketMode && !isFreeDrawAllowed ? (
-                                    <><Ban className="mr-2 h-5 w-5 sm:h-6 sm:w-6 text-rose-400" /> 此卡池未開放免費券兌換</>
+                                    <><Ban className="mr-2 h-4 w-4 text-rose-400" /> 此卡池未開放免費券兌換</>
                                 ) : useTicketMode && !hasEnoughTickets ? (
-                                    <><Ticket className="mr-2 h-5 w-5 sm:h-6 sm:w-6 text-amber-300" /> 🎟️ 尚未領取免費券（點此領取）</>
+                                    <><Ticket className="mr-2 h-4 w-4 text-amber-300" /> 🎟️ 尚未領取免費券（點此領取）</>
                                 ) : useTicketMode ? (
-                                    <><Ticket className="mr-2 h-5 w-5 sm:h-6 sm:w-6 text-slate-950 fill-slate-950" /> 🎟️ 消耗免費券啟動開獎 (1抽)</>
+                                    <><Ticket className="mr-2 h-4 w-4 text-slate-950 fill-slate-950" /> 🎟️ 消耗免費券啟動開獎 (1抽)</>
                                 ) : selectedNumbers && selectedNumbers.length > 0 ? (
-                                    <><Zap className="mr-2 h-5 w-5 sm:h-6 sm:w-6 fill-slate-950" /> 🎯 啟動自選開獎 ({selectedNumbers.map(n => '#' + n).join(', ')})</>
+                                    <><Zap className="mr-2 h-4 w-4 fill-slate-950" /> 🎯 啟動自選開獎 ({selectedNumbers.map(n => '#' + n).join(', ')})</>
                                 ) : (
-                                    <><Zap className="mr-2 h-5 w-5 sm:h-6 sm:w-6 fill-slate-950" /> 啟動正式開獎 ({cost.toLocaleString()} {isPPoint ? 'P點' : '鑽'})</>
+                                    <><Zap className="mr-2 h-4 w-4 fill-slate-950" /> 啟動正式開獎 ({cost.toLocaleString()} {isPPoint ? 'P點' : '鑽'})</>
                                 )}
                             </Button>
                         )}
                     </div>
                 </div>
 
-                {/* Return link */}
-                <div className="text-center pt-0.5">
-                    <Button asChild variant="ghost" className="text-slate-400 hover:text-white font-bold text-xs rounded-xl h-8">
+                {/* 第一次玩教學 & Return link & 公平驗證 */}
+                <div className="flex flex-wrap items-center justify-center gap-2 pt-0.5">
+                    <BeginnerGuideDialog
+                        triggerVariant="compact"
+                        buttonText="新手開獎須知"
+                        triggerClassName="h-7 text-[11px] bg-slate-900/90 border-amber-500/30 text-amber-300 hover:text-white"
+                    />
+                    <ProvablyFairDialog
+                        variant="button"
+                        trigger={
+                            <button
+                                type="button"
+                                className="h-7 px-2.5 rounded-xl border border-emerald-500/30 text-emerald-400 bg-emerald-950/20 hover:bg-emerald-950/40 text-[11px] font-bold inline-flex items-center gap-1 transition-all cursor-pointer"
+                            >
+                                <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                                <span>公平驗證</span>
+                            </button>
+                        }
+                    />
+                    <Button asChild variant="ghost" className="text-slate-400 hover:text-white font-bold text-xs rounded-xl h-7">
                         <Link href="/draw">
-                            <ArrowLeft className="w-3.5 h-3.5 mr-1" /> 取消並返回卡池列表
+                            <ArrowLeft className="w-3 h-3 mr-1" /> 取消
                         </Link>
                     </Button>
                 </div>

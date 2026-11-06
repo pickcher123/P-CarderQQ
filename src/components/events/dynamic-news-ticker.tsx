@@ -92,7 +92,7 @@ const DEFAULT_CAMPAIGN_ITEMS: TickerItem[] = [
         id: 'promo-authenticity',
         type: 'campaign',
         tag: '正品承諾',
-        title: '全館卡牌 PSA / BGS 原裝密封 · 雙向公證安心保證',
+        title: '全館卡牌 100% 實體現貨在庫 · 專業封存呵護保證',
         description: '所有中獎卡片皆經防偽封存並享防潮高規包裝，免運直寄府上，讓您收藏最安心！'
     }
 ];

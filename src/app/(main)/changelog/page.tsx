@@ -7,7 +7,10 @@ import { History, CheckCircle2, ChevronLeft, Zap, ShieldCheck, Palette, Bug, Glo
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { APP_VERSION } from '@/lib/version';
+import { APP_VERSION, getAppVersionFromSystem } from '@/lib/version';
+import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import type { SystemConfig } from '@/types/system';
 
 interface ChangeLogItem {
   version: string;
@@ -17,6 +20,19 @@ interface ChangeLogItem {
 }
 
 const changelogData: ChangeLogItem[] = [
+  {
+    version: "公測版 6.0 (最新里程碑)",
+    title: "現貨在庫承諾、密碼學機率驗證與 3D 沉浸舞台全面實裝",
+    type: "feature",
+    changes: [
+      "100% 實體現貨在庫承諾：宣告『有在庫才會上架，絕不先賣後買』，全站卡片均已在席實體入庫並存放於 24H 恆溫防潮保險庫。",
+      "Provably Fair 密碼學機率自主驗證：導入 SHA-256 / HMAC 加密演算法，開獎前預鎖 Server Hash、開獎注入 Client Seed，公式開源可隨時回溯複算。",
+      "3D 沉浸旋轉門紅包福袋舞台：福袋專區導入立體旋轉門卡袋舞台，立體翻轉檢視封底賞品大獎，並針對手機端高度優化垂直握持視角。",
+      "1/10 拼卡選號微晶按鈕美學升級：選號數字適度縮小更精煉（01~10 補零排版），搭配賽博微晶按鈕、粉紅霓虹漸層與老虎機雷射標線。",
+      "新手教學 & 公平驗證一體化雙分頁：整合純中文 4 步圖解指南（挑選開盒➔數位存庫➔現貨保護➔安全宅配）與驗證計算機，文字大幅精簡。",
+      "真實賽事自動抓取與機器人 OpenAPI：移除假賽事硬塞機制，每週一定期同步真實賽程；開放 /api/bot/pools 免金鑰卡池日報查詢端點。"
+    ]
+  },
   {
     version: "公測版 5.0 (旗艦版)",
     title: "數位資產全息革命與微距放大鏡全面降臨",
@@ -138,6 +154,11 @@ const typeIcons = {
 };
 
 export default function ChangeLogPage() {
+  const firestore = useFirestore();
+  const systemConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'systemConfig', 'main') : null, [firestore]);
+  const { data: systemConfig } = useDoc<SystemConfig>(systemConfigRef);
+  const currentVersion = getAppVersionFromSystem(systemConfig);
+
   return (
     <div className="container py-12 md:py-20 max-w-4xl relative">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[400px] bg-primary/5 blur-[100px] pointer-events-none" />
@@ -153,7 +174,7 @@ export default function ChangeLogPage() {
           <p className="text-muted-foreground text-lg font-medium">紀錄 P+Carder 的成長軌跡與技術革新。</p>
         </div>
         <Badge variant="outline" className="h-8 px-4 font-code text-base border-primary/30 text-primary bg-primary/5 shadow-[0_0_15px_rgba(6,182,212,0.2)]">
-          CURRENT VER: {APP_VERSION}
+          CURRENT VER: {currentVersion}
         </Badge>
       </div>
 

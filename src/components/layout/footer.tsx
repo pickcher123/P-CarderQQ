@@ -2,7 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { APP_VERSION } from '@/lib/version';
+import { APP_VERSION, getAppVersionFromSystem } from '@/lib/version';
+import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import type { SystemConfig } from '@/types/system';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -27,6 +30,11 @@ export function Footer() {
   const [isCopiedLine, setIsCopiedLine] = useState(false);
   const [isCopiedEmail, setIsCopiedEmail] = useState(false);
   const { toast } = useToast();
+  const firestore = useFirestore();
+  const systemConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'systemConfig', 'main') : null, [firestore]);
+  const { data: systemConfig } = useDoc<SystemConfig>(systemConfigRef);
+  const currentVersion = getAppVersionFromSystem(systemConfig);
+
 
   useEffect(() => {
     setIsMounted(true);
@@ -116,8 +124,16 @@ export function Footer() {
           </button>
         </div>
 
-        {/* 次級條款連結 */}
-        <div className="flex items-center justify-center text-[11px] text-slate-400 pt-0.5">
+        {/* 次級條款、新手教學與公平驗證連結 */}
+        <div className="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 text-[11px] text-slate-400 pt-0.5">
+          <Link href="/guide" className="text-amber-400 font-bold hover:text-amber-300 transition-colors">
+            新手教學與 FAQ
+          </Link>
+          <span className="text-slate-600">•</span>
+          <Link href="/fairness" className="text-emerald-400 font-bold hover:text-emerald-300 transition-colors">
+            公平驗證演算法
+          </Link>
+          <span className="text-slate-600">•</span>
           <Link href="/about" className="hover:text-cyan-300 transition-colors">
             服務條款與關於我們
           </Link>
@@ -126,7 +142,7 @@ export function Footer() {
         {/* 底部極簡版權與版本號 */}
         <div className="pt-2 border-t border-slate-800/50 flex items-center justify-between text-[10px] text-slate-500">
           <span>© {new Date().getFullYear()} P+Carder 版權所有</span>
-          <span className="font-mono text-slate-400">Ver {APP_VERSION}</span>
+          <span className="font-mono text-slate-400">Ver {currentVersion}</span>
         </div>
       </div>
 
@@ -194,6 +210,18 @@ export function Footer() {
                 <Link href="/collection" className="hover:text-cyan-300 transition-colors flex items-center justify-start gap-1.5">
                   <Layers className="w-3.5 h-3.5 text-cyan-400" />
                   <span>個人專屬收藏庫</span>
+                </Link>
+              </li>
+              <li>
+                <Link href="/guide" className="hover:text-amber-300 text-amber-400 font-bold transition-colors flex items-center justify-start gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  <span>新手教學與 FAQ</span>
+                </Link>
+              </li>
+              <li>
+                <Link href="/fairness" className="hover:text-emerald-300 text-emerald-400/90 font-bold transition-colors flex items-center justify-start gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>公開公平驗證 (Provably Fair)</span>
                 </Link>
               </li>
               <li>
@@ -291,7 +319,7 @@ export function Footer() {
             </div>
 
             <Badge variant="outline" className="bg-slate-900 border-slate-800 text-slate-400 font-mono text-[10px] py-0.5 px-2">
-              Ver {APP_VERSION}
+              Ver {currentVersion}
             </Badge>
           </div>
         </div>

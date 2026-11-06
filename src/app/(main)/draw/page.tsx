@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { SafeImage } from '@/components/safe-image';
 import { Button } from '@/components/ui/button';
-import { Layers, Gem, Package, Disc3, Info, Sparkles, ChevronRight, Star, Trophy, Clock, Settings, Dices, Target, Search, X } from 'lucide-react';
+import { Layers, Gem, Package, Disc3, Info, Sparkles, ChevronRight, Star, Trophy, Clock, Settings, Dices, Target, Search, X, HelpCircle } from 'lucide-react';
 import { useCollection, useRequest, useFirestore, useMemoFirebase, useDoc, useUser } from "@/firebase";
 import { collection, query, orderBy, doc } from "firebase/firestore";
 import { Skeleton } from '@/components/ui/skeleton';
@@ -20,6 +20,7 @@ import { PoolCard } from '@/components/pool-card';
 import type { SystemConfig } from '@/types/system';
 import { HallOfFameMarquee } from '@/components/hall-of-fame-marquee';
 import { RevolvingDoorThemeCarousel } from '@/components/revolving-door-theme-carousel';
+import { BeginnerGuideDialog } from '@/components/beginner-guide-dialog';
 
 interface DrawCategory {
     id: string;
@@ -156,29 +157,28 @@ export default function DrawPage() {
     <div className="container pt-3 sm:pt-6 md:pt-8 pb-36 sm:pb-40 md:pb-24 relative overflow-hidden px-3 sm:px-4 md:px-8 max-w-7xl mx-auto">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-gradient-to-b from-amber-500/10 via-cyan-500/5 to-transparent blur-[120px] pointer-events-none" />
         
-        {/* 頂部單獨角落：遊戲規則與卡池概況 */}
-        <div className="flex items-center justify-between mb-4 sm:mb-6 px-1">
-            <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-slate-900/90 via-[#131b2e]/90 to-slate-900/90 border border-amber-500/40 text-xs font-bold text-slate-200 shadow-[0_2px_15px_rgba(0,0,0,0.6)] backdrop-blur-md">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                    <span className="text-white">即時抽卡專區</span>
-                    <span className="text-amber-300 font-black font-mono ml-0.5 bg-amber-500/15 px-2 py-0.5 rounded-full border border-amber-400/30">
-                        {finalIsLoading ? '--' : allPools.length} 款卡池開放中
-                    </span>
-                </div>
-            </div>
-
-            {/* 單獨角落【遊戲規則】按鈕 (黃金尊榮質感) */}
-            <Dialog>
-                <DialogTrigger asChild>
-                    <button 
-                        type="button"
-                        className="flex items-center gap-1.5 h-8 px-3.5 rounded-xl bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-500 hover:from-yellow-300 hover:to-amber-300 text-slate-950 font-black text-xs shadow-[0_0_15px_rgba(245,158,11,0.35)] transition-all cursor-pointer group shrink-0 border border-yellow-200 active:scale-95"
-                    >
-                        <Dices className="w-3.5 h-3.5 text-slate-950 group-hover:rotate-45 transition-transform" />
-                        <span>遊戲規則</span>
-                    </button>
-                </DialogTrigger>
+        {/* 傳奇大獎牆區塊 */}
+        <div className="mb-4 sm:mb-6">
+            <HallOfFameMarquee />
+        </div>
+        
+        {/* 3D 旋轉門主題呈現專區 */}
+        <div className="mb-8 sm:mb-12">
+            <RevolvingDoorThemeCarousel
+                categories={categoriesWithCounts}
+                isLoading={finalIsLoading}
+                baseHref="/draw"
+                headerAction={(
+                <Dialog>
+                    <DialogTrigger asChild>
+                        <button 
+                            type="button"
+                            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-900/90 hover:bg-slate-800 text-amber-300 border border-amber-500/40 flex items-center justify-center transition-all shadow-[0_0_12px_rgba(245,158,11,0.25)] active:scale-95 cursor-pointer"
+                            title="遊戲規則說明"
+                        >
+                            <HelpCircle className="w-4 h-4 text-amber-400" />
+                        </button>
+                    </DialogTrigger>
                 <DialogContent className="rounded-[2rem] bg-slate-950 border border-amber-500/30 text-white max-w-2xl backdrop-blur-2xl shadow-2xl">
                     <DialogHeader>
                         <DialogTitle className="text-xl md:text-2xl font-black text-amber-400 flex items-center gap-2 font-headline">
@@ -214,21 +214,8 @@ export default function DrawPage() {
                     </div>
                 </DialogContent>
             </Dialog>
-        </div>
-
-        {/* 傳奇大獎牆區塊 */}
-        <div className="mb-4 sm:mb-6">
-            <HallOfFameMarquee />
-        </div>
-        
-        {/* 3D 旋轉門主題呈現專區 */}
-        <div className="mb-8 sm:mb-12">
-            <RevolvingDoorThemeCarousel
-                categories={categoriesWithCounts}
-                isLoading={finalIsLoading}
-                baseHref="/draw"
-            />
-        </div>
+                )}
+            />  </div>
 
         {/* 全部卡池專區 */}
         {!finalIsLoading && (
@@ -255,6 +242,8 @@ export default function DrawPage() {
 
                         {/* 搜尋欄與排序器 */}
                         <div className="flex items-center gap-2 w-full sm:w-auto">
+                            
+                            
                             {/* 搜尋卡池 */}
                             <div className="relative flex-1 sm:w-56">
                                 <Search className="w-3.5 h-3.5 text-amber-400/70 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -299,11 +288,11 @@ export default function DrawPage() {
                 {displayPools.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-5 sm:gap-7 max-w-md sm:max-w-none mx-auto">
                         {displayPools.map((pool) => (
-                            <div key={pool.id} className="relative w-full">
+                            <div key={pool.id} className="relative w-full pt-4 sm:pt-5">
                                 {pool.isFeatured && (
-                                    <div className="absolute -top-2.5 -left-2 z-20">
-                                        <div className="bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-black text-[10px] px-2.5 py-0.5 rounded-full shadow-[0_4px_12px_rgba(245,158,11,0.4)] border border-amber-200/50 uppercase tracking-wider flex items-center gap-1">
-                                            <Sparkles className="w-3 h-3 fill-slate-950" />
+                                    <div className="absolute top-0 left-2.5 sm:left-3 z-30 pointer-events-none">
+                                        <div className="bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 font-black text-[11px] px-3.5 py-1 rounded-full shadow-[0_4px_20px_rgba(245,158,11,0.7)] border-2 border-amber-100 uppercase tracking-wider flex items-center gap-1.5 animate-pulse">
+                                            <Sparkles className="w-3.5 h-3.5 fill-slate-950" />
                                             <span>HOT 精選</span>
                                         </div>
                                     </div>

@@ -24,6 +24,7 @@ interface RevolvingDoorThemeCarouselProps {
   baseHref?: string; // e.g. '/draw' or '/bet'
   onSelectCategory?: (category: ThemeCategoryItem) => void;
   className?: string;
+  headerAction?: React.ReactNode;
 }
 
 // Fallback high-impact sports visuals matching target design
@@ -53,6 +54,7 @@ export function RevolvingDoorThemeCarousel({
   baseHref = '/draw',
   onSelectCategory,
   className,
+  headerAction,
 }: RevolvingDoorThemeCarouselProps) {
   const router = useRouter();
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -172,17 +174,22 @@ export function RevolvingDoorThemeCarousel({
   };
 
   return (
-    <div className={cn("relative select-none w-full max-w-5xl mx-auto py-2", className)}>
-      {/* 標題區塊：黑金奢華質感 (Centered Clean Header) */}
-      <div className="text-center mb-4 sm:mb-6">
-        <h2 className="text-xl sm:text-2xl font-black font-headline tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 drop-shadow-[0_2px_15px_rgba(245,158,11,0.35)]">
+    <div className={cn("relative select-none w-full max-w-5xl mx-auto pt-0 pb-2", className)}>
+      {/* 標題區塊：黑金奢華質感 (Centered Clean Header with Optional Icon Action) */}
+      <div className="relative flex items-center justify-center mb-2 sm:mb-3.5 px-3">
+        <h2 className="text-xl sm:text-2xl font-black font-headline tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 drop-shadow-[0_2px_15px_rgba(245,158,11,0.35)] text-center">
           選擇主題卡池
         </h2>
+        {headerAction && (
+          <div className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-20">
+            {headerAction}
+          </div>
+        )}
       </div>
 
       {/* 3D 旋轉門舞台視角區 */}
       <div
-        className="relative w-full h-[340px] sm:h-[400px] md:h-[430px] flex items-center justify-center overflow-hidden perspective-[1100px] focus:outline-none"
+        className="relative w-full h-[320px] sm:h-[370px] md:h-[400px] flex items-center justify-center overflow-hidden perspective-[1100px] focus:outline-none"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         onTouchStart={onTouchStart}
@@ -192,7 +199,7 @@ export function RevolvingDoorThemeCarousel({
         tabIndex={0}
       >
         {/* 3D 旋轉門底座：同心金曜光圈舞台 (Turntable Glow Floor) */}
-        <div className="absolute bottom-6 sm:bottom-8 w-[280px] sm:w-[480px] md:w-[620px] h-[65px] sm:h-[95px] pointer-events-none flex items-center justify-center">
+        <div className="absolute bottom-4 sm:bottom-6 w-[280px] sm:w-[460px] md:w-[580px] h-[60px] sm:h-[85px] pointer-events-none flex items-center justify-center">
           {/* 外圈高亮軌道光圈 */}
           <div className="absolute inset-0 rounded-[100%] border border-amber-400/50 shadow-[0_0_35px_rgba(245,158,11,0.45)] transform rotate-x-[75deg]" />
           
@@ -295,7 +302,7 @@ export function RevolvingDoorThemeCarousel({
             return (
               <motion.div
                 key={category.id || category.name}
-                className="absolute w-[180px] h-[240px] sm:w-[240px] sm:h-[320px] md:w-[270px] md:h-[360px] origin-center cursor-pointer select-none"
+                className="absolute w-[170px] h-[226px] sm:w-[225px] sm:h-[300px] md:w-[255px] md:h-[340px] origin-center cursor-pointer select-none"
                 style={{
                   zIndex,
                 }}

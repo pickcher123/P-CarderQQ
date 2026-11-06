@@ -30,6 +30,7 @@ import { useToast } from '@/hooks/use-toast';
 import { claimCommunityFreeDraw } from '@/lib/promo-draw-service';
 import confetti from 'canvas-confetti';
 import { OFFICIAL_NEWS_LIST } from '@/lib/default-news';
+import { BeginnerGuideDialog } from '@/components/beginner-guide-dialog';
 
 interface NewsItem {
     id: string;
@@ -253,17 +254,13 @@ export default function Home() {
           </div>
           
           {/* 快捷操作按鈕組 */}
-          <div className="flex flex-col items-center justify-center animate-fade-in-up pt-4 sm:pt-6 max-w-lg mx-auto">
-            <Button size="lg" asChild className="w-full sm:w-auto h-12 sm:h-14 px-8 text-base sm:text-lg font-black rounded-2xl group bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-slate-950 shadow-[0_0_35px_rgba(245,158,11,0.45)] hover:shadow-[0_0_50px_rgba(245,158,11,0.7)] border border-amber-300/70 relative overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98]">
-              <Link href="/draw" className="flex items-center justify-center gap-2.5">
-                <Sparkles className="w-5 h-5 text-slate-950 fill-slate-950" />
-                <span className="tracking-wide">立即前往卡池</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform" />
-              </Link>
-            </Button>
-            {/* 按鈕下方展台投影光暈 */}
-            <div className="w-44 sm:w-60 h-3 mt-2 bg-amber-400/25 blur-md rounded-full pointer-events-none" />
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 animate-fade-in-up pt-4 sm:pt-6 max-w-xl mx-auto">
+
+
+            <BeginnerGuideDialog triggerVariant="hero" buttonText="新手教學與公平驗證" />
           </div>
+          {/* 按鈕下方展台投影光暈 */}
+          <div className="w-48 sm:w-80 h-3 mx-auto mt-2 bg-amber-400/25 blur-md rounded-full pointer-events-none" />
         </div>
 
         {/* 底部平滑過渡流光帶 */}
@@ -296,11 +293,11 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-5 sm:gap-7 max-w-md sm:max-w-none mx-auto">
             {featuredPools.map((pool) => (
-              <div key={pool.id} className="relative w-full">
+              <div key={pool.id} className="relative w-full pt-4 sm:pt-5">
                 {pool.isFeatured && (
-                  <div className="absolute -top-2.5 -left-2 z-20">
-                    <div className="bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-black text-[10px] px-2.5 py-0.5 rounded-full shadow-[0_4px_12px_rgba(245,158,11,0.4)] border border-amber-200/50 uppercase tracking-wider flex items-center gap-1">
-                      <Sparkles className="w-3 h-3 fill-slate-950" />
+                  <div className="absolute top-0 left-2.5 sm:left-3 z-30 pointer-events-none">
+                    <div className="bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 font-black text-[11px] px-3.5 py-1 rounded-full shadow-[0_4px_20px_rgba(245,158,11,0.7)] border-2 border-amber-100 uppercase tracking-wider flex items-center gap-1.5 animate-pulse">
+                      <Sparkles className="w-3.5 h-3.5 fill-slate-950" />
                       <span>HOT 精選</span>
                     </div>
                   </div>

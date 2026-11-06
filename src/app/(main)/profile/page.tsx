@@ -59,6 +59,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { SafeImage } from "@/components/safe-image";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TransactionFairnessModal } from '@/components/transaction-fairness-modal';
+import type { ProvablyFairData } from '@/lib/provably-fair';
 
 type OrderStatus = 'pending' | 'processing' | 'shipped' | 'cancelled';
 
@@ -93,6 +95,7 @@ interface Transaction {
     transactionType: 'Purchase' | 'Deposit' | 'Withdrawal' | 'QuickSell' | 'Refund' | 'Issuance';
     section?: 'draw' | 'lucky-bag' | 'betting' | 'admin' | 'shipping' | 'group-break' | 'deposit' | 'arena';
     details?: string;
+    provablyFair?: ProvablyFairData;
 }
 
 interface RedemptionItem {
@@ -537,27 +540,107 @@ function TransactionsTab({ userId }: { userId: string }) {
 
     return (
         <Card className="border-white/5 bg-card/30 backdrop-blur-xl rounded-[2rem] overflow-hidden">
-            <CardHeader className="bg-muted/20 pb-4"><CardTitle className="text-lg flex items-center gap-2 text-white"><History className="h-5 w-5 text-primary"/> 最近 30 筆交易明細</CardTitle></CardHeader>
+            <CardHeader className="bg-muted/20 pb-4 flex flex-row items-center justify-between">
+                <CardTitle className="text-lg flex items-center gap-2 text-white">
+                    <History className="h-5 w-5 text-primary"/> 最近 30 筆交易明細
+                </CardTitle>
+                <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-bold bg-emerald-950/40 border border-emerald-500/30 px-2.5 py-1 rounded-full">
+                    <Shield className="w-3.5 h-3.5" />
+                    <span>Provably Fair 全局開獎參數可查</span>
+                </div>
+            </CardHeader>
             <CardContent className="p-0">
-                <div className="overflow-x-auto custom-scrollbar">
-                    <Table className="min-w-[600px] md:min-w-full">
-                        <TableHeader className="bg-muted/10"><TableRow className="border-white/5"><TableHead className="pl-6 text-slate-300">詳情內容</TableHead><TableHead className="text-slate-300">變動金額</TableHead><TableHead className="pr-6 text-slate-300">交易時間</TableHead></TableRow></TableHeader>
-                    <TableBody>
-                        {isLoading ? <TableRow><TableCell colSpan={3} className="p-6"><Skeleton className="h-10 w-full"/></TableCell></TableRow> :
-                        sorted.map(tx => (
-                            <TableRow key={tx.id} className="border-white/5 hover:bg-white/5 transition-colors">
-                                <TableCell className="pl-6 text-xs max-w-[300px] truncate leading-relaxed text-slate-200">{translateDetails(tx.details)}</TableCell>
-                                <TableCell className={cn("font-code text-sm font-black", tx.amount > 0 ? "text-green-400" : "text-white")}>
-                                    <div className="flex items-center gap-1">
-                                        {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString()}
-                                        {tx.currency === 'p-point' ? <PPlusIcon className="h-3 w-3" /> : <Gem className="h-3 w-3 text-primary"/>}
+                {/* 手機版卡片視圖 (< md) */}
+                <div className="md:hidden divide-y divide-white/5">
+                    {isLoading ? (
+                        <div className="p-4 space-y-3">
+                            <Skeleton className="h-16 w-full rounded-xl" />
+                            <Skeleton className="h-16 w-full rounded-xl" />
+                        </div>
+                    ) : sorted.length === 0 ? (
+                        <div className="h-32 flex items-center justify-center text-slate-400 italic text-xs">
+                            目前尚無交易紀錄
+                        </div>
+                    ) : (
+                        sorted.map(tx => {
+                            const isGameTx = tx.section === 'betting' || tx.section === 'draw' || tx.section === 'lucky-bag' ||
+                                (tx.details && (tx.details.includes('拼卡') || tx.details.includes('抽卡') || tx.details.includes('連抽') || tx.details.includes('福袋')));
+
+                            return (
+                                <div key={tx.id} className="p-3.5 space-y-2 hover:bg-white/[0.02] transition-colors">
+                                    <div className="flex items-start justify-between gap-2">
+                                        <div className="space-y-0.5 flex-1 min-w-0">
+                                            <div className="text-xs font-semibold text-slate-200 line-clamp-2 leading-relaxed">
+                                                {translateDetails(tx.details)}
+                                            </div>
+                                            <div className="text-[10px] text-slate-500 font-code">
+                                                {format(new Date(tx.transactionDate.seconds * 1000), 'yyyy-MM-dd HH:mm')}
+                                            </div>
+                                        </div>
+                                        <div className={cn("font-code text-sm font-black shrink-0", tx.amount > 0 ? "text-green-400" : "text-white")}>
+                                            <div className="flex items-center gap-1 justify-end">
+                                                {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString()}
+                                                {tx.currency === 'p-point' ? <PPlusIcon className="h-3 w-3" /> : <Gem className="h-3 w-3 text-primary"/>}
+                                            </div>
+                                        </div>
                                     </div>
-                                </TableCell>
-                                <TableCell className="text-[10px] text-slate-400 font-code pr-6">{format(new Date(tx.transactionDate.seconds * 1000), 'MM-dd HH:mm')}</TableCell>
+
+                                    {isGameTx && (
+                                        <div className="flex items-center justify-between pt-1 border-t border-white/5 text-[11px]">
+                                            <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                                                <Shield className="w-3 h-3 text-emerald-400" />
+                                                <span>開獎防偽數據</span>
+                                            </span>
+                                            <TransactionFairnessModal transaction={tx} />
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })
+                    )}
+                </div>
+
+                {/* 桌面版表格視圖 (>= md) */}
+                <div className="hidden md:block overflow-x-auto custom-scrollbar">
+                    <Table className="min-w-full">
+                        <TableHeader className="bg-muted/10">
+                            <TableRow className="border-white/5">
+                                <TableHead className="pl-6 text-slate-300">詳情內容</TableHead>
+                                <TableHead className="text-slate-300">變動金額</TableHead>
+                                <TableHead className="text-center text-slate-300">密碼學開獎參數</TableHead>
+                                <TableHead className="pr-6 text-slate-300">交易時間</TableHead>
                             </TableRow>
-                        ))}
+                        </TableHeader>
+                    <TableBody>
+                        {isLoading ? <TableRow><TableCell colSpan={4} className="p-6"><Skeleton className="h-10 w-full"/></TableCell></TableRow> :
+                        sorted.map(tx => {
+                            const isGameTx = tx.section === 'betting' || tx.section === 'draw' || tx.section === 'lucky-bag' ||
+                                (tx.details && (tx.details.includes('拼卡') || tx.details.includes('抽卡') || tx.details.includes('連抽') || tx.details.includes('福袋')));
+
+                            return (
+                                <TableRow key={tx.id} className="border-white/5 hover:bg-white/5 transition-colors">
+                                    <TableCell className="pl-6 text-xs max-w-[280px] truncate leading-relaxed text-slate-200">
+                                        {translateDetails(tx.details)}
+                                    </TableCell>
+                                    <TableCell className={cn("font-code text-sm font-black", tx.amount > 0 ? "text-green-400" : "text-white")}>
+                                        <div className="flex items-center gap-1">
+                                            {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString()}
+                                            {tx.currency === 'p-point' ? <PPlusIcon className="h-3 w-3" /> : <Gem className="h-3 w-3 text-primary"/>}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="text-center py-2">
+                                        {isGameTx ? (
+                                            <TransactionFairnessModal transaction={tx} />
+                                        ) : (
+                                            <span className="text-[10px] text-slate-500 font-mono">-</span>
+                                        )}
+                                    </TableCell>
+                                    <TableCell className="text-[10px] text-slate-400 font-code pr-6">{format(new Date(tx.transactionDate.seconds * 1000), 'MM-dd HH:mm')}</TableCell>
+                                </TableRow>
+                            );
+                        })}
                         {!isLoading && sorted.length === 0 && (
-                            <TableRow><TableCell colSpan={3} className="h-32 text-center text-slate-400 italic">目前尚無交易紀錄</TableCell></TableRow>
+                            <TableRow><TableCell colSpan={4} className="h-32 text-center text-slate-400 italic">目前尚無交易紀錄</TableCell></TableRow>
                         )}
                     </TableBody>
                 </Table>
