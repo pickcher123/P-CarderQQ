@@ -142,7 +142,9 @@ export function Footer() {
         {/* 底部極簡版權與版本號 */}
         <div className="pt-2 border-t border-slate-800/50 flex items-center justify-between text-[10px] text-slate-500">
           <span>© {new Date().getFullYear()} P+Carder 版權所有</span>
-          <span className="font-mono text-slate-400">Ver {currentVersion}</span>
+          <Link href="/changelog" title="查看版本更新紀錄" className="font-mono text-slate-400 hover:text-cyan-300 transition-colors">
+            Ver {currentVersion}
+          </Link>
         </div>
       </div>
 
@@ -318,9 +320,11 @@ export function Footer() {
               <span>System Operational</span>
             </div>
 
-            <Badge variant="outline" className="bg-slate-900 border-slate-800 text-slate-400 font-mono text-[10px] py-0.5 px-2">
-              Ver {currentVersion}
-            </Badge>
+            <Link href="/changelog" title="查看版本更新紀錄">
+              <Badge variant="outline" className="bg-slate-900 border-slate-800 text-slate-400 hover:text-cyan-300 hover:border-cyan-500/30 transition-all font-mono text-[10px] py-0.5 px-2 cursor-pointer">
+                Ver {currentVersion}
+              </Badge>
+            </Link>
           </div>
         </div>
       </div>

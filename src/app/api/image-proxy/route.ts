@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
     const cacheKey = `${imageUrl}_matte_${shouldMatte}`;
     if (matteCache.has(cacheKey)) {
       const cached = matteCache.get(cacheKey)!;
-      return new NextResponse(cached.buffer, {
+      return new NextResponse(new Uint8Array(cached.buffer), {
         status: 200,
         headers: {
           'Content-Type': cached.contentType,
@@ -105,7 +105,7 @@ export async function GET(req: NextRequest) {
     }
     matteCache.set(cacheKey, { buffer: finalBuffer, contentType });
 
-    return new NextResponse(finalBuffer, {
+    return new NextResponse(new Uint8Array(finalBuffer), {
       status: 200,
       headers: {
         'Content-Type': contentType,

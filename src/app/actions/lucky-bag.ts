@@ -35,7 +35,7 @@ export async function resetLuckyBagParticipants(userId: string, luckyBagId: stri
 
     // 按用戶統計退款金額
     const userRefunds: { [uid: string]: { amount: number, slots: number[] } } = {};
-    purchasesSnap.docs.forEach(doc => {
+    purchasesSnap.docs.forEach((doc: any) => {
       const data = doc.data();
       const uid = data.userId;
       // 使用福袋當前價格作為退款基準，因為購買紀錄中沒存價格
@@ -54,7 +54,7 @@ export async function resetLuckyBagParticipants(userId: string, luckyBagId: stri
     const walletField = currency === 'diamond' ? 'points' : 'bonusPoints';
 
     // 使用 Transaction 確保退款與狀態重置的一致性
-    await adminDb.runTransaction(async (transaction) => {
+    await adminDb.runTransaction(async (transaction: any) => {
       // 1. 先執行所有讀取操作 (Reads must come before writes)
       const uids = Object.keys(userRefunds);
       const userRefs = uids.map(uid => adminDb.collection('users').doc(uid));
@@ -97,7 +97,7 @@ export async function resetLuckyBagParticipants(userId: string, luckyBagId: stri
       }
 
       // 刪除所有購買紀錄
-      purchasesSnap.docs.forEach(pDoc => {
+      purchasesSnap.docs.forEach((pDoc: any) => {
         transaction.delete(pDoc.ref);
       });
 

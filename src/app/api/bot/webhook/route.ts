@@ -38,7 +38,7 @@ async function handlePoolQuery(event: WebhookEvent) {
   const poolsSnapshot = await adminDb.collection('cardPools').get();
   let message = '目前卡池狀態：\n';
   
-  poolsSnapshot.forEach((doc) => {
+  poolsSnapshot.forEach((doc: any) => {
     const data = doc.data();
     message += `- ${data.name || '未知卡池'}: 剩餘 ${data.remainingPacks || 0} 包\n`;
   });

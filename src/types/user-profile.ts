@@ -11,7 +11,9 @@ export interface UserProfile {
   photoURL?: string;
   userLevel: string;
   points: number; // Diamonds
+  diamondBalance?: number; // 鑽石餘額別名相容
   bonusPoints: number; // Bonus P-Points (10 P-Points = 1 Diamond)
+  totalBonusEarned?: number; // 累積獲取之紅利點數
   totalSpent: number; // 累積消費金額 (Diamonds)，用於升級
   role: 'admin' | 'user';
   permissions?: string[];
@@ -27,6 +29,8 @@ export interface UserProfile {
   claimedPromoCodes?: string[]; // 已領取的兌換碼列表
   inviteCode?: string; // 專屬邀請碼
   invitedBy?: string; // 綁定的邀請人代碼
+  referredBy?: string; // 推薦人代碼 (別名相容)
+  displayName?: string; // 顯示名稱
   inviteCount?: number; // 成功邀請好友數量
   lastCheckInDate?: string; // 最後每日簽到日期 (yyyy-MM-dd)
 }

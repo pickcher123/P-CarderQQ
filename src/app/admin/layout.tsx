@@ -306,7 +306,11 @@ export default function AdminLayout({
   const isMaintenanceActive = Boolean(systemConfig?.maintenance?.enabled);
 
   const superAdmins = useMemo(() => ['pickcher123@gmail.com'], []);
-  const isSuperAdmin = useMemo(() => user?.email && superAdmins.includes(user.email), [user, superAdmins]);
+  const isSuperAdmin = useMemo(() => {
+    if (!user?.email) return false;
+    const cleanEmail = user.email.toLowerCase().trim();
+    return superAdmins.some(adminEmail => adminEmail.toLowerCase().trim() === cleanEmail);
+  }, [user, superAdmins]);
 
   const currentNav = useMemo(() => {
     return sidebarNavItems.flatMap(s => s.items).find(item => 
@@ -318,7 +322,8 @@ export default function AdminLayout({
     return sidebarNavItems.find(s => s.items.some(i => i.href === pathname || (i.href !== '/admin' && pathname.startsWith(i.href))));
   }, [pathname]);
 
-  if (isUserLoading || isProfileLoading) {
+  // 超級管理員無需等待 userProfile 載入即可通行；一般使用者才等待 profile
+  if (isUserLoading || (!isSuperAdmin && isProfileLoading)) {
     return (
       <div className="flex h-screen items-center justify-center bg-white">
         <LoadingSpinner />
@@ -333,10 +338,14 @@ export default function AdminLayout({
           <ShieldAlert className="h-10 w-10" />
         </div>
         <h1 className="text-xl font-bold text-slate-900 tracking-tight">存取權限受限</h1>
-        <p className="text-slate-500 mt-2 max-w-xs text-xs">您目前的帳號沒有管理員權限存取後台系統。</p>
-        <Button asChild className="mt-6 rounded-lg px-8 h-10 text-xs font-semibold bg-slate-900 text-white hover:bg-slate-800">
-          <Link href="/">返回前台首頁</Link>
-        </Button>
+        <p className="text-slate-500 mt-2 max-w-xs text-xs">
+          {user ? `您目前登入的帳號（${user.email || '無電子郵件'}）尚未具備管理員權限。` : '您尚未登入管理員帳號，請先登入後再進入後台。'}
+        </p>
+        <div className="flex items-center gap-3 mt-6">
+          <Button asChild className="rounded-lg px-6 h-10 text-xs font-semibold bg-slate-900 text-white hover:bg-slate-800">
+            <Link href="/">返回前台首頁</Link>
+          </Button>
+        </div>
       </div>
     );
   }

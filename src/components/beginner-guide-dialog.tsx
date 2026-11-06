@@ -40,7 +40,7 @@ export interface BeginnerGuideDialogProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   triggerClassName?: string;
-  triggerVariant?: 'default' | 'hero' | 'minimal' | 'badge';
+  triggerVariant?: 'default' | 'hero' | 'minimal' | 'badge' | 'compact';
   buttonText?: string;
 }
 
@@ -64,7 +64,7 @@ export function BeginnerGuideDialog({
   onOpenChange: setControlledOpen,
   triggerClassName,
   triggerVariant = 'default',
-  buttonText = '新手教學與公平驗證',
+  buttonText = 'How To Play',
 }: BeginnerGuideDialogProps) {
   const [internalOpen, setInternalOpen] = useState(defaultOpen);
   const [activeTab, setActiveTab] = useState<'tutorial' | 'fairness'>('tutorial');
@@ -87,6 +87,23 @@ export function BeginnerGuideDialog({
             )}
           >
             <HelpCircle className="w-5 h-5 text-amber-400" />
+            <span>{buttonText}</span>
+          </button>
+        </DialogTrigger>
+      );
+    }
+
+    if (triggerVariant === 'compact') {
+      return (
+        <DialogTrigger asChild>
+          <button
+            type="button"
+            className={cn(
+              "flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-400/30 text-[11px] font-bold transition-all cursor-pointer shadow-xs",
+              triggerClassName
+            )}
+          >
+            <HelpCircle className="w-3.5 h-3.5 text-amber-400" />
             <span>{buttonText}</span>
           </button>
         </DialogTrigger>

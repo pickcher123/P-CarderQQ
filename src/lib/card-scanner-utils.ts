@@ -140,7 +140,7 @@ export async function cropImageFromSource(
             cy > 0 ? (cy - 1) * w + cx : -1,
             cy < h - 1 ? (cy + 1) * w + cx : -1,
             cx > 0 ? cy * w + (cx - 1) : -1,
-            cx < width - 1 ? cy * w + (cx + 1) : -1,
+            cx < w - 1 ? cy * w + (cx + 1) : -1,
           ];
           for (const n of neighbors) {
             if (n >= 0 && !visited[n]) {

@@ -1,7 +1,21 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import firebaseConfigData from '@/../firebase-applet-config.json';
 
 export const dynamic = 'force-dynamic';
+
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+  'Cache-Control': 'no-store, max-age=0',
+};
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: CORS_HEADERS,
+  });
+}
 
 function parseFirestoreFields(fields: any): any {
   if (!fields) return {};
@@ -27,26 +41,26 @@ function parseFirestoreFields(fields: any): any {
   return res;
 }
 
-/**
- * @fileOverview 機器人專用 API 端點：即時查詢在線開放卡池
- * 支援 GET 請求，自動計算剩餘包數、大獎剩餘、傳奇命中率
- */
-export async function GET() {
+async function handleFetchPools(req: NextRequest) {
   try {
+    const { searchParams } = new URL(req.url);
+    const format = searchParams.get('format') || 'json';
+    const showAll = searchParams.get('all') === 'true' || searchParams.get('includeDraft') === 'true';
+
     const projectId = firebaseConfigData?.projectId || 'studio-8439816843-ca6d5';
     const baseUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents`;
 
-    // 1. 同步取得 cardPools 與 allCards
+    // 1. 同步取得 cardPools 與 allCards (以無快取模式拉取最新即時資料)
     const [poolsRes, cardsRes] = await Promise.all([
-      fetch(`${baseUrl}/cardPools?pageSize=100`, { cache: 'no-store' }),
-      fetch(`${baseUrl}/allCards?pageSize=500`, { cache: 'no-store' }),
+      fetch(`${baseUrl}/cardPools?pageSize=100`, { cache: 'no-store' }).catch(() => null),
+      fetch(`${baseUrl}/allCards?pageSize=500`, { cache: 'no-store' }).catch(() => null),
     ]);
 
-    const poolsJson = await poolsRes.json();
-    const cardsJson = await cardsRes.json();
+    const poolsJson = poolsRes ? await poolsRes.json().catch(() => ({})) : {};
+    const cardsJson = cardsRes ? await cardsRes.json().catch(() => ({})) : {};
 
     const allCardsMap = new Map<string, any>();
-    if (cardsJson.documents) {
+    if (cardsJson.documents && Array.isArray(cardsJson.documents)) {
       for (const doc of cardsJson.documents) {
         const id = doc.name.split('/').pop();
         const data = parseFirestoreFields(doc.fields);
@@ -64,8 +78,10 @@ export async function GET() {
         return { id, ...data };
       })
       .filter((pool: any) => {
-        // 剩餘包數檢查
-        if ((pool.remainingPacks ?? 0) <= 0) return false;
+        if (showAll) return true;
+        // 剩餘包數容錯檢查 (轉為 Number 比對)
+        const remPacks = Number(pool.remainingPacks ?? 0);
+        if (remPacks <= 0) return false;
         // 時間限制檢查
         const isStarted = !pool.startsAt || (pool.startsAt.seconds <= nowSeconds);
         const isNotExpired = !pool.expiresAt || (pool.expiresAt.seconds > nowSeconds);
@@ -76,49 +92,53 @@ export async function GET() {
         const grandPrizes: any[] = [];
 
         // 計算卡片類大獎
-        if (pool.cards && pool.cardRarities) {
+        if (Array.isArray(pool.cards) && pool.cardRarities) {
           pool.cards.forEach((c: any) => {
             const rarity = pool.cardRarities[c.cardId];
             const cardData = allCardsMap.get(c.cardId);
-            if (rarity === 'legendary' && c.quantity > 0 && !cardData?.isSold) {
-              legendaryCount += c.quantity;
+            const qty = Number(c.quantity || 0);
+            if (rarity === 'legendary' && qty > 0 && !cardData?.isSold) {
+              legendaryCount += qty;
               grandPrizes.push({
-                name: cardData?.name || '未知卡片',
-                remaining: c.quantity,
+                name: cardData?.name || '稀有大獎卡',
+                cardId: c.cardId,
+                remaining: qty,
               });
             }
           });
         }
 
         // 計算點數類大獎
-        if (pool.pointPrizes) {
+        if (Array.isArray(pool.pointPrizes)) {
           pool.pointPrizes.forEach((p: any) => {
-            if (p.rarity === 'legendary' && p.quantity > 0) {
-              legendaryCount += p.quantity;
+            const qty = Number(p.quantity || 0);
+            if (p.rarity === 'legendary' && qty > 0) {
+              legendaryCount += qty;
               grandPrizes.push({
                 name: `${p.points} P+ 點數獎`,
-                remaining: p.quantity,
+                remaining: qty,
               });
             }
           });
         }
 
-        const total = pool.totalPacks || 1;
-        const remaining = pool.remainingPacks || 0;
-        const ratio = ((remaining / total) * 100).toFixed(1) + '%';
+        const total = Number(pool.totalPacks || 1);
+        const remaining = Number(pool.remainingPacks || 0);
+        const ratio = total > 0 ? ((remaining / total) * 100).toFixed(1) + '%' : '0%';
         const legendaryProb = remaining > 0 ? ((legendaryCount / remaining) * 100).toFixed(2) + '%' : '0%';
 
         return {
           id: pool.id,
-          name: pool.name,
+          name: pool.name || '精選卡池',
           category: pool.category || 'general',
-          pricePerDraw: pool.price || 0,
+          pricePerDraw: Number(pool.price || 0),
           stats: {
             totalPacks: total,
             remainingPacks: remaining,
             remainingRatio: ratio,
           },
           probabilities: {
+            legendaryRemainingCount: legendaryCount,
             legendaryWinRate: legendaryProb,
           },
           grandPrizesInPool: grandPrizes,
@@ -126,22 +146,76 @@ export async function GET() {
         };
       });
 
+    // 產生適合推播或機器人直接讀取的繁體中文摘要
+    let formattedText = `🎰 【P+Carder 最新在席卡池情報】\n統計時間：${new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}\n目前開放卡池數量：${report.length} 個\n─────────────────\n`;
+
+    if (report.length === 0) {
+      formattedText += `目前暫無在席卡池，請留意最新上架公告！`;
+    } else {
+      report.forEach((p: any, idx: number) => {
+        formattedText += `${idx + 1}. 【${p.name}】\n`;
+        formattedText += `   💰 單抽：${p.pricePerDraw} 鑽\n`;
+        formattedText += `   📦 剩餘：${p.stats.remainingPacks} / ${p.stats.totalPacks} 包 (剩餘率 ${p.stats.remainingRatio})\n`;
+        formattedText += `   🔥 傳奇大獎爆率：${p.probabilities.legendaryWinRate} (大獎餘量 ${p.probabilities.legendaryRemainingCount} 張)\n`;
+        if (p.grandPrizesInPool.length > 0) {
+          formattedText += `   🏆 在池大獎：\n`;
+          p.grandPrizesInPool.forEach((g: any) => {
+            formattedText += `      - ${g.name} (剩餘 ${g.remaining})\n`;
+          });
+        }
+        formattedText += `─────────────────\n`;
+      });
+    }
+
+    if (format === 'text' || format === 'plain') {
+      return new NextResponse(formattedText, {
+        status: 200,
+        headers: {
+          ...CORS_HEADERS,
+          'Content-Type': 'text/plain; charset=utf-8',
+        },
+      });
+    }
+
     return NextResponse.json(
       {
         success: true,
+        code: 200,
         timestamp: new Date().toISOString(),
         activePoolsCount: report.length,
+        count: report.length,
         data: report,
+        pools: report, // 雙重相容 data 與 pools 命名
+        textSummary: formattedText,
+        message: `成功查詢 ${report.length} 個在席卡池`,
       },
       {
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Cache-Control': 'no-store, max-age=0',
-        },
+        status: 200,
+        headers: CORS_HEADERS,
       }
     );
   } catch (error: any) {
     console.error('Bot API Error:', error);
-    return NextResponse.json({ success: false, error: error.message || 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: error.message || '查詢失敗',
+        activePoolsCount: 0,
+        data: [],
+        pools: [],
+      },
+      {
+        status: 500,
+        headers: CORS_HEADERS,
+      }
+    );
   }
+}
+
+export async function GET(req: NextRequest) {
+  return handleFetchPools(req);
+}
+
+export async function POST(req: NextRequest) {
+  return handleFetchPools(req);
 }

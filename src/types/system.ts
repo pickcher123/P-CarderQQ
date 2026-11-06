@@ -42,6 +42,7 @@ export interface SystemConfig {
     communityUrl?: string;
     isCommunityEnabled?: boolean;
     maintenance?: MaintenanceConfig; // 🚧 全站維護模式配置
+    announcement?: string; // 系統公告
     appVersionConfig?: AppVersionConfig; // 🚀 全站版本設定（公測版 / 正式版）
     featureFlags?: {
         isDrawEnabled?: boolean;

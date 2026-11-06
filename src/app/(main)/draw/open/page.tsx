@@ -36,7 +36,6 @@ import { userLevels } from '@/components/member-level-crown';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { performDrawAction } from '@/app/actions/draw';
-import { toPng } from 'html-to-image';
 import { getEffectiveTicketCount, syncLocalPromoClaimsToFirestore, getLocalAvailableTicketsCount } from '@/lib/promo-draw-service';
 
 enum OperationType {

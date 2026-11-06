@@ -98,6 +98,7 @@ export function BettingGameDialog({
 
     const { user } = useUser();
     const firestore = useFirestore();
+    const { toast } = useToast();
     // 🚀 效能大幅優化：僅當彈窗開啟時才建立 Firestore 監聽，避免列表頁數十張卡牌同時監聽造成記憶體飆升與重繪卡頓
     const userProfileRef = useMemoFirebase(() => (firestore && user && isOpen) ? doc(firestore, 'users', user.uid) : null, [firestore, user, isOpen]);
     const { data: userProfile } = useDoc<UserProfile>(userProfileRef);

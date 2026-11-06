@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     
     if (result.TradeStatus !== '1') return NextResponse.json({ status: 'success' });
 
-    await adminDb.runTransaction(async (t) => {
+    await adminDb.runTransaction(async (t: any) => {
         const transactionRef = adminDb.collection('transactions').doc(ourTradeId);
         const transactionDoc = await t.get(transactionRef);
 

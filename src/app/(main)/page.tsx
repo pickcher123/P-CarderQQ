@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronRight, Trophy, Sparkles, Newspaper, Calendar, ShieldCheck, Zap, Target, Megaphone, Users2, Disc3, ArrowRight, Flame, Gift, Image as ImageIcon, FileText, Radio } from 'lucide-react';
 import { LuckyBagIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
-import { useAuth, useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { useUser, useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, limit, doc } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -41,6 +41,7 @@ interface NewsItem {
     imageUrl?: string;
     createdAt?: { seconds: number };
     isPinned?: boolean;
+    isDeleted?: boolean;
 }
 
 interface Partner {
@@ -51,7 +52,7 @@ interface Partner {
 }
 
 export default function Home() {
-  const { user } = useAuth();
+  const { user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
@@ -257,7 +258,7 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 animate-fade-in-up pt-4 sm:pt-6 max-w-xl mx-auto">
 
 
-            <BeginnerGuideDialog triggerVariant="hero" buttonText="新手教學與公平驗證" />
+            <BeginnerGuideDialog triggerVariant="hero" buttonText="How To Play" />
           </div>
           {/* 按鈕下方展台投影光暈 */}
           <div className="w-48 sm:w-80 h-3 mx-auto mt-2 bg-amber-400/25 blur-md rounded-full pointer-events-none" />

@@ -60,6 +60,7 @@ interface CardData {
     isFeatured?: boolean;
     lockedBy?: string;
     lockedAt?: any;
+    status?: string;
 }
 
 interface BettingCategory {

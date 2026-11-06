@@ -282,7 +282,7 @@ export default function BettingAdminPage() {
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button variant="ghost" onClick={() => resetForm() || setIsAddDialogOpen(false)} disabled={isProcessing} className="font-bold">取消</Button>
+                        <Button variant="ghost" onClick={() => { resetForm(); setIsAddDialogOpen(false); }} disabled={isProcessing} className="font-bold">取消</Button>
                         <Button onClick={() => handleSaveCategory('add')} disabled={isProcessing || !categoryName} className="bg-slate-900 text-white font-bold h-12 px-8 rounded-xl shadow-lg">
                             {isProcessing ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : null}
                             確認建立
@@ -340,7 +340,7 @@ export default function BettingAdminPage() {
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button variant="ghost" onClick={() => resetForm() || setIsEditDialogOpen(false)} disabled={isProcessing} className="font-bold">取消</Button>
+                        <Button variant="ghost" onClick={() => { resetForm(); setIsEditDialogOpen(false); }} disabled={isProcessing} className="font-bold">取消</Button>
                         <Button onClick={() => handleSaveCategory('edit')} disabled={isProcessing || !categoryName} className="bg-slate-900 text-white font-bold h-12 px-8 rounded-xl shadow-lg">
                             {isProcessing ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Save className="mr-2 h-4 w-4"/>}
                             儲存變更

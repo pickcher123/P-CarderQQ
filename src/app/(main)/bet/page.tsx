@@ -61,6 +61,7 @@ interface CardData {
     sellPrice?: number;
     rarity?: string;
     category?: string;
+    status?: string;
 }
 
 interface CategoryWithCount extends BettingCategory {

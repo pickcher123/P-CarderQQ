@@ -88,13 +88,14 @@ export default function RewardsAdminPage() {
   const [bonusEvent, setBonusEvent] = useState<BonusEventConfig>(DEFAULT_BONUS_EVENT);
 
   useEffect(() => {
-    if (systemConfig?.bonusEvent) {
+    const event = systemConfig?.bonusEvent;
+    if (event) {
       setBonusEvent(prev => ({
         ...DEFAULT_BONUS_EVENT,
-        ...systemConfig.bonusEvent,
+        ...event,
         targets: {
           ...DEFAULT_BONUS_EVENT.targets,
-          ...(systemConfig.bonusEvent.targets || {})
+          ...(event.targets || {})
         }
       }));
     }

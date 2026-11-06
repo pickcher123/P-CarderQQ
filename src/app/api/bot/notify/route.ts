@@ -13,7 +13,7 @@ export async function GET() {
   const poolsSnapshot = await adminDb.collection('cardPools').get();
   let message = '每日卡池狀態更新：\n';
   
-  poolsSnapshot.forEach((doc) => {
+  poolsSnapshot.forEach((doc: any) => {
     const data = doc.data();
     message += `- ${data.name || '未知卡池'}: 剩餘 ${data.remainingPacks || 0} 包\n`;
   });

@@ -26,6 +26,7 @@ export interface Exhibition {
   location?: string;
   description: string;
   imageUrl?: string;
+  officialUrl?: string;
 }
 
 export const extractCity = (location?: string): string => {

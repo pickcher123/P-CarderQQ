@@ -66,6 +66,7 @@ interface PointPrize {
     points: number;
     quantity: number;
     rarity: Rarity;
+    name?: string;
 }
 
 // Types
@@ -100,6 +101,11 @@ interface CardPool {
   eventTicketName?: string;
   eventRules?: string;
   eventMaxDrawsPerUser?: number;
+  categoryId?: string;
+  isAdult?: boolean;
+  enablePickNumber?: boolean;
+  totalTicketsCount?: number;
+  kujiTickets?: any[];
 }
 
 interface CardData {
@@ -216,79 +222,7 @@ export default function CardPoolDetailPage() {
   }, [firestore]);
   const { data: allCards, isLoading: isLoadingAllCards } = useCollection<CardData>(allCardsCollectionRef);
 
-  useEffect(() => {
-    async function fetchSalesStats() {
 
-      if (!firestore || !cardPoolId || !allCards) return;
-      setIsLoadingStats(true);
-      try {
-        console.log('DEBUG: Current user:', auth ? (auth.currentUser?.uid || 'no user') : 'no auth object', auth?.currentUser?.email);
-        console.log('DEBUG: Firestore instance:', firestore);
-        
-        // Test access to each collection individually
-        const collectionsToTest = ['transactions', 'allCards', 'drawnCardLogs'];
-        for (const colName of collectionsToTest) {
-            try {
-                await getDocs(collection(firestore, colName));
-                console.log(`DEBUG: Successfully accessed collection: ${colName}`);
-            } catch (colErr) {
-                console.error(`DEBUG: Failed to access collection: ${colName}`, colErr);
-            }
-        }
-
-
-        
-
-
-        // Calculate total pool value
-        let totalPoolValue = 0;
-        
-        // Fetch the latest cards directly to ensure we have the most up-to-date sellPrice
-        console.log('DEBUG: Fetching allCards...');
-        const allCardsSnapshot = await getDocs(collection(firestore, 'allCards'));
-        console.log('DEBUG: allCards fetched successfully.');
-        const latestAllCards = allCardsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CardData));
-        const cardMap = new Map(latestAllCards.map(c => [c.id, c.sellPrice || 0]));
-        
-        cardPool?.cards?.forEach(pc => {
-            const price = cardMap.get(pc.cardId) || 0;
-            totalPoolValue += price * pc.quantity;
-        });
-        cardPool?.pointPrizes?.forEach(pp => {
-            // P-point prizes divided by 10
-            if (pp && typeof pp.points === 'number') {
-                totalPoolValue += (pp.points / 10) * (pp.quantity || 0);
-            }
-        });
-        if (cardPool?.lastPrizeCardId) {
-            totalPoolValue += cardMap.get(cardPool.lastPrizeCardId) || 0;
-        }
-        
-        console.log('DEBUG: Querying drawnCardLogs...');
-        const drawnLogsQuery = query(collection(firestore, 'drawnCardLogs'), where('poolId', '==', cardPoolId));
-        const drawnLogsSnapshot = await getDocs(drawnLogsQuery);
-        console.log('DEBUG: drawnCardLogs queried successfully.');
-        
-        let totalDrawnValue = 0;
-        drawnLogsSnapshot.forEach(doc => {
-            const log = doc.data();
-            totalDrawnValue += log.sellPrice || 0;
-        });
-        
-        setSalesStats({
-            totalPoolValue,
-            totalDrawnValue: totalDrawnValue,
-            loss: totalSales - totalDrawnValue,
-            totalRevenue: totalSales
-        });
-      } catch (e) {
-        console.error('DEBUG: fetchSalesStats error:', e);
-      } finally {
-        setIsLoadingStats(false);
-      }
-      fetchSalesStats();
-    }
-  }, [firestore, cardPoolId, allCards, cardPool]);
   // Fetch all pools, betting items, and lucky bags to enforce the "assigned once" rule
   const { data: allCardPools } = useCollection<CardPool>(useMemoFirebase(() => firestore ? collection(firestore, 'cardPools') : null, [firestore]));
   const { data: bettingItems } = useCollection<any>(useMemoFirebase(() => firestore ? collection(firestore, 'betting-items') : null, [firestore]));

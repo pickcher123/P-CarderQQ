@@ -9,7 +9,12 @@ export interface Card {
     category: string;
     sellPrice?: number;
     isSold?: boolean;
+    rarity?: Rarity;
+    isPoints?: boolean;
+    points?: number;
 }
+
+export type CardItem = Card;
 
 export interface PointPrize {
     prizeId: string;
@@ -33,12 +38,20 @@ export interface CardPool {
     id: string;
     price?: number;
     price3Draws?: number;
+    price10Draws?: number;
     cards: { cardId: string; quantity: number }[];
     pointPrizes?: PointPrize[];
     cardRarities: Record<string, Rarity>;
     remainingPacks: number;
     totalPacks?: number;
     hasProtection?: boolean;
+    isFeatured?: boolean;
+    isActive?: boolean;
+    agentId?: string;
+    description?: string;
+    imageUrl?: string;
+    startsAt?: any;
+    expiresAt?: any;
     currency?: 'diamond' | 'p-point';
     type?: string;
     name?: string;

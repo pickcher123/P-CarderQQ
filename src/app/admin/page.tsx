@@ -25,6 +25,7 @@ import {
   Info, 
   Disc3,
   CheckCircle,
+  CheckCircle2,
   Clock,
   Layers,
   ShoppingBag,
@@ -360,7 +361,9 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const isSuperAdmin = currentUser?.email === SUPER_ADMIN_EMAIL;
+  const isSuperAdmin = Boolean(
+    currentUser?.email && currentUser.email.toLowerCase().trim() === SUPER_ADMIN_EMAIL.toLowerCase().trim()
+  );
 
   const totalUsers = users?.length ?? 0;
   const adminUsers = users?.filter((u: any) => u.role === 'admin').length ?? 0;

@@ -49,6 +49,7 @@ interface LuckBag {
   id?: string;
   name: string;
   price: number;
+  currency?: 'diamond' | 'pplus';
   totalParticipants: number;
   revealLottery?: boolean;
   imageUrl?: string;

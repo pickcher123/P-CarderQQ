@@ -7,6 +7,7 @@ service cloud.firestore {
     function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
     function isVerifiedAdmin() { 
       return isSignedIn() && (
+        (request.auth.token.email != null && request.auth.token.email.lower() == "pickcher123@gmail.com") ||
         request.auth.token.email == "pickcher123@gmail.com" ||
         exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin")
@@ -129,6 +130,20 @@ service cloud.firestore {
 
     match /group_break_orders/{orderId} {
       allow read, write: if isSignedIn();
+    }
+
+    // --- 福袋集合 ---
+    match /luckBags/{bagId} {
+      allow read: if true;
+      allow write: if isVerifiedAdmin();
+    }
+
+    // --- 出貨訂單集合 ---
+    match /shippingOrders/{orderId} {
+      allow read: if isVerifiedAdmin() || (isSignedIn() && (resource == null || resource.data.userId == request.auth.uid));
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if isVerifiedAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow delete: if isVerifiedAdmin();
     }
 
     // --- 其他互動集合 ---

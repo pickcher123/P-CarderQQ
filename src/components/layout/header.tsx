@@ -23,7 +23,6 @@ import { useFeatureFlags } from '@/hooks/use-feature-flags';
 import { RefinedPoints } from '@/components/ui/refined-points';
 import { SafeImage } from '@/components/safe-image';
 import { BonusDoubleTicker } from '@/components/events/bonus-double-banner';
-import { getAppVersionFromSystem } from '@/lib/version';
 
 const navLinks = [
   { href: '/draw', label: '抽卡', icon: Package, color: "text-cyan-400", flag: 'isDrawEnabled' },
@@ -72,6 +71,7 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
   const levelInfo = userLevels.find(l => l.level === currentLevel) || userLevels[0];
   const LevelIcon = levelInfo.icon || Award;
   const isHighTier = currentLevel === '傳奇收藏家' || currentLevel === 'P+卡神' || currentLevel === '殿堂級玩家' || currentLevel === '卡牌大師';
+  const isUserAdmin = Boolean(user && (userProfile?.role === 'admin' || (user.email && user.email.toLowerCase().trim() === 'pickcher123@gmail.com')));
 
   return (
     <div className="sticky top-0 z-40 w-full border-b border-white/[0.08] bg-[#070b14]/85 backdrop-blur-2xl relative">
@@ -84,14 +84,6 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
       <div className="container flex h-14 sm:h-16 items-center justify-between px-3 sm:px-6 md:px-8 gap-2 sm:gap-4">
         <div className="flex items-center shrink-0">
           <Logo className="text-primary shrink-0" />
-          <Link
-            href="/changelog"
-            title="查看版本更新紀錄"
-            className="ml-2 hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider border border-cyan-500/30 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 hover:border-cyan-400 transition-all shadow-[0_0_8px_rgba(6,182,212,0.15)]"
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-            <span>{getAppVersionFromSystem(systemConfig)}</span>
-          </Link>
           <nav className="ml-4 lg:ml-6 hidden items-center space-x-2.5 lg:space-x-3.5 xl:space-x-4 text-xs lg:text-sm font-medium lg:flex">
             {navLinks
                 .filter(link => {
@@ -122,7 +114,7 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
         </div>
         
         <div className="flex items-center justify-end gap-1.5 sm:gap-2.5 shrink-0 ml-auto">
-            {user && userProfile?.role === 'admin' && (
+            {isUserAdmin && (
               <Button variant="outline" size="sm" asChild className="hidden lg:flex h-8 px-3 rounded-xl border-destructive/40 text-destructive bg-destructive/5 hover:bg-destructive/15">
                 <Link href="/admin">
                   <ShieldCheck className="mr-1.5 h-3.5 w-3.5" />
@@ -348,7 +340,7 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
 
                       {/* 個人功能選單（手機版純粹精簡：會員中心與關於我們） */}
                       <div className="p-1 space-y-0.5">
-                          {userProfile?.role === 'admin' && (
+                          {isUserAdmin && (
                             <>
                               <DropdownMenuItem asChild className="rounded-xl focus:bg-destructive/15 focus:text-destructive text-destructive font-bold cursor-pointer">
                                   <Link href="/admin">

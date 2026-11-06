@@ -62,6 +62,7 @@ interface GroupBreak {
   breakType: 'spot' | 'team';
   currency?: 'diamond' | 'p-point';
   status: 'draft' | 'published' | 'in_progress' | 'completed';
+  isAdult?: boolean;
   winnings?: Winnings[];
 }
 
@@ -513,7 +514,7 @@ export default function GroupBreakDetailPage() {
               <div className="absolute top-2.5 inset-x-2.5 flex items-center justify-between pointer-events-none z-20">
                 <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-emerald-400/30 text-[10px] font-bold text-emerald-300 font-code pointer-events-auto">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_6px_#34d399]" />
-                  <span>CH #{breakId?.slice(0, 4).toUpperCase()}</span>
+                  <span>CH #{String(breakId || '').slice(0, 4).toUpperCase()}</span>
                 </div>
 
                 <Button

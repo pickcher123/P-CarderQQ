@@ -397,9 +397,11 @@ function DieFace({ value, isRolling }: { value: number; isRolling: boolean }) {
 }
 
 export default function LuckyWheelFrontendPage() {
-    const { user, isSuperAdmin, isUserLoading } = useUser();
+    const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
+
+    const isSuperAdmin = Boolean(user?.email && user.email.toLowerCase().trim() === 'pickcher123@gmail.com');
 
     const userProfileRef = useMemoFirebase(() => {
         if (!firestore || !user) return null;
