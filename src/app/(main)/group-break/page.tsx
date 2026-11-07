@@ -146,6 +146,7 @@ const GroupBreakCard = ({ groupBreak, index, cardOpacity }: { groupBreak: GroupB
 export default function GroupBreakPage() {
   const firestore = useFirestore();
   const [showAllCompleted, setShowAllCompleted] = useState(false);
+  const [filterMode, setFilterMode] = useState<'all' | 'available' | 'sold' | 'team' | 'spot'>('all');
 
   const systemConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'systemConfig', 'main') : null, [firestore]);
   const { data: systemConfig } = useDoc<SystemConfig>(systemConfigRef);
@@ -164,6 +165,22 @@ export default function GroupBreakPage() {
     const completed = sorted.filter(b => b.status === 'completed');
     return { publishedBreaks: active, completedBreaks: completed };
   }, [groupBreaks]);
+
+  const filteredPublishedBreaks = useMemo(() => {
+    return publishedBreaks.filter(b => {
+      const participantCount = b.breakType === 'team' 
+        ? (b.teams?.filter(t => t.userId).length || 0)
+        : (b.spots?.filter(s => s.userId).length || 0);
+      const totalSpots = b.breakType === 'team' ? (b.teams?.length || 0) : (b.totalSpots || 0);
+      const isFull = totalSpots > 0 && participantCount >= totalSpots;
+
+      if (filterMode === 'available') return !isFull;
+      if (filterMode === 'sold') return isFull;
+      if (filterMode === 'team') return b.breakType === 'team';
+      if (filterMode === 'spot') return b.breakType === 'spot';
+      return true;
+    });
+  }, [publishedBreaks, filterMode]);
 
   const displayedCompletedBreaks = showAllCompleted ? completedBreaks : completedBreaks.slice(0, 4);
 
@@ -283,7 +300,7 @@ export default function GroupBreakPage() {
 
         {/* === 正在開團中的場次 === */}
         <div className="space-y-4 sm:space-y-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 sm:gap-3">
               <div className="p-1.5 sm:p-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.3)]">
                 <Radio className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400 animate-pulse" />
@@ -292,19 +309,81 @@ export default function GroupBreakPage() {
                 正在開團中的場次
               </h2>
             </div>
+
+            {/* 前台快速分類按鈕 */}
+            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-950/70 border border-emerald-500/20 backdrop-blur-md self-start sm:self-auto overflow-x-auto max-w-full">
+              <button
+                type="button"
+                onClick={() => setFilterMode('all')}
+                className={cn(
+                  "px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap",
+                  filterMode === 'all' ? "bg-emerald-500 text-slate-950 shadow-sm font-black" : "text-slate-400 hover:text-white"
+                )}
+              >
+                全部場次 ({publishedBreaks.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterMode('available')}
+                className={cn(
+                  "px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap",
+                  filterMode === 'available' ? "bg-emerald-500 text-slate-950 shadow-sm font-black" : "text-slate-400 hover:text-white"
+                )}
+              >
+                未滿團 (熱賣中)
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterMode('sold')}
+                className={cn(
+                  "px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap",
+                  filterMode === 'sold' ? "bg-amber-500 text-slate-950 shadow-sm font-black" : "text-slate-400 hover:text-white"
+                )}
+              >
+                已滿團 (備拆中)
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterMode('team')}
+                className={cn(
+                  "px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap",
+                  filterMode === 'team' ? "bg-teal-500 text-slate-950 shadow-sm font-black" : "text-slate-400 hover:text-white"
+                )}
+              >
+                隊伍拆卡
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterMode('spot')}
+                className={cn(
+                  "px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap",
+                  filterMode === 'spot' ? "bg-teal-500 text-slate-950 shadow-sm font-black" : "text-slate-400 hover:text-white"
+                )}
+              >
+                號碼拆卡
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-6">
             {isLoading && Array.from({ length: 2 }).map((_, i) => (
               <div key={i} className="aspect-video rounded-2xl overflow-hidden bg-slate-900/50 border border-white/10"><Skeleton className="h-full w-full" /></div>
             ))}
-            {!isLoading && publishedBreaks.map((b, i) => (
+            {!isLoading && filteredPublishedBreaks.map((b, i) => (
               <GroupBreakCard key={b.id} groupBreak={b} index={i} cardOpacity={cardOpacity} />
             ))}
-            {!isLoading && publishedBreaks.length === 0 && (
-                <div className="col-span-full text-center py-12 sm:py-16 text-slate-400 border border-dashed border-white/10 rounded-2xl bg-slate-900/40 backdrop-blur-md space-y-1">
-                    <p className="font-bold text-sm tracking-wide">目前沒有正在開團或播映的場次</p>
-                    <p className="text-xs text-slate-500">請關注官方發布訊息，下一波團拆即將上架！</p>
+            {!isLoading && filteredPublishedBreaks.length === 0 && (
+                <div className="col-span-full text-center py-12 sm:py-16 text-slate-400 border border-dashed border-white/10 rounded-2xl bg-slate-900/40 backdrop-blur-md space-y-2">
+                    <p className="font-bold text-sm tracking-wide">
+                      {filterMode !== 'all' ? '此分類下暫無對應的開團場次' : '目前沒有正在開團或播映的場次'}
+                    </p>
+                    {filterMode !== 'all' ? (
+                      <Button size="sm" variant="outline" onClick={() => setFilterMode('all')} className="rounded-xl border-emerald-500/30 text-emerald-300 text-xs font-bold">
+                        查看全部開團場次
+                      </Button>
+                    ) : (
+                      <p className="text-xs text-slate-500">請關注官方發布訊息，下一波團拆即將上架！</p>
+                    )}
                 </div>
             )}
           </div>

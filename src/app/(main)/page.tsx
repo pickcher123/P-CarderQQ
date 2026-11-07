@@ -295,7 +295,7 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-5 sm:gap-7 max-w-md sm:max-w-none mx-auto">
             {featuredPools.map((pool) => (
               <div key={pool.id} className="relative w-full pt-4 sm:pt-5">
-                {pool.isFeatured && (
+                {(pool as any).isFeatured && (
                   <div className="absolute top-0 left-2.5 sm:left-3 z-30 pointer-events-none">
                     <div className="bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 font-black text-[11px] px-3.5 py-1 rounded-full shadow-[0_4px_20px_rgba(245,158,11,0.7)] border-2 border-amber-100 uppercase tracking-wider flex items-center gap-1.5 animate-pulse">
                       <Sparkles className="w-3.5 h-3.5 fill-slate-950" />
@@ -303,7 +303,7 @@ export default function Home() {
                     </div>
                   </div>
                 )}
-                <PoolCard pool={pool} allCardsMap={allCardsMap} userProfile={userProfile} />
+                <PoolCard pool={pool as any} allCardsMap={allCardsMap} userProfile={userProfile} />
               </div>
             ))}
           </div>
@@ -360,9 +360,9 @@ export default function Home() {
                                     即時快訊連線
                                 </span>
 
-                                <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[10px] font-mono font-bold shrink-0">
+                                <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[10px] font-bold shrink-0">
                                     <Sparkles className="w-3 h-3 text-amber-400" />
-                                    OFFICIAL DISPATCH
+                                    官方快訊
                                 </span>
                             </div>
 

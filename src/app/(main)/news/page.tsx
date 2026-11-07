@@ -177,18 +177,17 @@ function NewsPageContent() {
 
             <div className="flex items-center gap-2 text-[11px] font-bold text-amber-400 bg-amber-500/10 px-3.5 py-1.5 rounded-full border border-amber-500/30 backdrop-blur-md shadow-[0_0_15px_rgba(245,158,11,0.15)]">
               <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-              <span className="hidden sm:inline">P+ CARDER · OFFICIAL BULLETIN</span>
               <span>即時官方快訊</span>
             </div>
           </div>
 
-          {/* ★ 核心置中標題區塊（讓客戶一眼看清）★ */}
+          {/* ★ 核心置中標題區塊 ★ */}
           <div className="text-center max-w-3xl mx-auto space-y-4 sm:space-y-5">
             
             {/* 置中標籤勳章 */}
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-amber-500/20 border border-amber-400/40 backdrop-blur-md text-amber-300 text-xs sm:text-sm font-black tracking-widest uppercase shadow-[0_0_20px_rgba(245,158,11,0.2)]">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-amber-500/20 border border-amber-400/40 backdrop-blur-md text-amber-300 text-xs sm:text-sm font-black tracking-widest shadow-[0_0_20px_rgba(245,158,11,0.2)]">
               <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              <span>OFFICIAL ANNOUNCEMENTS & EVENTS</span>
+              <span>官方公告與盛典活動</span>
               <Sparkles className="w-3.5 h-3.5 text-amber-400" />
             </div>
 
@@ -202,10 +201,6 @@ function NewsPageContent() {
                   最新消息中心
                 </span>
               </h1>
-              
-              <p className="font-mono text-xs sm:text-sm tracking-[0.25em] text-amber-400/80 font-bold uppercase">
-                P+ CARDER NEWS & UPDATES
-              </p>
             </div>
 
             {/* 置中說明副標 */}

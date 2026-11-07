@@ -335,7 +335,8 @@ export default function CardAreaManagementPage() {
     return { today, yesterday, last7Days, unrecorded, dateGroups };
   }, [allCards]);
 
-  const filteredCards = useMemo(() => {
+  // 該區域全部原始卡片
+  const areaRawCards = useMemo(() => {
     if (!allCards) return [];
     let cards = [...allCards];
     const allCardIdSet = new Set(allCards.map(c => c.id));
@@ -366,15 +367,38 @@ export default function CardAreaManagementPage() {
     } else if (area === 'group-break') {
         cards = cards.filter(c => c.source === 'group-break');
     }
+    return cards;
+  }, [allCards, area, cardPools, bettingItems, luckBags]);
+
+  // 區域庫存售出統計
+  const areaStatusCounts = useMemo(() => {
+    let active = 0;
+    let sold = 0;
+    let recycled = 0;
+    areaRawCards.forEach(c => {
+      if (c.isRecycled) {
+        recycled++;
+      } else if (c.isSold) {
+        sold++;
+      } else {
+        active++;
+      }
+    });
+    return { all: areaRawCards.length, active, sold, recycled };
+  }, [areaRawCards]);
+
+  const filteredCards = useMemo(() => {
+    let cards = [...areaRawCards];
     
-    // Status tab filter
+    // 售出狀態分頁篩選
     if (activeTab === 'active') {
-        cards = cards.filter(c => !c.isSold);
+        cards = cards.filter(c => !c.isSold && !c.isRecycled);
+    } else if (activeTab === 'sold') {
+        cards = cards.filter(c => c.isSold && !c.isRecycled);
     } else if (activeTab === 'recycled') {
         cards = cards.filter(c => c.isRecycled);
-    } else {
-        cards = cards.filter(c => c.isSold && !c.isRecycled);
     }
+    // activeTab === 'all' 則保留全部卡片！
 
     // Search keyword
     if (searchTerm.trim()) cards = cards.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -807,10 +831,32 @@ export default function CardAreaManagementPage() {
 
         {/* Tabs for inventory status */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="bg-slate-200/50 p-1 rounded-2xl h-12 w-fit border border-slate-200 shadow-inner">
-                <TabsTrigger value="active" className="rounded-xl px-8 font-black text-xs data-[state=active]:bg-white data-[state=active]:shadow-md">在庫資產</TabsTrigger>
-                <TabsTrigger value="recycled" className="rounded-xl px-8 font-black text-xs data-[state=active]:bg-white data-[state=active]:shadow-md">已回收</TabsTrigger>
-                <TabsTrigger value="sold" className="rounded-xl px-8 font-black text-xs data-[state=active]:bg-white data-[state=active]:shadow-md">已抽出</TabsTrigger>
+            <TabsList className="bg-slate-200/50 p-1 rounded-2xl h-12 w-fit border border-slate-200 shadow-inner flex flex-wrap gap-1">
+                <TabsTrigger value="active" className="rounded-xl px-5 sm:px-6 font-black text-xs data-[state=active]:bg-white data-[state=active]:shadow-md flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                    未售出 (在庫)
+                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 bg-emerald-50 text-emerald-700 font-code font-bold">
+                        {areaStatusCounts.active}
+                    </Badge>
+                </TabsTrigger>
+                <TabsTrigger value="sold" className="rounded-xl px-5 sm:px-6 font-black text-xs data-[state=active]:bg-white data-[state=active]:shadow-md flex items-center gap-1.5">
+                    已售出 / 已抽出
+                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 bg-slate-100 text-slate-700 font-code font-bold">
+                        {areaStatusCounts.sold}
+                    </Badge>
+                </TabsTrigger>
+                <TabsTrigger value="recycled" className="rounded-xl px-5 sm:px-6 font-black text-xs data-[state=active]:bg-white data-[state=active]:shadow-md flex items-center gap-1.5">
+                    已回收 (轉點)
+                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 bg-slate-100 text-slate-600 font-code font-bold">
+                        {areaStatusCounts.recycled}
+                    </Badge>
+                </TabsTrigger>
+                <TabsTrigger value="all" className="rounded-xl px-5 sm:px-6 font-black text-xs data-[state=active]:bg-white data-[state=active]:shadow-md flex items-center gap-1.5">
+                    全部資產
+                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 bg-slate-900 text-white font-code font-bold">
+                        {areaStatusCounts.all}
+                    </Badge>
+                </TabsTrigger>
             </TabsList>
 
             {/* GROUPED BY DATE VIEW */}

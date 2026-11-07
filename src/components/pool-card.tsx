@@ -1234,15 +1234,6 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                             )
                         })}
                     </div>
-                    
-                    {/* 第一次玩？新手教學與 FAQ 快速入口 */}
-                    <div className="pt-2 flex items-center justify-between border-t border-amber-500/15 mt-1.5">
-                        <BeginnerGuideDialog 
-                            triggerVariant="compact" 
-                            buttonText="第一次玩？看這裡 (流程·點數·寄送)"
-                            triggerClassName="w-full justify-center py-1 text-[11px] font-bold bg-slate-950/80 border-amber-500/30 hover:border-amber-400/70 hover:bg-amber-500/15 text-amber-300 transition-all rounded-lg"
-                        />
-                    </div>
                     </div>
                 )}
                 </div>

@@ -606,6 +606,12 @@ export default function GroupBreakAdminDetailPage() {
   const [newTeamName, setNewTeamName] = useState('');
   const [newTeamPrice, setNewTeamPrice] = useState(0);
 
+  // 隊伍與位置售出分類篩選
+  const [teamFilter, setTeamFilter] = useState<'all' | 'sold' | 'available'>('all');
+  const [teamSearch, setTeamSearch] = useState('');
+  const [spotFilter, setSpotFilter] = useState<'all' | 'sold' | 'available'>('all');
+  const [spotSearch, setSpotSearch] = useState('');
+
   const groupBreakRef = useMemoFirebase(() => {
     if (!firestore || !breakId) return null;
     return doc(firestore, 'groupBreaks', breakId as string);
@@ -820,6 +826,41 @@ export default function GroupBreakAdminDetailPage() {
     }
   }
 
+  const handleReleaseTeam = async (teamId: string) => {
+    if (!groupBreakRef || !groupBreak?.teams) return;
+    const updatedTeams = groupBreak.teams.map(t => {
+      if (t.teamId === teamId) {
+        const { userId, userName, ...rest } = t;
+        return rest;
+      }
+      return t;
+    });
+    try {
+      await updateDoc(groupBreakRef, { teams: updatedTeams });
+      toast({ title: '已釋出名額', description: '該隊伍已恢復為「未售出」狀態。' });
+      if (forceRefetch) forceRefetch();
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: '操作失敗', description: e.message });
+    }
+  };
+
+  const handleReleaseSpot = async (spotNumber: number) => {
+    if (!groupBreakRef || !groupBreak?.spots) return;
+    const updatedSpots = groupBreak.spots.map(s => {
+      if (s.spotNumber === spotNumber) {
+        return { spotNumber };
+      }
+      return s;
+    });
+    try {
+      await updateDoc(groupBreakRef, { spots: updatedSpots });
+      toast({ title: '已釋出號碼', description: `位置 #${spotNumber} 已恢復為「未售出」狀態。` });
+      if (forceRefetch) forceRefetch();
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: '操作失敗', description: e.message });
+    }
+  };
+
   const handleDuplicate = async () => {
     if (!firestore || !groupBreak) {
         toast({
@@ -1007,7 +1048,7 @@ export default function GroupBreakAdminDetailPage() {
             </CardContent>
           </Card>
           
-           {isTeamBreak && (
+           {isTeamBreak ? (
              <Card className="shadow-lg border-white/5 bg-card/40">
                 <CardHeader>
                     <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
@@ -1018,7 +1059,7 @@ export default function GroupBreakAdminDetailPage() {
                             {details.teams?.length || 0} 隊
                           </Badge>
                         </CardTitle>
-                        <CardDescription>手動定義每個隊伍的價格，或點擊上方「一鍵新增隊伍」自動導入聯盟。</CardDescription>
+                        <CardDescription>管理各隊伍名額、售出狀況與價格。</CardDescription>
                       </div>
 
                       {/* 一鍵增加隊伍 按鈕區 */}
@@ -1061,7 +1102,8 @@ export default function GroupBreakAdminDetailPage() {
                       </div>
                     </div>
                 </CardHeader>
-                <CardContent className="space-y-6">
+                <CardContent className="space-y-5">
+                    {/* 手動新增隊伍輸入區 */}
                     <div className="flex gap-2 p-4 bg-muted/20 rounded-lg border border-dashed border-white/10 flex-wrap items-end">
                         <div className="flex-1 space-y-1 min-w-[200px]">
                             <Label className="text-[10px] uppercase font-bold text-muted-foreground">手動新增單隊名稱</Label>
@@ -1073,75 +1115,324 @@ export default function GroupBreakAdminDetailPage() {
                         </div>
                         <Button onClick={handleAddTeam} className="font-bold"><PlusCircle className="mr-2 h-4 w-4"/>新增單隊</Button>
                     </div>
-                    <p className="text-xs text-muted-foreground italic -mt-4">
-                      💡 提示：點擊「一鍵新增 NBA / MLB」時，若「單隊價格」有填寫數字，會以此價格作為所有新新增隊伍的初始金額（預設為 100）。
-                    </p>
-                     <div className="border rounded-xl bg-card/50 max-h-96 overflow-y-auto">
+
+                    {/* 隊伍售出分類與搜尋列 */}
+                    {details.teams && details.teams.length > 0 && (() => {
+                      const totalCount = details.teams.length;
+                      const soldCount = details.teams.filter(t => t.userId).length;
+                      const availableCount = totalCount - soldCount;
+                      return (
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3 bg-slate-950/60 rounded-xl border border-white/10">
+                          {/* 分類切換 Tabs */}
+                          <div className="flex items-center gap-1.5 p-1 bg-slate-900 rounded-lg border border-white/10">
+                            <button
+                              type="button"
+                              onClick={() => setTeamFilter('all')}
+                              className={cn(
+                                "px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer",
+                                teamFilter === 'all' ? "bg-white text-slate-900 shadow-xs" : "text-slate-400 hover:text-white"
+                              )}
+                            >
+                              全部 ({totalCount})
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setTeamFilter('available')}
+                              className={cn(
+                                "px-3 py-1 rounded-md text-xs font-bold transition-all flex items-center gap-1 cursor-pointer",
+                                teamFilter === 'available' ? "bg-emerald-600 text-white shadow-xs" : "text-slate-400 hover:text-emerald-400"
+                              )}
+                            >
+                              <span className={cn("w-1.5 h-1.5 rounded-full", teamFilter === 'available' ? "bg-white" : "bg-emerald-500")} />
+                              未售出 ({availableCount})
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setTeamFilter('sold')}
+                              className={cn(
+                                "px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer",
+                                teamFilter === 'sold' ? "bg-amber-600 text-white shadow-xs" : "text-slate-400 hover:text-amber-400"
+                              )}
+                            >
+                              已售出 ({soldCount})
+                            </button>
+                          </div>
+
+                          {/* 搜尋 */}
+                          <div className="relative w-full sm:w-56">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                            <Input 
+                              placeholder="搜尋隊名或買家..."
+                              value={teamSearch}
+                              onChange={(e) => setTeamSearch(e.target.value)}
+                              className="pl-8 h-8 text-xs bg-slate-900 border-white/10 rounded-lg text-white"
+                            />
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* 隊伍表格 */}
+                    <div className="border rounded-xl bg-card/50 max-h-96 overflow-y-auto">
                         <Table>
                             <TableHeader className="bg-muted/50 sticky top-0 z-10">
                                 <TableRow>
                                     <TableHead className="pl-6">隊伍名稱</TableHead>
-                                    <TableHead className="w-36">購買玩家</TableHead>
-                                    <TableHead className="w-32">價格</TableHead>
-                                    <TableHead className="w-20 text-right pr-6">操作</TableHead>
+                                    <TableHead className="w-40">售出狀態 / 買家</TableHead>
+                                    <TableHead className="w-32">單隊價格</TableHead>
+                                    <TableHead className="w-28 text-right pr-6">操作</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {details.teams?.map(team => {
-                                    const logo = getTeamLogoUrl(team.name, team.logoUrl);
-                                    const buyerName = getBuyerName(team.userId, team.userName);
-                                    return (
-                                     <TableRow key={team.teamId} className="hover:bg-white/5 transition-colors">
-                                         <TableCell className="font-bold pl-6">
-                                             <div className="flex items-center gap-3">
-                                                 {logo ? (
-                                                     <img src={logo} alt={team.name} className="w-7 h-7 object-contain flex-shrink-0 drop-shadow-sm" />
-                                                 ) : (
-                                                     <div className="w-7 h-7 rounded-full bg-slate-200 text-slate-700 text-xs font-black flex items-center justify-center">
-                                                         {team.name.slice(0, 1)}
-                                                     </div>
-                                                 )}
-                                                 <span>{team.name}</span>
-                                             </div>
-                                         </TableCell>
-                                         <TableCell>
-                                             {team.userId ? (
-                                                 <Badge className="bg-amber-100 text-amber-900 border-amber-300 font-bold hover:bg-amber-100 flex items-center gap-1 w-fit shadow-xs">
-                                                     <User className="w-3 h-3 text-amber-700 shrink-0" />
-                                                     <span className="truncate max-w-[100px]">{buyerName || '已卡位'}</span>
-                                                 </Badge>
-                                             ) : (
-                                                 <Badge variant="outline" className="text-slate-400 border-dashed text-[11px]">
-                                                     未售出
-                                                 </Badge>
-                                             )}
-                                         </TableCell>
-                                         <TableCell>
-                                             <div className="flex items-center gap-2">
-                                                 {currency === 'diamond' ? <Gem className="h-3 w-3 text-primary opacity-50"/> : <PPlusIcon className="h-3 w-3 opacity-50"/>}
-                                                 <Input 
-                                                     type="number" 
-                                                     defaultValue={team.price}
-                                                     onBlur={(e) => handleUpdateTeamPrice(team.teamId, Number(e.target.value))}
-                                                     className="h-8 bg-transparent"
-                                                 />
-                                             </div>
-                                         </TableCell>
-                                         <TableCell className="text-right pr-6">
-                                              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive" onClick={() => handleRemoveTeam(team.teamId)}>
-                                                 <Trash2 className="w-4 h-4"/>
-                                              </Button>
-                                         </TableCell>
-                                     </TableRow>
-                                    );
-                                })}
-                                {(!details.teams || details.teams.length === 0) && (
-                                    <TableRow>
-                                        <TableCell colSpan={4} className="h-24 text-center text-muted-foreground italic">
-                                          尚未新增任何隊伍選項。請點選上方「🏀 一鍵新增 NBA」或「⚾ 一鍵新增 MLB」快速為活動填入隊伍！
-                                        </TableCell>
-                                    </TableRow>
-                                )}
+                                {(() => {
+                                  let teamsToShow = details.teams || [];
+                                  if (teamFilter === 'available') {
+                                    teamsToShow = teamsToShow.filter(t => !t.userId);
+                                  } else if (teamFilter === 'sold') {
+                                    teamsToShow = teamsToShow.filter(t => !!t.userId);
+                                  }
+                                  if (teamSearch.trim()) {
+                                    const q = teamSearch.toLowerCase();
+                                    teamsToShow = teamsToShow.filter(t => {
+                                      const bName = getBuyerName(t.userId, t.userName) || '';
+                                      return t.name.toLowerCase().includes(q) || bName.toLowerCase().includes(q);
+                                    });
+                                  }
+
+                                  return (
+                                    <>
+                                      {teamsToShow.map(team => {
+                                          const logo = getTeamLogoUrl(team.name, team.logoUrl);
+                                          const buyerName = getBuyerName(team.userId, team.userName);
+                                          return (
+                                           <TableRow key={team.teamId} className="hover:bg-white/5 transition-colors">
+                                               <TableCell className="font-bold pl-6">
+                                                   <div className="flex items-center gap-3">
+                                                       {logo ? (
+                                                           <img src={logo} alt={team.name} className="w-7 h-7 object-contain flex-shrink-0 drop-shadow-sm" />
+                                                       ) : (
+                                                           <div className="w-7 h-7 rounded-full bg-slate-200 text-slate-700 text-xs font-black flex items-center justify-center">
+                                                               {team.name.slice(0, 1)}
+                                                           </div>
+                                                       )}
+                                                       <span>{team.name}</span>
+                                                   </div>
+                                               </TableCell>
+                                               <TableCell>
+                                                   {team.userId ? (
+                                                       <div className="flex items-center gap-1.5">
+                                                         <Badge className="bg-amber-100 text-amber-900 border-amber-300 font-bold hover:bg-amber-100 flex items-center gap-1 shadow-xs">
+                                                             <User className="w-3 h-3 text-amber-700 shrink-0" />
+                                                             <span className="truncate max-w-[90px]">{buyerName || '已售出'}</span>
+                                                         </Badge>
+                                                         <button 
+                                                           onClick={() => handleReleaseTeam(team.teamId)} 
+                                                           className="text-[10px] text-rose-400 hover:text-rose-300 underline cursor-pointer"
+                                                           title="釋出名額為未售出"
+                                                         >
+                                                           釋出
+                                                         </button>
+                                                       </div>
+                                                   ) : (
+                                                       <Badge variant="outline" className="text-emerald-400 border-emerald-500/40 bg-emerald-500/10 text-[11px] font-bold">
+                                                           ● 未售出
+                                                       </Badge>
+                                                   )}
+                                               </TableCell>
+                                               <TableCell>
+                                                   <div className="flex items-center gap-2">
+                                                       {currency === 'diamond' ? <Gem className="h-3 w-3 text-primary opacity-50"/> : <PPlusIcon className="h-3 w-3 opacity-50"/>}
+                                                       <Input 
+                                                           type="number" 
+                                                           defaultValue={team.price}
+                                                           onBlur={(e) => handleUpdateTeamPrice(team.teamId, Number(e.target.value))}
+                                                           className="h-8 bg-transparent"
+                                                       />
+                                                   </div>
+                                               </TableCell>
+                                               <TableCell className="text-right pr-6">
+                                                    <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive" onClick={() => handleRemoveTeam(team.teamId)}>
+                                                       <Trash2 className="w-4 h-4"/>
+                                                    </Button>
+                                               </TableCell>
+                                           </TableRow>
+                                          );
+                                      })}
+                                      {teamsToShow.length === 0 && (
+                                          <TableRow>
+                                              <TableCell colSpan={4} className="h-24 text-center text-muted-foreground italic">
+                                                {details.teams?.length ? '沒有符合目前篩選條件的隊伍。' : '尚未新增任何隊伍選項。請點選上方「🏀 一鍵新增 NBA」或「⚾ 一鍵新增 MLB」快速為活動填入隊伍！'}
+                                              </TableCell>
+                                          </TableRow>
+                                      )}
+                                    </>
+                                  );
+                                })()}
+                            </TableBody>
+                        </Table>
+                     </div>
+                </CardContent>
+             </Card>
+           ) : (
+             /* 選號模式 (Spot Break) 名額與售出矩陣 */
+             <Card className="shadow-lg border-white/5 bg-card/40">
+                <CardHeader>
+                    <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                      <div>
+                        <CardTitle className="text-xl flex items-center gap-2">
+                          選號名額與售出矩陣
+                          <Badge variant="secondary" className="font-mono text-xs">
+                            {groupBreak.spots?.length || details.totalSpots || 0} 個位置
+                          </Badge>
+                        </CardTitle>
+                        <CardDescription>管理每個選號位置的買家與售出狀態。</CardDescription>
+                      </div>
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-5">
+                    {/* 選號售出分類與搜尋列 */}
+                    {(() => {
+                      const allSpots = groupBreak.spots || [];
+                      const totalCount = allSpots.length || (details.totalSpots || 0);
+                      const soldCount = allSpots.filter(s => s.userId).length;
+                      const availableCount = totalCount - soldCount;
+                      return (
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3 bg-slate-950/60 rounded-xl border border-white/10">
+                          <div className="flex items-center gap-1.5 p-1 bg-slate-900 rounded-lg border border-white/10">
+                            <button
+                              type="button"
+                              onClick={() => setSpotFilter('all')}
+                              className={cn(
+                                "px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer",
+                                spotFilter === 'all' ? "bg-white text-slate-900 shadow-xs" : "text-slate-400 hover:text-white"
+                              )}
+                            >
+                              全部 ({totalCount})
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setSpotFilter('available')}
+                              className={cn(
+                                "px-3 py-1 rounded-md text-xs font-bold transition-all flex items-center gap-1 cursor-pointer",
+                                spotFilter === 'available' ? "bg-emerald-600 text-white shadow-xs" : "text-slate-400 hover:text-emerald-400"
+                              )}
+                            >
+                              <span className={cn("w-1.5 h-1.5 rounded-full", spotFilter === 'available' ? "bg-white" : "bg-emerald-500")} />
+                              未售出 ({availableCount})
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setSpotFilter('sold')}
+                              className={cn(
+                                "px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer",
+                                spotFilter === 'sold' ? "bg-amber-600 text-white shadow-xs" : "text-slate-400 hover:text-amber-400"
+                              )}
+                            >
+                              已售出 ({soldCount})
+                            </button>
+                          </div>
+
+                          <div className="relative w-full sm:w-56">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                            <Input 
+                              placeholder="搜尋號碼或買家..."
+                              value={spotSearch}
+                              onChange={(e) => setSpotSearch(e.target.value)}
+                              className="pl-8 h-8 text-xs bg-slate-900 border-white/10 rounded-lg text-white"
+                            />
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* 號碼位置表格 */}
+                    <div className="border rounded-xl bg-card/50 max-h-96 overflow-y-auto">
+                        <Table>
+                            <TableHeader className="bg-muted/50 sticky top-0 z-10">
+                                <TableRow>
+                                    <TableHead className="pl-6 w-28">號碼位置</TableHead>
+                                    <TableHead>售出狀態 / 買家</TableHead>
+                                    <TableHead className="w-32">位置單價</TableHead>
+                                    <TableHead className="w-24 text-right pr-6">操作</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {(() => {
+                                  const allSpots = groupBreak.spots || [];
+                                  let spotsToShow = allSpots;
+                                  if (spotFilter === 'available') {
+                                    spotsToShow = spotsToShow.filter(s => !s.userId);
+                                  } else if (spotFilter === 'sold') {
+                                    spotsToShow = spotsToShow.filter(s => !!s.userId);
+                                  }
+                                  if (spotSearch.trim()) {
+                                    const q = spotSearch.toLowerCase();
+                                    spotsToShow = spotsToShow.filter(s => {
+                                      const bName = getBuyerName(s.userId, s.userName) || '';
+                                      return `位置 #${s.spotNumber}`.toLowerCase().includes(q) || 
+                                             String(s.spotNumber).includes(q) || 
+                                             bName.toLowerCase().includes(q);
+                                    });
+                                  }
+
+                                  return (
+                                    <>
+                                      {spotsToShow.map(spot => {
+                                          const buyerName = getBuyerName(spot.userId, spot.userName);
+                                          return (
+                                           <TableRow key={spot.spotNumber} className="hover:bg-white/5 transition-colors">
+                                               <TableCell className="font-bold pl-6 font-code text-sm">
+                                                   位置 #{spot.spotNumber}
+                                               </TableCell>
+                                               <TableCell>
+                                                   {spot.userId ? (
+                                                       <div className="flex items-center gap-1.5">
+                                                         <Badge className="bg-amber-100 text-amber-900 border-amber-300 font-bold hover:bg-amber-100 flex items-center gap-1 shadow-xs">
+                                                             <User className="w-3 h-3 text-amber-700 shrink-0" />
+                                                             <span className="truncate max-w-[120px]">{buyerName || '已售出'}</span>
+                                                         </Badge>
+                                                         <button 
+                                                           onClick={() => handleReleaseSpot(spot.spotNumber)} 
+                                                           className="text-[10px] text-rose-400 hover:text-rose-300 underline cursor-pointer"
+                                                           title="釋出此號碼為未售出"
+                                                         >
+                                                           釋出
+                                                         </button>
+                                                       </div>
+                                                   ) : (
+                                                       <Badge variant="outline" className="text-emerald-400 border-emerald-500/40 bg-emerald-500/10 text-[11px] font-bold">
+                                                           ● 未售出
+                                                       </Badge>
+                                                   )}
+                                               </TableCell>
+                                               <TableCell className="font-code text-xs font-bold text-slate-300">
+                                                   ${details.pricePerSpot || groupBreak.pricePerSpot || 0}
+                                               </TableCell>
+                                               <TableCell className="text-right pr-6">
+                                                   {spot.userId && (
+                                                     <Button 
+                                                       variant="ghost" 
+                                                       size="sm" 
+                                                       onClick={() => handleReleaseSpot(spot.spotNumber)}
+                                                       className="h-7 text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-500/10"
+                                                     >
+                                                       退訂釋出
+                                                     </Button>
+                                                   )}
+                                               </TableCell>
+                                           </TableRow>
+                                          );
+                                      })}
+                                      {spotsToShow.length === 0 && (
+                                          <TableRow>
+                                              <TableCell colSpan={4} className="h-24 text-center text-muted-foreground italic">
+                                                無符合目前篩選條件的號碼位置。
+                                              </TableCell>
+                                          </TableRow>
+                                      )}
+                                    </>
+                                  );
+                                })()}
                             </TableBody>
                         </Table>
                      </div>

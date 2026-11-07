@@ -74,14 +74,17 @@ export function KujiNumberPickerDialog({
 
   // 統計未開出與已開出
   const availableTickets = useMemo(() => tickets.filter(t => !t.isDrawn), [tickets]);
+  const availableNumbersSet = useMemo(() => new Set(availableTickets.map(t => t.number)), [availableTickets]);
 
-  // Sync initialSelectedNumbers 或依 targetPickCount 自動預選抽數號碼
+  // Sync initialSelectedNumbers 或依 targetPickCount 自動預選抽數號碼（嚴格過濾已開出號碼）
   React.useEffect(() => {
     if (isOpen) {
-      if (initialSelectedNumbers && initialSelectedNumbers.length > 0) {
-        setSelectedNumbers(initialSelectedNumbers);
+      const validInitial = (initialSelectedNumbers || []).filter(num => availableNumbersSet.has(num));
+
+      if (validInitial.length > 0) {
+        setSelectedNumbers(validInitial);
       } else if (targetPickCount && targetPickCount > 0) {
-        const poolOfAvailable = availableTickets.map(t => t.number);
+        const poolOfAvailable = Array.from(availableNumbersSet);
         if (poolOfAvailable.length > 0) {
           const shuffled = [...poolOfAvailable];
           for (let i = shuffled.length - 1; i > 0; i--) {
@@ -90,16 +93,30 @@ export function KujiNumberPickerDialog({
           }
           const chosen = shuffled.slice(0, Math.min(targetPickCount, shuffled.length));
           setSelectedNumbers(chosen);
+        } else {
+          setSelectedNumbers([]);
         }
+      } else {
+        setSelectedNumbers([]);
       }
     }
-  }, [isOpen, initialSelectedNumbers, targetPickCount, availableTickets]);
+  }, [isOpen, initialSelectedNumbers, targetPickCount, availableNumbersSet]);
+
+  // 即時監聽 availableNumbersSet：若目前選取的號碼已被抽出，即刻自選取狀態中自動剔除
+  React.useEffect(() => {
+    setSelectedNumbers(prev => {
+      const filtered = prev.filter(num => availableNumbersSet.has(num));
+      return filtered.length === prev.length ? prev : filtered;
+    });
+  }, [availableNumbersSet]);
+
   const drawnTicketsCount = tickets.length - availableTickets.length;
 
-  // 計算價格
+  // 計算價格（嚴格僅以可用籤號計價）
+  const validSelectedNumbers = useMemo(() => selectedNumbers.filter(n => availableNumbersSet.has(n)), [selectedNumbers, availableNumbersSet]);
   const isPPoint = cardPool?.currency === 'p-point';
   const pricePerDraw = cardPool?.price || 0;
-  const count = selectedNumbers.length;
+  const count = validSelectedNumbers.length;
   const totalPrice = useMemo(() => {
     if (count === 3 && cardPool?.price3Draws) {
       return cardPool.price3Draws;
@@ -113,23 +130,28 @@ export function KujiNumberPickerDialog({
   const toggleSelectNumber = (num: number) => {
     if (isDrawing) return;
     const ticket = tickets.find(t => t.number === num);
-    if (!ticket || ticket.isDrawn) return;
+    if (!ticket) return;
 
+    // 若號碼已在選取列表中，無條件允許取消
     if (selectedNumbers.includes(num)) {
       setSelectedNumbers(prev => prev.filter(n => n !== num));
-    } else {
-      // 最多一次選 10 抽
-      if (selectedNumbers.length >= 10) {
-        return;
-      }
-      setSelectedNumbers(prev => [...prev, num]);
+      return;
     }
+
+    // 若已開出則不允許點選
+    if (ticket.isDrawn) return;
+
+    // 最多一次選 10 抽
+    if (validSelectedNumbers.length >= 10) {
+      return;
+    }
+    setSelectedNumbers(prev => [...prev.filter(n => availableNumbersSet.has(n)), num]);
   };
 
   // 隨機自選 N 號
   const handleRandomPick = (pickCount: number) => {
     if (isDrawing) return;
-    const poolOfAvailable = availableTickets.map(t => t.number);
+    const poolOfAvailable = Array.from(availableNumbersSet);
     if (poolOfAvailable.length === 0) return;
 
     // Fisher-Yates shuffle
@@ -148,8 +170,8 @@ export function KujiNumberPickerDialog({
   };
 
   const handleConfirm = () => {
-    if (selectedNumbers.length === 0 || isDrawing) return;
-    onConfirmDraw(selectedNumbers);
+    if (validSelectedNumbers.length === 0 || isDrawing) return;
+    onConfirmDraw(validSelectedNumbers);
   };
 
   return (
@@ -229,13 +251,14 @@ export function KujiNumberPickerDialog({
         <ScrollArea className="h-[280px] sm:h-[340px] rounded-2xl bg-slate-900/60 border border-white/5 p-3">
           <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2 sm:gap-2.5">
             {tickets.map(ticket => {
-              const isSelected = selectedNumbers.includes(ticket.number);
-              const isDrawn = ticket.isDrawn;
+              const isDrawn = !!ticket.isDrawn;
+              const isSelected = !isDrawn && selectedNumbers.includes(ticket.number);
+              const isResidualSelected = isDrawn && selectedNumbers.includes(ticket.number);
 
               return (
                 <button
                   key={ticket.number}
-                  disabled={isDrawn || isDrawing}
+                  disabled={(isDrawn && !isResidualSelected) || isDrawing}
                   onClick={() => toggleSelectNumber(ticket.number)}
                   className={cn(
                     'relative aspect-square rounded-xl flex items-center justify-center p-1 transition-all duration-200 select-none cursor-pointer group',
@@ -273,9 +296,9 @@ export function KujiNumberPickerDialog({
           <div className="flex items-center justify-between text-xs">
             <div className="flex items-center gap-1.5 text-slate-300">
               <span>已選號碼：</span>
-              {selectedNumbers.length > 0 ? (
+              {validSelectedNumbers.length > 0 ? (
                 <div className="flex flex-wrap gap-1 max-w-[280px]">
-                  {selectedNumbers.map(n => (
+                  {validSelectedNumbers.map(n => (
                     <Badge key={n} variant="secondary" className="bg-amber-400/20 text-amber-300 border border-amber-400/30 text-[10px] px-1.5 py-0">
                       #{n}
                     </Badge>
@@ -318,30 +341,30 @@ export function KujiNumberPickerDialog({
                   <Button
                     variant="outline"
                     onClick={() => {
-                      if (selectedNumbers.length === 0 || isDrawing) return;
-                      onSelectNumbersOnly(selectedNumbers);
+                      if (validSelectedNumbers.length === 0 || isDrawing) return;
+                      onSelectNumbersOnly(validSelectedNumbers);
                       onClose();
                     }}
-                    disabled={selectedNumbers.length === 0 || isDrawing}
+                    disabled={validSelectedNumbers.length === 0 || isDrawing}
                     className="flex-1 h-11 rounded-xl font-bold text-xs border-purple-500/40 bg-purple-950/40 text-purple-200 hover:bg-purple-900/60 transition-all"
                   >
                     ✅ 鎖定所選號碼
                   </Button>
                 )}
                 <Button
-                  onClick={() => onConfirmDraw(selectedNumbers, true)}
-                  disabled={selectedNumbers.length === 0 || isDrawing}
+                  onClick={() => onConfirmDraw(validSelectedNumbers, true)}
+                  disabled={validSelectedNumbers.length === 0 || isDrawing}
                   className={cn(
                     'flex-[2] h-11 rounded-xl font-black text-xs sm:text-sm tracking-wide shadow-xl flex items-center justify-center gap-2',
-                    selectedNumbers.length > 0
+                    validSelectedNumbers.length > 0
                       ? 'bg-gradient-to-r from-purple-500 via-fuchsia-500 to-indigo-500 text-white hover:brightness-110 shadow-purple-500/25 cursor-pointer active:scale-95'
                       : 'bg-slate-800 text-slate-500 cursor-not-allowed'
                   )}
                 >
                   <Sparkles className="w-4 h-4 text-amber-300" />
-                  {selectedNumbers.length === 0
+                  {validSelectedNumbers.length === 0
                     ? '請先點選號碼牌'
-                    : `🎯 免費模擬開籤 (${selectedNumbers.length} 籤)`}
+                    : `🎯 免費模擬開籤 (${validSelectedNumbers.length} 籤)`}
                 </Button>
               </div>
             ) : (
@@ -349,20 +372,20 @@ export function KujiNumberPickerDialog({
                 {/* 直接確認開獎 */}
                 <Button
                   onClick={handleConfirm}
-                  disabled={selectedNumbers.length === 0 || !hasEnoughBalance || isDrawing}
+                  disabled={validSelectedNumbers.length === 0 || !hasEnoughBalance || isDrawing}
                   className={cn(
                     'flex-1 h-11 rounded-xl font-black text-xs sm:text-sm tracking-wide shadow-xl flex items-center justify-center gap-1.5',
-                    selectedNumbers.length > 0 && hasEnoughBalance
+                    validSelectedNumbers.length > 0 && hasEnoughBalance
                       ? 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 hover:brightness-110 shadow-amber-500/25 cursor-pointer'
                       : 'bg-slate-800 text-slate-500 cursor-not-allowed'
                   )}
                 >
                   <Sparkles className="w-4 h-4" />
-                  {selectedNumbers.length === 0
+                  {validSelectedNumbers.length === 0
                     ? '請先點選號碼'
                     : !hasEnoughBalance
                     ? '點數餘額不足'
-                    : `確認開獎 (${selectedNumbers.length} 籤)`}
+                    : `確認開獎 (${validSelectedNumbers.length} 籤)`}
                 </Button>
               </div>
             )}

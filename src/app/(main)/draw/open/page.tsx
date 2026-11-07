@@ -188,6 +188,17 @@ export default function OpenPackPage() {
         }
     }, [parsedInitialNumbers]);
 
+    // 即時防護：若卡池籤表中的號碼已開出，強制自 selectedNumbers 中剔除
+    useEffect(() => {
+        if (cardPool?.kujiTickets && cardPool.kujiTickets.length > 0) {
+            const drawnNums = new Set(cardPool.kujiTickets.filter(t => t.isDrawn).map(t => t.number));
+            setSelectedNumbers(prev => {
+                const filtered = prev.filter(num => !drawnNums.has(num));
+                return filtered.length === prev.length ? prev : filtered;
+            });
+        }
+    }, [cardPool?.kujiTickets]);
+
     useEffect(() => {
         if (isTrialParam) {
             setIsTrialMode(true);
@@ -333,6 +344,15 @@ export default function OpenPackPage() {
         setShowCelebration('none');
         setLandingVFX('none');
         setStep('summoning');
+        setSelectedNumbers([]);
+        if (typeof window !== 'undefined') {
+            const url = new URL(window.location.href);
+            if (url.searchParams.has('numbers') || url.searchParams.has('pick')) {
+                url.searchParams.delete('numbers');
+                url.searchParams.delete('pick');
+                window.history.replaceState({}, '', url.toString());
+            }
+        }
         toast({
             title: numbersToDraw && numbersToDraw.length > 0
                 ? `🎯 試抽自選號碼 (#${numbersToDraw.join(', #')})`
@@ -561,7 +581,7 @@ export default function OpenPackPage() {
                 // 6. 紀錄交易日誌與 Provably Fair 開獎參數
                 const pfRound = await createProvablyFairRound({
                     clientSeed: `${user.uid.substring(0, 8)}_${Date.now()}`,
-                    outcomeType: 'pack',
+                    outcomeType: 'draw',
                     poolSize: cardPool.totalPacks || 80
                 });
 
@@ -634,6 +654,15 @@ export default function OpenPackPage() {
                 setShowCelebration('none');
                 setLandingVFX('none');
                 setStep('summoning');
+                setSelectedNumbers([]);
+                if (typeof window !== 'undefined') {
+                    const url = new URL(window.location.href);
+                    if (url.searchParams.has('numbers') || url.searchParams.has('pick')) {
+                        url.searchParams.delete('numbers');
+                        url.searchParams.delete('pick');
+                        window.history.replaceState({}, '', url.toString());
+                    }
+                }
             }
 
         } catch (error: any) {
@@ -781,7 +810,7 @@ export default function OpenPackPage() {
                             ? (cardPool?.currency === 'p-point' ? (userProfile.bonusPoints || 0) : (userProfile.points || 0))
                             : 0
                     }
-                    isDrawing={step === 'loading'}
+                    isDrawing={false}
                     onSelectNumbersOnly={(chosenNumbers) => {
                         setSelectedNumbers(chosenNumbers);
                         setIsPickNumberOpen(false);
@@ -864,14 +893,14 @@ export default function OpenPackPage() {
                     <ArrowLeft className="mr-1 h-3.5 w-3.5" /> 返回
                 </Button>
 
-                {step !== 'done' && step !== 'waiting-to-start' && step !== 'init-loading' && (
+                {step !== 'done' && (
                     <div className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400 text-[10px] font-black uppercase shadow-lg backdrop-blur-md">
                         <ShieldCheck className="h-3 w-3" /> 保護時間剩餘 {lockCountdown}s
                     </div>
                 )}
 
                 {/* Top-Right Quick Skip & Settlement Button */}
-                {step !== 'done' && step !== 'waiting-to-start' && step !== 'init-loading' && drawnPrizes.length > 0 ? (
+                {step !== 'done' && drawnPrizes.length > 0 ? (
                     <Button
                         size="sm"
                         onClick={skipAllToDone}
@@ -1184,14 +1213,15 @@ export default function OpenPackPage() {
                                             canDraw3={canDraw3}
                                             canDraw10={canDraw10}
                                             cardPool={cardPool}
-                                            performDraw={(count, forceTicket, forceEventTicket) => performDraw(count, forceTicket, forceEventTicket, selectedNumbers)}
-                                            performTrialDraw={(count) => performTrialDraw(count, selectedNumbers)}
+                                            performDraw={(count, forceTicket, forceEventTicket) => performDraw(count, forceTicket, forceEventTicket, undefined)}
+                                            performTrialDraw={(count) => performTrialDraw(count, undefined)}
                                             isTrialMode={isTrialMode}
                                             freeDrawTickets={userProfile?.freeDrawTickets || 0}
                                             eventPoolTickets={poolId && userProfile?.eventPoolTickets ? (userProfile.eventPoolTickets[poolId] || 0) : 0}
                                             onOpenPickNumber={
                                                 (cardPool?.enablePickNumber || (cardPool?.kujiTickets && cardPool.kujiTickets.length > 0))
                                                     ? (count) => {
+                                                        setSelectedNumbers([]);
                                                         setTargetPickCount(count || 1);
                                                         setIsPickNumberOpen(true);
                                                     }
@@ -1238,7 +1268,7 @@ export default function OpenPackPage() {
                         ? (cardPool?.currency === 'p-point' ? (userProfile.bonusPoints || 0) : (userProfile.points || 0))
                         : 0
                 }
-                isDrawing={step === 'loading'}
+                isDrawing={false}
                 onSelectNumbersOnly={(chosenNumbers) => {
                     setSelectedNumbers(chosenNumbers);
                     setIsPickNumberOpen(false);

@@ -88,10 +88,6 @@ export function PackPreview({
                         </div>
                         
                         <div className="space-y-0.5">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-amber-400/80 flex items-center justify-center gap-1">
-                                <Sparkles className="w-3 h-3 text-amber-400" />
-                                {isEventMode ? '🎪 活動限定專屬卡池開獎' : useTicketMode ? '🎟️ 活動免費兌換券開獎確認' : '拆卡抽賞確認'}
-                            </p>
                             <h2 className="text-base sm:text-lg font-headline font-black text-white italic tracking-tight line-clamp-1 px-1">
                                 {cardPool.name}
                             </h2>
@@ -136,15 +132,6 @@ export function PackPreview({
                                     <span className="font-mono font-black text-emerald-300 text-xs bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-500/30">
                                         {effectiveTickets} 張可用
                                     </span>
-                                    {effectiveTickets <= 0 && (
-                                        <button
-                                            type="button"
-                                            onClick={() => setIsPromoModalOpen(true)}
-                                            className="text-[10px] font-bold text-amber-300 hover:text-amber-200 underline underline-offset-2 cursor-pointer"
-                                        >
-                                            點此領取
-                                        </button>
-                                    )}
                                 </div>
                             </div>
                             
@@ -285,12 +272,6 @@ export function PackPreview({
                                     </div>
                                 </DialogContent>
                             </Dialog>
-
-                            <BeginnerGuideDialog
-                                triggerVariant="compact"
-                                buttonText="第一次玩？看這裡"
-                                triggerClassName="py-0.5 px-2 text-[10px] bg-amber-500/10 border-amber-500/30 text-amber-300 hover:text-white"
-                            />
                         </div>
                         <p className="text-[10px] text-slate-400 leading-snug">
                             本商品屬數位機率型抽選內容，啟動開獎即視為您已閱讀並同意條款。
@@ -351,8 +332,7 @@ export function PackPreview({
                                     onClick={onOpenPickNumber}
                                     disabled={!isLevelMet || isLoadingStats || isSoldOut || isOverPacks}
                                 >
-                                    <Sparkles className="w-4 h-4 fill-slate-950" />
-                                    <span>🎯 自選號碼開獎</span>
+                                    <span>自選號碼開獎</span>
                                 </Button>
 
                                 <Button
@@ -367,7 +347,6 @@ export function PackPreview({
                                     }}
                                     disabled={!canStart}
                                 >
-                                    <Zap className="w-3 h-3 text-amber-400" />
                                     <span>或直接開獎 (由系統隨機出籤)</span>
                                 </Button>
                             </div>

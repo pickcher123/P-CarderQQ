@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
 
     let contentType = response.headers.get('content-type') || 'image/jpeg';
     const arrayBuffer = await response.arrayBuffer();
-    let finalBuffer = Buffer.from(arrayBuffer);
+    let finalBuffer: any = Buffer.from(arrayBuffer);
 
     // 如果要求去背 (去掉卡片拍照時的黑底、暗色卡套/黑桌布邊界)
     if (shouldMatte) {

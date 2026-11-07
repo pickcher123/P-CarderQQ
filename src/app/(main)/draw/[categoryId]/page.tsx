@@ -230,7 +230,7 @@ export default function DrawCategoryPage() {
                 ) : (
                     filteredPools.map(pool => (
                         <div key={pool.id} className="animate-fade-in-up relative w-full pt-4 sm:pt-5">
-                            {pool.isFeatured && (
+                            {(pool as any).isFeatured && (
                                 <div className="absolute top-0 left-2.5 sm:left-3 z-30 pointer-events-none">
                                     <div className="bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 font-black text-[11px] px-3.5 py-1 rounded-full shadow-[0_4px_20px_rgba(245,158,11,0.7)] border-2 border-amber-100 uppercase tracking-wider flex items-center gap-1.5 animate-pulse">
                                         <Sparkles className="w-3.5 h-3.5 fill-slate-950" />
