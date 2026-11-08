@@ -4,10 +4,11 @@ import { useState, useMemo, ChangeEvent } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useCollection, useFirestore, useMemoFirebase, useAuth, useStorage } from '@/firebase';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
-import { collection, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, deleteDoc, doc, writeBatch } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { format, isToday, isYesterday, subDays, isAfter, startOfDay } from 'date-fns';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table,
   TableBody,
@@ -32,7 +33,8 @@ import { useToast } from '@/hooks/use-toast';
 import { 
   PlusCircle, Edit, Trash2, ArrowLeft, Search, Loader2, 
   UploadCloud, Files, X, Archive, Ban, Calendar, CalendarDays, 
-  Clock, ArrowUpDown, Sparkles, LayoutList, LayoutGrid, RotateCcw, Filter
+  Clock, ArrowUpDown, Sparkles, LayoutList, LayoutGrid, RotateCcw, Filter,
+  AlertTriangle, CheckSquare
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SafeImage } from '@/components/safe-image';
@@ -272,6 +274,12 @@ export default function CardAreaManagementPage() {
   const [sortBy, setSortBy] = useState('date-desc');
   const [isGroupedByDate, setIsGroupedByDate] = useState(false);
   const [activeTab, setActiveTab] = useState('active');
+
+  // 批量選取與移除相關狀態
+  const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
+  const [isBatchDeleteDialogOpen, setIsBatchDeleteDialogOpen] = useState(false);
+  const [isBatchDeleting, setIsBatchDeleting] = useState(false);
+  const [batchDeleteProgress, setBatchDeleteProgress] = useState(0);
 
   const { data: allCards, isLoading: isLoadingCards, forceRefetch } = useCollection<CardData>(useMemoFirebase(() => firestore ? collection(firestore, 'allCards') : null, [firestore]));
   const { data: cardPools } = useCollection<{cards?: {cardId: string}[]}>(useMemoFirebase(() => firestore ? collection(firestore, 'cardPools') : null, [firestore]));
@@ -618,9 +626,109 @@ export default function CardAreaManagementPage() {
         if (card.imageUrl && card.imageUrl.includes('firebasestorage.googleapis.com')) {
             try { await deleteObject(ref(storage, card.imageUrl)); } catch (err) { console.error(err); }
         }
+        if (card.backImageUrl && card.backImageUrl.includes('firebasestorage.googleapis.com')) {
+            try { await deleteObject(ref(storage, card.backImageUrl)); } catch (err) { console.error(err); }
+        }
         await deleteDoc(doc(firestore, 'allCards', card.id));
-        toast({ title: "已刪除卡片" });
-    } catch (e) { toast({ variant: "destructive" }); }
+        setSelectedCardIds(prev => prev.filter(id => id !== card.id));
+        toast({ title: "已自 Firebase 後台刪除卡片" });
+        if (forceRefetch) forceRefetch();
+    } catch (e) { toast({ variant: "destructive", title: "刪除失敗" }); }
+  };
+
+  // --- 批量選取與移除邏輯 ---
+  const toggleSelectCard = (id: string) => {
+    setSelectedCardIds(prev => 
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAllFiltered = () => {
+    const allFilteredIds = filteredCards.map(c => c.id!).filter(Boolean);
+    setSelectedCardIds(allFilteredIds);
+  };
+
+  const handleClearSelection = () => {
+    setSelectedCardIds([]);
+  };
+
+  const handleToggleGroup = (cards: CardData[]) => {
+    const groupIds = cards.map(c => c.id!).filter(Boolean);
+    const allSelected = groupIds.length > 0 && groupIds.every(id => selectedCardIds.includes(id));
+    if (allSelected) {
+      setSelectedCardIds(prev => prev.filter(id => !groupIds.includes(id)));
+    } else {
+      setSelectedCardIds(prev => Array.from(new Set([...prev, ...groupIds])));
+    }
+  };
+
+  const selectedCardsList = useMemo(() => {
+    if (!allCards) return [];
+    const idSet = new Set(selectedCardIds);
+    return allCards.filter(c => c.id && idSet.has(c.id));
+  }, [allCards, selectedCardIds]);
+
+  const assignedSelectedCards = useMemo(() => {
+    return selectedCardsList.filter(c => cardAssignmentMap.has(c.id!));
+  }, [selectedCardsList, cardAssignmentMap]);
+
+  const deletableSelectedCards = useMemo(() => {
+    return selectedCardsList.filter(c => !cardAssignmentMap.has(c.id!));
+  }, [selectedCardsList, cardAssignmentMap]);
+
+  const handleExecuteBatchDelete = async () => {
+    if (!firestore || deletableSelectedCards.length === 0) return;
+    setIsBatchDeleting(true);
+    setBatchDeleteProgress(0);
+
+    try {
+      const total = deletableSelectedCards.length;
+
+      // 1. 同步從 Firebase Storage 實體刪除雲端圖片檔案
+      for (let i = 0; i < deletableSelectedCards.length; i++) {
+        const card = deletableSelectedCards[i];
+        if (storage) {
+          if (card.imageUrl && card.imageUrl.includes('firebasestorage.googleapis.com')) {
+            try { await deleteObject(ref(storage, card.imageUrl)); } catch (_) {}
+          }
+          if (card.backImageUrl && card.backImageUrl.includes('firebasestorage.googleapis.com')) {
+            try { await deleteObject(ref(storage, card.backImageUrl)); } catch (_) {}
+          }
+        }
+        setBatchDeleteProgress(Math.round(((i + 1) / total) * 50));
+      }
+
+      // 2. 批次從 Firestore 刪除 (分批 400 筆為一個 batch 避免超過 500 筆上限)
+      const BATCH_SIZE = 400;
+      for (let i = 0; i < deletableSelectedCards.length; i += BATCH_SIZE) {
+        const chunk = deletableSelectedCards.slice(i, i + BATCH_SIZE);
+        const batch = writeBatch(firestore);
+        chunk.forEach(card => {
+          batch.delete(doc(firestore, 'allCards', card.id!));
+        });
+        await batch.commit();
+        setBatchDeleteProgress(50 + Math.round(((i + chunk.length) / total) * 50));
+      }
+
+      toast({
+        title: "批量移除成功",
+        description: `已成功自 Firebase 資料庫與雲端存儲永久移除 ${deletableSelectedCards.length} 張卡片！${assignedSelectedCards.length > 0 ? ` (已保護並保留 ${assignedSelectedCards.length} 張使用中的卡片)` : ''}`
+      });
+
+      setSelectedCardIds([]);
+      setIsBatchDeleteDialogOpen(false);
+      if (forceRefetch) forceRefetch();
+    } catch (err: any) {
+      console.error('Batch delete failed:', err);
+      toast({
+        variant: "destructive",
+        title: "批量移除失敗",
+        description: err?.message || "請檢查權限或網絡連線。"
+      });
+    } finally {
+      setIsBatchDeleting(false);
+      setBatchDeleteProgress(0);
+    }
   };
 
   return (
@@ -640,6 +748,17 @@ export default function CardAreaManagementPage() {
             </div>
             
             <div className="flex flex-wrap items-center gap-3">
+                {/* 批量移除快捷按鈕 (有勾選卡片時顯著發光) */}
+                {selectedCardIds.length > 0 && (
+                    <Button 
+                        onClick={() => setIsBatchDeleteDialogOpen(true)}
+                        className="h-10 rounded-xl font-black bg-rose-600 hover:bg-rose-700 text-white shadow-lg shadow-rose-600/30 flex items-center gap-1.5 animate-pulse"
+                    >
+                        <Trash2 className="h-4 w-4" />
+                        <span>批量移除 ({selectedCardIds.length})</span>
+                    </Button>
+                )}
+
                 {/* 運作機制說明 (紅色圈圈位置) */}
                 <CardUploadGuideDialog />
 
@@ -674,6 +793,50 @@ export default function CardAreaManagementPage() {
                 </Button>
             </div>
         </div>
+
+        {/* 批量操作工具條 (當有選取卡片時顯著浮現) */}
+        {selectedCardIds.length > 0 && (
+            <div className="sticky top-4 z-40 p-3 sm:p-4 rounded-2xl bg-slate-900 text-white shadow-2xl border border-slate-800 flex flex-wrap items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2">
+                <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-amber-400 text-slate-950 font-black flex items-center justify-center text-xs shadow-md">
+                        {selectedCardIds.length}
+                    </div>
+                    <div>
+                        <p className="font-black text-sm">已勾選 {selectedCardIds.length} 張卡片資產</p>
+                        <p className="text-[11px] text-slate-400">
+                            其中 {deletableSelectedCards.length} 張可安全移除{assignedSelectedCards.length > 0 ? `，${assignedSelectedCards.length} 張已分配使用中（將自動保護排除）` : ''}
+                        </p>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                    <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        onClick={handleSelectAllFiltered}
+                        className="text-xs text-slate-300 hover:text-white hover:bg-slate-800 h-9"
+                    >
+                        全選當前篩選 ({filteredCards.length})
+                    </Button>
+                    <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        onClick={handleClearSelection}
+                        className="text-xs text-slate-400 hover:text-slate-200 hover:bg-slate-800 h-9"
+                    >
+                        清空選取
+                    </Button>
+                    <Button 
+                        size="sm" 
+                        onClick={() => setIsBatchDeleteDialogOpen(true)}
+                        className="h-9 px-4 rounded-xl font-black bg-rose-600 hover:bg-rose-500 text-white shadow-lg shadow-rose-600/30 flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+                    >
+                        <Trash2 className="w-4 h-4" />
+                        <span>確認批量移除 ({selectedCardIds.length})</span>
+                    </Button>
+                </div>
+            </div>
+        )}
 
         {/* Filter Toolbar */}
         <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-sm space-y-4">
@@ -897,19 +1060,36 @@ export default function CardAreaManagementPage() {
                                             </h3>
                                         </div>
                                     </div>
-                                    <Badge variant="secondary" className="font-code font-bold bg-white text-slate-800 border border-slate-200 shadow-sm">
-                                        {group.cards.length} 張卡片
-                                    </Badge>
+                                    <div className="flex items-center gap-2">
+                                        <Button 
+                                            size="sm" 
+                                            variant="ghost" 
+                                            onClick={() => handleToggleGroup(group.cards)}
+                                            className="h-7 px-2.5 text-[11px] font-bold text-slate-600 hover:text-slate-900 hover:bg-white rounded-lg border border-slate-200/60 shadow-2xs"
+                                        >
+                                            {group.cards.length > 0 && group.cards.every(c => selectedCardIds.includes(c.id!)) ? "取消此日全選" : `全選此日 (${group.cards.length})`}
+                                        </Button>
+                                        <Badge variant="secondary" className="font-code font-bold bg-white text-slate-800 border border-slate-200 shadow-sm">
+                                            {group.cards.length} 張卡片
+                                        </Badge>
+                                    </div>
                                 </div>
 
                                 {/* Group cards grid */}
                                 <div className="p-5 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
                                     {group.cards.map((card) => {
                                         const dateBadge = formatCardDateBadge(card.createdAt);
+                                        const isCardSelected = selectedCardIds.includes(card.id!);
                                         return (
                                             <div 
                                                 key={card.id}
-                                                className="group relative bg-slate-50/60 hover:bg-white border border-slate-200/80 hover:border-slate-400 rounded-2xl p-3 transition-all hover:shadow-lg flex flex-col justify-between"
+                                                className={cn(
+                                                    "group relative rounded-2xl p-3 transition-all hover:shadow-lg flex flex-col justify-between cursor-pointer",
+                                                    isCardSelected 
+                                                        ? "bg-slate-100/90 border-2 border-slate-900 shadow-md ring-2 ring-slate-900/10" 
+                                                        : "bg-slate-50/60 hover:bg-white border border-slate-200/80 hover:border-slate-400"
+                                                )}
+                                                onClick={() => toggleSelectCard(card.id!)}
                                             >
                                                 <div className="space-y-2">
                                                     <div className="aspect-[2.5/3.5] relative rounded-xl border border-slate-200 bg-slate-100 overflow-hidden shadow-sm">
@@ -918,6 +1098,16 @@ export default function CardAreaManagementPage() {
                                                             <Badge className="bg-slate-900/90 text-white text-[9px] font-black border-none px-1.5 py-0 h-4">
                                                                 {card.category}
                                                             </Badge>
+                                                        </div>
+                                                        <div 
+                                                            className="absolute top-1.5 right-1.5 z-10" 
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        >
+                                                            <Checkbox 
+                                                                checked={isCardSelected}
+                                                                onCheckedChange={() => toggleSelectCard(card.id!)}
+                                                                className="bg-white/95 border-slate-400 data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900 shadow-md"
+                                                            />
                                                         </div>
                                                     </div>
                                                     <div>
@@ -981,10 +1171,24 @@ export default function CardAreaManagementPage() {
                 /* STANDARD TABLE VIEW */
                 <div className="bg-white border border-slate-200 rounded-[2rem] overflow-hidden shadow-md">
                     <ScrollArea className="w-full">
-                        <Table className="min-w-[900px]">
+                        <Table className="min-w-[950px]">
                             <TableHeader className="bg-slate-50 border-b-slate-200">
                                 <TableRow>
-                                    <TableHead className="pl-8 text-slate-900 font-black uppercase text-[10px] tracking-widest py-5">名稱資訊</TableHead>
+                                    <TableHead className="w-14 pl-6 py-5 text-center">
+                                        <Checkbox 
+                                            checked={filteredCards.length > 0 && filteredCards.every(c => selectedCardIds.includes(c.id!))}
+                                            onCheckedChange={(checked) => {
+                                                if (checked) {
+                                                    handleSelectAllFiltered();
+                                                } else {
+                                                    handleClearSelection();
+                                                }
+                                            }}
+                                            aria-label="全選所有篩選卡片"
+                                            className="bg-white border-slate-300 data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900"
+                                        />
+                                    </TableHead>
+                                    <TableHead className="text-slate-900 font-black uppercase text-[10px] tracking-widest py-5">名稱資訊</TableHead>
                                     <TableHead className="text-slate-900 font-black uppercase text-[10px] tracking-widest text-center">分配位置</TableHead>
                                     <TableHead className="text-slate-900 font-black uppercase text-[10px] tracking-widest">運動分類</TableHead>
                                     <TableHead className="text-slate-900 font-black uppercase text-[10px] tracking-widest text-center">視覺預覽</TableHead>
@@ -997,17 +1201,32 @@ export default function CardAreaManagementPage() {
                             <TableBody>
                                 {isLoadingCards ? Array.from({length: 5}).map((_, i) => (
                                     <TableRow key={i}>
-                                        <TableCell colSpan={8} className="p-6"><Skeleton className="h-12 w-full rounded-2xl" /></TableCell>
+                                        <TableCell colSpan={9} className="p-6"><Skeleton className="h-12 w-full rounded-2xl" /></TableCell>
                                     </TableRow>
                                 )) : 
                                 filteredCards.map((card) => {
                                     const dateBadge = formatCardDateBadge(card.createdAt);
+                                    const isRowSelected = selectedCardIds.includes(card.id!);
                                     return (
-                                        <TableRow key={card.id} className="hover:bg-slate-50 transition-colors border-b-slate-100 group">
-                                            <TableCell className="pl-8 font-black text-slate-900 py-4 max-w-[200px] truncate" title={card.name}>
+                                        <TableRow 
+                                            key={card.id} 
+                                            className={cn(
+                                                "transition-colors border-b-slate-100 group cursor-pointer",
+                                                isRowSelected ? "bg-slate-100/90 font-medium hover:bg-slate-200/70" : "hover:bg-slate-50"
+                                            )}
+                                            onClick={() => toggleSelectCard(card.id!)}
+                                        >
+                                            <TableCell className="w-14 pl-6 text-center" onClick={(e) => e.stopPropagation()}>
+                                                <Checkbox 
+                                                    checked={isRowSelected}
+                                                    onCheckedChange={() => toggleSelectCard(card.id!)}
+                                                    className="bg-white border-slate-300 data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900"
+                                                />
+                                            </TableCell>
+                                            <TableCell className="font-black text-slate-900 py-4 max-w-[200px] truncate" title={card.name}>
                                                 {card.name}
                                             </TableCell>
-                                            <TableCell className="text-center">
+                                            <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
                                                 {cardAssignmentMap.has(card.id!) ? (
                                                     <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 text-[10px] font-black uppercase">
                                                         {cardAssignmentMap.get(card.id!)?.name}
@@ -1039,7 +1258,7 @@ export default function CardAreaManagementPage() {
                                                     )}
                                                 </div>
                                             </TableCell>
-                                            <TableCell>
+                                            <TableCell onClick={(e) => e.stopPropagation()}>
                                                 <div className="flex items-center space-x-3">
                                                     <Switch checked={card.isSold} onCheckedChange={() => handleToggleSold(card)} />
                                                     <Label className={cn("text-[10px] font-black uppercase tracking-tighter", 
@@ -1052,7 +1271,7 @@ export default function CardAreaManagementPage() {
                                             <TableCell className="font-code font-black text-slate-900 text-lg">
                                                 {card.sellPrice?.toLocaleString()} <span className="text-[10px] font-normal text-slate-400">💎</span>
                                             </TableCell>
-                                            <TableCell className="text-right pr-8 space-x-1">
+                                            <TableCell className="text-right pr-8 space-x-1" onClick={(e) => e.stopPropagation()}>
                                                 <Button 
                                                     variant="ghost" 
                                                     size="icon" 
@@ -1063,7 +1282,7 @@ export default function CardAreaManagementPage() {
                                                         setBackPreviewUrl(card.backImageUrl || null); 
                                                         setIsEditMode(true); 
                                                         setIsCardDialogOpen(true); 
-                                                    }}
+                                                    }} 
                                                 >
                                                     <Edit className="h-4 w-4 text-slate-600" />
                                                 </Button>
@@ -1081,7 +1300,7 @@ export default function CardAreaManagementPage() {
                                 })}
                                 {!isLoadingCards && filteredCards.length === 0 && (
                                     <TableRow>
-                                        <TableCell colSpan={8} className="h-40 text-center text-slate-400 font-bold italic">
+                                        <TableCell colSpan={9} className="h-40 text-center text-slate-400 font-bold italic">
                                             <div className="flex flex-col items-center gap-3">
                                                 <Archive className="h-8 w-8 opacity-20" />
                                                 目前此條件下沒有卡片資產
@@ -1176,6 +1395,135 @@ export default function CardAreaManagementPage() {
                     </div>
                 </ScrollArea>
                 <DialogFooter className="mt-6"><Button onClick={handleSaveCard} className="w-full h-14 rounded-2xl font-black bg-slate-900 text-white text-lg shadow-xl hover:bg-slate-800 transition-all">儲存資產並同步資料庫</Button></DialogFooter>
+            </DialogContent>
+        </Dialog>
+
+        {/* 批量移除確認彈窗 (Batch Delete Dialog) */}
+        <Dialog open={isBatchDeleteDialogOpen} onOpenChange={(val) => !isBatchDeleting && setIsBatchDeleteDialogOpen(val)}>
+            <DialogContent className="light sm:max-w-xl bg-white text-slate-900 border-none shadow-2xl rounded-3xl p-6 sm:p-8">
+                <DialogHeader className="space-y-2">
+                    <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mb-1">
+                        <Trash2 className="w-6 h-6" />
+                    </div>
+                    <DialogTitle className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                        確認批量移除卡片資產？
+                    </DialogTitle>
+                    <DialogDescription className="text-xs text-slate-500 font-medium">
+                        此操作將同時從管理後台、<strong className="text-rose-600 font-bold">Firebase Firestore 資料庫</strong> 以及 <strong className="text-rose-600 font-bold">Firebase Storage 雲端儲存空間</strong> 徹底永久移除，資料刪除後無法復原。
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-4 py-2">
+                    {/* 數據統計摘要 */}
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+                            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">已選取總數</span>
+                            <div className="text-2xl font-black text-slate-900 font-code mt-0.5">
+                                {selectedCardIds.length} <span className="text-xs text-slate-500 font-normal">張</span>
+                            </div>
+                        </div>
+                        <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200">
+                            <span className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">可安全移除</span>
+                            <div className="text-2xl font-black text-emerald-800 font-code mt-0.5">
+                                {deletableSelectedCards.length} <span className="text-xs text-emerald-600 font-normal">張</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 安全保護警告 (若選取的卡片中已有被卡池引用的) */}
+                    {assignedSelectedCards.length > 0 && (
+                        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-2">
+                            <div className="flex items-center gap-2 text-amber-800 font-black text-xs">
+                                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                                <span>安全防護機制：已自動排除 {assignedSelectedCards.length} 張正在使用中的卡片</span>
+                            </div>
+                            <p className="text-[11px] text-amber-700 leading-relaxed font-medium">
+                                以下卡片目前已配置於線上營運中的卡池或活動，為避免玩家抽卡發生錯誤，系統已保護並自動略過：
+                            </p>
+                            <ScrollArea className="max-h-24 rounded-xl bg-white/80 p-2 border border-amber-200/60 text-xs">
+                                <div className="space-y-1">
+                                    {assignedSelectedCards.map(c => (
+                                        <div key={c.id} className="flex items-center justify-between text-[11px] py-0.5">
+                                            <span className="font-bold text-slate-800 truncate max-w-[240px]">{c.name}</span>
+                                            <Badge variant="outline" className="text-[9px] border-amber-300 text-amber-800 bg-amber-100">
+                                                {cardAssignmentMap.get(c.id!)?.name}
+                                            </Badge>
+                                        </div>
+                                    ))}
+                                </div>
+                            </ScrollArea>
+                        </div>
+                    )}
+
+                    {/* 即將刪除清單預覽 */}
+                    {deletableSelectedCards.length > 0 ? (
+                        <div className="space-y-1.5">
+                            <div className="text-[11px] font-black uppercase text-slate-400 tracking-wider">
+                                即將自 Firebase 永久移除之卡片清單 ({deletableSelectedCards.length} 張)：
+                            </div>
+                            <ScrollArea className="max-h-40 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                                <div className="space-y-1.5">
+                                    {deletableSelectedCards.map(c => (
+                                        <div key={c.id} className="flex items-center justify-between p-2 rounded-xl bg-white border border-slate-100 text-xs shadow-2xs">
+                                            <div className="flex items-center gap-2.5 min-w-0">
+                                                <div className="relative w-7 h-9 rounded border border-slate-200 bg-slate-100 overflow-hidden shrink-0">
+                                                    <SafeImage src={c.imageUrl} alt={c.name} fill className="object-contain p-0.5" />
+                                                </div>
+                                                <span className="font-bold text-slate-800 truncate">{c.name}</span>
+                                            </div>
+                                            <Badge variant="secondary" className="text-[10px] font-code shrink-0">
+                                                {c.category}
+                                            </Badge>
+                                        </div>
+                                    ))}
+                                </div>
+                            </ScrollArea>
+                        </div>
+                    ) : (
+                        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-center text-xs text-slate-500 font-bold">
+                            所勾選的卡片全數已在線上卡池使用中，無可直接刪除之卡片。若需刪除請先至對應卡池解除配置。
+                        </div>
+                    )}
+
+                    {/* 刪除中進度 */}
+                    {isBatchDeleting && (
+                        <div className="space-y-3 pt-2 text-center">
+                            <div className="flex items-center justify-center gap-2 font-black text-sm text-slate-900">
+                                <Loader2 className="w-4 h-4 animate-spin text-rose-600" />
+                                <span>正在同步清除 Firebase 資料庫與雲端圖片... ({batchDeleteProgress}%)</span>
+                            </div>
+                            <Progress value={batchDeleteProgress} className="h-2.5 bg-slate-100" indicatorClassName="bg-rose-600 transition-all" />
+                        </div>
+                    )}
+                </div>
+
+                <DialogFooter className="gap-2 sm:gap-3 pt-2">
+                    <Button 
+                        variant="outline" 
+                        onClick={() => setIsBatchDeleteDialogOpen(false)} 
+                        disabled={isBatchDeleting}
+                        className="font-bold border-slate-200 rounded-xl"
+                    >
+                        取消
+                    </Button>
+                    <Button 
+                        onClick={handleExecuteBatchDelete} 
+                        disabled={isBatchDeleting || deletableSelectedCards.length === 0}
+                        className="px-6 font-black bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-lg shadow-rose-600/25 flex items-center gap-1.5 transition-all"
+                    >
+                        {isBatchDeleting ? (
+                            <>
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                <span>正在從 Firebase 刪除中...</span>
+                            </>
+                        ) : (
+                            <>
+                                <Trash2 className="w-4 h-4" />
+                                <span>確認從 Firebase 永久移除 ({deletableSelectedCards.length} 張)</span>
+                            </>
+                        )}
+                    </Button>
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     </div>

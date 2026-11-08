@@ -28,6 +28,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { isSuperAdminEmail } from '@/hooks/use-is-admin';
 import type { UserProfile } from '@/types/user-profile';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Badge } from '@/components/ui/badge';
@@ -99,7 +100,7 @@ export default function LuckBagDetailPage() {
   const auth = useAuth();
   const { toast } = useToast();
 
-  const isSuperAdmin = useMemo(() => auth?.currentUser?.email === 'pickcher123@gmail.com', [auth]);
+  const isSuperAdmin = useMemo(() => isSuperAdminEmail(auth?.currentUser?.email), [auth]);
 
   const handleResetParticipants = async () => {
     if (!auth?.currentUser?.uid || !luckBagId) return;

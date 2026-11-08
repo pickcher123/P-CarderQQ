@@ -21,6 +21,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Loader2, Sparkles, ShieldCheck, LogIn, CheckCircle2, Terminal, Mail, Lock, ArrowLeft, UserPlus, Gift, Check, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { isSuperAdminEmail } from '@/hooks/use-is-admin';
 
 // Simple Google Icon SVG
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -238,6 +239,7 @@ function LoginContent() {
     try {
         const result = await initiateGoogleSignIn(auth);
         const user = result.user;
+        const isSuper = isSuperAdminEmail(user.email);
         
         // 記錄登入軌跡
         recordUserLoginEvent(user.uid, user.email, user.displayName, user.photoURL, 'google');
@@ -250,14 +252,14 @@ function LoginContent() {
             // 第一次登入，建立初始資料
             await setDoc(userRef, {
                 id: user.uid,
-                username: user.displayName || user.email?.split('@')[0] || '新收藏家',
+                username: user.displayName || user.email?.split('@')[0] || (isSuper ? '超級管理員' : '新收藏家'),
                 email: user.email,
                 photoURL: user.photoURL,
-                role: 'user',
+                role: isSuper ? 'admin' : 'user',
                 points: 0,
                 bonusPoints: 0,
                 totalSpent: 0,
-                userLevel: '新手收藏家',
+                userLevel: isSuper ? '殿堂級玩家' : '新手收藏家',
                 createdAt: serverTimestamp(),
                 lastLoginAt: serverTimestamp(),
             });
@@ -277,9 +279,19 @@ function LoginContent() {
                 console.error('Google signup referral apply error:', err);
               }
             }
+        } else if (isSuper && userSnap.data()?.role !== 'admin') {
+            // 若為超級管理員信箱但過去為一般會員角色，自動同步提升為 admin
+            await setDoc(userRef, { role: 'admin' }, { merge: true });
         }
         
-        router.push('/profile');
+        const redirectParam = searchParams.get('redirect');
+        if (redirectParam && redirectParam.startsWith('/')) {
+            router.push(redirectParam);
+        } else if (isSuper) {
+            router.push('/admin');
+        } else {
+            router.push('/profile');
+        }
     } catch (error) {
         if (error instanceof FirebaseError) {
             toast({

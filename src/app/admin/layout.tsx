@@ -1,5 +1,7 @@
 'use client';
-import { useUser, useDoc, useFirestore, useMemoFirebase } from "@/firebase";
+import { useUser, useDoc, useFirestore, useMemoFirebase, useAuth } from "@/firebase";
+import { initiateGoogleSignIn } from "@/firebase/non-blocking-login";
+import { signOut } from "firebase/auth";
 import { doc } from "firebase/firestore";
 import type { UserProfile } from "@/types/user-profile";
 import { useState, useMemo } from "react";
@@ -47,6 +49,8 @@ import { usePathname } from 'next/navigation';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+
+import { isSuperAdminEmail } from "@/hooks/use-is-admin";
 
 interface NavItem {
   href: string;
@@ -305,12 +309,37 @@ export default function AdminLayout({
   const { data: systemConfig } = useDoc<SystemConfig>(systemConfigRef);
   const isMaintenanceActive = Boolean(systemConfig?.maintenance?.enabled);
 
-  const superAdmins = useMemo(() => ['pickcher123@gmail.com'], []);
+  const auth = useAuth();
+  const [isSigningIn, setIsSigningIn] = useState(false);
+
   const isSuperAdmin = useMemo(() => {
-    if (!user?.email) return false;
-    const cleanEmail = user.email.toLowerCase().trim();
-    return superAdmins.some(adminEmail => adminEmail.toLowerCase().trim() === cleanEmail);
-  }, [user, superAdmins]);
+    return isSuperAdminEmail(user?.email);
+  }, [user]);
+
+  const handleAdminGoogleLogin = async () => {
+    if (!auth) return;
+    setIsSigningIn(true);
+    try {
+      await initiateGoogleSignIn(auth);
+    } catch (error) {
+      console.error('Admin Google sign-in failed:', error);
+    } finally {
+      setIsSigningIn(false);
+    }
+  };
+
+  const handleAdminSwitchAccount = async () => {
+    if (!auth) return;
+    setIsSigningIn(true);
+    try {
+      await signOut(auth);
+      await initiateGoogleSignIn(auth);
+    } catch (error) {
+      console.error('Admin switch account failed:', error);
+    } finally {
+      setIsSigningIn(false);
+    }
+  };
 
   const currentNav = useMemo(() => {
     return sidebarNavItems.flatMap(s => s.items).find(item => 
@@ -333,18 +362,63 @@ export default function AdminLayout({
 
   if (!user || (!isSuperAdmin && (!userProfile || userProfile.role !== 'admin'))) {
     return (
-      <div className="flex h-screen flex-col items-center justify-center text-center bg-white p-6">
-        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200/80 mb-4 text-amber-700">
-          <ShieldAlert className="h-10 w-10" />
-        </div>
-        <h1 className="text-xl font-bold text-slate-900 tracking-tight">存取權限受限</h1>
-        <p className="text-slate-500 mt-2 max-w-xs text-xs">
-          {user ? `您目前登入的帳號（${user.email || '無電子郵件'}）尚未具備管理員權限。` : '您尚未登入管理員帳號，請先登入後再進入後台。'}
-        </p>
-        <div className="flex items-center gap-3 mt-6">
-          <Button asChild className="rounded-lg px-6 h-10 text-xs font-semibold bg-slate-900 text-white hover:bg-slate-800">
-            <Link href="/">返回前台首頁</Link>
-          </Button>
+      <div className="flex h-screen flex-col items-center justify-center text-center bg-slate-900/50 backdrop-blur-sm p-4">
+        <div className="w-full max-w-md bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-200 text-slate-900 flex flex-col items-center animate-in fade-in zoom-in-95 duration-200">
+          <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200/80 mb-4 text-amber-600 shadow-sm">
+            <ShieldAlert className="h-10 w-10" />
+          </div>
+          
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">管理員身分驗證</h1>
+          
+          <p className="text-slate-500 mt-2 text-xs sm:text-sm leading-relaxed max-w-xs">
+            {user 
+              ? `目前登入的帳號（${user.email || '未設定信箱'}）尚未具備管理員權限。請切換為指定之管理員信箱。` 
+              : '您尚未登入管理員帳號，請點擊下方按鈕以 Google 快速登入管理員後台。'}
+          </p>
+
+          <div className="w-full space-y-2.5 mt-6">
+            {!user ? (
+              <Button 
+                onClick={handleAdminGoogleLogin}
+                disabled={isSigningIn}
+                className="w-full h-11 rounded-xl bg-slate-900 text-white hover:bg-slate-800 font-bold text-xs sm:text-sm shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.98]"
+              >
+                <LogIn className="h-4 w-4 text-amber-400" />
+                <span>{isSigningIn ? '正在驗證 Google 登入...' : '以 Google 登入管理員帳號'}</span>
+              </Button>
+            ) : (
+              <div className="space-y-2 w-full">
+                <Button 
+                  onClick={handleAdminSwitchAccount}
+                  disabled={isSigningIn}
+                  className="w-full h-11 rounded-xl bg-amber-500 text-slate-950 hover:bg-amber-400 font-black text-xs sm:text-sm shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.98]"
+                >
+                  <RefreshCw className={cn("h-4 w-4", isSigningIn && "animate-spin")} />
+                  <span>{isSigningIn ? '切換中...' : '切換為其他 Google 管理員帳號'}</span>
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => auth && signOut(auth)}
+                  className="w-full h-9 rounded-xl border-slate-200 text-slate-600 hover:bg-slate-100 font-semibold text-xs cursor-pointer"
+                >
+                  登出目前帳號
+                </Button>
+              </div>
+            )}
+
+            <Button asChild variant="ghost" className="w-full h-9 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-900 hover:bg-slate-100">
+              <Link href="/">
+                <Home className="mr-1.5 h-3.5 w-3.5" />
+                返回前台首頁
+              </Link>
+            </Button>
+          </div>
+
+          <div className="mt-5 pt-4 border-t border-slate-100 w-full text-center">
+            <p className="text-[10px] text-slate-400">
+              系統超級管理員：<span className="font-mono text-slate-600 font-semibold">pickcher123@gmail.com / pickcher1234@gmail.com</span>
+            </p>
+          </div>
         </div>
       </div>
     );

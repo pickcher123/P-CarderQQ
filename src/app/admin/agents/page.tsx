@@ -5,7 +5,7 @@ import { collection, collectionGroup, query, addDoc, doc, deleteDoc } from 'fire
 import type { UserProfile } from '@/types/user-profile';
 import { useEffect } from 'react';
 
-const SUPER_ADMIN_EMAIL = 'pickcher123@gmail.com';
+import { isSuperAdminEmail } from '@/hooks/use-is-admin';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, startOfMonth, endOfMonth, getYear, getMonth } from 'date-fns';
@@ -70,7 +70,7 @@ export default function AgentsAdminPage() {
     }, [firestore, authUser?.uid]);
     const { data: userProfile } = useRequest<UserProfile>(userProfileQuery);
 
-    const isSuperAdmin = authUser?.email === SUPER_ADMIN_EMAIL;
+    const isSuperAdmin = isSuperAdminEmail(authUser?.email);
     const assignedAgentId = userProfile?.agentId;
     const isSalesOnly = !isSuperAdmin && !!assignedAgentId;
 

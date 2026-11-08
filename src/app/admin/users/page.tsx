@@ -71,7 +71,7 @@ const PERMISSION_ITEMS = [
     { id: 'activity-logs', label: '操作日誌', category: '系統配置' },
 ];
 
-const SUPER_ADMIN_EMAIL = 'pickcher123@gmail.com';
+import { isSuperAdminEmail } from '@/hooks/use-is-admin';
 
 function translateDetails(details?: string): string {
     if (typeof details !== 'string' || !details) return '-';
@@ -1117,7 +1117,7 @@ export default function UsersAdminPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isEventDispatchOpen, setIsEventDispatchOpen] = useState(false);
   const [isEventLogsOpen, setIsEventLogsOpen] = useState(false);
-  const isSuperAdmin = currentUser?.email === SUPER_ADMIN_EMAIL;
+  const isSuperAdmin = isSuperAdminEmail(currentUser?.email);
 
   const usersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'users'), limit(50)) : null, [firestore]);
   const { data: users, isLoading, forceRefetch } = useCollection<UserProfile>(usersQuery);
@@ -1189,7 +1189,7 @@ export default function UsersAdminPage() {
                 {isLoading ? Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={i}><TableCell colSpan={5} className="p-6"><Skeleton className="h-12 w-full rounded-2xl" /></TableCell></TableRow>
                 )) : filteredUsers.length > 0 ? filteredUsers.map((user) => (
-                    <TableRow key={user.id} className={cn("hover:bg-slate-50/80 transition-colors border-b-slate-100", user.email === SUPER_ADMIN_EMAIL && "bg-blue-50/40")}>
+                    <TableRow key={user.id} className={cn("hover:bg-slate-50/80 transition-colors border-b-slate-100", isSuperAdminEmail(user.email) && "bg-blue-50/40")}>
                     <TableCell className="pl-8 py-5"><UserDetailsDialog user={user} /></TableCell>
                     <TableCell><Badge variant="outline" className="font-black text-[10px] border-slate-300 text-slate-700 uppercase h-6 px-3 bg-white shadow-sm">{user.userLevel}</Badge></TableCell>
                     <TableCell className="font-code">
@@ -1219,7 +1219,7 @@ export default function UsersAdminPage() {
                         </div>
                     </TableCell>
                     <TableCell className="text-right pr-8 py-5"><div className="flex justify-end gap-2 flex-wrap items-center">
-                        {isSuperAdmin && user.email !== SUPER_ADMIN_EMAIL && (
+                        {isSuperAdmin && !isSuperAdminEmail(user.email) && (
                             <>
                                 <ToggleRoleDialog user={user} onUpdate={() => forceRefetch?.()} />
                                 {user.role === 'admin' && <ModifyPermissionsDialog user={user} onUpdate={() => forceRefetch?.()} />}

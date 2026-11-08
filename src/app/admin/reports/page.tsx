@@ -14,7 +14,7 @@ import { Bar, BarChart as RechartsBarChart, ResponsiveContainer, XAxis, YAxis, T
 import { cn } from '@/lib/utils';
 import type { UserProfile } from '@/types/user-profile';
 
-const SUPER_ADMIN_EMAIL = 'pickcher123@gmail.com';
+import { isSuperAdminEmail } from '@/hooks/use-is-admin';
 
 interface Transaction {
     id: string;
@@ -93,7 +93,7 @@ export default function ReportsPage() {
     }, [firestore, authUser?.uid]);
     const { data: userProfile } = useRequest<UserProfile>(userProfileQuery);
 
-    const isSuperAdmin = authUser?.email === SUPER_ADMIN_EMAIL;
+    const isSuperAdmin = isSuperAdminEmail(authUser?.email);
     const assignedAgentId = userProfile?.agentId;
     const isSalesOnly = !isSuperAdmin && !!assignedAgentId;
 

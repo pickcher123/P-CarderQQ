@@ -5,7 +5,16 @@ import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import type { UserProfile } from '@/types/user-profile';
 
-const SUPER_ADMINS = ['pickcher123@gmail.com'];
+export const SUPER_ADMIN_EMAILS = [
+  'pickcher123@gmail.com',
+  'pickcher1234@gmail.com',
+];
+
+export function isSuperAdminEmail(email?: string | null): boolean {
+  if (!email) return false;
+  const cleanEmail = email.toLowerCase().trim();
+  return SUPER_ADMIN_EMAILS.some(adminEmail => adminEmail.toLowerCase().trim() === cleanEmail);
+}
 
 export function useIsAdmin() {
   const { user, isUserLoading } = useUser();
@@ -19,7 +28,7 @@ export function useIsAdmin() {
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
 
   const isSuperAdmin = useMemo(() => {
-    return Boolean(user?.email && SUPER_ADMINS.includes(user.email));
+    return isSuperAdminEmail(user?.email);
   }, [user]);
 
   const isAdmin = useMemo(() => {

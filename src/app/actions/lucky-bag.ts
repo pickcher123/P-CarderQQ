@@ -2,6 +2,7 @@
 
 import { adminDb } from '@/lib/firebase-admin';
 import * as admin from 'firebase-admin';
+import { isSuperAdminEmail } from '@/hooks/use-is-admin';
 
 export async function resetLuckyBagParticipants(userId: string, luckyBagId: string) {
   try {
@@ -9,7 +10,7 @@ export async function resetLuckyBagParticipants(userId: string, luckyBagId: stri
     const userSnap = await adminDb.collection('users').doc(userId).get();
     if (!userSnap.exists) throw new Error('使用者不存在');
     const userData = userSnap.data();
-    if (userData?.email !== 'pickcher123@gmail.com') {
+    if (!isSuperAdminEmail(userData?.email)) {
       throw new Error('只有超級管理員可以執行此操作');
     }
 

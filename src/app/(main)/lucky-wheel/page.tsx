@@ -5,6 +5,7 @@ import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@
 import { collection, doc, setDoc, addDoc, deleteDoc, updateDoc, query, orderBy, serverTimestamp, getDoc } from 'firebase/firestore';
 import confetti from 'canvas-confetti';
 import type { UserProfile } from '@/types/user-profile';
+import { isSuperAdminEmail } from '@/hooks/use-is-admin';
 import { 
     Disc3, 
     Sparkles, 
@@ -401,7 +402,7 @@ export default function LuckyWheelFrontendPage() {
     const firestore = useFirestore();
     const { toast } = useToast();
 
-    const isSuperAdmin = Boolean(user?.email && user.email.toLowerCase().trim() === 'pickcher123@gmail.com');
+    const isSuperAdmin = isSuperAdminEmail(user?.email);
 
     const userProfileRef = useMemoFirebase(() => {
         if (!firestore || !user) return null;

@@ -23,6 +23,7 @@ import { useFeatureFlags } from '@/hooks/use-feature-flags';
 import { RefinedPoints } from '@/components/ui/refined-points';
 import { SafeImage } from '@/components/safe-image';
 import { BonusDoubleTicker } from '@/components/events/bonus-double-banner';
+import { isSuperAdminEmail } from '@/hooks/use-is-admin';
 
 const navLinks = [
   { href: '/draw', label: '抽卡', icon: Package, color: "text-cyan-400", flag: 'isDrawEnabled' },
@@ -71,7 +72,7 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
   const levelInfo = userLevels.find(l => l.level === currentLevel) || userLevels[0];
   const LevelIcon = levelInfo.icon || Award;
   const isHighTier = currentLevel === '傳奇收藏家' || currentLevel === 'P+卡神' || currentLevel === '殿堂級玩家' || currentLevel === '卡牌大師';
-  const isUserAdmin = Boolean(user && (userProfile?.role === 'admin' || (user.email && user.email.toLowerCase().trim() === 'pickcher123@gmail.com')));
+  const isUserAdmin = Boolean(user && (userProfile?.role === 'admin' || isSuperAdminEmail(user.email)));
 
   return (
     <div className="sticky top-0 z-40 w-full border-b border-white/[0.08] bg-[#070b14]/85 backdrop-blur-2xl relative">
@@ -115,10 +116,10 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
         
         <div className="flex items-center justify-end gap-1.5 sm:gap-2.5 shrink-0 ml-auto">
             {isUserAdmin && (
-              <Button variant="outline" size="sm" asChild className="hidden lg:flex h-8 px-3 rounded-xl border-destructive/40 text-destructive bg-destructive/5 hover:bg-destructive/15">
+              <Button variant="outline" size="sm" asChild className="hidden md:flex h-8 px-3 rounded-xl border-amber-500/40 text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 shadow-[0_0_10px_rgba(245,158,11,0.2)]">
                 <Link href="/admin">
-                  <ShieldCheck className="mr-1.5 h-3.5 w-3.5" />
-                  管理後台
+                  <ShieldCheck className="mr-1.5 h-3.5 w-3.5 text-amber-400" />
+                  <span>管理後台</span>
                 </Link>
               </Button>
             )}
@@ -339,13 +340,16 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                       <DropdownMenuSeparator className="bg-white/10" />
 
                       {/* 個人功能選單（手機版純粹精簡：會員中心與關於我們） */}
-                      <div className="p-1 space-y-0.5">
+                      <div className="p-1 space-y-1">
                           {isUserAdmin && (
                             <>
-                              <DropdownMenuItem asChild className="rounded-xl focus:bg-destructive/15 focus:text-destructive text-destructive font-bold cursor-pointer">
-                                  <Link href="/admin">
-                                      <ShieldCheck className="mr-2.5 h-4 w-4" />
-                                      <span>後台管理中心</span>
+                              <DropdownMenuItem asChild className="rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30 cursor-pointer shadow-[0_0_12px_rgba(245,158,11,0.15)] py-2">
+                                  <Link href="/admin" className="flex items-center justify-between w-full">
+                                      <div className="flex items-center">
+                                          <ShieldCheck className="mr-2 h-4 w-4 text-amber-400" />
+                                          <span>後台管理中心</span>
+                                      </div>
+                                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono font-bold tracking-wider border border-amber-500/30">ADMIN</span>
                                   </Link>
                               </DropdownMenuItem>
                               <DropdownMenuItem asChild className="hidden sm:flex rounded-xl focus:bg-purple-500/15 focus:text-purple-300 text-purple-400 font-bold cursor-pointer">

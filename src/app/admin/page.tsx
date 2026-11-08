@@ -53,7 +53,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 
 interface GenericDoc { id: string; [key: string]: any; }
 
-const SUPER_ADMIN_EMAIL = 'pickcher123@gmail.com';
+import { isSuperAdminEmail } from "@/hooks/use-is-admin";
 const WIPE_PASSWORD = '90301251';
 
 const QUICK_ACTIONS = [
@@ -361,9 +361,7 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const isSuperAdmin = Boolean(
-    currentUser?.email && currentUser.email.toLowerCase().trim() === SUPER_ADMIN_EMAIL.toLowerCase().trim()
-  );
+  const isSuperAdmin = isSuperAdminEmail(currentUser?.email);
 
   const totalUsers = users?.length ?? 0;
   const adminUsers = users?.filter((u: any) => u.role === 'admin').length ?? 0;
