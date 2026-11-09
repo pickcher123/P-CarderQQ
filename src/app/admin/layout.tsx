@@ -144,7 +144,9 @@ function SidebarNav({
 
   const canView = (permission: string | null) => {
     if (isSuperAdmin || !permission) return true;
-    return permissions?.includes(permission);
+    // 若管理員尚未被特別限制（permissions 為空或未定義），預設具備全模組存取權
+    if (!permissions || permissions.length === 0) return true;
+    return permissions.includes(permission);
   };
 
   const filterText = (searchFilter || '').trim().toLowerCase();
@@ -351,6 +353,13 @@ export default function AdminLayout({
     return sidebarNavItems.find(s => s.items.some(i => i.href === pathname || (i.href !== '/admin' && pathname.startsWith(i.href))));
   }, [pathname]);
 
+  const isUserAdmin = Boolean(
+    isSuperAdmin || 
+    userProfile?.role?.toLowerCase() === 'admin' || 
+    userProfile?.role?.toLowerCase() === 'superadmin' ||
+    userProfile?.isAdmin === true
+  );
+
   // 超級管理員無需等待 userProfile 載入即可通行；一般使用者才等待 profile
   if (isUserLoading || (!isSuperAdmin && isProfileLoading)) {
     return (
@@ -360,7 +369,7 @@ export default function AdminLayout({
     );
   }
 
-  if (!user || (!isSuperAdmin && (!userProfile || userProfile.role !== 'admin'))) {
+  if (!user || !isUserAdmin) {
     return (
       <div className="flex h-screen flex-col items-center justify-center text-center bg-slate-900/50 backdrop-blur-sm p-4">
         <div className="w-full max-w-md bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-200 text-slate-900 flex flex-col items-center animate-in fade-in zoom-in-95 duration-200">
@@ -430,7 +439,7 @@ export default function AdminLayout({
     .find(i => pathname === i.href || pathname.startsWith(i.href + '/'))
     ?.permission;
 
-  if (pagePermission && !isSuperAdmin && !userProfile?.permissions?.includes(pagePermission)) {
+  if (pagePermission && !isSuperAdmin && userProfile?.permissions && userProfile.permissions.length > 0 && !userProfile.permissions.includes(pagePermission)) {
     return (
       <div className="flex h-screen flex-col items-center justify-center text-center bg-white p-6">
         <h1 className="text-xl font-bold text-slate-900">模組授權不足</h1>

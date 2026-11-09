@@ -33,7 +33,8 @@ export function useIsAdmin() {
 
   const isAdmin = useMemo(() => {
     if (isSuperAdmin) return true;
-    return userProfile?.role === 'admin';
+    const role = userProfile?.role?.toLowerCase();
+    return role === 'admin' || role === 'superadmin' || userProfile?.isAdmin === true;
   }, [isSuperAdmin, userProfile]);
 
   return {

@@ -285,9 +285,13 @@ function LoginContent() {
         }
         
         const redirectParam = searchParams.get('redirect');
+        const userDocData = userSnap.data();
+        const role = userDocData?.role?.toLowerCase();
+        const isAdminUser = Boolean(isSuper || role === 'admin' || role === 'superadmin' || userDocData?.isAdmin === true);
+
         if (redirectParam && redirectParam.startsWith('/')) {
             router.push(redirectParam);
-        } else if (isSuper) {
+        } else if (isAdminUser) {
             router.push('/admin');
         } else {
             router.push('/profile');

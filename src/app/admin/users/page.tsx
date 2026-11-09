@@ -1,7 +1,7 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { useCollection, useRequest, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, doc, updateDoc, writeBatch, serverTimestamp, increment, where, limit } from 'firebase/firestore';
+import { collection, query, doc, updateDoc, setDoc, deleteDoc, writeBatch, serverTimestamp, increment, where, limit } from 'firebase/firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
@@ -31,7 +31,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
-import { Loader2, User as UserIcon, Gem, MapPin, Search, UserCheck, Briefcase, Mail, Ticket, Send, Sparkles, Clock, LogIn } from 'lucide-react';
+import { Loader2, User as UserIcon, Gem, MapPin, Search, UserCheck, Briefcase, Mail, Ticket, Send, Sparkles, Clock, LogIn, ShieldCheck } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -343,8 +343,39 @@ function ToggleRoleDialog({ user, onUpdate }: { user: UserProfile, onUpdate: () 
         setIsProcessing(true);
         const newRole = user.role === 'admin' ? 'user' : 'admin';
         try {
-            await updateDoc(doc(firestore, 'users', user.id), { role: newRole });
-            toast({ title: '角色已變更' });
+            const batch = writeBatch(firestore);
+            const userDocRef = doc(firestore, 'users', user.id);
+            const adminDocRef = doc(firestore, 'admins', user.id);
+
+            if (newRole === 'admin') {
+                const fullPermissions = (user.permissions && user.permissions.length > 0)
+                    ? user.permissions
+                    : PERMISSION_ITEMS.map(p => p.id);
+
+                batch.update(userDocRef, { 
+                    role: 'admin',
+                    isAdmin: true,
+                    permissions: fullPermissions,
+                    updatedAt: serverTimestamp()
+                });
+                batch.set(adminDocRef, {
+                    uid: user.id,
+                    email: user.email || '',
+                    username: user.username || '',
+                    role: 'admin',
+                    updatedAt: serverTimestamp()
+                }, { merge: true });
+            } else {
+                batch.update(userDocRef, { 
+                    role: 'user',
+                    isAdmin: false,
+                    updatedAt: serverTimestamp()
+                });
+                batch.delete(adminDocRef);
+            }
+
+            await batch.commit();
+            toast({ title: newRole === 'admin' ? '已成功設為管理員並開通全部模組' : '已將角色切換為一般會員' });
             onUpdate();
         } catch (error) {
             console.error(error);
@@ -469,8 +500,26 @@ function ModifyPermissionsDialog({ user, onUpdate }: { user: UserProfile, onUpda
         if(!firestore) return;
         setIsProcessing(true);
         try {
-            await updateDoc(doc(firestore, 'users', user.id), { permissions });
-            toast({ title: '權限已更新' });
+            const batch = writeBatch(firestore);
+            const userDocRef = doc(firestore, 'users', user.id);
+            const adminDocRef = doc(firestore, 'admins', user.id);
+
+            batch.update(userDocRef, { 
+                permissions,
+                role: 'admin',
+                isAdmin: true,
+                updatedAt: serverTimestamp()
+            });
+            batch.set(adminDocRef, {
+                uid: user.id,
+                email: user.email || '',
+                username: user.username || '',
+                role: 'admin',
+                updatedAt: serverTimestamp()
+            }, { merge: true });
+
+            await batch.commit();
+            toast({ title: '模組權限已更新並同步至管理員清冊' });
             onUpdate();
             setIsOpen(false);
         } catch (error) {
@@ -1118,6 +1167,54 @@ export default function UsersAdminPage() {
   const [isEventDispatchOpen, setIsEventDispatchOpen] = useState(false);
   const [isEventLogsOpen, setIsEventLogsOpen] = useState(false);
   const isSuperAdmin = isSuperAdminEmail(currentUser?.email);
+  const [isSyncingAdmins, setIsSyncingAdmins] = useState(false);
+
+  const handleSyncAllAdmins = async () => {
+    if (!firestore || !users) return;
+    setIsSyncingAdmins(true);
+    try {
+      const batch = writeBatch(firestore);
+      let count = 0;
+      const allModuleIds = PERMISSION_ITEMS.map(p => p.id);
+
+      for (const u of users) {
+        const isAdm = u.role?.toLowerCase() === 'admin' || isSuperAdminEmail(u.email);
+        if (isAdm) {
+          const userDocRef = doc(firestore, 'users', u.id);
+          const adminDocRef = doc(firestore, 'admins', u.id);
+          
+          batch.update(userDocRef, {
+            role: 'admin',
+            isAdmin: true,
+            permissions: allModuleIds,
+            updatedAt: serverTimestamp()
+          });
+
+          batch.set(adminDocRef, {
+            uid: u.id,
+            email: u.email || '',
+            username: u.username || '',
+            role: 'admin',
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+
+          count++;
+        }
+      }
+
+      await batch.commit();
+      toast({
+        title: '✅ 全體管理員權限已修復同步',
+        description: `已為 ${count} 位管理員補齊全部 25 個後台模組授權並同步至安全清冊！`
+      });
+      forceRefetch?.();
+    } catch (err: any) {
+      console.error(err);
+      toast({ variant: 'destructive', title: '同步失敗', description: err?.message || '請稍後再試' });
+    } finally {
+      setIsSyncingAdmins(false);
+    }
+  };
 
   const usersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'users'), limit(50)) : null, [firestore]);
   const { data: users, isLoading, forceRefetch } = useCollection<UserProfile>(usersQuery);
@@ -1150,6 +1247,17 @@ export default function UsersAdminPage() {
             <p className="mt-1 text-sm text-slate-600 font-bold">查閱並管理全站會員資料、帳戶資產與活動抽卡券發放。</p>
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full xl:w-auto">
+            {isSuperAdmin && (
+              <Button
+                variant="outline"
+                onClick={handleSyncAllAdmins}
+                disabled={isSyncingAdmins}
+                className="h-11 sm:h-12 px-4 rounded-2xl font-black border-amber-300 text-amber-900 bg-amber-50 hover:bg-amber-100 flex items-center gap-2 shadow-xs cursor-pointer"
+              >
+                {isSyncingAdmins ? <Loader2 className="w-4 h-4 animate-spin text-amber-600" /> : <ShieldCheck className="w-4 h-4 text-amber-600" />}
+                <span>一鍵修復全體管理員權限</span>
+              </Button>
+            )}
             <Button
                 onClick={() => setIsEventDispatchOpen(true)}
                 className="h-11 sm:h-12 px-4 rounded-2xl font-black bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 shadow-md flex items-center gap-2"

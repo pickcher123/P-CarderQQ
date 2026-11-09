@@ -410,7 +410,12 @@ export default function LuckyWheelFrontendPage() {
     }, [firestore, user]);
 
     const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
-    const isAdmin = isSuperAdmin || userProfile?.role === 'admin';
+    const isAdmin = Boolean(
+        isSuperAdmin || 
+        userProfile?.role?.toLowerCase() === 'admin' || 
+        userProfile?.role?.toLowerCase() === 'superadmin' || 
+        userProfile?.isAdmin === true
+    );
 
     // 🎪 活動專區分類選單狀態 (轉盤大福袋 / 一番賞 / 估價王 / 九宮格盲盒)
     const [activeEventTab, setActiveEventTab] = useState<EventTabType>('wheel');

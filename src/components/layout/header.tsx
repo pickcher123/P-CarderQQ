@@ -71,8 +71,13 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
   const currentLevel = userProfile?.userLevel || '新手收藏家';
   const levelInfo = userLevels.find(l => l.level === currentLevel) || userLevels[0];
   const LevelIcon = levelInfo.icon || Award;
-  const isHighTier = currentLevel === '傳奇收藏家' || currentLevel === 'P+卡神' || currentLevel === '殿堂級玩家' || currentLevel === '卡牌大師';
-  const isUserAdmin = Boolean(user && (userProfile?.role === 'admin' || isSuperAdminEmail(user.email)));
+  const isHighTier = Boolean(levelInfo && (levelInfo.threshold ?? 0) >= 100000);
+  const isUserAdmin = Boolean(user && (
+    isSuperAdminEmail(user.email) ||
+    userProfile?.role?.toLowerCase() === 'admin' ||
+    userProfile?.role?.toLowerCase() === 'superadmin' ||
+    userProfile?.isAdmin === true
+  ));
 
   return (
     <div className="sticky top-0 z-40 w-full border-b border-white/[0.08] bg-[#070b14]/85 backdrop-blur-2xl relative">

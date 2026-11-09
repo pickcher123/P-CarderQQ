@@ -293,7 +293,7 @@ export function EventTicketDispatchDialog({
                                                     <div className="truncate">
                                                         <div className="text-xs font-bold text-white truncate flex items-center gap-1.5">
                                                             {u.username || '未命名玩家'}
-                                                            {u.role === 'admin' && (
+                                                            {(u.role?.toLowerCase() === 'admin' || u.role?.toLowerCase() === 'superadmin' || u.isAdmin === true) && (
                                                                 <Badge className="bg-purple-500/20 text-purple-300 text-[9px] px-1 py-0">管理員</Badge>
                                                             )}
                                                         </div>
