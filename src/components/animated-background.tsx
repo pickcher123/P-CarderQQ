@@ -125,3 +125,5 @@ export function AnimatedBackground({
     </div>
   );
 }
+
+export default AnimatedBackground;
