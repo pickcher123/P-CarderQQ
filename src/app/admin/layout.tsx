@@ -353,7 +353,7 @@ export default function AdminLayout({
     return sidebarNavItems.find(s => s.items.some(i => i.href === pathname || (i.href !== '/admin' && pathname.startsWith(i.href))));
   }, [pathname]);
 
-  const { isAdmin: isHookAdmin } = useIsAdmin();
+  const { isAdmin: isHookAdmin, isLoading: isHookAdminLoading } = useIsAdmin();
 
   const isUserAdmin = Boolean(
     isSuperAdmin || 
@@ -363,8 +363,8 @@ export default function AdminLayout({
     userProfile?.isAdmin === true
   );
 
-  // 超級管理員無需等待 userProfile 載入即可通行；一般使用者才等待 profile
-  if (isUserLoading || (!isSuperAdmin && isProfileLoading)) {
+  // 超級管理員無需等待載入即可通行；一般使用者等待 profile 與 hook 驗證完畢（若已確認管理員身分則直接放行）
+  if (isUserLoading || (!isSuperAdmin && !isUserAdmin && (isProfileLoading || isHookAdminLoading))) {
     return (
       <div className="flex h-screen items-center justify-center bg-white">
         <LoadingSpinner />

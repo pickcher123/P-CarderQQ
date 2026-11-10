@@ -124,11 +124,10 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
         
         <div className="flex items-center justify-end gap-1.5 sm:gap-2.5 shrink-0 ml-auto">
             {isUserAdmin && (
-              <Button variant="outline" size="sm" asChild className="flex h-8 px-2 sm:px-3 rounded-xl border-amber-500/40 text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 shadow-[0_0_10px_rgba(245,158,11,0.2)] shrink-0">
+              <Button variant="outline" size="sm" asChild className="hidden md:flex h-8 px-3 rounded-xl border-amber-500/40 text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 shadow-[0_0_10px_rgba(245,158,11,0.2)] shrink-0">
                 <Link href="/admin" className="flex items-center">
-                  <ShieldCheck className="h-3.5 w-3.5 text-amber-400 sm:mr-1.5 shrink-0" />
-                  <span className="hidden sm:inline">管理後台</span>
-                  <span className="sm:hidden text-xs font-bold ml-1">後台</span>
+                  <ShieldCheck className="h-3.5 w-3.5 text-amber-400 mr-1.5 shrink-0" />
+                  <span>管理後台</span>
                 </Link>
               </Button>
             )}

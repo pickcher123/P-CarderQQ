@@ -1,8 +1,8 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import type { UserProfile } from '@/types/user-profile';
 
 export const SUPER_ADMIN_EMAILS = [
@@ -67,11 +67,49 @@ export function useIsAdmin() {
     return false;
   }, [isSuperAdmin, userProfile, adminDoc, adminEmailDoc, user?.uid]);
 
+  // 當被指派的管理員登入時，自動同步確保 users/{uid} 與 admins/{uid} 皆具備完整管理員標記
+  useEffect(() => {
+    if (!firestore || !user || !isAdmin) return;
+
+    const needsUserSync = userProfile && (userProfile.role !== 'admin' || !userProfile.isAdmin);
+    const needsAdminDocSync = !adminDoc;
+
+    if (needsUserSync || needsAdminDocSync) {
+      try {
+        const cleanEmail = user.email?.toLowerCase().trim() || '';
+        // 同步更新 users/{user.uid}
+        setDoc(doc(firestore, 'users', user.uid), {
+          role: 'admin',
+          isAdmin: true,
+          updatedAt: serverTimestamp(),
+        }, { merge: true }).catch(() => {});
+
+        // 同步更新 admins/{user.uid}
+        setDoc(doc(firestore, 'admins', user.uid), {
+          uid: user.uid,
+          email: cleanEmail,
+          role: 'admin',
+          isAdmin: true,
+          updatedAt: serverTimestamp(),
+        }, { merge: true }).catch(() => {});
+      } catch (err) {
+        // 忽略背景同步錯誤
+      }
+    }
+  }, [firestore, user, isAdmin, userProfile, adminDoc]);
+
+  // 正確等待所有管理員驗證文件完成讀取，避免網路微秒延遲導致 false negative
+  const isLoading = isUserLoading || (!isSuperAdmin && !isAdmin && (
+    isProfileLoading ||
+    isAdminDocLoading ||
+    (Boolean(cleanEmail) && isAdminEmailDocLoading)
+  ));
+
   return {
     user,
     userProfile,
     isAdmin: Boolean(isAdmin),
     isSuperAdmin,
-    isLoading: isUserLoading || (isProfileLoading && !isSuperAdmin && !isAdmin),
+    isLoading,
   };
 }

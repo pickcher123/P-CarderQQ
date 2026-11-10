@@ -1344,8 +1344,24 @@ export default function UsersAdminPage() {
         if (d.id.includes('@')) adminEmailsFromAdminsCol.add(d.id.toLowerCase().trim());
       });
 
-      const batch = writeBatch(firestore);
+      // 1. 先處理 admins 集合中的所有紀錄，確保全部擁有小寫 email 鍵值與完整 admin 標記
+      adminsSnap.forEach(d => {
+        const data = d.data();
+        const emailFromData = (data.email || (d.id.includes('@') ? d.id : '')).toLowerCase().trim();
+        if (emailFromData) {
+          adminEmailsFromAdminsCol.add(emailFromData);
+          batch.set(doc(firestore, 'admins', emailFromData), {
+            email: emailFromData,
+            uid: data.uid || (d.id.includes('@') ? '' : d.id),
+            role: 'admin',
+            isAdmin: true,
+            permissions: allModuleIds,
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+        }
+      });
 
+      // 2. 遍歷全站使用者，凡符合信箱或 UID 或標記為管理員者，立即補齊全模組權限
       usersSnap.forEach(uDoc => {
         const u = uDoc.data();
         const cleanEmail = u.email?.toLowerCase()?.trim() || '';
@@ -1354,8 +1370,8 @@ export default function UsersAdminPage() {
           u.role?.toLowerCase() === 'superadmin' || 
           u.isAdmin === true || 
           isSuperAdminEmail(u.email) ||
-          adminEmailsFromAdminsCol.has(cleanEmail) ||
-          adminsSnap.docs.some(ad => ad.id === uDoc.id);
+          (cleanEmail && adminEmailsFromAdminsCol.has(cleanEmail)) ||
+          adminsSnap.docs.some(ad => ad.id === uDoc.id || ad.data()?.email?.toLowerCase()?.trim() === cleanEmail);
 
         if (isAdm) {
           const userDocRef = doc(firestore, 'users', uDoc.id);
@@ -1374,6 +1390,7 @@ export default function UsersAdminPage() {
             username: u.username || '',
             role: 'admin',
             isAdmin: true,
+            permissions: allModuleIds,
             updatedAt: serverTimestamp()
           }, { merge: true });
 
@@ -1381,8 +1398,10 @@ export default function UsersAdminPage() {
             batch.set(doc(firestore, 'admins', cleanEmail), {
               uid: uDoc.id,
               email: cleanEmail,
+              username: u.username || '',
               role: 'admin',
               isAdmin: true,
+              permissions: allModuleIds,
               updatedAt: serverTimestamp()
             }, { merge: true });
           }
