@@ -89,7 +89,7 @@ const sidebarNavItems: NavSection[] = [
       { href: '/admin/betting', label: '拼卡管理', icon: Swords, permission: 'betting', desc: '拼卡項目與選號管理' },
       { href: '/admin/lucky-bags', label: '福袋管理', icon: Ticket, permission: 'lucky-bags', desc: '福袋獎品配置與上架' },
       { href: '/admin/group-breaks', label: '團拆管理', icon: Users2, permission: 'group-breaks', desc: '直播團拆專案建立' },
-      { href: '/admin/lucky-wheel', label: '大轉盤福袋', icon: Disc3, permission: null, desc: '自訂號碼與轉盤抽獎' },
+      { href: '/admin/lucky-wheel', label: '大轉盤福袋', icon: Disc3, permission: 'lucky-bags', desc: '自訂號碼與轉盤抽獎' },
     ]
   },
   { 
@@ -97,7 +97,7 @@ const sidebarNavItems: NavSection[] = [
     badge: '營運',
     items: [
       { href: '/admin/users', label: '會員資訊', icon: UserCircle, permission: 'users', desc: '帳號查詢、權限與點數' },
-      { href: '/admin/login-logs', label: '登入紀錄', icon: LogIn, permission: 'users', desc: '玩家登入時間、IP、裝置與歷程' },
+      { href: '/admin/login-logs', label: '登入紀錄', icon: LogIn, permission: 'login-logs', desc: '玩家登入時間、IP、裝置與歷程' },
       { href: '/admin/shipping', label: '出貨管理', icon: Truck, permission: 'shipping', desc: '實體卡片寄送與單號' },
       { href: '/admin/rewards', label: '會員回饋', icon: Gift, permission: 'rewards', desc: '簽到與紅利兌換商城' },
     ]
@@ -107,7 +107,7 @@ const sidebarNavItems: NavSection[] = [
     badge: '活動',
     items: [
       { href: '/admin/predictions', label: '賽事預測', icon: Activity, permission: 'predictions', desc: '體育與賽事競猜結算' },
-      { href: '/admin/referrals', label: '推薦碼管理', icon: Share2, permission: 'coupons', desc: '好友邀請與專案推廣碼' },
+      { href: '/admin/referrals', label: '推薦碼管理', icon: Share2, permission: 'referrals', desc: '好友邀請與專案推廣碼' },
       { href: '/admin/coupons', label: '優惠券管理', icon: Ticket, permission: 'coupons', desc: '折價券與兌換碼發放' },
       { href: '/admin/news', label: '消息管理', icon: Newspaper, permission: 'news', desc: '最新消息與專題文章' },
       { href: '/admin/announcements', label: '站內公告', icon: Megaphone, permission: 'announcements', desc: '彈出公告與跑馬燈' },
@@ -144,8 +144,9 @@ function SidebarNav({
 
   const canView = (permission: string | null) => {
     if (isSuperAdmin || !permission) return true;
-    // 若管理員尚未被特別限制（permissions 為空或未定義），預設具備全模組存取權
-    if (!permissions || permissions.length === 0) return true;
+    // 若管理員尚未被特別限制（permissions 為 undefined），預設具備全模組存取權
+    if (permissions === undefined) return true;
+    // 一旦管理員被設定了特定權限清單（包含空陣列 []），嚴格依據清單過濾！
     return permissions.includes(permission);
   };
 
@@ -355,12 +356,44 @@ export default function AdminLayout({
 
   const { isAdmin: isHookAdmin, isLoading: isHookAdminLoading } = useIsAdmin();
 
+  // 額外監聽 admins/{user.uid}
+  const adminDocRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, "admins", user.uid);
+  }, [firestore, user]);
+  const { data: adminDoc } = useDoc<any>(adminDocRef);
+
+  // 額外監聽以 email 為鍵名之 admins/{email}
+  const cleanEmail = user?.email?.toLowerCase().trim();
+  const adminEmailDocRef = useMemoFirebase(() => {
+    if (!firestore || !cleanEmail) return null;
+    return doc(firestore, "admins", cleanEmail);
+  }, [firestore, cleanEmail]);
+  const { data: adminEmailDoc } = useDoc<any>(adminEmailDocRef);
+
+  // 統合計算 effectivePermissions：三路完整判定
+  const effectivePermissions: string[] | undefined = useMemo(() => {
+    if (isSuperAdmin) return undefined; // 超級管理員完全無任何模組限制
+    if (userProfile?.permissions !== undefined && Array.isArray(userProfile.permissions)) {
+      return userProfile.permissions;
+    }
+    if (adminDoc?.permissions !== undefined && Array.isArray(adminDoc.permissions)) {
+      return adminDoc.permissions;
+    }
+    if (adminEmailDoc?.permissions !== undefined && Array.isArray(adminEmailDoc.permissions)) {
+      return adminEmailDoc.permissions;
+    }
+    return undefined; // 若皆未特別設定限制，則預設全模組通行
+  }, [isSuperAdmin, userProfile?.permissions, adminDoc?.permissions, adminEmailDoc?.permissions]);
+
   const isUserAdmin = Boolean(
     isSuperAdmin || 
     isHookAdmin ||
     userProfile?.role?.toLowerCase() === 'admin' || 
     userProfile?.role?.toLowerCase() === 'superadmin' ||
-    userProfile?.isAdmin === true
+    userProfile?.isAdmin === true ||
+    adminDoc?.isAdmin === true ||
+    adminEmailDoc?.isAdmin === true
   );
 
   // 超級管理員無需等待載入即可通行；一般使用者等待 profile 與 hook 驗證完畢（若已確認管理員身分則直接放行）
@@ -442,13 +475,25 @@ export default function AdminLayout({
     .find(i => pathname === i.href || pathname.startsWith(i.href + '/'))
     ?.permission;
 
-  if (pagePermission && !isSuperAdmin && userProfile?.permissions && userProfile.permissions.length > 0 && !userProfile.permissions.includes(pagePermission)) {
+  const isDenied = Boolean(
+    pagePermission && 
+    !isSuperAdmin && 
+    effectivePermissions !== undefined && 
+    !effectivePermissions.includes(pagePermission)
+  );
+
+  if (isDenied) {
     return (
       <div className="flex h-screen flex-col items-center justify-center text-center bg-white p-6">
-        <h1 className="text-xl font-bold text-slate-900">模組授權不足</h1>
-        <p className="text-slate-500 mt-2 text-xs">您的管理員帳號尚未被授權存取此特定模組。</p>
-        <Button asChild variant="outline" className="mt-6 rounded-lg text-xs border-slate-200">
-          <Link href="/admin">返回儀表板</Link>
+        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 mb-4 shadow-sm">
+          <ShieldAlert className="h-10 w-10" />
+        </div>
+        <h1 className="text-xl font-black text-slate-900">模組授權不足</h1>
+        <p className="text-slate-500 mt-2 text-xs max-w-sm leading-relaxed">
+          您的管理員帳號尚未被授權存取此特定模組。請聯繫最高主管為您開通相應模組權限。
+        </p>
+        <Button asChild variant="outline" className="mt-6 rounded-xl text-xs font-bold border-slate-200">
+          <Link href="/admin">返回管理儀表板</Link>
         </Button>
       </div>
     );
@@ -504,7 +549,7 @@ export default function AdminLayout({
         <ScrollArea className="flex-grow">
           <SidebarNav 
             isCollapsed={isCollapsed} 
-            permissions={userProfile?.permissions} 
+            permissions={effectivePermissions} 
             isSuperAdmin={isSuperAdmin}
             searchFilter={navSearch}
           />
@@ -563,7 +608,7 @@ export default function AdminLayout({
       {/* Main Content Area */}
       <div className="flex flex-col flex-1 h-screen overflow-hidden">
         <MobileHeader 
-          permissions={userProfile?.permissions} 
+          permissions={effectivePermissions} 
           isSuperAdmin={isSuperAdmin}
           isMaintenanceActive={isMaintenanceActive}
         />

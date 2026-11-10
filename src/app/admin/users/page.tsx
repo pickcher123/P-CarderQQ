@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useCollection, useRequest, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, doc, updateDoc, setDoc, deleteDoc, writeBatch, serverTimestamp, increment, where, limit, getDocs } from 'firebase/firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -510,10 +510,17 @@ function AssignAgentDialog({ user, onUpdate }: { user: UserProfile, onUpdate: ()
 
 function ModifyPermissionsDialog({ user, onUpdate }: { user: UserProfile, onUpdate: () => void }) {
     const [isOpen, setIsOpen] = useState(false);
-    const [permissions, setPermissions] = useState<string[]>(user.permissions || []);
+    const [permissions, setPermissions] = useState<string[]>(Array.isArray(user.permissions) ? user.permissions : PERMISSION_ITEMS.map(p => p.id));
     const [isProcessing, setIsProcessing] = useState(false);
     const firestore = useFirestore();
     const { toast } = useToast();
+
+    const handleOpenChange = (open: boolean) => {
+        setIsOpen(open);
+        if (open) {
+            setPermissions(Array.isArray(user.permissions) ? user.permissions : PERMISSION_ITEMS.map(p => p.id));
+        }
+    };
 
     const handleConfirm = async () => {
         if(!firestore) return;
@@ -526,6 +533,7 @@ function ModifyPermissionsDialog({ user, onUpdate }: { user: UserProfile, onUpda
             const cleanEmail = user.email ? user.email.toLowerCase().trim() : '';
             const adminEmailDocRef = cleanEmail ? doc(firestore, 'admins', cleanEmail) : null;
 
+            // 1. 寫入 users/{user.id}
             batch.set(userDocRef, { 
                 permissions,
                 role: 'admin',
@@ -533,15 +541,18 @@ function ModifyPermissionsDialog({ user, onUpdate }: { user: UserProfile, onUpda
                 updatedAt: serverTimestamp()
             }, { merge: true });
 
+            // 2. 寫入 admins/{user.id}（包含 permissions 欄位）
             batch.set(adminDocRef, {
                 uid: user.id,
                 email: cleanEmail,
                 username: user.username || '',
                 role: 'admin',
                 isAdmin: true,
+                permissions,
                 updatedAt: serverTimestamp()
             }, { merge: true });
 
+            // 3. 寫入 admins/{cleanEmail}（包含 permissions 欄位）
             if (adminEmailDocRef) {
                 batch.set(adminEmailDocRef, {
                     uid: user.id,
@@ -549,12 +560,16 @@ function ModifyPermissionsDialog({ user, onUpdate }: { user: UserProfile, onUpda
                     username: user.username || '',
                     role: 'admin',
                     isAdmin: true,
+                    permissions,
                     updatedAt: serverTimestamp()
                 }, { merge: true });
             }
 
             await batch.commit();
-            toast({ title: '模組權限已更新並同步至管理員清冊' });
+            toast({ 
+                title: '✅ 模組權限已更新並全面生效',
+                description: `已成功將「${user.username}」的授權模組設定為 ${permissions.length} 項！`
+            });
             onUpdate();
             setIsOpen(false);
         } catch (error) {
@@ -574,9 +589,15 @@ function ModifyPermissionsDialog({ user, onUpdate }: { user: UserProfile, onUpda
     // 按分類整理
     const categories = Array.from(new Set(PERMISSION_ITEMS.map(p => p.category)));
 
+    const currentCount = Array.isArray(user.permissions) ? user.permissions.length : PERMISSION_ITEMS.length;
+
     return (
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild><Button variant="outline" size="sm" className="h-8 text-[10px] rounded-lg font-black bg-white border-slate-200 text-slate-700">模組授權</Button></DialogTrigger>
+        <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+            <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 text-[10px] rounded-lg font-black bg-white border-slate-200 text-slate-700 hover:border-slate-300">
+                    模組授權 ({currentCount}/{PERMISSION_ITEMS.length})
+                </Button>
+            </DialogTrigger>
             <DialogContent className="light w-[95vw] md:max-w-2xl max-h-[90vh] rounded-3xl bg-white shadow-2xl border-none text-slate-900 p-0 flex flex-col overflow-hidden">
                 <DialogTitle className="sr-only">管理模組授權</DialogTitle>
                 <DialogHeader className="p-6 border-b border-slate-100 flex flex-row items-center justify-between shrink-0">
@@ -1344,10 +1365,11 @@ export default function UsersAdminPage() {
         if (d.id.includes('@')) adminEmailsFromAdminsCol.add(d.id.toLowerCase().trim());
       });
 
-      // 1. 先處理 admins 集合中的所有紀錄，確保全部擁有小寫 email 鍵值與完整 admin 標記
+      // 1. 先處理 admins 集合中的所有紀錄，確保全部擁有小寫 email 鍵值與完整 admin 標記（保留既有自訂模組權限）
       adminsSnap.forEach(d => {
         const data = d.data();
         const emailFromData = (data.email || (d.id.includes('@') ? d.id : '')).toLowerCase().trim();
+        const customPermissions = Array.isArray(data.permissions) ? data.permissions : allModuleIds;
         if (emailFromData) {
           adminEmailsFromAdminsCol.add(emailFromData);
           batch.set(doc(firestore, 'admins', emailFromData), {
@@ -1355,32 +1377,38 @@ export default function UsersAdminPage() {
             uid: data.uid || (d.id.includes('@') ? '' : d.id),
             role: 'admin',
             isAdmin: true,
-            permissions: allModuleIds,
+            permissions: customPermissions,
             updatedAt: serverTimestamp()
           }, { merge: true });
         }
       });
 
-      // 2. 遍歷全站使用者，凡符合信箱或 UID 或標記為管理員者，立即補齊全模組權限
+      // 2. 遍歷全站使用者，凡符合信箱或 UID 或標記為管理員者，同步管理員身分並保留自訂權限
       usersSnap.forEach(uDoc => {
         const u = uDoc.data();
         const cleanEmail = u.email?.toLowerCase()?.trim() || '';
+        const matchingAdminDoc = adminsSnap.docs.find(ad => ad.id === uDoc.id || ad.id.toLowerCase() === cleanEmail || ad.data()?.email?.toLowerCase()?.trim() === cleanEmail);
         const isAdm = 
           u.role?.toLowerCase() === 'admin' || 
           u.role?.toLowerCase() === 'superadmin' || 
           u.isAdmin === true || 
           isSuperAdminEmail(u.email) ||
           (cleanEmail && adminEmailsFromAdminsCol.has(cleanEmail)) ||
-          adminsSnap.docs.some(ad => ad.id === uDoc.id || ad.data()?.email?.toLowerCase()?.trim() === cleanEmail);
+          Boolean(matchingAdminDoc);
 
         if (isAdm) {
           const userDocRef = doc(firestore, 'users', uDoc.id);
           const adminDocRef = doc(firestore, 'admins', uDoc.id);
           
+          // 保留管理員已特別設定的授權，不強制重置
+          const effectiveUserPermissions = Array.isArray(u.permissions) 
+            ? u.permissions 
+            : (matchingAdminDoc && Array.isArray(matchingAdminDoc.data()?.permissions) ? matchingAdminDoc.data().permissions : allModuleIds);
+
           batch.set(userDocRef, {
             role: 'admin',
             isAdmin: true,
-            permissions: allModuleIds,
+            permissions: effectiveUserPermissions,
             updatedAt: serverTimestamp()
           }, { merge: true });
 
@@ -1390,7 +1418,7 @@ export default function UsersAdminPage() {
             username: u.username || '',
             role: 'admin',
             isAdmin: true,
-            permissions: allModuleIds,
+            permissions: effectiveUserPermissions,
             updatedAt: serverTimestamp()
           }, { merge: true });
 
@@ -1401,7 +1429,7 @@ export default function UsersAdminPage() {
               username: u.username || '',
               role: 'admin',
               isAdmin: true,
-              permissions: allModuleIds,
+              permissions: effectiveUserPermissions,
               updatedAt: serverTimestamp()
             }, { merge: true });
           }
