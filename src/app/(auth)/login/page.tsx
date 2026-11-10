@@ -192,8 +192,40 @@ function LoginContent() {
       .then(async (cred) => {
         if (cred?.user) {
           recordUserLoginEvent(cred.user.uid, cred.user.email, cred.user.displayName, cred.user.photoURL, 'email');
+          
+          try {
+            const isSuper = isSuperAdminEmail(cred.user.email);
+            const userRef = doc(firestore, 'users', cred.user.uid);
+            const adminRef = doc(firestore, 'admins', cred.user.uid);
+            const [userSnap, adminSnap] = await Promise.all([
+              getDoc(userRef).catch(() => null),
+              getDoc(adminRef).catch(() => null),
+            ]);
+            
+            const userData = userSnap?.data();
+            const role = userData?.role?.toLowerCase();
+            const isAdminUser = Boolean(
+              isSuper ||
+              role === 'admin' ||
+              role === 'superadmin' ||
+              userData?.isAdmin === true ||
+              (adminSnap && adminSnap.exists())
+            );
+
+            const redirectParam = searchParams.get('redirect');
+            if (redirectParam && redirectParam.startsWith('/')) {
+              router.push(redirectParam);
+            } else if (isAdminUser) {
+              router.push('/admin');
+            } else {
+              router.push('/profile');
+            }
+          } catch {
+            router.push('/profile');
+          }
+        } else {
+          router.push('/profile');
         }
-        router.push('/profile');
       })
       .catch((error) => {
         if (error instanceof FirebaseError) {

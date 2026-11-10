@@ -35,9 +35,11 @@ import {
     Shield,
     AlertCircle,
     Settings,
-    Award
+    Award,
+    ShieldCheck
 } from 'lucide-react';
 import { PPlusIcon, DiamondIcon } from "@/components/icons";
+import { useIsAdmin } from "@/hooks/use-is-admin";
 import { useUser, useDoc, useFirestore, useMemoFirebase, useCollection } from "@/firebase";
 import { doc, collection, increment, runTransaction, query, where, limit, updateDoc, serverTimestamp, orderBy, writeBatch, getDocs } from "firebase/firestore";
 import { format } from 'date-fns';
@@ -663,6 +665,8 @@ export default function UnifiedMemberCenterPage() {
 
     const userProfileRef = useMemoFirebase(() => (firestore && user && isMounted) ? doc(firestore, "users", user.uid) : null, [firestore, user, isMounted]);
     const { data: userProfile, isLoading: isProfileLoading, error: profileError } = useDoc<UserProfile>(userProfileRef);
+    const { isAdmin: isHookAdmin, isSuperAdmin } = useIsAdmin();
+    const isUserAdmin = Boolean(isHookAdmin || isSuperAdmin || userProfile?.role?.toLowerCase() === 'admin' || userProfile?.isAdmin === true);
 
     const systemConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'systemConfig', 'main') : null, [firestore]);
     const { data: systemConfig } = useDoc<SystemConfig>(systemConfigRef);
@@ -1028,6 +1032,40 @@ export default function UnifiedMemberCenterPage() {
         <div className="container py-8 sm:py-12 md:py-16 max-w-7xl relative text-white">
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[450px] bg-cyan-500/5 blur-[120px] pointer-events-none" />
             <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.02] pointer-events-none" />
+
+            {/* 👑 管理員後台專屬入口 (只要具備管理員權限立即呈現) */}
+            {isUserAdmin && (
+              <div className="relative z-10 mb-6 sm:mb-8 p-4 sm:p-6 rounded-[1.5rem] bg-gradient-to-r from-amber-950/80 via-slate-900/90 to-amber-950/80 border-2 border-amber-500/50 shadow-[0_0_30px_rgba(245,158,11,0.25)] flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5 text-left w-full sm:w-auto">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(245,158,11,0.3)]">
+                    <ShieldCheck className="w-6 h-6 text-amber-400" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-base sm:text-lg font-black text-amber-300">
+                        {isSuperAdmin ? '系統最高管理員權限已開通' : '系統後台管理權限已開通'}
+                      </h2>
+                      <Badge className="bg-amber-500 text-slate-950 font-black text-[9px] px-1.5 py-0.5 border-none shadow-xs">
+                        ADMIN ACCESS
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-slate-300 font-medium mt-0.5">
+                      您具備管理後台存取權限，可直接點擊進入營運總覽與各項功能模組。
+                    </p>
+                  </div>
+                </div>
+                <Button 
+                  asChild
+                  className="w-full sm:w-auto shrink-0 h-11 px-6 rounded-xl font-black bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 shadow-[0_0_20px_rgba(245,158,11,0.4)] hover:brightness-110 active:scale-95 transition-all text-sm flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Link href="/admin">
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>進入後台管理中心</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </Link>
+                </Button>
+              </div>
+            )}
 
             {/* 頂部尊榮會員資訊橫幅 */}
             <div className="relative z-10 mb-6 sm:mb-10 p-4 sm:p-6 md:p-8 rounded-[1.75rem] md:rounded-[2.5rem] bg-gradient-to-b from-[#13192a]/95 via-[#0c101d]/90 to-[#080b14]/95 border border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.6)] backdrop-blur-2xl">

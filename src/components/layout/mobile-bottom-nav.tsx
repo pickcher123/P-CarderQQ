@@ -10,12 +10,13 @@ import {
   NavGroupBreakIcon, 
   NavCollectionIcon 
 } from "@/components/icons";
-import { Trophy, Calendar, Gift } from "lucide-react";
+import { Trophy, Calendar, Gift, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { SystemConfig } from '@/types/system';
 import { useFeatureFlags } from '@/hooks/use-feature-flags';
 import { PromoRedeemModal } from '@/components/events/PromoRedeemModal';
 import { useToast } from '@/hooks/use-toast';
+import { useIsAdmin } from '@/hooks/use-is-admin';
 
 interface MobileBottomNavProps {
   systemConfig?: SystemConfig | null;
@@ -41,6 +42,7 @@ export function MobileBottomNav({ systemConfig }: MobileBottomNavProps) {
   const [isPromoModalOpen, setIsPromoModalOpen] = useState(false);
   const { toast } = useToast();
   const { isFeatureEnabled } = useFeatureFlags(systemConfig);
+  const { isAdmin } = useIsAdmin();
 
   useEffect(() => {
     setIsMounted(true);
@@ -111,6 +113,16 @@ export function MobileBottomNav({ systemConfig }: MobileBottomNavProps) {
       activeBg: "bg-white/[0.08] border-white/10 text-white",
       dotColor: "bg-sky-400" 
     },
+    ...(isAdmin ? [{
+      id: 'admin',
+      href: '/admin',
+      label: '管理後台',
+      icon: ShieldCheck,
+      activeColor: "text-amber-400",
+      activeBg: "bg-amber-500/20 border-amber-500/40 text-amber-300",
+      dotColor: "bg-amber-400",
+      badge: 'ADMIN',
+    }] : []),
   ];
 
   // 根據管理員後台開放區域多寡動態過濾項目（利用本地快取保證重新整理時 0ms 響應，絕不閃爍）

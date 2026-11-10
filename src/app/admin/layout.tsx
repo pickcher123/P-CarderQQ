@@ -50,7 +50,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 
-import { isSuperAdminEmail } from "@/hooks/use-is-admin";
+import { isSuperAdminEmail, useIsAdmin } from "@/hooks/use-is-admin";
 
 interface NavItem {
   href: string;
@@ -353,8 +353,11 @@ export default function AdminLayout({
     return sidebarNavItems.find(s => s.items.some(i => i.href === pathname || (i.href !== '/admin' && pathname.startsWith(i.href))));
   }, [pathname]);
 
+  const { isAdmin: isHookAdmin } = useIsAdmin();
+
   const isUserAdmin = Boolean(
     isSuperAdmin || 
+    isHookAdmin ||
     userProfile?.role?.toLowerCase() === 'admin' || 
     userProfile?.role?.toLowerCase() === 'superadmin' ||
     userProfile?.isAdmin === true

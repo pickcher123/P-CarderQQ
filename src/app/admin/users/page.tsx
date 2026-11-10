@@ -1,7 +1,7 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { useCollection, useRequest, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, doc, updateDoc, setDoc, deleteDoc, writeBatch, serverTimestamp, increment, where, limit } from 'firebase/firestore';
+import { collection, query, doc, updateDoc, setDoc, deleteDoc, writeBatch, serverTimestamp, increment, where, limit, getDocs } from 'firebase/firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
@@ -347,31 +347,50 @@ function ToggleRoleDialog({ user, onUpdate }: { user: UserProfile, onUpdate: () 
             const userDocRef = doc(firestore, 'users', user.id);
             const adminDocRef = doc(firestore, 'admins', user.id);
 
+            const cleanEmail = user.email ? user.email.toLowerCase().trim() : '';
+            const adminEmailDocRef = cleanEmail ? doc(firestore, 'admins', cleanEmail) : null;
+
             if (newRole === 'admin') {
                 const fullPermissions = (user.permissions && user.permissions.length > 0)
                     ? user.permissions
                     : PERMISSION_ITEMS.map(p => p.id);
 
-                batch.update(userDocRef, { 
+                batch.set(userDocRef, { 
                     role: 'admin',
                     isAdmin: true,
                     permissions: fullPermissions,
                     updatedAt: serverTimestamp()
-                });
+                }, { merge: true });
+
                 batch.set(adminDocRef, {
                     uid: user.id,
-                    email: user.email || '',
+                    email: cleanEmail,
                     username: user.username || '',
                     role: 'admin',
+                    isAdmin: true,
                     updatedAt: serverTimestamp()
                 }, { merge: true });
+
+                if (adminEmailDocRef) {
+                    batch.set(adminEmailDocRef, {
+                        uid: user.id,
+                        email: cleanEmail,
+                        username: user.username || '',
+                        role: 'admin',
+                        isAdmin: true,
+                        updatedAt: serverTimestamp()
+                    }, { merge: true });
+                }
             } else {
-                batch.update(userDocRef, { 
+                batch.set(userDocRef, { 
                     role: 'user',
                     isAdmin: false,
                     updatedAt: serverTimestamp()
-                });
+                }, { merge: true });
                 batch.delete(adminDocRef);
+                if (adminEmailDocRef) {
+                    batch.delete(adminEmailDocRef);
+                }
             }
 
             await batch.commit();
@@ -504,19 +523,35 @@ function ModifyPermissionsDialog({ user, onUpdate }: { user: UserProfile, onUpda
             const userDocRef = doc(firestore, 'users', user.id);
             const adminDocRef = doc(firestore, 'admins', user.id);
 
-            batch.update(userDocRef, { 
+            const cleanEmail = user.email ? user.email.toLowerCase().trim() : '';
+            const adminEmailDocRef = cleanEmail ? doc(firestore, 'admins', cleanEmail) : null;
+
+            batch.set(userDocRef, { 
                 permissions,
                 role: 'admin',
                 isAdmin: true,
                 updatedAt: serverTimestamp()
-            });
+            }, { merge: true });
+
             batch.set(adminDocRef, {
                 uid: user.id,
-                email: user.email || '',
+                email: cleanEmail,
                 username: user.username || '',
                 role: 'admin',
+                isAdmin: true,
                 updatedAt: serverTimestamp()
             }, { merge: true });
+
+            if (adminEmailDocRef) {
+                batch.set(adminEmailDocRef, {
+                    uid: user.id,
+                    email: cleanEmail,
+                    username: user.username || '',
+                    role: 'admin',
+                    isAdmin: true,
+                    updatedAt: serverTimestamp()
+                }, { merge: true });
+            }
 
             await batch.commit();
             toast({ title: '模組權限已更新並同步至管理員清冊' });
@@ -1160,6 +1195,126 @@ function BatchGrantFreeTicketsDialog({ onComplete }: { onComplete: () => void })
     );
 }
 
+function QuickGrantAdminDialog({ onUpdate }: { onUpdate: () => void }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [targetEmail, setTargetEmail] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const firestore = useFirestore();
+  const { toast } = useToast();
+
+  const handleGrant = async () => {
+    if (!firestore || !targetEmail.trim()) return;
+    const cleanEmail = targetEmail.trim().toLowerCase();
+    setIsProcessing(true);
+    try {
+      const allModuleIds = PERMISSION_ITEMS.map(p => p.id);
+      
+      // 1. 查找是否已存在該 email 之 user 文件
+      const q = query(collection(firestore, 'users'), where('email', '==', cleanEmail));
+      const qSnap = await getDocs(q);
+      
+      const batch = writeBatch(firestore);
+      let matchedUid = '';
+
+      if (!qSnap.empty) {
+        const uDoc = qSnap.docs[0];
+        matchedUid = uDoc.id;
+        batch.set(doc(firestore, 'users', matchedUid), {
+          role: 'admin',
+          isAdmin: true,
+          permissions: allModuleIds,
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+        
+        batch.set(doc(firestore, 'admins', matchedUid), {
+          uid: matchedUid,
+          email: cleanEmail,
+          role: 'admin',
+          isAdmin: true,
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+      }
+
+      // 2. 一併登記以 cleanEmail 為鍵之 admins 文件
+      batch.set(doc(firestore, 'admins', cleanEmail), {
+        email: cleanEmail,
+        uid: matchedUid || cleanEmail,
+        role: 'admin',
+        isAdmin: true,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+
+      await batch.commit();
+
+      toast({
+        title: '✅ 管理員授權成功',
+        description: `已成功將「${cleanEmail}」設定為管理員並賦予全模組權限！`
+      });
+      setTargetEmail('');
+      setIsOpen(false);
+      onUpdate();
+    } catch (err: any) {
+      console.error(err);
+      toast({ variant: 'destructive', title: '授權失敗', description: err?.message || '請稍後再試' });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button className="h-11 sm:h-12 px-4 rounded-2xl font-black bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:to-indigo-500 text-white shadow-md flex items-center gap-2 cursor-pointer">
+          <UserCheck className="w-4 h-4" />
+          <span>指定新管理員 (依信箱)</span>
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="light sm:max-w-md bg-white rounded-3xl p-6 text-slate-900 shadow-2xl border-none">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-black text-slate-900 flex items-center gap-2">
+            <ShieldCheck className="w-5 h-5 text-amber-500" />
+            快速指定管理員
+          </DialogTitle>
+          <p className="text-xs text-slate-500 font-bold mt-1">
+            輸入欲授權的 Google / 註冊信箱，系統將自動賦予全部 25 個後台管理模組權限與通行證。
+          </p>
+        </DialogHeader>
+
+        <div className="space-y-4 py-4">
+          <div className="space-y-1.5">
+            <Label className="text-xs font-black text-slate-700">管理員登入信箱 (Email)</Label>
+            <Input
+              placeholder="例: admin@example.com"
+              value={targetEmail}
+              onChange={(e) => setTargetEmail(e.target.value)}
+              className="h-11 rounded-xl border-slate-200 font-bold"
+            />
+          </div>
+          <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-900 text-xs font-medium space-y-1">
+            <p className="font-bold">💡 權限開通說明：</p>
+            <p>• 無論該帳號是否已在系統註冊，確認後皆會立即納入管理員清冊。</p>
+            <p>• 該使用者登入後，無論手機或電腦皆能立即看到「管理後台」進入選項！</p>
+          </div>
+        </div>
+
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button variant="outline" onClick={() => setIsOpen(false)} className="rounded-xl font-bold border-slate-200">
+            取消
+          </Button>
+          <Button 
+            onClick={handleGrant} 
+            disabled={isProcessing || !targetEmail.trim()} 
+            className="rounded-xl font-black bg-slate-900 text-white hover:bg-slate-800"
+          >
+            {isProcessing ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <ShieldCheck className="w-4 h-4 text-amber-400 mr-1.5" />}
+            確認授權為管理員
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function UsersAdminPage() {
   const firestore = useFirestore();
   const { user: currentUser } = useUser();
@@ -1170,42 +1325,76 @@ export default function UsersAdminPage() {
   const [isSyncingAdmins, setIsSyncingAdmins] = useState(false);
 
   const handleSyncAllAdmins = async () => {
-    if (!firestore || !users) return;
+    if (!firestore) return;
     setIsSyncingAdmins(true);
     try {
-      const batch = writeBatch(firestore);
       let count = 0;
       const allModuleIds = PERMISSION_ITEMS.map(p => p.id);
 
-      for (const u of users) {
-        const isAdm = u.role?.toLowerCase() === 'admin' || isSuperAdminEmail(u.email);
+      // 全庫掃描：不受分頁 50 筆限制
+      const [usersSnap, adminsSnap] = await Promise.all([
+        getDocs(collection(firestore, 'users')),
+        getDocs(collection(firestore, 'admins'))
+      ]);
+      
+      const adminEmailsFromAdminsCol = new Set<string>();
+      adminsSnap.forEach(d => {
+        const data = d.data();
+        if (data.email) adminEmailsFromAdminsCol.add(data.email.toLowerCase().trim());
+        if (d.id.includes('@')) adminEmailsFromAdminsCol.add(d.id.toLowerCase().trim());
+      });
+
+      const batch = writeBatch(firestore);
+
+      usersSnap.forEach(uDoc => {
+        const u = uDoc.data();
+        const cleanEmail = u.email?.toLowerCase()?.trim() || '';
+        const isAdm = 
+          u.role?.toLowerCase() === 'admin' || 
+          u.role?.toLowerCase() === 'superadmin' || 
+          u.isAdmin === true || 
+          isSuperAdminEmail(u.email) ||
+          adminEmailsFromAdminsCol.has(cleanEmail) ||
+          adminsSnap.docs.some(ad => ad.id === uDoc.id);
+
         if (isAdm) {
-          const userDocRef = doc(firestore, 'users', u.id);
-          const adminDocRef = doc(firestore, 'admins', u.id);
+          const userDocRef = doc(firestore, 'users', uDoc.id);
+          const adminDocRef = doc(firestore, 'admins', uDoc.id);
           
-          batch.update(userDocRef, {
+          batch.set(userDocRef, {
             role: 'admin',
             isAdmin: true,
             permissions: allModuleIds,
             updatedAt: serverTimestamp()
-          });
+          }, { merge: true });
 
           batch.set(adminDocRef, {
-            uid: u.id,
-            email: u.email || '',
+            uid: uDoc.id,
+            email: cleanEmail,
             username: u.username || '',
             role: 'admin',
+            isAdmin: true,
             updatedAt: serverTimestamp()
           }, { merge: true });
 
+          if (cleanEmail) {
+            batch.set(doc(firestore, 'admins', cleanEmail), {
+              uid: uDoc.id,
+              email: cleanEmail,
+              role: 'admin',
+              isAdmin: true,
+              updatedAt: serverTimestamp()
+            }, { merge: true });
+          }
+
           count++;
         }
-      }
+      });
 
       await batch.commit();
       toast({
         title: '✅ 全體管理員權限已修復同步',
-        description: `已為 ${count} 位管理員補齊全部 25 個後台模組授權並同步至安全清冊！`
+        description: `已為全系統 ${count} 位管理員補齊全部 25 個後台模組授權並同步至安全清冊！`
       });
       forceRefetch?.();
     } catch (err: any) {
@@ -1216,7 +1405,7 @@ export default function UsersAdminPage() {
     }
   };
 
-  const usersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'users'), limit(50)) : null, [firestore]);
+  const usersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'users'), limit(200)) : null, [firestore]);
   const { data: users, isLoading, forceRefetch } = useCollection<UserProfile>(usersQuery);
 
   const poolsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'cardPools') : null, [firestore]);
@@ -1248,15 +1437,18 @@ export default function UsersAdminPage() {
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full xl:w-auto">
             {isSuperAdmin && (
-              <Button
-                variant="outline"
-                onClick={handleSyncAllAdmins}
-                disabled={isSyncingAdmins}
-                className="h-11 sm:h-12 px-4 rounded-2xl font-black border-amber-300 text-amber-900 bg-amber-50 hover:bg-amber-100 flex items-center gap-2 shadow-xs cursor-pointer"
-              >
-                {isSyncingAdmins ? <Loader2 className="w-4 h-4 animate-spin text-amber-600" /> : <ShieldCheck className="w-4 h-4 text-amber-600" />}
-                <span>一鍵修復全體管理員權限</span>
-              </Button>
+              <>
+                <QuickGrantAdminDialog onUpdate={() => forceRefetch?.()} />
+                <Button
+                  variant="outline"
+                  onClick={handleSyncAllAdmins}
+                  disabled={isSyncingAdmins}
+                  className="h-11 sm:h-12 px-4 rounded-2xl font-black border-amber-300 text-amber-900 bg-amber-50 hover:bg-amber-100 flex items-center gap-2 shadow-xs cursor-pointer"
+                >
+                  {isSyncingAdmins ? <Loader2 className="w-4 h-4 animate-spin text-amber-600" /> : <ShieldCheck className="w-4 h-4 text-amber-600" />}
+                  <span>一鍵修復全體管理員權限</span>
+                </Button>
+              </>
             )}
             <Button
                 onClick={() => setIsEventDispatchOpen(true)}
