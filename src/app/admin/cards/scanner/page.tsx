@@ -29,6 +29,7 @@ import {
   Tag,
   DollarSign,
   Maximize2,
+  ZoomIn,
   Copy,
   Zap,
   Eraser,
@@ -103,6 +104,11 @@ export default function CardScannerProPage() {
   const [currentSopStep, setCurrentSopStep] = useState<number>(1);
   const [isBatchPriceChecking, setIsBatchPriceChecking] = useState<boolean>(false);
   const [isQcModalOpen, setIsQcModalOpen] = useState<boolean>(false);
+
+  // 🌟 卡片高清放大檢視與貼紙消除前後對比狀態 (Lightbox Zoom)
+  const [zoomCardIdx, setZoomCardIdx] = useState<number | null>(null);
+  const [zoomShowOriginal, setZoomShowOriginal] = useState<boolean>(false);
+  const [zoomSide, setZoomSide] = useState<'front' | 'back'>('front');
 
   // 正面狀態
   const [frontImageSrc, setFrontImageSrc] = useState<string | null>(null);
@@ -1170,319 +1176,415 @@ export default function CardScannerProPage() {
   return (
     <div className="space-y-6 pb-20 text-slate-900">
       
-      {/* 頂部 Header & 快捷導航 */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Button variant="ghost" size="sm" asChild className="h-8 px-2 text-slate-500 hover:text-slate-900">
-              <Link href="/admin/cards">
-                <ArrowLeft className="w-4 h-4 mr-1" />
-                返回卡片庫
-              </Link>
-            </Button>
-            <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-[10px] px-2">
-              PRO 旗艦版
-            </Badge>
-          </div>
-          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 flex items-center gap-2.5">
-            <ScanLine className="w-6 h-6 text-amber-500" />
-            <span>球員卡掃描自動分割工具</span>
-          </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            助理專用 8 步標準作業程序 (SOP)：多卡整版掃描、邊框偵測、智慧辨識、去貼紙、卡價行情與一鍵入庫。
-          </p>
-        </div>
-
-        {/* 快捷操作按鈕組 */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <Button
-            onClick={handleBatchPriceCheck}
-            disabled={isBatchPriceChecking || cards.length === 0}
-            variant="outline"
-            className="h-9 px-3 rounded-xl border-emerald-200 bg-emerald-50/80 hover:bg-emerald-100 text-emerald-900 font-bold text-xs gap-1.5 shadow-xs"
-            title="查詢 eBay / 130point / 台灣市場行情"
-          >
-            {isBatchPriceChecking ? <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-600" /> : <DollarSign className="w-3.5 h-3.5 text-emerald-600" />}
-            <span>查詢卡價</span>
-          </Button>
-
-          <Button
-            onClick={() => setIsQcModalOpen(true)}
-            disabled={cards.length === 0}
-            variant="outline"
-            className="h-9 px-3 rounded-xl border-blue-200 bg-blue-50/80 hover:bg-blue-100 text-blue-900 font-bold text-xs gap-1.5 shadow-xs"
-          >
-            <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
-            <span>品管檢查 (QC)</span>
-          </Button>
-
-          <Button
-            onClick={handleDownloadZip}
-            disabled={cards.length === 0 || !frontImageSrc}
-            variant="outline"
-            className="h-9 px-3 rounded-xl font-bold text-xs border-slate-200 hover:bg-slate-50 gap-1.5"
-          >
-            <Download className="w-3.5 h-3.5 text-slate-600" />
-            <span>下載 ZIP</span>
-          </Button>
-
-          <Button
-            onClick={() => {
-              // 匯入前再次觸發第 7 步品管防呆核對
-              setIsQcModalOpen(true);
-            }}
-            disabled={isSavingToDb || cards.length === 0 || !frontImageSrc}
-            className="h-9 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs shadow-md gap-1.5"
-          >
-            {isSavingToDb ? (
-              <>
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                <span>匯入中 ({saveProgress?.current}/{saveProgress?.total})</span>
-              </>
-            ) : (
-              <>
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                <span>一鍵匯入卡片庫</span>
-              </>
-            )}
-          </Button>
-        </div>
-      </div>
-
-      {/* 🌟 助理專用：8 大標準作業程序 (SOP) 流程引導橫條 */}
-      <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white p-4 sm:p-5 rounded-2xl shadow-md border border-slate-800 space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-amber-500 text-slate-950 font-black text-xs flex items-center justify-center shadow-xs">
-              SOP
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-sm sm:text-base font-black tracking-wide text-white">
-                  球員卡上架 8 步標準作業程序 (SOP 引導)
-                </h2>
-                <Badge className="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-mono">
-                  目前進行：第 {currentSopStep} 步
-                </Badge>
-              </div>
-              <p className="text-xs text-slate-400">
-                請助理依序按照 1 到 8 步驟點擊執行，零失誤完成卡片邊界抓取、文字辨識、去空白貼紙、卡價查詢與匯入入庫！
-              </p>
-            </div>
-          </div>
-
-          {/* 當前步驟的主要行動引導按鈕 */}
-          <div className="flex items-center gap-2 flex-wrap">
-            {currentSopStep === 1 && (
-              <label className="cursor-pointer">
-                <Input type="file" accept="image/*" onChange={handleFrontImageUpload} className="hidden" />
-                <div className="inline-flex items-center gap-1.5 h-9 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs shadow-md transition-all">
-                  <UploadCloud className="w-4 h-4" />
-                  <span>步驟 1：請點此上傳正面照片</span>
-                </div>
-              </label>
-            )}
-
-            {currentSopStep === 2 && (
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  onClick={() => runAiDetection(true)}
-                  disabled={isAiDetectingFront}
-                  className="h-9 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs shadow-md gap-1.5"
-                >
-                  {isAiDetectingFront ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                  <span>步驟 2：點此 AI 偵測邊框</span>
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setCurrentSopStep(3)}
-                  className="h-9 px-3 rounded-xl border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold gap-1"
-                >
-                  <span>下一步</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Button>
-              </div>
-            )}
-
-            {currentSopStep === 3 && (
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  onClick={runBatchAiRecognize}
-                  disabled={isBatchAiRunning || cards.length === 0}
-                  className="h-9 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 font-black text-xs shadow-md gap-1.5"
-                >
-                  {isBatchAiRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                  <span>步驟 3：點此 PRO 智慧辨識全部</span>
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setCurrentSopStep(4)}
-                  className="h-9 px-3 rounded-xl border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold gap-1"
-                >
-                  <span>下一步</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Button>
-              </div>
-            )}
-
-            {currentSopStep === 4 && (
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  onClick={handleBatchRemoveStickers}
-                  disabled={isBatchRemovingStickers || cards.length === 0}
-                  className="h-9 px-4 rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-black text-xs shadow-md gap-1.5"
-                >
-                  {isBatchRemovingStickers ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eraser className="w-4 h-4" />}
-                  <span>步驟 4：點此批次去除空白貼紙 (0點數)</span>
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setCurrentSopStep(5)}
-                  className="h-9 px-3 rounded-xl border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold gap-1"
-                >
-                  <span>下一步</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Button>
-              </div>
-            )}
-
-            {currentSopStep === 5 && (
-              <div className="flex items-center gap-2">
-                <label className="cursor-pointer">
-                  <Input type="file" accept="image/*" onChange={handleBackImageUpload} className="hidden" />
-                  <div className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white font-black text-xs shadow-md transition-all">
-                    <UploadCloud className="w-4 h-4" />
-                    <span>步驟 5：上傳背面照片</span>
-                  </div>
-                </label>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setCurrentSopStep(6)}
-                  className="h-9 px-3 rounded-xl border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold gap-1"
-                >
-                  <span>無背面，直接跳至步驟 6</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Button>
-              </div>
-            )}
-
-            {currentSopStep === 6 && (
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  onClick={handleBatchPriceCheck}
-                  disabled={isBatchPriceChecking || cards.length === 0}
-                  className="h-9 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-slate-950 font-black text-xs shadow-md gap-1.5"
-                >
-                  {isBatchPriceChecking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-                  <span>步驟 6：點此查詢卡價行情</span>
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    setCurrentSopStep(7);
-                    setIsQcModalOpen(true);
-                  }}
-                  className="h-9 px-3 rounded-xl border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold gap-1"
-                >
-                  <span>下一步</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Button>
-              </div>
-            )}
-
-            {currentSopStep === 7 && (
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  onClick={() => setIsQcModalOpen(true)}
-                  className="h-9 px-4 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-black text-xs shadow-md gap-1.5"
-                >
-                  <ShieldCheck className="w-4 h-4" />
-                  <span>步驟 7：開啟再次詢問檢查對話框</span>
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setCurrentSopStep(8)}
-                  className="h-9 px-3 rounded-xl border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold gap-1"
-                >
-                  <span>已確認，下一步</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Button>
-              </div>
-            )}
-
-            {currentSopStep === 8 && (
-              <Button
-                size="sm"
-                onClick={handleSaveAllToDatabase}
-                disabled={isSavingToDb || cards.length === 0}
-                className="h-9 px-5 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-600 hover:to-teal-600 text-slate-950 font-black text-xs shadow-lg gap-1.5"
-              >
-                {isSavingToDb ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                <span>步驟 8：確認無誤，一鍵匯入卡片庫！</span>
+      {/* 🌟 頂部 Header & 簡約整合 SOP 流程指揮台 */}
+      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-5 space-y-4">
+        {/* 頂部標題與核心輔助功能 */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-3">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <Button variant="ghost" size="sm" asChild className="h-7 px-2 text-slate-500 hover:text-slate-900">
+                <Link href="/admin/cards">
+                  <ArrowLeft className="w-3.5 h-3.5 mr-1" />
+                  返回卡片庫
+                </Link>
               </Button>
-            )}
+              <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-[10px] px-2">
+                PRO 旗艦版
+              </Badge>
+            </div>
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 flex items-center gap-2">
+              <ScanLine className="w-6 h-6 text-amber-500" />
+              <span>球員卡掃描自動分割工具</span>
+            </h1>
+          </div>
+
+          {/* 右上角極簡狀態指示 (去除干擾按鈕，引導依循 SOP 步驟) */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-mono font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
+              SOP 引導模式 · 進行中
+            </span>
           </div>
         </div>
 
-        {/* 8 步驟橫向進度指示節點 (1 到 8 步驟清晰可見) */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 pt-1">
-          {[
-            { num: 1, title: '1.上傳正面照片', isDone: Boolean(frontImageSrc) },
-            { num: 2, title: '2.AI偵測邊框', isDone: frontBoxes.length > 0 && Boolean(frontImageSrc) },
-            { num: 3, title: '3.PRO智慧辨識全部', isDone: cards.some(c => c.name && !c.name.startsWith('卡片 #')) },
-            { num: 4, title: '4.批次去除空白貼紙', isDone: cards.some(c => c.hasRemovedSticker) || currentSopStep > 4 },
-            { num: 5, title: '5.上傳背面照片', isDone: Boolean(backImageSrc) || currentSopStep > 5 },
-            { num: 6, title: '6.查詢卡價', isDone: cards.some(c => Boolean(c.priceRange)) || currentSopStep > 6 },
-            { num: 7, title: '7.再次詢問檢查', isDone: currentSopStep > 7 },
-            { num: 8, title: '8.一鍵匯入卡片庫', isDone: isSavingToDb },
-          ].map((item) => {
-            const isCurrent = currentSopStep === item.num;
-            return (
-              <button
-                key={item.num}
-                type="button"
-                onClick={() => setCurrentSopStep(item.num)}
-                className={`text-left p-2.5 rounded-xl border transition-all flex flex-col justify-between min-h-[64px] ${
-                  isCurrent
-                    ? 'bg-amber-500/15 border-amber-400/90 shadow-sm ring-1 ring-amber-400/40 text-amber-200'
-                    : item.isDone
-                    ? 'bg-emerald-950/30 border-emerald-500/40 text-emerald-300 hover:bg-emerald-950/50'
-                    : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:bg-slate-800/60'
-                }`}
-              >
-                <div className="flex items-center justify-between w-full mb-1">
-                  <span className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded ${
-                    isCurrent 
-                      ? 'bg-amber-500 text-slate-950' 
-                      : item.isDone 
-                      ? 'bg-emerald-500 text-slate-950' 
-                      : 'bg-slate-800 text-slate-400'
-                  }`}>
-                    STEP {item.num}
+        {/* 🌟 現代極簡 8 步 SOP 流程進度條 (點擊即可跳轉檢視) */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between text-xs text-slate-500 px-1">
+            <span className="font-bold text-slate-700 flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+              助理 SOP 標準作業程序 (步驟 {currentSopStep} / 8)
+            </span>
+            <span className="text-[11px] text-slate-400">依序完成下方 8 個步驟，完成後點擊下一步</span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+            {[
+              { num: 1, title: '1.上傳正面', shortDesc: '載入合拍照', isDone: Boolean(frontImageSrc) },
+              { num: 2, title: '2.AI邊框', shortDesc: '自動精準分割', isDone: frontBoxes.length > 0 && Boolean(frontImageSrc) },
+              { num: 3, title: '3.智慧辨識', shortDesc: 'PRO 全卡OCR', isDone: cards.some(c => c.name && !c.name.startsWith('卡片 #')) },
+              { num: 4, title: '4.去貼紙', shortDesc: '左上無痕消除', isDone: cards.some(c => c.hasRemovedSticker) || currentSopStep > 4 },
+              { num: 5, title: '5.上傳背面', shortDesc: '正反面鏡像對齊', isDone: Boolean(backImageSrc) || currentSopStep > 5 },
+              { num: 6, title: '6.查詢卡價', shortDesc: '市場行情估價', isDone: cards.some(c => Boolean(c.priceRange)) || currentSopStep > 6 },
+              { num: 7, title: '7.檢查QC', shortDesc: '入庫前品管防呆', isDone: currentSopStep > 7 },
+              { num: 8, title: '8.一鍵入庫', shortDesc: '寫入卡片資料庫', isDone: isSavingToDb },
+            ].map((item) => {
+              const isCurrent = currentSopStep === item.num;
+              return (
+                <button
+                  key={item.num}
+                  type="button"
+                  onClick={() => setCurrentSopStep(item.num)}
+                  className={`text-left p-2.5 rounded-xl border transition-all flex flex-col justify-between ${
+                    isCurrent
+                      ? 'bg-amber-500/10 border-amber-500 shadow-xs ring-2 ring-amber-400/30'
+                      : item.isDone
+                      ? 'bg-emerald-50/80 border-emerald-300 text-emerald-900 hover:bg-emerald-100/70'
+                      : 'bg-slate-50 border-slate-200 text-slate-400 hover:bg-slate-100'
+                  }`}
+                >
+                  <div className="flex items-center justify-between w-full mb-1">
+                    <span className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded ${
+                      isCurrent
+                        ? 'bg-amber-500 text-slate-950 shadow-xs'
+                        : item.isDone
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-slate-200 text-slate-600'
+                    }`}>
+                      #{item.num}
+                    </span>
+                    {item.isDone ? (
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    ) : isCurrent ? (
+                      <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping shrink-0" />
+                    ) : null}
+                  </div>
+                  <span className={`text-xs font-black truncate w-full ${isCurrent ? 'text-amber-900' : item.isDone ? 'text-emerald-900' : 'text-slate-600'}`}>
+                    {item.title}
                   </span>
-                  {item.isDone ? (
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                  ) : isCurrent ? (
-                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping shrink-0" />
-                  ) : null}
-                </div>
-                <span className="text-[11px] font-bold leading-tight truncate w-full">
-                  {item.title}
-                </span>
-              </button>
-            );
-          })}
+                  <span className="text-[10px] text-slate-400 truncate w-full block mt-0.5">
+                    {item.shortDesc}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* 🌟 當前步驟專屬聚焦指揮區 (清晰單一指令，不再混亂！) */}
+          <div className="p-3.5 rounded-xl bg-gradient-to-r from-amber-50 via-orange-50/40 to-slate-50 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-lg bg-amber-500 text-white font-black text-xs flex items-center justify-center shadow-xs">
+                {currentSopStep}
+              </div>
+              <div>
+                <p className="text-xs font-black text-slate-900 flex items-center gap-1.5">
+                  <span>
+                    {currentSopStep === 1 && '步驟 1：請上傳正面照片（可多張合拍照或掃描圖）'}
+                    {currentSopStep === 2 && '步驟 2：執行 AI 邊框偵測，自動切分所有卡片'}
+                    {currentSopStep === 3 && '步驟 3：PRO 智慧辨識全部，自動抓取球員名、系列與 PSA/BGS 標籤'}
+                    {currentSopStep === 4 && '步驟 4：批次消除左上角空白標籤貼紙 (無痕羽化修復，0 AI 點數消耗)'}
+                    {currentSopStep === 5 && '步驟 5：上傳背面照片（自動鏡像對齊；若是單面卡可直接跳過）'}
+                    {currentSopStep === 6 && '步驟 6：查詢市場參考卡價 (比對 eBay / 130point / 台灣市場行情)'}
+                    {currentSopStep === 7 && '步驟 7：入庫前品管防呆核對 (確認品名、售價、評級與去貼紙效果)'}
+                    {currentSopStep === 8 && '步驟 8：確認無誤，一鍵匯入卡片庫！'}
+                  </span>
+                </p>
+                <p className="text-[11px] text-slate-500">
+                  {currentSopStep === 1 && '支援 JPG / PNG / WebP 格式，整版掃描圖可一次切分多張。'}
+                  {currentSopStep === 2 && '已修復背景誤判問題，每張卡片皆會精準裁切，不抓整張原圖。'}
+                  {currentSopStep === 3 && '精準 OCR 評級標籤文字、證號與小分，並建議標準拍賣品名。'}
+                  {currentSopStep === 4 && '僅對貼有白色標籤的卡片消除貼紙，乾淨評級卡自動完整保留原貌。'}
+                  {currentSopStep === 5 && '背面將自動套用正面裁切框與順序，無需重複填寫屬性。'}
+                  {currentSopStep === 6 && '根據球員知名度與 PSA 10 / BGS 9.5 評級自動估算市場建議售價。'}
+                  {currentSopStep === 7 && '可點擊縮圖放大檢查「消除貼紙前後對比」，確保外觀完美無痕。'}
+                  {currentSopStep === 8 && '自動將高清正面與背面卡片寫入庫存資料庫，上架完成！'}
+                </p>
+              </div>
+            </div>
+
+            {/* 核心操作大按鈕 (依據當前步驟動態呈現，功能完整保留且專注當前任務) */}
+            <div className="flex items-center gap-2 shrink-0 flex-wrap">
+              {currentSopStep === 1 && (
+                <>
+                  <label className="cursor-pointer">
+                    <Input type="file" accept="image/*" onChange={handleFrontImageUpload} className="hidden" />
+                    <div className="inline-flex items-center gap-1.5 h-9 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs shadow-md transition-all">
+                      <UploadCloud className="w-4 h-4" />
+                      <span>{frontImageSrc ? '更換正面圖片' : '上傳正面照片'}</span>
+                    </div>
+                  </label>
+                  {frontImageSrc && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setCurrentSopStep(2)}
+                      className="h-9 px-3 rounded-xl border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold gap-1 shadow-xs"
+                    >
+                      <span>進入步驟 2：AI 邊框</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Button>
+                  )}
+                </>
+              )}
+
+              {currentSopStep === 2 && (
+                <>
+                  <Button
+                    size="sm"
+                    onClick={() => runAiDetection(true)}
+                    disabled={isAiDetectingFront || !frontImageSrc}
+                    className="h-9 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs shadow-md gap-1.5"
+                  >
+                    {isAiDetectingFront ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                    <span>AI 偵測邊框</span>
+                  </Button>
+
+                  {/* 網格切分快捷輔助選項 (專屬步驟 2) */}
+                  <div className="flex items-center gap-0.5 bg-white p-0.5 rounded-xl border border-slate-300 shadow-2xs">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => applyFrontGrid(1, 1)}
+                      className="h-8 px-2 text-[11px] font-bold text-slate-700 hover:bg-slate-100"
+                    >
+                      單卡
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => applyFrontGrid(2, 2)}
+                      className="h-8 px-2 text-[11px] font-bold text-slate-700 hover:bg-slate-100"
+                    >
+                      2x2
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => applyFrontGrid(2, 3)}
+                      className="h-8 px-2 text-[11px] font-bold text-slate-700 hover:bg-slate-100"
+                    >
+                      2x3
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => applyFrontGrid(3, 3)}
+                      className="h-8 px-2 text-[11px] font-bold text-slate-700 hover:bg-slate-100"
+                    >
+                      3x3
+                    </Button>
+                  </div>
+
+                  {/* 隱藏/顯示 編號標記 */}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setHideBoxBadges(!hideBoxBadges)}
+                    className={`h-9 px-2.5 text-[11px] font-bold rounded-xl border ${
+                      hideBoxBadges ? 'bg-amber-100 border-amber-300 text-amber-900' : 'bg-white border-slate-300 text-slate-700'
+                    }`}
+                    title={hideBoxBadges ? "點擊顯示卡片邊框編號" : "點擊隱藏編號以清晰檢視卡片"}
+                  >
+                    {hideBoxBadges ? <EyeOff className="w-3.5 h-3.5 mr-1 text-amber-700" /> : <Eye className="w-3.5 h-3.5 mr-1" />}
+                    <span>{hideBoxBadges ? "已隱藏編號" : "隱藏編號"}</span>
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setCurrentSopStep(3)}
+                    className="h-9 px-3 rounded-xl border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold gap-1 shadow-xs"
+                  >
+                    <span>進入步驟 3：PRO 辨識</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Button>
+                </>
+              )}
+
+              {currentSopStep === 3 && (
+                <>
+                  <Button
+                    size="sm"
+                    onClick={runBatchAiRecognize}
+                    disabled={isBatchAiRunning || cards.length === 0}
+                    className="h-9 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 font-black text-xs shadow-md gap-1.5"
+                  >
+                    {isBatchAiRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                    <span>PRO 智慧辨識全部</span>
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={runBatchSlabOcr}
+                    disabled={isBatchSlabOcrRunning || cards.length === 0}
+                    className="h-9 px-3 rounded-xl border-indigo-200 bg-indigo-50/80 hover:bg-indigo-100 text-indigo-900 text-xs font-bold gap-1.5 shadow-2xs"
+                    title="單獨針對 PSA/BGS 卡殼頂部標籤文字與證號執行 OCR"
+                  >
+                    {isBatchSlabOcrRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-600" /> : <FileText className="w-3.5 h-3.5 text-indigo-600" />}
+                    <span>抓取 PSA/BGS 標籤</span>
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setCurrentSopStep(4)}
+                    className="h-9 px-3 rounded-xl border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold gap-1 shadow-xs"
+                  >
+                    <span>進入步驟 4：去貼紙</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Button>
+                </>
+              )}
+
+              {currentSopStep === 4 && (
+                <>
+                  <Button
+                    size="sm"
+                    onClick={handleBatchRemoveStickers}
+                    disabled={isBatchRemovingStickers || cards.length === 0}
+                    className="h-9 px-4 rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-black text-xs shadow-md gap-1.5"
+                  >
+                    {isBatchRemovingStickers ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eraser className="w-4 h-4" />}
+                    <span>批次去空白貼紙 (0點數)</span>
+                  </Button>
+
+                  {cards.some(c => c.hasRemovedSticker) && (
+                    <span className="text-xs font-bold text-emerald-800 bg-emerald-100/80 px-2.5 py-1.5 rounded-xl border border-emerald-300">
+                      ✓ 已修復 {cards.filter(c => c.hasRemovedSticker).length} 張
+                    </span>
+                  )}
+
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setCurrentSopStep(5)}
+                    className="h-9 px-3 rounded-xl border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold gap-1 shadow-xs"
+                  >
+                    <span>進入步驟 5：上傳背面</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Button>
+                </>
+              )}
+
+              {currentSopStep === 5 && (
+                <>
+                  <label className="cursor-pointer">
+                    <Input type="file" accept="image/*" onChange={handleBackImageUpload} className="hidden" />
+                    <div className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs shadow-md transition-all">
+                      <UploadCloud className="w-4 h-4" />
+                      <span>{backImageSrc ? '更換背面圖片' : '上傳背面照片'}</span>
+                    </div>
+                  </label>
+
+                  {backImageSrc && (
+                    <>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={copyFrontBoxesToBack}
+                        className="h-9 px-3 rounded-xl text-xs font-bold border-cyan-300 bg-cyan-50/80 hover:bg-cyan-100 text-cyan-900 gap-1 shadow-2xs"
+                      >
+                        <ArrowRightLeft className="w-3.5 h-3.5 text-cyan-700" />
+                        <span>複製正面框</span>
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={mirrorBackBoxes}
+                        className="h-9 px-3 rounded-xl text-xs font-bold border-cyan-300 bg-cyan-50/80 hover:bg-cyan-100 text-cyan-900 gap-1 shadow-2xs"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5 text-cyan-700" />
+                        <span>鏡像左右翻轉</span>
+                      </Button>
+                    </>
+                  )}
+
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setCurrentSopStep(6)}
+                    className="h-9 px-3 rounded-xl border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold gap-1 shadow-xs"
+                  >
+                    <span>{backImageSrc ? '進入步驟 6：查詢卡價' : '單面卡 (跳過背面，直接查價)'}</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Button>
+                </>
+              )}
+
+              {currentSopStep === 6 && (
+                <>
+                  <Button
+                    size="sm"
+                    onClick={handleBatchPriceCheck}
+                    disabled={isBatchPriceChecking || cards.length === 0}
+                    className="h-9 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-xs shadow-md gap-1.5"
+                  >
+                    {isBatchPriceChecking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                    <span>查詢卡價行情</span>
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setCurrentSopStep(7);
+                      setIsQcModalOpen(true);
+                    }}
+                    className="h-9 px-3 rounded-xl border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold gap-1 shadow-xs"
+                  >
+                    <span>進入步驟 7：品管防呆核對</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Button>
+                </>
+              )}
+
+              {currentSopStep === 7 && (
+                <>
+                  <Button
+                    size="sm"
+                    onClick={() => setIsQcModalOpen(true)}
+                    className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs shadow-md gap-1.5"
+                  >
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>開啟品管檢查核對 (QC)</span>
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setCurrentSopStep(8)}
+                    className="h-9 px-3 rounded-xl border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold gap-1 shadow-xs"
+                  >
+                    <span>確認無誤，前往一鍵入庫</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Button>
+                </>
+              )}
+
+              {currentSopStep === 8 && (
+                <>
+                  <Button
+                    size="sm"
+                    onClick={handleSaveAllToDatabase}
+                    disabled={isSavingToDb || cards.length === 0}
+                    className="h-9 px-5 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-xs shadow-md gap-1.5"
+                  >
+                    {isSavingToDb ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4 text-emerald-300" />}
+                    <span>確認無誤，執行一鍵匯入！</span>
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleDownloadZip}
+                    disabled={cards.length === 0 || !frontImageSrc}
+                    className="h-9 px-3.5 rounded-xl font-bold text-xs border-slate-300 bg-white hover:bg-slate-100 text-slate-700 gap-1.5 shadow-xs"
+                  >
+                    <Download className="w-3.5 h-3.5 text-slate-600" />
+                    <span>下載 ZIP 備份檔</span>
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1509,111 +1611,11 @@ export default function CardScannerProPage() {
               </div>
             </div>
 
-            {/* 正面控制按鈕 */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <label className="cursor-pointer">
-                <Input 
-                  type="file" 
-                  accept="image/*" 
-                  onChange={handleFrontImageUpload} 
-                  className="hidden" 
-                />
-                <div className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 font-bold text-xs transition-colors">
-                  <UploadCloud className="w-4 h-4 text-amber-600" />
-                  <span>{frontImageSrc ? '更換正面圖片' : '上傳正面掃描圖'}</span>
-                </div>
-              </label>
-
-              {frontImageSrc && (
-                <>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => runAiDetection(true)}
-                    disabled={isAiDetectingFront}
-                    className="h-9 px-3 rounded-xl text-xs font-bold border-slate-200 gap-1"
-                  >
-                    {isAiDetectingFront ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 text-amber-500" />}
-                    <span>AI 偵測邊框</span>
-                  </Button>
-
-                  {/* 🌟 PSA/BGS 評級標籤文字自動抓取 */}
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={runBatchSlabOcr}
-                    disabled={isBatchSlabOcrRunning || cards.length === 0}
-                    className="h-9 px-3 rounded-xl text-xs font-bold border-indigo-200 bg-indigo-50/80 hover:bg-indigo-100 text-indigo-900 gap-1.5 shadow-xs"
-                    title="一鍵辨識所有 PSA/BGS 卡殼頂部標籤文字與證號"
-                  >
-                    {isBatchSlabOcrRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-600" /> : <FileText className="w-3.5 h-3.5 text-indigo-600" />}
-                    <span>抓取 PSA/BGS 標籤</span>
-                  </Button>
-
-                  {/* 🌟 批次去除左上角白色空白貼紙 */}
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={handleBatchRemoveStickers}
-                    disabled={isBatchRemovingStickers || cards.length === 0}
-                    className="h-9 px-3 rounded-xl text-xs font-bold border-rose-200 bg-rose-50/80 hover:bg-rose-100 text-rose-900 gap-1.5 shadow-xs"
-                    title="自動掃描全體卡片，僅對偵測到白色空白標籤貼紙的卡片進行無痕去除（未貼貼紙的乾淨評級卡自動完整保留）"
-                  >
-                    {isBatchRemovingStickers ? <Loader2 className="w-3.5 h-3.5 animate-spin text-rose-600" /> : <Eraser className="w-3.5 h-3.5 text-rose-600" />}
-                    <span>批次去空白貼紙</span>
-                  </Button>
-
-                  {/* 網格切分快捷按鈕 */}
-                  <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-xl border border-slate-200">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => applyFrontGrid(1, 1)}
-                      className="h-8 px-2 text-[11px] font-bold"
-                    >
-                      單卡
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => applyFrontGrid(2, 2)}
-                      className="h-8 px-2 text-[11px] font-bold"
-                    >
-                      2x2
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => applyFrontGrid(2, 3)}
-                      className="h-8 px-2 text-[11px] font-bold"
-                    >
-                      2x3
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => applyFrontGrid(3, 3)}
-                      className="h-8 px-2 text-[11px] font-bold"
-                    >
-                      3x3
-                    </Button>
-                  </div>
-
-                  {/* 隱藏/顯示 編號標記 (避免遮擋左上角標籤) */}
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setHideBoxBadges(!hideBoxBadges)}
-                    className={`h-8 px-2 text-[11px] font-bold rounded-lg border ${
-                      hideBoxBadges ? 'bg-amber-100 border-amber-300 text-amber-900' : 'border-slate-200 text-slate-600'
-                    }`}
-                    title={hideBoxBadges ? "點擊顯示編號" : "點擊隱藏編號以清晰檢視卡片左上角標籤"}
-                  >
-                    {hideBoxBadges ? <EyeOff className="w-3.5 h-3.5 mr-1 text-amber-700" /> : <Eye className="w-3.5 h-3.5 mr-1" />}
-                    <span>{hideBoxBadges ? "已隱藏編號" : "隱藏編號"}</span>
-                  </Button>
-                </>
-              )}
+            {/* 簡約純淨標題列，不放干擾功能選項，引導助理專注當前 SOP 步驟 */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-slate-600 font-mono bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
+                正面已載入 {frontBoxes.length} 個裁切框 · {cards.filter(c => Boolean(c.frontPreview)).length} 張就緒
+              </span>
             </div>
           </div>
         </CardHeader>
@@ -1730,28 +1732,15 @@ export default function CardScannerProPage() {
               <div className="lg:col-span-5 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-black text-slate-700">已辨識卡片列表 ({cards.length} 張)</span>
-                  <div className="flex items-center gap-1.5">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleBatchRemoveStickers}
-                      disabled={isBatchRemovingStickers || cards.length === 0}
-                      className="h-7 px-2.5 text-[11px] font-bold border-rose-200 bg-rose-50/90 text-rose-800 hover:bg-rose-100 gap-1 shadow-xs"
-                      title="自動掃描並消除所有卡片左上角的空白白色貼紙標籤"
-                    >
-                      {isBatchRemovingStickers ? <Loader2 className="w-3 h-3 animate-spin text-rose-600" /> : <Eraser className="w-3 h-3 text-rose-600" />}
-                      <span>批次去空白貼紙</span>
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={refreshPreviews}
-                      className="h-7 px-2 text-xs text-slate-500 gap-1"
-                    >
-                      <RefreshCw className="w-3 h-3" />
-                      <span>更新預覽</span>
-                    </Button>
-                  </div>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={refreshPreviews}
+                    className="h-7 px-2 text-xs text-slate-500 hover:text-slate-800 gap-1"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    <span>更新預覽</span>
+                  </Button>
                 </div>
 
                 <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
@@ -1768,7 +1757,17 @@ export default function CardScannerProPage() {
                       <div className="flex items-start gap-3">
                         {/* 裁切縮圖與去標籤控制 */}
                         <div className="flex flex-col items-center gap-1.5 shrink-0">
-                          <div className="w-18 h-24 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center relative group">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setZoomCardIdx(idx);
+                              setZoomSide('front');
+                              setZoomShowOriginal(false);
+                            }}
+                            className="w-18 h-24 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center relative group cursor-pointer hover:border-amber-400 hover:shadow-md transition-all text-left"
+                            title="點擊放大檢視卡片大圖與貼紙消除效果"
+                          >
                             {card.frontPreview ? (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img src={card.frontPreview} alt="Front Crop" className="w-full h-full object-cover" />
@@ -1780,53 +1779,60 @@ export default function CardScannerProPage() {
                                 已去標籤
                               </span>
                             )}
-                          </div>
+                            <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[10px] font-bold">
+                              <ZoomIn className="w-4 h-4 text-white drop-shadow mb-0.5" />
+                              <span>點擊放大</span>
+                            </div>
+                          </button>
 
-                          {/* 🌟 去除左上角白色標籤貼紙控制群組 */}
-                          <div className="flex items-center gap-1 w-full justify-center">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleRemoveSticker(idx);
-                              }}
-                              disabled={card.isRemovingSticker}
-                              className={`h-6 px-1.5 text-[9px] font-bold rounded-md border transition-all flex-1 ${
-                                card.hasRemovedSticker 
-                                  ? 'border-emerald-300 text-emerald-700 bg-emerald-50 hover:bg-emerald-100' 
-                                  : 'border-slate-200 text-slate-700 bg-white hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200'
-                              }`}
-                              title={card.hasRemovedSticker ? "復原左上角標籤貼紙" : "一鍵自動偵測去除左上角空白標籤貼紙"}
-                            >
-                              {card.isRemovingSticker ? (
-                                <Loader2 className="w-2.5 h-2.5 animate-spin mr-0.5 text-rose-600" />
-                              ) : (
-                                <Eraser className="w-2.5 h-2.5 mr-0.5 text-rose-500" />
-                              )}
-                              <span>{card.hasRemovedSticker ? '↺ 復原' : '去掉貼紙'}</span>
-                            </Button>
+                          {/* 🌟 僅在「步驟 4：去貼紙」或已去貼紙時顯示專屬微調按鈕，其他步驟保持畫面乾淨 */}
+                          {(currentSopStep === 4 || card.hasRemovedSticker) && (
+                            <div className="flex items-center gap-1 w-full justify-center">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRemoveSticker(idx);
+                                }}
+                                disabled={card.isRemovingSticker}
+                                className={`h-6 px-1.5 text-[9px] font-bold rounded-md border transition-all flex-1 ${
+                                  card.hasRemovedSticker 
+                                    ? 'border-emerald-300 text-emerald-700 bg-emerald-50 hover:bg-emerald-100' 
+                                    : 'border-slate-200 text-slate-700 bg-white hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200'
+                                }`}
+                                title={card.hasRemovedSticker ? "復原左上角標籤貼紙" : "一鍵自動偵測去除左上角空白標籤貼紙"}
+                              >
+                                {card.isRemovingSticker ? (
+                                  <Loader2 className="w-2.5 h-2.5 animate-spin mr-0.5 text-rose-600" />
+                                ) : (
+                                  <Eraser className="w-2.5 h-2.5 mr-0.5 text-rose-500" />
+                                )}
+                                <span>{card.hasRemovedSticker ? '↺ 復原' : '去貼紙'}</span>
+                              </Button>
 
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openStickerEraser(idx);
-                              }}
-                              className="h-6 w-6 p-0 rounded-md border border-slate-200 text-slate-600 hover:text-indigo-600 hover:border-indigo-200 bg-white hover:bg-indigo-50"
-                              title="開啟貼紙消除工作台 (微調選取範圍與即時預覽)"
-                            >
-                              <Crosshair className="w-3 h-3" />
-                            </Button>
-                          </div>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openStickerEraser(idx);
+                                }}
+                                className="h-6 w-6 p-0 rounded-md border border-slate-200 text-slate-600 hover:text-indigo-600 hover:border-indigo-200 bg-white hover:bg-indigo-50"
+                                title="開啟貼紙消除工作台 (微調選取範圍與即時預覽)"
+                              >
+                                <Crosshair className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          )}
                         </div>
 
                         {/* 卡片屬性輸入 */}
                         <div className="flex-1 space-y-2 min-w-0">
                           <div className="flex items-center justify-between gap-1.5">
                             <span className="text-xs font-black text-amber-600 font-mono">#{card.index}</span>
-                            <div className="flex items-center gap-1">
+                            {/* 🌟 僅在「步驟 3：PRO 智慧辨識」時突顯單卡辨識按鈕 */}
+                            {currentSopStep === 3 && (
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -1835,12 +1841,12 @@ export default function CardScannerProPage() {
                                   runSingleAiRecognize(idx);
                                 }}
                                 disabled={card.isAiRecognizing}
-                                className="h-6 px-2 text-[10px] font-black bg-gradient-to-r from-amber-50 to-orange-50 text-amber-800 border-amber-200 hover:bg-amber-100"
+                                className="h-6 px-2 text-[10px] font-black bg-gradient-to-r from-amber-50 to-orange-50 text-amber-800 border-amber-200 hover:bg-amber-100 shadow-2xs"
                               >
                                 {card.isAiRecognizing ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Sparkles className="w-3 h-3 mr-1 text-amber-500" />}
                                 PRO 辨識
                               </Button>
-                            </div>
+                            )}
                           </div>
 
                           <Input
@@ -1860,58 +1866,63 @@ export default function CardScannerProPage() {
                                 <Tag className="w-3 h-3 text-indigo-600" />
                                 評級標籤文字 (PSA/BGS OCR)
                               </span>
-                              <div className="flex items-center gap-1">
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    runSingleSlabOcr(idx);
-                                  }}
-                                  disabled={card.isOcrRunning}
-                                  className="h-5 px-1.5 text-[9px] font-bold text-indigo-700 hover:bg-indigo-100/70"
-                                  title="抓取 PSA/BGS 標籤文字"
-                                >
-                                  {card.isOcrRunning ? <Loader2 className="w-2.5 h-2.5 animate-spin mr-0.5" /> : <FileText className="w-2.5 h-2.5 mr-0.5" />}
-                                  抓取標籤
-                                </Button>
-                                {card.slabLabelText && (
-                                  <>
+                              {/* 僅在步驟 3 或已擷取標籤時顯示輔助操作按鈕 */}
+                              {(currentSopStep === 3 || Boolean(card.slabLabelText)) && (
+                                <div className="flex items-center gap-1">
+                                  {currentSopStep === 3 && (
                                     <Button
                                       type="button"
                                       size="sm"
                                       variant="ghost"
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        applySlabTextToTitle(idx);
+                                        runSingleSlabOcr(idx);
                                       }}
-                                      className="h-5 px-1.5 text-[9px] font-bold text-amber-800 hover:bg-amber-100/70"
-                                      title="套用標籤為上方卡片品名"
+                                      disabled={card.isOcrRunning}
+                                      className="h-5 px-1.5 text-[9px] font-bold text-indigo-700 hover:bg-indigo-100/70"
+                                      title="抓取 PSA/BGS 標籤文字"
                                     >
-                                      <Zap className="w-2.5 h-2.5 mr-0.5 text-amber-600" />
-                                      套用品名
+                                      {card.isOcrRunning ? <Loader2 className="w-2.5 h-2.5 animate-spin mr-0.5" /> : <FileText className="w-2.5 h-2.5 mr-0.5" />}
+                                      抓取
                                     </Button>
-                                    <Button
-                                      type="button"
-                                      size="sm"
-                                      variant="ghost"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        copySlabText(idx);
-                                      }}
-                                      className="h-5 px-1.5 text-[9px] font-bold text-slate-600 hover:bg-slate-200"
-                                      title="複製標籤文字"
-                                    >
-                                      <Copy className="w-2.5 h-2.5" />
-                                    </Button>
-                                  </>
-                                )}
-                              </div>
+                                  )}
+                                  {card.slabLabelText && (
+                                    <>
+                                      <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          applySlabTextToTitle(idx);
+                                        }}
+                                        className="h-5 px-1.5 text-[9px] font-bold text-amber-800 hover:bg-amber-100/70"
+                                        title="套用標籤為上方卡片品名"
+                                      >
+                                        <Zap className="w-2.5 h-2.5 mr-0.5 text-amber-600" />
+                                        套用
+                                      </Button>
+                                      <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          copySlabText(idx);
+                                        }}
+                                        className="h-5 px-1.5 text-[9px] font-bold text-slate-600 hover:bg-slate-200"
+                                        title="複製標籤文字"
+                                      >
+                                        <Copy className="w-2.5 h-2.5" />
+                                      </Button>
+                                    </>
+                                  )}
+                                </div>
+                              )}
                             </div>
 
                             <Input
-                              placeholder="點擊「抓取標籤」自動抓取 PSA/BGS 標籤文字"
+                              placeholder="PSA/BGS 標籤文字 (由步驟 3 PRO 智慧辨識自動帶入)"
                               value={card.slabLabelText || ''}
                               onChange={(e) => {
                                 const val = e.target.value;
@@ -1980,7 +1991,7 @@ export default function CardScannerProPage() {
                             </Select>
                           </div>
 
-                          {/* 🌟 步驟 6 專用：市場卡價參考行情與單卡查價按鈕 */}
+                          {/* 🌟 市場卡價參考行情 (僅在步驟 6 顯示查價按鈕，其餘步驟靜態顯示) */}
                           <div className="flex items-center justify-between text-[10px] bg-emerald-50/70 border border-emerald-100 rounded-md px-2 py-1 text-emerald-950">
                             <div className="flex items-center gap-1 overflow-hidden">
                               <DollarSign className="w-3 h-3 text-emerald-600 shrink-0" />
@@ -1989,21 +2000,23 @@ export default function CardScannerProPage() {
                                 {card.priceRange || '尚未查詢行情'}
                               </span>
                             </div>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="ghost"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                runSinglePriceCheck(idx);
-                              }}
-                              disabled={card.isPriceChecking}
-                              className="h-5 px-1.5 text-[9px] font-bold text-emerald-700 hover:bg-emerald-100/80 shrink-0"
-                              title="依球員名與評級查詢市場行情"
-                            >
-                              {card.isPriceChecking ? <Loader2 className="w-2.5 h-2.5 animate-spin mr-0.5" /> : <Search className="w-2.5 h-2.5 mr-0.5" />}
-                              查卡價
-                            </Button>
+                            {currentSopStep === 6 && (
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  runSinglePriceCheck(idx);
+                                }}
+                                disabled={card.isPriceChecking}
+                                className="h-5 px-1.5 text-[9px] font-bold text-emerald-700 hover:bg-emerald-100/80 shrink-0"
+                                title="依球員名與評級查詢市場行情"
+                              >
+                                {card.isPriceChecking ? <Loader2 className="w-2.5 h-2.5 animate-spin mr-0.5" /> : <Search className="w-2.5 h-2.5 mr-0.5" />}
+                                查卡價
+                              </Button>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -2042,44 +2055,11 @@ export default function CardScannerProPage() {
               </div>
             </div>
 
-            {/* 背面控制按鈕 */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <label className="cursor-pointer">
-                <Input 
-                  type="file" 
-                  accept="image/*" 
-                  onChange={handleBackImageUpload} 
-                  className="hidden" 
-                />
-                <div className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-cyan-50 hover:bg-cyan-100 border border-cyan-200 text-cyan-900 font-bold text-xs transition-colors">
-                  <UploadCloud className="w-4 h-4 text-cyan-600" />
-                  <span>{backImageSrc ? '更換背面圖片' : '上傳背面掃描圖'}</span>
-                </div>
-              </label>
-
-              {backImageSrc && (
-                <>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={copyFrontBoxesToBack}
-                    className="h-9 px-3 rounded-xl text-xs font-bold border-cyan-200 text-cyan-800 hover:bg-cyan-50 gap-1"
-                  >
-                    <ArrowRightLeft className="w-3.5 h-3.5" />
-                    <span>複製正面框</span>
-                  </Button>
-
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={mirrorBackBoxes}
-                    className="h-9 px-3 rounded-xl text-xs font-bold border-cyan-200 text-cyan-800 hover:bg-cyan-50 gap-1"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    <span>一鍵鏡像左右翻轉</span>
-                  </Button>
-                </>
-              )}
+            {/* 簡約純淨標題列，不放干擾功能選項，引導助理專注當前 SOP 步驟 */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-cyan-800 font-mono bg-cyan-50 px-3 py-1.5 rounded-xl border border-cyan-200">
+                {backImageSrc ? `背面已對齊 ${backBoxes.length} 張卡片` : '單面卡模式 (可免填背面)'}
+              </span>
             </div>
           </div>
         </CardHeader>
@@ -2566,19 +2546,50 @@ export default function CardScannerProPage() {
                 {cards.map((card, i) => (
                   <tr key={`qc-${card.id}`} className="hover:bg-slate-50/80 transition-colors">
                     <td className="py-2 px-3 font-mono font-bold text-amber-600">#{i + 1}</td>
-                    <td className="py-2 px-3">
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-9 h-12 rounded bg-slate-100 border border-slate-200 overflow-hidden shrink-0">
-                          {card.frontPreview && (
+                    <td className="py-2.5 px-3">
+                      <div className="flex items-center gap-2">
+                        {/* 正面縮圖（點擊放大） */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setZoomCardIdx(i);
+                            setZoomSide('front');
+                            setZoomShowOriginal(false);
+                          }}
+                          className="w-12 h-16 rounded-lg bg-slate-100 border-2 border-slate-300 overflow-hidden shrink-0 relative group cursor-pointer hover:border-amber-500 hover:shadow-md transition-all"
+                          title="點擊放大檢視正面與貼紙消除效果"
+                        >
+                          {card.frontPreview ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={card.frontPreview} alt="Front" className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-[10px] text-slate-400">正</span>
                           )}
-                        </div>
+                          <div className="absolute inset-0 bg-slate-950/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[9px] font-bold">
+                            <ZoomIn className="w-4 h-4 text-white drop-shadow mb-0.5" />
+                            <span>放大</span>
+                          </div>
+                        </button>
+
+                        {/* 背面縮圖（點擊放大） */}
                         {card.backPreview && (
-                          <div className="w-9 h-12 rounded bg-cyan-950/20 border border-cyan-400/40 overflow-hidden shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setZoomCardIdx(i);
+                              setZoomSide('back');
+                              setZoomShowOriginal(false);
+                            }}
+                            className="w-12 h-16 rounded-lg bg-cyan-950/20 border-2 border-cyan-400/50 overflow-hidden shrink-0 relative group cursor-pointer hover:border-cyan-500 hover:shadow-md transition-all"
+                            title="點擊放大檢視背面"
+                          >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={card.backPreview} alt="Back" className="w-full h-full object-cover" />
-                          </div>
+                            <div className="absolute inset-0 bg-slate-950/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[9px] font-bold">
+                              <ZoomIn className="w-4 h-4 text-white drop-shadow mb-0.5" />
+                              <span>放大</span>
+                            </div>
+                          </button>
                         )}
                       </div>
                     </td>
@@ -2587,37 +2598,56 @@ export default function CardScannerProPage() {
                         {card.name}
                       </span>
                       {card.slabLabelText && (
-                        <span className="text-[10px] text-slate-400 block truncate font-mono" title={card.slabLabelText}>
+                        <span className="text-[10px] text-slate-500 block truncate font-mono" title={card.slabLabelText}>
                           {card.slabLabelText}
                         </span>
                       )}
                     </td>
                     <td className="py-2 px-3">
-                      <Badge variant="outline" className="font-mono text-[10px] border-slate-300">
+                      {/* 🌟 紅圈 1 修復：超清晰高對比深色評級文字標籤 */}
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-md font-mono text-xs font-black border shadow-2xs ${
+                        card.grade?.includes('10')
+                          ? 'bg-amber-100 text-amber-950 border-amber-400 font-extrabold ring-1 ring-amber-300/50'
+                          : card.grade?.includes('9.5') || card.grade?.includes('9')
+                          ? 'bg-emerald-100 text-emerald-950 border-emerald-400 font-bold'
+                          : card.grade?.startsWith('PSA') || card.grade?.startsWith('BGS')
+                          ? 'bg-indigo-100 text-indigo-950 border-indigo-300 font-bold'
+                          : 'bg-slate-200 text-slate-900 border-slate-400 font-bold'
+                      }`}>
                         {card.grade || 'RAW'}
-                      </Badge>
+                      </span>
                     </td>
-                    <td className="py-2 px-3 text-slate-600">{card.category}</td>
+                    <td className="py-2 px-3 text-slate-700 font-bold">{card.category}</td>
                     <td className="py-2 px-3">
-                      <span className="font-bold font-mono text-emerald-700 block">
+                      <span className="font-black font-mono text-emerald-800 text-sm block">
                         {card.sellPrice} P
                       </span>
                       {card.priceRange && (
-                        <span className="text-[9px] text-slate-400 block font-mono">
+                        <span className="text-[10px] text-slate-500 block font-mono font-medium">
                           {card.priceRange}
                         </span>
                       )}
                     </td>
-                    <td className="py-2 px-3 text-slate-500 text-[11px]">
+                    <td className="py-2 px-3 text-slate-600 text-xs font-medium">
                       {AREAS.find(a => a.id === card.targetArea)?.name || '全部庫存'}
                     </td>
                     <td className="py-2 px-3">
                       {card.hasRemovedSticker ? (
-                        <Badge className="bg-emerald-100 text-emerald-800 text-[9px] border-emerald-200 font-bold">
-                          ✓ 已去貼紙
-                        </Badge>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setZoomCardIdx(i);
+                            setZoomSide('front');
+                            setZoomShowOriginal(false);
+                          }}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 text-[10px] border border-emerald-300 font-black hover:bg-emerald-200 cursor-pointer transition-colors shadow-2xs"
+                          title="點擊放大對比消除貼紙效果"
+                        >
+                          <Check className="w-3 h-3 text-emerald-700" />
+                          <span>已去貼紙 (點擊放大)</span>
+                        </button>
                       ) : (
-                        <span className="text-[10px] text-slate-400">原貌乾淨</span>
+                        <span className="text-[11px] text-slate-400">原貌乾淨</span>
                       )}
                     </td>
                   </tr>
@@ -2626,18 +2656,18 @@ export default function CardScannerProPage() {
             </table>
           </div>
 
-          <DialogFooter className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-100 pt-4 mt-3">
-            <div className="flex items-center gap-1.5 text-xs text-slate-500">
+          <DialogFooter className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-200 pt-4 mt-3">
+            <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium">
               <CheckSquare className="w-4 h-4 text-emerald-600" />
               <span>所有欄位確認無誤後，請點選右側「執行第 8 步一鍵入庫」</span>
             </div>
 
             <div className="flex items-center gap-2">
+              {/* 🌟 紅圈 2 修復：高對比清晰白底深灰字按鈕，絕不變黑磚 */}
               <Button
                 type="button"
-                variant="outline"
                 onClick={() => setIsQcModalOpen(false)}
-                className="h-10 px-4 rounded-xl text-xs font-bold border-slate-200"
+                className="h-10 px-5 rounded-xl text-xs font-black bg-white hover:bg-slate-100 text-slate-800 border-2 border-slate-300 shadow-xs"
               >
                 返回修改
               </Button>
@@ -2657,6 +2687,162 @@ export default function CardScannerProPage() {
               </Button>
             </div>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ========================================================================= */}
+      {/* 🌟 卡片高清放大檢視器與貼紙消除前後對比視窗 (Card Zoom & Inspection Modal) */}
+      {/* ========================================================================= */}
+      <Dialog open={zoomCardIdx !== null} onOpenChange={(open) => { if (!open) setZoomCardIdx(null); }}>
+        <DialogContent className="max-w-2xl bg-white text-slate-900 border-slate-200 p-5 overflow-hidden">
+          {zoomCardIdx !== null && cards[zoomCardIdx] && (() => {
+            const zCard = cards[zoomCardIdx];
+            const hasStickerRemoved = Boolean(zCard.hasRemovedSticker);
+            const currentImg = zoomSide === 'back' 
+              ? zCard.backPreview 
+              : (zoomShowOriginal && zCard.originalFrontPreview ? zCard.originalFrontPreview : zCard.frontPreview);
+
+            return (
+              <div className="space-y-4">
+                <DialogHeader className="border-b border-slate-100 pb-3">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-black text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 text-xs">
+                        #{zCard.index}
+                      </span>
+                      <DialogTitle className="text-base font-black text-slate-900 truncate max-w-[340px]">
+                        {zCard.name}
+                      </DialogTitle>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {/* 正面 / 背面 切換 */}
+                      {zCard.backPreview && (
+                        <div className="flex items-center rounded-lg bg-slate-100 p-0.5 border border-slate-200 text-xs">
+                          <button
+                            type="button"
+                            onClick={() => setZoomSide('front')}
+                            className={`px-2.5 py-1 rounded-md font-bold transition-all ${zoomSide === 'front' ? 'bg-white shadow-xs text-slate-900' : 'text-slate-500 hover:text-slate-900'}`}
+                          >
+                            正面
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setZoomSide('back')}
+                            className={`px-2.5 py-1 rounded-md font-bold transition-all ${zoomSide === 'back' ? 'bg-white shadow-xs text-slate-900' : 'text-slate-500 hover:text-slate-900'}`}
+                          >
+                            背面
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 貼紙消除前後對比按鈕 (若該卡片有消除貼紙) */}
+                  {zoomSide === 'front' && hasStickerRemoved && zCard.originalFrontPreview && (
+                    <div className="flex items-center justify-between bg-emerald-50/70 border border-emerald-200 rounded-xl p-2.5 mt-2">
+                      <div className="flex items-center gap-2 text-xs">
+                        <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <div>
+                          <span className="font-black text-emerald-950 block">左上角貼紙消除檢視</span>
+                          <span className="text-[10px] text-emerald-700">可切換檢視「消除後無痕圖」與「原始含貼紙圖」進行比對</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1 bg-white p-0.5 rounded-lg border border-emerald-200 text-xs shadow-2xs">
+                        <button
+                          type="button"
+                          onClick={() => setZoomShowOriginal(false)}
+                          className={`px-2.5 py-1 rounded-md font-black text-[11px] transition-all ${!zoomShowOriginal ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+                        >
+                          ✨ 消除後 (無痕修復)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setZoomShowOriginal(true)}
+                          className={`px-2.5 py-1 rounded-md font-black text-[11px] transition-all ${zoomShowOriginal ? 'bg-rose-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+                        >
+                          📷 消除前 (原始貼紙)
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </DialogHeader>
+
+                {/* 大圖展示畫布 */}
+                <div className="relative bg-slate-950 rounded-2xl p-3 flex items-center justify-center min-h-[380px] max-h-[540px] overflow-hidden border border-slate-800">
+                  {currentImg ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={currentImg}
+                      alt="Zoomed Card"
+                      className="max-h-[500px] w-auto object-contain rounded-lg shadow-2xl select-none"
+                    />
+                  ) : (
+                    <span className="text-slate-400 text-xs">無預覽圖片</span>
+                  )}
+
+                  {/* 貼紙消除區域提示標籤 */}
+                  {zoomSide === 'front' && hasStickerRemoved && !zoomShowOriginal && (
+                    <div className="absolute top-5 left-5 px-2.5 py-1 rounded-lg bg-emerald-600/90 text-white text-[11px] font-black shadow-lg backdrop-blur-xs flex items-center gap-1.5 border border-emerald-400/40">
+                      <Check className="w-3.5 h-3.5" />
+                      <span>左上角貼紙已無痕羽化修復</span>
+                    </div>
+                  )}
+                  {zoomSide === 'front' && hasStickerRemoved && zoomShowOriginal && (
+                    <div className="absolute top-5 left-5 px-2.5 py-1 rounded-lg bg-rose-600/90 text-white text-[11px] font-black shadow-lg backdrop-blur-xs flex items-center gap-1.5 border border-rose-400/40">
+                      <Eraser className="w-3.5 h-3.5" />
+                      <span>顯示原始含空白貼紙狀態</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* 底部資訊與微調按鈕 */}
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-black text-slate-800 bg-slate-100 px-2 py-0.5 rounded border border-slate-300">
+                      {zCard.grade || 'RAW'}
+                    </span>
+                    <span className="font-bold text-emerald-700 font-mono">
+                      {zCard.sellPrice} P
+                    </span>
+                    {zCard.certNumber && (
+                      <span className="text-[11px] text-slate-400 font-mono">
+                        證號: {zCard.certNumber}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const targetIdx = zoomCardIdx;
+                        setZoomCardIdx(null);
+                        openStickerEraser(targetIdx);
+                      }}
+                      className="h-8 px-3 rounded-xl border-indigo-200 bg-indigo-50/80 hover:bg-indigo-100 text-indigo-900 text-xs font-bold gap-1 shadow-2xs"
+                    >
+                      <Crosshair className="w-3.5 h-3.5 text-indigo-600" />
+                      <span>手動微調貼紙消除範圍</span>
+                    </Button>
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setZoomCardIdx(null)}
+                      className="h-8 px-4 rounded-xl text-xs font-bold border-slate-300 bg-white hover:bg-slate-100 text-slate-700"
+                    >
+                      關閉放大檢視
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
         </DialogContent>
       </Dialog>
 
