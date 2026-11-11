@@ -170,12 +170,14 @@ function translateDetails(details?: string): string {
 
 function StatCard({ label, value, icon: Icon, color }: { label: string, value: number, icon: any, color: string }) {
     return (
-        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-b from-[#13192a]/95 via-[#0c101d]/95 to-[#080b14]/95 border border-white/10 shadow-[0_8px_25px_rgba(0,0,0,0.4)] hover:border-amber-500/40 hover:shadow-[0_0_20px_rgba(245,158,11,0.15)] transition-all group">
-            <div className={cn("mb-2 sm:mb-3 flex items-center justify-center p-2.5 rounded-xl bg-white/5 border border-white/5 w-fit mx-auto group-hover:scale-110 transition-transform", color)}>
-                <Icon className="w-6 h-6 sm:w-7 sm:h-7 opacity-90" />
+        <div className="p-3 sm:p-4 rounded-xl bg-slate-900/60 border border-white/5 flex items-center gap-3 hover:border-white/10 transition-all">
+            <div className={cn("p-2 rounded-lg bg-white/5 shrink-0", color)}>
+                <Icon className="w-4 h-4 sm:w-5 sm:h-5 opacity-90" />
             </div>
-            <p className="text-[11px] sm:text-xs text-center font-bold text-slate-400 mb-1">{label}</p>
-            <p className="text-lg sm:text-2xl font-black font-code text-center text-white">{value.toLocaleString()}</p>
+            <div className="min-w-0">
+                <p className="text-[11px] text-slate-400 truncate">{label}</p>
+                <p className="text-base sm:text-lg font-black font-mono text-white leading-tight">{value.toLocaleString()}</p>
+            </div>
         </div>
     );
 }
@@ -379,100 +381,7 @@ function RedeemPrizesDialog({ children }: { children: React.ReactNode }) {
     );
 }
 
-function CompactDailyCheckIn() {
-  const { user } = useUser();
-  const firestore = useFirestore();
-  const { toast } = useToast();
-  const userDocRef = useMemoFirebase(() => (firestore && user) ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
-  const { data: userProfile } = useDoc<UserProfile>(userDocRef);
-  const systemConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'systemConfig', 'main') : null, [firestore]);
-  const { data: systemConfig } = useDoc<SystemConfig>(systemConfigRef);
-  const missionsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'dailyMissions'), where('type', '==', 'login'), limit(1)) : null, [firestore]);
-  const progressQuery = useMemoFirebase(() => (firestore && user) ? collection(firestore, `users/${user.uid}/missionProgress`) : null, [firestore, user]);
-  const { data: missions } = useCollection<DailyMission>(missionsQuery);
-  const { data: progress, forceRefetch } = useCollection<UserMissionProgress>(progressQuery);
-  const [claimingId, setClaimingId] = useState<string | null>(null);
-  
-  const loginMission = useMemo(() => missions?.[0] || null, [missions]);
-  const missionId = loginMission?.id || 'daily-login';
-  const baseRewardPoints = loginMission?.rewardPoints ?? 10;
 
-  // 🔥 活動期間紅利加倍倍率
-  const bonusMultiplier = useMemo(() => {
-    return getBonusMultiplier(systemConfig?.bonusEvent, 'checkIn');
-  }, [systemConfig]);
-
-  const rewardPoints = useMemo(() => {
-    return Math.max(1, Math.round(baseRewardPoints * bonusMultiplier));
-  }, [baseRewardPoints, bonusMultiplier]);
-
-  const userProgress = useMemo(() => progress?.find(p => p.id === missionId || p.id === loginMission?.id), [progress, missionId, loginMission]);
-  const todayStr = format(new Date(), 'yyyy-MM-dd');
-  const hasClaimedToday = useMemo(() => {
-    if (userProfile?.lastCheckInDate === todayStr) return true;
-    if (!userProgress?.lastCompleted) return false;
-    return userProgress.lastCompleted === todayStr;
-  }, [userProgress, userProfile?.lastCheckInDate, todayStr]);
-
-  const handleCheckIn = useCallback(async () => {
-    if (!user || !firestore) return;
-    setClaimingId(missionId);
-    try {
-      await runTransaction(firestore, async (transaction) => {
-        const userRef = doc(firestore, 'users', user.uid);
-        const progressRef = doc(firestore, `users/${user.uid}/missionProgress`, missionId);
-        const [userDoc, existingProgress] = await Promise.all([transaction.get(userRef), transaction.get(progressRef)]);
-        const currentToday = format(new Date(), 'yyyy-MM-dd');
-        const userData = userDoc.data();
-        if (userData?.lastCheckInDate === currentToday || (existingProgress.exists() && existingProgress.data()?.lastCompleted === currentToday)) {
-          throw new Error("今日已領取");
-        }
-        transaction.update(userRef, { 
-          bonusPoints: increment(rewardPoints),
-          lastCheckInDate: currentToday
-        });
-        if (!existingProgress.exists()) {
-          transaction.set(progressRef, { progress: 1, lastCompleted: currentToday, userId: user.uid, updatedAt: new Date().toISOString() });
-        } else {
-          transaction.update(progressRef, { progress: increment(1), lastCompleted: currentToday, updatedAt: new Date().toISOString() });
-        }
-      });
-      toast({ 
-        title: '🎉 簽到成功！', 
-        description: `恭喜獲得 +${rewardPoints} 紅利 P+ 點數！${bonusMultiplier > 1 ? `（含 ${bonusMultiplier}X 活動加倍）` : ''}` 
-      });
-      if(forceRefetch) forceRefetch();
-    } catch (e: any) { 
-      toast({ variant: 'destructive', title: '簽到失敗', description: e.message || '請稍後再試' }); 
-    } finally { 
-      setClaimingId(null); 
-    }
-  }, [user, firestore, toast, forceRefetch, missionId, rewardPoints, bonusMultiplier]);
-
-  return (
-    <Button 
-      variant="outline" 
-      className={cn("h-7 sm:h-8 w-full px-2 rounded-lg border-primary/30 transition-all text-xs", hasClaimedToday ? "bg-white/5 opacity-60 text-white/40" : "bg-primary/10 hover:bg-primary/20 shadow-[0_0_10px_rgba(6,182,212,0.1)] text-white")} 
-      disabled={hasClaimedToday || (loginMission && !loginMission.isActive) || !!claimingId} 
-      onClick={handleCheckIn}
-    >
-        <div className="flex items-center justify-center gap-1.5 w-full">
-            {claimingId ? <Loader2 className="animate-spin h-3.5 w-3.5 text-primary" /> : hasClaimedToday ? <CheckCircle2 className="h-3.5 w-3.5 text-green-500" /> : <CalendarCheck className="h-3.5 w-3.5 text-primary" />}
-            <span className="text-[10px] font-black uppercase tracking-wider">{hasClaimedToday ? '今日已領取' : '每日簽到'}</span>
-            {!hasClaimedToday && (
-              <span className="text-[10px] text-accent font-black font-code flex items-center gap-1">
-                +{rewardPoints}
-                {bonusMultiplier > 1 && (
-                  <span className="text-[9px] text-amber-300 font-bold bg-amber-500/20 px-1 rounded border border-amber-500/30">
-                    {bonusMultiplier}X
-                  </span>
-                )}
-              </span>
-            )}
-        </div>
-    </Button>
-  );
-}
 
 function ShippingOrdersTab({ userId }: { userId: string }) {
     const firestore = useFirestore();
@@ -1067,115 +976,85 @@ export default function UnifiedMemberCenterPage() {
               </div>
             )}
 
-            {/* 頂部尊榮會員資訊橫幅 */}
-            <div className="relative z-10 mb-6 sm:mb-10 p-4 sm:p-6 md:p-8 rounded-[1.75rem] md:rounded-[2.5rem] bg-gradient-to-b from-[#13192a]/95 via-[#0c101d]/90 to-[#080b14]/95 border border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.6)] backdrop-blur-2xl">
-                <div className="flex flex-col lg:flex-row items-center justify-between gap-5 sm:gap-6 md:gap-8">
+            {/* 頂部簡約精緻會員資訊區 */}
+            <div className="relative z-10 mb-5 sm:mb-6 p-4 sm:p-5 rounded-2xl bg-gradient-to-b from-[#13192a]/95 via-[#0c101d]/90 to-[#080b14]/95 border border-white/10 shadow-xl backdrop-blur-xl">
+                <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 sm:gap-6">
                     
-                    {/* 左側：頭像與會員尊榮資訊 */}
-                    <div className="flex flex-row items-center gap-4 sm:gap-5 text-left w-full lg:w-auto">
-                        <div className="relative group shrink-0">
-                            <div className="absolute -inset-2 bg-gradient-to-r from-amber-400/20 via-cyan-400/20 to-amber-400/20 rounded-full blur-xl opacity-60 animate-pulse" />
-                            <MemberLevelCrown level={userProfile.userLevel} size="lg" />
+                    {/* 左側：會員身份資料 */}
+                    <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
+                        <div className="relative shrink-0">
+                            <MemberLevelCrown level={userProfile.userLevel} size="sm" />
                         </div>
-
-                        <div className="space-y-1.5 sm:space-y-2 min-w-0">
-                            <div className="flex flex-wrap items-center gap-2">
-                                <h1 className="text-xl sm:text-2xl md:text-3xl font-black font-headline text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-amber-200 drop-shadow-[0_0_15px_rgba(245,158,11,0.2)] tracking-tight truncate">
+                        <div className="min-w-0 space-y-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <h1 className="text-lg sm:text-xl md:text-2xl font-black text-white tracking-tight truncate">
                                     {userProfile.username}
                                 </h1>
-                                <Badge className="bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black px-2 py-0.5 text-[9px] sm:text-[10px] rounded-full border-none shadow-[0_0_12px_rgba(245,158,11,0.4)] shrink-0">
-                                    VIP 會員
+                                <Badge className="bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0">
+                                    <Crown className="w-3 h-3 inline mr-1 text-amber-400" />
+                                    {userProfile.userLevel || '新手收藏家'}
                                 </Badge>
+                                <span className="text-[10px] bg-white/5 text-slate-400 border border-white/10 px-2 py-0.5 rounded-full font-medium shrink-0">
+                                    VIP 會員
+                                </span>
                             </div>
-
-                            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                                <div className="flex items-center gap-1 text-amber-300 font-black text-[11px] sm:text-xs bg-amber-500/10 px-2.5 py-0.5 sm:py-1 rounded-full border border-amber-500/25 shadow-sm">
-                                    <Crown className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-amber-400 fill-amber-400/30" />
-                                    <span>{userProfile.userLevel}</span>
-                                </div>
-                                <LeaderboardDialog>
-                                    <Button variant="ghost" size="sm" className="h-6 sm:h-7 px-2 sm:px-2.5 rounded-full text-slate-300 hover:text-white font-bold text-[10px] sm:text-[11px] bg-white/5 hover:bg-white/10 border border-white/10 transition-all">
-                                        <ListOrdered className="mr-1 h-3 w-3 sm:h-3.5 sm:w-3.5 text-amber-400" />
-                                        榮耀排行榜
-                                        <ChevronRight className="ml-0.5 h-3 w-3 opacity-60" />
-                                    </Button>
-                                </LeaderboardDialog>
+                            <div className="flex items-center gap-2 text-xs text-slate-400">
+                                <span>UID: <span className="font-mono text-slate-300">{userProfile.id?.slice(0, 10)}...</span></span>
+                                <span>•</span>
+                                <span>已加入 {stats.daysJoined} 天</span>
                             </div>
                         </div>
                     </div>
 
-                    {/* 右側：資產快覽與快捷操作 */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3.5 w-full lg:w-auto">
-                        
-                        {/* 鑽石 */}
-                        <div className="p-3 sm:p-4 rounded-2xl bg-gradient-to-b from-slate-900/90 to-[#0c1426]/90 border border-cyan-500/30 flex flex-col justify-between min-w-[135px] shadow-[0_4px_20px_rgba(6,182,212,0.12)] relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 w-16 h-16 bg-cyan-500/5 rounded-full blur-xl pointer-events-none group-hover:bg-cyan-500/10 transition-colors" />
-                            <div className="flex items-center justify-between text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">
-                                <span className="flex items-center gap-1.5">
-                                    <DiamondIcon className="w-3.5 h-3.5 text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.7)]" />
-                                    <span>鑽石餘額</span>
-                                </span>
-                                <span className="text-[9px] font-bold text-cyan-400/60 font-numbers tracking-widest">DIAMONDS</span>
+                    {/* 右側：簡約資產概覽 (鑽石 & 紅利) 與操作 */}
+                    <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 w-full lg:w-auto justify-between lg:justify-end">
+                        <div className="flex items-center gap-3 sm:gap-4 bg-slate-950/70 border border-white/10 rounded-xl px-3.5 sm:px-4 py-2">
+                            {/* 鑽石 */}
+                            <div className="flex items-center gap-2">
+                                <DiamondIcon className="w-4 h-4 text-cyan-400 drop-shadow-[0_0_6px_rgba(34,211,238,0.5)]" />
+                                <div>
+                                    <div className="text-[10px] text-slate-400 leading-none">鑽石</div>
+                                    <div className="text-base sm:text-lg font-black font-mono text-cyan-300 leading-tight">
+                                        {(userProfile?.points ?? 0).toLocaleString()}
+                                    </div>
+                                </div>
                             </div>
-                            <div className="my-1.5">
-                                <RefinedPoints 
-                                    value={userProfile?.points ?? 0}
-                                    currency="diamond"
-                                    size="xl"
-                                    animate
-                                    variant="luxury"
-                                />
+
+                            <div className="w-px h-6 bg-white/10" />
+
+                            {/* 紅利 P+ */}
+                            <div className="flex items-center gap-2">
+                                <PPlusIcon className="w-4 h-4 text-amber-400 drop-shadow-[0_0_6px_rgba(245,158,11,0.5)]" />
+                                <div>
+                                    <div className="text-[10px] text-slate-400 leading-none">紅利 P+</div>
+                                    <div className="text-base sm:text-lg font-black font-mono text-amber-300 leading-tight">
+                                        {(userProfile?.bonusPoints ?? 0).toLocaleString()}
+                                    </div>
+                                </div>
                             </div>
-                            <Button size="sm" variant="ghost" asChild className="mt-1 h-7 px-2 text-[10px] text-cyan-300 hover:text-white bg-cyan-500/10 hover:bg-cyan-500/25 border border-cyan-500/20 rounded-lg w-full font-bold transition-all">
-                                <Link href="/#pools">前往抽卡</Link>
-                            </Button>
                         </div>
 
-                        {/* 紅利 P+ */}
-                        <div className="p-3 sm:p-4 rounded-2xl bg-gradient-to-b from-slate-900/90 to-[#1c1408]/90 border border-amber-500/30 flex flex-col justify-between min-w-[135px] shadow-[0_4px_20px_rgba(245,158,11,0.12)] relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 w-16 h-16 bg-amber-500/5 rounded-full blur-xl pointer-events-none group-hover:bg-amber-500/10 transition-colors" />
-                            <div className="flex items-center justify-between text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">
-                                <span className="flex items-center gap-1.5">
-                                    <PPlusIcon className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-                                    <span>紅利 P+</span>
-                                </span>
-                                <span className="text-[9px] font-bold text-amber-400/60 font-numbers tracking-widest">BONUS</span>
-                            </div>
-                            <div className="my-1.5">
-                                <RefinedPoints 
-                                    value={userProfile?.bonusPoints ?? 0}
-                                    currency="pplus"
-                                    size="xl"
-                                    animate
-                                    variant="luxury"
-                                />
-                            </div>
+                        {/* 快捷操作按鈕 */}
+                        <div className="flex items-center gap-2 shrink-0">
                             <RedeemPrizesDialog>
-                                <Button size="sm" variant="ghost" className="mt-1 h-7 px-2 text-[10px] text-amber-300 hover:text-white bg-amber-500/10 hover:bg-amber-500/25 border border-amber-500/20 rounded-lg w-full font-bold transition-all">
+                                <Button size="sm" variant="outline" className="h-9 px-3 text-xs border-amber-500/40 text-amber-300 hover:bg-amber-500/10 hover:text-white rounded-xl transition-all">
+                                    <Gift className="w-3.5 h-3.5 mr-1 text-amber-400" />
                                     兌換獎品
                                 </Button>
                             </RedeemPrizesDialog>
-                        </div>
-
-                        {/* 簽到 */}
-                        <div className="col-span-2 sm:col-span-1 p-3 sm:p-4 rounded-2xl bg-slate-900/80 border border-white/10 flex flex-col justify-between min-w-[130px]">
-                            <div className="flex items-center justify-between text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">
-                                <span className="flex items-center gap-1.5"><CalendarCheck className="w-3.5 h-3.5 text-primary" />每日簽到</span>
-                                <span className="text-[9px] text-primary/80 font-bold">登入獎勵</span>
-                            </div>
-                            <div className="my-0.5 hidden sm:block">
-                                <span className="text-[11px] text-slate-300 font-medium truncate block">簽到領取 P+ 點</span>
-                            </div>
-                            <div className="mt-1">
-                                <CompactDailyCheckIn />
-                            </div>
+                            <LeaderboardDialog>
+                                <Button size="sm" variant="ghost" className="h-9 px-2.5 text-xs text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all" title="榮耀排行榜">
+                                    <ListOrdered className="w-3.5 h-3.5 text-amber-400 mr-1" />
+                                    排行榜
+                                </Button>
+                            </LeaderboardDialog>
                         </div>
                     </div>
                 </div>
             </div>
 
             {/* 總覽數據統計卡片 */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 mb-8 sm:mb-12 relative z-10">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5 mb-6 sm:mb-8 relative z-10">
                 <StatCard label="加入天數" value={stats.daysJoined} icon={CalendarCheck} color="text-amber-400" />
                 <StatCard label="累計抽卡數" value={stats.draws} icon={Package} color="text-cyan-400" />
                 <StatCard label="拼卡參與次數" value={stats.bets} icon={Dices} color="text-rose-400" />

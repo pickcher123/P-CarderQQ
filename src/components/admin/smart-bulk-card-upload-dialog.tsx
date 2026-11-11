@@ -40,8 +40,14 @@ import {
   Plus,
   RotateCcw,
   Zap,
+  Eraser,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+  safeLoadImage,
+  detectWhiteStickerBox,
+  removeTopLeftLabelFromImage,
+} from '@/lib/card-scanner-utils';
 
 export interface CardDraft {
   id: string;
@@ -55,6 +61,10 @@ export interface CardDraft {
   detectedGrade?: string;
   detectedRarity?: string;
   isPairMatched: boolean;
+  hasRemovedSticker?: boolean;
+  isRemovingSticker?: boolean;
+  originalFrontFile?: File;
+  originalFrontPreview?: string;
 }
 
 const SPORT_CATEGORIES = ["籃球", "棒球", "足球", "女孩卡", "女優", "TCG", "其他"];
@@ -88,6 +98,7 @@ export function SmartBulkCardUploadDialog({ area, onComplete }: SmartBulkCardUpl
   // 批次統一設定狀態
   const [batchCategory, setBatchCategory] = useState<string>('');
   const [batchPrice, setBatchPrice] = useState<string>('');
+  const [isBatchRemovingStickers, setIsBatchRemovingStickers] = useState(false);
 
   // 檔名智慧解析為卡片 Draft
   const parseFilesToDrafts = (files: File[]): CardDraft[] => {
@@ -290,9 +301,140 @@ export function SmartBulkCardUploadDialog({ area, onComplete }: SmartBulkCardUpl
     toast({ title: '已批次更新售價', description: `所有草稿卡片已統一設定售價為 ${p} 點` });
   };
 
+  // 單張草稿去除貼紙 / 復原
+  const handleRemoveStickerFromDraft = async (draftId: string) => {
+    const draft = drafts.find((d) => d.id === draftId);
+    if (!draft) return;
+
+    if (draft.hasRemovedSticker) {
+      // 復原原始圖片
+      setDrafts((prev) =>
+        prev.map((d) => {
+          if (d.id !== draftId) return d;
+          return {
+            ...d,
+            frontFile: d.originalFrontFile || d.frontFile,
+            frontPreview: d.originalFrontPreview || d.frontPreview,
+            hasRemovedSticker: false,
+          };
+        })
+      );
+      toast({ title: '已復原原始圖片' });
+      return;
+    }
+
+    setDrafts((prev) =>
+      prev.map((d) => (d.id === draftId ? { ...d, isRemovingSticker: true } : d))
+    );
+
+    try {
+      const backupFile = draft.frontFile;
+      const backupPreview = draft.frontPreview;
+
+      const cleaned = await removeTopLeftLabelFromImage(draft.frontPreview);
+
+      // 轉換 Blob 為新的 File 物件，確保上傳時使用的是無貼紙圖檔
+      const cleanedFile = new File(
+        [cleaned.blob],
+        draft.frontFile.name.replace(/\.[^/.]+$/, '') + '_cleaned.jpg',
+        { type: 'image/jpeg' }
+      );
+
+      setDrafts((prev) =>
+        prev.map((d) => {
+          if (d.id !== draftId) return d;
+          return {
+            ...d,
+            frontFile: cleanedFile,
+            frontPreview: cleaned.optimizedDataUrl || cleaned.dataUrl,
+            originalFrontFile: backupFile,
+            originalFrontPreview: backupPreview,
+            hasRemovedSticker: true,
+            isRemovingSticker: false,
+          };
+        })
+      );
+
+      toast({
+        title: '🎉 已成功清除左上角標籤貼紙！',
+        description: '外框與卡套邊界已無痕平滑修復。',
+      });
+    } catch (e: any) {
+      setDrafts((prev) =>
+        prev.map((d) => (d.id === draftId ? { ...d, isRemovingSticker: false } : d))
+      );
+      toast({
+        variant: 'destructive',
+        title: '清除貼紙失敗',
+        description: e.message || '無法清除貼紙，請檢查圖片格式',
+      });
+    }
+  };
+
+  // 批次去除全體草稿的左上空白貼紙
+  const handleBatchRemoveStickersFromDrafts = async () => {
+    if (drafts.length === 0) return;
+    setIsBatchRemovingStickers(true);
+    toast({ title: '開始批次掃描全體草稿左上貼紙...' });
+
+    let count = 0;
+    try {
+      for (const draft of drafts) {
+        if (draft.hasRemovedSticker) continue;
+        try {
+          const detected = await detectWhiteStickerBox(draft.frontPreview);
+          if (detected && detected.found) {
+            const backupFile = draft.frontFile;
+            const backupPreview = draft.frontPreview;
+            const cleaned = await removeTopLeftLabelFromImage(draft.frontPreview, detected);
+            const cleanedFile = new File(
+              [cleaned.blob],
+              draft.frontFile.name.replace(/\.[^/.]+$/, '') + '_cleaned.jpg',
+              { type: 'image/jpeg' }
+            );
+
+            setDrafts((prev) =>
+              prev.map((d) =>
+                d.id === draft.id
+                  ? {
+                      ...d,
+                      frontFile: cleanedFile,
+                      frontPreview: cleaned.optimizedDataUrl || cleaned.dataUrl,
+                      originalFrontFile: backupFile,
+                      originalFrontPreview: backupPreview,
+                      hasRemovedSticker: true,
+                    }
+                  : d
+              )
+            );
+            count++;
+          }
+        } catch (innerErr) {
+          console.warn('Batch remove item error:', innerErr);
+        }
+      }
+
+      if (count > 0) {
+        toast({
+          title: `🎉 成功為 ${count} 張卡片清除左上角空白標籤！`,
+          description: '乾淨未貼標籤的卡片已自動完整保留原貌。',
+        });
+      } else {
+        toast({
+          title: '已檢查全體卡片',
+          description: '未偵測到明顯的左上白色空白貼紙，可點擊單卡「去除左上貼紙」手動處理。',
+        });
+      }
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: '批次處理出錯', description: e.message });
+    } finally {
+      setIsBatchRemovingStickers(false);
+    }
+  };
+
   // 執行上傳流程
   const startSmartUpload = async () => {
-    if (!firestore || !storage || drafts.length === 0) return;
+    if (!firestore || drafts.length === 0) return;
 
     setIsUploading(true);
     setUploadProgress(0);
@@ -310,7 +452,7 @@ export function SmartBulkCardUploadDialog({ area, onComplete }: SmartBulkCardUpl
         let frontImageUrl = '';
         if (storage) {
           try {
-            const frontExt = draft.frontFile.name.split('.').pop() || 'png';
+            const frontExt = draft.frontFile.name.split('.').pop() || 'jpg';
             const frontStorageRef = ref(storage, `P-Carder/cards/${uuidv4()}.${frontExt}`);
             const frontUploadTask = uploadBytesResumable(frontStorageRef, draft.frontFile);
 
@@ -327,12 +469,50 @@ export function SmartBulkCardUploadDialog({ area, onComplete }: SmartBulkCardUpl
           frontImageUrl = draft.frontPreview;
         }
 
+        // 若 frontImageUrl 為 blob: URL，轉為 base64 Data URL 以免重新整理後圖片失效
+        if (frontImageUrl.startsWith('blob:')) {
+          try {
+            const imgEl = await safeLoadImage(frontImageUrl);
+            const compCanvas = document.createElement('canvas');
+            const compW = Math.min(720, imgEl.naturalWidth || 720);
+            const compH = Math.round((compW / (imgEl.naturalWidth || 1)) * (imgEl.naturalHeight || 1));
+            compCanvas.width = compW;
+            compCanvas.height = compH;
+            const compCtx = compCanvas.getContext('2d');
+            if (compCtx) {
+              compCtx.drawImage(imgEl, 0, 0, compW, compH);
+              frontImageUrl = compCanvas.toDataURL('image/jpeg', 0.82);
+            }
+          } catch (blobConvErr) {
+            console.warn('Blob to dataURL fallback error:', blobConvErr);
+          }
+        }
+
+        // 壓縮檢查：若為 Data URL 且體積過大，縮小至 < 500KB 防止超出 Firestore 1MB 上限
+        if (frontImageUrl && frontImageUrl.startsWith('data:image/') && frontImageUrl.length > 500000) {
+          try {
+            const imgEl = await safeLoadImage(frontImageUrl);
+            const compCanvas = document.createElement('canvas');
+            const compW = Math.min(720, imgEl.naturalWidth || 720);
+            const compH = Math.round((compW / (imgEl.naturalWidth || 1)) * (imgEl.naturalHeight || 1));
+            compCanvas.width = compW;
+            compCanvas.height = compH;
+            const compCtx = compCanvas.getContext('2d');
+            if (compCtx) {
+              compCtx.drawImage(imgEl, 0, 0, compW, compH);
+              frontImageUrl = compCanvas.toDataURL('image/jpeg', 0.82);
+            }
+          } catch (compErr) {
+            console.warn('Compress fallback error:', compErr);
+          }
+        }
+
         // 2. 上傳背面圖 (若有)
         let backImageUrl: string | undefined = undefined;
         if (draft.backFile) {
           if (storage) {
             try {
-              const backExt = draft.backFile.name.split('.').pop() || 'png';
+              const backExt = draft.backFile.name.split('.').pop() || 'jpg';
               const backStorageRef = ref(storage, `P-Carder/cards/${uuidv4()}-back.${backExt}`);
               const backUploadTask = uploadBytesResumable(backStorageRef, draft.backFile);
 
@@ -348,6 +528,24 @@ export function SmartBulkCardUploadDialog({ area, onComplete }: SmartBulkCardUpl
           if (!backImageUrl) {
             backImageUrl = draft.backPreview;
           }
+
+          if (backImageUrl && backImageUrl.startsWith('blob:')) {
+            try {
+              const imgEl = await safeLoadImage(backImageUrl);
+              const compCanvas = document.createElement('canvas');
+              const compW = Math.min(720, imgEl.naturalWidth || 720);
+              const compH = Math.round((compW / (imgEl.naturalWidth || 1)) * (imgEl.naturalHeight || 1));
+              compCanvas.width = compW;
+              compCanvas.height = compH;
+              const compCtx = compCanvas.getContext('2d');
+              if (compCtx) {
+                compCtx.drawImage(imgEl, 0, 0, compW, compH);
+                backImageUrl = compCanvas.toDataURL('image/jpeg', 0.82);
+              }
+            } catch (blobConvErr) {
+              console.warn('Back Blob to dataURL fallback error:', blobConvErr);
+            }
+          }
         }
 
         // 3. 寫入 Firestore 集合 allCards
@@ -359,6 +557,7 @@ export function SmartBulkCardUploadDialog({ area, onComplete }: SmartBulkCardUpl
           isSold: area === 'group-break',
           dailyLimit: 0,
           minLevel: '新手收藏家',
+          hasRemovedSticker: draft.hasRemovedSticker || false,
           createdAt: uploadTimestamp,
         };
 
@@ -534,6 +733,25 @@ export function SmartBulkCardUploadDialog({ area, onComplete }: SmartBulkCardUpl
 
                       <div className="h-4 w-px bg-slate-200 mx-1" />
 
+                      {/* 批次去空白貼紙 */}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleBatchRemoveStickersFromDrafts}
+                        disabled={isBatchRemovingStickers}
+                        className="h-8 px-2.5 text-xs font-bold border-amber-200 bg-amber-50/70 hover:bg-amber-100 text-amber-900"
+                        title="自動掃描並消除全體卡片左上角的空白白色貼紙"
+                      >
+                        {isBatchRemovingStickers ? (
+                          <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin text-amber-600" />
+                        ) : (
+                          <Eraser className="h-3.5 w-3.5 mr-1 text-amber-600" />
+                        )}
+                        批次去空白貼紙
+                      </Button>
+
+                      <div className="h-4 w-px bg-slate-200 mx-1" />
+
                       <Button
                         size="sm"
                         variant="ghost"
@@ -566,61 +784,89 @@ export function SmartBulkCardUploadDialog({ area, onComplete }: SmartBulkCardUpl
                           </div>
 
                           {/* 雙面圖片預覽區 */}
-                          <div className="flex items-center gap-2 shrink-0">
-                            {/* 正面 */}
-                            <div className="relative group w-14 h-20 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
-                                src={draft.frontPreview}
-                                alt="Front"
-                                className="w-full h-full object-cover"
-                              />
-                              <span className="absolute bottom-0 inset-x-0 bg-slate-900/80 text-white text-[9px] font-black text-center py-0.5">
-                                正面
-                              </span>
-                            </div>
-
-                            {/* 互換正反面按鈕 (僅在有背面時可點) */}
-                            <button
-                              type="button"
-                              onClick={() => handleSwapFrontBack(draft.id)}
-                              disabled={!draft.backFile}
-                              title={draft.backFile ? '點擊互換正面與背面' : '尚無背面'}
-                              className={cn(
-                                'p-1 rounded-lg border transition-colors',
-                                draft.backFile
-                                  ? 'border-slate-200 hover:border-cyan-400 hover:bg-cyan-50 text-slate-600 hover:text-cyan-700'
-                                  : 'border-transparent text-slate-300 cursor-not-allowed'
-                              )}
-                            >
-                              <ArrowRightLeft className="h-3.5 w-3.5" />
-                            </button>
-
-                            {/* 背面 */}
-                            {draft.backPreview ? (
+                          <div className="flex flex-col items-center gap-1.5 shrink-0">
+                            <div className="flex items-center gap-2">
+                              {/* 正面 */}
                               <div className="relative group w-14 h-20 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center">
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img
-                                  src={draft.backPreview}
-                                  alt="Back"
+                                  src={draft.frontPreview}
+                                  alt="Front"
                                   className="w-full h-full object-cover"
                                 />
                                 <span className="absolute bottom-0 inset-x-0 bg-slate-900/80 text-white text-[9px] font-black text-center py-0.5">
-                                  背面
+                                  正面
                                 </span>
+                                {draft.hasRemovedSticker && (
+                                  <span className="absolute top-0.5 right-0.5 bg-emerald-500 text-white text-[8px] font-black px-1 rounded-sm shadow-xs">
+                                    已去標
+                                  </span>
+                                )}
                               </div>
-                            ) : (
-                              <label className="w-14 h-20 rounded-xl border border-dashed border-slate-300 hover:border-cyan-400 bg-slate-50 hover:bg-cyan-50/50 flex flex-col items-center justify-center text-[10px] text-slate-400 hover:text-cyan-700 font-bold cursor-pointer transition-colors relative">
-                                <Plus className="h-4 w-4 mb-0.5" />
-                                <span>補背面</span>
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  onChange={(e) => handleAddBackImage(draft.id, e)}
-                                  className="absolute inset-0 opacity-0 cursor-pointer"
-                                />
-                              </label>
-                            )}
+
+                              {/* 互換正反面按鈕 (僅在有背面時可點) */}
+                              <button
+                                type="button"
+                                onClick={() => handleSwapFrontBack(draft.id)}
+                                disabled={!draft.backFile}
+                                title={draft.backFile ? '點擊互換正面與背面' : '尚無背面'}
+                                className={cn(
+                                  'p-1 rounded-lg border transition-colors',
+                                  draft.backFile
+                                    ? 'border-slate-200 hover:border-cyan-400 hover:bg-cyan-50 text-slate-600 hover:text-cyan-700'
+                                    : 'border-transparent text-slate-300 cursor-not-allowed'
+                                )}
+                              >
+                                <ArrowRightLeft className="h-3.5 w-3.5" />
+                              </button>
+
+                              {/* 背面 */}
+                              {draft.backPreview ? (
+                                <div className="relative group w-14 h-20 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center">
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img
+                                    src={draft.backPreview}
+                                    alt="Back"
+                                    className="w-full h-full object-cover"
+                                  />
+                                  <span className="absolute bottom-0 inset-x-0 bg-slate-900/80 text-white text-[9px] font-black text-center py-0.5">
+                                    背面
+                                  </span>
+                                </div>
+                              ) : (
+                                <label className="w-14 h-20 rounded-xl border border-dashed border-slate-300 hover:border-cyan-400 bg-slate-50 hover:bg-cyan-50/50 flex flex-col items-center justify-center text-[10px] text-slate-400 hover:text-cyan-700 font-bold cursor-pointer transition-colors relative">
+                                  <Plus className="h-4 w-4 mb-0.5" />
+                                  <span>補背面</span>
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => handleAddBackImage(draft.id, e)}
+                                    className="absolute inset-0 opacity-0 cursor-pointer"
+                                  />
+                                </label>
+                              )}
+                            </div>
+
+                            {/* 去除左上白色空白貼紙按鈕 */}
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveStickerFromDraft(draft.id)}
+                              disabled={draft.isRemovingSticker}
+                              className={cn(
+                                'w-full py-0.5 px-1.5 rounded-md text-[10px] font-bold border flex items-center justify-center gap-1 transition-all',
+                                draft.hasRemovedSticker
+                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                                  : 'bg-white text-amber-700 border-amber-200 hover:bg-amber-50'
+                              )}
+                              title="去除卡片左上角白色空白標籤貼紙"
+                            >
+                              {draft.isRemovingSticker ? (
+                                <Loader2 className="h-3 w-3 animate-spin text-amber-600" />
+                              ) : (
+                                <Eraser className="h-3 w-3" />
+                              )}
+                              <span>{draft.hasRemovedSticker ? '已去貼紙(復原)' : '去掉貼紙'}</span>
+                            </button>
                           </div>
 
                           {/* 欄位資訊與即時編輯 */}

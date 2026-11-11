@@ -1476,48 +1476,69 @@ export default function UsersAdminPage() {
   }, [users, searchTerm]);
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col xl:flex-row justify-between xl:items-center gap-6">
-        <div>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight">會員管理</h1>
-            <p className="mt-1 text-sm text-slate-600 font-bold">查閱並管理全站會員資料、帳戶資產與活動抽卡券發放。</p>
+    <div className="space-y-6">
+      {/* 頁面頂部標題與搜尋列 */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-2 border-b border-slate-200/80">
+        <div className="shrink-0">
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight whitespace-nowrap">會員管理</h1>
+            <Badge variant="secondary" className="font-bold text-xs bg-slate-100 text-slate-700 border-slate-200">
+              共 {users?.length || 0} 位
+            </Badge>
+          </div>
+          <p className="mt-1 text-xs sm:text-sm text-slate-600 font-bold whitespace-nowrap">
+            查閱並管理全站會員資料、帳戶資產與活動抽卡券發放。
+          </p>
         </div>
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full xl:w-auto">
-            {isSuperAdmin && (
-              <>
-                <QuickGrantAdminDialog onUpdate={() => forceRefetch?.()} />
-                <Button
-                  variant="outline"
-                  onClick={handleSyncAllAdmins}
-                  disabled={isSyncingAdmins}
-                  className="h-11 sm:h-12 px-4 rounded-2xl font-black border-amber-300 text-amber-900 bg-amber-50 hover:bg-amber-100 flex items-center gap-2 shadow-xs cursor-pointer"
-                >
-                  {isSyncingAdmins ? <Loader2 className="w-4 h-4 animate-spin text-amber-600" /> : <ShieldCheck className="w-4 h-4 text-amber-600" />}
-                  <span>一鍵修復全體管理員權限</span>
-                </Button>
-              </>
-            )}
-            <Button
-                onClick={() => setIsEventDispatchOpen(true)}
-                className="h-11 sm:h-12 px-4 rounded-2xl font-black bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 shadow-md flex items-center gap-2"
-            >
-                <Ticket className="w-4 h-4" />
-                派發活動專屬券
-            </Button>
-            <Button
-                variant="outline"
-                onClick={() => setIsEventLogsOpen(true)}
-                className="h-11 sm:h-12 px-4 rounded-2xl font-bold border-purple-200 text-purple-900 bg-purple-50/60 hover:bg-purple-100 flex items-center gap-2"
-            >
-                <Clock className="w-4 h-4 text-purple-600" />
-                專屬券派發紀錄
-            </Button>
-            <BatchGrantFreeTicketsDialog onComplete={() => forceRefetch?.()} />
-            <div className="relative w-full sm:w-80 xl:w-96">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                <Input placeholder="搜尋名稱、Email 或 UID..." className="pl-12 h-11 sm:h-12 bg-white border-slate-200 rounded-2xl shadow-sm font-black text-slate-900 placeholder:text-slate-400" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-            </div>
+
+        {/* 搜尋框在右上角 */}
+        <div className="relative w-full sm:w-80 lg:w-96 shrink-0">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <Input 
+            placeholder="搜尋名稱、Email 或 UID..." 
+            className="pl-12 h-11 sm:h-12 bg-white border-slate-200 rounded-2xl shadow-xs font-bold text-slate-900 placeholder:text-slate-400" 
+            value={searchTerm} 
+            onChange={(e) => setSearchTerm(e.target.value)} 
+          />
         </div>
+      </div>
+
+      {/* 快捷操作功能列：支援 flex-wrap 自然換行，絕不擠壓標題 */}
+      <div className="flex flex-wrap items-center gap-2.5 p-3.5 bg-slate-100/80 border border-slate-200 rounded-2xl">
+        <div className="flex items-center gap-1.5 text-xs font-black text-slate-500 uppercase tracking-wider mr-1 shrink-0">
+          <span>快捷操作</span>
+          <span>:</span>
+        </div>
+        {isSuperAdmin && (
+          <>
+            <QuickGrantAdminDialog onUpdate={() => forceRefetch?.()} />
+            <Button
+              variant="outline"
+              onClick={handleSyncAllAdmins}
+              disabled={isSyncingAdmins}
+              className="h-10 sm:h-11 px-3.5 rounded-xl font-black border-amber-300 text-amber-900 bg-white hover:bg-amber-50 flex items-center gap-2 shadow-xs cursor-pointer text-xs shrink-0"
+            >
+              {isSyncingAdmins ? <Loader2 className="w-4 h-4 animate-spin text-amber-600" /> : <ShieldCheck className="w-4 h-4 text-amber-600" />}
+              <span>一鍵修復全體管理員權限</span>
+            </Button>
+          </>
+        )}
+        <Button
+          onClick={() => setIsEventDispatchOpen(true)}
+          className="h-10 sm:h-11 px-3.5 rounded-xl font-black bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 shadow-xs flex items-center gap-1.5 text-xs shrink-0"
+        >
+          <Ticket className="w-4 h-4" />
+          <span>派發活動專屬券</span>
+        </Button>
+        <Button
+          variant="outline"
+          onClick={() => setIsEventLogsOpen(true)}
+          className="h-10 sm:h-11 px-3.5 rounded-xl font-bold border-purple-200 text-purple-900 bg-white hover:bg-purple-50 flex items-center gap-1.5 text-xs shrink-0"
+        >
+          <Clock className="w-4 h-4 text-purple-600" />
+          <span>專屬券派發紀錄</span>
+        </Button>
+        <BatchGrantFreeTicketsDialog onComplete={() => forceRefetch?.()} />
       </div>
 
       <Card className="border-slate-200 shadow-lg overflow-hidden rounded-3xl bg-white">
@@ -1525,11 +1546,11 @@ export default function UsersAdminPage() {
             <Table className="min-w-[1050px]">
             <TableHeader className="bg-slate-50">
                 <TableRow className="border-b-slate-200">
-                    <TableHead className="pl-8 text-[10px] font-black uppercase text-slate-900 tracking-widest py-5">會員資訊</TableHead>
-                    <TableHead className="text-[10px] font-black uppercase text-slate-900 tracking-widest">等級稱號</TableHead>
-                    <TableHead className="text-[10px] font-black uppercase text-slate-900 tracking-widest">帳戶資產</TableHead>
-                    <TableHead className="text-[10px] font-black uppercase text-slate-900 tracking-widest">系統角色</TableHead>
-                    <TableHead className="text-right pr-8 text-[10px] font-black uppercase text-slate-900 tracking-widest">管理操作</TableHead>
+                    <TableHead className="pl-8 text-[10px] font-black uppercase text-slate-900 tracking-widest py-5 min-w-[220px]">會員資訊</TableHead>
+                    <TableHead className="text-[10px] font-black uppercase text-slate-900 tracking-widest whitespace-nowrap min-w-[130px]">等級稱號</TableHead>
+                    <TableHead className="text-[10px] font-black uppercase text-slate-900 tracking-widest whitespace-nowrap min-w-[130px]">帳戶資產</TableHead>
+                    <TableHead className="text-[10px] font-black uppercase text-slate-900 tracking-widest whitespace-nowrap min-w-[90px]">系統角色</TableHead>
+                    <TableHead className="text-right pr-8 text-[10px] font-black uppercase text-slate-900 tracking-widest whitespace-nowrap min-w-[340px]">管理操作</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
@@ -1537,8 +1558,12 @@ export default function UsersAdminPage() {
                     <TableRow key={i}><TableCell colSpan={5} className="p-6"><Skeleton className="h-12 w-full rounded-2xl" /></TableCell></TableRow>
                 )) : filteredUsers.length > 0 ? filteredUsers.map((user) => (
                     <TableRow key={user.id} className={cn("hover:bg-slate-50/80 transition-colors border-b-slate-100", isSuperAdminEmail(user.email) && "bg-blue-50/40")}>
-                    <TableCell className="pl-8 py-5"><UserDetailsDialog user={user} /></TableCell>
-                    <TableCell><Badge variant="outline" className="font-black text-[10px] border-slate-300 text-slate-700 uppercase h-6 px-3 bg-white shadow-sm">{user.userLevel}</Badge></TableCell>
+                    <TableCell className="pl-8 py-5 min-w-[220px]"><UserDetailsDialog user={user} /></TableCell>
+                    <TableCell className="whitespace-nowrap min-w-[130px]">
+                      <Badge variant="outline" className="font-black text-[10px] border-slate-300 text-slate-700 uppercase h-6 px-3 bg-white shadow-xs whitespace-nowrap inline-flex items-center justify-center shrink-0">
+                        {user.userLevel || '新手收藏家'}
+                      </Badge>
+                    </TableCell>
                     <TableCell className="font-code">
                         <div className="flex flex-col gap-1">
                             <span className="flex items-center gap-1.5 text-sm font-black text-slate-900">{user.points?.toLocaleString() || 0} <Gem className="w-3.5 h-3.5 text-cyan-600" /></span>
