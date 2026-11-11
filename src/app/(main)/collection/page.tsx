@@ -57,7 +57,7 @@ import type { UserProfile } from '@/types/user-profile';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import { PPlusIcon } from '@/components/icons';
+import { PPlusIcon, CrossedCardsIcon } from '@/components/icons';
 import { motion, AnimatePresence } from 'framer-motion';
 
 type Rarity = 'common' | 'rare' | 'legendary';
@@ -630,27 +630,11 @@ export default function CollectionPage() {
 
             <div className="relative z-10 flex flex-col items-center text-center justify-center gap-5 sm:gap-6">
               
-              {/* Centered Title, Collector Badge & Subtitle */}
-              <div className="space-y-2.5 max-w-2xl mx-auto text-center flex flex-col items-center">
-                
-                {/* Collector Rank Badge */}
-                <div className={cn(
-                  "inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-[11px] font-black uppercase tracking-wider shadow-md backdrop-blur-md",
-                  collectorTier.bgGlow
-                )}>
-                  <Crown className="w-3.5 h-3.5 animate-pulse" />
-                  <span>{collectorTier.name}</span>
-                  <span className="text-white/40">·</span>
-                  <span className="font-mono text-[10px] text-white/80">{collectorTier.title}</span>
-                </div>
-
+              {/* Centered Title */}
+              <div className="max-w-2xl mx-auto text-center flex flex-col items-center">
                 <h1 className="font-headline text-2xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-200 to-amber-300 drop-shadow-[0_0_25px_rgba(6,182,212,0.45)] tracking-tight leading-none">
                   我的卡牌典藏庫
                 </h1>
-
-                <p className="text-xs sm:text-sm text-slate-400 font-medium leading-relaxed max-w-xl">
-                  管理您的珍稀評級卡磚與數位藏品。支援 3D 正反面鑑賞、AI 鑑定報告、批次出貨或秒速轉點變現。
-                </p>
               </div>
 
               {/* Centered Portfolio Live Stats (奢華金屬數據儀表板) */}
@@ -701,6 +685,7 @@ export default function CollectionPage() {
               </div>
             </div>
           </div>
+
 
           {/* === INTERACTIVE FILTER & TOOLBAR === */}
           <div className="space-y-3">

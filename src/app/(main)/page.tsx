@@ -21,7 +21,6 @@ import { HeroStageFloor } from '@/components/hero-stage-floor';
 import { PLACEHOLDER_CARD_IMAGE } from '@/lib/placeholders';
 import { CardExhibitionCalendar } from '@/components/card-exhibition-calendar';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from '@/components/ui/carousel';
-import { PredictionSection } from '@/components/prediction-section';
 import { PoolCard } from '@/components/pool-card';
 import type { CardPool, CardItem } from '@/types';
 import { PromoRedeemModal } from '@/components/events/PromoRedeemModal';

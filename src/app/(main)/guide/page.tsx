@@ -1,7 +1,7 @@
 'use client';
 import Image from "next/image";
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   Sparkles, 
@@ -16,6 +16,8 @@ import {
   ArrowRight,
   Search,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Gift,
   AlertTriangle,
   Lock,
@@ -33,30 +35,23 @@ import { cn } from '@/lib/utils';
 import { PPlusIcon, DiamondIcon } from '@/components/icons';
 import { GUIDE_STEPS, CORE_PILLARS, FAQ_LIST } from '@/data/guide-data';
 
+const FAQ_TAG_THEMES: Record<string, { badge: string; border: string; glow: string; text: string }> = {
+  '點數體系': { badge: 'bg-amber-500/15 text-amber-300 border-amber-500/30', border: 'border-amber-500/40', glow: 'from-amber-500/20', text: 'text-amber-300' },
+  '卡片處理': { badge: 'bg-rose-500/15 text-rose-300 border-rose-500/30', border: 'border-rose-500/40', glow: 'from-rose-500/20', text: 'text-rose-300' },
+  '出貨與運費': { badge: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30', border: 'border-emerald-500/40', glow: 'from-emerald-500/20', text: 'text-emerald-300' },
+  '資金保障': { badge: 'bg-blue-500/15 text-blue-300 border-blue-500/30', border: 'border-blue-500/40', glow: 'from-blue-500/20', text: 'text-blue-300' },
+  '斷線保護': { badge: 'bg-purple-500/15 text-purple-300 border-purple-500/30', border: 'border-purple-500/40', glow: 'from-purple-500/20', text: 'text-purple-300' },
+  '新客須知': { badge: 'bg-yellow-500/15 text-yellow-300 border-yellow-500/30', border: 'border-yellow-500/40', glow: 'from-yellow-500/20', text: 'text-yellow-300' },
+  '公平保證': { badge: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30', border: 'border-cyan-500/40', glow: 'from-cyan-500/20', text: 'text-cyan-300' },
+};
+
 export default function BeginnerGuidePage() {
   const [faqSearch, setFaqSearch] = useState('');
   const [activeFaqCategory, setActiveFaqCategory] = useState<string>('all');
-  const [expandedFaqs, setExpandedFaqs] = useState<Set<number>>(new Set([0, 1, 2]));
-
-  const toggleFaq = (idx: number) => {
-    setExpandedFaqs(prev => {
-      const next = new Set(prev);
-      if (next.has(idx)) {
-        next.delete(idx);
-      } else {
-        next.add(idx);
-      }
-      return next;
-    });
-  };
-
-  const expandAll = () => {
-    setExpandedFaqs(new Set((FAQ_LIST || []).map((_, i) => i)));
-  };
-
-  const collapseAll = () => {
-    setExpandedFaqs(new Set());
-  };
+  const faqCarouselRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+  const [activeFaqIndex, setActiveFaqIndex] = useState(0);
 
   const filteredFaqs = (FAQ_LIST || []).filter(item => {
     const matchesSearch = !faqSearch.trim() || 
@@ -69,6 +64,54 @@ export default function BeginnerGuidePage() {
   });
 
   const categories = ['all', '點數體系', '卡片處理', '出貨與運費', '資金保障', '斷線保護', '新客須知', '公平保證'];
+
+  const checkFaqScroll = () => {
+    if (!faqCarouselRef.current) return;
+    const { scrollLeft, scrollWidth, clientWidth } = faqCarouselRef.current;
+    setCanScrollLeft(scrollLeft > 10);
+    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
+
+    const cardWidth = 340;
+    const index = Math.round(scrollLeft / cardWidth);
+    setActiveFaqIndex(Math.min(Math.max(0, index), Math.max(0, filteredFaqs.length - 1)));
+  };
+
+  useEffect(() => {
+    checkFaqScroll();
+    const el = faqCarouselRef.current;
+    if (!el) return;
+    el.addEventListener('scroll', checkFaqScroll, { passive: true });
+    return () => el.removeEventListener('scroll', checkFaqScroll);
+  }, [filteredFaqs]);
+
+  const scrollFaq = (direction: 'left' | 'right') => {
+    if (!faqCarouselRef.current) return;
+    const scrollAmount = faqCarouselRef.current.clientWidth * 0.85;
+    faqCarouselRef.current.scrollBy({
+      left: direction === 'left' ? -scrollAmount : scrollAmount,
+      behavior: 'smooth'
+    });
+  };
+
+  const scrollToFaqIndex = (idx: number) => {
+    if (!faqCarouselRef.current) return;
+    const cards = faqCarouselRef.current.children;
+    if (cards[idx]) {
+      (cards[idx] as HTMLElement).scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'center'
+      });
+    }
+  };
+
+  const handleCategorySelect = (cat: string) => {
+    setActiveFaqCategory(cat);
+    setActiveFaqIndex(0);
+    if (faqCarouselRef.current) {
+      faqCarouselRef.current.scrollTo({ left: 0, behavior: 'smooth' });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#070b14] text-slate-100 pb-28 pt-4 sm:pt-8 relative overflow-hidden">
@@ -349,33 +392,51 @@ export default function BeginnerGuidePage() {
         </section>
 
         {/* ================= SECTION 3: 必看 FAQ 問答集 ================= */}
-        <section id="faq-section" className="scroll-mt-20 space-y-6">
+        {/* ================= SECTION 3: 必看 FAQ 左右滑動字卡 ================= */}
+        <section id="faq-section" className="scroll-mt-20 space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-white/10 pb-4">
             <div>
               <div className="flex items-center gap-2 text-xs font-black tracking-wider uppercase text-rose-400 font-mono">
-                <span className="w-2 h-2 rounded-full bg-rose-400" />
-                Frequently Asked Questions
+                <span className="w-2 h-2 rounded-full bg-rose-400 animate-pulse" />
+                Frequently Asked Questions · 左右滑動字卡
               </div>
               <h2 className="text-2xl sm:text-3xl font-black font-headline text-white mt-1">
                 常見問題與保證承諾
               </h2>
             </div>
 
-            {/* 搜尋與全部展開/收合控制 */}
-            <div className="flex items-center gap-2">
+            {/* 左右切換控制按鈕與當前題號 */}
+            <div className="flex items-center gap-2.5">
+              <span className="text-xs font-mono font-bold text-slate-400 px-2.5 py-1 rounded-lg bg-slate-900 border border-white/10">
+                {filteredFaqs.length > 0 ? `第 ${Math.min(activeFaqIndex + 1, filteredFaqs.length)} / ${filteredFaqs.length} 題` : '0 則問題'}
+              </span>
               <button
                 type="button"
-                onClick={expandAll}
-                className="text-xs text-slate-400 hover:text-white px-2.5 py-1 rounded-lg bg-slate-900 border border-white/10 transition-colors"
+                onClick={() => scrollFaq('left')}
+                disabled={!canScrollLeft}
+                aria-label="前一個問題"
+                className={cn(
+                  "p-2 rounded-xl border transition-all duration-200 cursor-pointer",
+                  canScrollLeft
+                    ? "bg-slate-900 text-white border-white/20 hover:border-amber-400 hover:bg-slate-800 active:scale-95 shadow-md shadow-amber-400/10"
+                    : "bg-slate-950/60 text-slate-600 border-white/5 cursor-not-allowed opacity-50"
+                )}
               >
-                全部展開
+                <ChevronLeft className="w-4 h-4" />
               </button>
               <button
                 type="button"
-                onClick={collapseAll}
-                className="text-xs text-slate-400 hover:text-white px-2.5 py-1 rounded-lg bg-slate-900 border border-white/10 transition-colors"
+                onClick={() => scrollFaq('right')}
+                disabled={!canScrollRight}
+                aria-label="下一個問題"
+                className={cn(
+                  "p-2 rounded-xl border transition-all duration-200 cursor-pointer",
+                  canScrollRight
+                    ? "bg-slate-900 text-white border-white/20 hover:border-amber-400 hover:bg-slate-800 active:scale-95 shadow-md shadow-amber-400/10"
+                    : "bg-slate-950/60 text-slate-600 border-white/5 cursor-not-allowed opacity-50"
+                )}
               >
-                全部收合
+                <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -387,7 +448,13 @@ export default function BeginnerGuidePage() {
               <input
                 type="text"
                 value={faqSearch}
-                onChange={(e) => setFaqSearch(e.target.value)}
+                onChange={(e) => {
+                  setFaqSearch(e.target.value);
+                  setActiveFaqIndex(0);
+                  if (faqCarouselRef.current) {
+                    faqCarouselRef.current.scrollTo({ left: 0, behavior: 'smooth' });
+                  }
+                }}
                 placeholder="搜尋點數、運費、寄送、退款..."
                 className="w-full h-10 pl-9 pr-4 text-xs sm:text-sm rounded-xl bg-slate-900/90 border border-white/15 text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-400 transition-colors shadow-inner"
               />
@@ -398,7 +465,7 @@ export default function BeginnerGuidePage() {
                 <button
                   key={cat}
                   type="button"
-                  onClick={() => setActiveFaqCategory(cat)}
+                  onClick={() => handleCategorySelect(cat)}
                   className={cn(
                     "px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer",
                     activeFaqCategory === cat
@@ -412,61 +479,109 @@ export default function BeginnerGuidePage() {
             </div>
           </div>
 
-          {/* FAQ 列表手風琴 */}
-          <div className="space-y-3">
-            {filteredFaqs.length === 0 ? (
-              <div className="p-8 text-center bg-slate-900/60 rounded-3xl border border-white/10 text-slate-400 text-sm">
-                找不到相關問題，請嘗試搜尋其他關鍵字或點選分類切換。
-              </div>
-            ) : (
-              filteredFaqs.map((faq, idx) => {
-                const isExpanded = expandedFaqs.has(idx);
-                return (
-                  <div
-                    key={idx}
-                    className={cn(
-                      "rounded-2xl border transition-all overflow-hidden",
-                      isExpanded
-                        ? "bg-gradient-to-r from-slate-900 via-slate-950 to-slate-900 border-amber-500/40 shadow-lg"
-                        : "bg-slate-900/50 border-white/10 hover:border-white/20"
-                    )}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => toggleFaq(idx)}
-                      className="w-full p-4 sm:p-5 text-left flex items-center justify-between gap-4 cursor-pointer select-none"
+          {/* 左右滑動卡片軌道 */}
+          {filteredFaqs.length === 0 ? (
+            <div className="p-8 text-center bg-slate-900/60 rounded-3xl border border-white/10 text-slate-400 text-sm">
+              找不到相關問題，請嘗試搜尋其他關鍵字或點選分類切換。
+            </div>
+          ) : (
+            <div className="relative">
+              {/* 橫向滑動卡片容器 */}
+              <div
+                ref={faqCarouselRef}
+                className="flex gap-4 overflow-x-auto snap-x snap-mandatory pt-2 pb-4 px-1 scrollbar-none touch-pan-x scroll-smooth"
+              >
+                {filteredFaqs.map((faq, idx) => {
+                  const theme = FAQ_TAG_THEMES[faq.tag] || {
+                    badge: 'bg-white/10 text-slate-300 border-white/10',
+                    border: 'border-white/15',
+                    glow: 'from-white/10',
+                    text: 'text-slate-300'
+                  };
+                  return (
+                    <div
+                      key={idx}
+                      className={cn(
+                        "w-[85vw] max-w-[340px] sm:w-[370px] md:w-[390px] shrink-0 snap-start",
+                        "h-[390px] sm:h-[410px] flex flex-col justify-between",
+                        "rounded-2xl sm:rounded-3xl border p-5 sm:p-6 select-none",
+                        "bg-gradient-to-b from-slate-900/95 via-[#0b111e]/95 to-slate-950/95",
+                        "transition-all duration-300 hover:scale-[1.01] shadow-[0_12px_35px_rgba(0,0,0,0.6)] relative overflow-hidden group",
+                        theme.border
+                      )}
                     >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <span className={cn(
-                          "w-6 h-6 rounded-lg font-mono text-xs font-black flex items-center justify-center shrink-0 transition-colors",
-                          isExpanded
-                            ? "bg-amber-400 text-slate-950"
-                            : "bg-white/10 text-slate-300"
-                        )}>
-                          Q
-                        </span>
-                        <span className="text-sm sm:text-base font-bold text-white">
-                          {faq.q}
-                        </span>
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-white/5 text-amber-300/80 border border-white/5 hidden md:inline shrink-0">
-                          {faq.tag}
-                        </span>
-                      </div>
-                      <ChevronDown className={cn("w-4 h-4 text-slate-400 transition-transform shrink-0", isExpanded && "rotate-180 text-amber-400")} />
-                    </button>
+                      {/* 頂部賽博發光裝飾條 */}
+                      <div className={cn("absolute top-0 inset-x-0 h-1 bg-gradient-to-r transparent", theme.glow, "to-transparent")} />
 
-                    {isExpanded && (
-                      <div className="px-5 pb-5 pt-1 text-xs sm:text-sm text-slate-300 leading-relaxed border-t border-white/5 bg-black/25">
-                        <div className="p-3.5 rounded-xl bg-slate-950/80 border border-white/5 text-slate-200">
-                          <p className="whitespace-pre-line leading-relaxed">{faq.a}</p>
+                      {/* 卡片頂部標籤與編號 */}
+                      <div>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className={cn("px-2.5 py-0.5 rounded-full text-[11px] font-bold border", theme.badge)}>
+                            {faq.tag}
+                          </span>
+                          <span className="font-mono text-xs font-black text-slate-400 bg-white/5 px-2 py-0.5 rounded-md border border-white/5">
+                            Q{idx + 1}
+                          </span>
                         </div>
+
+                        {/* 問題標題 */}
+                        <h3 className="text-base sm:text-lg font-black text-white mt-3 leading-snug line-clamp-2 group-hover:text-amber-300 transition-colors">
+                          {faq.q}
+                        </h3>
                       </div>
-                    )}
-                  </div>
-                );
-              })
-            )}
-          </div>
+
+                      {/* 卡片回答內容 (內置細緻滾動容器，確保長內容完整閱覽且不溢出) */}
+                      <div className="flex-1 min-h-0 my-3 p-3.5 sm:p-4 rounded-xl bg-slate-950/80 border border-white/5 text-xs sm:text-sm text-slate-300 leading-relaxed overflow-y-auto scrollbar-thin">
+                        <p className="whitespace-pre-line leading-relaxed">{faq.a}</p>
+                      </div>
+
+                      {/* 卡片底部提示欄 */}
+                      <div className="pt-2 border-t border-white/5 flex items-center justify-between text-[11px] text-slate-400">
+                        <span className="flex items-center gap-1 text-amber-400/90 font-medium">
+                          <HelpCircle className="w-3.5 h-3.5 shrink-0" />
+                          官方答疑認證
+                        </span>
+                        <span className="text-slate-500 font-mono text-[10px]">
+                          P+ CARDER FAQ
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* 手機版左右滑動提示與下方點點導覽 */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-2 px-1">
+                <p className="text-[11px] text-slate-500 flex items-center gap-1 sm:hidden">
+                  <span>👈</span>
+                  <span>可直接向左向右滑動字卡切換</span>
+                  <span>👉</span>
+                </p>
+
+                {/* 底部小圓點導覽 */}
+                <div className="flex items-center gap-1.5 overflow-x-auto max-w-full py-1">
+                  {filteredFaqs.map((_, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => scrollToFaqIndex(idx)}
+                      aria-label={`跳至第 ${idx + 1} 個問題`}
+                      className={cn(
+                        "h-2 rounded-full transition-all duration-300 cursor-pointer",
+                        activeFaqIndex === idx
+                          ? "w-6 bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.8)]"
+                          : "w-2 bg-white/20 hover:bg-white/40"
+                      )}
+                    />
+                  ))}
+                </div>
+
+                <div className="hidden sm:flex items-center gap-1 text-[11px] text-slate-500">
+                  <span>共 {filteredFaqs.length} 則常見問題字卡，點選箭頭或左右滑動即可閱覽</span>
+                </div>
+              </div>
+            </div>
+          )}
         </section>
 
         {/* ================= BOTTOM CTA BANNER ================= */}

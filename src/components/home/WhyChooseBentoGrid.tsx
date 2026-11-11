@@ -225,10 +225,10 @@ export function WhyChooseBentoGrid({
                   <div className="space-y-2 text-xs">
                     <div className="p-2 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-between">
                       <span className="font-bold text-slate-200 flex items-center gap-1.5 text-[11px]">
-                        <span className="w-1.5 h-1.5 rounded-full bg-fuchsia-400" />
-                        即時拼卡 (Team Break)
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+                        拼卡 · 回血救援館
                       </span>
-                      <span className="text-[10px] text-slate-400">小額拼頂卡</span>
+                      <span className="text-[10px] text-rose-300 font-bold">空門回血 · 自選換卡</span>
                     </div>
                     <div className="p-2 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-between">
                       <span className="font-bold text-slate-200 flex items-center gap-1.5 text-[11px]">
@@ -480,10 +480,10 @@ export function WhyChooseBentoGrid({
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full md:w-auto shrink-0">
               <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-between gap-4">
                 <span className="font-bold text-slate-200 flex items-center gap-2 text-xs">
-                  <span className="w-2 h-2 rounded-full bg-fuchsia-400" />
-                  即時拼卡 (Team Break)
+                  <span className="w-2 h-2 rounded-full bg-rose-400" />
+                  拼卡 · 回血救援館
                 </span>
-                <span className="text-[11px] text-slate-400 font-mono">小額拼頂卡</span>
+                <span className="text-[11px] text-rose-300 font-bold">1/10小額自選換卡</span>
               </div>
               <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-between gap-4">
                 <span className="font-bold text-slate-200 flex items-center gap-2 text-xs">

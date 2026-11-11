@@ -1966,29 +1966,38 @@ export default function CardScannerProPage() {
                             />
                           </div>
 
-                          <div className="grid grid-cols-2 gap-2 text-[11px]">
-                            <Input
-                              placeholder="評級 (如 PSA 10)"
-                              value={card.grade || ''}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                setCards(prev => prev.map((c, i) => i === idx ? { ...c, grade: val } : c));
-                              }}
-                              className="h-7 text-[11px]"
-                            />
-                            <Select
-                              value={card.targetArea || 'all'}
-                              onValueChange={(val) => {
-                                setCards(prev => prev.map((c, i) => i === idx ? { ...c, targetArea: val } : c));
-                              }}
-                            >
-                              <SelectTrigger className="h-7 text-[11px]">
-                                <SelectValue placeholder="入庫專區" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {AREAS.map(a => <SelectItem key={a.id} value={a.id} className="text-xs">{a.name}</SelectItem>)}
-                              </SelectContent>
-                            </Select>
+                          {/* 評級等級與一鍵快捷標籤（取代原冗餘入庫專區選單） */}
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-1.5">
+                              <Input
+                                placeholder="評級 (如 PSA 10, RAW)"
+                                value={card.grade || ''}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setCards(prev => prev.map((c, i) => i === idx ? { ...c, grade: val } : c));
+                                }}
+                                className="h-7 text-[11px] font-bold text-slate-900 bg-white"
+                              />
+                              <div className="flex items-center gap-1 shrink-0">
+                                {['PSA 10', 'PSA 9', 'BGS 9.5', 'RAW'].map(quickGrade => (
+                                  <button
+                                    key={quickGrade}
+                                    type="button"
+                                    onClick={() => {
+                                      setCards(prev => prev.map((c, i) => i === idx ? { ...c, grade: quickGrade } : c));
+                                    }}
+                                    className={cn(
+                                      "px-1.5 py-0.5 rounded text-[9px] font-black transition-all cursor-pointer border",
+                                      card.grade === quickGrade
+                                        ? "bg-slate-900 text-white border-slate-900 shadow-2xs"
+                                        : "bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300"
+                                    )}
+                                  >
+                                    {quickGrade}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
                           </div>
 
                           {/* 🌟 市場卡價參考行情 (僅在步驟 6 顯示查價按鈕，其餘步驟靜態顯示) */}
@@ -2530,22 +2539,21 @@ export default function CardScannerProPage() {
           {/* 卡片清單總核對表格 */}
           <div className="border border-slate-200 rounded-xl overflow-hidden max-h-[340px] overflow-y-auto">
             <table className="w-full text-left text-xs border-collapse">
-              <thead className="bg-slate-100 text-slate-700 sticky top-0 z-10 font-bold text-[11px] border-b border-slate-200">
+              <thead className="bg-slate-100 text-slate-800 sticky top-0 z-10 font-black text-xs border-b border-slate-200">
                 <tr>
                   <th className="py-2.5 px-3">#</th>
-                  <th className="py-2.5 px-3">預覽 (正/反)</th>
+                  <th className="py-2.5 px-3">卡片外觀 (正/反縮圖)</th>
                   <th className="py-2.5 px-3">球員 / 卡片品名</th>
                   <th className="py-2.5 px-3">評級等級</th>
                   <th className="py-2.5 px-3">分類</th>
                   <th className="py-2.5 px-3">建議售價 / 行情</th>
-                  <th className="py-2.5 px-3">專區</th>
-                  <th className="py-2.5 px-3">貼紙修復</th>
+                  <th className="py-2.5 px-3">貼紙修復檢視</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
                 {cards.map((card, i) => (
                   <tr key={`qc-${card.id}`} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="py-2 px-3 font-mono font-bold text-amber-600">#{i + 1}</td>
+                    <td className="py-2 px-3 font-mono font-bold text-amber-600 text-xs">#{i + 1}</td>
                     <td className="py-2.5 px-3">
                       <div className="flex items-center gap-2">
                         {/* 正面縮圖（點擊放大） */}
@@ -2556,7 +2564,7 @@ export default function CardScannerProPage() {
                             setZoomSide('front');
                             setZoomShowOriginal(false);
                           }}
-                          className="w-12 h-16 rounded-lg bg-slate-100 border-2 border-slate-300 overflow-hidden shrink-0 relative group cursor-pointer hover:border-amber-500 hover:shadow-md transition-all"
+                          className="w-14 h-20 rounded-lg bg-slate-100 border-2 border-slate-300 overflow-hidden shrink-0 relative group cursor-pointer hover:border-amber-500 hover:shadow-md transition-all shadow-2xs"
                           title="點擊放大檢視正面與貼紙消除效果"
                         >
                           {card.frontPreview ? (
@@ -2565,10 +2573,15 @@ export default function CardScannerProPage() {
                           ) : (
                             <span className="text-[10px] text-slate-400">正</span>
                           )}
-                          <div className="absolute inset-0 bg-slate-950/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[9px] font-bold">
+                          <div className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[10px] font-black">
                             <ZoomIn className="w-4 h-4 text-white drop-shadow mb-0.5" />
                             <span>放大</span>
                           </div>
+                          {card.hasRemovedSticker && (
+                            <div className="absolute top-0.5 left-0.5 bg-emerald-600 text-white rounded px-1 text-[8px] font-black shadow">
+                              無痕
+                            </div>
+                          )}
                         </button>
 
                         {/* 背面縮圖（點擊放大） */}
@@ -2580,12 +2593,12 @@ export default function CardScannerProPage() {
                               setZoomSide('back');
                               setZoomShowOriginal(false);
                             }}
-                            className="w-12 h-16 rounded-lg bg-cyan-950/20 border-2 border-cyan-400/50 overflow-hidden shrink-0 relative group cursor-pointer hover:border-cyan-500 hover:shadow-md transition-all"
+                            className="w-14 h-20 rounded-lg bg-cyan-950/20 border-2 border-cyan-400/50 overflow-hidden shrink-0 relative group cursor-pointer hover:border-cyan-500 hover:shadow-md transition-all shadow-2xs"
                             title="點擊放大檢視背面"
                           >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={card.backPreview} alt="Back" className="w-full h-full object-cover" />
-                            <div className="absolute inset-0 bg-slate-950/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[9px] font-bold">
+                            <div className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[10px] font-black">
                               <ZoomIn className="w-4 h-4 text-white drop-shadow mb-0.5" />
                               <span>放大</span>
                             </div>
@@ -2593,43 +2606,41 @@ export default function CardScannerProPage() {
                         )}
                       </div>
                     </td>
-                    <td className="py-2 px-3 max-w-[200px]">
-                      <span className="font-bold text-slate-900 block truncate" title={card.name}>
+                    <td className="py-2 px-3 max-w-[240px]">
+                      <span className="font-black text-slate-900 block text-xs truncate" title={card.name}>
                         {card.name}
                       </span>
                       {card.slabLabelText && (
-                        <span className="text-[10px] text-slate-500 block truncate font-mono" title={card.slabLabelText}>
+                        <span className="text-[10px] text-slate-500 block truncate font-mono mt-0.5" title={card.slabLabelText}>
                           {card.slabLabelText}
                         </span>
                       )}
                     </td>
                     <td className="py-2 px-3">
-                      {/* 🌟 紅圈 1 修復：超清晰高對比深色評級文字標籤 */}
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-md font-mono text-xs font-black border shadow-2xs ${
+                      {/* 🌟 紅圈 1 修復：超清晰高對比深色評級文字標籤，100% 清晰可見 */}
+                      <span className={cn(
+                        "inline-flex items-center px-2.5 py-1 rounded-md font-mono text-xs font-black shadow-2xs tracking-tight border",
                         card.grade?.includes('10')
-                          ? 'bg-amber-100 text-amber-950 border-amber-400 font-extrabold ring-1 ring-amber-300/50'
+                          ? "bg-amber-400 text-slate-950 border-amber-500 font-black shadow-amber-400/20"
                           : card.grade?.includes('9.5') || card.grade?.includes('9')
-                          ? 'bg-emerald-100 text-emerald-950 border-emerald-400 font-bold'
+                          ? "bg-emerald-600 text-white border-emerald-700 font-black"
                           : card.grade?.startsWith('PSA') || card.grade?.startsWith('BGS')
-                          ? 'bg-indigo-100 text-indigo-950 border-indigo-300 font-bold'
-                          : 'bg-slate-200 text-slate-900 border-slate-400 font-bold'
-                      }`}>
+                          ? "bg-slate-900 text-white border-slate-800 font-black"
+                          : "bg-slate-200 text-slate-900 border-slate-300 font-bold"
+                      )}>
                         {card.grade || 'RAW'}
                       </span>
                     </td>
-                    <td className="py-2 px-3 text-slate-700 font-bold">{card.category}</td>
+                    <td className="py-2 px-3 text-slate-800 font-bold text-xs">{card.category}</td>
                     <td className="py-2 px-3">
-                      <span className="font-black font-mono text-emerald-800 text-sm block">
-                        {card.sellPrice} P
+                      <span className="font-black font-mono text-emerald-700 text-sm block">
+                        {card.sellPrice?.toLocaleString() || 100} P
                       </span>
                       {card.priceRange && (
-                        <span className="text-[10px] text-slate-500 block font-mono font-medium">
+                        <span className="text-[10px] text-slate-500 block font-mono font-medium mt-0.5">
                           {card.priceRange}
                         </span>
                       )}
-                    </td>
-                    <td className="py-2 px-3 text-slate-600 text-xs font-medium">
-                      {AREAS.find(a => a.id === card.targetArea)?.name || '全部庫存'}
                     </td>
                     <td className="py-2 px-3">
                       {card.hasRemovedSticker ? (
@@ -2640,14 +2651,14 @@ export default function CardScannerProPage() {
                             setZoomSide('front');
                             setZoomShowOriginal(false);
                           }}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 text-[10px] border border-emerald-300 font-black hover:bg-emerald-200 cursor-pointer transition-colors shadow-2xs"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-black shadow-xs cursor-pointer transition-colors"
                           title="點擊放大對比消除貼紙效果"
                         >
-                          <Check className="w-3 h-3 text-emerald-700" />
+                          <Check className="w-3.5 h-3.5 text-emerald-200" />
                           <span>已去貼紙 (點擊放大)</span>
                         </button>
                       ) : (
-                        <span className="text-[11px] text-slate-400">原貌乾淨</span>
+                        <span className="text-[11px] text-slate-400 font-medium">原貌乾淨</span>
                       )}
                     </td>
                   </tr>
@@ -2666,8 +2677,9 @@ export default function CardScannerProPage() {
               {/* 🌟 紅圈 2 修復：高對比清晰白底深灰字按鈕，絕不變黑磚 */}
               <Button
                 type="button"
+                variant="outline"
                 onClick={() => setIsQcModalOpen(false)}
-                className="h-10 px-5 rounded-xl text-xs font-black bg-white hover:bg-slate-100 text-slate-800 border-2 border-slate-300 shadow-xs"
+                className="h-10 px-6 rounded-xl text-xs font-black bg-white hover:bg-slate-100 text-slate-900 border-2 border-slate-300 hover:border-slate-400 shadow-xs cursor-pointer"
               >
                 返回修改
               </Button>
@@ -2680,9 +2692,9 @@ export default function CardScannerProPage() {
                   handleSaveAllToDatabase();
                 }}
                 disabled={isSavingToDb || cards.length === 0}
-                className="h-10 px-5 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-xs shadow-md gap-1.5"
+                className="h-10 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-md gap-2 border border-emerald-500 transition-all cursor-pointer disabled:opacity-50"
               >
-                {isSavingToDb ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4 text-emerald-300" />}
+                {isSavingToDb ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : <CheckCircle2 className="w-4 h-4 text-emerald-200" />}
                 <span>確認無誤，執行第 8 步一鍵入庫！</span>
               </Button>
             </div>

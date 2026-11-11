@@ -242,9 +242,52 @@ export default function BetLandingPage() {
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1100px] h-[450px] bg-gradient-to-b from-rose-500/15 via-pink-500/10 to-transparent blur-[140px] pointer-events-none -z-10" />
             <div className="absolute top-[600px] right-0 w-[600px] h-[600px] bg-rose-500/10 blur-[160px] pointer-events-none -z-10" />
 
-            <div className="container px-3 sm:px-6 pt-7 sm:pt-11 pb-20 max-w-7xl mx-auto space-y-6 sm:space-y-8">
+            <div className="container px-3 sm:px-6 pt-3 sm:pt-9 pb-20 max-w-7xl mx-auto space-y-4 sm:space-y-8">
                 
-                {/* 3D 旋轉門主題呈現專區（右上角配有精緻的玩法說明與公平驗證，適度留白更顯大器） */}
+                {/* 🛡️ 拼卡 · 4 大核心介紹（手機版極致精巧、不佔高度） */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 sm:gap-4">
+                    <div className="p-2 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-b from-[#180a14]/90 to-[#0e070d]/90 border border-rose-500/25 flex items-center gap-2 sm:gap-3 shadow-xs hover:border-rose-500/40 transition-all">
+                        <div className="w-7 h-7 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400 shrink-0">
+                            <Target className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
+                        </div>
+                        <div className="min-w-0">
+                            <div className="font-black text-white text-[11px] sm:text-sm tracking-tight leading-tight">自選目標卡</div>
+                            <div className="text-[9px] sm:text-[11px] text-slate-400 mt-0.5 leading-tight truncate">告別盲盒遺憾</div>
+                        </div>
+                    </div>
+
+                    <div className="p-2 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-b from-[#180a14]/90 to-[#0e070d]/90 border border-rose-500/25 flex items-center gap-2 sm:gap-3 shadow-xs hover:border-rose-500/40 transition-all">
+                        <div className="w-7 h-7 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+                            <Percent className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
+                        </div>
+                        <div className="min-w-0">
+                            <div className="font-black text-white text-[11px] sm:text-sm tracking-tight leading-tight">1/10 成本換卡</div>
+                            <div className="text-[9px] sm:text-[11px] text-slate-400 mt-0.5 leading-tight truncate">高期望值翻盤</div>
+                        </div>
+                    </div>
+
+                    <div className="p-2 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-b from-[#180a14]/90 to-[#0e070d]/90 border border-rose-500/25 flex items-center gap-2 sm:gap-3 shadow-xs hover:border-rose-500/40 transition-all">
+                        <div className="w-7 h-7 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-400 shrink-0">
+                            <Coins className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
+                        </div>
+                        <div className="min-w-0">
+                            <div className="font-black text-white text-[11px] sm:text-sm tracking-tight leading-tight">支援轉點回收</div>
+                            <div className="text-[9px] sm:text-[11px] text-slate-400 mt-0.5 leading-tight truncate">P+ 點數皆可拼</div>
+                        </div>
+                    </div>
+
+                    <div className="p-2 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-b from-[#180a14]/90 to-[#0e070d]/90 border border-rose-500/25 flex items-center gap-2 sm:gap-3 shadow-xs hover:border-rose-500/40 transition-all">
+                        <div className="w-7 h-7 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+                            <Award className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
+                        </div>
+                        <div className="min-w-0">
+                            <div className="font-black text-white text-[11px] sm:text-sm tracking-tight leading-tight">中獎即刻入庫</div>
+                            <div className="text-[9px] sm:text-[11px] text-slate-400 mt-0.5 leading-tight truncate">實體卡保證寄送</div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* 3D 旋轉門主題呈現專區（右上角配有精緻的玩法說明與公平驗證） */}
                 <div className="relative mt-1 sm:mt-2">
                     <RevolvingDoorThemeCarousel
                         categories={categoriesWithCounts}
@@ -256,7 +299,7 @@ export default function BetLandingPage() {
                                 <button 
                                     type="button"
                                     className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-900/90 hover:bg-slate-800 text-rose-300 border border-rose-500/40 flex items-center justify-center transition-all shadow-[0_0_12px_rgba(244,63,94,0.25)] active:scale-95 cursor-pointer"
-                                    title="拼卡玩法說明"
+                                    title="拼卡回血機制說明"
                                 >
                                     <HelpCircle className="w-4 h-4 text-rose-400" />
                                 </button>
@@ -265,34 +308,37 @@ export default function BetLandingPage() {
                                 <DialogHeader>
                                     <DialogTitle className="text-xl md:text-2xl font-black text-rose-400 flex items-center gap-2 font-headline">
                                         <Target className="w-6 h-6 text-rose-400" />
-                                        拼卡機制
+                                        拼卡 · 回血救援機制
                                     </DialogTitle>
                                 </DialogHeader>
                                 <div className="space-y-4 py-3 text-sm text-slate-300">
+                                    <p className="text-xs text-rose-200/90 bg-rose-500/10 border border-rose-500/20 p-3 rounded-xl leading-relaxed">
+                                        💡 <strong>空門救贖核心理念</strong>：玩家在轉蛋或卡盒中若未抽中理想球星，可至此挑選真正喜愛的卡片，僅需 1/10 成本以小搏大；也可使用卡片轉點後的紅利 P+ 點數或鑽石進行直購兌換！
+                                    </p>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
                                             <div className="flex items-center gap-2 text-rose-400 font-bold">
-                                                <Percent className="w-4 h-4" /> 1/10 命中率
+                                                <Percent className="w-4 h-4" /> 1/10 幸運命中
                                             </div>
-                                            <p className="text-xs text-slate-400">每次 1~10 隨機搖號，命中直接帶走卡片。</p>
+                                            <p className="text-xs text-slate-400">每次 1~10 號碼隨機搖號，命中直接帶走心儀卡片。</p>
                                         </div>
                                         <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
                                             <div className="flex items-center gap-2 text-purple-400 font-bold">
-                                                <Coins className="w-4 h-4" /> 雙幣參與
+                                                <Coins className="w-4 h-4" /> 雙幣自由參與
                                             </div>
-                                            <p className="text-xs text-slate-400">支援鑽石 💎 或 P+ 點數（鑽石與 P+ 1:10）。</p>
+                                            <p className="text-xs text-slate-400">支援鑽石 💎 或卡片轉點的 P+ 點數（比例 1:10）。</p>
                                         </div>
                                         <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
                                             <div className="flex items-center gap-2 text-amber-400 font-bold">
-                                                <Award className="w-4 h-4" /> 10% 成本
+                                                <Award className="w-4 h-4" /> 10% 成本博大獎
                                             </div>
-                                            <p className="text-xs text-slate-400">單次只需卡片價值的 1/10 低成本博大獎。</p>
+                                            <p className="text-xs text-slate-400">單次只需卡片價值的 1/10，以小博大無負擔。</p>
                                         </div>
                                         <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
                                             <div className="flex items-center gap-2 text-emerald-400 font-bold">
-                                                <ShieldCheck className="w-4 h-4" /> 即時入庫
+                                                <ShieldCheck className="w-4 h-4" /> 即時入庫保證
                                             </div>
-                                            <p className="text-xs text-slate-400">中獎即刻存入個人卡庫，隨時申請實體出貨。</p>
+                                            <p className="text-xs text-slate-400">中獎即刻存入個人卡庫，隨時可申請實體出貨到府。</p>
                                         </div>
                                     </div>
                                 </div>
@@ -304,7 +350,7 @@ export default function BetLandingPage() {
 
                 {/* === 全部拼卡獎品區 (過濾 + 頂級卡磚) === */}
                 <div className="space-y-6 pt-2">
-                                        {/* 焦點拼卡獎品控制中樞 (Clean & Elegant Cyberpunk Prize Hub) */}
+                    {/* 焦點拼卡獎品控制中樞 */}
                     <div className="relative rounded-2xl sm:rounded-3xl p-4 sm:p-6 bg-gradient-to-b from-[#180d1e]/95 via-[#0e0c16]/95 to-[#08070d] border border-rose-500/35 shadow-[0_20px_50px_rgba(0,0,0,0.85)] backdrop-blur-2xl overflow-hidden">
                         {/* 頂部全息激光流光條 */}
                         <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-rose-500 to-transparent shadow-[0_0_12px_#f43f5e]" />
@@ -317,7 +363,7 @@ export default function BetLandingPage() {
                                         <Sparkles className="w-5 h-5 text-rose-300 fill-rose-400/50" />
                                     </div>
                                     <h2 className="text-xl sm:text-2xl md:text-3xl font-black font-headline tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-rose-300 to-amber-300">
-                                        焦點拼卡獎品
+                                        焦點回血 · 挑選心儀神卡
                                     </h2>
                                 </div>
 

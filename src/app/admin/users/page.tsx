@@ -54,7 +54,6 @@ const PERMISSION_ITEMS = [
     { id: 'betting', label: '拼卡管理', category: '遊戲管理' },
     { id: 'lucky-bags', label: '福袋管理', category: '遊戲管理' },
     { id: 'group-breaks', label: '團拆管理', category: '遊戲管理' },
-    { id: 'predictions', label: '賽事預測管理', category: '行銷管理' },
     { id: 'referrals', label: '推薦碼管理', category: '行銷管理' },
     { id: 'users', label: '會員資訊', category: '會員管理' },
     { id: 'login-logs', label: '玩家登入紀錄', category: '會員管理' },

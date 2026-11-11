@@ -106,7 +106,6 @@ const sidebarNavItems: NavSection[] = [
     title: '行銷與推廣', 
     badge: '活動',
     items: [
-      { href: '/admin/predictions', label: '賽事預測', icon: Activity, permission: 'predictions', desc: '體育與賽事競猜結算' },
       { href: '/admin/referrals', label: '推薦碼管理', icon: Share2, permission: 'referrals', desc: '好友邀請與專案推廣碼' },
       { href: '/admin/coupons', label: '優惠券管理', icon: Ticket, permission: 'coupons', desc: '折價券與兌換碼發放' },
       { href: '/admin/news', label: '消息管理', icon: Newspaper, permission: 'news', desc: '最新消息與專題文章' },

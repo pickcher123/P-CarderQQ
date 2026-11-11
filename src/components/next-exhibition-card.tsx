@@ -17,6 +17,8 @@ import {
 import { cn } from '@/lib/utils';
 import { SafeImage } from '@/components/safe-image';
 
+export type ExhibitionGlobalRegion = 'taiwan' | 'asia' | 'usa';
+
 export interface Exhibition {
   id: string;
   title: string;
@@ -27,11 +29,26 @@ export interface Exhibition {
   description: string;
   imageUrl?: string;
   officialUrl?: string;
+  region?: ExhibitionGlobalRegion;
 }
 
+export const detectGlobalRegion = (exh: { region?: string; location?: string; title?: string }): ExhibitionGlobalRegion => {
+  if (exh.region === 'taiwan' || exh.region === 'asia' || exh.region === 'usa') {
+    return exh.region;
+  }
+  const text = `${exh.location || ''} ${exh.title || ''}`.toLowerCase();
+  if (/美國|usa|u\.s\.|national sports collectors|burbank|dallas|chicago|atlantic city|anaheim|cleveland|orlando|las vegas|texas|california|florida|nscc|mint collective|spectacular|america/.test(text)) {
+    return 'usa';
+  }
+  if (/日本|東京|大阪|名古屋|橫濱|京都|香港|澳門|韓國|首爾|釜山|新加坡|馬來西亞|泰國|曼谷|菲律賓|馬尼拉|tokyo|osaka|hong kong|hk|seoul|singapore|bangkok|manila|japan|korea|asia/.test(text)) {
+    return 'asia';
+  }
+  return 'taiwan';
+};
+
 export const extractCity = (location?: string): string => {
-  if (!location) return '全台';
-  const cities = ['台北', '新北', '基隆', '桃園', '新竹', '苗栗', '台中', '彰化', '南投', '雲林', '嘉義', '台南', '高雄', '屏東', '宜蘭', '花蓮', '台東', '澎湖', '金門'];
+  if (!location) return '實體卡展';
+  const cities = ['台北', '新北', '基隆', '桃園', '新竹', '苗栗', '台中', '彰化', '南投', '雲林', '嘉義', '台南', '高雄', '屏東', '宜蘭', '花蓮', '台東', '東京', '大阪', '香港', '首爾', '新加坡', 'Chicago', 'Burbank', 'Dallas', 'Las Vegas', 'Anaheim', 'New York'];
   for (const city of cities) {
     if (location.includes(city)) return city;
   }

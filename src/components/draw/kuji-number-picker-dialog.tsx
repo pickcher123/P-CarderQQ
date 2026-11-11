@@ -132,14 +132,17 @@ export function KujiNumberPickerDialog({
     const ticket = tickets.find(t => t.number === num);
     if (!ticket) return;
 
-    // 若號碼已在選取列表中，無條件允許取消
-    if (selectedNumbers.includes(num)) {
+    // 若已開出抽出，嚴格禁止點選，並強制從選取列表中清除
+    if (ticket.isDrawn || !availableNumbersSet.has(num)) {
       setSelectedNumbers(prev => prev.filter(n => n !== num));
       return;
     }
 
-    // 若已開出則不允許點選
-    if (ticket.isDrawn) return;
+    // 若號碼已在選取列表中，允許取消選取
+    if (selectedNumbers.includes(num)) {
+      setSelectedNumbers(prev => prev.filter(n => n !== num));
+      return;
+    }
 
     // 最多一次選 10 抽
     if (validSelectedNumbers.length >= 10) {
@@ -251,22 +254,21 @@ export function KujiNumberPickerDialog({
         <ScrollArea className="h-[280px] sm:h-[340px] rounded-2xl bg-slate-900/60 border border-white/5 p-3">
           <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2 sm:gap-2.5">
             {tickets.map(ticket => {
-              const isDrawn = !!ticket.isDrawn;
+              const isDrawn = !!ticket.isDrawn || !availableNumbersSet.has(ticket.number);
               const isSelected = !isDrawn && selectedNumbers.includes(ticket.number);
-              const isResidualSelected = isDrawn && selectedNumbers.includes(ticket.number);
 
               return (
                 <button
                   key={ticket.number}
-                  disabled={(isDrawn && !isResidualSelected) || isDrawing}
+                  disabled={isDrawn || isDrawing}
                   onClick={() => toggleSelectNumber(ticket.number)}
                   className={cn(
-                    'relative aspect-square rounded-xl flex items-center justify-center p-1 transition-all duration-200 select-none cursor-pointer group',
+                    'relative aspect-square rounded-xl flex items-center justify-center p-1 transition-all duration-200 select-none group',
                     isDrawn
-                      ? 'bg-slate-900/60 border border-white/5 text-slate-600 cursor-not-allowed opacity-40'
+                      ? 'bg-slate-950/80 border border-white/5 text-slate-600 cursor-not-allowed opacity-30 pointer-events-none shadow-none'
                       : isSelected
-                      ? 'bg-gradient-to-b from-amber-400 to-yellow-500 text-slate-950 font-black border-2 border-amber-200 shadow-[0_0_15px_rgba(251,191,36,0.5)] scale-105 z-10'
-                      : 'bg-gradient-to-b from-slate-800/80 to-slate-900/90 text-slate-200 border border-cyan-500/20 hover:border-cyan-400 hover:bg-cyan-950/40 hover:scale-105 shadow-sm'
+                      ? 'bg-gradient-to-b from-amber-400 to-yellow-500 text-slate-950 font-black border-2 border-amber-200 shadow-[0_0_15px_rgba(251,191,36,0.5)] scale-105 z-10 cursor-pointer'
+                      : 'bg-gradient-to-b from-slate-800/80 to-slate-900/90 text-slate-200 border border-cyan-500/20 hover:border-cyan-400 hover:bg-cyan-950/40 hover:scale-105 shadow-sm cursor-pointer'
                   )}
                 >
                   <span className={cn(

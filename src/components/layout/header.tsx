@@ -27,12 +27,11 @@ import { isSuperAdminEmail, useIsAdmin } from '@/hooks/use-is-admin';
 
 const navLinks = [
   { href: '/draw', label: '抽卡', icon: Package, color: "text-cyan-400", flag: 'isDrawEnabled' },
-  { href: '/bet', label: '拼卡', icon: CrossedCardsIcon, color: "text-rose-400", flag: 'isBettingEnabled' },
+  { href: '/bet', label: '拼卡', icon: CrossedCardsIcon, color: "text-rose-400", flag: 'isBettingEnabled', badge: '回血' },
   { href: '/lucky-bags', label: '福袋', icon: LuckyBagIcon, color: "text-amber-400", flag: 'isLuckyBagEnabled' },
   { href: '/group-break', label: '團拆', icon: Users2, color: "text-emerald-400", flag: 'isGroupBreakEnabled' },
-  { href: '/exhibitions', label: '卡展賽事', icon: Calendar, color: "text-cyan-400", flag: 'isExhibitionsEnabled' },
+  { href: '/exhibitions', label: '卡展行事曆', icon: Calendar, color: "text-cyan-400", flag: 'isExhibitionsEnabled' },
   { href: '/collection', label: '收藏庫', icon: Library, color: "text-cyan-300/80" },
-  { href: '/guide', label: '教學與驗證', icon: HelpCircle, color: "text-amber-300" },
 ];
 
 export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) {
@@ -116,6 +115,11 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                     isActive ? link.color : "text-muted-foreground"
                   )} />
                   <span>{link.label}</span>
+                  {link.badge && (
+                    <span className="text-[9px] font-black px-1.5 py-0.2 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-[0_0_8px_rgba(244,63,94,0.3)]">
+                      {link.badge}
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -199,7 +203,7 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                             </div>
                             <div>
                               <span className="text-xs font-bold text-slate-200 block">鑽石餘額</span>
-                              <span className="text-[10px] text-cyan-400/70 font-medium">抽卡與團拆通用</span>
+                              <span className="text-[10px] text-cyan-400 font-medium">卡池抽卡專用代幣</span>
                             </div>
                           </div>
                           <RefinedPoints 
@@ -219,7 +223,7 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                             </div>
                             <div>
                               <span className="text-xs font-bold text-amber-200 block">紅利 P+ 點</span>
-                              <span className="text-[10px] text-amber-400/70 font-medium">兌換商城專屬商品</span>
+                              <span className="text-[10px] text-amber-400 font-medium">拼卡回血 · 自選卡片兌換</span>
                             </div>
                           </div>
                           <RefinedPoints 
@@ -375,9 +379,9 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                               </Link>
                           </DropdownMenuItem>
                           <DropdownMenuItem asChild className="rounded-xl cursor-pointer text-slate-200 hover:text-white focus:bg-white/10">
-                              <Link href="/guide" className="font-semibold text-xs flex items-center py-2 px-1 text-amber-300 hover:text-amber-200 transition-colors">
+                              <Link href="/guide" className="font-semibold text-xs flex items-center py-2 px-1 text-slate-100 hover:text-cyan-300 transition-colors">
                                 <HelpCircle className="mr-2.5 h-4 w-4 text-amber-400" />
-                                <span>新手教學與公平驗證</span>
+                                <span>常見問題</span>
                               </Link>
                           </DropdownMenuItem>
                           <DropdownMenuItem asChild className="rounded-xl cursor-pointer text-slate-200 hover:text-white focus:bg-white/10">

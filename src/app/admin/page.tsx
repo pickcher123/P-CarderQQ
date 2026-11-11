@@ -32,7 +32,8 @@ import {
   Palette,
   Home,
   Wrench,
-  ShieldAlert
+  ShieldAlert,
+  Calendar
 } from 'lucide-react';
 import { useRequest, useFirestore, useMemoFirebase, useDoc, useUser } from "@/firebase";
 import { collection, doc, updateDoc, query, where, getDocs, writeBatch, setDoc } from "firebase/firestore";
@@ -111,7 +112,7 @@ const CORE_MODULES = [
   {
     category: '行銷與運營',
     items: [
-      { label: '賽事預測', desc: '競猜賽事發布與結算', href: '/admin/predictions', icon: Activity },
+      { label: '卡展行事曆', desc: '線下卡展活動日程與區域', href: '/admin/card-exhibitions', icon: Calendar },
       { label: '推薦邀請碼', desc: '推廣碼統計與設定', href: '/admin/referrals', icon: Share2 },
       { label: '優惠券管理', desc: '折價券與兌換碼發放', href: '/admin/coupons', icon: Ticket },
       { label: '素材管理', desc: '全站橫幅與主題圖庫', href: '/admin/materials', icon: Palette },
@@ -915,7 +916,6 @@ export default function AdminDashboardPage() {
                   { label: '幸運福袋', flag: 'isLuckyBagEnabled', desc: '控制福袋選購拆封', defaultVal: true },
                   { label: '競猜拼卡', flag: 'isBettingEnabled', desc: '控制拼卡選號專區', defaultVal: true },
                   { label: '直播團拆', flag: 'isGroupBreakEnabled', desc: '控制團拆開盒專案', defaultVal: true },
-                  { label: '賽事預測專區', flag: 'isPredictionsEnabled', desc: '體育與賽事競猜下注', defaultVal: true },
                   { label: '卡展行事曆', flag: 'isExhibitionsEnabled', desc: '線下卡展行程資訊', defaultVal: true },
                   { label: '中獎跑馬燈廣播', flag: 'isMarqueeEnabled', desc: '首頁中獎輪播通知', defaultVal: true },
                   { label: '活動代碼公開展示', flag: 'showPromoHints', desc: '前台顯示優惠碼提示', defaultVal: false },

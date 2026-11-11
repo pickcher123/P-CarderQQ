@@ -55,7 +55,7 @@ interface ExtractedExhibition {
 }
 
 export type DateFilterType = 'all' | 'ongoing' | 'upcoming' | 'this_month' | 'ended';
-export type RegionFilterType = 'all' | 'north' | 'central' | 'south' | 'other';
+export type RegionFilterType = 'all' | 'taiwan' | 'asia' | 'usa';
 export type SortOrderType = 'date_asc' | 'date_desc' | 'created_desc';
 
 export function getExhibitionStatus(exh: any): { 
@@ -104,13 +104,19 @@ export function getExhibitionStatus(exh: any): {
     }
 }
 
-export function detectExhibitionRegion(locationStr?: string): RegionFilterType {
-    if (!locationStr) return 'other';
+export function detectExhibitionRegion(locationStr?: string, regionField?: string): 'taiwan' | 'asia' | 'usa' {
+    if (regionField === 'taiwan' || regionField === 'asia' || regionField === 'usa') {
+        return regionField;
+    }
+    if (!locationStr) return 'taiwan';
     const loc = locationStr.toLowerCase();
-    if (/台北|新北|基隆|桃園|新竹|宜蘭|龍山|松山|世貿|花博|華山|南港/.test(loc)) return 'north';
-    if (/台中|彰化|苗栗|南投|雲林|烏日/.test(loc)) return 'central';
-    if (/高雄|台南|屏東|嘉義|巨蛋|駁二/.test(loc)) return 'south';
-    return 'other';
+    if (/usa|united states|chicago|dallas|california|burbank|national sports|nscc|convention center, us|orlando|houston|las vegas|new york|america|美國/.test(loc)) {
+        return 'usa';
+    }
+    if (/japan|tokyo|korea|seoul|hong kong|hkcec|coex|big sight|shanghai|beijing|macau|singapore|bangkok|asia|日本|東京|首爾|韓國|香港|澳門|新加坡|泰國|亞洲/.test(loc)) {
+        return 'asia';
+    }
+    return 'taiwan';
 }
 
 export default function CardExhibitionsAdmin() {
@@ -123,6 +129,7 @@ export default function CardExhibitionsAdmin() {
     const [location, setLocation] = useState('');
     const [description, setDescription] = useState('');
     const [imageUrl, setImageUrl] = useState('');
+    const [region, setRegion] = useState<'taiwan' | 'asia' | 'usa'>('taiwan');
 
     // 篩選與分類狀態
     const [dateFilter, setDateFilter] = useState<DateFilterType>('all');
@@ -253,7 +260,7 @@ export default function CardExhibitionsAdmin() {
 
             // 3. 地區篩選
             if (regionFilter !== 'all') {
-                const reg = detectExhibitionRegion(exh.location);
+                const reg = detectExhibitionRegion(exh.location, exh.region);
                 if (reg !== regionFilter) return false;
             }
 
@@ -333,7 +340,7 @@ export default function CardExhibitionsAdmin() {
                 } else {
                     toast({
                         title: 'AI 提取成功',
-                        description: `成功聯網找到 ${items.length} 場台灣球員卡展情報！`,
+                        description: `成功聯網找到 ${items.length} 場台灣/全球卡展情報！`,
                     });
                 }
             }
@@ -366,9 +373,11 @@ export default function CardExhibitionsAdmin() {
                 const newDocRef = doc(exhibitionsCol);
                 const sDate = item.startDate ? new Date(item.startDate) : new Date();
                 const eDate = item.endDate ? new Date(item.endDate) : sDate;
+                const reg = (item as any).region || detectExhibitionRegion(item.location);
 
                 batch.set(newDocRef, {
-                    title: item.title || '台灣球員卡展',
+                    title: item.title || '球員卡展',
+                    region: reg,
                     date: Timestamp.fromDate(sDate),
                     endDate: Timestamp.fromDate(eDate),
                     time: item.time || '',
@@ -383,7 +392,7 @@ export default function CardExhibitionsAdmin() {
             await batch.commit();
             toast({
                 title: '🎉 匯入成功',
-                description: `已將 ${selectedItems.length} 場台灣卡展情報同步至卡展行事曆！`,
+                description: `已將 ${selectedItems.length} 場卡展情報同步至卡展行事曆！`,
             });
             setIsAiDialogOpen(false);
             setAiExtractedList([]);
@@ -406,6 +415,7 @@ export default function CardExhibitionsAdmin() {
         try {
             await addDoc(collection(firestore, 'card_exhibitions'), {
                 title: title.trim(),
+                region,
                 date: Timestamp.fromDate(new Date(startDate)),
                 endDate: endDate ? Timestamp.fromDate(new Date(endDate)) : Timestamp.fromDate(new Date(startDate)),
                 time: time.trim(),
@@ -422,6 +432,7 @@ export default function CardExhibitionsAdmin() {
             setLocation('');
             setDescription('');
             setImageUrl('');
+            setRegion('taiwan');
             setIsAddFormExpanded(false);
         } catch (e) {
             toast({ variant: 'destructive', title: '錯誤', description: '新增失敗' });
@@ -525,10 +536,15 @@ export default function CardExhibitionsAdmin() {
         const [editImageUrl, setEditImageUrl] = useState(exh.imageUrl || '');
         const [editStartDate, setEditStartDate] = useState(exh.date ? format(new Date(exh.date.seconds * 1000), 'yyyy-MM-dd') : '');
         const [editEndDate, setEditEndDate] = useState(exh.endDate ? format(new Date(exh.endDate.seconds * 1000), 'yyyy-MM-dd') : '');
+        const [editRegion, setEditRegion] = useState<'taiwan' | 'asia' | 'usa'>(exh.region || detectExhibitionRegion(exh.location));
 
         const statusInfo = getExhibitionStatus(exh);
-        const region = detectExhibitionRegion(exh.location);
-        const regionLabel = region === 'north' ? '北部' : region === 'central' ? '中部' : region === 'south' ? '南部' : '其他';
+        const region = detectExhibitionRegion(exh.location, exh.region);
+        const regionInfo = region === 'taiwan'
+            ? { flag: '🇹🇼 台灣展區', class: 'border-emerald-200 bg-emerald-50 text-emerald-700' }
+            : region === 'asia'
+            ? { flag: '🌏 亞洲展區', class: 'border-indigo-200 bg-indigo-50 text-indigo-700' }
+            : { flag: '🇺🇸 美國展區', class: 'border-amber-200 bg-amber-50 text-amber-700' };
 
         if (isEditing) {
             return (
@@ -546,7 +562,20 @@ export default function CardExhibitionsAdmin() {
                             className="bg-slate-800 border-slate-700 text-white font-bold"
                         />
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-bold text-slate-300">展覽區域 *</Label>
+                            <Select value={editRegion} onValueChange={(val: 'taiwan' | 'asia' | 'usa') => setEditRegion(val)}>
+                                <SelectTrigger className="bg-slate-800 border-slate-700 text-white text-xs h-9">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="bg-slate-900 text-white border-slate-700">
+                                    <SelectItem value="taiwan">🇹🇼 台灣展區</SelectItem>
+                                    <SelectItem value="asia">🌏 亞洲展區</SelectItem>
+                                    <SelectItem value="usa">🇺🇸 美國展區</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                         <div className="space-y-1.5">
                             <Label className="text-xs font-bold text-slate-300">開始日期 *</Label>
                             <Input 
@@ -615,6 +644,7 @@ export default function CardExhibitionsAdmin() {
                                 }
                                 handleUpdate(exh.id, { 
                                     title: editTitle.trim(), 
+                                    region: editRegion,
                                     location: editLocation.trim(),
                                     time: editTime.trim(),
                                     description: editDescription.trim(), 
@@ -652,8 +682,8 @@ export default function CardExhibitionsAdmin() {
                             <Badge variant="outline" className={cn("text-[11px] font-black border px-2.5 py-0.5 rounded-full shadow-xs", statusInfo.color)}>
                                 {statusInfo.label}
                             </Badge>
-                            <Badge variant="outline" className="text-[10px] font-bold border-slate-200 bg-slate-100/70 text-slate-700">
-                                📍 {regionLabel}
+                            <Badge variant="outline" className={cn("text-[10px] font-bold border", regionInfo.class)}>
+                                {regionInfo.flag}
                             </Badge>
                             {exh.source === 'AI-Extracted' && (
                                 <Badge variant="outline" className="text-[10px] font-bold border-indigo-200 bg-indigo-50 text-indigo-700">
@@ -1078,9 +1108,24 @@ export default function CardExhibitionsAdmin() {
                         </Button>
                     </CardHeader>
                     <CardContent className="p-6 space-y-4">
-                        <div className="space-y-1.5">
-                            <Label className="text-xs font-black text-slate-700">展覽標題 *</Label>
-                            <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="例：2026 CARDNEX 台北收藏卡展" className="h-10 rounded-xl" />
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="md:col-span-2 space-y-1.5">
+                                <Label className="text-xs font-black text-slate-700">展覽標題 *</Label>
+                                <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="例：2026 CARDNEX 台北收藏卡展" className="h-10 rounded-xl" />
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-black text-slate-700">展覽區域 (台灣 / 亞洲 / 美國) *</Label>
+                                <Select value={region} onValueChange={(val: 'taiwan' | 'asia' | 'usa') => setRegion(val)}>
+                                    <SelectTrigger className="h-10 rounded-xl bg-white border-slate-200 text-xs font-bold text-slate-800">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-white">
+                                        <SelectItem value="taiwan">🇹🇼 台灣展區 (台北/台中/高雄等)</SelectItem>
+                                        <SelectItem value="asia">🌏 亞洲展區 (東京/首爾/香港等)</SelectItem>
+                                        <SelectItem value="usa">🇺🇸 美國展區 (NSCC/Burbank/Dallas等)</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-1.5">
@@ -1260,11 +1305,10 @@ export default function CardExhibitionsAdmin() {
                             <SelectValue placeholder="地區篩選" />
                         </SelectTrigger>
                         <SelectContent className="bg-white">
-                            <SelectItem value="all">📍 全台所有地區</SelectItem>
-                            <SelectItem value="north">🏙️ 北部 (雙北 / 桃竹)</SelectItem>
-                            <SelectItem value="central">🌳 中部 (台中 / 彰苗)</SelectItem>
-                            <SelectItem value="south">☀️ 南部 (高屏 / 台南)</SelectItem>
-                            <SelectItem value="other">🌐 東部 / 海外 / 其他</SelectItem>
+                            <SelectItem value="all">🌐 全球所有區域</SelectItem>
+                            <SelectItem value="taiwan">🇹🇼 台灣展區</SelectItem>
+                            <SelectItem value="asia">🌏 亞洲展區 (日韓港新等)</SelectItem>
+                            <SelectItem value="usa">🇺🇸 美國展區 (NSCC/Burbank等)</SelectItem>
                         </SelectContent>
                     </Select>
 

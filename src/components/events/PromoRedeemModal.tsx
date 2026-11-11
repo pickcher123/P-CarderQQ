@@ -5,7 +5,6 @@ import confetti from 'canvas-confetti';
 import Link from 'next/link';
 import { 
     Gift, 
-    QrCode, 
     Sparkles, 
     CheckCircle2, 
     KeyRound, 
@@ -106,7 +105,7 @@ interface PromoRedeemModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onApplyReward?: (targetEvent: string, freePlays: number) => void;
-    initialTab?: 'redeem' | 'referral' | 'history' | 'poster';
+    initialTab?: 'redeem' | 'referral' | 'history';
 }
 
 export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab }: PromoRedeemModalProps) {
@@ -122,7 +121,7 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
     const { data: userProfile } = useDoc<UserProfile>(userDocRef);
 
     const [inputCode, setInputCode] = useState('');
-    const [selectedTab, setSelectedTab] = useState<'redeem' | 'referral' | 'history' | 'poster'>(initialTab || 'redeem');
+    const [selectedTab, setSelectedTab] = useState<'redeem' | 'referral' | 'history'>(initialTab || 'redeem');
 
     useEffect(() => {
         if (open && initialTab) {
@@ -804,12 +803,12 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
                         </div>
 
                         {/* 自適應分頁導航 */}
-                        <div className="grid grid-cols-4 gap-1 mt-3 bg-slate-950/80 p-1 rounded-xl border border-slate-800/70">
+                        <div className="grid grid-cols-3 gap-1 mt-3 bg-slate-950/80 p-1 rounded-xl border border-slate-800/70">
                             <button
                                 type="button"
                                 onClick={() => setSelectedTab('redeem')}
                                 className={cn(
-                                    "py-1.5 px-0.5 sm:px-2 rounded-lg text-[11px] sm:text-xs font-semibold transition-all flex items-center justify-center gap-1",
+                                    "py-1.5 px-1 sm:px-2 rounded-lg text-[11px] sm:text-xs font-semibold transition-all flex items-center justify-center gap-1",
                                     selectedTab === 'redeem'
                                         ? "bg-slate-800 text-white border border-slate-700 shadow-sm"
                                         : "text-slate-400 hover:text-slate-200"
@@ -822,7 +821,7 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
                                 type="button"
                                 onClick={() => setSelectedTab('referral')}
                                 className={cn(
-                                    "py-1.5 px-0.5 sm:px-2 rounded-lg text-[11px] sm:text-xs font-semibold transition-all flex items-center justify-center gap-1",
+                                    "py-1.5 px-1 sm:px-2 rounded-lg text-[11px] sm:text-xs font-semibold transition-all flex items-center justify-center gap-1",
                                     selectedTab === 'referral'
                                         ? "bg-slate-800 text-white border border-slate-700 shadow-sm"
                                         : "text-slate-400 hover:text-slate-200"
@@ -835,7 +834,7 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
                                 type="button"
                                 onClick={() => setSelectedTab('history')}
                                 className={cn(
-                                    "py-1.5 px-0.5 sm:px-2 rounded-lg text-[11px] sm:text-xs font-semibold transition-all flex items-center justify-center gap-1",
+                                    "py-1.5 px-1 sm:px-2 rounded-lg text-[11px] sm:text-xs font-semibold transition-all flex items-center justify-center gap-1",
                                     selectedTab === 'history'
                                         ? "bg-slate-800 text-white border border-slate-700 shadow-sm"
                                         : "text-slate-400 hover:text-slate-200"
@@ -848,19 +847,6 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
                                         {allClaimedRecords.length}
                                     </span>
                                 )}
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setSelectedTab('poster')}
-                                className={cn(
-                                    "py-1.5 px-0.5 sm:px-2 rounded-lg text-[11px] sm:text-xs font-semibold transition-all flex items-center justify-center gap-1",
-                                    selectedTab === 'poster'
-                                        ? "bg-slate-800 text-white border border-slate-700 shadow-sm"
-                                        : "text-slate-400 hover:text-slate-200"
-                                )}
-                            >
-                                <QrCode className="w-3.5 h-3.5 shrink-0" />
-                                <span className="truncate">現場專區</span>
                             </button>
                         </div>
                     </DialogHeader>
@@ -1459,57 +1445,6 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
                                         </Button>
                                     </div>
                                 )}
-                            </div>
-                        )}
-
-                        {/* 4. 現場活動專區 */}
-                        {selectedTab === 'poster' && (
-                            <div className="space-y-4">
-                                <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-amber-500/10 via-slate-900/90 to-slate-900 border border-amber-500/30 space-y-4 text-center">
-                                    <div className="space-y-1.5">
-                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-bold">
-                                            <QrCode className="w-3.5 h-3.5 text-amber-400" />
-                                            <span>展會活動專屬代碼</span>
-                                        </span>
-                                        <h4 className="text-sm sm:text-base font-bold text-white pt-1">現場活動兌換專區</h4>
-                                        <p className="text-xs text-slate-400">
-                                            出示專屬代碼或直接於現場一鍵帶入領取開幕首抽禮
-                                        </p>
-                                    </div>
-
-                                    <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row items-center justify-between text-xs max-w-sm mx-auto gap-3 shadow-inner">
-                                        <div className="text-center sm:text-left min-w-0">
-                                            <span className="text-[10px] text-slate-500 block uppercase font-mono">Event Promo Code</span>
-                                            <span className="font-mono font-black text-base sm:text-lg text-amber-400 tracking-wider">OPEN2024</span>
-                                        </div>
-                                        <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-center">
-                                            <Button
-                                                type="button"
-                                                size="sm"
-                                                variant="outline"
-                                                onClick={() => {
-                                                    navigator.clipboard.writeText('OPEN2024');
-                                                    toast({ title: '已複製代碼 OPEN2024', description: '可前往兌換區貼上領取首抽禮' });
-                                                }}
-                                                className="h-8 px-2.5 text-xs font-bold border-slate-700 bg-slate-900 text-slate-200 hover:text-white"
-                                            >
-                                                <Copy className="w-3.5 h-3.5 mr-1" />
-                                                <span>複製</span>
-                                            </Button>
-                                            <Button
-                                                type="button"
-                                                size="sm"
-                                                onClick={() => {
-                                                    setInputCode('OPEN2024');
-                                                    setSelectedTab('redeem');
-                                                }}
-                                                className="h-8 px-3 text-xs font-bold bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-sm cursor-pointer active:scale-95"
-                                            >
-                                                <span>帶入代碼前往兌換 ➜</span>
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
                         )}
                     </div>

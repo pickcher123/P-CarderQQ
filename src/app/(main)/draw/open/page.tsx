@@ -23,13 +23,13 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useUser, useAuth, useDoc, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
 import { addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { collection, query, where, getDoc, doc, serverTimestamp, increment, runTransaction, getDocs, updateDoc, Timestamp, limit, setDoc } from 'firebase/firestore';
+import { collection, query, where, getDoc, doc, serverTimestamp, increment, runTransaction, getDocs, updateDoc, Timestamp, limit, setDoc, onSnapshot } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { getApp } from 'firebase/app';
 import type { UserProfile } from '@/types/user-profile';
 import type { SystemConfig } from '@/types/system';
 import type { Card, CardPool, DrawnPrize, PointPrize, Rarity, Step } from '@/types/draw';
-import { Logo, PPlusIcon } from '@/components/icons';
+import { Logo, PPlusIcon, CrossedCardsIcon } from '@/components/icons';
 import { DrawButtons } from '@/components/draw-buttons';
 import { Badge } from '@/components/ui/badge';
 import { userLevels } from '@/components/member-level-crown';
@@ -180,11 +180,13 @@ export default function OpenPackPage() {
             .map(n => parseInt(n.trim(), 10))
             .filter(n => !isNaN(n) && n > 0);
     }, [numbersParam]);
-    const [selectedNumbers, setSelectedNumbers] = useState<number[]>(parsedInitialNumbers);
+    const [selectedNumbers, setSelectedNumbers] = useState<number[]>([]);
+    const hasAppliedInitialNumbersRef = useRef(false);
 
     useEffect(() => {
-        if (parsedInitialNumbers.length > 0) {
+        if (!hasAppliedInitialNumbersRef.current && parsedInitialNumbers.length > 0) {
             setSelectedNumbers(parsedInitialNumbers);
+            hasAppliedInitialNumbersRef.current = true;
         }
     }, [parsedInitialNumbers]);
 
@@ -246,8 +248,12 @@ export default function OpenPackPage() {
 
     useEffect(() => {
         if (!firestore || !poolId) return;
-        getDoc(doc(firestore, 'cardPools', poolId)).then(snap => {
-            if (!snap.exists()) throw new Error("找不到指定的卡池。");
+        const unsub = onSnapshot(doc(firestore, 'cardPools', poolId), (snap) => {
+            if (!snap.exists()) {
+                setError("找不到指定的卡池。");
+                setStep('error');
+                return;
+            }
             const poolData = { id: snap.id, ...snap.data() } as CardPool;
             
             // 檢查是否處於 120 秒開獎保護鎖定狀態 (僅對已登入且非鎖定者進行提示)
@@ -257,17 +263,21 @@ export default function OpenPackPage() {
                     : Math.floor(new Date(poolData.lockedAt as any).getTime() / 1000);
                 const diff = Math.floor(Date.now() / 1000 - lockSecs);
                 if (diff < LOCK_DURATION) {
-                    throw new Error(`此卡池正處於 120 秒開獎保護中（由其他玩家鎖定中，剩餘 ${LOCK_DURATION - diff} 秒），請稍後再試。`);
+                    setError(`此卡池正處於 120 秒開獎保護中（由其他玩家鎖定中，剩餘 ${LOCK_DURATION - diff} 秒），請稍後再試。`);
+                    setStep('error');
+                    return;
                 }
             }
 
             setCardPool(poolData);
-            setStep('waiting-to-start');
-        }).catch(e => { 
+            setStep(prev => (prev === 'loading' || prev === 'init-loading' ? 'waiting-to-start' : prev));
+        }, (e) => { 
             console.error(e);
             setError(e.message); 
             setStep('error'); 
         });
+
+        return () => unsub();
     }, [firestore, poolId, user]);
 
     const cardsRef = useMemoFirebase(() => (firestore ? collection(firestore, 'cards') : null), [firestore]);
@@ -345,6 +355,7 @@ export default function OpenPackPage() {
         setLandingVFX('none');
         setStep('summoning');
         setSelectedNumbers([]);
+        setTargetPickCount(undefined);
         if (typeof window !== 'undefined') {
             const url = new URL(window.location.href);
             if (url.searchParams.has('numbers') || url.searchParams.has('pick')) {
@@ -372,9 +383,14 @@ export default function OpenPackPage() {
         count: number, 
         forceUseTicket?: boolean, 
         forceUseEventTicket?: boolean,
-        chosenNumbers?: number[]
+        chosenNumbers?: number[],
     ) => {
-        const numbersToDraw = (chosenNumbers && chosenNumbers.length > 0) ? chosenNumbers : (selectedNumbers.length > 0 ? selectedNumbers : undefined);
+        const rawNumbers = (chosenNumbers && chosenNumbers.length > 0) ? chosenNumbers : (selectedNumbers.length > 0 ? selectedNumbers : undefined);
+        const numbersToDraw = rawNumbers ? rawNumbers.filter(num => {
+            if (!cardPool?.kujiTickets) return true;
+            const t = cardPool.kujiTickets.find(ticket => ticket.number === num);
+            return !t || !t.isDrawn;
+        }) : undefined;
         const isEventExclusive = !!(cardPool?.isEventPool && cardPool?.exclusiveTicketOnly);
         const useEventTicketMode = forceUseEventTicket !== undefined 
             ? forceUseEventTicket 
@@ -641,7 +657,7 @@ export default function OpenPackPage() {
                   lastDrawDate: todayStr
                 }), { merge: true });
 
-                return { drawn };
+                return { drawn, updatedCards, updatedPointPrizes, updatedTickets };
             });
 
             if (result && result.drawn) {
@@ -655,6 +671,18 @@ export default function OpenPackPage() {
                 setLandingVFX('none');
                 setStep('summoning');
                 setSelectedNumbers([]);
+                setTargetPickCount(undefined);
+
+                // 立即更新本地 cardPool 狀態，確保已抽出的號碼立即在前端標記為 isDrawn: true，杜絕下一抽重複選取
+                if (result.updatedTickets && result.updatedTickets.length > 0) {
+                    setCardPool(prev => prev ? {
+                        ...prev,
+                        remainingPacks: Math.max(0, (prev.remainingPacks || 0) - result.drawn.length),
+                        cards: result.updatedCards || prev.cards,
+                        pointPrizes: (result.updatedPointPrizes && result.updatedPointPrizes.length > 0) ? result.updatedPointPrizes : prev.pointPrizes,
+                        kujiTickets: result.updatedTickets,
+                    } : prev);
+                }
                 if (typeof window !== 'undefined') {
                     const url = new URL(window.location.href);
                     if (url.searchParams.has('numbers') || url.searchParams.has('pick')) {
@@ -1249,6 +1277,31 @@ export default function OpenPackPage() {
                                         </Button>
                                     )}
                                 </div>
+
+                                {/* 🌟 拼卡 · 回血救援館專屬動線引導 */}
+                                {step === 'done' && (
+                                    <div className="mt-2.5 p-2.5 sm:p-3 rounded-2xl bg-gradient-to-r from-rose-950/80 via-slate-950 to-pink-950/70 border border-rose-500/30 flex items-center justify-between gap-2.5 shadow-[0_0_20px_rgba(244,63,94,0.15)]">
+                                        <div className="flex items-center gap-2 min-w-0">
+                                            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-300 shrink-0">
+                                                <CrossedCardsIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <div className="flex items-center gap-1.5 flex-wrap">
+                                                    <span className="text-xs font-black text-white">沒抽到心儀大獎？</span>
+                                                    <span className="px-1.5 py-0.2 rounded text-[9px] font-black bg-rose-500 text-white shadow-xs">
+                                                        回血救援
+                                                    </span>
+                                                </div>
+                                                <p className="text-[10px] text-slate-300 truncate mt-0.5">
+                                                    前往「拼卡」挑選喜愛卡片，1/10 成本逆轉回血！
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <Button asChild size="sm" className="h-7 sm:h-8 px-2.5 sm:px-3 text-[11px] font-black rounded-xl bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white shrink-0 shadow-md">
+                                            <Link href="/bet">去拼卡回血</Link>
+                                        </Button>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
