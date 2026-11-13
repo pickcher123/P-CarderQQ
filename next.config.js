@@ -6,8 +6,7 @@ const nextConfig = {
   transpilePackages: ['firebase'],
   experimental: {
     serverComponentsExternalPackages: ['firebase-admin'],
-    workerThreads: false,
-    cpus: 1,
+    optimizePackageImports: ['lucide-react', 'date-fns', 'recharts', 'framer-motion'],
   },
   images: {
     formats: ['image/avif', 'image/webp'],

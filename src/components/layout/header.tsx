@@ -27,7 +27,7 @@ import { isSuperAdminEmail, useIsAdmin } from '@/hooks/use-is-admin';
 
 const navLinks = [
   { href: '/draw', label: '抽卡', icon: Package, color: "text-cyan-400", flag: 'isDrawEnabled' },
-  { href: '/bet', label: '拼卡', icon: CrossedCardsIcon, color: "text-rose-400", flag: 'isBettingEnabled', badge: '回血' },
+  { href: '/bet', label: '拼卡', icon: CrossedCardsIcon, color: "text-rose-400", flag: 'isBettingEnabled' },
   { href: '/lucky-bags', label: '福袋', icon: LuckyBagIcon, color: "text-amber-400", flag: 'isLuckyBagEnabled' },
   { href: '/group-break', label: '團拆', icon: Users2, color: "text-emerald-400", flag: 'isGroupBreakEnabled' },
   { href: '/exhibitions', label: '卡展行事曆', icon: Calendar, color: "text-cyan-400", flag: 'isExhibitionsEnabled' },
@@ -223,7 +223,7 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                             </div>
                             <div>
                               <span className="text-xs font-bold text-amber-200 block">紅利 P+ 點</span>
-                              <span className="text-[10px] text-amber-400 font-medium">拼卡回血 · 自選卡片兌換</span>
+                              <span className="text-[10px] text-amber-400 font-medium">拼卡挑戰 · 實體獎品兌換</span>
                             </div>
                           </div>
                           <RefinedPoints 

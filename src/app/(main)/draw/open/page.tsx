@@ -1278,7 +1278,7 @@ export default function OpenPackPage() {
                                     )}
                                 </div>
 
-                                {/* 🌟 拼卡 · 回血救援館專屬動線引導 */}
+                                {/* 🌟 拼卡 · 自選專區專屬動線引導 */}
                                 {step === 'done' && (
                                     <div className="mt-2.5 p-2.5 sm:p-3 rounded-2xl bg-gradient-to-r from-rose-950/80 via-slate-950 to-pink-950/70 border border-rose-500/30 flex items-center justify-between gap-2.5 shadow-[0_0_20px_rgba(244,63,94,0.15)]">
                                         <div className="flex items-center gap-2 min-w-0">
@@ -1289,16 +1289,16 @@ export default function OpenPackPage() {
                                                 <div className="flex items-center gap-1.5 flex-wrap">
                                                     <span className="text-xs font-black text-white">沒抽到心儀大獎？</span>
                                                     <span className="px-1.5 py-0.2 rounded text-[9px] font-black bg-rose-500 text-white shadow-xs">
-                                                        回血救援
+                                                        自選專區
                                                     </span>
                                                 </div>
                                                 <p className="text-[10px] text-slate-300 truncate mt-0.5">
-                                                    前往「拼卡」挑選喜愛卡片，1/10 成本逆轉回血！
+                                                    前往「拼卡」挑選自選卡片與實體獎品，1/10 成本直接挑戰！
                                                 </p>
                                             </div>
                                         </div>
                                         <Button asChild size="sm" className="h-7 sm:h-8 px-2.5 sm:px-3 text-[11px] font-black rounded-xl bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white shrink-0 shadow-md">
-                                            <Link href="/bet">去拼卡回血</Link>
+                                            <Link href="/bet">前往拼卡</Link>
                                         </Button>
                                     </div>
                                 )}

@@ -70,8 +70,7 @@ export function MobileBottomNav({ systemConfig }: MobileBottomNavProps) {
       activeColor: "text-rose-400", 
       activeBg: "bg-white/[0.08] border-white/10 text-white",
       dotColor: "bg-rose-400",
-      flag: 'isBettingEnabled',
-      badge: '回血'
+      flag: 'isBettingEnabled'
     },
     { 
       id: 'lucky-bags',

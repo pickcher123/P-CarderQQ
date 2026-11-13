@@ -71,6 +71,7 @@ import { useFirestore, useStorage } from '@/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
+import { cn } from '@/lib/utils';
 import { 
   CropBox, 
   ScannedCardItem, 

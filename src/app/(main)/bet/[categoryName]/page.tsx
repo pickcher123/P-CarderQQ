@@ -392,14 +392,14 @@ export default function BettingCategoryPage() {
                             <div className="flex items-center justify-center md:justify-start gap-2">
                                 <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs font-black">
                                     <ShieldCheck className="w-3.5 h-3.5" />
-                                    回血 / 救援自選卡池
+                                    自選目標專屬卡池
                                 </span>
                             </div>
                             <h1 className="font-headline text-2xl sm:text-4xl md:text-5xl font-black text-white tracking-tight">
                                 {currentCategoryInfo?.name || decodedCategory}
                             </h1>
                             <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                                自選喜愛神卡 • 1/10 成本極速回血帶走，亦支援點數直接兌換收藏
+                                自選喜愛神卡 • 1/10 成本極速挑戰帶走，亦支援點數直接兌換收藏
                             </p>
                         </div>
 

@@ -226,9 +226,9 @@ export function WhyChooseBentoGrid({
                     <div className="p-2 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-between">
                       <span className="font-bold text-slate-200 flex items-center gap-1.5 text-[11px]">
                         <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
-                        拼卡 · 回血救援館
+                        拼卡 · 自選挑戰專區
                       </span>
-                      <span className="text-[10px] text-rose-300 font-bold">空門回血 · 自選換卡</span>
+                      <span className="text-[10px] text-rose-300 font-bold">1/10 成本 · 自選換卡</span>
                     </div>
                     <div className="p-2 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-between">
                       <span className="font-bold text-slate-200 flex items-center gap-1.5 text-[11px]">
@@ -481,7 +481,7 @@ export function WhyChooseBentoGrid({
               <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-between gap-4">
                 <span className="font-bold text-slate-200 flex items-center gap-2 text-xs">
                   <span className="w-2 h-2 rounded-full bg-rose-400" />
-                  拼卡 · 回血救援館
+                  拼卡 · 自選挑戰專區
                 </span>
                 <span className="text-[11px] text-rose-300 font-bold">1/10小額自選換卡</span>
               </div>

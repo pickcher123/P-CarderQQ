@@ -22,7 +22,6 @@ import {
     Dices,
     Zap,
     Gift,
-    ShoppingBag,
     Truck,
     ListOrdered,
     Medal as MedalIcon,
@@ -41,11 +40,10 @@ import {
 import { PPlusIcon, DiamondIcon } from "@/components/icons";
 import { useIsAdmin } from "@/hooks/use-is-admin";
 import { useUser, useDoc, useFirestore, useMemoFirebase, useCollection } from "@/firebase";
-import { doc, collection, increment, runTransaction, query, where, limit, updateDoc, serverTimestamp, orderBy, writeBatch, getDocs } from "firebase/firestore";
+import { doc, collection, increment, query, where, limit, updateDoc, serverTimestamp, orderBy, writeBatch, getDocs } from "firebase/firestore";
 import { format } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { RefinedPoints } from "@/components/ui/refined-points";
 import { MemberLevelCrown, userLevels } from "@/components/member-level-crown";
 import { InteractiveHonorAtlas } from "@/components/interactive-honor-atlas";
 import { InteractiveAchievementWall, InteractiveAchievement } from "@/components/interactive-achievement-wall";
@@ -58,7 +56,6 @@ import { cn, toSafeDate } from "@/lib/utils";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { SafeImage } from "@/components/safe-image";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TransactionFairnessModal } from '@/components/transaction-fairness-modal';
@@ -86,6 +83,7 @@ interface ShippingOrder {
     createdAt: { seconds: number };
     trackingNumber?: string;
     fee: number;
+    redemptionItem?: string;
 }
 
 interface Transaction {
@@ -100,15 +98,6 @@ interface Transaction {
     provablyFair?: ProvablyFairData;
 }
 
-interface RedemptionItem {
-    id: string;
-    name: string;
-    points: number;
-    imageUrl: string;
-    description: string;
-    isActive: boolean;
-    order?: number;
-}
 
 const statusVariant: Record<OrderStatus, 'default' | 'secondary' | 'destructive' | 'outline'> = {
     pending: 'destructive',
@@ -284,102 +273,6 @@ function LeaderboardDialog({ children }: { children: React.ReactNode }) {
     );
 }
 
-function RedeemPrizesDialog({ children }: { children: React.ReactNode }) {
-    const { user } = useUser();
-    const firestore = useFirestore();
-    const { toast } = useToast();
-    const [isProcessing, setIsProcessing] = useState(false);
-    const [selectedItem, setSelectedItem] = useState<RedemptionItem | null>(null);
-    const [realName, setRealName] = useState('');
-    const [phone, setPhone] = useState('');
-    const [address, setAddress] = useState('');
-
-    const userProfileRef = useMemoFirebase(() => (firestore && user) ? doc(firestore, 'users', user.uid) : null, [firestore, user?.uid]);
-    const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
-
-    const redemptionsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'redemptionItems') : null, [firestore]);
-    const { data: rawRedemptionItems, isLoading } = useCollection<RedemptionItem>(redemptionsQuery);
-
-    const redemptionItems = useMemo(() => {
-        if (!rawRedemptionItems) return [];
-        return rawRedemptionItems.filter(item => item.isActive !== false).sort((a, b) => (a.order || 0) - (b.order || 0));
-    }, [rawRedemptionItems]);
-
-    useEffect(() => {
-        if (userProfile) {
-            setRealName(userProfile.realName || userProfile.username || '');
-            setPhone(userProfile.phone || '');
-            setAddress(userProfile.address || '');
-        }
-    }, [userProfile]);
-
-    const handleRedeem = async () => {
-        if (!user || !firestore || !selectedItem || !realName || !phone || !address) {
-            toast({ variant: 'destructive', title: '錯誤', description: '請填寫完整收件資訊。'});
-            return;
-        }
-        if ((userProfile?.bonusPoints || 0) < selectedItem.points) {
-            toast({ variant: 'destructive', title: '點數不足', description: '您的紅利 P+ 餘額不足。'});
-            return;
-        }
-        setIsProcessing(true);
-        try {
-            await runTransaction(firestore, async (transaction) => {
-                const uRef = doc(firestore, 'users', user.uid);
-                const uSnap = await transaction.get(uRef);
-                const userData = uSnap.data() as UserProfile;
-                if (userData.bonusPoints < selectedItem.points) throw new Error("點數不足");
-                transaction.update(uRef, { bonusPoints: increment(-selectedItem.points) });
-                transaction.set(doc(collection(firestore, 'transactions')), { userId: user.uid, transactionType: 'Purchase', section: 'betting', currency: 'p-point', amount: -selectedItem.points, details: `紅利兌換: ${selectedItem.name}`, transactionDate: serverTimestamp() });
-                transaction.set(doc(collection(firestore, 'shippingOrders')), { userId: user.uid, name: realName, phone: phone, address: address, cardCount: 1, cardIds: [], redemptionItem: selectedItem.name, status: 'pending', shippingMethod: '7-11', createdAt: serverTimestamp(), fee: 0 });
-            });
-            toast({ title: '兌換成功！', description: `您已成功兌換「${selectedItem.name}」` });
-            setSelectedItem(null);
-        } catch (e: any) {
-            toast({ variant: 'destructive', title: '兌換失敗', description: e.message });
-        } finally { setIsProcessing(false); }
-    };
-
-    return (
-        <Dialog>
-            <DialogTrigger asChild>{children}</DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-[2.5rem] bg-background/95 backdrop-blur-3xl border-white/10 p-6 md:p-10 text-white">
-                <DialogTitle className="flex items-center gap-2 text-xl md:text-2xl font-black font-headline"><ShoppingBag className="text-accent" /> 紅利兌換商店</DialogTitle>
-                <DialogHeader>
-                    <DialogDescription className="text-xs md:text-sm text-white/60">使用累積的 P+ 兌換實體獎品。</DialogDescription>
-                </DialogHeader>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 py-6">
-                    {isLoading ? Array.from({length: 4}).map((_, i) => <Skeleton key={i} className="aspect-square rounded-xl" />) :
-                    redemptionItems.map(item => (
-                        <Card key={item.id} className={cn("cursor-pointer transition-all border border-white/5 bg-card/40 flex flex-col overflow-hidden group rounded-2xl", selectedItem?.id === item.id ? "border-primary bg-primary/10 ring-2 ring-primary" : "hover:border-primary/50")} onClick={() => setSelectedItem(item)}>
-                            <div className="aspect-square relative overflow-hidden"><SafeImage src={item.imageUrl} alt={item.name} fill className="object-cover transition-transform group-hover:scale-110" /></div>
-                            <CardContent className="p-2 md:p-3 text-center flex-1 flex flex-col justify-between">
-                                <p className="font-bold text-[10px] md:text-sm truncate text-white">{item.name}</p>
-                                <div className="flex items-center justify-center gap-1 mt-1 md:mt-2">
-                                    <RefinedPoints 
-                                        value={item.points}
-                                        currency="pplus"
-                                        size="sm"
-                                        showIcon
-                                        variant="luxury"
-                                    />
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
-                {selectedItem && (
-                    <div className="space-y-4 p-4 md:p-6 bg-primary/5 rounded-[1.5rem] md:rounded-[2rem] border border-primary/20">
-                        <h4 className="font-bold text-xs md:text-sm flex items-center gap-2 text-primary uppercase tracking-widest"><Truck className="w-4 h-4"/> 確認收件資訊</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3"><Input value={realName} onChange={e => setRealName(e.target.value)} placeholder="真實姓名" className="bg-background/50 h-10" /><Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="09xx..." className="bg-background/50 h-10" /></div>
-                        <Input value={address} onChange={e => setAddress(e.target.value)} placeholder="請輸入 7-11 門市名稱或地址" className="bg-background/50 h-10" />
-                        <Button className="w-full font-black h-12 rounded-xl shadow-xl bg-primary text-primary-foreground" onClick={handleRedeem} disabled={isProcessing}>{isProcessing ? <Loader2 className="animate-spin h-5 w-5" /> : `確認花費 ${selectedItem.points.toLocaleString()} P+ 兌換`}</Button>
-                    </div>
-                )}
-            </DialogContent>
-        </Dialog>
-    );
-}
 
 
 
@@ -421,15 +314,15 @@ function ShippingOrdersTab({ userId }: { userId: string }) {
             <CardContent className="p-0">
                 <div className="overflow-x-auto custom-scrollbar">
                     <Table className="min-w-[500px] md:min-w-full">
-                        <TableHeader className="bg-muted/10"><TableRow className="border-white/5"><TableHead className="pl-6 text-slate-300">張數</TableHead><TableHead className="text-slate-300">申請時間</TableHead><TableHead className="text-slate-300">狀態</TableHead><TableHead className="text-right pr-6 text-slate-300">操作</TableHead></TableRow></TableHeader>
+                        <TableHeader className="bg-muted/10"><TableRow className="border-white/5"><TableHead className="pl-6 text-slate-300">內容 / 張數</TableHead><TableHead className="text-slate-300">申請時間</TableHead><TableHead className="text-slate-300">狀態</TableHead><TableHead className="text-right pr-6 text-slate-300">操作</TableHead></TableRow></TableHeader>
                     <TableBody>
                         {isLoading ? <TableRow><TableCell colSpan={4} className="p-6"><Skeleton className="h-10 w-full"/></TableCell></TableRow> : 
                         sortedOrders.map(order => (
                             <TableRow key={order.id} className="border-white/5 hover:bg-white/5 transition-colors">
-                                <TableCell className="pl-6 font-bold text-white">{order.cardCount} 張</TableCell>
+                                <TableCell className="pl-6 font-bold text-white">{order.redemptionItem ? `🎁 ${order.redemptionItem}` : `${order.cardCount} 張`}</TableCell>
                                 <TableCell className="text-[10px] text-slate-400 font-code">{format(new Date(order.createdAt.seconds * 1000), 'yyyy-MM-dd HH:mm')}</TableCell>
                                 <TableCell><Badge variant={statusVariant[order.status] || 'default'} className="text-[9px] uppercase tracking-tighter font-black">{statusText[order.status]}</Badge></TableCell>
-                                <TableCell className="text-right pr-6">{order.status === 'pending' && <Button variant="ghost" size="sm" onClick={() => handleCancelOrder(order)} disabled={!!isCancelling} className="text-xs text-destructive hover:bg-destructive/10">取消申請</Button>}</TableCell>
+                                <TableCell className="text-right pr-6">{order.status === 'pending' && !order.redemptionItem && <Button variant="ghost" size="sm" onClick={() => handleCancelOrder(order)} disabled={!!isCancelling} className="text-xs text-destructive hover:bg-destructive/10">取消申請</Button>}</TableCell>
                             </TableRow>
                         ))}
                         {!isLoading && sortedOrders.length === 0 && (
@@ -1036,12 +929,6 @@ export default function UnifiedMemberCenterPage() {
 
                         {/* 快捷操作按鈕 */}
                         <div className="flex items-center gap-2 shrink-0">
-                            <RedeemPrizesDialog>
-                                <Button size="sm" variant="outline" className="h-9 px-3 text-xs border-amber-500/40 text-amber-300 hover:bg-amber-500/10 hover:text-white rounded-xl transition-all">
-                                    <Gift className="w-3.5 h-3.5 mr-1 text-amber-400" />
-                                    兌換獎品
-                                </Button>
-                            </RedeemPrizesDialog>
                             <LeaderboardDialog>
                                 <Button size="sm" variant="ghost" className="h-9 px-2.5 text-xs text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all" title="榮耀排行榜">
                                     <ListOrdered className="w-3.5 h-3.5 text-amber-400 mr-1" />
