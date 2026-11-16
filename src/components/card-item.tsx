@@ -109,7 +109,7 @@ export function CardItem({
   return (
     <div
       className={cn(
-        "group w-full aspect-[2.5/3.5] [perspective:1200px] transition-transform duration-300 hover:scale-[1.02]",
+        "group w-full aspect-[2.5/3.5] [perspective:1200px] transition-transform duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] [@media(hover:hover)_and_(pointer:fine)]:hover:scale-[1.02]",
         className
       )}
       onClick={handleCardClick}
@@ -117,7 +117,7 @@ export function CardItem({
     >
       <div
         className={cn(
-          "relative w-full h-full rounded-xl transition-transform duration-700 [transform-style:preserve-3d] bg-transparent",
+          "relative w-full h-full rounded-xl transition-transform duration-[450ms] ease-[cubic-bezier(0.23,1,0.32,1)] [transform-style:preserve-3d] bg-transparent",
           isFlippable && "cursor-pointer",
           isFlipped ? '[transform:rotateY(180deg)_scale(1)]' : '[transform:rotateY(0deg)_scale(1)]'
         )}
@@ -125,7 +125,7 @@ export function CardItem({
         {/* Card Front */}
          <div 
           className={cn(
-            'absolute w-full h-full [backface-visibility:hidden] rounded-xl overflow-hidden border transition-all duration-300 bg-transparent group-hover:shadow-2xl',
+            'absolute w-full h-full [backface-visibility:hidden] rounded-xl overflow-hidden border transition-[border-color] duration-200 bg-transparent',
             styles.glow,
           )}
           onMouseMove={handleMouseMove}
@@ -143,7 +143,7 @@ export function CardItem({
                 fill
                 sizes="(max-width: 640px) 40vw, (max-width: 1024px) 25vw, 15vw"
                 className={cn(
-                    "object-contain p-1 rounded-xl transition-all duration-300 relative z-10 drop-shadow-[0_4px_12px_rgba(0,0,0,0.35)]",
+                    "object-contain p-1 rounded-xl transition-opacity duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] relative z-10 drop-shadow-[0_4px_12px_rgba(0,0,0,0.35)]",
                     (zoomPos && !isFlipped) ? "opacity-0" : "opacity-100"
                 )}
                 data-ai-hint={imageHint || name}
@@ -188,7 +188,7 @@ export function CardItem({
             </div>
           )}
 
-          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-1000 [transform:translateZ(1px)] pointer-events-none z-10">
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] [transform:translateZ(1px)] pointer-events-none z-10">
              <div className="absolute inset-[-150%] rounded-full [background:radial-gradient(circle_at_var(--mouse-x)_var(--mouse-y),rgba(255,255,255,0.12),transparent_40%)]" 
                 style={ { '--mouse-x': '0px', '--mouse-y': '0px' } as React.CSSProperties }
              />
@@ -209,7 +209,7 @@ export function CardItem({
                     alt={`${name || '卡片'} back`}
                     fill
                     className={cn(
-                      "object-cover rounded-xl transition-all duration-300",
+                      "object-cover rounded-xl transition-opacity duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]",
                       (zoomPos && isFlipped) ? "opacity-0" : "opacity-100"
                     )}
                     sizes="(max-width: 640px) 40vw, (max-width: 1024px) 25vw, 15vw"

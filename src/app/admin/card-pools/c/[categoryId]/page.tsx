@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, addDoc, Timestamp, deleteDoc, doc, updateDoc, query, orderBy, where } from 'firebase/firestore';
+import { collection, addDoc, Timestamp, deleteDoc, doc, updateDoc, query, orderBy, where } from '@/lib/audited-firestore';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';

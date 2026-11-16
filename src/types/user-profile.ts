@@ -15,7 +15,8 @@ export interface UserProfile {
   bonusPoints: number; // Bonus P-Points (10 P-Points = 1 Diamond)
   totalBonusEarned?: number; // 累積獲取之紅利點數
   totalSpent: number; // 累積消費金額 (Diamonds)，用於升級
-  role: 'admin' | 'user';
+  role: 'admin' | 'superadmin' | 'user';
+  isAdmin?: boolean;
   permissions?: string[];
   agentId?: string; // 綁定的業務/代理人 ID
   agentName?: string; // 綁定的業務名稱

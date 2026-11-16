@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { SafeImage } from '@/components/safe-image';
 import { cn } from '@/lib/utils';
@@ -57,6 +57,7 @@ export function RevolvingDoorThemeCarousel({
   headerAction,
 }: RevolvingDoorThemeCarouselProps) {
   const router = useRouter();
+  const shouldReduceMotion = useReducedMotion();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
 
@@ -79,12 +80,12 @@ export function RevolvingDoorThemeCarousel({
 
   // Subtle auto-rotation when user is not hovering or interacting
   useEffect(() => {
-    if (isHovered || total <= 1) return;
+    if (isHovered || total <= 1 || shouldReduceMotion) return;
     const timer = setInterval(() => {
       handleNext();
     }, 5000);
     return () => clearInterval(timer);
-  }, [isHovered, total, handleNext]);
+  }, [isHovered, total, handleNext, shouldReduceMotion]);
 
   // Keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -220,7 +221,7 @@ export function RevolvingDoorThemeCarousel({
         <button
           type="button"
           onClick={handlePrev}
-          className="absolute left-2 sm:left-6 z-40 p-2 sm:p-3 text-amber-300 hover:text-yellow-200 transition-all cursor-pointer hover:scale-125 active:scale-95 drop-shadow-[0_0_14px_rgba(245,158,11,0.9)]"
+          className="absolute left-2 sm:left-6 z-40 p-2 sm:p-3 text-amber-300 hover:text-yellow-200 transition-[transform,color] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] cursor-pointer [@media(hover:hover)_and_(pointer:fine)]:hover:scale-110 active:scale-[0.97] drop-shadow-[0_0_14px_rgba(245,158,11,0.9)]"
           aria-label="上一主題"
         >
           <ChevronLeft className="w-7 h-7 sm:w-9 sm:h-9" />
@@ -230,7 +231,7 @@ export function RevolvingDoorThemeCarousel({
         <button
           type="button"
           onClick={handleNext}
-          className="absolute right-2 sm:right-6 z-40 p-2 sm:p-3 text-amber-300 hover:text-yellow-200 transition-all cursor-pointer hover:scale-125 active:scale-95 drop-shadow-[0_0_14px_rgba(245,158,11,0.9)]"
+          className="absolute right-2 sm:right-6 z-40 p-2 sm:p-3 text-amber-300 hover:text-yellow-200 transition-[transform,color] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] cursor-pointer [@media(hover:hover)_and_(pointer:fine)]:hover:scale-110 active:scale-[0.97] drop-shadow-[0_0_14px_rgba(245,158,11,0.9)]"
           aria-label="下一主題"
         >
           <ChevronRight className="w-7 h-7 sm:w-9 sm:h-9" />
@@ -306,23 +307,29 @@ export function RevolvingDoorThemeCarousel({
                 style={{
                   zIndex,
                 }}
-                animate={{
+                animate={shouldReduceMotion ? {
+                  scale: isCenter ? 1.05 : 0.82,
+                  opacity,
+                } : {
                   rotateY,
                   x: translateX,
                   z: translateZ,
                   scale,
                   opacity,
                 }}
-                transition={{
+                transition={shouldReduceMotion ? {
+                  duration: 0.15,
+                  ease: [0.23, 1, 0.32, 1],
+                } : {
                   type: 'spring',
-                  stiffness: 260,
-                  damping: 25,
+                  duration: 0.45,
+                  bounce: 0.15,
                 }}
                 onClick={() => handleCardClick(category, index)}
               >
                 <div
                   className={cn(
-                    "w-full h-full relative rounded-2xl sm:rounded-3xl overflow-hidden flex flex-col justify-between p-3.5 sm:p-5 transition-all duration-300 group bg-slate-950",
+                    "w-full h-full relative rounded-2xl sm:rounded-3xl overflow-hidden flex flex-col justify-between p-3.5 sm:p-5 transition-[border-color] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] group bg-slate-950",
                     isCenter
                       ? "border-2 border-amber-400 shadow-[0_0_35px_rgba(245,158,11,0.65),inset_0_0_20px_rgba(245,158,11,0.25)]"
                       : "border border-amber-500/30 hover:border-amber-400/60 shadow-xl"
@@ -334,8 +341,8 @@ export function RevolvingDoorThemeCarousel({
                     alt={category.name}
                     fill
                     className={cn(
-                      "object-cover transition-transform duration-700 pointer-events-none",
-                      isCenter ? "scale-105 opacity-85 group-hover:scale-110" : "scale-100 opacity-60"
+                      "object-cover transition-[transform,opacity] duration-250 ease-[cubic-bezier(0.23,1,0.32,1)] pointer-events-none",
+                      isCenter ? "scale-105 opacity-85 [@media(hover:hover)_and_(pointer:fine)]:group-hover:scale-110" : "scale-100 opacity-60"
                     )}
                     sizes="(max-width: 768px) 250px, 350px"
                     priority={isCenter}
@@ -363,13 +370,13 @@ export function RevolvingDoorThemeCarousel({
                     </h3>
 
                     <div className={cn(
-                      "text-xs sm:text-sm font-black tracking-wide flex items-center justify-center gap-1.5 transition-all drop-shadow-md rounded-full px-3.5 py-1",
+                      "text-xs sm:text-sm font-black tracking-wide flex items-center justify-center gap-1.5 transition-[background-color,color] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] drop-shadow-md rounded-full px-3.5 py-1",
                       isCenter
                         ? "bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-500 text-slate-950 shadow-[0_0_15px_rgba(245,158,11,0.5)] border border-yellow-200"
                         : "bg-black/60 text-amber-300 border border-amber-500/40 group-hover:bg-amber-500/20"
                     )}>
                       <span>進入專區</span>
-                      <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                      <ChevronRight className="w-3.5 h-3.5 [@media(hover:hover)_and_(pointer:fine)]:group-hover:translate-x-0.5 transition-transform duration-150" />
                     </div>
                   </div>
                 </div>

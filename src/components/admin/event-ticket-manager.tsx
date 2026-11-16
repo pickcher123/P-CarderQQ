@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection, doc, addDoc, updateDoc, increment, serverTimestamp, query, orderBy, limit, where } from 'firebase/firestore';
+import { collection, doc, addDoc, updateDoc, increment, serverTimestamp, query, orderBy, limit, where } from '@/lib/audited-firestore';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

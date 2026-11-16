@@ -17,9 +17,10 @@ export default {
     },
     extend: {
       fontFamily: {
-        body: ['"Noto Sans TC"', 'sans-serif'],
-        headline: ['Orbitron', 'sans-serif'],
-        code: ['Rajdhani', 'monospace'],
+        body: ['"Plus Jakarta Sans"', '"Noto Sans TC"', 'sans-serif'],
+        headline: ['Outfit', '"Plus Jakarta Sans"', '"Noto Sans TC"', 'sans-serif'],
+        brand: ['Orbitron', 'Outfit', 'sans-serif'],
+        code: ['Outfit', 'Rajdhani', 'monospace'],
         numbers: ['Outfit', 'Rajdhani', 'sans-serif'],
         cyber: ['"Chakra Petch"', 'Rajdhani', 'monospace'],
       },
@@ -94,8 +95,8 @@ export default {
           '100%': { transform: 'translate(0px, 0px) scale(1)' },
         },
         'fade-in-up': {
-            '0%': { transform: 'translateY(10px)' },
-            '100%': { transform: 'translateY(0)' },
+          '0%': { opacity: '0', transform: 'translateY(8px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
         },
         shake: {
           '10%, 90%': { transform: 'translate3d(-1px, 0, 0)' },
@@ -105,24 +106,24 @@ export default {
         },
         'explode-pack': {
           '0%': { transform: 'scale(1)', opacity: '1' },
-          '100%': { transform: 'scale(1.8)', opacity: '0' },
+          '100%': { transform: 'scale(1.6)', opacity: '0' },
         },
         'glow-burst': {
-            '0%': { transform: 'scale(0)', opacity: '0' },
-            '50%': { transform: 'scale(2)', opacity: '0.8' },
-            '100%': { transform: 'scale(3)', opacity: '0' },
+          '0%': { transform: 'scale(0.9)', opacity: '0' },
+          '50%': { transform: 'scale(1.4)', opacity: '0.8' },
+          '100%': { transform: 'scale(2.1)', opacity: '0' },
         },
         'glow-legendary': {
-          '0%, 100%': { boxShadow: '0 0 20px 5px hsl(var(--accent) / 0.4)', opacity: '0.8' },
-          '50%': { boxShadow: '0 0 50px 20px hsl(var(--accent) / 0.6)', opacity: '1' }
+          '0%, 100%': { opacity: '0.78' },
+          '50%': { opacity: '1' }
         },
         'glow-rare': {
-          '0%, 100%': { boxShadow: '0 0 15px 2px hsl(var(--primary) / 0.3)', opacity: '0.8' },
-          '50%': { boxShadow: '0 0 40px 12px hsl(var(--primary) / 0.5)', opacity: '1' }
+          '0%, 100%': { opacity: '0.78' },
+          '50%': { opacity: '1' }
         },
         'firework': {
-          '0%': { transform: 'scale(0.1)', opacity: '1' },
-          '100%': { transform: 'scale(1.5)', opacity: '0' }
+          '0%': { transform: 'scale(0.6)', opacity: '0.95' },
+          '100%': { transform: 'scale(1.4)', opacity: '0' }
         },
         marquee: {
           from: { transform: 'translateX(0)' },
@@ -133,23 +134,23 @@ export default {
           '50%': { transform: 'translateY(-10px)' },
         },
         'electric-chaos': {
-          '0%, 100%': { opacity: '0', transform: 'scale(0.8) rotate(var(--tw-rotate))' },
-          '10%, 90%': { opacity: '0.8', transform: 'scale(1.1) rotate(var(--tw-rotate))' },
-          '20%, 40%, 60%, 80%': { opacity: '0.2', transform: 'scale(0.9) rotate(var(--tw-rotate))' },
-          '30%, 50%, 70%': { opacity: '1', transform: 'scale(1.2) rotate(var(--tw-rotate))' }
+          '0%, 100%': { opacity: '0', transform: 'scale(0.9) rotate(var(--tw-rotate))' },
+          '10%, 90%': { opacity: '0.8', transform: 'scale(1.08) rotate(var(--tw-rotate))' },
+          '20%, 40%, 60%, 80%': { opacity: '0.25', transform: 'scale(0.94) rotate(var(--tw-rotate))' },
+          '30%, 50%, 70%': { opacity: '1', transform: 'scale(1.12) rotate(var(--tw-rotate))' }
         }
       },
       animation: {
-        'accordion-down': 'accordion-down 0.2s ease-out',
-        'accordion-up': 'accordion-up 0.2s ease-out',
+        'accordion-down': 'accordion-down 0.2s cubic-bezier(0.23, 1, 0.32, 1)',
+        'accordion-up': 'accordion-up 0.2s cubic-bezier(0.23, 1, 0.32, 1)',
         'blob': 'blob 7s infinite',
-        'fade-in-up': 'fade-in-up 1s cubic-bezier(0.22, 1, 0.36, 1) forwards',
-        'shake': 'shake 0.7s cubic-bezier(.36,.07,.19,.97) both',
-        'explode-pack': 'explode-pack 0.5s ease-out forwards',
-        'glow-burst': 'glow-burst 0.6s ease-in-out forwards',
-        'glow-legendary': 'glow-legendary 10s ease-in-out infinite',
-        'glow-rare': 'glow-rare 10s ease-in-out infinite',
-        'firework': 'firework 0.8s ease-out forwards',
+        'fade-in-up': 'fade-in-up 0.22s cubic-bezier(0.23, 1, 0.32, 1) forwards',
+        'shake': 'shake 0.55s cubic-bezier(.36,.07,.19,.97) both',
+        'explode-pack': 'explode-pack 0.4s cubic-bezier(0.23, 1, 0.32, 1) forwards',
+        'glow-burst': 'glow-burst 0.45s cubic-bezier(0.23, 1, 0.32, 1) forwards',
+        'glow-legendary': 'glow-legendary 4s ease-in-out infinite',
+        'glow-rare': 'glow-rare 4s ease-in-out infinite',
+        'firework': 'firework 0.55s cubic-bezier(0.23, 1, 0.32, 1) forwards',
         'marquee': 'marquee 80s linear infinite',
         'float': 'float 3s ease-in-out infinite',
         'pulse-slow': 'pulse 10s cubic-bezier(0.4, 0, 0.6, 1) infinite',

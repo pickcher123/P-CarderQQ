@@ -85,20 +85,20 @@ const GroupBreakCard = ({ groupBreak, index, cardOpacity }: { groupBreak: GroupB
             {/* 狀態標籤 */}
             <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1.5">
                 {isCompleted ? (
-                  <Badge className="bg-slate-900/90 text-slate-300 font-bold text-[10px] sm:text-xs px-2.5 py-0.5 rounded-md border border-slate-700 shadow-md backdrop-blur-xs">
+                  <Badge className="bg-slate-900/90 text-slate-300 font-bold text-[11px] px-2.5 py-0.5 rounded-md border border-slate-700">
                     已結束
                   </Badge>
                 ) : isInProgress ? (
-                  <Badge className="bg-rose-500 text-white font-bold text-[10px] sm:text-xs px-2.5 py-0.5 rounded-md shadow-md animate-pulse">
-                    🔥 直播中
+                  <Badge className="bg-rose-500 text-white font-bold text-[11px] px-2.5 py-0.5 rounded-md shadow-md">
+                    直播中
                   </Badge>
                 ) : isFull ? (
-                  <Badge className="bg-amber-500/90 text-slate-950 border border-amber-300 font-bold text-[10px] sm:text-xs px-2.5 py-0.5 rounded-md shadow-md backdrop-blur-xs">
+                  <Badge className="bg-amber-500 text-slate-950 font-bold text-[11px] px-2.5 py-0.5 rounded-md shadow-md">
                     已滿團
                   </Badge>
                 ) : (
-                  <Badge className="bg-emerald-500 text-slate-950 border border-emerald-300 font-bold text-[10px] sm:text-xs px-2.5 py-0.5 rounded-md shadow-[0_0_12px_rgba(16,185,129,0.4)] backdrop-blur-xs">
-                    ✨ 開團中
+                  <Badge className="bg-emerald-500 text-slate-950 font-bold text-[11px] px-2.5 py-0.5 rounded-md shadow-md">
+                    開團中
                   </Badge>
                 )}
             </div>
@@ -222,12 +222,12 @@ export default function GroupBreakPage() {
             
             <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-3 sm:gap-6 md:gap-12">
                 <div className="space-y-2 sm:space-y-3 text-center lg:text-left max-w-2xl">
-                    <h1 className="font-headline text-2xl sm:text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-200 to-cyan-300 drop-shadow-[0_0_20px_rgba(16,185,129,0.4)] tracking-tight leading-none uppercase">
+                    <h1 className="font-headline text-2xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight">
                         直播團拆
                     </h1>
 
-                    <p className="text-xs sm:text-sm md:text-base text-slate-300 font-medium leading-normal">
-                        線上實體拆盒直播，公開公正分配熱門球星卡。
+                    <p className="text-xs sm:text-sm md:text-base text-slate-300 leading-relaxed">
+                        線上實體拆盒直播，公開透明分配各隊伍或位置球星卡。
                     </p>
 
                     {/* Rules Quick Dialog Button */}
@@ -302,65 +302,65 @@ export default function GroupBreakPage() {
         <div className="space-y-4 sm:space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 sm:gap-3">
-              <div className="p-1.5 sm:p-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.3)]">
-                <Radio className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400 animate-pulse" />
+              <div className="p-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30">
+                <Radio className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" />
               </div>
-              <h2 className="text-base sm:text-xl font-black tracking-wide font-headline text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-200 to-cyan-300 drop-shadow-[0_0_12px_rgba(16,185,129,0.3)]">
-                正在開團中的場次
+              <h2 className="text-lg sm:text-xl font-bold tracking-tight font-headline text-white">
+                開團中場次
               </h2>
             </div>
 
             {/* 前台快速分類按鈕 */}
-            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-950/70 border border-emerald-500/20 backdrop-blur-md self-start sm:self-auto overflow-x-auto max-w-full">
+            <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-950/80 border border-slate-800 backdrop-blur-md self-start sm:self-auto overflow-x-auto max-w-full">
               <button
                 type="button"
                 onClick={() => setFilterMode('all')}
                 className={cn(
-                  "px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap",
-                  filterMode === 'all' ? "bg-emerald-500 text-slate-950 shadow-sm font-black" : "text-slate-400 hover:text-white"
+                  "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap",
+                  filterMode === 'all' ? "bg-emerald-500 text-slate-950 font-bold" : "text-slate-400 hover:text-white"
                 )}
               >
-                全部場次 ({publishedBreaks.length})
+                全部 ({publishedBreaks.length})
               </button>
               <button
                 type="button"
                 onClick={() => setFilterMode('available')}
                 className={cn(
-                  "px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap",
-                  filterMode === 'available' ? "bg-emerald-500 text-slate-950 shadow-sm font-black" : "text-slate-400 hover:text-white"
+                  "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap",
+                  filterMode === 'available' ? "bg-emerald-500 text-slate-950 font-bold" : "text-slate-400 hover:text-white"
                 )}
               >
-                未滿團 (熱賣中)
+                未滿團
               </button>
               <button
                 type="button"
                 onClick={() => setFilterMode('sold')}
                 className={cn(
-                  "px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap",
-                  filterMode === 'sold' ? "bg-amber-500 text-slate-950 shadow-sm font-black" : "text-slate-400 hover:text-white"
+                  "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap",
+                  filterMode === 'sold' ? "bg-amber-500 text-slate-950 font-bold" : "text-slate-400 hover:text-white"
                 )}
               >
-                已滿團 (備拆中)
+                已滿團
               </button>
               <button
                 type="button"
                 onClick={() => setFilterMode('team')}
                 className={cn(
-                  "px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap",
-                  filterMode === 'team' ? "bg-teal-500 text-slate-950 shadow-sm font-black" : "text-slate-400 hover:text-white"
+                  "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap",
+                  filterMode === 'team' ? "bg-teal-500 text-slate-950 font-bold" : "text-slate-400 hover:text-white"
                 )}
               >
-                隊伍拆卡
+                隊伍制
               </button>
               <button
                 type="button"
                 onClick={() => setFilterMode('spot')}
                 className={cn(
-                  "px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap",
-                  filterMode === 'spot' ? "bg-teal-500 text-slate-950 shadow-sm font-black" : "text-slate-400 hover:text-white"
+                  "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap",
+                  filterMode === 'spot' ? "bg-teal-500 text-slate-950 font-bold" : "text-slate-400 hover:text-white"
                 )}
               >
-                號碼拆卡
+                位置制
               </button>
             </div>
           </div>

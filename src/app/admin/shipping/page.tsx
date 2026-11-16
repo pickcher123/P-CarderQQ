@@ -1,6 +1,6 @@
 'use client';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, doc, updateDoc, writeBatch, serverTimestamp, increment } from 'firebase/firestore';
+import { collection, doc, updateDoc, writeBatch, serverTimestamp, increment } from '@/lib/audited-firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';

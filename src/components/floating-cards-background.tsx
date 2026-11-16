@@ -1,6 +1,6 @@
 'use client';
 
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { motion, useMotionValue, useSpring, useTransform, useReducedMotion } from 'framer-motion';
 import { useMemo, useEffect } from 'react';
 import Image from 'next/image';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
@@ -24,6 +24,7 @@ export function FloatingCardsBackground() {
 
   const { data: dbCards } = useCollection<CardData>(cardsQuery);
 
+  const shouldReduceMotion = useReducedMotion();
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
 
@@ -31,8 +32,8 @@ export function FloatingCardsBackground() {
   const springY = useSpring(mouseY, { stiffness: 50, damping: 20 });
 
   useEffect(() => {
-    // 觸控裝置跳過 mousemove 監聽以節省 CPU
-    if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) {
+    // 觸控裝置或減少動態偏好跳過 mousemove 監聽以節省 CPU
+    if (shouldReduceMotion || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches)) {
       return;
     }
 
@@ -45,7 +46,7 @@ export function FloatingCardsBackground() {
 
     window.addEventListener('mousemove', handleMouseMove, { passive: true });
     return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, [mouseX, mouseY]);
+  }, [mouseX, mouseY, shouldReduceMotion]);
 
   // Create random positions and types for cards
   const cards = useMemo(() => {
@@ -83,7 +84,8 @@ export function FloatingCardsBackground() {
             key={card.id} 
             card={card} 
             springX={springX} 
-            springY={springY} 
+            springY={springY}
+            shouldReduceMotion={Boolean(shouldReduceMotion)}
           />
         ))}
       </div>
@@ -98,7 +100,7 @@ export function FloatingCardsBackground() {
   );
 }
 
-function FloatingCard({ card, springX, springY }: { card: any, springX: any, springY: any }) {
+function FloatingCard({ card, springX, springY, shouldReduceMotion }: { card: any, springX: any, springY: any, shouldReduceMotion: boolean }) {
   const moveX = useTransform(springX, (v: number) => v * 120 * card.depth);
   const moveY = useTransform(springY, (v: number) => v * 120 * card.depth);
 
@@ -111,17 +113,23 @@ function FloatingCard({ card, springX, springY }: { card: any, springX: any, spr
         width: `${175 * card.scale}px`,
         aspectRatio: '2/3',
         opacity: card.opacity,
-        x: moveX,
-        y: moveY,
-        willChange: 'transform',
+        x: shouldReduceMotion ? 0 : moveX,
+        y: shouldReduceMotion ? 0 : moveY,
+        willChange: shouldReduceMotion ? 'auto' : 'transform',
       }}
       initial={{ opacity: 0, scale: card.scale, rotate: card.rotate }}
-      animate={{
+      animate={shouldReduceMotion ? {
+        opacity: card.opacity,
+        rotate: card.rotate,
+      } : {
         opacity: [card.opacity, card.opacity * 1.4, card.opacity],
         rotate: [card.rotate - 6, card.rotate + 6, card.rotate - 6],
         translateY: [-card.floatRange, card.floatRange, -card.floatRange],
       }}
-      transition={{
+      transition={shouldReduceMotion ? {
+        duration: 0.2,
+        ease: [0.23, 1, 0.32, 1],
+      } : {
         opacity: { duration: 6, repeat: Infinity, ease: "linear" },
         rotate: { duration: card.duration, repeat: Infinity, ease: "easeInOut" },
         translateY: { duration: card.duration, repeat: Infinity, ease: "easeInOut", delay: card.delay },

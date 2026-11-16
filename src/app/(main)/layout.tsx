@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { AnimatedBackground } from "@/components/animated-background";
@@ -24,6 +24,7 @@ export default function MainLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const shouldReduceMotion = useReducedMotion();
   const firestore = useFirestore();
   const pathname = usePathname();
   const { isAdmin, isLoading: isAuthLoading } = useIsAdmin();
@@ -122,9 +123,9 @@ export default function MainLayout({
         <Header systemConfig={systemConfig} />
         {isMarqueeVisible && <NewsMarquee isDrawing={isDrawing} />}
         <motion.main 
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, ease: "easeOut" }}
+          transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
           className="flex-1 pb-36 sm:pb-40 md:pb-16 overflow-x-hidden max-w-full w-full"
         >
           {children}

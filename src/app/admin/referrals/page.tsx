@@ -30,6 +30,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { adminFetch } from '@/lib/admin-audit';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function AdminReferralPage() {
@@ -115,7 +116,7 @@ export default function AdminReferralPage() {
     const handleSaveConfig = async () => {
         setIsSavingConfig(true);
         try {
-            const res = await fetch('/api/admin/referral/config', {
+            const res = await adminFetch('/api/admin/referral/config', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(config),
@@ -143,7 +144,7 @@ export default function AdminReferralPage() {
 
         setIsCreatingCode(true);
         try {
-            const res = await fetch('/api/admin/referral', {
+            const res = await adminFetch('/api/admin/referral', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -175,7 +176,7 @@ export default function AdminReferralPage() {
     // 切換官方推薦碼啟用狀態
     const handleToggleCode = async (code: string, currentActive: boolean) => {
         try {
-            const res = await fetch('/api/admin/referral', {
+            const res = await adminFetch('/api/admin/referral', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -198,7 +199,7 @@ export default function AdminReferralPage() {
     const handleDeleteCode = async (code: string) => {
         if (!confirm(`確定要刪除專案推薦碼【${code}】嗎？`)) return;
         try {
-            const res = await fetch('/api/admin/referral', {
+            const res = await adminFetch('/api/admin/referral', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

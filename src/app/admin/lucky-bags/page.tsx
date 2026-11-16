@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, addDoc, query, deleteDoc, doc, updateDoc, getCountFromServer } from 'firebase/firestore';
+import { collection, addDoc, query, deleteDoc, doc, updateDoc, getCountFromServer } from '@/lib/audited-firestore';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,

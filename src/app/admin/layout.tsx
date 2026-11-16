@@ -4,10 +4,17 @@ import { initiateGoogleSignIn } from "@/firebase/non-blocking-login";
 import { signOut } from "firebase/auth";
 import { doc } from "firebase/firestore";
 import type { UserProfile } from "@/types/user-profile";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import Link from 'next/link';
 import { cn } from "@/lib/utils";
+import {
+  updateAdminAuditContext,
+  recordAdminBackendLogin,
+  clearAdminBackendLoginSessionFlag,
+  setAdminAuditFirestore,
+  logAdminApiCall,
+} from "@/lib/admin-audit";
 import {
   LayoutDashboard,
   CreditCard,
@@ -321,6 +328,7 @@ export default function AdminLayout({
   const handleAdminGoogleLogin = async () => {
     if (!auth) return;
     setIsSigningIn(true);
+    clearAdminBackendLoginSessionFlag();
     try {
       await initiateGoogleSignIn(auth);
     } catch (error) {
@@ -333,6 +341,7 @@ export default function AdminLayout({
   const handleAdminSwitchAccount = async () => {
     if (!auth) return;
     setIsSigningIn(true);
+    clearAdminBackendLoginSessionFlag();
     try {
       await signOut(auth);
       await initiateGoogleSignIn(auth);
@@ -394,6 +403,154 @@ export default function AdminLayout({
     adminDoc?.isAdmin === true ||
     adminEmailDoc?.isAdmin === true
   );
+
+  // 同步管理員操作稽核上下文 + 自動記錄管理員進入後台與後端 API 操作
+  useEffect(() => {
+    if (!user || !isUserAdmin || !firestore) {
+      setAdminAuditFirestore(null);
+      return;
+    }
+
+    setAdminAuditFirestore(firestore);
+
+    const displayName =
+      userProfile?.username ||
+      adminDoc?.username ||
+      user.displayName ||
+      (user.email ? user.email.split('@')[0] : '管理員');
+
+    updateAdminAuditContext({
+      uid: user.uid,
+      email: user.email || '',
+      name: displayName,
+      isSuperAdmin,
+      routePath: pathname || '/admin',
+    });
+
+    // 自動記錄管理員進入後台（同步寫入操作日誌與登入紀錄，若新管理員權限文件尚在背景同步則自動重試）
+    let cancelled = false;
+    let retryTimer1: ReturnType<typeof setTimeout> | null = null;
+    let retryTimer2: ReturnType<typeof setTimeout> | null = null;
+
+    const triggerBackendLoginRecord = async () => {
+      const ok = await recordAdminBackendLogin(firestore, {
+        uid: user.uid,
+        email: user.email || '',
+        name: displayName,
+        photoURL: user.photoURL || null,
+        isSuperAdmin,
+        routePath: pathname || '/admin',
+      });
+      if (!ok && !cancelled) {
+        retryTimer1 = setTimeout(async () => {
+          if (cancelled) return;
+          const ok2 = await recordAdminBackendLogin(firestore, {
+            uid: user.uid,
+            email: user.email || '',
+            name: displayName,
+            photoURL: user.photoURL || null,
+            isSuperAdmin,
+            routePath: pathname || '/admin',
+          });
+          if (!ok2 && !cancelled) {
+            retryTimer2 = setTimeout(() => {
+              if (!cancelled) {
+                void recordAdminBackendLogin(firestore, {
+                  uid: user.uid,
+                  email: user.email || '',
+                  name: displayName,
+                  photoURL: user.photoURL || null,
+                  isSuperAdmin,
+                  routePath: pathname || '/admin',
+                });
+              }
+            }, 3000);
+          }
+        }, 1800);
+      }
+    };
+
+    void triggerBackendLoginRecord();
+
+    return () => {
+      cancelled = true;
+      if (retryTimer1) clearTimeout(retryTimer1);
+      if (retryTimer2) clearTimeout(retryTimer2);
+    };
+  }, [user, isUserAdmin, isSuperAdmin, userProfile?.username, adminDoc?.username, pathname, firestore]);
+
+  // 攔截管理員呼叫 /api/admin/* 的變更型操作 (POST / PUT / PATCH / DELETE)
+  // 相容預覽環境或擴充套件將 window.fetch 設為唯讀 getter 的情況，避免拋出 TypeError
+  useEffect(() => {
+    if (!user || !isUserAdmin || !firestore || typeof window === 'undefined') return;
+
+    const rawFetch = window.fetch;
+    if (typeof rawFetch !== 'function') return;
+
+    const boundOriginalFetch = rawFetch.bind(window);
+    const wrappedFetch: typeof window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+      const response = await boundOriginalFetch(input, init);
+      logAdminApiCall(input, init, response, firestore);
+      return response;
+    };
+
+    try {
+      Object.assign(wrappedFetch, rawFetch);
+    } catch {
+      // ignore non-writable static properties on fetch
+    }
+
+    const ownDescriptor = Object.getOwnPropertyDescriptor(window, 'fetch');
+    let installedViaDefineProperty = false;
+    let installedViaAssignment = false;
+
+    try {
+      if (!ownDescriptor) {
+        const proto = Object.getPrototypeOf(window);
+        const protoDescriptor = proto ? Object.getOwnPropertyDescriptor(proto, 'fetch') : undefined;
+        if (!protoDescriptor || protoDescriptor.writable || protoDescriptor.set) {
+          window.fetch = wrappedFetch;
+          installedViaAssignment = true;
+        } else if (protoDescriptor.configurable !== false) {
+          Object.defineProperty(window, 'fetch', {
+            configurable: true,
+            enumerable: true,
+            writable: true,
+            value: wrappedFetch,
+          });
+          installedViaDefineProperty = true;
+        }
+      } else if (ownDescriptor.writable || typeof ownDescriptor.set === 'function') {
+        window.fetch = wrappedFetch;
+        installedViaAssignment = true;
+      } else if (ownDescriptor.configurable) {
+        Object.defineProperty(window, 'fetch', {
+          configurable: true,
+          enumerable: ownDescriptor.enumerable ?? true,
+          get: () => wrappedFetch,
+        });
+        installedViaDefineProperty = true;
+      }
+    } catch {
+      // 若瀏覽器或預覽沙盒鎖定 window.fetch，由各頁面 adminFetch 接手記錄，不影響後台運作
+    }
+
+    return () => {
+      try {
+        if (installedViaDefineProperty) {
+          if (ownDescriptor) {
+            Object.defineProperty(window, 'fetch', ownDescriptor);
+          } else {
+            Reflect.deleteProperty(window, 'fetch');
+          }
+        } else if (installedViaAssignment) {
+          window.fetch = rawFetch;
+        }
+      } catch {
+        // ignore cleanup errors on locked window properties
+      }
+    };
+  }, [user, isUserAdmin, firestore]);
 
   // 超級管理員無需等待載入即可通行；一般使用者等待 profile 與 hook 驗證完畢（若已確認管理員身分則直接放行）
   if (isUserLoading || (!isSuperAdmin && !isUserAdmin && (isProfileLoading || isHookAdminLoading))) {

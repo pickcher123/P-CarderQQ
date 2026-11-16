@@ -4,7 +4,7 @@ import { useState, ChangeEvent, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useDoc, useCollection, useFirestore, useMemoFirebase, useAuth, useStorage } from '@/firebase';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { collection, updateDoc, doc, arrayUnion, arrayRemove, Timestamp, runTransaction, query, where } from 'firebase/firestore';
+import { collection, updateDoc, doc, arrayUnion, arrayRemove, Timestamp, runTransaction, query, where } from '@/lib/audited-firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { Button } from '@/components/ui/button';
 import {

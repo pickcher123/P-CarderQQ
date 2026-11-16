@@ -4,7 +4,7 @@ import { useState, ChangeEvent, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useDoc, useCollection, useFirestore, useMemoFirebase, useAuth } from '@/firebase';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { collection, doc, updateDoc, query, writeBatch, serverTimestamp, arrayUnion, arrayRemove, getDocs, addDoc, increment } from 'firebase/firestore';
+import { collection, doc, updateDoc, query, writeBatch, serverTimestamp, arrayUnion, arrayRemove, getDocs, addDoc, increment } from '@/lib/audited-firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { Button } from '@/components/ui/button';
 import {
@@ -36,6 +36,7 @@ import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { PPlusIcon } from '@/components/icons';
 import { resetLuckyBagParticipants } from '@/app/actions/lucky-bag';
+import { recordAdminActivityLog } from '@/lib/admin-audit';
 import { VisuallyHidden } from '@/components/ui/visually-hidden';
 
 type LuckBagStatus = 'draft' | 'published' | '已開獎';
@@ -107,6 +108,20 @@ export default function LuckBagDetailPage() {
     try {
       const res = await resetLuckyBagParticipants(auth.currentUser.uid, luckBagId);
       if (res.success) {
+        if (firestore) {
+          void recordAdminActivityLog(firestore, {
+            module: 'lucky-bags',
+            moduleLabel: '福袋與轉盤',
+            operationType: 'probability_change',
+            severity: 'critical',
+            riskTags: ['prob_tamper', 'stock_change'],
+            action: '🔄 重置一番福袋參與者並退還點數',
+            targetCollection: 'luckBags',
+            targetId: luckBagId,
+            targetName: bagDetails?.name || luckBagId,
+            details: `重置福袋「${bagDetails?.name || luckBagId}」所有已購籤位參與紀錄，退還買家款項並退回草稿狀態`,
+          });
+        }
         toast({ title: '重設成功', description: '所有參與者資料已清除，活動已回至草稿狀態。' });
       } else {
         toast({ variant: 'destructive', title: '重設失敗', description: res.error });

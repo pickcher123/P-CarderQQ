@@ -34,6 +34,10 @@
     
     --radius: 0.5rem;
 
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+    --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+
     --chart-1: 190 95% 43%;
     --chart-2: 45 93% 47%;
     --chart-3: 327 72% 52%;
@@ -79,11 +83,27 @@
   html {
     background-color: #070b14;
     color-scheme: dark;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
   body {
     background-color: #070b14;
     color: hsl(var(--foreground));
     overflow-x: hidden;
+    line-height: 1.6;
+    letter-spacing: 0.01em;
+  }
+  h1, h2, h3, h4 {
+    text-wrap: balance;
+    line-height: 1.25;
+  }
+  p {
+    text-wrap: pretty;
+  }
+  .font-code {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
   }
 }
 
@@ -175,8 +195,8 @@
 }
 
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
 
 @keyframes bounce-right {
@@ -197,13 +217,13 @@
 }
 
 @keyframes glow-burst {
-  0% { opacity: 0; scale: 0.8; }
-  50% { opacity: 1; scale: 1.1; }
-  100% { opacity: 0; scale: 1.3; }
+  0% { opacity: 0; transform: scale(0.9); }
+  50% { opacity: 0.85; transform: scale(1.1); }
+  100% { opacity: 0; transform: scale(1.3); }
 }
 
 @keyframes firework {
-  0% { transform: translate(0, 0) scale(0); opacity: 1; }
+  0% { transform: translate(0, 0) scale(0.6); opacity: 1; }
   100% { opacity: 0; }
 }
 
@@ -311,12 +331,10 @@
   0%, 100% {
     transform: scale(1);
     opacity: 0.85;
-    filter: blur(2.5px);
   }
   50% {
-    transform: scale(0.78);
-    opacity: 0.42;
-    filter: blur(5.5px);
+    transform: scale(0.8);
+    opacity: 0.45;
   }
 }
 
@@ -451,4 +469,31 @@
   animation: cyber-particle-float 6.2s ease-in-out infinite 2.8s;
 }
 
-
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+  }
+  .animate-card-levitate,
+  .animate-card-shadow,
+  .animate-levitate-beam,
+  .animate-energy-ring,
+  .animate-led-flow,
+  .animate-led-orbit,
+  .animate-led-flow-fast,
+  .animate-led-glow,
+  .animate-cyber-scan,
+  .animate-circuit-dash,
+  .animate-orb-1,
+  .animate-orb-2,
+  .animate-particle-1,
+  .animate-particle-2,
+  .animate-particle-3,
+  .animate-pulse-slow,
+  .animate-pulse-slowest,
+  .animate-float,
+  .animate-blob,
+  .animate-ping,
+  .animate-bounce {
+    animation: none !important;
+  }
+}

@@ -122,20 +122,12 @@ export default function BeginnerGuidePage() {
         
         {/* ================= HERO BANNER ================= */}
         <div className="text-center space-y-4 pt-4 sm:pt-8 max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-amber-500/15 via-yellow-500/10 to-amber-500/15 border border-amber-400/40 text-amber-300 text-xs font-black shadow-[0_0_20px_rgba(245,158,11,0.2)]">
-            <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-            <span>P+CARDER 官方一頁式新手全攻略 & FAQ</span>
-          </div>
-
-          <h1 className="text-3xl sm:text-5xl md:text-6xl font-black font-headline tracking-tight text-transparent bg-clip-text bg-gradient-to-b from-white via-slate-100 to-amber-200 drop-shadow-[0_4px_30px_rgba(245,158,11,0.3)]">
-            第一次玩？看這裡就懂！
+          <h1 className="text-3xl sm:text-5xl font-black font-headline tracking-tight text-white">
+            新手玩法指南與常見問題
           </h1>
 
           <p className="text-sm sm:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed">
-            不用加入任何群組即可自主掌握全站規則。我們將以最直白的實際流程，為您解答
-            <span className="text-amber-400 font-bold mx-1">「實體卡 vs 點數獎項」</span>、
-            <span className="text-cyan-400 font-bold mx-1">「收藏庫防潮存證」</span>以及
-            <span className="text-rose-400 font-bold mx-1">「寄送與轉點折現雙軌制」</span>。
+            一篇掌握點數規則、個人數位收藏庫保存、實體保險出貨與公開公平驗證機制。
           </p>
 
           {/* 快速捷徑列 */}
@@ -144,30 +136,30 @@ export default function BeginnerGuidePage() {
               href="#flow-example" 
               className="px-3.5 py-1.5 rounded-xl bg-slate-900/90 border border-white/10 hover:border-amber-400/40 text-xs font-bold text-slate-300 hover:text-amber-300 transition-all"
             >
-              🚀 6 步完整流程範例
+              6 步完整流程
             </a>
             <a 
               href="#core-questions" 
               className="px-3.5 py-1.5 rounded-xl bg-slate-900/90 border border-white/10 hover:border-cyan-400/40 text-xs font-bold text-slate-300 hover:text-cyan-300 transition-all"
             >
-              💎 實體卡與收藏庫解密
+              實體卡與收藏庫
             </a>
             <a 
               href="#fairness-section" 
               className="px-3.5 py-1.5 rounded-xl bg-emerald-950/40 border border-emerald-500/40 hover:border-emerald-400 text-xs font-bold text-emerald-300 hover:text-emerald-200 transition-all"
             >
-              🛡️ 公開公平驗證演算法
+              公開公平驗證
             </a>
             <a 
               href="#faq-section" 
               className="px-3.5 py-1.5 rounded-xl bg-slate-900/90 border border-white/10 hover:border-rose-400/40 text-xs font-bold text-slate-300 hover:text-rose-300 transition-all"
             >
-              ❓ 必看 FAQ（點數、運費、斷線）
+              常見問題字卡
             </a>
           </div>
         </div>
 
-                {/* ================= 視覺化新手四步圖解指南 ================= */}
+        {/* ================= 視覺化新手四步圖解指南 ================= */}
         <section className="rounded-3xl overflow-hidden border border-amber-500/35 bg-gradient-to-b from-[#181120] to-slate-950 shadow-[0_15px_40px_rgba(0,0,0,0.8)] relative group">
           <div className="relative w-full aspect-[16/9] max-h-[460px] bg-slate-900">
             <Image 
@@ -177,16 +169,14 @@ export default function BeginnerGuidePage() {
               sizes="(max-width: 1200px) 100vw, 1200px"
               className="object-contain object-center"
               priority
+              referrerPolicy="no-referrer"
             />
           </div>
           <div className="p-4 sm:p-5 bg-slate-950/90 border-t border-white/10 flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-2.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-xs sm:text-sm font-black text-amber-300">
-                核心閉環：1. 挑選福袋卡包 ➔ 2. 存入個人數位收藏庫 ➔ 3. 專業防潮保護 ➔ 4. 實體保險包裝宅配到府
-              </span>
-            </div>
-            <span className="text-xs text-slate-400 font-mono hidden sm:inline">100% 實體現貨在庫 · 恆溫防潮呵護</span>
+            <span className="text-xs sm:text-sm font-bold text-amber-300">
+              核心流程：1. 挑選福袋卡包 · 2. 存入個人數位收藏庫 · 3. 專業防潮保護 · 4. 實體保險包裝宅配到府
+            </span>
+            <span className="text-xs text-slate-400 hidden sm:inline">實體現貨在庫 · 恆溫防潮保存</span>
           </div>
         </section>
 
@@ -194,17 +184,13 @@ export default function BeginnerGuidePage() {
         <section id="flow-example" className="scroll-mt-20 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 border-b border-white/10 pb-4">
             <div>
-              <div className="flex items-center gap-2 text-xs font-black tracking-wider uppercase text-amber-400 font-mono">
-                <span className="w-2 h-2 rounded-full bg-amber-400" />
-                Walkthrough Example
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-black font-headline text-white mt-1">
-                從零開始：實際開箱完整流程
+              <h2 className="text-xl sm:text-3xl font-bold font-headline text-white tracking-tight">
+                實際開箱完整流程
               </h2>
+              <p className="text-xs sm:text-sm text-slate-400 mt-1">
+                註冊 · 了解點數 · 挑選卡池 · 開獎 · 收藏庫 · 寄送或轉點
+              </p>
             </div>
-            <p className="text-xs text-slate-400 max-w-sm sm:text-right">
-              註冊 ➔ 了解點數 ➔ 挑選卡池 ➔ 開獎 ➔ 收藏庫 ➔ 寄送或折現
-            </p>
           </div>
 
           {/* 6 大步驟卡片 */}
@@ -218,17 +204,17 @@ export default function BeginnerGuidePage() {
                 >
                   <div>
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-xs font-black font-mono px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-300 border border-amber-500/30">
-                        STEP {step.step}
+                      <span className="text-xs font-bold font-code px-2.5 py-0.5 rounded-lg bg-amber-500/10 text-amber-300 border border-amber-500/30">
+                        0{step.step}
                       </span>
-                      <span className="text-xs font-bold text-slate-400">{step.tag}</span>
+                      <span className="text-xs font-medium text-slate-400">{step.tag}</span>
                     </div>
 
                     <div className="flex items-center gap-3 mb-3">
                       <div className={cn("w-10 h-10 rounded-xl bg-gradient-to-br flex items-center justify-center text-slate-950 shadow-md shrink-0", step.color)}>
                         <Icon className="w-5 h-5" />
                       </div>
-                      <h3 className="text-base sm:text-lg font-black text-white group-hover:text-amber-200 transition-colors">
+                      <h3 className="text-base sm:text-lg font-bold font-headline text-white group-hover:text-amber-200 transition-colors">
                         {step.title}
                       </h3>
                     </div>
@@ -236,11 +222,6 @@ export default function BeginnerGuidePage() {
                     <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
                       {step.desc}
                     </p>
-                  </div>
-
-                  <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-[11px] text-slate-400 font-mono">
-                    <span>STATUS: READY</span>
-                    <span className="text-amber-400/80 group-hover:translate-x-1 transition-transform">➔</span>
                   </div>
                 </div>
               );
@@ -271,13 +252,12 @@ export default function BeginnerGuidePage() {
         {/* ================= SECTION 2: 三大核心重點直接解答 ================= */}
         <section id="core-questions" className="scroll-mt-20 space-y-6">
           <div className="border-b border-white/10 pb-4">
-            <div className="flex items-center gap-2 text-xs font-black tracking-wider uppercase text-cyan-400 font-mono">
-              <span className="w-2 h-2 rounded-full bg-cyan-400" />
-              Core Mechanics Explained
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-black font-headline text-white mt-1">
-              三大新客最常問的核心概念
+            <h2 className="text-xl sm:text-3xl font-bold font-headline text-white tracking-tight">
+              三大核心機制說明
             </h2>
+            <p className="text-xs sm:text-sm text-slate-400 mt-1">
+              實體卡片歸屬、數位收藏庫保存與點數雙軌運用
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -301,21 +281,16 @@ export default function BeginnerGuidePage() {
                         <Icon className="w-5 h-5" />
                       </div>
                       <div>
-                        <span className={cn("text-[10px] font-black uppercase font-mono px-2 py-0.5 rounded-full bg-white/10 border border-white/10 inline-block mb-1", item.accent)}>
+                        <span className={cn("text-[11px] font-bold px-2 py-0.5 rounded-full bg-white/10 border border-white/10 inline-block mb-1", item.accent)}>
                           {item.badge}
                         </span>
-                        <h3 className="text-lg font-black text-white">{item.title}</h3>
+                        <h3 className="text-lg font-bold font-headline text-white">{item.title}</h3>
                       </div>
                     </div>
 
                     <p className="text-xs sm:text-sm text-slate-300 leading-relaxed pt-1">
                       {item.content}
                     </p>
-                  </div>
-
-                  <div className="pt-3 border-t border-white/10 flex items-center justify-between text-xs font-mono text-slate-400">
-                    <span>100% TRANSPARENT</span>
-                    <CheckCircle2 className={cn("w-4 h-4", item.accent)} />
                   </div>
                 </div>
               );
@@ -326,15 +301,11 @@ export default function BeginnerGuidePage() {
         {/* ================= SECTION 2.5: 公開驗證演算法專區 ================= */}
         <section id="fairness-section" className="scroll-mt-20 space-y-6">
           <div className="border-b border-white/10 pb-4">
-            <div className="flex items-center gap-2 text-xs font-black tracking-wider uppercase text-emerald-400 font-mono">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              Cryptographic Fairness Standard
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-black font-headline text-white mt-1">
-              如何確保公平？認識「公開驗證演算法 (Provably Fair)」
+            <h2 className="text-xl sm:text-3xl font-bold font-headline text-white tracking-tight">
+              公開公平驗證機制（Provably Fair）
             </h2>
             <p className="text-xs sm:text-sm text-slate-400 mt-1">
-              平台完全杜絕後台偷改機率或內定中獎！透過國際標準 SHA-256 與 HMAC 加密，任何人都可以在開獎後親自驗算。
+              採用標準 SHA-256 與 HMAC 密碼學驗證，開獎後任何人皆可獨立驗算結果
             </p>
           </div>
 
@@ -391,24 +362,22 @@ export default function BeginnerGuidePage() {
           </div>
         </section>
 
-        {/* ================= SECTION 3: 必看 FAQ 問答集 ================= */}
         {/* ================= SECTION 3: 必看 FAQ 左右滑動字卡 ================= */}
         <section id="faq-section" className="scroll-mt-20 space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-white/10 pb-4">
             <div>
-              <div className="flex items-center gap-2 text-xs font-black tracking-wider uppercase text-rose-400 font-mono">
-                <span className="w-2 h-2 rounded-full bg-rose-400 animate-pulse" />
-                Frequently Asked Questions · 左右滑動字卡
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-black font-headline text-white mt-1">
-                常見問題與保證承諾
+              <h2 className="text-xl sm:text-3xl font-bold font-headline text-white tracking-tight">
+                常見問題
               </h2>
+              <p className="text-xs sm:text-sm text-slate-400 mt-1">
+                左右滑動字卡或依分類篩選快速查閱
+              </p>
             </div>
 
             {/* 左右切換控制按鈕與當前題號 */}
             <div className="flex items-center gap-2.5">
-              <span className="text-xs font-mono font-bold text-slate-400 px-2.5 py-1 rounded-lg bg-slate-900 border border-white/10">
-                {filteredFaqs.length > 0 ? `第 ${Math.min(activeFaqIndex + 1, filteredFaqs.length)} / ${filteredFaqs.length} 題` : '0 則問題'}
+              <span className="text-xs font-code font-bold text-slate-400 px-2.5 py-1 rounded-lg bg-slate-900 border border-white/10">
+                {filteredFaqs.length > 0 ? `${Math.min(activeFaqIndex + 1, filteredFaqs.length)} / ${filteredFaqs.length}` : '0'}
               </span>
               <button
                 type="button"
@@ -539,10 +508,10 @@ export default function BeginnerGuidePage() {
                       <div className="pt-2 border-t border-white/5 flex items-center justify-between text-[11px] text-slate-400">
                         <span className="flex items-center gap-1 text-amber-400/90 font-medium">
                           <HelpCircle className="w-3.5 h-3.5 shrink-0" />
-                          官方答疑認證
+                          常見問題解答
                         </span>
-                        <span className="text-slate-500 font-mono text-[10px]">
-                          P+ CARDER FAQ
+                        <span className="text-slate-500 font-code text-[11px]">
+                          {idx + 1} / {filteredFaqs.length}
                         </span>
                       </div>
                     </div>
@@ -552,10 +521,8 @@ export default function BeginnerGuidePage() {
 
               {/* 手機版左右滑動提示與下方點點導覽 */}
               <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-2 px-1">
-                <p className="text-[11px] text-slate-500 flex items-center gap-1 sm:hidden">
-                  <span>👈</span>
-                  <span>可直接向左向右滑動字卡切換</span>
-                  <span>👉</span>
+                <p className="text-[11px] text-slate-500 sm:hidden">
+                  可左右滑動字卡切換
                 </p>
 
                 {/* 底部小圓點導覽 */}

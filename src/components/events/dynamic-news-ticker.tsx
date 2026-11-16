@@ -18,7 +18,7 @@ import {
     Clock,
     CheckCircle2
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, limit, where, Timestamp } from 'firebase/firestore';
 import { Badge } from '@/components/ui/badge';
@@ -183,6 +183,7 @@ interface DynamicNewsTickerProps {
 }
 
 export function DynamicNewsTicker({ onSelectPrize, className }: DynamicNewsTickerProps) {
+    const shouldReduceMotion = useReducedMotion();
     const firestore = useFirestore();
     const { toast } = useToast();
 
@@ -348,7 +349,7 @@ export function DynamicNewsTicker({ onSelectPrize, className }: DynamicNewsTicke
                 onMouseEnter={() => setIsPaused(true)}
                 onMouseLeave={() => setIsPaused(false)}
                 className={cn(
-                    "relative rounded-2xl border transition-all duration-300 overflow-hidden shadow-lg",
+                    "relative rounded-2xl border transition-[border-color] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden shadow-lg",
                     "bg-gradient-to-r from-slate-950 via-[#0d1424] to-slate-950",
                     "border-amber-500/25 hover:border-amber-500/40",
                     "shadow-[0_4px_25px_rgba(0,0,0,0.6),0_0_15px_rgba(245,158,11,0.06)]"
@@ -379,7 +380,7 @@ export function DynamicNewsTicker({ onSelectPrize, className }: DynamicNewsTicke
                                 type="button"
                                 onClick={() => setActiveFilter('all')}
                                 className={cn(
-                                    "px-2 py-0.5 rounded-md text-[10px] sm:text-xs font-bold transition-all",
+                                    "px-2 py-0.5 rounded-md text-[10px] sm:text-xs font-bold transition-[background-color,color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]",
                                     activeFilter === 'all'
                                         ? "bg-amber-500 text-slate-950 shadow-sm"
                                         : "text-slate-400 hover:text-slate-200"
@@ -391,7 +392,7 @@ export function DynamicNewsTicker({ onSelectPrize, className }: DynamicNewsTicke
                                 type="button"
                                 onClick={() => setActiveFilter('campaign')}
                                 className={cn(
-                                    "px-2 py-0.5 rounded-md text-[10px] sm:text-xs font-bold transition-all flex items-center gap-1",
+                                    "px-2 py-0.5 rounded-md text-[10px] sm:text-xs font-bold transition-[background-color,color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] flex items-center gap-1",
                                     activeFilter === 'campaign'
                                         ? "bg-amber-500 text-slate-950 shadow-sm"
                                         : "text-slate-400 hover:text-slate-200"
@@ -404,7 +405,7 @@ export function DynamicNewsTicker({ onSelectPrize, className }: DynamicNewsTicke
                                 type="button"
                                 onClick={() => setActiveFilter('winning')}
                                 className={cn(
-                                    "px-2 py-0.5 rounded-md text-[10px] sm:text-xs font-bold transition-all flex items-center gap-1",
+                                    "px-2 py-0.5 rounded-md text-[10px] sm:text-xs font-bold transition-[background-color,color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] flex items-center gap-1",
                                     activeFilter === 'winning'
                                         ? "bg-amber-500 text-slate-950 shadow-sm"
                                         : "text-slate-400 hover:text-slate-200"
@@ -421,10 +422,10 @@ export function DynamicNewsTicker({ onSelectPrize, className }: DynamicNewsTicke
                         <AnimatePresence mode="wait">
                             <motion.div
                                 key={currentItem.id}
-                                initial={{ opacity: 0, y: 12 }}
+                                initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 8 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -12 }}
-                                transition={{ duration: 0.35, ease: 'easeOut' }}
+                                exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
+                                transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
                                 className="w-full flex items-center justify-between gap-2"
                             >
                                 <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -472,7 +473,7 @@ export function DynamicNewsTicker({ onSelectPrize, className }: DynamicNewsTicke
                                                 e.stopPropagation();
                                                 handleCopyPromoCode(currentItem.promoCode!);
                                             }}
-                                            className="h-7 px-2 sm:px-2.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/40 text-[10px] sm:text-xs font-bold gap-1 shadow-sm transition-all"
+                                            className="h-7 px-2 sm:px-2.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/40 text-[10px] sm:text-xs font-bold gap-1 shadow-sm transition-[background-color,color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]"
                                         >
                                             {copiedCode === currentItem.promoCode ? (
                                                 <>
@@ -495,7 +496,7 @@ export function DynamicNewsTicker({ onSelectPrize, className }: DynamicNewsTicke
                                                 e.stopPropagation();
                                                 window.open(currentItem.actionUrl || 'https://line.me/ti/g2/', '_blank', 'noopener,noreferrer');
                                             }}
-                                            className="h-7 px-2 sm:px-2.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-400/40 text-[10px] sm:text-xs font-bold gap-1 shadow-sm transition-all"
+                                            className="h-7 px-2 sm:px-2.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-400/40 text-[10px] sm:text-xs font-bold gap-1 shadow-sm transition-[background-color,color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]"
                                         >
                                             <ExternalLink className="w-3 h-3 text-emerald-400" />
                                             <span>{currentItem.actionText || '前往連結'}</span>
@@ -521,7 +522,7 @@ export function DynamicNewsTicker({ onSelectPrize, className }: DynamicNewsTicke
                                 type="button"
                                 onClick={handlePrev}
                                 title="上一則公告"
-                                className="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:text-amber-300 hover:bg-slate-800 transition-colors"
+                                className="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:text-amber-300 hover:bg-slate-800 transition-[background-color,color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]"
                             >
                                 <ChevronLeft className="w-3.5 h-3.5" />
                             </button>
@@ -531,7 +532,7 @@ export function DynamicNewsTicker({ onSelectPrize, className }: DynamicNewsTicke
                                 type="button"
                                 onClick={() => setIsPaused(!isPaused)}
                                 title={isPaused ? "繼續播放" : "暫停播放"}
-                                className="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:text-amber-300 hover:bg-slate-800 transition-colors"
+                                className="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:text-amber-300 hover:bg-slate-800 transition-[background-color,color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]"
                             >
                                 {isPaused ? <Play className="w-3 h-3 text-emerald-400" /> : <Pause className="w-3 h-3" />}
                             </button>
@@ -541,7 +542,7 @@ export function DynamicNewsTicker({ onSelectPrize, className }: DynamicNewsTicke
                                 type="button"
                                 onClick={handleNext}
                                 title="下一則公告"
-                                className="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:text-amber-300 hover:bg-slate-800 transition-colors"
+                                className="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:text-amber-300 hover:bg-slate-800 transition-[background-color,color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]"
                             >
                                 <ChevronRight className="w-3.5 h-3.5" />
                             </button>

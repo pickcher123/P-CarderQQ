@@ -1,7 +1,7 @@
 'use client';
 import { useState, useMemo, useEffect } from 'react';
 import { useCollection, useRequest, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, doc, updateDoc, setDoc, deleteDoc, writeBatch, serverTimestamp, increment, where, limit, getDocs } from 'firebase/firestore';
+import { collection, query, doc, updateDoc, setDoc, deleteDoc, writeBatch, serverTimestamp, increment, where, limit, getDocs } from '@/lib/audited-firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
@@ -31,7 +31,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
-import { Loader2, User as UserIcon, Gem, MapPin, Search, UserCheck, Briefcase, Mail, Ticket, Send, Sparkles, Clock, LogIn, ShieldCheck } from 'lucide-react';
+import { Loader2, User as UserIcon, Gem, MapPin, Search, UserCheck, Briefcase, Mail, Ticket, Send, Sparkles, Clock, LogIn, ShieldCheck, FileText } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -1338,6 +1338,7 @@ function QuickGrantAdminDialog({ onUpdate }: { onUpdate: () => void }) {
 export default function UsersAdminPage() {
   const firestore = useFirestore();
   const { user: currentUser } = useUser();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [isEventDispatchOpen, setIsEventDispatchOpen] = useState(false);
   const [isEventLogsOpen, setIsEventLogsOpen] = useState(false);
@@ -1350,6 +1351,7 @@ export default function UsersAdminPage() {
     try {
       let count = 0;
       const allModuleIds = PERMISSION_ITEMS.map(p => p.id);
+      const batch = writeBatch(firestore);
 
       // 全庫掃描：不受分頁 50 筆限制
       const [usersSnap, adminsSnap] = await Promise.all([
@@ -1604,6 +1606,14 @@ export default function UsersAdminPage() {
                                 寄信
                             </Button>
                         </Link>
+                        {(user.role === 'admin' || isSuperAdminEmail(user.email)) && (
+                            <Link href={`/admin/activity-logs?admin=${encodeURIComponent(user.email || user.id)}`}>
+                                <Button variant="outline" size="sm" className="h-8 text-[10px] rounded-lg font-black bg-amber-50 border-amber-300 text-amber-800 hover:bg-amber-100 shadow-sm flex items-center gap-1" title="查看此管理員的所有後台操作紀錄">
+                                    <FileText className="w-3 h-3 text-amber-600" />
+                                    操作紀錄
+                                </Button>
+                            </Link>
+                        )}
                         <Link href={`/admin/login-logs?search=${encodeURIComponent(user.id)}`}>
                             <Button variant="outline" size="sm" className="h-8 text-[10px] rounded-lg font-black bg-white border-cyan-200 text-cyan-600 hover:bg-cyan-50 hover:border-cyan-300 shadow-sm flex items-center gap-1" title="查看該玩家登入歷史紀錄">
                                 <LogIn className="w-3 h-3" />

@@ -3,7 +3,7 @@
 import React, { useState, ChangeEvent, useMemo } from 'react';
 import { useFirestore, useStorage } from '@/firebase';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc } from '@/lib/audited-firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { useToast } from '@/hooks/use-toast';
 import {

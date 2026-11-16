@@ -867,10 +867,10 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
 
                                 {/* 前景大氣懸浮金塵光斑 (立體光束景深粒子) */}
                                 <div className="absolute inset-0 pointer-events-none z-20 overflow-hidden">
-                                    <span className="absolute top-[26%] left-[22%] w-1.5 h-1.5 rounded-full bg-amber-300 blur-[0.6px] opacity-75 animate-pulse" />
+                                    <span className="absolute top-[26%] left-[22%] w-1.5 h-1.5 rounded-full bg-amber-300 blur-[0.6px] opacity-75" />
                                     <span className="absolute top-[44%] right-[18%] w-1 h-1 rounded-full bg-yellow-200 blur-[0.4px] opacity-60" />
                                     <span className="absolute bottom-[20%] left-[26%] w-1.5 h-1.5 rounded-full bg-amber-400/60 blur-[0.6px] opacity-70" />
-                                    <span className="absolute top-[62%] right-[24%] w-1 h-1 rounded-full bg-amber-300 blur-[0.5px] opacity-65 animate-pulse" style={{ animationDelay: '1.2s' }} />
+                                    <span className="absolute top-[62%] right-[24%] w-1 h-1 rounded-full bg-amber-300 blur-[0.5px] opacity-65" />
                                 </div>
 
                                 {/* 🌟 次世代黑曜金屬展台 (沉穩接地，搭載反重力磁浮環與立體投影層) */}
@@ -923,7 +923,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
 
                                 {/* 🎴 主卡牌本體 (反重力浮空懸浮，與底座保持自然空間間隙，自帶平滑呼吸起伏動態) */}
                                 <div className="absolute inset-x-0 top-1 bottom-5 sm:bottom-6 flex flex-col items-center justify-end z-20 pointer-events-none">
-                                    <div className="relative w-full h-full max-h-[170px] xs:max-h-[195px] sm:max-h-[225px] flex items-end justify-center animate-card-levitate transition-all duration-300 group-hover/card:scale-[1.04] group-hover/card:-translate-y-1.5">
+                                    <div className="relative w-full h-full max-h-[170px] xs:max-h-[195px] sm:max-h-[225px] flex items-end justify-center animate-card-levitate transition-transform duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] [@media(hover:hover)_and_(pointer:fine)]:group-hover/card:scale-[1.04] [@media(hover:hover)_and_(pointer:fine)]:group-hover/card:-translate-y-1.5">
                                         {/* 主實體卡片 */}
                                         <div className="relative w-full h-full flex items-end justify-center">
                                             <div className="relative w-full h-full max-w-[158px] max-h-[216px] flex items-end justify-center overflow-visible">
@@ -992,14 +992,14 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                             }}
                                             title={`點擊查看${rarityStyles[r].label}剩餘卡牌`}
                                             className={cn(
-                                                "flex items-center justify-center gap-1.5 py-1.5 px-1 rounded-lg border text-xs transition-all cursor-pointer group/rarity active:scale-95 select-none relative overflow-hidden",
+                                                "flex items-center justify-center gap-1.5 py-1.5 px-1 rounded-lg border text-xs transition-[transform,background-color,border-color,opacity] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] cursor-pointer group/rarity active:scale-[0.97] select-none relative overflow-hidden",
                                                 isSoldOut
                                                     ? "bg-slate-950/60 border-slate-900 text-slate-600 opacity-60 hover:opacity-100 hover:border-slate-700"
                                                     : r === 'legendary' 
-                                                    ? "bg-gradient-to-b from-amber-500/20 via-amber-950/35 to-black/80 border-amber-400/60 text-amber-300 font-black shadow-[0_0_12px_rgba(245,158,11,0.2)] hover:border-amber-300 hover:bg-amber-500/30 hover:scale-[1.02]" 
+                                                    ? "bg-gradient-to-b from-amber-500/20 via-amber-950/35 to-black/80 border-amber-400/60 text-amber-300 font-black shadow-[0_0_12px_rgba(245,158,11,0.2)] hover:border-amber-300 hover:bg-amber-500/30 [@media(hover:hover)_and_(pointer:fine)]:hover:scale-[1.02]" 
                                                     : r === 'rare' 
-                                                    ? "bg-gradient-to-b from-purple-500/20 via-purple-950/35 to-black/80 border-purple-400/50 text-purple-200 font-bold shadow-[0_0_12px_rgba(168,85,247,0.18)] hover:border-purple-300 hover:bg-purple-500/30 hover:scale-[1.02]" 
-                                                    : "bg-gradient-to-b from-slate-700/20 via-slate-900/40 to-black/80 border-slate-600/60 text-slate-200 font-bold hover:border-slate-400 hover:bg-slate-800/40 hover:scale-[1.02]"
+                                                    ? "bg-gradient-to-b from-purple-500/20 via-purple-950/35 to-black/80 border-purple-400/50 text-purple-200 font-bold shadow-[0_0_12px_rgba(168,85,247,0.18)] hover:border-purple-300 hover:bg-purple-500/30 [@media(hover:hover)_and_(pointer:fine)]:hover:scale-[1.02]" 
+                                                    : "bg-gradient-to-b from-slate-700/20 via-slate-900/40 to-black/80 border-slate-600/60 text-slate-200 font-bold hover:border-slate-400 hover:bg-slate-800/40 [@media(hover:hover)_and_(pointer:fine)]:hover:scale-[1.02]"
                                             )}
                                         >
                                             <RarityIcon className={cn(
@@ -1038,12 +1038,12 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                         <div className="h-2 w-full rounded-full overflow-hidden bg-black/95 border border-amber-500/25 p-[0.5px]">
                             <div 
                                 className={cn(
-                                    "h-full rounded-full transition-all duration-500 shadow-sm",
+                                    "h-full w-full rounded-full origin-left transition-transform duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-sm will-change-transform",
                                     isLastChance 
                                         ? "bg-gradient-to-r from-amber-400 via-rose-500 to-red-600 animate-pulse" 
                                         : "bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-300 shadow-[0_0_8px_rgba(245,158,11,0.5)]"
                                 )}
-                                style={{ width: `${remainingPercent}%` }}
+                                style={{ transform: `scaleX(${Math.max(0, Math.min(100, remainingPercent)) / 100})` }}
                             />
                         </div>
                     </div>
@@ -1070,7 +1070,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                 {/* 📢 卡池即時狀態說明提示條 (當卡池處於保護、售罄、尚未開放等狀態時，清晰告知客人) */}
                 {poolStatus.disabled && poolStatus.message && (
                     <div className={cn(
-                        "mb-2 p-2 rounded-xl border text-xs font-bold text-center flex items-center justify-center gap-1.5 shadow-sm transition-all",
+                        "mb-2 p-2 rounded-xl border text-xs font-bold text-center flex items-center justify-center gap-1.5 shadow-sm transition-[background-color,border-color,color] duration-200",
                         poolStatus.status === 'sold-out' 
                             ? "bg-rose-950/70 border-rose-500/40 text-rose-300"
                             : poolStatus.status === 'locked'
@@ -1188,7 +1188,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                     key={drawCount}
                                     disabled={!canDraw || isDrawing}
                                     className={cn(
-                                        "relative h-auto min-h-[48px] sm:min-h-[52px] py-1.5 px-1 flex flex-col items-center justify-center rounded-xl transition-all active:scale-95 overflow-hidden border group cursor-pointer shadow-md select-none",
+                                        "relative h-auto min-h-[48px] sm:min-h-[52px] py-1.5 px-1 flex flex-col items-center justify-center rounded-xl transition-[transform,background-color,border-color] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] overflow-hidden border group cursor-pointer shadow-md select-none",
                                         isHighlighted
                                             ? opt.isAllIn
                                                 ? "bg-gradient-to-b from-amber-500/35 via-amber-950/60 to-slate-950 border-2 border-amber-400 hover:border-yellow-300 shadow-[0_0_20px_rgba(245,158,11,0.4)] hover:brightness-110"
@@ -1202,7 +1202,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
 
                                     {/* 優惠/全包極簡角標 (緊湊嵌合右上角，金屬黑金倒角) */}
                                     {opt.isAllIn ? (
-                                        <span className="absolute top-0 right-0 bg-gradient-to-r from-amber-400 to-rose-500 text-slate-950 font-black text-[8px] px-1.5 py-0.5 rounded-bl-md leading-none z-10 shadow-sm animate-pulse">
+                                        <span className="absolute top-0 right-0 bg-gradient-to-r from-amber-400 to-rose-500 text-slate-950 font-black text-[8px] px-1.5 py-0.5 rounded-bl-md leading-none z-10 shadow-sm">
                                             全包
                                         </span>
                                     ) : savings > 0 ? (

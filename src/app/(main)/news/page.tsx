@@ -163,7 +163,7 @@ function NewsPageContent() {
 
         <div className="container px-4 max-w-6xl mx-auto relative z-10">
           
-          {/* 上方功能導覽列：返回按鈕與狀態指示 */}
+          {/* 上方返回導覽 */}
           <div className="flex items-center justify-between gap-4 mb-6 sm:mb-8">
             <Button 
               variant="ghost" 
@@ -174,39 +174,18 @@ function NewsPageContent() {
                 <ChevronLeft className="mr-1.5 h-4 w-4 text-amber-400" /> 返回首頁
               </Link>
             </Button>
-
-            <div className="flex items-center gap-2 text-[11px] font-bold text-amber-400 bg-amber-500/10 px-3.5 py-1.5 rounded-full border border-amber-500/30 backdrop-blur-md shadow-[0_0_15px_rgba(245,158,11,0.15)]">
-              <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-              <span>即時官方快訊</span>
-            </div>
           </div>
 
-          {/* ★ 核心置中標題區塊 ★ */}
-          <div className="text-center max-w-3xl mx-auto space-y-4 sm:space-y-5">
-            
-            {/* 置中標籤勳章 */}
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-amber-500/20 border border-amber-400/40 backdrop-blur-md text-amber-300 text-xs sm:text-sm font-black tracking-widest shadow-[0_0_20px_rgba(245,158,11,0.2)]">
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              <span>官方公告與盛典活動</span>
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            </div>
-
-            {/* 置中大標題 */}
+          {/* 置中標題區塊 */}
+          <div className="text-center max-w-3xl mx-auto space-y-4">
             <div className="space-y-2">
-              <h1 className="font-headline text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white flex items-center justify-center gap-3">
-                <span className="p-2 sm:p-3 rounded-2xl bg-gradient-to-br from-amber-400/20 to-amber-600/20 border border-amber-500/30 text-amber-400 shadow-[0_0_25px_rgba(245,158,11,0.3)] shrink-0">
-                  <Megaphone className="h-6 w-6 sm:h-9 sm:w-9 text-amber-400" />
-                </span>
-                <span className="bg-clip-text text-transparent bg-gradient-to-r from-amber-200 via-amber-400 to-yellow-200 drop-shadow-[0_0_30px_rgba(245,158,11,0.5)]">
-                  最新消息中心
-                </span>
+              <h1 className="font-headline text-3xl sm:text-5xl font-black tracking-tight text-white">
+                最新消息
               </h1>
+              <p className="text-sm sm:text-base text-slate-300 max-w-xl mx-auto leading-relaxed">
+                掌握官方活動公告、機台更新與限定企劃
+              </p>
             </div>
-
-            {/* 置中說明副標 */}
-            <p className="text-sm sm:text-base text-slate-300 max-w-xl mx-auto font-medium leading-relaxed drop-shadow-md">
-              掌握官方最新活動盛典、機台更新、限定企劃與即時維護公告。
-            </p>
 
             {/* ★ 置中搜尋欄位 ★ */}
             <div className="pt-2 max-w-md mx-auto relative">
@@ -265,18 +244,17 @@ function NewsPageContent() {
         
         {/* 結果統計與目前篩選狀態 */}
         <div className="flex items-center justify-between mb-6 pb-3 border-b border-slate-800/60">
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
-            <Filter className="w-3.5 h-3.5 text-amber-400" />
+          <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
             <span>目前顯示：</span>
-            <span className="text-amber-300 font-black">
+            <span className="text-amber-300 font-bold">
               {selectedCategory === 'ALL' ? '全部消息' : selectedCategory}
             </span>
             {searchTerm && (
-              <span className="text-slate-400">（搜尋關鍵字：「{searchTerm}」）</span>
+              <span className="text-slate-400">（關鍵字：「{searchTerm}」）</span>
             )}
           </div>
-          <div className="text-xs font-mono text-slate-400 font-bold">
-            共 <span className="text-amber-400 font-black text-sm">{filteredNews.length}</span> 則消息
+          <div className="text-xs font-code text-slate-400 font-semibold">
+            共 <span className="text-amber-400 font-bold text-sm">{filteredNews.length}</span> 則
           </div>
         </div>
 
@@ -314,40 +292,35 @@ function NewsPageContent() {
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                       />
                     ) : (
-                      <div className="absolute inset-0 bg-gradient-to-br from-amber-950/40 via-slate-950 to-slate-900 flex flex-col items-center justify-center p-6 text-center">
-                        <Newspaper className="w-12 h-12 text-amber-500/30 mb-2 group-hover:scale-110 transition-transform" />
-                        <span className="text-[11px] font-bold text-amber-400/60 tracking-wider">OFFICIAL ANNOUNCEMENT</span>
+                      <div className="absolute inset-0 bg-gradient-to-br from-amber-950/35 via-slate-950 to-slate-900 flex flex-col items-center justify-center p-6 text-center">
+                        <Newspaper className="w-10 h-10 text-amber-500/35 mb-2 group-hover:scale-105 transition-transform" />
+                        <span className="text-xs font-medium text-amber-300/75 tracking-wider">官方公告</span>
                       </div>
                     )}
                     
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent" />
 
-                    {/* 頂部標籤 */}
-                    <div className="absolute top-3 left-3 flex items-center gap-1.5 z-10">
-                      {item.isPinned && (
-                        <span className="bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-black text-[10px] px-2.5 py-0.5 rounded-md shadow-lg flex items-center gap-1">
+                    {/* 置頂標籤（僅在置頂時顯示） */}
+                    {item.isPinned && (
+                      <div className="absolute top-3 left-3 z-10">
+                        <span className="bg-amber-400 text-slate-950 font-bold text-[11px] px-2.5 py-0.5 rounded shadow-md flex items-center gap-1">
                           <Pin className="w-3 h-3 fill-slate-950" />
                           <span>置頂</span>
                         </span>
-                      )}
-                      <span className="bg-black/80 backdrop-blur-md border border-white/10 text-slate-200 font-bold text-[10px] px-2.5 py-0.5 rounded-md">
-                        {item.category || '官方公告'}
-                      </span>
-                    </div>
-
-                    {/* 類型標註 */}
-                    {item.type === 'image' && (
-                      <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-md px-2 py-0.5 rounded-md border border-white/10 text-[10px] font-mono text-amber-300 flex items-center gap-1">
-                        <Layers className="w-3 h-3 text-amber-400" />
-                        <span>圖文海報</span>
                       </div>
                     )}
                   </div>
 
                   {/* 內容區塊 */}
                   <div className="p-5 flex flex-col justify-between flex-1 space-y-4">
-                    <div className="space-y-2">
-                      <h3 className="font-headline text-base sm:text-lg font-black text-white group-hover:text-amber-300 transition-colors line-clamp-2 leading-snug">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
+                        <span className="text-amber-300/90">{item.category || '官方公告'}</span>
+                        <span aria-hidden="true">·</span>
+                        <span className="font-code">{item.createdAt ? format(new Date(item.createdAt.seconds * 1000), 'yyyy-MM-dd') : '---'}</span>
+                      </div>
+
+                      <h3 className="font-headline text-base sm:text-lg font-bold text-white group-hover:text-amber-300 transition-colors line-clamp-2 leading-snug">
                         {item.title}
                       </h3>
                       
@@ -358,15 +331,10 @@ function NewsPageContent() {
                       )}
                     </div>
 
-                    {/* 底部時間與點擊引導 */}
-                    <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-1.5 text-slate-400 font-mono text-[11px]">
-                        <Clock className="h-3.5 w-3.5 text-amber-400/80" />
-                        <span>{item.createdAt ? format(new Date(item.createdAt.seconds * 1000), 'yyyy-MM-dd') : '---'}</span>
-                      </div>
-
-                      <span className="text-amber-400 font-bold flex items-center gap-1 text-xs group-hover:translate-x-1 transition-transform">
-                        <span>詳閱全文</span>
+                    {/* 底部閱讀引導 */}
+                    <div className="pt-3 border-t border-slate-800/80 flex items-center justify-end text-xs">
+                      <span className="text-amber-400 font-semibold flex items-center gap-1 text-xs group-hover:translate-x-0.5 transition-transform">
+                        <span>閱讀全文</span>
                         <ArrowRight className="w-3.5 h-3.5" />
                       </span>
                     </div>

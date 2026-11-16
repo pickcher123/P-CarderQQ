@@ -27,7 +27,16 @@ const nextConfig = {
   },
   eslint: {
     ignoreDuringBuilds: true,
-  }
+  },
+  webpack: (config, { dev }) => {
+    if (dev) {
+      config.cache = {
+        type: 'memory',
+        maxGenerations: 1,
+      };
+    }
+    return config;
+  },
 };
 
 module.exports = nextConfig;

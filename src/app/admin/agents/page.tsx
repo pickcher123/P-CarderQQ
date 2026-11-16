@@ -1,7 +1,7 @@
 'use client';
 
 import { useCollection, useFirestore, useMemoFirebase, useUser, useRequest } from '@/firebase';
-import { collection, collectionGroup, query, addDoc, doc, deleteDoc } from 'firebase/firestore';
+import { collection, collectionGroup, query, addDoc, doc, deleteDoc } from '@/lib/audited-firestore';
 import type { UserProfile } from '@/types/user-profile';
 import { useEffect } from 'react';
 

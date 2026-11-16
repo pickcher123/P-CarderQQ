@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useCollection, useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, doc, setDoc, serverTimestamp, getDoc, addDoc } from 'firebase/firestore';
+import { collection, query, orderBy, doc, setDoc, serverTimestamp, getDoc, addDoc } from '@/lib/audited-firestore';
+import { adminFetch } from '@/lib/admin-audit';
 import type { UserProfile } from '@/types/user-profile';
 import { generateMarketingEmailHtml, EmailTemplateOptions } from '@/lib/email-templates';
 import { useToast } from '@/hooks/use-toast';
@@ -533,7 +534,7 @@ function MarketingEmailsContent() {
       const effectiveButtonText = isCtaButtonEnabled ? buttonText : '';
       const effectiveButtonUrl = isCtaButtonEnabled ? buttonUrl : '';
 
-      const res = await fetch('/api/admin/send-marketing-email', {
+      const res = await adminFetch('/api/admin/send-marketing-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -648,7 +649,7 @@ function MarketingEmailsContent() {
       const effectiveButtonText = isCtaButtonEnabled ? buttonText : '';
       const effectiveButtonUrl = isCtaButtonEnabled ? buttonUrl : '';
 
-      const res = await fetch('/api/admin/send-marketing-email', {
+      const res = await adminFetch('/api/admin/send-marketing-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -778,7 +779,7 @@ function MarketingEmailsContent() {
     setIsVerifyingSmtp(true);
     setSmtpVerifyStatus(null);
     try {
-      const res = await fetch('/api/admin/verify-smtp', {
+      const res = await adminFetch('/api/admin/verify-smtp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ smtpConfig: smtpSettings }),

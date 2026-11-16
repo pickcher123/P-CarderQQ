@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LuckyBagRedPacketCard } from '@/components/lucky-bag-red-packet-card';
@@ -24,6 +24,7 @@ export function RevolvingDoorLuckyBagCarousel({
   className,
 }: RevolvingDoorLuckyBagCarouselProps) {
   const router = useRouter();
+  const shouldReduceMotion = useReducedMotion();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
 
@@ -67,12 +68,12 @@ export function RevolvingDoorLuckyBagCarousel({
 
   // 使用者未懸停時自動緩慢旋轉展示 (每 6 秒)
   useEffect(() => {
-    if (isHovered || total <= 1) return;
+    if (isHovered || total <= 1 || shouldReduceMotion) return;
     const timer = setInterval(() => {
       handleNext();
     }, 6000);
     return () => clearInterval(timer);
-  }, [isHovered, total, handleNext]);
+  }, [isHovered, total, handleNext, shouldReduceMotion]);
 
   // 鍵盤左右鍵導航
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -186,7 +187,7 @@ export function RevolvingDoorLuckyBagCarousel({
           <button
             type="button"
             onClick={handlePrev}
-            className="absolute left-2 sm:left-6 z-40 p-2 sm:p-3 text-amber-300 hover:text-yellow-200 transition-all cursor-pointer hover:scale-125 active:scale-95 drop-shadow-[0_0_14px_rgba(245,158,11,0.9)]"
+            className="absolute left-2 sm:left-6 z-40 p-2 sm:p-3 text-amber-300 hover:text-yellow-200 transition-[transform,color] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] cursor-pointer [@media(hover:hover)_and_(pointer:fine)]:hover:scale-110 active:scale-[0.97] drop-shadow-[0_0_14px_rgba(245,158,11,0.9)]"
             aria-label="上一個紅包福袋"
           >
             <ChevronLeft className="w-8 h-8 sm:w-10 sm:h-10" />
@@ -198,7 +199,7 @@ export function RevolvingDoorLuckyBagCarousel({
           <button
             type="button"
             onClick={handleNext}
-            className="absolute right-2 sm:right-6 z-40 p-2 sm:p-3 text-amber-300 hover:text-yellow-200 transition-all cursor-pointer hover:scale-125 active:scale-95 drop-shadow-[0_0_14px_rgba(245,158,11,0.9)]"
+            className="absolute right-2 sm:right-6 z-40 p-2 sm:p-3 text-amber-300 hover:text-yellow-200 transition-[transform,color] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] cursor-pointer [@media(hover:hover)_and_(pointer:fine)]:hover:scale-110 active:scale-[0.97] drop-shadow-[0_0_14px_rgba(245,158,11,0.9)]"
             aria-label="下一個紅包福袋"
           >
             <ChevronRight className="w-8 h-8 sm:w-10 sm:h-10" />
@@ -274,18 +275,23 @@ export function RevolvingDoorLuckyBagCarousel({
                   willChange: 'transform, opacity',
                   transform: 'translateZ(0)',
                 }}
-                animate={{
+                animate={shouldReduceMotion ? {
+                  scale: isCenter ? 1.05 : 0.82,
+                  opacity,
+                } : {
                   rotateY,
                   x: translateX,
                   z: translateZ,
                   scale,
                   opacity,
                 }}
-                transition={{
+                transition={shouldReduceMotion ? {
+                  duration: 0.15,
+                  ease: [0.23, 1, 0.32, 1],
+                } : {
                   type: 'spring',
-                  stiffness: 300,
-                  damping: 26,
-                  mass: 0.8,
+                  duration: 0.45,
+                  bounce: 0.15,
                 }}
                 onClick={() => handleBagClick(bag, index)}
               >
@@ -309,7 +315,7 @@ export function RevolvingDoorLuckyBagCarousel({
               key={bag.id}
               onClick={() => setCurrentIndex(idx)}
               className={cn(
-                "h-2 rounded-full transition-all duration-300 cursor-pointer",
+                "h-2 rounded-full transition-[width,background-color] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] cursor-pointer",
                 idx === currentIndex
                   ? "w-8 bg-gradient-to-r from-amber-400 to-yellow-300 shadow-[0_0_10px_rgba(250,204,21,0.8)]"
                   : "w-2 bg-slate-700 hover:bg-slate-500"

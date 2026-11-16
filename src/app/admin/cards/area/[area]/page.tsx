@@ -4,7 +4,7 @@ import { useState, useMemo, ChangeEvent } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useCollection, useFirestore, useMemoFirebase, useAuth, useStorage } from '@/firebase';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
-import { collection, addDoc, updateDoc, deleteDoc, doc, writeBatch } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, deleteDoc, doc, writeBatch, query, orderBy, limit } from '@/lib/audited-firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { format, isToday, isYesterday, subDays, isAfter, startOfDay } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -34,7 +34,7 @@ import {
   PlusCircle, Edit, Trash2, ArrowLeft, Search, Loader2, 
   UploadCloud, Files, X, Archive, Ban, Calendar, CalendarDays, 
   Clock, ArrowUpDown, Sparkles, LayoutList, LayoutGrid, RotateCcw, Filter,
-  AlertTriangle, CheckSquare
+  AlertTriangle, CheckSquare, UserCheck
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SafeImage } from '@/components/safe-image';
@@ -60,6 +60,13 @@ interface CardData {
     dailyLimit?: number;
     minLevel?: string;
     createdAt?: any;
+    createdByUid?: string;
+    createdByEmail?: string;
+    createdByName?: string;
+    createdByRole?: string;
+    updatedByUid?: string;
+    updatedByEmail?: string;
+    updatedByName?: string;
 }
 
 function parseCardDate(createdAt: any): Date | null {
@@ -271,6 +278,7 @@ export default function CardAreaManagementPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [sportFilter, setSportFilter] = useState('全部');
   const [dateFilter, setDateFilter] = useState('all');
+  const [creatorFilter, setCreatorFilter] = useState('all');
   const [sortBy, setSortBy] = useState('date-desc');
   const [isGroupedByDate, setIsGroupedByDate] = useState(false);
   const [activeTab, setActiveTab] = useState('active');
@@ -285,6 +293,71 @@ export default function CardAreaManagementPage() {
   const { data: cardPools } = useCollection<{cards?: {cardId: string}[]}>(useMemoFirebase(() => firestore ? collection(firestore, 'cardPools') : null, [firestore]));
   const { data: bettingItems } = useCollection<{allCardIds: string[]}>(useMemoFirebase(() => firestore ? collection(firestore, 'betting-items') : null, [firestore]));
   const { data: luckBags } = useCollection<{prizes?: any, otherPrizes?: {cardId: string}[]}>(useMemoFirebase(() => firestore ? collection(firestore, 'luckBags') : null, [firestore]));
+  const { data: recentActivityLogs } = useCollection<any>(
+    useMemoFirebase(
+      () => (firestore ? query(collection(firestore, 'activityLogs'), orderBy('createdAt', 'desc'), limit(500)) : null),
+      [firestore]
+    )
+  );
+
+  // 從操作日誌回溯早期尚未直接寫入 createdByName 欄位的卡片新增者
+  const cardCreatorFallbackMap = useMemo(() => {
+    const map = new Map<string, { name: string; email: string; role: string }>();
+    if (!recentActivityLogs) return map;
+
+    for (const log of recentActivityLogs) {
+      if (log.targetCollection !== 'allCards') continue;
+      const name = log.userName || (log.userEmail ? String(log.userEmail).split('@')[0] : '');
+      const email = log.userEmail || '';
+      const role = log.adminRoleLabel || '管理員';
+      if (!name && !email) continue;
+
+      if (log.operationType === 'create' && log.targetId && !map.has(log.targetId)) {
+        map.set(log.targetId, { name: name || email, email, role });
+      } else if (
+        (log.operationType === 'batch' || ( Array.isArray(log.riskTags) && log.riskTags.includes('card_pool_create') )) &&
+        Array.isArray(log.changes)
+      ) {
+        for (const c of log.changes) {
+          if (typeof c?.field === 'string' && c.field.includes('.')) {
+            const cardId = c.field.split('.')[0];
+            if (cardId && !map.has(cardId)) {
+              map.set(cardId, { name: name || email, email, role });
+            }
+          }
+        }
+      }
+    }
+    return map;
+  }, [recentActivityLogs]);
+
+  const resolveCardCreator = useMemo(() => {
+    return (card?: Partial<CardData> | null): { key: string; name: string; email: string; role: string } | null => {
+      if (!card) return null;
+      if (card.createdByName || card.createdByEmail) {
+        const email = (card.createdByEmail || '').trim();
+        const name = (card.createdByName || (email ? email.split('@')[0] : '') || '管理員').trim();
+        const key = (email || card.createdByUid || name).toLowerCase();
+        return {
+          key,
+          name,
+          email,
+          role: card.createdByRole || '管理員',
+        };
+      }
+      if (card.id && cardCreatorFallbackMap.has(card.id)) {
+        const fb = cardCreatorFallbackMap.get(card.id)!;
+        const key = (fb.email || fb.name).toLowerCase();
+        return {
+          key,
+          name: fb.name,
+          email: fb.email,
+          role: fb.role,
+        };
+      }
+      return null;
+    };
+  }, [cardCreatorFallbackMap]);
 
   const cardAssignmentMap = useMemo(() => {
     const map = new Map<string, { type: string, name: string }>();
@@ -395,6 +468,36 @@ export default function CardAreaManagementPage() {
     return { all: areaRawCards.length, active, sold, recycled };
   }, [areaRawCards]);
 
+  // 新增管理員統計（供下拉篩選器顯示每位管理員新增幾張卡）
+  const creatorStats = useMemo(() => {
+    const map = new Map<string, { key: string; name: string; email: string; count: number }>();
+    let unrecordedCount = 0;
+
+    areaRawCards.forEach((c) => {
+      const info = resolveCardCreator(c);
+      if (!info) {
+        unrecordedCount += 1;
+        return;
+      }
+      const existing = map.get(info.key);
+      if (existing) {
+        existing.count += 1;
+      } else {
+        map.set(info.key, {
+          key: info.key,
+          name: info.name,
+          email: info.email,
+          count: 1,
+        });
+      }
+    });
+
+    return {
+      creators: Array.from(map.values()).sort((a, b) => b.count - a.count),
+      unrecordedCount,
+    };
+  }, [areaRawCards, resolveCardCreator]);
+
   const filteredCards = useMemo(() => {
     let cards = [...areaRawCards];
     
@@ -408,11 +511,28 @@ export default function CardAreaManagementPage() {
     }
     // activeTab === 'all' 則保留全部卡片！
 
-    // Search keyword
-    if (searchTerm.trim()) cards = cards.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    // Search keyword（支援搜尋卡片名稱、新增人員姓名或信箱）
+    if (searchTerm.trim()) {
+        const kw = searchTerm.trim().toLowerCase();
+        cards = cards.filter(c => {
+            if (c.name.toLowerCase().includes(kw)) return true;
+            const creator = resolveCardCreator(c);
+            if (creator && (creator.name.toLowerCase().includes(kw) || creator.email.toLowerCase().includes(kw))) {
+                return true;
+            }
+            return false;
+        });
+    }
     
     // Category filter
     if (sportFilter !== '全部') cards = cards.filter(c => c.category === sportFilter);
+
+    // Creator filter
+    if (creatorFilter === 'unrecorded') {
+        cards = cards.filter(c => !resolveCardCreator(c));
+    } else if (creatorFilter !== 'all') {
+        cards = cards.filter(c => resolveCardCreator(c)?.key === creatorFilter);
+    }
     
     // Date filter
     if (dateFilter === 'today') {
@@ -472,7 +592,7 @@ export default function CardAreaManagementPage() {
         }
         return 0;
     });
-  }, [allCards, area, cardPools, bettingItems, luckBags, searchTerm, sportFilter, dateFilter, sortBy, activeTab]);
+  }, [areaRawCards, resolveCardCreator, searchTerm, sportFilter, creatorFilter, dateFilter, sortBy, activeTab]);
 
   // Grouped cards when date grouping mode is enabled
   const groupedCards = useMemo(() => {
@@ -846,7 +966,7 @@ export default function CardAreaManagementPage() {
                     <div className="relative w-full sm:w-64">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                         <Input 
-                            placeholder="搜尋卡片名稱..." 
+                            placeholder="搜尋卡片名稱或新增人員..." 
                             className="pl-10 h-10 bg-slate-50 border-slate-200 rounded-xl shadow-inner font-bold text-slate-900 text-xs" 
                             value={searchTerm} 
                             onChange={(e) => setSearchTerm(e.target.value)} 
@@ -893,6 +1013,34 @@ export default function CardAreaManagementPage() {
 
                             <div className="border-t border-slate-100 my-1" />
                             <SelectItem value="unrecorded" className="font-bold text-xs text-slate-500">📦 歷史舊卡 / 未標記日期 ({dateStats.unrecorded})</SelectItem>
+                        </SelectContent>
+                    </Select>
+
+                    {/* Creator filter dropdown */}
+                    <Select value={creatorFilter} onValueChange={setCreatorFilter}>
+                        <SelectTrigger className={cn(
+                            "w-[175px] h-10 border rounded-xl font-bold text-xs flex items-center gap-1.5 transition-colors",
+                            creatorFilter !== 'all'
+                                ? "bg-indigo-50 border-indigo-300 text-indigo-800 shadow-sm"
+                                : "bg-slate-50 border-slate-200 text-slate-700"
+                        )}>
+                            <UserCheck className={cn("w-3.5 h-3.5 shrink-0", creatorFilter !== 'all' ? "text-indigo-600" : "text-slate-400")} />
+                            <SelectValue placeholder="新增人員篩選" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl max-h-72">
+                            <SelectItem value="all" className="font-bold text-xs">
+                                全部新增人員 ({areaRawCards.length})
+                            </SelectItem>
+                            {creatorStats.creators.map((creator) => (
+                                <SelectItem key={creator.key} value={creator.key} className="font-bold text-xs">
+                                    {creator.name} ({creator.count} 張)
+                                </SelectItem>
+                            ))}
+                            {creatorStats.unrecordedCount > 0 && (
+                                <SelectItem value="unrecorded" className="font-bold text-xs text-slate-500">
+                                    早期舊卡 / 未標記人員 ({creatorStats.unrecordedCount})
+                                </SelectItem>
+                            )}
                         </SelectContent>
                     </Select>
 
@@ -981,9 +1129,9 @@ export default function CardAreaManagementPage() {
                     最近7天 ({dateStats.last7Days})
                 </button>
 
-                {dateFilter !== 'all' && (
+                {(dateFilter !== 'all' || creatorFilter !== 'all' || sportFilter !== '全部' || Boolean(searchTerm.trim())) && (
                     <button 
-                        onClick={() => { setDateFilter('all'); setSearchTerm(''); setSportFilter('全部'); }}
+                        onClick={() => { setDateFilter('all'); setCreatorFilter('all'); setSearchTerm(''); setSportFilter('全部'); }}
                         className="ml-auto text-[11px] font-bold text-slate-400 hover:text-slate-700 flex items-center gap-1 underline"
                     >
                         <RotateCcw className="w-3 h-3" /> 重設所有篩選
@@ -1079,6 +1227,7 @@ export default function CardAreaManagementPage() {
                                 <div className="p-5 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
                                     {group.cards.map((card) => {
                                         const dateBadge = formatCardDateBadge(card.createdAt);
+                                        const creator = resolveCardCreator(card);
                                         const isCardSelected = selectedCardIds.includes(card.id!);
                                         return (
                                             <div 
@@ -1115,6 +1264,12 @@ export default function CardAreaManagementPage() {
                                                         <div className="flex items-center justify-between mt-1 text-[11px]">
                                                             <span className="font-code font-bold text-slate-700">{card.sellPrice?.toLocaleString()} 💎</span>
                                                             <span className="text-[10px] text-slate-400 font-bold">{dateBadge.timeStr || dateBadge.dateStr}</span>
+                                                        </div>
+                                                        <div
+                                                            className="mt-1 text-[10px] text-slate-500 font-semibold truncate"
+                                                            title={creator ? `新增管理員：${creator.name}${creator.email ? ` (${creator.email})` : ''}` : '早期舊卡（未標記新增人員）'}
+                                                        >
+                                                            {creator ? `新增：${creator.name}` : '新增：早期舊卡'}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1192,7 +1347,7 @@ export default function CardAreaManagementPage() {
                                     <TableHead className="text-slate-900 font-black uppercase text-[10px] tracking-widest text-center">分配位置</TableHead>
                                     <TableHead className="text-slate-900 font-black uppercase text-[10px] tracking-widest">運動分類</TableHead>
                                     <TableHead className="text-slate-900 font-black uppercase text-[10px] tracking-widest text-center">視覺預覽</TableHead>
-                                    <TableHead className="text-slate-900 font-black uppercase text-[10px] tracking-widest">上傳日期</TableHead>
+                                    <TableHead className="text-slate-900 font-black uppercase text-[10px] tracking-widest">上傳日期 / 新增人員</TableHead>
                                     <TableHead className="text-slate-900 font-black uppercase text-[10px] tracking-widest">庫存狀態</TableHead>
                                     <TableHead className="text-slate-900 font-black uppercase text-[10px] tracking-widest">卡片價值</TableHead>
                                     <TableHead className="text-right pr-8 text-slate-900 font-black uppercase text-[10px] tracking-widest">操作</TableHead>
@@ -1206,6 +1361,7 @@ export default function CardAreaManagementPage() {
                                 )) : 
                                 filteredCards.map((card) => {
                                     const dateBadge = formatCardDateBadge(card.createdAt);
+                                    const creator = resolveCardCreator(card);
                                     const isRowSelected = selectedCardIds.includes(card.id!);
                                     return (
                                         <TableRow 
@@ -1246,15 +1402,32 @@ export default function CardAreaManagementPage() {
                                                 </div>
                                             </TableCell>
                                             <TableCell>
-                                                <div className="flex flex-col">
+                                                <div className="flex flex-col space-y-0.5">
                                                     <span className={cn(
-                                                        "text-xs font-bold font-code",
+                                                        "text-xs font-bold font-code tabular-nums",
                                                         dateBadge.isNew ? "text-emerald-600 font-black" : (dateBadge.isYesterday ? "text-blue-600 font-black" : "text-slate-700")
                                                     )}>
                                                         {dateBadge.label}
                                                     </span>
                                                     {dateBadge.timeStr && (
-                                                        <span className="text-[10px] text-slate-400 font-bold">{dateBadge.dateStr}</span>
+                                                        <span className="text-[10px] text-slate-400 font-bold tabular-nums">{dateBadge.dateStr}</span>
+                                                    )}
+                                                    {creator ? (
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setCreatorFilter(creatorFilter === creator.key ? 'all' : creator.key);
+                                                            }}
+                                                            title={`點擊篩選「${creator.name}」新增的所有卡片${creator.email ? ` (${creator.email})` : ''}`}
+                                                            className="text-left text-[11px] font-bold text-indigo-700 hover:underline truncate max-w-[165px] cursor-pointer"
+                                                        >
+                                                            新增：{creator.name}
+                                                        </button>
+                                                    ) : (
+                                                        <span className="text-[10px] text-slate-400 font-medium">
+                                                            新增：早期未標記
+                                                        </span>
                                                     )}
                                                 </div>
                                             </TableCell>
@@ -1318,7 +1491,7 @@ export default function CardAreaManagementPage() {
         {/* Edit / Create Dialog */}
         <Dialog open={isCardDialogOpen} onOpenChange={setIsCardDialogOpen}>
             <DialogContent className="light sm:max-w-xl bg-white border-none shadow-2xl p-10 rounded-[2.5rem] text-slate-900 overflow-hidden">
-                <DialogHeader className="mb-6">
+                <DialogHeader className="mb-6 space-y-2">
                     <DialogTitle className="text-2xl font-black tracking-tight flex items-center justify-between">
                         <span>{isEditMode ? '修改資產數據' : '建立新資產草稿'}</span>
                         {isEditMode && currentCard.createdAt && (
@@ -1327,6 +1500,22 @@ export default function CardAreaManagementPage() {
                             </Badge>
                         )}
                     </DialogTitle>
+                    {isEditMode && (() => {
+                        const dialogCreator = resolveCardCreator(currentCard);
+                        return (
+                            <div className="flex flex-wrap items-center gap-1.5 text-xs text-slate-500 font-semibold pt-1">
+                                <span>
+                                    新增人員：{dialogCreator ? `${dialogCreator.name}${dialogCreator.email ? ` (${dialogCreator.email})` : ''}` : '早期未標記人員'}
+                                </span>
+                                {currentCard.updatedByName && (
+                                    <>
+                                        <span aria-hidden="true">·</span>
+                                        <span>最後修改：{currentCard.updatedByName}</span>
+                                    </>
+                                )}
+                            </div>
+                        );
+                    })()}
                 </DialogHeader>
                 <ScrollArea className="max-h-[70vh] pr-4">
                     <div className="grid gap-8 py-4">

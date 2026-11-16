@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, addDoc, deleteDoc, updateDoc, doc, Timestamp, orderBy, query, writeBatch } from 'firebase/firestore';
+import { collection, addDoc, deleteDoc, updateDoc, doc, Timestamp, orderBy, query, writeBatch } from '@/lib/audited-firestore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -42,6 +42,7 @@ import {
     Copy,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { adminFetch } from '@/lib/admin-audit';
 
 interface ExtractedExhibition {
     title: string;
@@ -310,7 +311,7 @@ export default function CardExhibitionsAdmin() {
     const handleFetchFromAi = async () => {
         setIsAiFetching(true);
         try {
-            const res = await fetch('/api/admin/fetch-exhibitions', {
+            const res = await adminFetch('/api/admin/fetch-exhibitions', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
             });

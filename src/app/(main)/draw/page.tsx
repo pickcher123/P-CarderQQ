@@ -220,39 +220,37 @@ export default function DrawPage() {
         {/* 全部卡池專區 */}
         {!finalIsLoading && (
             <div className="space-y-4 sm:space-y-6 animate-fade-in-up">
-                {/* 頂部 Header & 控制列 (整合即時搜尋與排序，黑金奢華質感) */}
-                <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-[#0c121e]/95 via-[#0f172a]/95 to-[#0c121e]/95 border border-amber-500/35 backdrop-blur-xl flex flex-col gap-3 shadow-[0_10px_30px_rgba(0,0,0,0.7)]">
+                {/* 頂部 Header & 控制列 */}
+                <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-slate-800/90 backdrop-blur-xl flex flex-col gap-3 shadow-lg">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div className="flex items-center gap-2.5">
-                            <div className="p-2 rounded-xl bg-gradient-to-br from-amber-500/20 via-yellow-500/10 to-amber-600/20 border border-amber-400/40 text-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.25)]">
-                                <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-amber-300" />
+                        <div className="flex items-center gap-3">
+                            <div className="p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 shrink-0">
+                                <Trophy className="w-5 h-5 text-amber-400" />
                             </div>
-                            <div>
-                                <div className="flex items-center gap-2">
-                                    <h2 className="text-base sm:text-lg font-black font-headline text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 tracking-wider">
-                                        全部卡池機台
+                            <div className="space-y-0.5">
+                                <div className="flex items-baseline gap-2.5">
+                                    <h2 className="text-lg sm:text-xl font-bold font-headline text-white tracking-tight">
+                                        全部卡池
                                     </h2>
-                                    <span className="text-[10px] font-bold text-amber-300 bg-amber-500/15 px-2 py-0.5 rounded-full border border-amber-400/30">
+                                    <span className="text-xs font-code text-amber-300/90 font-medium">
                                         共 {displayPools.length} 款
                                     </span>
                                 </div>
-                                <p className="text-[11px] text-amber-200/60 hidden sm:block">即時連線機台 · 公平公正透明抽取 · 支援一番賞挑籤</p>
+                                <p className="text-xs text-slate-400 hidden sm:block">實體現貨即時抽取 · 機率公開透明 · 支援自由挑籤</p>
                             </div>
                         </div>
 
                         {/* 搜尋欄與排序器 */}
                         <div className="flex items-center gap-2 w-full sm:w-auto">
-                            
-                            
                             {/* 搜尋卡池 */}
                             <div className="relative flex-1 sm:w-56">
-                                <Search className="w-3.5 h-3.5 text-amber-400/70 absolute left-3 top-1/2 -translate-y-1/2" />
+                                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                                 <input
                                     type="text"
                                     value={searchKeyword}
                                     onChange={(e) => setSearchKeyword(e.target.value)}
                                     placeholder="搜尋卡池名稱..."
-                                    className="w-full bg-[#070a13]/90 text-xs text-white pl-8 pr-7 py-2 rounded-xl border border-amber-500/30 focus:border-amber-400 focus:shadow-[0_0_12px_rgba(245,158,11,0.25)] focus:outline-none transition-all placeholder:text-slate-500 shadow-inner"
+                                    className="w-full bg-slate-950/90 text-xs text-white pl-8 pr-7 py-2 rounded-xl border border-slate-800 focus:border-amber-400 focus:outline-none transition-colors placeholder:text-slate-500"
                                 />
                                 {searchKeyword && (
                                     <button
@@ -268,15 +266,15 @@ export default function DrawPage() {
                             {/* 排序選擇器 */}
                             <div className="relative shrink-0">
                                 <select 
-                                    className="appearance-none bg-[#070a13]/90 text-xs font-bold text-amber-200 pl-3 pr-7 py-2 rounded-xl border border-amber-500/30 hover:border-amber-400/60 focus:border-amber-400 focus:outline-none transition-all cursor-pointer shadow-sm"
+                                    className="appearance-none bg-slate-950/90 text-xs font-semibold text-slate-200 pl-3 pr-7 py-2 rounded-xl border border-slate-800 hover:border-amber-400/50 focus:border-amber-400 focus:outline-none transition-colors cursor-pointer"
                                     value={sortOption}
                                     onChange={(e) => setSortOption(e.target.value as any)}
                                 >
-                                    <option value="latest">⚡ 最新上架</option>
-                                    <option value="price-high">💎 點數高至低</option>
-                                    <option value="price-low">🪙 點數低至高</option>
+                                    <option value="latest">最新上架</option>
+                                    <option value="price-high">點數高至低</option>
+                                    <option value="price-low">點數低至高</option>
                                 </select>
-                                <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-amber-400/70 text-[10px]">
+                                <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-[10px]">
                                     ▼
                                 </div>
                             </div>
@@ -284,16 +282,16 @@ export default function DrawPage() {
                     </div>
                 </div>
 
-                {/* 卡池列表 (手機版 max-w-md 居中適配防拉扯，電腦版 2~3 欄優雅展示) */}
+                {/* 卡池列表 */}
                 {displayPools.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-5 sm:gap-7 max-w-md sm:max-w-none mx-auto">
                         {displayPools.map((pool) => (
                             <div key={pool.id} className="relative w-full pt-4 sm:pt-5">
                                 {pool.isFeatured && (
                                     <div className="absolute top-0 left-2.5 sm:left-3 z-30 pointer-events-none">
-                                        <div className="bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 font-black text-[11px] px-3.5 py-1 rounded-full shadow-[0_4px_20px_rgba(245,158,11,0.7)] border-2 border-amber-100 uppercase tracking-wider flex items-center gap-1.5 animate-pulse">
-                                            <Sparkles className="w-3.5 h-3.5 fill-slate-950" />
-                                            <span>HOT 精選</span>
+                                        <div className="bg-gradient-to-r from-amber-400 to-yellow-400 text-slate-950 font-bold text-[11px] px-3 py-0.5 rounded-md shadow-md border border-amber-100 flex items-center gap-1">
+                                            <Sparkles className="w-3 h-3 fill-slate-950" />
+                                            <span>精選推薦</span>
                                         </div>
                                     </div>
                                 )}
@@ -328,9 +326,6 @@ export default function DrawPage() {
             </div>
         )}
 
-        <div className="mt-12 text-center flex flex-col items-center opacity-20">
-            <p className="text-[10px] md:text-[12px] text-muted-foreground font-headline uppercase tracking-[0.5em] origin-center scale-[0.2]">P+Carder Official Terminal • Link Stable • Secure Protocol</p>
-        </div>
     </div>
   );
 }

@@ -10,8 +10,16 @@ export default function ExhibitionsPage() {
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1100px] h-[450px] bg-gradient-to-b from-amber-500/15 via-purple-500/10 to-transparent blur-[140px] pointer-events-none -z-10" />
       <div className="absolute top-[600px] right-0 w-[600px] h-[600px] bg-amber-500/5 blur-[160px] pointer-events-none -z-10" />
 
-      <div className="container mx-auto px-2.5 sm:px-6 max-w-7xl space-y-5 sm:space-y-6">
-        <UnifiedEventCalendar hideHeader={false} />
+      <div className="container mx-auto px-3 sm:px-6 max-w-7xl space-y-5 sm:space-y-6 pt-2 sm:pt-4">
+        <div className="space-y-1 border-b border-slate-800/80 pb-4">
+          <h1 className="text-2xl sm:text-3xl font-bold font-headline tracking-tight text-white">
+            卡展行事曆
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-400">
+            台灣巡迴、亞洲與美國大型卡牌展覽日程總覽
+          </p>
+        </div>
+        <UnifiedEventCalendar hideHeader={true} />
       </div>
     </div>
   );

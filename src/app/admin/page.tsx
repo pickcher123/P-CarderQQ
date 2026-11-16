@@ -36,7 +36,7 @@ import {
   Calendar
 } from 'lucide-react';
 import { useRequest, useFirestore, useMemoFirebase, useDoc, useUser } from "@/firebase";
-import { collection, doc, updateDoc, query, where, getDocs, writeBatch, setDoc } from "firebase/firestore";
+import { collection, doc, updateDoc, query, where, getDocs, writeBatch, setDoc } from "@/lib/audited-firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";

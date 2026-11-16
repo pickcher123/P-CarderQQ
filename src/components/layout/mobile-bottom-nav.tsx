@@ -130,7 +130,7 @@ export function MobileBottomNav({ systemConfig }: MobileBottomNavProps) {
       <div className="fixed bottom-2.5 sm:bottom-4 left-0 right-0 z-50 md:hidden pointer-events-none px-2 sm:px-3 flex justify-center pb-[max(env(safe-area-inset-bottom),0px)]">
         {/* 懸浮導覽膠囊 - 僅外框環狀 LED 炫彩 */}
         <div className={cn(
-          "pointer-events-auto relative w-full rounded-full transition-all duration-300",
+          "pointer-events-auto relative w-full rounded-full transition-[max-width] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]",
           count <= 4 ? "max-w-[340px]" : count <= 5 ? "max-w-[400px]" : count === 6 ? "max-w-[450px]" : "max-w-[98vw]"
         )}>
           {/* 外框循環環繞式 LED 流光層 (細膩流暢、溫潤護眼，絕不滲透到內部) */}
@@ -171,7 +171,7 @@ export function MobileBottomNav({ systemConfig }: MobileBottomNavProps) {
                       {/* 圖示與角標 */}
                       <div className="relative flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 my-0.5">
                         <Icon className={cn(
-                          "w-[18px] h-[18px] sm:w-[20px] sm:h-[20px] transition-all duration-200", 
+                          "w-[18px] h-[18px] sm:w-[20px] sm:h-[20px] transition-[transform,color] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]", 
                           isActive 
                             ? cn(link.activeColor, "scale-105") 
                             : "text-slate-400 group-hover:text-slate-200"
@@ -187,7 +187,7 @@ export function MobileBottomNav({ systemConfig }: MobileBottomNavProps) {
 
                       {/* 標籤文字：禁止折行，保證排版簡潔 */}
                       <span className={cn(
-                        "text-[10px] tracking-tight transition-all duration-200 text-center leading-none whitespace-nowrap mt-0.5",
+                        "text-[10px] tracking-tight transition-colors duration-150 text-center leading-none whitespace-nowrap mt-0.5",
                         isActive 
                           ? "font-bold text-white" 
                           : "font-medium text-slate-400 group-hover:text-slate-200"
@@ -205,7 +205,7 @@ export function MobileBottomNav({ systemConfig }: MobileBottomNavProps) {
                         onClick={() => setIsPromoModalOpen(true)}
                         id={`mobile-nav-${link.id}`}
                         className={cn(
-                          "relative flex flex-col items-center justify-center py-1 px-1 rounded-full transition-all duration-200 active:scale-95 group select-none min-h-[46px]",
+                          "relative flex flex-col items-center justify-center py-1 px-1 rounded-full transition-[transform,background-color,color,border-color] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] group select-none min-h-[46px]",
                           isScrollable ? "flex-1 min-w-[48px] snap-center" : "",
                           "hover:bg-white/[0.04] text-slate-400 hover:text-pink-300 border border-transparent"
                         )}
@@ -221,7 +221,7 @@ export function MobileBottomNav({ systemConfig }: MobileBottomNavProps) {
                       href={link.href!}
                       id={`mobile-nav-${link.id}`}
                       className={cn(
-                        "relative flex flex-col items-center justify-center py-1 px-1 rounded-full transition-all duration-200 active:scale-95 group select-none min-h-[46px]",
+                        "relative flex flex-col items-center justify-center py-1 px-1 rounded-full transition-[transform,background-color,color,border-color] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] group select-none min-h-[46px]",
                         isScrollable ? "flex-1 min-w-[48px] snap-center" : "",
                         isActive 
                           ? cn("border", link.activeBg) 

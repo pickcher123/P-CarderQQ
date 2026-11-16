@@ -224,8 +224,8 @@ export default function Home() {
             </div>
           )}
           
-          <div className="space-y-3 sm:space-y-4 animate-fade-in-up">
-            <h1 className="font-headline text-4xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-black tracking-tight leading-none relative select-none whitespace-nowrap inline-block mx-auto max-w-full">
+          <div className="space-y-3.5 sm:space-y-4 animate-fade-in-up">
+            <h1 className="font-brand text-4xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-black tracking-tight leading-none relative select-none whitespace-nowrap inline-block mx-auto max-w-full">
                 <span className="bg-clip-text text-transparent bg-gradient-to-b from-white via-slate-100 to-amber-200/90 drop-shadow-[0_4px_30px_rgba(245,158,11,0.35)] whitespace-nowrap inline-block">
                     P+CARDER
                 </span>
@@ -234,30 +234,25 @@ export default function Home() {
                 </span>
             </h1>
 
-            {/* 標題底部光學地平飾條 (Title Horizon Light Accent & Badge) */}
-            <div className="flex flex-nowrap items-center justify-center gap-1.5 sm:gap-3 my-2 sm:my-3 opacity-90 pointer-events-none w-full max-w-lg mx-auto px-2 sm:px-4 overflow-hidden">
-              <div className="h-[1px] flex-1 max-w-[24px] sm:max-w-[60px] md:max-w-[90px] bg-gradient-to-r from-transparent via-amber-400/60 to-amber-300 shrink" />
-              <div className="flex items-center gap-1.5 sm:gap-2 text-[8px] sm:text-[10px] md:text-xs font-black tracking-wider sm:tracking-[0.2em] md:tracking-[0.25em] text-amber-300/90 uppercase whitespace-nowrap shrink-0">
-                <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 rotate-45 bg-amber-400 shadow-[0_0_8px_#fbbf24] shrink-0" />
-                <span className="whitespace-nowrap">OFFICIAL TRADING CARDS & VAULT</span>
-                <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 rotate-45 bg-amber-400 shadow-[0_0_8px_#fbbf24] shrink-0" />
+            {/* 標題底部光學地平飾條 */}
+            <div className="flex flex-nowrap items-center justify-center gap-2 sm:gap-3 my-2 sm:my-3 opacity-95 pointer-events-none w-full max-w-lg mx-auto px-2 sm:px-4 overflow-hidden">
+              <div className="h-[1px] flex-1 max-w-[32px] sm:max-w-[72px] bg-gradient-to-r from-transparent via-amber-400/60 to-amber-300 shrink" />
+              <div className="flex items-center gap-2 text-xs sm:text-sm font-bold tracking-[0.16em] text-amber-300 whitespace-nowrap shrink-0">
+                <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 rotate-45 bg-amber-400 shrink-0" />
+                <span className="whitespace-nowrap">頂級球員卡數位收藏平台</span>
+                <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 rotate-45 bg-amber-400 shrink-0" />
               </div>
-              <div className="h-[1px] flex-1 max-w-[24px] sm:max-w-[60px] md:max-w-[90px] bg-gradient-to-l from-transparent via-amber-400/60 to-amber-300 shrink" />
+              <div className="h-[1px] flex-1 max-w-[32px] sm:max-w-[72px] bg-gradient-to-l from-transparent via-amber-400/60 to-amber-300 shrink" />
             </div>
             
-            <p className="text-sm sm:text-base md:text-xl text-slate-300 max-w-xl mx-auto font-medium tracking-wider leading-relaxed px-2">
-                頂級球員卡福袋平台<br />
-                <span className="text-amber-400 font-bold drop-shadow-[0_0_12px_rgba(245,158,11,0.4)]">打造屬於你的極致玩卡與收藏體驗</span>
+            <p className="text-sm sm:text-base md:text-lg text-slate-300 max-w-xl mx-auto font-medium tracking-wide leading-relaxed px-2">
+              線上抽卡 <span className="text-slate-600 mx-1">·</span> 自選拼卡 <span className="text-slate-600 mx-1">·</span> 限量福袋 <span className="text-slate-600 mx-1">·</span> 實體入庫直寄
             </p>
-
-
           </div>
           
           {/* 快捷操作按鈕組 */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 animate-fade-in-up pt-4 sm:pt-6 max-w-xl mx-auto">
-
-
-            <BeginnerGuideDialog triggerVariant="hero" buttonText="How To Play" />
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 animate-fade-in-up pt-3 sm:pt-5 max-w-xl mx-auto">
+            <BeginnerGuideDialog triggerVariant="hero" buttonText="新手玩法指南" />
           </div>
           {/* 按鈕下方展台投影光暈 */}
           <div className="w-48 sm:w-80 h-3 mx-auto mt-2 bg-amber-400/25 blur-md rounded-full pointer-events-none" />
@@ -269,24 +264,24 @@ export default function Home() {
 
       {/* 首頁熱門推薦卡池 */}
       {featuredPools && featuredPools.length > 0 && (
-        <section className="py-4 sm:py-8 container px-3 sm:px-4 max-w-7xl mx-auto">
-          <div className="p-3 sm:p-4 rounded-2xl bg-gradient-to-r from-slate-900/90 via-slate-950/90 to-slate-900/90 border border-slate-800/80 backdrop-blur-xl flex items-center justify-between gap-3 mb-6 sm:mb-8 shadow-lg">
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30 text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
-                <Flame className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
+        <section className="py-6 sm:py-10 container px-3 sm:px-4 max-w-7xl mx-auto">
+          <div className="flex items-end justify-between gap-4 pb-4 mb-6 sm:mb-8 border-b border-slate-800/80">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 shrink-0">
+                <Flame className="w-5 h-5 text-amber-400" />
               </div>
-              <div>
-                <h2 className="text-base sm:text-lg font-black font-headline tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-100 to-yellow-400 drop-shadow-[0_0_12px_rgba(245,158,11,0.3)]">
+              <div className="space-y-0.5">
+                <h2 className="text-lg sm:text-2xl font-bold font-headline tracking-tight text-white">
                   熱門推薦卡池
                 </h2>
-                <p className="text-[11px] text-slate-400 hidden sm:block">頂級球員卡即時開包 · 公平公正透明</p>
+                <p className="text-xs sm:text-sm text-slate-400">實體現貨即時開包 · 機率公開透明</p>
               </div>
             </div>
 
-            <Button variant="ghost" asChild className="hover:bg-slate-800 h-9 px-3.5 rounded-xl font-bold text-amber-400 hover:text-amber-300 text-xs">
-              <Link href="/draw" className="flex items-center gap-1.5">
-                <span>查看全部卡池</span>
-                <ChevronRight className="h-3.5 w-3.5" />
+            <Button variant="ghost" asChild className="hover:bg-slate-800/80 h-9 px-3.5 rounded-xl font-bold text-amber-400 hover:text-amber-300 text-xs sm:text-sm shrink-0">
+              <Link href="/draw" className="flex items-center gap-1 whitespace-nowrap">
+                <span>查看全部</span>
+                <ChevronRight className="h-4 w-4" />
               </Link>
             </Button>
           </div>
@@ -296,9 +291,9 @@ export default function Home() {
               <div key={pool.id} className="relative w-full pt-4 sm:pt-5">
                 {(pool as any).isFeatured && (
                   <div className="absolute top-0 left-2.5 sm:left-3 z-30 pointer-events-none">
-                    <div className="bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 font-black text-[11px] px-3.5 py-1 rounded-full shadow-[0_4px_20px_rgba(245,158,11,0.7)] border-2 border-amber-100 uppercase tracking-wider flex items-center gap-1.5 animate-pulse">
-                      <Sparkles className="w-3.5 h-3.5 fill-slate-950" />
-                      <span>HOT 精選</span>
+                    <div className="bg-gradient-to-r from-amber-400 to-yellow-400 text-slate-950 font-bold text-[11px] px-3 py-0.5 rounded-md shadow-md border border-amber-100 flex items-center gap-1">
+                      <Sparkles className="w-3 h-3 fill-slate-950" />
+                      <span>精選推薦</span>
                     </div>
                   </div>
                 )}
@@ -309,89 +304,37 @@ export default function Home() {
         </section>
       )}
 
-      {/* 最新消息中心 */}
-      <section className="relative py-8 sm:py-16 bg-gradient-to-b from-slate-950/80 via-slate-900/50 to-slate-950/80 border-y border-slate-800/80 overflow-hidden">
+      {/* 最新消息 */}
+      <section className="relative py-10 sm:py-16 bg-gradient-to-b from-slate-950/80 via-slate-900/40 to-slate-950/80 border-y border-slate-800/80 overflow-hidden">
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-amber-500/5 rounded-full blur-[140px] pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-amber-500/5 rounded-full blur-[120px] pointer-events-none" />
         <div className="container relative z-10 px-3 sm:px-4 max-w-7xl mx-auto">
             
-            {/* Header - 奢華全息通訊廣播站 (Cyber Broadcast Terminal Header) */}
-            <div className="relative p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-gradient-to-r from-[#12182b]/95 via-[#0c1222]/98 to-[#151c33]/95 border border-amber-500/35 backdrop-blur-2xl mb-6 sm:mb-8 shadow-[0_20px_50px_rgba(0,0,0,0.8),0_0_25px_rgba(245,158,11,0.12)] overflow-hidden group">
-                {/* 科技幾何網格背景 */}
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,#f59e0b0d_1px,transparent_1px),linear-gradient(to_bottom,#f59e0b0d_1px,transparent_1px)] bg-[size:28px_28px] pointer-events-none opacity-60" />
-
-                {/* 頂部全息雷射貫穿光條 */}
-                <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_15px_#f59e0b]" />
-
-                {/* 科技燙金飾角 (Corner Accents) */}
-                <div className="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-amber-400/60 pointer-events-none" />
-                <div className="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-amber-400/60 pointer-events-none" />
-                <div className="absolute bottom-2 left-2 w-3 h-3 border-b-2 border-l-2 border-amber-400/60 pointer-events-none" />
-                <div className="absolute bottom-2 right-2 w-3 h-3 border-b-2 border-r-2 border-amber-400/60 pointer-events-none" />
-
-                {/* 背景柔光霓虹泡泡 */}
-                <div className="absolute -top-16 left-1/4 w-80 h-32 bg-amber-500/15 blur-[60px] pointer-events-none group-hover:bg-amber-500/20 transition-all duration-700" />
-                <div className="absolute -bottom-16 right-1/4 w-80 h-32 bg-cyan-500/10 blur-[60px] pointer-events-none" />
-
-                <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6">
-                    {/* 左側：廣播節點圖標 + 標題與標籤列 */}
-                    <div className="flex items-center gap-3.5 sm:gap-5 min-w-0">
-                        {/* 廣播終端動態節點徽章 */}
-                        <div className="relative shrink-0">
-                            <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-400 opacity-40 blur-sm group-hover:opacity-75 transition-opacity duration-500" />
-                            <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-amber-400/25 via-amber-500/15 to-slate-950 border border-amber-400/40 text-amber-300 flex items-center justify-center shadow-inner">
-                                <Radio className="w-5 h-5 sm:w-6 sm:h-6 text-amber-300 animate-pulse drop-shadow-[0_0_10px_rgba(245,158,11,0.8)]" />
-                                {/* 右上角微型雷達波點 */}
-                                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399] animate-ping" />
-                                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-400" />
-                            </div>
-                        </div>
-
-                        {/* 標題與標籤內容 */}
-                        <div className="min-w-0 space-y-1">
-                            <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
-                                <h2 className="text-lg sm:text-2xl md:text-3xl font-black font-headline tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-100 to-amber-400 drop-shadow-[0_2px_15px_rgba(245,158,11,0.4)] truncate">
-                                    最新消息中心
-                                </h2>
-
-                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-400/40 text-emerald-300 text-[10px] sm:text-[11px] font-black shadow-[0_0_10px_rgba(16,185,129,0.25)] shrink-0">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                                    即時快訊連線
-                                </span>
-
-                                <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[10px] font-bold shrink-0">
-                                    <Sparkles className="w-3 h-3 text-amber-400" />
-                                    官方快訊
-                                </span>
-                            </div>
-
-                            <p className="text-xs sm:text-sm text-slate-300 font-medium leading-relaxed truncate">
-                                官方即時資訊 · 掌握第一手活動盛典、機台更新與限定福利
-                            </p>
-                        </div>
+            {/* 統一區塊標題列 */}
+            <div className="flex items-end justify-between gap-4 pb-4 mb-6 sm:mb-8 border-b border-slate-800/80">
+                <div className="flex items-center gap-3 min-w-0">
+                    <div className="p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 shrink-0">
+                        <Newspaper className="w-5 h-5 text-amber-400" />
                     </div>
-
-                    {/* 右側：奢華微光操作按鈕 */}
-                    <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto shrink-0 border-t sm:border-t-0 pt-3 sm:pt-0 border-amber-500/15">
-                        <div className="text-[11px] font-mono text-amber-300/80 hidden lg:flex items-center gap-1.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                            <span>{effectiveNews.length} 則即時快報</span>
-                        </div>
-
-                        <Button 
-                            asChild 
-                            className="h-9 sm:h-11 px-4 sm:px-5 rounded-xl font-black text-slate-950 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 hover:from-amber-300 hover:to-yellow-200 shadow-[0_0_20px_rgba(245,158,11,0.35)] hover:shadow-[0_0_28px_rgba(245,158,11,0.5)] border border-yellow-200 text-xs sm:text-sm transition-all duration-300 active:scale-95 cursor-pointer w-full sm:w-auto group/btn"
-                        >
-                            <Link href="/news" className="flex items-center justify-center gap-1.5 sm:gap-2">
-                                <span>完整消息庫</span>
-                                <ArrowRight className="h-4 w-4 text-slate-950 transition-transform group-hover/btn:translate-x-1" />
-                            </Link>
-                        </Button>
+                    <div className="min-w-0 space-y-0.5">
+                        <h2 className="text-lg sm:text-2xl font-bold font-headline tracking-tight text-white truncate">
+                            最新消息
+                        </h2>
+                        <p className="text-xs sm:text-sm text-slate-400 truncate">
+                            活動公告 · 機台更新 · 限定企劃
+                        </p>
                     </div>
                 </div>
+
+                <Button variant="ghost" asChild className="hover:bg-slate-800/80 h-9 px-3.5 rounded-xl font-bold text-amber-400 hover:text-amber-300 text-xs sm:text-sm shrink-0">
+                    <Link href="/news" className="flex items-center gap-1 whitespace-nowrap">
+                        <span>查看全部</span>
+                        <ChevronRight className="h-4 w-4" />
+                    </Link>
+                </Button>
             </div>
             
-            {/* 卡片輪播 - 手機版露出下張卡片邊緣 (basis-[86%] xs:basis-[82%])，支援手勢滑動與點擊開啟詳情 */}
+            {/* 卡片輪播 */}
             <Carousel 
                 setApi={setNewsApi}
                 opts={{ align: "start", loop: false }} 
@@ -422,9 +365,9 @@ export default function Home() {
                                       role="button"
                                       tabIndex={0}
                                     >
-                                        <div className="h-full overflow-hidden bg-gradient-to-b from-slate-900/95 via-slate-950/95 to-slate-950 border border-slate-800/80 hover:border-amber-400/70 transition-all duration-300 rounded-2xl shadow-xl hover:shadow-[0_12px_36px_rgba(245,158,11,0.18)] group-hover:-translate-y-1.5 flex flex-col justify-between">
+                                        <div className="h-full overflow-hidden bg-slate-900/90 border border-slate-800/80 hover:border-amber-400/60 transition-all duration-200 rounded-2xl shadow-lg hover:-translate-y-1 flex flex-col justify-between">
                                             
-                                            {/* 上半部：精美封面與浮動標籤 */}
+                                            {/* 上半部：封面 */}
                                             <div className="aspect-[16/9] w-full relative overflow-hidden bg-slate-950 shrink-0">
                                                 {item.type === 'image' && item.imageUrl ? (
                                                     <>
@@ -433,78 +376,57 @@ export default function Home() {
                                                             alt={item.title} 
                                                             width={600}
                                                             height={338}
-                                                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-108"
+                                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                                                         />
                                                         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent pointer-events-none" />
                                                     </>
                                                 ) : (
                                                     <div className="absolute inset-0 bg-gradient-to-br from-amber-950/30 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-4 overflow-hidden">
-                                                        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:16px_16px] opacity-60" />
-                                                        <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 mb-2 shadow-[0_0_20px_rgba(245,158,11,0.15)] group-hover:scale-110 transition-transform duration-300 z-10">
+                                                        <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 mb-2 z-10">
                                                             <Newspaper className="w-6 h-6" />
                                                         </div>
-                                                        <span className="text-[10px] font-mono font-bold text-amber-400/70 tracking-widest uppercase z-10">
-                                                            P+ CARDER NEWS
+                                                        <span className="text-xs font-medium text-amber-300/80 tracking-wider z-10">
+                                                            官方公告
                                                         </span>
-                                                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent pointer-events-none" />
                                                     </div>
                                                 )}
 
-                                                {/* 頂部左側徽章 */}
-                                                <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 z-10">
-                                                    {item.isPinned && (
-                                                      <span className="bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 font-black text-[10px] px-2 py-0.5 rounded shadow-[0_0_10px_rgba(245,158,11,0.5)] flex items-center gap-1">
-                                                        <span>★ 置頂</span>
-                                                      </span>
-                                                    )}
-                                                    <span className="bg-black/75 backdrop-blur-md border border-white/10 text-amber-300 font-bold text-[10px] px-2 py-0.5 rounded shadow-sm">
-                                                      {item.category || '官方公告'}
-                                                    </span>
-                                                </div>
-
-                                                {/* 頂部右側類型徽章 */}
-                                                <div className="absolute top-2.5 right-2.5 z-10">
-                                                    <span className="bg-black/70 backdrop-blur-md border border-white/10 text-[10px] text-slate-300 px-2 py-0.5 rounded font-mono flex items-center gap-1">
-                                                        {item.type === 'image' ? (
-                                                            <>
-                                                                <ImageIcon className="w-3 h-3 text-amber-400" />
-                                                                <span>圖文</span>
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <FileText className="w-3 h-3 text-cyan-400" />
-                                                                <span>公告</span>
-                                                            </>
-                                                        )}
-                                                    </span>
-                                                </div>
+                                                {item.isPinned && (
+                                                    <div className="absolute top-3 left-3 z-10">
+                                                        <span className="bg-amber-400 text-slate-950 font-bold text-[11px] px-2 py-0.5 rounded shadow-sm">
+                                                            置頂
+                                                        </span>
+                                                    </div>
+                                                )}
                                             </div>
 
-                                            {/* 下半部：層次分明的標題、內文摘要與底部時標 */}
+                                            {/* 下半部：乾淨中繼資訊、標題、摘要 */}
                                             <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-3">
                                                 <div className="space-y-1.5">
-                                                    <h3 className="font-headline font-black text-sm sm:text-base text-white group-hover:text-amber-300 transition-colors line-clamp-2 leading-snug text-left">
+                                                    <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
+                                                        <span className="text-amber-300/90">{item.category || '官方公告'}</span>
+                                                        <span aria-hidden="true">·</span>
+                                                        <span className="font-code">{item.createdAt ? format(new Date(item.createdAt.seconds * 1000), 'yyyy-MM-dd') : '---'}</span>
+                                                    </div>
+
+                                                    <h3 className="font-headline font-bold text-base sm:text-lg text-white group-hover:text-amber-300 transition-colors line-clamp-2 leading-snug text-left">
                                                         {item.title}
                                                     </h3>
+
                                                     {snippet ? (
-                                                        <p className="text-[11px] sm:text-xs text-slate-400/90 line-clamp-2 leading-relaxed text-left font-normal">
+                                                        <p className="text-xs sm:text-sm text-slate-400 line-clamp-2 leading-relaxed text-left">
                                                             {snippet}
                                                         </p>
                                                     ) : (
-                                                        <p className="text-[11px] sm:text-xs text-slate-500/80 line-clamp-1 leading-relaxed text-left font-normal">
-                                                            點擊查看完整官方消息與最新動態...
+                                                        <p className="text-xs sm:text-sm text-slate-500 line-clamp-1 leading-relaxed text-left">
+                                                            點擊查看完整公告內容
                                                         </p>
                                                     )}
                                                 </div>
 
-                                                {/* 底部時間與詳閱箭頭 */}
-                                                <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs">
-                                                    <div className="flex items-center gap-1.5 font-mono text-[11px] text-slate-400">
-                                                        <Calendar className="h-3 w-3 text-amber-400/80" />
-                                                        <span>{item.createdAt ? format(new Date(item.createdAt.seconds * 1000), 'yyyy-MM-dd') : '---'}</span>
-                                                    </div>
-                                                    <span className="text-amber-400 group-hover:text-amber-300 font-bold text-xs flex items-center gap-0.5 group-hover:translate-x-1 transition-transform">
-                                                        <span>詳閱內容</span>
+                                                <div className="pt-2.5 border-t border-slate-800/70 flex items-center justify-end text-xs">
+                                                    <span className="text-amber-400 group-hover:text-amber-300 font-semibold flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">
+                                                        <span>閱讀全文</span>
                                                         <ChevronRight className="w-3.5 h-3.5" />
                                                     </span>
                                                 </div>
@@ -518,14 +440,13 @@ export default function Home() {
                     )}
                 </CarouselContent>
                 
-                {/* 電腦與平板左右導覽箭頭 */}
                 <CarouselPrevious className="hidden md:flex -left-4 h-9 w-9 bg-slate-900 border-slate-700 text-slate-200 hover:bg-amber-500 hover:text-slate-950 shadow-lg" />
                 <CarouselNext className="hidden md:flex -right-4 h-9 w-9 bg-slate-900 border-slate-700 text-slate-200 hover:bg-amber-500 hover:text-slate-950 shadow-lg" />
 
-                {/* 手機專用滑動指示圓點 (Dots) */}
-                {newsItems && newsItems.length > 1 && (
+                {/* 手機專用滑動指示圓點 (修正為 effectiveNews 同步數量) */}
+                {effectiveNews.length > 1 && (
                     <div className="flex sm:hidden justify-center items-center gap-1.5 mt-5">
-                        {newsItems.map((_, dotIdx) => (
+                        {effectiveNews.map((_, dotIdx) => (
                             <button
                                 key={dotIdx}
                                 type="button"
@@ -534,7 +455,7 @@ export default function Home() {
                                 className={cn(
                                     "h-1.5 transition-all duration-300 rounded-full",
                                     newsCurrent === dotIdx 
-                                        ? "w-6 bg-gradient-to-r from-amber-400 to-yellow-400 shadow-[0_0_8px_rgba(245,158,11,0.6)]" 
+                                        ? "w-6 bg-amber-400" 
                                         : "w-1.5 bg-slate-700/80 hover:bg-slate-600"
                                 )}
                             />
@@ -545,7 +466,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 為什麼選擇 P+Carder (Bento Grid 發布會級圖表矩陣) */}
+      {/* 為什麼選擇 P+Carder */}
       <WhyChooseBentoGrid 
         onCommunityJoin={handleCommunityJoin}
         isCommunityClaimed={isCommunityClaimed}
@@ -555,11 +476,11 @@ export default function Home() {
       {/* 合作夥伴 */}
       <section className="container pb-12 sm:pb-20 px-3 sm:px-4 max-w-7xl mx-auto text-white">
         <div className="relative p-6 sm:p-10 rounded-3xl bg-slate-950/50 border border-slate-800/60 backdrop-blur-xl overflow-hidden">
-          <div className="text-center mb-8 space-y-2">
-            <h2 className="text-xl sm:text-3xl font-black font-headline tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-100 to-yellow-400 drop-shadow-[0_0_15px_rgba(245,158,11,0.25)]">
-              我們的合作夥伴
+          <div className="text-center mb-8 space-y-1.5">
+            <h2 className="text-xl sm:text-3xl font-bold font-headline tracking-tight text-white">
+              合作夥伴
             </h2>
-            <p className="text-xs text-slate-400 font-medium">與頂級卡牌品牌與知名同好團隊攜手合作</p>
+            <p className="text-xs sm:text-sm text-slate-400">攜手知名卡牌品牌與專業藏家團隊</p>
           </div>
           
           <div className="flex flex-wrap justify-center items-center gap-4 sm:gap-6">
@@ -571,14 +492,13 @@ export default function Home() {
               partners.map((partner) => (
                 <div 
                   key={partner.id} 
-                  className="w-48 sm:w-64 h-24 sm:h-28 flex flex-col items-center justify-center p-4 rounded-2xl bg-slate-900/70 border border-slate-800/80 hover:border-amber-400/50 shadow-xl hover:shadow-[0_8px_30px_rgba(245,158,11,0.15)] transition-all duration-300 group relative overflow-hidden backdrop-blur-md"
+                  className="w-48 sm:w-64 h-24 sm:h-28 flex flex-col items-center justify-center p-4 rounded-2xl bg-slate-900/70 border border-slate-800/80 hover:border-amber-400/50 shadow-xl transition-all duration-200 group relative overflow-hidden backdrop-blur-md"
                 >
-                  <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   <div className="w-full h-full relative flex items-center justify-center z-10">
                     <SafeImage 
                       src={partner.logoUrl} 
                       alt={partner.name} 
-                      className="object-contain max-h-full max-w-full drop-shadow-md group-hover:scale-108 transition-transform duration-300 filter group-hover:brightness-110" 
+                      className="object-contain max-h-full max-w-full drop-shadow-md group-hover:scale-105 transition-transform duration-300" 
                       width={200} 
                       height={90} 
                     />
@@ -586,8 +506,8 @@ export default function Home() {
                 </div>
               ))
             ) : (
-              <div className="py-6 text-center text-xs text-slate-500 font-mono">
-                夥伴品牌陸續入駐中...
+              <div className="py-6 text-center text-xs text-slate-500">
+                合作夥伴品牌陸續加入中
               </div>
             )}
           </div>

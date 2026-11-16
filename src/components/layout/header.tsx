@@ -106,18 +106,18 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                   key={link.href}
                   href={link.href}
                   className={cn(
-                    "flex items-center gap-1.5 transition-all duration-300 hover:opacity-100 whitespace-nowrap py-1 px-1.5 rounded-lg hover:bg-white/5",
+                    "flex items-center gap-1.5 transition-[background-color,color,opacity,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] hover:opacity-100 whitespace-nowrap py-1 px-1.5 rounded-lg hover:bg-white/5",
                     isActive ? "text-cyan-300 font-bold bg-cyan-500/10" : "text-muted-foreground opacity-80"
                   )}
                 >
                   <Icon className={cn(
-                    "h-3.5 w-3.5 transition-all duration-300", 
+                    "h-3.5 w-3.5 transition-colors duration-150", 
                     isActive ? link.color : "text-muted-foreground"
                   )} />
                   <span>{link.label}</span>
-                  {link.badge && (
+                  {'badge' in link && Boolean((link as any).badge) && (
                     <span className="text-[9px] font-black px-1.5 py-0.2 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-[0_0_8px_rgba(244,63,94,0.3)]">
-                      {link.badge}
+                      {(link as any).badge}
                     </span>
                   )}
                 </Link>
@@ -141,11 +141,11 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
               type="button"
               id="header-free-ticket-btn"
               onClick={() => setIsPromoModalOpen(true)}
-              className="relative flex items-center justify-center gap-1 sm:gap-1.5 h-8 sm:h-9 px-2 sm:px-3 rounded-full bg-gradient-to-r from-pink-500/20 via-rose-500/20 to-pink-500/15 border border-pink-500/40 hover:border-pink-400/80 shadow-[0_0_12px_rgba(244,63,94,0.2)] text-pink-300 hover:text-white transition-all duration-200 group cursor-pointer shrink-0"
+              className="relative flex items-center justify-center gap-1 sm:gap-1.5 h-8 sm:h-9 px-2 sm:px-3 rounded-full bg-gradient-to-r from-pink-500/20 via-rose-500/20 to-pink-500/15 border border-pink-500/40 hover:border-pink-400/80 shadow-[0_0_12px_rgba(244,63,94,0.2)] text-pink-300 hover:text-white transition-[border-color,color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] group cursor-pointer shrink-0"
               title="簽到/領券"
             >
               <div className="relative flex items-center justify-center">
-                <CalendarCheck className="h-4 w-4 text-pink-400 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300" />
+                <CalendarCheck className="h-4 w-4 text-pink-400 [@media(hover:hover)_and_(pointer:fine)]:group-hover:scale-110 [@media(hover:hover)_and_(pointer:fine)]:group-hover:rotate-6 transition-transform duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]" />
                 {/* 手機版微型發光紅點 */}
                 <span className="sm:hidden absolute -top-1 -right-1 w-2 h-2 rounded-full bg-pink-500 border border-pink-200 animate-pulse shadow-[0_0_6px_rgba(244,63,94,0.8)]" />
               </div>
@@ -155,15 +155,15 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
             {/* 點數區塊 (電競晶鑽膠囊) */}
             {user && (
               <div className="flex items-center">
-                <div className="flex items-center h-8 sm:h-9 bg-gradient-to-b from-slate-900/95 via-[#0b1324]/95 to-slate-950/95 rounded-full border border-cyan-500/40 shadow-[0_0_18px_rgba(6,182,212,0.22)] ring-1 ring-cyan-500/20 backdrop-blur-xl overflow-hidden group/capsule hover:border-cyan-400 hover:shadow-[0_0_22px_rgba(6,182,212,0.4)] transition-all duration-300">
+                <div className="flex items-center h-8 sm:h-9 bg-gradient-to-b from-slate-900/95 via-[#0b1324]/95 to-slate-950/95 rounded-full border border-cyan-500/40 shadow-[0_0_18px_rgba(6,182,212,0.22)] ring-1 ring-cyan-500/20 backdrop-blur-xl overflow-hidden group/capsule hover:border-cyan-400 hover:shadow-[0_0_22px_rgba(6,182,212,0.4)] transition-[border-color] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]">
                   <Popover>
                     <PopoverTrigger asChild>
                       <button 
                         id="header-points-trigger"
-                        className="flex items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 h-full hover:bg-cyan-500/10 active:bg-cyan-500/20 transition-all duration-200 group outline-none"
+                        className="flex items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 h-full hover:bg-cyan-500/10 active:bg-cyan-500/20 active:scale-[0.97] transition-[background-color,transform] duration-150 group outline-none"
                       >
                         <div className="relative flex items-center justify-center shrink-0">
-                          <DiamondIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 drop-shadow-[0_0_10px_rgba(34,211,238,0.9)] group-hover:scale-110 transition-transform duration-300" />
+                          <DiamondIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 drop-shadow-[0_0_10px_rgba(34,211,238,0.9)] [@media(hover:hover)_and_(pointer:fine)]:group-hover:scale-110 transition-transform duration-150" />
                           <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-cyan-300 animate-ping opacity-75 pointer-events-none" />
                         </div>
                         {isProfileLoading ? (
@@ -183,7 +183,7 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                       </button>
                     </PopoverTrigger>
                     
-                    <PopoverContent className="w-80 p-4 bg-[#090d19]/95 backdrop-blur-2xl border border-cyan-500/25 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.85)] animate-in zoom-in-95 duration-200" align="end" sideOffset={10} collisionPadding={16}>
+                    <PopoverContent className="w-80 p-4 bg-[#090d19]/95 backdrop-blur-2xl border border-cyan-500/25 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.85)]" align="end" sideOffset={10} collisionPadding={16}>
                       <div className="space-y-4">
                         <div className="flex items-center justify-between pb-2 border-b border-white/[0.08]">
                           <div className="flex items-center gap-1.5">
@@ -239,7 +239,7 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                         <PurchasePointsDialog>
                           <Button 
                             id="popover-recharge-btn"
-                            className="w-full h-9 rounded-xl font-black text-xs bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 shadow-[0_0_15px_rgba(6,182,212,0.4)] transition-all"
+                            className="w-full h-9 rounded-xl font-black text-xs bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 shadow-[0_0_15px_rgba(6,182,212,0.4)] transition-[filter,transform] duration-150"
                           >
                             <Plus className="w-3.5 h-3.5 mr-1 text-slate-950 stroke-[3]" /> 前往儲值 / 加值
                           </Button>
@@ -254,9 +254,9 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                       <button 
                         id="header-add-points-btn"
                         title="立即加值"
-                        className="h-full px-2.5 sm:px-3 flex items-center justify-center bg-gradient-to-r from-cyan-500/20 to-blue-600/25 hover:from-cyan-500/40 hover:to-blue-600/45 active:bg-cyan-500/50 text-cyan-300 hover:text-white transition-all group outline-none"
+                        className="h-full px-2.5 sm:px-3 flex items-center justify-center bg-gradient-to-r from-cyan-500/20 to-blue-600/25 hover:from-cyan-500/40 hover:to-blue-600/45 active:bg-cyan-500/50 active:scale-[0.97] text-cyan-300 hover:text-white transition-[background-color,color,transform] duration-150 group outline-none"
                       >
-                        <Plus className="h-3.5 w-3.5 group-hover:scale-125 transition-transform stroke-[2.5]" />
+                        <Plus className="h-3.5 w-3.5 [@media(hover:hover)_and_(pointer:fine)]:group-hover:scale-110 transition-transform duration-150 stroke-[2.5]" />
                       </button>
                     </PurchasePointsDialog>
                   </div>
@@ -275,11 +275,11 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                     <DropdownMenuTrigger asChild>
                     <button 
                       id="header-avatar-trigger"
-                      className="relative flex items-center justify-center p-0.5 rounded-full hover:scale-105 active:scale-95 transition-all duration-200 outline-none group ml-0.5 sm:ml-1"
+                      className="relative flex items-center justify-center p-0.5 rounded-full [@media(hover:hover)_and_(pointer:fine)]:hover:scale-105 active:scale-[0.97] transition-transform duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] outline-none group ml-0.5 sm:ml-1"
                     >
                       {/* 頭像外圈霓虹光環 */}
                       <div className={cn(
-                        "relative flex items-center justify-center rounded-full p-[2px] transition-all duration-300 shadow-[0_0_14px_rgba(6,182,212,0.25)] group-hover:shadow-[0_0_20px_rgba(6,182,212,0.5)]",
+                        "relative flex items-center justify-center rounded-full p-[2px] transition-opacity duration-150 shadow-[0_0_14px_rgba(6,182,212,0.25)] group-hover:shadow-[0_0_20px_rgba(6,182,212,0.5)]",
                         levelInfo.border,
                         levelInfo.glow,
                         "bg-gradient-to-br from-cyan-400/40 via-white/10 to-blue-900/60"
@@ -317,7 +317,7 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                     </button>
                     </DropdownMenuTrigger>
 
-                    <DropdownMenuContent className="min-w-[240px] p-2 bg-[#090d19]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.85)] animate-in zoom-in-95 duration-200" align="end" sideOffset={8}>
+                    <DropdownMenuContent className="min-w-[240px] p-2 bg-[#090d19]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.85)]" align="end" sideOffset={8}>
                       {/* 用戶資訊 Header */}
                       <DropdownMenuLabel className="font-normal p-2.5 pb-2">
                           <div className="flex items-center gap-3">

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, doc, setDoc, addDoc, deleteDoc, updateDoc, query, orderBy, serverTimestamp, getDoc } from 'firebase/firestore';
+import { collection, doc, setDoc, addDoc, deleteDoc, updateDoc, query, orderBy, serverTimestamp, getDoc } from '@/lib/audited-firestore';
 import confetti from 'canvas-confetti';
 import type { UserProfile } from '@/types/user-profile';
 import { isSuperAdminEmail } from '@/hooks/use-is-admin';

@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { useDoc, useCollection, useFirestore, useMemoFirebase, useStorage } from '@/firebase';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { doc, updateDoc, collection, addDoc, getDoc, setDoc, query, where, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { doc, updateDoc, collection, addDoc, getDoc, setDoc, query, where, serverTimestamp, writeBatch } from '@/lib/audited-firestore';
 // ... existing imports
 import { v4 as uuidv4 } from 'uuid';
 import { Skeleton } from '@/components/ui/skeleton';

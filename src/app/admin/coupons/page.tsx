@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useCollection, useDoc, useFirestore, useMemoFirebase } from "@/firebase";
-import { collection, query, orderBy, limit, addDoc, deleteDoc, updateDoc, doc, Timestamp, setDoc } from "firebase/firestore";
+import { collection, query, orderBy, limit, addDoc, deleteDoc, updateDoc, doc, Timestamp, setDoc } from "@/lib/audited-firestore";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

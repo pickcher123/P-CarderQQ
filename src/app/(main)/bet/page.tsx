@@ -384,49 +384,6 @@ export default function BetLandingPage() {
 
                 {activeSection === 'cards' ? (
                     <>
-                        {/* 🛡️ 拼卡 · 4 大核心介紹（手機版極致精巧、不佔高度） */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 sm:gap-4">
-                            <div className="p-2 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-b from-[#180a14]/90 to-[#0e070d]/90 border border-rose-500/25 flex items-center gap-2 sm:gap-3 shadow-xs hover:border-rose-500/40 transition-all">
-                                <div className="w-7 h-7 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400 shrink-0">
-                                    <Target className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
-                                </div>
-                                <div className="min-w-0">
-                                    <div className="font-black text-white text-[11px] sm:text-sm tracking-tight leading-tight">自選目標卡</div>
-                                    <div className="text-[9px] sm:text-[11px] text-slate-400 mt-0.5 leading-tight truncate">告別盲盒遺憾</div>
-                                </div>
-                            </div>
-
-                            <div className="p-2 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-b from-[#180a14]/90 to-[#0e070d]/90 border border-rose-500/25 flex items-center gap-2 sm:gap-3 shadow-xs hover:border-rose-500/40 transition-all">
-                                <div className="w-7 h-7 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
-                                    <Percent className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
-                                </div>
-                                <div className="min-w-0">
-                                    <div className="font-black text-white text-[11px] sm:text-sm tracking-tight leading-tight">1/10 成本換卡</div>
-                                    <div className="text-[9px] sm:text-[11px] text-slate-400 mt-0.5 leading-tight truncate">高期望值翻盤</div>
-                                </div>
-                            </div>
-
-                            <div className="p-2 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-b from-[#180a14]/90 to-[#0e070d]/90 border border-rose-500/25 flex items-center gap-2 sm:gap-3 shadow-xs hover:border-rose-500/40 transition-all">
-                                <div className="w-7 h-7 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-400 shrink-0">
-                                    <Coins className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
-                                </div>
-                                <div className="min-w-0">
-                                    <div className="font-black text-white text-[11px] sm:text-sm tracking-tight leading-tight">支援轉點回收</div>
-                                    <div className="text-[9px] sm:text-[11px] text-slate-400 mt-0.5 leading-tight truncate">P+ 點數皆可拼</div>
-                                </div>
-                            </div>
-
-                            <div className="p-2 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-b from-[#180a14]/90 to-[#0e070d]/90 border border-rose-500/25 flex items-center gap-2 sm:gap-3 shadow-xs hover:border-rose-500/40 transition-all">
-                                <div className="w-7 h-7 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
-                                    <Award className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
-                                </div>
-                                <div className="min-w-0">
-                                    <div className="font-black text-white text-[11px] sm:text-sm tracking-tight leading-tight">中獎即刻入庫</div>
-                                    <div className="text-[9px] sm:text-[11px] text-slate-400 mt-0.5 leading-tight truncate">實體卡保證寄送</div>
-                                </div>
-                            </div>
-                        </div>
-
                         {/* 3D 旋轉門主題呈現專區 */}
                         <div className="relative mt-1 sm:mt-2">
                             <RevolvingDoorThemeCarousel
@@ -494,19 +451,12 @@ export default function BetLandingPage() {
                                 <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-rose-500 to-transparent shadow-[0_0_12px_#f43f5e]" />
                                 
                                 <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                    <div className="flex items-center justify-between sm:justify-start gap-3">
-                                        <div className="flex items-center gap-2.5">
-                                            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-rose-500/30 to-amber-500/20 border border-rose-400/50 flex items-center justify-center text-rose-200 shrink-0 shadow-sm">
-                                                <Sparkles className="w-5 h-5 text-rose-300 fill-rose-400/50" />
-                                            </div>
-                                            <h2 className="text-xl sm:text-2xl md:text-3xl font-black font-headline tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-rose-300 to-amber-300">
-                                                焦點目標 · 挑選心儀神卡
-                                            </h2>
-                                        </div>
-
-                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-500/20 border border-rose-400/40 text-[11px] sm:text-xs font-black text-rose-200 font-mono shrink-0">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-ping" />
-                                            <span>{finalIsLoading ? "--" : (stats.availableItems + " 款在席")}</span>
+                                    <div className="flex items-baseline gap-2.5">
+                                        <h2 className="text-lg sm:text-2xl font-bold font-headline tracking-tight text-white">
+                                            自選目標球員卡
+                                        </h2>
+                                        <span className="text-xs font-code text-rose-300/90 font-medium">
+                                            {finalIsLoading ? '--' : `${stats.availableItems} 款可挑戰`}
                                         </span>
                                     </div>
 
@@ -714,19 +664,16 @@ export default function BetLandingPage() {
 
                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                                 <div className="space-y-1">
-                                    <div className="flex items-center gap-2.5 flex-wrap">
-                                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-amber-400/25 to-rose-500/25 border border-amber-400/50 flex items-center justify-center shrink-0">
-                                            <Disc3 className="w-5 h-5 text-amber-300 animate-spin" style={{ animationDuration: '7s' }} />
-                                        </div>
-                                        <h2 className="text-xl sm:text-2xl md:text-3xl font-black font-headline tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-300 to-rose-300">
-                                            實體獎品 · 命運轉盤 & 紅利兌換
+                                    <div className="flex items-baseline gap-2.5 flex-wrap">
+                                        <h2 className="text-lg sm:text-2xl font-bold font-headline tracking-tight text-white">
+                                            實體獎品 · 命運轉盤與紅利兌換
                                         </h2>
-                                        <Badge className="bg-amber-500/20 text-amber-300 border border-amber-400/40 text-xs font-mono font-black">
-                                            {isLoadingPrizes ? '--' : `${totalActivePrizeCount} 項好禮`}
-                                        </Badge>
+                                        <span className="text-xs font-code text-amber-300/90 font-medium">
+                                            {isLoadingPrizes ? '--' : `共 ${totalActivePrizeCount} 項`}
+                                        </span>
                                     </div>
-                                    <p className="text-xs sm:text-sm text-slate-300 leading-relaxed pl-0.5">
-                                        每項獎品皆支援 <span className="text-rose-300 font-bold">🎡 1/10 點數命運轉盤以小搏大</span>，或使用累積的 <span className="text-amber-300 font-bold">🛍️ P+ 點數全額直接兌換</span>，免運寄送到府！
+                                    <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
+                                        支援 <span className="text-rose-300 font-semibold">1/10 點數命運轉盤挑戰</span>，或使用 <span className="text-amber-300 font-semibold">P+ 點數直接兌換</span>，免運寄送到府
                                     </p>
                                 </div>
 
@@ -809,16 +756,16 @@ export default function BetLandingPage() {
                                                 )}
 
                                                 <div className="pt-1.5 space-y-1">
-                                                    <div className="flex items-center justify-between text-[11px] px-2 py-1 rounded-lg bg-rose-500/10 border border-rose-500/20">
-                                                        <span className="text-rose-200 font-bold">🎡 轉盤單格</span>
-                                                        <span className="font-mono font-black text-rose-300 flex items-center gap-1">
+                                                    <div className="flex items-center justify-between text-xs px-2.5 py-1 rounded-lg bg-rose-500/10 border border-rose-500/20">
+                                                        <span className="text-rose-200 font-semibold">轉盤單格</span>
+                                                        <span className="font-code font-bold text-rose-300 flex items-center gap-1">
                                                             <PPlusIcon className="w-3 h-3 text-amber-400" />
                                                             {wheelSlicePoints.toLocaleString()}
                                                         </span>
                                                     </div>
-                                                    <div className="flex items-center justify-between text-[11px] px-2 py-1 rounded-lg bg-white/[0.03] border border-white/5">
-                                                        <span className="text-slate-400">🛍️ 直接兌換</span>
-                                                        <span className="font-mono font-bold text-amber-300 flex items-center gap-1">
+                                                    <div className="flex items-center justify-between text-xs px-2.5 py-1 rounded-lg bg-white/[0.03] border border-white/5">
+                                                        <span className="text-slate-400">直接兌換</span>
+                                                        <span className="font-code font-bold text-amber-300 flex items-center gap-1">
                                                             <PPlusIcon className="w-3 h-3 text-amber-400" />
                                                             {item.points.toLocaleString()}
                                                         </span>

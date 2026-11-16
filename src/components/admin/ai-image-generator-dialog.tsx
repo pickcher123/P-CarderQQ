@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { adminFetch } from '@/lib/admin-audit';
 import {
   Dialog,
   DialogContent,
@@ -165,7 +166,7 @@ export function AIImageGeneratorDialog({
 
     setIsGenerating(true);
     try {
-      const res = await fetch('/api/admin/generate-image', {
+      const res = await adminFetch('/api/admin/generate-image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

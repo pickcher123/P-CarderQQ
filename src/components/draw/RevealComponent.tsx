@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { CardItem } from '@/components/card-item';
 import { RandomPlayerCard } from '@/components/random-player-card';
 import { Button } from '@/components/ui/button';
@@ -32,41 +32,44 @@ export function RevealComponent({
     completeReveal: any,
     squeezeRef: any
 }) {
+    const shouldReduceMotion = useReducedMotion();
     const visual = currentPrize ? (rarityVisuals[currentPrize.rarity] || rarityVisuals.common) : rarityVisuals.common;
     const isLegendaryRevealed = (step === 'revealing' || revealPercent === 100) && currentPrize && (currentPrize.rarity === 'legendary' || currentPrize.type === 'last-prize');
 
     return (
         <motion.div 
-            initial={{ y: -400, opacity: 0, scale: 0.5, rotate: -15 }}
-            animate={isLegendaryRevealed ? { 
-                y: [0, -14, 4, 0], 
-                scale: [1, 1.1, 0.98, 1], 
-                rotate: [0, -2, 2, 0], 
+            initial={shouldReduceMotion ? { opacity: 0 } : { y: -160, opacity: 0, scale: 0.9, rotate: -6 }}
+            animate={shouldReduceMotion ? { opacity: 1 } : isLegendaryRevealed ? { 
+                y: [0, -10, 2, 0], 
+                scale: [1, 1.06, 0.99, 1], 
+                rotate: [0, -1.5, 1.5, 0], 
                 opacity: 1 
             } : { y: 0, opacity: 1, scale: 1, rotate: 0 }}
-            transition={isLegendaryRevealed ? {
-                duration: 0.6,
-                ease: "easeOut",
+            transition={shouldReduceMotion ? {
+                duration: 0.2,
+                ease: [0.23, 1, 0.32, 1],
+            } : isLegendaryRevealed ? {
+                duration: 0.45,
+                ease: [0.23, 1, 0.32, 1],
             } : { 
                 type: 'spring', 
-                stiffness: 180, 
-                damping: 16,
-                mass: 1.0,
+                duration: 0.45,
+                bounce: 0.16,
             }}
             className="flex flex-col items-center w-full max-w-[170px] md:max-w-[220px] relative transform-gpu will-change-transform"
         >
             {/* 傳奇震撼身後向外擴散雙重黃金衝擊波 */}
-            {isLegendaryRevealed && (
+            {isLegendaryRevealed && !shouldReduceMotion && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[-1]">
                     <motion.div
-                        initial={{ scale: 0.7, opacity: 1 }}
-                        animate={{ scale: [0.7, 2.3, 2.8], opacity: [1, 0.7, 0] }}
+                        initial={{ scale: 0.9, opacity: 0.9 }}
+                        animate={{ scale: [0.9, 2.2, 2.6], opacity: [0.9, 0.6, 0] }}
                         transition={{ duration: 1.2, ease: "easeOut", repeat: Infinity, repeatDelay: 0.5 }}
                         className="absolute w-full h-full rounded-[2.2rem] border-2 border-amber-300 shadow-[0_0_50px_rgba(251,191,36,0.9)]"
                     />
                     <motion.div
-                        initial={{ scale: 0.7, opacity: 1 }}
-                        animate={{ scale: [0.7, 2.8, 3.5], opacity: [1, 0.5, 0] }}
+                        initial={{ scale: 0.9, opacity: 0.9 }}
+                        animate={{ scale: [0.9, 2.6, 3.2], opacity: [0.9, 0.45, 0] }}
                         transition={{ duration: 1.5, ease: "easeOut", delay: 0.25, repeat: Infinity, repeatDelay: 0.5 }}
                         className="absolute w-full h-full rounded-[2.8rem] border border-yellow-200 shadow-[0_0_70px_rgba(245,158,11,0.7)]"
                     />
@@ -74,7 +77,7 @@ export function RevealComponent({
             )}
 
             <div className={cn(
-                "relative p-1 bg-slate-900 border-[4px] md:border-[5px] rounded-[2.2rem] shadow-2xl overflow-hidden w-full transition-all duration-500",
+                "relative p-1 bg-slate-900 border-[4px] md:border-[5px] rounded-[2.2rem] shadow-2xl overflow-hidden w-full transition-[border-color,transform] duration-250 ease-[cubic-bezier(0.23,1,0.32,1)]",
                 isLegendaryRevealed
                     ? "border-amber-400 shadow-[0_0_85px_rgba(245,158,11,1),0_0_160px_rgba(251,191,36,0.75),inset_0_0_30px_rgba(254,240,138,0.85)] ring-4 ring-amber-300/90 scale-[1.03]"
                     : (step === 'revealing' && revealPercent === 100 && visual.glow),
@@ -132,7 +135,7 @@ export function RevealComponent({
                     <div 
                         className={cn(
                             "absolute inset-0 z-30 bg-slate-900 rounded-xl border-4 border-primary/50 flex flex-col items-center justify-center pointer-events-none select-none shadow-[inset_0_0_20px_rgba(6,182,212,0.3)]",
-                            (!isSqueezing && (revealPercent === 0 || isChanging)) ? "" : "transition-all duration-500 ease-out",
+                            (!isSqueezing && (revealPercent === 0 || isChanging)) ? "" : "transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]",
                             (revealPercent >= 100) ? "opacity-0" : "opacity-100"
                         )} 
                         style={{ transform: `translateY(-${revealPercent}%)` }} 
@@ -154,7 +157,7 @@ export function RevealComponent({
                     variant="ghost" 
                     size="sm" 
                     onClick={completeReveal}
-                    className="mt-4 h-8 px-6 rounded-full bg-white/10 border border-white/20 text-[10px] font-black text-primary uppercase tracking-[0.2em] hover:bg-primary/20 transition-all shadow-xl"
+                    className="mt-4 h-8 px-6 rounded-full bg-white/10 border border-white/20 text-[10px] font-black text-primary uppercase tracking-[0.2em] hover:bg-primary/20 transition-[background-color,color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] shadow-xl"
                 >
                     <FastForward className="w-3 h-3 mr-1.5" /> 快速開獎 SKIP
                 </Button>

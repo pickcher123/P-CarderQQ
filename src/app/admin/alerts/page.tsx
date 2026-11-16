@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
-import { collection, query, orderBy, limit, updateDoc, doc } from "firebase/firestore";
+import { collection, query, orderBy, limit, updateDoc, doc } from "@/lib/audited-firestore";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { AlertTriangle, Check, CheckCircle2, ShieldAlert, Clock, RefreshCw } from 'lucide-react';

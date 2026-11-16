@@ -46,7 +46,10 @@ export function GoldDustParticles({
     const ctx = canvas.getContext('2d', { alpha: true });
     if (!ctx) return;
 
-    let animationFrameId: number;
+    let animationFrameId = 0;
+    const prefersReducedMotion = Boolean(
+      window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    );
 
     // 低飽和、極簡雅緻的香檳金調色盤（溫潤微光，絕不刺眼、不花俏）
     const goldPalette = [
@@ -201,8 +204,42 @@ export function GoldDustParticles({
         );
       }
 
-      animationFrameId = requestAnimationFrame(render);
+      if (!prefersReducedMotion) {
+        animationFrameId = requestAnimationFrame(render);
+      }
     };
+
+    const drawStaticFrame = () => {
+      const { w, h, dpr } = sizeRef.current;
+      if (w === 0 || h === 0) return;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, w, h);
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        ctx.globalAlpha = Math.min(p.baseAlpha, 0.5);
+        const renderSize = p.size * 3.6;
+        ctx.drawImage(
+          spriteCanvases[p.paletteIndex],
+          p.x - renderSize / 2,
+          p.y - renderSize / 2,
+          renderSize,
+          renderSize
+        );
+      }
+    };
+
+    if (prefersReducedMotion) {
+      drawStaticFrame();
+      const handleReducedResize = () => {
+        updateDimensions();
+        drawStaticFrame();
+      };
+      window.addEventListener('resize', handleReducedResize);
+      return () => {
+        window.removeEventListener('resize', handleResize);
+        window.removeEventListener('resize', handleReducedResize);
+      };
+    }
 
     render();
 

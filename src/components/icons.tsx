@@ -20,7 +20,7 @@ export function Logo({
   const content = (
     <div className="flex items-center group cursor-pointer select-none shrink-0 whitespace-nowrap">
       {/* 品牌純文字 LOGO */}
-      <span className="font-headline font-black text-lg sm:text-2xl tracking-tighter text-cyan-400 drop-shadow-[0_0_12px_rgba(34,211,238,0.4)] group-hover:drop-shadow-[0_0_18px_rgba(34,211,238,0.7)] transition-all whitespace-nowrap shrink-0 inline-block">
+      <span className="font-brand font-black text-lg sm:text-2xl tracking-tight text-cyan-400 drop-shadow-[0_0_12px_rgba(34,211,238,0.4)] group-hover:drop-shadow-[0_0_18px_rgba(34,211,238,0.7)] transition-all whitespace-nowrap shrink-0 inline-block">
         P+CARDER
       </span>
     </div>

@@ -2,7 +2,7 @@
 
 import { useState, ChangeEvent, useEffect } from 'react';
 import { useCollection, useFirestore, useMemoFirebase, useStorage } from '@/firebase';
-import { collection, doc, setDoc, deleteDoc, updateDoc, query, orderBy, serverTimestamp, addDoc, getDoc } from 'firebase/firestore';
+import { collection, doc, setDoc, deleteDoc, updateDoc, query, orderBy, serverTimestamp, addDoc, getDoc } from '@/lib/audited-firestore';
 import { ref, uploadBytesResumable, getDownloadURL, uploadString } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
 import { Button } from '@/components/ui/button';

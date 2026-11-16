@@ -445,17 +445,17 @@ export function UnifiedEventCalendar({
         end.setHours(23, 59, 59, 999);
 
         if (today >= start && today <= end) {
-            return { text: '🔥 展期進行中', badgeClass: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 animate-pulse' };
+            return { text: '展期進行中', badgeClass: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' };
         }
         const days = differenceInCalendarDays(start, today);
         if (days === 0) {
-            return { text: '⚡ 今日開展', badgeClass: 'bg-rose-500/20 text-rose-300 border-rose-500/40 animate-pulse' };
+            return { text: '今日開展', badgeClass: 'bg-rose-500/20 text-rose-300 border-rose-500/40' };
         } else if (days === 1) {
-            return { text: '⏳ 明日開展', badgeClass: 'bg-amber-500/20 text-amber-300 border-amber-500/40' };
+            return { text: '明日開展', badgeClass: 'bg-amber-500/20 text-amber-300 border-amber-500/40' };
         } else if (days > 1) {
-            return { text: `⏳ 倒數 ${days} 天`, badgeClass: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40' };
+            return { text: `倒數 ${days} 天`, badgeClass: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40' };
         } else {
-            return { text: '已圓滿閉幕', badgeClass: 'bg-slate-700/50 text-slate-400 border-slate-700' };
+            return { text: '已閉幕', badgeClass: 'bg-slate-700/50 text-slate-400 border-slate-700' };
         }
     };
 
@@ -498,20 +498,20 @@ export function UnifiedEventCalendar({
                                 <div className="relative z-10 space-y-3">
                                     <div className="flex items-center justify-between gap-1.5 flex-wrap">
                                         <div className="flex items-center gap-1.5 flex-wrap">
-                                            <Badge className="bg-gradient-to-r from-emerald-500 to-teal-600 text-slate-950 font-black text-[11px] sm:text-xs px-2.5 py-0.5 rounded-lg flex items-center gap-1 shadow-[0_0_12px_rgba(16,185,129,0.4)] border-0">
-                                                <span>🇹🇼 台灣焦點展會</span>
+                                            <Badge className="bg-gradient-to-r from-emerald-500 to-teal-600 text-slate-950 font-bold text-[11px] sm:text-xs px-2.5 py-0.5 rounded-lg flex items-center gap-1 shadow-[0_0_12px_rgba(16,185,129,0.4)] border-0">
+                                                <span>台灣焦點展會</span>
                                             </Badge>
                                             <Badge variant="outline" className="border-emerald-500/40 bg-emerald-950/40 text-emerald-200 font-bold text-[10px] sm:text-[11px] px-2 py-0.5">
-                                                📍 {extractCity(spotlightTaiwanExhibition.location)} 展館
+                                                {extractCity(spotlightTaiwanExhibition.location)}
                                             </Badge>
                                         </div>
 
-                                        <span className={cn("text-[10px] sm:text-[11px] font-black px-2.5 py-0.5 rounded-full border shrink-0 font-mono shadow-sm", countdown.badgeClass)}>
+                                        <span className={cn("text-[10px] sm:text-[11px] font-bold px-2.5 py-0.5 rounded-full border shrink-0 font-code shadow-sm", countdown.badgeClass)}>
                                             {countdown.text}
                                         </span>
                                     </div>
 
-                                    <h3 className="text-base sm:text-lg font-black text-white group-hover:text-emerald-300 transition-colors line-clamp-1 leading-snug drop-shadow-md">
+                                    <h3 className="text-base sm:text-lg font-bold font-headline text-white group-hover:text-emerald-300 transition-colors line-clamp-1 leading-snug drop-shadow-md">
                                         {spotlightTaiwanExhibition.title}
                                     </h3>
 
@@ -522,7 +522,7 @@ export function UnifiedEventCalendar({
                                             </div>
                                             <div className="min-w-0 flex-1 flex items-center justify-between">
                                                 <span className="text-slate-400 text-[11px]">展期時間</span>
-                                                <span className="font-mono text-emerald-200 font-bold text-xs sm:text-sm">{spotlightTaiwanExhibition.timeStr}</span>
+                                                <span className="font-code text-emerald-200 font-bold text-xs sm:text-sm">{spotlightTaiwanExhibition.timeStr}</span>
                                             </div>
                                         </div>
 
@@ -538,8 +538,8 @@ export function UnifiedEventCalendar({
                                 </div>
 
                                 <div className="relative z-10 flex items-center justify-between gap-2 pt-2.5 border-t border-emerald-500/20">
-                                    <span className="text-[10px] sm:text-[11px] text-emerald-400/80 font-mono font-bold tracking-wider">
-                                        #TAIWAN-CARD-SHOW
+                                    <span className="text-[11px] text-slate-400">
+                                        點擊查看場館與地圖資訊
                                     </span>
                                     <div className="flex items-center gap-2 shrink-0">
                                         <Button
@@ -582,20 +582,20 @@ export function UnifiedEventCalendar({
                                 <div className="relative z-10 space-y-3">
                                     <div className="flex items-center justify-between gap-1.5 flex-wrap">
                                         <div className="flex items-center gap-1.5 flex-wrap">
-                                            <Badge className={cn("text-slate-950 font-black text-[11px] sm:text-xs px-2.5 py-0.5 rounded-lg flex items-center gap-1 border-0 bg-gradient-to-r", reg.gradientClass)}>
-                                                <span>{reg.flag} {reg.label}</span>
+                                            <Badge className={cn("text-slate-950 font-bold text-[11px] sm:text-xs px-2.5 py-0.5 rounded-lg flex items-center gap-1 border-0 bg-gradient-to-r", reg.gradientClass)}>
+                                                <span>{reg.label}</span>
                                             </Badge>
                                             <Badge variant="outline" className={cn("font-bold text-[10px] sm:text-[11px] px-2 py-0.5", reg.badgeClass)}>
-                                                📍 {extractCity(spotlightInternationalExhibition.location)}
+                                                {extractCity(spotlightInternationalExhibition.location)}
                                             </Badge>
                                         </div>
 
-                                        <span className={cn("text-[10px] sm:text-[11px] font-black px-2.5 py-0.5 rounded-full border shrink-0 font-mono shadow-sm", countdown.badgeClass)}>
+                                        <span className={cn("text-[10px] sm:text-[11px] font-bold px-2.5 py-0.5 rounded-full border shrink-0 font-code shadow-sm", countdown.badgeClass)}>
                                             {countdown.text}
                                         </span>
                                     </div>
 
-                                    <h3 className={cn("text-base sm:text-lg font-black text-white transition-colors line-clamp-1 leading-snug drop-shadow-md", isUsa ? "group-hover:text-amber-300" : "group-hover:text-indigo-300")}>
+                                    <h3 className={cn("text-base sm:text-lg font-bold font-headline text-white transition-colors line-clamp-1 leading-snug drop-shadow-md", isUsa ? "group-hover:text-amber-300" : "group-hover:text-indigo-300")}>
                                         {spotlightInternationalExhibition.title}
                                     </h3>
 
@@ -606,7 +606,7 @@ export function UnifiedEventCalendar({
                                             </div>
                                             <div className="min-w-0 flex-1 flex items-center justify-between">
                                                 <span className="text-slate-400 text-[11px]">展期時間</span>
-                                                <span className={cn("font-mono font-bold text-xs sm:text-sm", isUsa ? "text-amber-200" : "text-indigo-200")}>
+                                                <span className={cn("font-code font-bold text-xs sm:text-sm", isUsa ? "text-amber-200" : "text-indigo-200")}>
                                                     {spotlightInternationalExhibition.timeStr}
                                                 </span>
                                             </div>
@@ -624,8 +624,8 @@ export function UnifiedEventCalendar({
                                 </div>
 
                                 <div className="relative z-10 flex items-center justify-between gap-2 pt-2.5 border-t border-slate-800">
-                                    <span className={cn("text-[10px] sm:text-[11px] font-mono font-bold tracking-wider", isUsa ? "text-amber-400/80" : "text-indigo-400/80")}>
-                                        #{isUsa ? 'USA-EXPO' : 'ASIA-EXPO'}
+                                    <span className="text-[11px] text-slate-400">
+                                        點擊查看完整展訊與官網
                                     </span>
                                     <Button
                                         size="sm"

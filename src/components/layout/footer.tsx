@@ -70,14 +70,11 @@ export function Footer() {
           針對手機窄螢幕大幅精簡：收攏公司立案、客服捷徑、版權，避免重複導航佔用過多垂直空間
           ========================================================================= */}
       <div className="block md:hidden container mx-auto px-4 pt-5 pb-24 text-center space-y-3.5">
-        {/* 品牌 Logo 與合規立案徽章 */}
-        <div className="flex items-center justify-center gap-2">
-          <span className="font-black text-lg tracking-tight bg-gradient-to-r from-white via-slate-100 to-cyan-300 bg-clip-text text-transparent">
-            P+Carder
+        {/* 品牌文字標誌 */}
+        <div className="flex items-center justify-center">
+          <span className="font-brand font-black text-lg tracking-tight text-cyan-400">
+            P+CARDER
           </span>
-          <Badge className="bg-cyan-950/80 text-cyan-300 border border-cyan-500/30 text-[9px] font-bold px-1.5 py-0">
-            球卡數位生態
-          </Badge>
         </div>
 
         {/* 公司法人合規資訊 (單行精簡) */}
@@ -124,18 +121,18 @@ export function Footer() {
           </button>
         </div>
 
-        {/* 次級條款、新手教學與公平驗證連結 */}
-        <div className="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 text-[11px] text-slate-400 pt-0.5">
-          <Link href="/guide" className="text-amber-400 font-bold hover:text-amber-300 transition-colors">
-            新手教學與 FAQ
+        {/* 次級條款、常見問題與公平驗證連結 */}
+        <div className="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 text-xs text-slate-400 pt-0.5">
+          <Link href="/guide" className="text-amber-400 font-semibold hover:text-amber-300 transition-colors">
+            常見問題
           </Link>
-          <span className="text-slate-600">•</span>
-          <Link href="/fairness" className="text-emerald-400 font-bold hover:text-emerald-300 transition-colors">
-            公平驗證演算法
+          <span className="text-slate-600">·</span>
+          <Link href="/fairness" className="text-emerald-400 font-semibold hover:text-emerald-300 transition-colors">
+            公平驗證機制
           </Link>
-          <span className="text-slate-600">•</span>
+          <span className="text-slate-600">·</span>
           <Link href="/about" className="hover:text-cyan-300 transition-colors">
-            服務條款與關於我們
+            關於我們與條款
           </Link>
         </div>
 
@@ -156,17 +153,14 @@ export function Footer() {
           
           {/* 左欄：品牌、主體與營運誠信 (5 欄寬) */}
           <div className="col-span-5 space-y-4 text-left">
-            <div className="flex items-center justify-start gap-2.5">
-              <span className="font-black text-xl tracking-tight bg-gradient-to-r from-white via-slate-100 to-cyan-300 bg-clip-text text-transparent">
-                P+Carder
+            <div className="flex items-center justify-start">
+              <span className="font-brand font-black text-xl tracking-tight text-cyan-400">
+                P+CARDER
               </span>
-              <Badge className="bg-cyan-950 text-cyan-300 border border-cyan-500/30 text-[10px] font-bold px-2 py-0">
-                球卡數位生態
-              </Badge>
             </div>
 
-            <p className="text-xs text-slate-400 leading-relaxed font-normal max-w-sm">
-              全台頂尖數位球員卡收藏、轉蛋卡池與福袋娛樂平台。致力於打造透明、公平且富有收藏樂趣的即時抽卡與社群互動體驗。
+            <p className="text-xs sm:text-sm text-slate-400 leading-relaxed font-normal max-w-sm">
+              專業球員卡數位收藏平台，提供線上抽卡、自選拼卡、限量福袋與直播團拆服務，公開透明守護每份收藏。
             </p>
 
             {/* 公司合規登記區塊 */}
@@ -215,21 +209,21 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/guide" className="hover:text-amber-300 text-amber-400 font-bold transition-colors flex items-center justify-start gap-1.5">
+                <Link href="/guide" className="hover:text-amber-300 text-amber-400 font-semibold transition-colors flex items-center justify-start gap-1.5">
                   <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                  <span>新手教學與 FAQ</span>
+                  <span>常見問題與教學</span>
                 </Link>
               </li>
               <li>
-                <Link href="/fairness" className="hover:text-emerald-300 text-emerald-400/90 font-bold transition-colors flex items-center justify-start gap-1.5">
+                <Link href="/fairness" className="hover:text-emerald-300 text-emerald-400/90 font-semibold transition-colors flex items-center justify-start gap-1.5">
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>公開公平驗證 (Provably Fair)</span>
+                  <span>公開公平驗證</span>
                 </Link>
               </li>
               <li>
                 <Link href="/about" className="hover:text-slate-200 transition-colors flex items-center justify-start gap-1.5">
                   <HeartHandshake className="w-3.5 h-3.5 text-slate-400" />
-                  <span>服務條款與關於我們</span>
+                  <span>關於我們與條款</span>
                 </Link>
               </li>
             </ul>
@@ -304,28 +298,17 @@ export function Footer() {
           </div>
         </div>
 
-        {/* 底部次級版權與系統狀態欄 */}
+        {/* 底部次級版權與版本欄 */}
         <div className="mt-10 pt-6 border-t border-slate-800/60 flex items-center justify-between text-xs text-slate-500">
-          <div className="space-y-0.5">
-            <p>© {new Date().getFullYear()} P+Carder. All rights reserved.</p>
-            <p className="text-[11px] text-slate-600">云希國際股份有限公司 版權所有</p>
-          </div>
-
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 text-[10px] font-mono font-medium">
-              <span className="relative flex h-1.5 w-1.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400"></span>
-              </span>
-              <span>System Operational</span>
-            </div>
-
-            <Link href="/changelog" title="查看版本更新紀錄">
-              <Badge variant="outline" className="bg-slate-900 border-slate-800 text-slate-400 hover:text-cyan-300 hover:border-cyan-500/30 transition-all font-mono text-[10px] py-0.5 px-2 cursor-pointer">
-                Ver {currentVersion}
-              </Badge>
-            </Link>
+            <span>© {new Date().getFullYear()} P+Carder</span>
+            <span className="text-slate-700">·</span>
+            <span>云希國際股份有限公司 版權所有</span>
           </div>
+
+          <Link href="/changelog" title="查看版本更新紀錄" className="font-code text-slate-400 hover:text-cyan-300 transition-colors">
+            Ver {currentVersion}
+          </Link>
         </div>
       </div>
     </footer>

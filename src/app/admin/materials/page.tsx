@@ -3,7 +3,7 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Image as ImageIcon, Wallpaper, Trash2, BookOpen, Info, Layers, Sparkles, Clock, ShieldCheck, Sun, Moon, RefreshCw } from 'lucide-react';
 import { useFirestore, useDoc, useStorage, useMemoFirebase } from "@/firebase";
-import { doc, updateDoc, setDoc } from "firebase/firestore";
+import { doc, updateDoc, setDoc } from "@/lib/audited-firestore";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";

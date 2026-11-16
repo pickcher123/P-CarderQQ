@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Sparkles, Flame, Crown, FastForward, Layers, Scissors, ArrowRight, Disc3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,7 @@ export function CloveSummoningAnimation({
   onAnimationComplete,
   selectedNumbers,
 }: CloveSummoningAnimationProps) {
+  const shouldReduceMotion = useReducedMotion();
   const [stage, setStage] = useState<Stage>('idle');
   const [hasTapped, setHasTapped] = useState(false);
   const [swipeProgress, setSwipeProgress] = useState(0); // 0 to 100
@@ -208,7 +209,7 @@ export function CloveSummoningAnimation({
           onClick={handleSkip}
           variant="ghost"
           size="sm"
-          className="h-8 px-3.5 rounded-full bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-200 hover:text-white font-black text-xs tracking-wider gap-1.5 active:scale-95 transition-all shadow-md"
+          className="h-8 px-3.5 rounded-full bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-200 hover:text-white font-black text-xs tracking-wider gap-1.5 active:scale-[0.97] transition-[background-color,color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-md"
         >
           <FastForward className="w-3.5 h-3.5 text-amber-300" />
           <span>⚡ 跳過動畫</span>
@@ -231,31 +232,33 @@ export function CloveSummoningAnimation({
           />
 
           {/* 輕量金粉飄散 (減少至 6 個，極速流暢無重繪負擔) */}
-          <div className="absolute inset-0 pointer-events-none overflow-visible">
-            {[...Array(6)].map((_, i) => (
-              <motion.div
-                key={i}
-                className="absolute rounded-full pointer-events-none bg-amber-200 will-change-transform transform-gpu"
-                style={{
-                  width: '3px',
-                  height: '3px',
-                  left: `${20 + i * 12}%`,
-                  top: `${25 + (i * 15) % 50}%`,
-                  opacity: 0.7,
-                }}
-                animate={{
-                  y: [0, -35],
-                  opacity: [0.3, 0.9, 0],
-                }}
-                transition={{
-                  duration: 1.8,
-                  repeat: Infinity,
-                  ease: 'easeOut',
-                  delay: i * 0.25,
-                }}
-              />
-            ))}
-          </div>
+          {!shouldReduceMotion && (
+            <div className="absolute inset-0 pointer-events-none overflow-visible">
+              {[...Array(6)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute rounded-full pointer-events-none bg-amber-200 will-change-transform transform-gpu"
+                  style={{
+                    width: '3px',
+                    height: '3px',
+                    left: `${20 + i * 12}%`,
+                    top: `${25 + (i * 15) % 50}%`,
+                    opacity: 0.7,
+                  }}
+                  animate={{
+                    y: [0, -35],
+                    opacity: [0.3, 0.9, 0],
+                  }}
+                  transition={{
+                    duration: 1.8,
+                    repeat: Infinity,
+                    ease: 'easeOut',
+                    delay: i * 0.25,
+                  }}
+                />
+              ))}
+            </div>
+          )}
 
           {/* 實體鋁箔卡包容器 (AUTHENTIC FOIL BOOSTER PACK - 標準比例 1:1.6) */}
           <div className="relative z-10 w-[240px] h-[380px] sm:w-[270px] sm:h-[430px] flex flex-col items-center drop-shadow-[0_25px_50px_rgba(0,0,0,0.85)]">
@@ -265,11 +268,15 @@ export function CloveSummoningAnimation({
               initial={{ y: 0, x: 0, rotate: 0, opacity: 1 }}
               animate={
                 stage === 'idle'
-                  ? { 
+                  ? (shouldReduceMotion ? {
+                      y: 0,
+                      x: (swipeProgress / 100) * 18,
+                      rotate: (swipeProgress / 100) * 4,
+                    } : { 
                       y: [0, -2, 0],
                       x: (swipeProgress / 100) * 18,
                       rotate: (swipeProgress / 100) * 4,
-                    }
+                    })
                   : stage === 'tearing'
                   ? {
                       x: [0, 50, 110],
@@ -280,9 +287,9 @@ export function CloveSummoningAnimation({
                   : { opacity: 0, y: -70, x: 120 }
               }
               transition={{
-                duration: stage === 'idle' ? 2.5 : 0.35,
-                repeat: stage === 'idle' ? Infinity : 0,
-                ease: [0.22, 1, 0.36, 1],
+                duration: stage === 'idle' ? (shouldReduceMotion ? 0.1 : 2.5) : 0.35,
+                repeat: stage === 'idle' && !shouldReduceMotion ? Infinity : 0,
+                ease: [0.23, 1, 0.32, 1],
               }}
               className="relative w-full h-14 sm:h-16 rounded-t-xl bg-gradient-to-b from-slate-700 via-slate-800 to-slate-900 border-t border-x border-white/25 shadow-lg overflow-hidden flex flex-col justify-between p-2.5 z-20 shrink-0 will-change-transform transform-gpu"
             >
@@ -304,11 +311,11 @@ export function CloveSummoningAnimation({
                     PULL TO TEAR
                   </span>
                 </div>
-                {/* 輕量滑動指示進度 */}
+                {/* 輕量滑動指示進度 (GPU transform: scaleX) */}
                 <div className="h-1 w-18 bg-white/20 rounded-full overflow-hidden">
                   <div 
-                    className="h-full bg-gradient-to-r from-amber-400 to-amber-200 transition-all duration-100 rounded-full" 
-                    style={{ width: `${Math.max(swipeProgress, 12)}%` }}
+                    className="h-full w-full bg-gradient-to-r from-amber-400 to-amber-200 origin-left transition-transform duration-100 rounded-full will-change-transform" 
+                    style={{ transform: `scaleX(${Math.max(swipeProgress, 12) / 100})` }}
                   />
                 </div>
               </div>
@@ -354,7 +361,7 @@ export function CloveSummoningAnimation({
             <motion.div
               animate={
                 stage === 'idle'
-                  ? { y: [0, 2, 0] }
+                  ? (shouldReduceMotion ? { y: 0 } : { y: [0, 2, 0] })
                   : stage === 'tearing'
                   ? { 
                       y: [0, 4, 1],
@@ -366,8 +373,8 @@ export function CloveSummoningAnimation({
                     }
               }
               transition={{
-                duration: stage === 'idle' ? 2.5 : 0.35,
-                repeat: stage === 'idle' ? Infinity : 0,
+                duration: stage === 'idle' ? (shouldReduceMotion ? 0.1 : 2.5) : 0.35,
+                repeat: stage === 'idle' && !shouldReduceMotion ? Infinity : 0,
                 ease: 'easeInOut',
               }}
               className="relative w-full flex-1 rounded-b-xl bg-gradient-to-b from-slate-800 via-slate-900 to-slate-950 border-b border-x border-white/25 shadow-2xl overflow-hidden flex flex-col items-center justify-between p-4 z-10 -mt-0.5 will-change-transform transform-gpu"
@@ -422,11 +429,11 @@ export function CloveSummoningAnimation({
           </div>
 
           {/* 磨砂互動膠囊按鈕 */}
-          <div className="relative overflow-hidden w-full px-5 py-3 rounded-full bg-slate-900/80 border border-white/20 backdrop-blur-md shadow-xl flex items-center justify-between text-slate-200 text-xs sm:text-sm font-bold hover:border-white/35 transition-all">
-            {/* 滑動填充反饋 */}
+          <div className="relative overflow-hidden w-full px-5 py-3 rounded-full bg-slate-900/80 border border-white/20 backdrop-blur-md shadow-xl flex items-center justify-between text-slate-200 text-xs sm:text-sm font-bold hover:border-white/35 transition-[border-color] duration-150">
+            {/* 滑動填充反饋 (GPU transform: scaleX) */}
             <div 
-              className="absolute inset-y-0 left-0 bg-white/20 pointer-events-none transition-all duration-100"
-              style={{ width: `${swipeProgress}%` }}
+              className="absolute inset-0 bg-white/20 pointer-events-none origin-left transition-transform duration-100 will-change-transform"
+              style={{ transform: `scaleX(${swipeProgress / 100})` }}
             />
 
             <div className="relative z-10 flex items-center gap-2">
