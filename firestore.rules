@@ -122,9 +122,31 @@ service cloud.firestore {
           'soldAt',
           'soldBy',
           'soldFromPoolId',
-          'soldVia'
+          'soldVia',
+          'lockedBy',
+          'lockedAt'
         ]) &&
         incoming().get('isSold', false) is bool
+      );
+    }
+
+    // --- 拼卡與命運轉盤兌換獎品集合 ---
+    match /redemptionItems/{itemId} {
+      allow read: if true;
+      allow write: if isVerifiedAdmin();
+    }
+
+    match /bettingCategories/{catId} {
+      allow read: if true;
+      allow write: if isVerifiedAdmin();
+    }
+
+    match /betting-items/{catId} {
+      allow read: if true;
+      allow create, delete: if isVerifiedAdmin();
+      allow update: if isVerifiedAdmin() || (
+        isSignedIn() &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['soldCardIds'])
       );
     }
 
@@ -166,6 +188,12 @@ service cloud.firestore {
     match /luckBags/{bagId} {
       allow read: if true;
       allow write: if isVerifiedAdmin();
+
+      match /luckBagPurchases/{spotId} {
+        allow read: if true;
+        allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+        allow update, delete: if isVerifiedAdmin();
+      }
     }
 
     // --- 出貨訂單集合 ---

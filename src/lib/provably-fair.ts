@@ -164,6 +164,35 @@ export function generateRandomHexSeed(): string {
 }
 
 /**
+ * 遞迴移除一般物件中的 undefined 欄位，保留 Firestore FieldValue (如 serverTimestamp / increment)
+ */
+export function sanitizeFirestorePayload<T>(val: T): T {
+  if (val === null || val === undefined || typeof val !== 'object') {
+    return val;
+  }
+  if (val instanceof Date) {
+    return val;
+  }
+  if (Array.isArray(val)) {
+    return val
+      .filter((item) => item !== undefined)
+      .map((item) => sanitizeFirestorePayload(item)) as unknown as T;
+  }
+  // 保留特殊類別實例（如 Firestore FieldValue / Timestamp）
+  const proto = Object.getPrototypeOf(val);
+  if (proto !== null && proto !== Object.prototype) {
+    return val;
+  }
+  const cleaned: Record<string, any> = {};
+  for (const [k, v] of Object.entries(val as Record<string, any>)) {
+    if (v !== undefined) {
+      cleaned[k] = sanitizeFirestorePayload(v);
+    }
+  }
+  return cleaned as T;
+}
+
+/**
  * 建立全新一局的 Provably Fair 開獎參數
  */
 export async function createProvablyFairRound(options?: {
@@ -177,15 +206,20 @@ export async function createProvablyFairRound(options?: {
   const clientSeed = options?.clientSeed || `client_${generateRandomHexSeed().substring(0, 12)}`;
   const nonce = options?.nonce || Math.floor(Date.now() / 1000) % 100000 + 1;
 
-  return {
+  const round: ProvablyFairData = {
     serverSeed,
     serverHash,
     clientSeed,
     nonce,
     outcomeType: options?.outcomeType || 'bet',
-    poolSize: options?.poolSize,
     timestamp: Date.now(),
   };
+
+  if (typeof options?.poolSize === 'number' && !Number.isNaN(options.poolSize)) {
+    round.poolSize = options.poolSize;
+  }
+
+  return round;
 }
 
 /**

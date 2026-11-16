@@ -30,7 +30,7 @@ import type { UserProfile } from '@/types/user-profile';
 import type { LevelBenefit } from '@/types/system';
 import { RefinedPoints } from '@/components/ui/refined-points';
 import Link from 'next/link';
-import { createProvablyFairRound, type ProvablyFairData } from '@/lib/provably-fair';
+import { createProvablyFairRound, sanitizeFirestorePayload, type ProvablyFairData } from '@/lib/provably-fair';
 
 interface CardData {
     id: string;
@@ -223,26 +223,28 @@ export function BettingGameDialog({
                 }
                 transaction.update(userRef, updateObj);
 
-                // 產生 Provably Fair 密碼學參數
+                // 產生 Provably Fair 密碼學參數 (10 格拼卡轉盤)
                 const pfData = await createProvablyFairRound({
                     clientSeed: `${user.uid.substring(0, 8)}_${Date.now()}`,
-                    outcomeType: 'bet'
+                    outcomeType: 'bet',
+                    poolSize: 10,
                 });
-                const fullFairness: ProvablyFairData = {
+                const fullFairness: ProvablyFairData = sanitizeFirestorePayload({
                     ...pfData,
+                    poolSize: 10,
                     winningSpot,
                     isWin: didWin,
                     luckyNumber: (winningSpot - 1) * 1000 + 500,
                     luckyPercent: Number((((winningSpot - 1) * 10) + 5).toFixed(2))
-                };
+                });
 
                 // 寫入交易紀錄
                 const winText = didWin ? '中獎' : '未中獎';
-                const detailString = `【拼卡】${card.name} (${paymentCurrency === 'diamond' ? '鑽石' : 'P+'}) 下注:[${selectedNumbers.join(',')}] 開出:[${winningSpot}] 結果:${winText}`;
+                const detailString = `【拼卡】${card.name || '卡牌'} (${paymentCurrency === 'diamond' ? '鑽石' : 'P+'}) 下注:[${selectedNumbers.join(',')}] 開出:[${winningSpot}] 結果:${winText}`;
 
-                transaction.set(doc(collection(firestore, 'transactions')), {
+                transaction.set(doc(collection(firestore, 'transactions')), sanitizeFirestorePayload({
                     userId: user.uid,
-                    targetId: card.id,
+                    targetId: card.id || null,
                     transactionType: 'Purchase',
                     section: 'betting',
                     currency: paymentCurrency,
@@ -250,7 +252,7 @@ export function BettingGameDialog({
                     details: detailString,
                     provablyFair: fullFairness,
                     transactionDate: serverTimestamp()
-                });
+                }));
 
                 const cardUpdates: any = {
                     lockedBy: null,
@@ -259,7 +261,7 @@ export function BettingGameDialog({
 
                 if (didWin) {
                     // 發放卡片到收藏庫
-                    transaction.set(doc(collection(firestore, 'users', user.uid, 'userCards')), {
+                    transaction.set(doc(collection(firestore, 'users', user.uid, 'userCards')), sanitizeFirestorePayload({
                         userId: user.uid,
                         cardId: card.id,
                         isFoil: true,
@@ -267,10 +269,14 @@ export function BettingGameDialog({
                         category: card.category || 'betting',
                         source: 'betting',
                         acquiredAt: serverTimestamp()
-                    });
+                    }));
 
-                    // 標記卡片售出
+                    // 標記卡片售出並鎖定不再重複調用
                     cardUpdates.isSold = true;
+                    cardUpdates.status = 'sold';
+                    cardUpdates.soldVia = 'betting';
+                    cardUpdates.soldBy = user.uid;
+                    cardUpdates.soldAt = serverTimestamp();
 
                     // 更新主題分類中的 soldCardIds
                     const targetCategory = card.category || decodeURIComponent(categoryName);

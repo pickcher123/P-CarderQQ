@@ -30,7 +30,7 @@ import type { UserProfile } from '@/types/user-profile';
 import type { LevelBenefit } from '@/types/system';
 import { RefinedPoints } from '@/components/ui/refined-points';
 import Link from 'next/link';
-import { createProvablyFairRound, type ProvablyFairData } from '@/lib/provably-fair';
+import { createProvablyFairRound, sanitizeFirestorePayload, type ProvablyFairData } from '@/lib/provably-fair';
 
 export interface RedemptionItem {
     id: string;
@@ -230,25 +230,27 @@ export function PrizeWheelDialog({
                 }
                 transaction.update(userRef, updateObj);
 
-                // 密碼學公平驗證參數
+                // 密碼學公平驗證參數 (10 格命運轉盤)
                 const pfData = await createProvablyFairRound({
                     clientSeed: `${user.uid.substring(0, 8)}_${Date.now()}`,
                     outcomeType: 'bet',
+                    poolSize: 10,
                 });
-                const fullFairness: ProvablyFairData = {
+                const fullFairness: ProvablyFairData = sanitizeFirestorePayload({
                     ...pfData,
+                    poolSize: 10,
                     winningSpot,
                     isWin: didWin,
                     luckyNumber: (winningSpot - 1) * 1000 + 500,
                     luckyPercent: Number((((winningSpot - 1) * 10) + 5).toFixed(2)),
-                };
+                });
 
                 const winText = didWin ? '中獎' : '未中獎';
-                const detailString = `【獎品拼卡】${item.name} (${paymentCurrency === 'pplus' ? 'P+' : '鑽石'}) 下注:[${selectedNumbers.join(',')}] 開出:[${winningSpot}] 結果:${winText}`;
+                const detailString = `【獎品拼卡】${item.name || '實體獎品'} (${paymentCurrency === 'pplus' ? 'P+' : '鑽石'}) 下注:[${selectedNumbers.join(',')}] 開出:[${winningSpot}] 結果:${winText}`;
 
-                transaction.set(doc(collection(firestore, 'transactions')), {
+                transaction.set(doc(collection(firestore, 'transactions')), sanitizeFirestorePayload({
                     userId: user.uid,
-                    targetId: item.id,
+                    targetId: item.id || null,
                     transactionType: 'Purchase',
                     section: 'betting',
                     currency: paymentCurrency === 'pplus' ? 'p-point' : 'diamond',
@@ -256,23 +258,23 @@ export function PrizeWheelDialog({
                     details: detailString,
                     provablyFair: fullFairness,
                     transactionDate: serverTimestamp(),
-                });
+                }));
 
                 let claimId: string | undefined;
                 if (didWin) {
                     const claimRef = doc(collection(firestore, 'users', user.uid, 'wonPrizes'));
                     claimId = claimRef.id;
-                    transaction.set(claimRef, {
+                    transaction.set(claimRef, sanitizeFirestorePayload({
                         userId: user.uid,
-                        itemId: item.id,
-                        itemName: item.name,
+                        itemId: item.id || '',
+                        itemName: item.name || '實體獎品',
                         itemImageUrl: item.imageUrl || '',
-                        pointsValue: item.points,
+                        pointsValue: item.points ?? 0,
                         winningSpot,
                         selectedNumbers,
                         status: 'unclaimed',
                         wonAt: serverTimestamp(),
-                    });
+                    }));
                 }
 
                 return {
@@ -396,29 +398,29 @@ export function PrizeWheelDialog({
                 }
 
                 transaction.update(uRef, { bonusPoints: increment(-item.points) });
-                transaction.set(doc(collection(firestore, 'transactions')), {
+                transaction.set(doc(collection(firestore, 'transactions')), sanitizeFirestorePayload({
                     userId: user.uid,
-                    targetId: item.id,
+                    targetId: item.id || null,
                     transactionType: 'Purchase',
                     section: 'betting',
                     currency: 'p-point',
-                    amount: -item.points,
-                    details: `紅利兌換: ${item.name}`,
+                    amount: -(item.points ?? 0),
+                    details: `紅利兌換: ${item.name || '實體獎品'}`,
                     transactionDate: serverTimestamp(),
-                });
-                transaction.set(doc(collection(firestore, 'shippingOrders')), {
+                }));
+                transaction.set(doc(collection(firestore, 'shippingOrders')), sanitizeFirestorePayload({
                     userId: user.uid,
                     name: realName.trim(),
                     phone: phone.trim(),
                     address: address.trim(),
                     cardCount: 1,
                     cardIds: [],
-                    redemptionItem: item.name,
+                    redemptionItem: item.name || '實體獎品',
                     status: 'pending',
                     shippingMethod: '7-11',
                     createdAt: serverTimestamp(),
                     fee: 0,
-                });
+                }));
             });
 
             toast({
