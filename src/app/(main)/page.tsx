@@ -85,7 +85,7 @@ export default function Home() {
 
   const cardsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return collection(firestore, 'cards');
+    return collection(firestore, 'allCards');
   }, [firestore]);
 
   const categoriesQuery = useMemoFirebase(() => {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, ChangeEvent, useEffect, useMemo, useCallback } from 'react';
+import { useState, ChangeEvent, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useDoc, useCollection, useFirestore, useMemoFirebase, useAuth, useStorage } from '@/firebase';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
@@ -142,6 +142,7 @@ interface CardPool {
   enablePickNumber?: boolean;
   totalTicketsCount?: number;
   kujiTickets?: any[];
+  lastPrizeClaimed?: boolean;
 }
 
 interface CardData {
@@ -153,6 +154,8 @@ interface CardData {
   sellPrice?: number;
   source?: string;
   isSold?: boolean;
+  isRecycled?: boolean;
+  status?: string;
   createdAt?: any;
 }
 
@@ -219,24 +222,72 @@ export default function CardPoolDetailPage() {
   const { data: bettingItems } = useCollection<any>(useMemoFirebase(() => firestore ? collection(firestore, 'betting-items') : null, [firestore]));
   const { data: luckBags } = useCollection<any>(useMemoFirebase(() => firestore ? collection(firestore, 'luckBags') : null, [firestore]));
 
-  // 匯總已被其他位置佔用的卡片 ID
-  const globallyAssignedCardIds = useMemo(() => {
-    const ids = new Set<string>();
+  // 匯總已被任何卡池（包含本池已抽出為 0 的卡片、籤表、最後賞）、拼卡或福袋佔用/抽出的卡片 ID
+  const { globallyAssignedCardIds, historicallyDrawnCardIds } = useMemo(() => {
+    const assignedIds = new Set<string>();
+    const drawnIds = new Set<string>();
+
     allCardPools?.forEach(p => {
-      if (p.id === cardPoolId) return;
-      p.cards?.forEach(c => ids.add(c.cardId));
-      if (p.lastPrizeCardId) ids.add(p.lastPrizeCardId);
+      p.cards?.forEach(c => {
+        if (!c?.cardId) return;
+        assignedIds.add(c.cardId);
+        if ((c.quantity ?? 0) <= 0) {
+          drawnIds.add(c.cardId);
+        }
+      });
+      p.kujiTickets?.forEach((t: any) => {
+        if (!t?.cardId) return;
+        assignedIds.add(t.cardId);
+        if (t.isDrawn) {
+          drawnIds.add(t.cardId);
+        }
+      });
+      if (p.lastPrizeCardId) {
+        assignedIds.add(p.lastPrizeCardId);
+        if ((p as any).lastPrizeClaimed || (p.remainingPacks !== undefined && p.remainingPacks <= 0 && (p.totalPacks ?? 0) > 0)) {
+          drawnIds.add(p.lastPrizeCardId);
+        }
+      }
     });
+
     bettingItems?.forEach(item => {
-      item.allCardIds?.forEach((id: string) => ids.add(id));
+      item.allCardIds?.forEach((id: string) => assignedIds.add(id));
+      item.soldCardIds?.forEach((id: string) => {
+        assignedIds.add(id);
+        drawnIds.add(id);
+      });
     });
+
     luckBags?.forEach(bag => {
-      if (bag.prizes?.first) ids.add(bag.prizes.first);
-      if (bag.prizes?.second) ids.add(bag.prizes.second);
-      if (bag.prizes?.third) ids.add(bag.prizes.third);
+      if (bag.prizes?.first) assignedIds.add(bag.prizes.first);
+      if (bag.prizes?.second) assignedIds.add(bag.prizes.second);
+      if (bag.prizes?.third) assignedIds.add(bag.prizes.third);
+      bag.otherPrizes?.forEach((p: any) => {
+        if (p?.type === 'card' && p?.cardId) assignedIds.add(p.cardId);
+      });
     });
-    return ids;
-  }, [allCardPools, cardPoolId, bettingItems, luckBags]);
+
+    return { globallyAssignedCardIds: assignedIds, historicallyDrawnCardIds: drawnIds };
+  }, [allCardPools, bettingItems, luckBags]);
+
+  // 自動校正歷史已抽出但尚未標記 isSold 的大獎卡片，確保刪除舊卡池後也不會回到在庫清單被重複調用
+  const hasSyncedHistoricalSoldRef = useRef(false);
+  useEffect(() => {
+    if (!firestore || !allCards || historicallyDrawnCardIds.size === 0 || hasSyncedHistoricalSoldRef.current) return;
+    const unsyncedDrawnCards = allCards.filter(c => historicallyDrawnCardIds.has(c.id) && !c.isSold);
+    hasSyncedHistoricalSoldRef.current = true;
+    if (unsyncedDrawnCards.length === 0) return;
+
+    Promise.allSettled(
+      unsyncedDrawnCards.map(c =>
+        updateDoc(doc(firestore, 'allCards', c.id), {
+          isSold: true,
+          status: 'sold',
+          soldVia: 'draw',
+        })
+      )
+    ).catch(err => console.warn('Sync drawn card sold status failed:', err));
+  }, [firestore, allCards, historicallyDrawnCardIds]);
 
   // 同步卡池資料至 state
   useEffect(() => {
@@ -288,17 +339,17 @@ export default function CardPoolDetailPage() {
     }
   }, [cardPool]);
 
-  // 池內卡片解析
+  // 池內卡片解析（保留已抽出 quantity === 0 的紀錄供後台檢視並鎖定 ID，防止重複加入）
   const { cardsInPool, cardsInPoolIds } = useMemo(() => {
     if (!allCards || !cardPool?.cards) return { cardsInPool: [], cardsInPoolIds: new Set<string>() };
     const cardIdToDataMap = new Map(allCards.map(c => [c.id, c]));
     const idSet = new Set<string>();
 
-    const cards = cardPool.cards.filter(poolCard => poolCard.quantity > 0).map(poolCard => {
+    const cards = cardPool.cards.map(poolCard => {
+      idSet.add(poolCard.cardId);
       const cardData = cardIdToDataMap.get(poolCard.cardId);
       if (cardData) {
-        idSet.add(poolCard.cardId);
-        return { ...cardData, quantity: poolCard.quantity };
+        return { ...cardData, quantity: Math.max(0, poolCard.quantity || 0) };
       }
       return null;
     }).filter((c): c is CardData & { quantity: number } => c !== null);
@@ -395,11 +446,14 @@ export default function CardPoolDetailPage() {
     return activePrizeCards;
   }, [allCards, cardPool]);
 
-  // 可加入卡池的卡片清單
+  // 可加入卡池的卡片清單（嚴格排除已抽出、已售出、已回收、或已綁定任何卡池/活動之實體卡）
   const availableCardsToAdd = useMemo(() => {
     if (!allCards) return [];
     const available = allCards.filter(card => 
       !card.isSold && 
+      !card.isRecycled &&
+      card.status !== 'sold' &&
+      !historicallyDrawnCardIds.has(card.id) &&
       !globallyAssignedCardIds.has(card.id) &&
       !cardsInPoolIds.has(card.id) &&
       card.id !== poolDetails.lastPrizeCardId &&
@@ -422,7 +476,7 @@ export default function CardPoolDetailPage() {
     });
 
     return filtered;
-  }, [allCards, globallyAssignedCardIds, cardsInPoolIds, poolDetails.lastPrizeCardId, addCardCategoryFilter, addCardSearchTerm]);
+  }, [allCards, historicallyDrawnCardIds, globallyAssignedCardIds, cardsInPoolIds, poolDetails.lastPrizeCardId, addCardCategoryFilter, addCardSearchTerm]);
 
   // 機率計算
   const probabilities = useMemo(() => {
@@ -584,10 +638,22 @@ export default function CardPoolDetailPage() {
     });
   };
 
-  // 一番賞重置
+  // 一番賞重置（嚴格保護已被抽出的實體大獎卡片，禁止將已開出的大獎重置回未開出狀態）
   const handleResetKujiTickets = async () => {
     if (!cardPoolRef || !poolDetails.kujiTickets) return;
+    const soldSet = new Set(
+      (allCards || [])
+        .filter(c => c.isSold || c.isRecycled || c.status === 'sold' || historicallyDrawnCardIds.has(c.id))
+        .map(c => c.id)
+    );
+    let lockedCardCount = 0;
+
     const resetTickets = poolDetails.kujiTickets.map(t => {
+      const isAlreadyWonPhysicalCard = Boolean(t.cardId && (t.isDrawn || soldSet.has(t.cardId)));
+      if (isAlreadyWonPhysicalCard) {
+        lockedCardCount += 1;
+        return t;
+      }
       const item: any = {
         number: t.number,
         isDrawn: false,
@@ -599,11 +665,15 @@ export default function CardPoolDetailPage() {
       if (t.pointPrizeId) item.pointPrizeId = t.pointPrizeId;
       return item;
     });
-    setPoolDetails(prev => ({ ...prev, kujiTickets: resetTickets, remainingPacks: resetTickets.length }));
-    await updateDoc(cardPoolRef, cleanFirestoreData({ kujiTickets: resetTickets, remainingPacks: resetTickets.length }));
+
+    const availableCount = resetTickets.filter(t => !t.isDrawn).length;
+    setPoolDetails(prev => ({ ...prev, kujiTickets: resetTickets, remainingPacks: availableCount }));
+    await updateDoc(cardPoolRef, cleanFirestoreData({ kujiTickets: resetTickets, remainingPacks: availableCount }));
     toast({
       title: '一番賞籤位已重置',
-      description: '全數號碼已恢復為未開出狀態！',
+      description: lockedCardCount > 0
+        ? `小賞號碼已恢復為未開出；其中 ${lockedCardCount} 張已抽出的實體大獎維持鎖定，防止重複開出！`
+        : '全數號碼已恢復為未開出狀態！',
     });
   };
 
@@ -662,34 +732,66 @@ export default function CardPoolDetailPage() {
     setIsAddCardDialogOpen(true);
   };
 
-  // 確認將卡片加入卡池
+  // 確認將卡片加入卡池（交易層級二次驗證 isSold 與歷史抽出狀態，徹底杜絕已抽出大獎再次被調用）
   const handleConfirmAddCards = async () => {
-    if (!cardPoolRef || selectedCardsToAdd.length === 0 || !cardPool) return;
-    
+    if (!cardPoolRef || selectedCardsToAdd.length === 0 || !cardPool || !firestore) return;
+
     if (targetPrizeType === 'last') {
       const cardId = selectedCardsToAdd[0];
-      await handleUpdatePoolDetails('lastPrizeCardId', cardId);
-      setIsAddCardDialogOpen(false);
+      try {
+        await runTransaction(firestore, async (transaction) => {
+          const cSnap = await transaction.get(doc(firestore, 'allCards', cardId));
+          if (!cSnap.exists()) throw new Error('找不到該卡片主檔。');
+          const cData = cSnap.data() as CardData;
+          if (cData.isSold || cData.isRecycled || cData.status === 'sold' || historicallyDrawnCardIds.has(cardId)) {
+            throw new Error(`卡片「${cData.name || cardId}」已被抽出或售出，無法再次設為最後賞！`);
+          }
+          transaction.update(cardPoolRef, cleanFirestoreData({
+            lastPrizeCardId: cardId,
+            lastPrizeClaimed: false,
+          }));
+        });
+        setPoolDetails(prev => ({ ...prev, lastPrizeCardId: cardId, lastPrizeClaimed: false }));
+        toast({ title: '成功', description: '已設定最後賞卡片。' });
+        setIsAddCardDialogOpen(false);
+      } catch (error) {
+        toast({
+          variant: 'destructive',
+          title: '無法設定最後賞',
+          description: error instanceof Error ? error.message : String(error),
+        });
+      }
       return;
     }
 
     try {
+      const uniqueSelectedIds = Array.from(new Set(selectedCardsToAdd));
       await runTransaction(firestore, async (transaction) => {
         const pSnap = await transaction.get(cardPoolRef);
-        if (!pSnap.exists()) throw "Pool not found";
+        if (!pSnap.exists()) throw new Error('找不到指定的卡池。');
         const pData = pSnap.data() as CardPool;
-        
+
+        const cardSnaps = await Promise.all(
+          uniqueSelectedIds.map(cid => transaction.get(doc(firestore, 'allCards', cid)))
+        );
+
         const existingCards = [...(pData.cards || [])];
         const existingRarities = { ...(pData.cardRarities || {}) };
         let addedCount = 0;
 
-        selectedCardsToAdd.forEach(cardId => {
-          const idx = existingCards.findIndex(c => c.cardId === cardId);
-          if (idx > -1) {
-            existingCards[idx].quantity += 1;
-          } else {
-            existingCards.push({ cardId, quantity: 1 });
+        cardSnaps.forEach((cSnap, index) => {
+          const cardId = uniqueSelectedIds[index];
+          if (!cSnap.exists()) {
+            throw new Error(`找不到卡片資料 (${cardId})。`);
           }
+          const cData = cSnap.data() as CardData;
+          if (cData.isSold || cData.isRecycled || cData.status === 'sold' || historicallyDrawnCardIds.has(cardId)) {
+            throw new Error(`大獎卡片「${cData.name || cardId}」已被抽出，不可再次被卡池調用！`);
+          }
+          if (existingCards.some(c => c.cardId === cardId)) {
+            throw new Error(`卡片「${cData.name || cardId}」已存在於此卡池中，不可重複配置！`);
+          }
+          existingCards.push({ cardId, quantity: 1 });
           if (!existingRarities[cardId]) {
             existingRarities[cardId] = 'common';
           }
@@ -704,14 +806,14 @@ export default function CardPoolDetailPage() {
         }));
       });
 
-      toast({ title: '成功', description: `${selectedCardsToAdd.length} 張卡片已加入卡池。`});
+      toast({ title: '成功', description: `${uniqueSelectedIds.length} 張卡片已加入卡池。`});
       setIsAddCardDialogOpen(false);
     } catch (error) {
       console.error("Error adding cards to pool:", error);
       toast({ 
         variant: "destructive", 
-        title: "錯誤", 
-        description: `加入卡片時發生錯誤: ${error instanceof Error ? error.message : '未知錯誤'}` 
+        title: "無法加入卡片", 
+        description: error instanceof Error ? error.message : String(error) 
       });
     }
   };
@@ -763,17 +865,25 @@ export default function CardPoolDetailPage() {
     }
   };
 
-  // 從池中移除卡片
+  // 從池中移除卡片（若該卡片已被抽出 quantity <= 0，移除池內顯示紀錄時仍強制維持 allCards.isSold = true）
   const handleRemoveCardFromPool = async (cardIdToRemove: string) => {
-    if (!cardPoolRef || !cardPool || !cardPool.cards) return;
+    if (!cardPoolRef || !cardPool || !cardPool.cards || !firestore) return;
     const cardToRemove = cardPool.cards.find(c => c.cardId === cardIdToRemove);
     if (!cardToRemove) return;
     try {
       const newCardRarities = { ...cardPool.cardRarities };
       delete (newCardRarities as Record<string, Rarity>)[cardIdToRemove];
       
-      const quantityToRemove = cardToRemove.quantity;
+      const quantityToRemove = Math.max(0, cardToRemove.quantity || 0);
       const newRemainingPacks = Math.max(0, (cardPool.remainingPacks || 0) - quantityToRemove);
+
+      if (quantityToRemove <= 0) {
+        await updateDoc(doc(firestore, 'allCards', cardIdToRemove), {
+          isSold: true,
+          status: 'sold',
+          soldVia: 'draw',
+        }).catch(() => {});
+      }
 
       await updateDoc(cardPoolRef, {
         cards: arrayRemove(cardToRemove),
@@ -781,7 +891,12 @@ export default function CardPoolDetailPage() {
         totalPacks: Math.max(0, (cardPool.totalPacks || 0) - quantityToRemove),
         remainingPacks: newRemainingPacks
       });
-      toast({ title: '成功', description: '卡片已從卡池中移除。' });
+      toast({
+        title: '成功',
+        description: quantityToRemove <= 0
+          ? '已移除池內顯示紀錄（該大獎已抽出，庫存維持鎖定不可重複調用）。'
+          : '卡片已從卡池中移除並釋回庫存。',
+      });
     } catch (error) {
       console.error("Error removing card from pool:", error);
       toast({ variant: "destructive", title: "錯誤", description: "移除卡片時發生錯誤。" });
@@ -1826,9 +1941,15 @@ export default function CardPoolDetailPage() {
                           </TableCell>
 
                           <TableCell className="text-center font-code font-black text-sm text-slate-800">
-                            <Badge variant="secondary" className="font-code font-bold text-xs bg-slate-100 border border-slate-200 text-slate-800">
-                              {card.quantity} 包
-                            </Badge>
+                            {card.quantity <= 0 ? (
+                              <Badge variant="destructive" className="font-code font-bold text-xs bg-rose-100 border border-rose-300 text-rose-700">
+                                已抽出 (鎖定)
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary" className="font-code font-bold text-xs bg-slate-100 border border-slate-200 text-slate-800">
+                                {card.quantity} 包
+                              </Badge>
+                            )}
                           </TableCell>
 
                           <TableCell>

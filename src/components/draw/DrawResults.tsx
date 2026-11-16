@@ -18,15 +18,18 @@ export function DrawResults({
                     {sessionPrizes.map((p, i) => (
                         <div key={i} className="animate-fade-in-up snap-center w-[160px] md:w-[200px] flex-shrink-0" style={{ animationDelay: `${i * 80}ms` }}>
                             {p.type === 'points' || p.isPoints || p.name?.includes('隨機球員') ? (
-                                <RandomPlayerCard 
-                                    rarity={p.rarity} 
-                                    points={p.points}
-                                    title={p.name}
-                                    onClick={() => setPreviewCard({ ...p, isPoints: true })} 
-                                />
+                                <div className="w-full aspect-[2.5/4] rounded-xl overflow-hidden shadow-2xl transition-transform duration-200 hover:scale-[1.03]">
+                                    <RandomPlayerCard 
+                                        rarity={p.rarity} 
+                                        points={p.points}
+                                        title={p.name}
+                                        className="w-full h-full aspect-[2.5/4] rounded-xl hover:scale-100"
+                                        onClick={() => setPreviewCard({ ...p, isPoints: true })} 
+                                    />
+                                </div>
                             ) : (
                                 <div 
-                                    className="w-full aspect-[2.5/3.5] rounded-3xl overflow-hidden shadow-2xl transition-all hover:scale-105 group border border-white/5 h-full cursor-zoom-in"
+                                    className="w-full aspect-[2.5/4] rounded-xl overflow-hidden shadow-2xl transition-transform duration-200 hover:scale-[1.03] group cursor-zoom-in"
                                     onClick={() => setPreviewCard({ ...p, rarity: p.rarity })}
                                 >
                                     <CardItem 
@@ -35,7 +38,7 @@ export function DrawResults({
                                         backImageUrl={p.backImageUrl} 
                                         imageHint={p.name} 
                                         rarity={p.rarity} 
-                                        className="h-full"
+                                        className="w-full h-full aspect-[2.5/4] hover:scale-100"
                                         isFlippable={false}
                                     />
                                 </div>

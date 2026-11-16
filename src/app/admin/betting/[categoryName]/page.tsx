@@ -125,17 +125,19 @@ export default function BettingCategoryDetailPage() {
   const globallyAssignedCardIds = useMemo(() => {
     const ids = new Set<string>();
     allCardPools?.forEach(p => {
-        p.cards?.forEach((c: any) => ids.add(c.cardId));
+        p.cards?.forEach((c: any) => { if (c?.cardId) ids.add(c.cardId); });
+        p.kujiTickets?.forEach((t: any) => { if (t?.cardId) ids.add(t.cardId); });
         if (p.lastPrizeCardId) ids.add(p.lastPrizeCardId);
     });
     allBettingItems?.forEach(item => {
         item.allCardIds?.forEach((id: string) => ids.add(id));
+        item.soldCardIds?.forEach((id: string) => ids.add(id));
     });
     luckBags?.forEach(bag => {
         if (bag.prizes?.first) ids.add(bag.prizes.first);
         if (bag.prizes?.second) ids.add(bag.prizes.second);
         if (bag.prizes?.third) ids.add(bag.prizes.third);
-        bag.otherPrizes?.forEach((p: any) => ids.add(p.cardId));
+        bag.otherPrizes?.forEach((p: any) => { if (p?.cardId) ids.add(p.cardId); });
     });
     return ids;
   }, [allCardPools, allBettingItems, luckBags]);
@@ -158,6 +160,8 @@ export default function BettingCategoryDetailPage() {
     
     const available = allCards.filter(card => 
         !card.isSold &&
+        !(card as any).isRecycled &&
+        (card as any).status !== 'sold' &&
         !globallyAssignedCardIds.has(card.id) &&
         !cardsInBetIds.has(card.id) &&
         card.source !== 'group-break'

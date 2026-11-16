@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, ChangeEvent } from 'react';
+import { useState, useMemo, useEffect, useRef, ChangeEvent } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useCollection, useFirestore, useMemoFirebase, useAuth, useStorage } from '@/firebase';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
@@ -417,16 +417,63 @@ export default function CardAreaManagementPage() {
   }, [allCards]);
 
   // 該區域全部原始卡片
+  const drawnInPoolsIds = useMemo(() => {
+    const set = new Set<string>();
+    cardPools?.forEach((p: any) => {
+      p.cards?.forEach((c: any) => {
+        if (c?.cardId && (c.quantity ?? 0) <= 0) {
+          set.add(c.cardId);
+        }
+      });
+      p.kujiTickets?.forEach((t: any) => {
+        if (t?.cardId && t.isDrawn) {
+          set.add(t.cardId);
+        }
+      });
+      if (p.lastPrizeCardId && (p.lastPrizeClaimed || (p.remainingPacks !== undefined && p.remainingPacks <= 0 && (p.totalPacks ?? 0) > 0))) {
+        set.add(p.lastPrizeCardId);
+      }
+    });
+    return set;
+  }, [cardPools]);
+
+  const hasSyncedDrawnRef = useRef(false);
+  useEffect(() => {
+    if (!firestore || !allCards || drawnInPoolsIds.size === 0 || hasSyncedDrawnRef.current) return;
+    const toSync = allCards.filter(c => c.id && drawnInPoolsIds.has(c.id) && !c.isSold);
+    hasSyncedDrawnRef.current = true;
+    if (toSync.length === 0) return;
+
+    Promise.allSettled(
+      toSync.map(c =>
+        updateDoc(doc(firestore, 'allCards', c.id!), {
+          isSold: true,
+          status: 'sold',
+          soldVia: 'draw',
+        })
+      )
+    ).catch(() => {});
+  }, [firestore, allCards, drawnInPoolsIds]);
+
   const areaRawCards = useMemo(() => {
     if (!allCards) return [];
-    let cards = [...allCards];
+    let cards = allCards.map(c =>
+      c.id && drawnInPoolsIds.has(c.id) && !c.isSold
+        ? { ...c, isSold: true }
+        : c
+    );
     const allCardIdSet = new Set(allCards.map(c => c.id));
 
     if (area === 'draw') {
         const ids = new Set<string>();
-        cardPools?.forEach(p => p.cards?.forEach(c => {
-            if (allCardIdSet.has(c.cardId)) ids.add(c.cardId);
-        }));
+        cardPools?.forEach(p => {
+            p.cards?.forEach(c => {
+                if (allCardIdSet.has(c.cardId)) ids.add(c.cardId);
+            });
+            if ((p as any).lastPrizeCardId && allCardIdSet.has((p as any).lastPrizeCardId)) {
+                ids.add((p as any).lastPrizeCardId);
+            }
+        });
         cards = cards.filter(c => ids.has(c.id!));
     } else if (area === 'betting') {
         const ids = new Set<string>();
@@ -449,7 +496,7 @@ export default function CardAreaManagementPage() {
         cards = cards.filter(c => c.source === 'group-break');
     }
     return cards;
-  }, [allCards, area, cardPools, bettingItems, luckBags]);
+  }, [allCards, area, cardPools, bettingItems, luckBags, drawnInPoolsIds]);
 
   // 區域庫存售出統計
   const areaStatusCounts = useMemo(() => {

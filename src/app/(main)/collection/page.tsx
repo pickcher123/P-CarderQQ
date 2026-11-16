@@ -74,6 +74,16 @@ interface UserCard {
     breakTitle?: string;
     teamName?: string;
     serialNumber?: string;
+    name?: string;
+    cardName?: string;
+    imageUrl?: string;
+    backImageUrl?: string;
+    sellPrice?: number;
+    isPoints?: boolean;
+    points?: number;
+    poolId?: string;
+    poolName?: string;
+    ticketNumber?: number;
 }
 
 interface AllCards {
@@ -88,7 +98,7 @@ interface AllCards {
     teamName?: string;
 }
 
-type MergedCard = UserCard & AllCards & { serialNumber: string };
+type MergedCard = UserCard & AllCards & { serialNumber: string; _isRealCard?: boolean };
 
 const SHIPPING_FEE = 60;
 const PICKUP_ADDRESS = "台北市中山區林森北路50號3樓之4";
@@ -158,26 +168,78 @@ export default function CollectionPage() {
     if (!userCards || !allCards) return [];
     const cardMap = new Map(allCards.map(c => [c.id, c]));
     return userCards.map(userCard => {
-      const cardDetails = cardMap.get(userCard.cardId);
+      const isExplicitRandomId = Boolean(userCard.cardId?.startsWith('random-player-'));
+      const cardDetails = !isExplicitRandomId && userCard.cardId ? cardMap.get(userCard.cardId) : undefined;
+
       if (cardDetails) {
+        const cleanUserCat = userCard.category && !['all', '抽賞', 'normal', 'general', '紅利'].includes(userCard.category)
+          ? userCard.category
+          : '';
+        const resolvedCategory = (cardDetails.category && !['all', '抽賞'].includes(cardDetails.category))
+          ? cardDetails.category
+          : (cleanUserCat || '一般');
+
         return {
-          ...cardDetails,
           ...userCard,
-          category: (userCard.category && userCard.category !== 'all') ? userCard.category : (cardDetails.category || userCard.category || 'general'),
-          serialNumber: userCard.serialNumber || '0000'
-        }
-      } else if (userCard.cardId?.startsWith('random-player-')) {
-          return {
-              ...userCard,
-              name: '隨機球員 普/特 卡',
-              imageUrl: PLACEHOLDER_CARD_IMAGE,
-              imageHint: '幸運獲獎',
-              category: '抽賞',
-              isSold: false,
-              sellPrice: 10,
-              serialNumber: userCard.serialNumber || '0000'
-          } as MergedCard;
+          ...cardDetails,
+          id: userCard.id,
+          cardId: userCard.cardId,
+          userId: userCard.userId,
+          rarity: userCard.rarity || (cardDetails as any).rarity || 'common',
+          isFoil: Boolean(userCard.isFoil || userCard.rarity === 'legendary'),
+          source: userCard.source,
+          breakTitle: userCard.breakTitle,
+          teamName: userCard.teamName || cardDetails.teamName,
+          name: cardDetails.name || userCard.name || userCard.cardName || '典藏球員卡',
+          imageUrl: cardDetails.imageUrl || userCard.imageUrl || PLACEHOLDER_CARD_IMAGE,
+          backImageUrl: cardDetails.backImageUrl || userCard.backImageUrl,
+          imageHint: cardDetails.imageHint || cardDetails.name || '典藏球員卡',
+          sellPrice: cardDetails.sellPrice ?? userCard.sellPrice ?? 10,
+          category: resolvedCategory,
+          serialNumber: userCard.serialNumber || '0000',
+          _isRealCard: true,
+        } as MergedCard;
       }
+
+      if (
+        isExplicitRandomId ||
+        userCard.isPoints ||
+        userCard.category === '紅利' ||
+        userCard.name?.includes('隨機球員') ||
+        userCard.name?.includes('普/特')
+      ) {
+        return {
+          ...userCard,
+          name: userCard.name || '隨機球員 普/特 卡',
+          imageUrl: PLACEHOLDER_CARD_IMAGE,
+          imageHint: '幸運獲獎',
+          category: '抽賞',
+          isSold: false,
+          sellPrice: 10,
+          serialNumber: userCard.serialNumber || '0000',
+          _isRealCard: false,
+        } as MergedCard;
+      }
+
+      // 若管理員曾刪除/異動主檔卡片，仍以快照欄位保底呈現，確保玩家抽中的大獎永遠不會從收藏庫消失
+      if (userCard.cardId) {
+        const fallbackCategory = userCard.category && !['all', '抽賞', 'normal', 'general', '紅利'].includes(userCard.category)
+          ? userCard.category
+          : '一般';
+        return {
+          ...userCard,
+          name: userCard.name || userCard.cardName || '典藏球員卡',
+          imageUrl: userCard.imageUrl || PLACEHOLDER_CARD_IMAGE,
+          backImageUrl: userCard.backImageUrl,
+          imageHint: userCard.name || '典藏球員卡',
+          category: fallbackCategory,
+          isSold: false,
+          sellPrice: userCard.sellPrice ?? 10,
+          serialNumber: userCard.serialNumber || '0000',
+          _isRealCard: true,
+        } as MergedCard;
+      }
+
       return null;
     }).filter((c): c is MergedCard => c !== null);
   }, [userCards, allCards]);
@@ -201,11 +263,12 @@ export default function CollectionPage() {
   }, [mergedCards.length]);
 
   const isRandomPlayerCard = (card: MergedCard) => {
-    return (
+    if (card._isRealCard) return false;
+    return Boolean(
+      card.cardId?.startsWith('random-player-') ||
+      card.isPoints ||
       card.name?.includes('隨機球員') ||
-      card.name?.includes('普/特') ||
-      card.category === '抽賞' ||
-      card.cardId?.startsWith('random-player-')
+      card.name?.includes('普/特')
     );
   };
 

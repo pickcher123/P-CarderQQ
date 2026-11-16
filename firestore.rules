@@ -87,8 +87,8 @@ service cloud.firestore {
       allow read: if true; // 所有人可看卡池
       allow update: if (
         isSignedIn() && 
-        // 動作鎖定：玩家只能更新特定庫存欄位
-        incoming().diff(existing()).affectedKeys().hasOnly(['cards', 'pointPrizes', 'remainingPacks', 'lockedBy', 'lockedAt'])
+        // 動作鎖定：玩家只能更新特定庫存與籤位欄位
+        incoming().diff(existing()).affectedKeys().hasOnly(['cards', 'pointPrizes', 'kujiTickets', 'remainingPacks', 'lockedBy', 'lockedAt', 'lastPrizeClaimed'])
       ) || isVerifiedAdmin();
     }
 
@@ -109,10 +109,23 @@ service cloud.firestore {
       allow read, write: if isVerifiedAdmin();
     }
 
-    // --- 唯讀靜態集合 ---
+    // --- 卡片主檔集合 (大獎抽出後原子鎖定為已售出，嚴禁竄改名稱/價格/圖片) ---
     match /allCards/{cardId} {
       allow read: if true;
-      allow write: if isVerifiedAdmin();
+      allow create, delete: if isVerifiedAdmin();
+      allow update: if isVerifiedAdmin() || (
+        isSignedIn() &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'isSold',
+          'isRecycled',
+          'status',
+          'soldAt',
+          'soldBy',
+          'soldFromPoolId',
+          'soldVia'
+        ]) &&
+        incoming().get('isSold', false) is bool
+      );
     }
 
     match /drawCategories/{catId} {

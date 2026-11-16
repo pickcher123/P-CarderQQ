@@ -1434,7 +1434,8 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                                                 rarity={c.rarity} 
                                                                 points={c.points} 
                                                                 title={c.name}
-                                                                showBuybackHint={false} 
+                                                                showBuybackHint={false}
+                                                                className="w-full h-full aspect-[2.5/3.5] rounded-md"
                                                             />
                                                         ) : (
                                                             <SafeImage src={c.imageUrl} alt={c.name} sizes="140px" fill className="object-contain rounded-md p-0.5 relative z-10 drop-shadow-[0_4px_10px_rgba(0,0,0,0.3)]" />
@@ -1516,13 +1517,14 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                         </div>
 
                         {/* 卡片主體展示區：支援 3D 翻轉與高解析放大 */}
-                        <div className="w-full max-w-[220px] sm:max-w-[240px] my-1 drop-shadow-[0_15px_30px_rgba(0,0,0,0.85)]">
+                        <div className="w-full max-w-[220px] sm:max-w-[240px] aspect-[2.5/3.5] my-1 drop-shadow-[0_15px_30px_rgba(0,0,0,0.85)]">
                             {previewCard.isPoints ? (
                                 <RandomPlayerCard 
                                     rarity={previewCard.rarity} 
                                     points={previewCard.points} 
                                     title={previewCard.name}
-                                    showBuybackHint={false} 
+                                    showBuybackHint={false}
+                                    className="w-full h-full aspect-[2.5/3.5] rounded-xl"
                                 />
                             ) : (
                                 <CardItem 
@@ -1532,6 +1534,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                     imageHint={previewCard.name} 
                                     rarity={previewCard.rarity} 
                                     isFlippable={true}
+                                    className="w-full h-full aspect-[2.5/3.5]"
                                 />
                             )}
                         </div>

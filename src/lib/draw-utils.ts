@@ -5,8 +5,13 @@ export interface CardMapItem {
   name: string;
   category?: string;
   imageUrl?: string;
+  backImageUrl?: string;
+  serialNumber?: string;
   sellPrice?: number;
   rarity?: Rarity;
+  isSold?: boolean;
+  isRecycled?: boolean;
+  status?: string;
 }
 
 /**
@@ -19,33 +24,36 @@ export function generateKujiTickets(
 ): KujiTicketItem[] {
   const items: { cardId?: string; pointPrizeId?: string }[] = [];
 
-  // 1. 展開卡片
+  // 1. 展開實體卡片（嚴格限制同一張實體卡片在單一籤表中最多出現一次，杜絕重複開出大獎）
+  const seenCardIds = new Set<string>();
   if (poolData.cards && Array.isArray(poolData.cards)) {
     for (const c of poolData.cards) {
-      const qty = Math.max(0, c.quantity || 0);
-      for (let i = 0; i < qty; i++) {
+      if (!c?.cardId || seenCardIds.has(c.cardId)) continue;
+      const qty = Math.min(1, Math.max(0, c.quantity || 0));
+      if (qty > 0) {
+        seenCardIds.add(c.cardId);
         items.push({ cardId: c.cardId });
       }
     }
   }
 
   // 2. 展開點數/紅利獎項
+  const pointTemplates: { pointPrizeId: string }[] = [];
   if (poolData.pointPrizes && Array.isArray(poolData.pointPrizes)) {
     for (const p of poolData.pointPrizes) {
       const qty = Math.max(0, p.quantity || 0);
+      if (p.prizeId) pointTemplates.push({ pointPrizeId: p.prizeId });
       for (let i = 0; i < qty; i++) {
         items.push({ pointPrizeId: p.prizeId });
       }
     }
   }
 
-  // 若使用者指定的總抽數大於目前的獎項總數，補齊預設項目
+  // 若指定的總抽數大於目前的獎項總數，僅允許以點數小賞補齊，絕對不可複製實體大獎 cardId！
   const targetTotal = customTotalCount && customTotalCount > 0 ? customTotalCount : items.length;
-  if (items.length < targetTotal && items.length > 0) {
-    // 重複循環填充至 targetTotal
-    const originalLen = items.length;
-    for (let i = originalLen; i < targetTotal; i++) {
-      items.push({ ...items[i % originalLen] });
+  if (items.length < targetTotal && pointTemplates.length > 0) {
+    for (let i = items.length; i < targetTotal; i++) {
+      items.push({ ...pointTemplates[(i - items.length) % pointTemplates.length] });
     }
   }
 
@@ -164,24 +172,27 @@ export function drawKujiTickets(
         cardEntry.quantity -= 1;
       }
 
-      let cardDetails = cardsMap instanceof Map
+      const cardDetails = cardsMap instanceof Map
         ? cardsMap.get(ticket.cardId)
         : (cardsMap ? (cardsMap as Record<string, CardMapItem>)[ticket.cardId] : undefined);
 
       const rarity = getCardRarity(ticket.cardId);
       const resolvedName = cardDetails?.name || '精選頂級球員卡';
       const resolvedImage = cardDetails?.imageUrl || (cardDetails as any)?.image || '';
+      const resolvedCategory = (cardDetails?.category && cardDetails.category !== '抽賞' && cardDetails.category !== 'all')
+        ? cardDetails.category
+        : '一般';
 
       drawn.push({
         id: cardDetails?.id || ticket.cardId,
         name: resolvedName,
         imageUrl: resolvedImage,
-        backImageUrl: (cardDetails as any)?.backImageUrl || '',
-        serialNumber: (cardDetails as any)?.serialNumber || '',
+        backImageUrl: cardDetails?.backImageUrl || '',
+        serialNumber: cardDetails?.serialNumber || '',
         imageHint: resolvedName,
-        category: cardDetails?.category || '抽賞',
+        category: resolvedCategory,
         rarity,
-        sellPrice: (cardDetails as any)?.sellPrice || 0,
+        sellPrice: cardDetails?.sellPrice || 0,
         type: 'card',
         ticketNumber: ticket.number,
       } as any);
@@ -192,15 +203,19 @@ export function drawKujiTickets(
       }
       const rarity = (pointEntry?.rarity as Rarity) || 'common';
       const points = pointEntry?.points || 300;
-      const prizeName = pointEntry?.name || `${points} 紅利點數`;
+      const prizeName = pointEntry?.name || '隨機球員 普/特 卡';
+      const isRandomCardPrize = prizeName.includes('隨機球員') || prizeName.includes('普/特') || !pointEntry?.name;
+      const normalizedPrizeId = isRandomCardPrize
+        ? (String(ticket.pointPrizeId).startsWith('random-player-') ? String(ticket.pointPrizeId) : `random-player-${ticket.pointPrizeId}`)
+        : String(ticket.pointPrizeId);
 
       drawn.push({
-        id: ticket.pointPrizeId,
+        id: normalizedPrizeId,
         name: prizeName,
         points,
         imageUrl: '',
-        imageHint: '紅利賞',
-        category: '紅利',
+        imageHint: isRandomCardPrize ? '隨機球員賞' : '紅利賞',
+        category: isRandomCardPrize ? '抽賞' : '紅利',
         rarity,
         type: 'points',
         isPoints: true,
@@ -271,9 +286,16 @@ export function drawFromPool(
       return baseQty;
     };
 
-    // 1) Calculate weighted total for cards
+    // 1) Calculate weighted total for cards (正式抽卡時若實體卡片已在別處抽出標記 isSold，強制權重歸零防重抽)
     const cardEntries = updatedCards.map(c => {
-      const q = Math.max(0, c.quantity || 0);
+      const cardDetails = cardsMap instanceof Map
+        ? cardsMap.get(c.cardId)
+        : (cardsMap ? (cardsMap as Record<string, CardMapItem>)[c.cardId] : undefined);
+      const alreadySoldElsewhere = !isTrial && Boolean(cardDetails?.isSold || cardDetails?.isRecycled || cardDetails?.status === 'sold');
+      if (alreadySoldElsewhere && c.quantity > 0) {
+        c.quantity = 0;
+      }
+      const q = alreadySoldElsewhere ? 0 : Math.max(0, c.quantity || 0);
       const rarity = getCardRarity(c.cardId);
       const weight = getWeight(rarity, q);
       return { card: c, q, rarity, weight };
@@ -303,36 +325,26 @@ export function drawFromPool(
         entry.card.quantity = Math.max(0, entry.q - 1);
         drawnFound = true;
 
-        let cardDetails = cardsMap instanceof Map 
+        const cardDetails = cardsMap instanceof Map 
           ? cardsMap.get(entry.card.cardId) 
           : (cardsMap ? (cardsMap as Record<string, CardMapItem>)[entry.card.cardId] : undefined);
 
-        // If card details not found by specific ID, find the best matching card from cardsMap
-        if (!cardDetails && cardsMap) {
-          const allCardsList = Array.from(cardsMap instanceof Map ? cardsMap.values() : Object.values(cardsMap)).filter(Boolean);
-          if (allCardsList.length > 0) {
-            const sameRarityCards = allCardsList.filter(c => c.rarity === entry.rarity);
-            if (sameRarityCards.length > 0) {
-              cardDetails = sameRarityCards[Math.floor(Math.random() * sameRarityCards.length)];
-            } else {
-              cardDetails = allCardsList[Math.floor(Math.random() * allCardsList.length)];
-            }
-          }
-        }
-
         const resolvedName = cardDetails?.name || "精選頂級球員卡";
         const resolvedImage = cardDetails?.imageUrl || (cardDetails as any)?.image || "";
+        const resolvedCategory = (cardDetails?.category && cardDetails.category !== '抽賞' && cardDetails.category !== 'all')
+          ? cardDetails.category
+          : '一般';
 
         drawn.push({
           id: cardDetails?.id || entry.card.cardId,
           name: resolvedName,
           imageUrl: resolvedImage,
-          backImageUrl: (cardDetails as any)?.backImageUrl || '',
-          serialNumber: (cardDetails as any)?.serialNumber || '',
+          backImageUrl: cardDetails?.backImageUrl || '',
+          serialNumber: cardDetails?.serialNumber || '',
           imageHint: resolvedName,
-          category: cardDetails?.category || "抽賞",
+          category: resolvedCategory,
           rarity: entry.rarity || cardDetails?.rarity || 'common',
-          sellPrice: (cardDetails as any)?.sellPrice || 0,
+          sellPrice: cardDetails?.sellPrice || 0,
           type: 'card'
         } as any);
         break;

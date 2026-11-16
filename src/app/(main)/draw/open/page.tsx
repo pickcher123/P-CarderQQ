@@ -37,6 +37,14 @@ import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { performDrawAction } from '@/app/actions/draw';
 import { getEffectiveTicketCount, syncLocalPromoClaimsToFirestore, getLocalAvailableTicketsCount } from '@/lib/promo-draw-service';
+import {
+  type PeelCorner,
+  PEEL_CORNER_LABELS,
+  detectPeelCorner,
+  isNearCornerHotspot,
+  computeCornerPeelPercent,
+  getCornerPeelGeometry,
+} from '@/lib/corner-peel';
 
 enum OperationType {
   CREATE = 'create',
@@ -166,7 +174,15 @@ export default function OpenPackPage() {
     }, [isLegendaryRevealed]);
 
     const squeezeRef = useRef<HTMLDivElement>(null);
-    const startY = useRef(0);
+    const [peelCorner, setPeelCorner] = useState<PeelCorner>('tr');
+    const startGestureRef = useRef<{
+        x: number;
+        y: number;
+        time: number;
+        width: number;
+        height: number;
+        corner: PeelCorner;
+    }>({ x: 0, y: 0, time: 0, width: 230, height: 368, corner: 'tr' });
     const poolId = searchParams.get('poolId');
     const initialDrawCount = parseInt(searchParams.get('draws') || '1', 10);
     const isUsingTicket = searchParams.get('useTicket') === 'true';
@@ -280,7 +296,7 @@ export default function OpenPackPage() {
         return () => unsub();
     }, [firestore, poolId, user]);
 
-    const cardsRef = useMemoFirebase(() => (firestore ? collection(firestore, 'cards') : null), [firestore]);
+    const cardsRef = useMemoFirebase(() => (firestore ? collection(firestore, 'allCards') : null), [firestore]);
     const { data: allCards, isLoading: isLoadingCards } = useCollection<Card>(cardsRef);
     const allCardsMap = useMemo(() => {
         const map = new Map<string, Card>();
@@ -291,40 +307,29 @@ export default function OpenPackPage() {
     // Dynamically enrich drawn prizes if allCardsMap loads or updates
     useEffect(() => {
         if (!allCardsMap || allCardsMap.size === 0) return;
-        setDrawnPrizes(prev => prev.map(p => {
+        const enrichPrize = (p: DrawnPrize): DrawnPrize => {
             if (p.type === 'card' || p.type === 'last-prize') {
                 const card = allCardsMap.get(p.id);
                 if (card) {
+                    const validCategory = (card.category && card.category !== '抽賞' && card.category !== 'all')
+                        ? card.category
+                        : ((p.category && p.category !== '抽賞' && p.category !== 'all') ? p.category : '一般');
                     return {
                         ...p,
                         name: card.name || p.name,
                         imageUrl: card.imageUrl || p.imageUrl,
-                        backImageUrl: card.backImageUrl || (p as any).backImageUrl,
-                        category: card.category || p.category,
+                        backImageUrl: card.backImageUrl || p.backImageUrl,
+                        category: validCategory,
                         rarity: p.rarity || card.rarity || 'common',
-                        serialNumber: (card as any).serialNumber || (p as any).serialNumber || '',
+                        sellPrice: card.sellPrice ?? p.sellPrice ?? 0,
+                        serialNumber: p.serialNumber || (card as any).serialNumber || '',
                     };
                 }
             }
             return p;
-        }));
-        setSessionPrizes(prev => prev.map(p => {
-            if (p.type === 'card' || p.type === 'last-prize') {
-                const card = allCardsMap.get(p.id);
-                if (card) {
-                    return {
-                        ...p,
-                        name: card.name || p.name,
-                        imageUrl: card.imageUrl || p.imageUrl,
-                        backImageUrl: card.backImageUrl || (p as any).backImageUrl,
-                        category: card.category || p.category,
-                        rarity: p.rarity || card.rarity || 'common',
-                        serialNumber: (card as any).serialNumber || (p as any).serialNumber || '',
-                    };
-                }
-            }
-            return p;
-        }));
+        };
+        setDrawnPrizes(prev => prev.map(enrichPrize));
+        setSessionPrizes(prev => prev.map(enrichPrize));
     }, [allCardsMap]);
 
     const performTrialDraw = useCallback((count: number, chosenNumbers?: number[]) => {
@@ -423,13 +428,45 @@ export default function OpenPackPage() {
                 const poolDocRef = doc(firestore, 'cardPools', poolId);
                 const poolStatsRef = doc(firestore, 'users', user.uid, 'poolStats', poolId);                
 
-                // 1. 讀取最新資料
+                // 1. 讀取最新資料 (所有 transaction.get 必須在任何寫入之前執行)
                 const userSnap = await transaction.get(userDocRef);
                 const poolSnap = await transaction.get(poolDocRef);
                 const poolStatsSnap = await transaction.get(poolStatsRef);
 
                 if (!poolSnap.exists()) throw new Error('此卡池已下架或不存在。');
-                
+
+                const poolData = poolSnap.data() as CardPool;
+
+                // 讀取卡池內所有關聯實體卡片主檔 (必須在任何寫入前完成讀取，同時作為原子鎖定 isSold 之依據)
+                const txCardsMap = new Map<string, Card>(allCardsMap);
+                const existingAllCardIds = new Set<string>();
+                const referencedCardIds = new Set<string>();
+                if (Array.isArray(poolData.cards)) {
+                    poolData.cards.forEach((c: any) => {
+                        if (c?.cardId) referencedCardIds.add(String(c.cardId));
+                    });
+                }
+                if (Array.isArray(poolData.kujiTickets)) {
+                    poolData.kujiTickets.forEach((t: any) => {
+                        if (t?.cardId) referencedCardIds.add(String(t.cardId));
+                    });
+                }
+                if (poolData.lastPrizeCardId) {
+                    referencedCardIds.add(String(poolData.lastPrizeCardId));
+                }
+
+                if (referencedCardIds.size > 0) {
+                    const fetchedCardSnaps = await Promise.all(
+                        Array.from(referencedCardIds).map((cid) => transaction.get(doc(firestore, 'allCards', cid)))
+                    );
+                    fetchedCardSnaps.forEach((cSnap) => {
+                        if (cSnap.exists()) {
+                            existingAllCardIds.add(cSnap.id);
+                            txCardsMap.set(cSnap.id, { id: cSnap.id, ...cSnap.data() } as Card);
+                        }
+                    });
+                }
+
                 let userData = userSnap.data();
                 if (!userSnap.exists()) {
                     userData = {
@@ -445,8 +482,6 @@ export default function OpenPackPage() {
                     };
                     transaction.set(userDocRef, userData);
                 }
-
-                const poolData = poolSnap.data() as CardPool;
 
                 // 驗證 120 秒開獎保護鎖定
                 if (poolData.hasProtection !== false && poolData.lockedAt && poolData.lockedBy && poolData.lockedBy !== user.uid) {
@@ -514,7 +549,7 @@ export default function OpenPackPage() {
                     }
                 }
 
-                // 2. 進行抽選
+                // 2. 進行抽選 (傳入完整 txCardsMap 確保大獎圖案與資訊 100% 載入)
                 const isKujiPool = !!(poolData.enablePickNumber || (poolData.kujiTickets && poolData.kujiTickets.length > 0));
                 let drawn: any[] = [];
                 let updatedCards: any[] = [];
@@ -529,13 +564,13 @@ export default function OpenPackPage() {
                             if (found.isDrawn) throw new Error(`號碼 #${num} 剛剛已被其他玩家抽走，請重新挑選其他號碼！`);
                         }
                     }
-                    const kujiRes = drawKujiTickets(poolData, numbersToDraw, actualDrawCount, allCardsMap);
+                    const kujiRes = drawKujiTickets(poolData, numbersToDraw, actualDrawCount, txCardsMap);
                     drawn = kujiRes.drawn;
                     updatedCards = kujiRes.updatedCards;
                     updatedPointPrizes = kujiRes.updatedPointPrizes;
                     updatedTickets = kujiRes.updatedTickets;
                 } else {
-                    const normalRes = drawFromPool(poolData, actualDrawCount, allCardsMap);
+                    const normalRes = drawFromPool(poolData, actualDrawCount, txCardsMap);
                     drawn = normalRes.drawn;
                     updatedCards = normalRes.updatedCards;
                     updatedPointPrizes = normalRes.updatedPointPrizes;
@@ -543,29 +578,100 @@ export default function OpenPackPage() {
 
                 if (drawn.length === 0) throw new Error('卡池目前已無獎項可供抽取。');
 
-                // 3. 處理獲獎結果並存檔
+                const packsConsumed = drawn.length;
+                let claimLastPrize = false;
+
+                // 檢查並派發最後賞 (Last One Prize)
+                if (
+                    poolData.remainingPacks !== undefined &&
+                    poolData.remainingPacks !== null &&
+                    poolData.remainingPacks - packsConsumed <= 0 &&
+                    poolData.lastPrizeCardId &&
+                    !(poolData as any).lastPrizeClaimed
+                ) {
+                    const lpId = String(poolData.lastPrizeCardId);
+                    const lpDetails = txCardsMap.get(lpId);
+                    drawn.push({
+                        id: lpId,
+                        name: lpDetails?.name || '最後賞限定大獎',
+                        imageUrl: lpDetails?.imageUrl || '',
+                        backImageUrl: lpDetails?.backImageUrl || '',
+                        serialNumber: '',
+                        imageHint: lpDetails?.name || '最後賞限定大獎',
+                        category: (lpDetails?.category && lpDetails.category !== '抽賞' && lpDetails.category !== 'all') ? lpDetails.category : '一般',
+                        rarity: 'legendary',
+                        sellPrice: lpDetails?.sellPrice || 0,
+                        type: 'last-prize',
+                    });
+                    claimLastPrize = true;
+                }
+
+                // 3. 處理獲獎結果並寫入收藏庫，同時將抽出的實體大獎卡片原子標記為 isSold: true 永久鎖定防重複調用
+                const drawSource = useEventTicketMode ? 'event_ticket_draw' : (useTicketMode ? 'promo_ticket_draw' : 'draw');
+                const soldCardIdsToLock = new Set<string>();
+
                 for (const prize of drawn) {
-                    // 儲存卡片到使用者收藏
                     const newUserCardRef = doc(collection(firestore, 'users', user.uid, 'userCards'));
                     const serialNumber = `${Math.floor(Math.random() * 9000) + 1000}`;
-                    const cardPayload: any = {
-                        cardId: (prize as any).id || '',
-                        userId: user.uid,
-                        category: (prize as any).category || 'normal',
-                        rarity: (prize as any).rarity || 'common',
-                        isFoil: (prize as any).rarity === 'legendary',
-                        source: useEventTicketMode ? 'event_ticket_draw' : (useTicketMode ? 'promo_ticket_draw' : 'draw'),
-                        poolId: poolId,
-                        serialNumber: serialNumber,
-                        createdAt: serverTimestamp()
-                    };
-                    if ((prize as any).ticketNumber !== undefined && (prize as any).ticketNumber !== null) {
-                        cardPayload.ticketNumber = (prize as any).ticketNumber;
+                    const isPointOrRandom = prize.type === 'points' || Boolean(prize.isPoints) || Boolean(prize.name?.includes('隨機球員'));
+                    const rawId = String(prize.id || '');
+
+                    const cardPayload: any = isPointOrRandom
+                        ? {
+                            cardId: rawId.startsWith('random-player-') ? rawId : `random-player-${rawId || 'points_300'}`,
+                            name: prize.name || '隨機球員 普/特 卡',
+                            userId: user.uid,
+                            category: '抽賞',
+                            rarity: prize.rarity || 'common',
+                            isFoil: false,
+                            isPoints: true,
+                            points: Number(prize.points || 300),
+                            source: drawSource,
+                            poolId: poolId,
+                            poolName: poolData.name || cardPool.name || '',
+                            serialNumber: serialNumber,
+                            createdAt: serverTimestamp()
+                        }
+                        : {
+                            cardId: rawId,
+                            name: prize.name || '典藏球員卡',
+                            imageUrl: prize.imageUrl || '',
+                            backImageUrl: prize.backImageUrl || '',
+                            sellPrice: Number(prize.sellPrice || 0),
+                            userId: user.uid,
+                            category: (prize.category && !['抽賞', 'all', 'normal'].includes(prize.category)) ? prize.category : '一般',
+                            rarity: prize.rarity || 'common',
+                            isFoil: prize.rarity === 'legendary' || prize.type === 'last-prize',
+                            isPoints: false,
+                            source: drawSource,
+                            poolId: poolId,
+                            poolName: poolData.name || cardPool.name || '',
+                            serialNumber: serialNumber,
+                            createdAt: serverTimestamp()
+                        };
+
+                    if (prize.ticketNumber !== undefined && prize.ticketNumber !== null) {
+                        cardPayload.ticketNumber = prize.ticketNumber;
                     }
                     transaction.set(newUserCardRef, cleanFirestoreData(cardPayload));
-                    // 同步更新本地顯示的 ID
-                    (prize as any).serialNumber = serialNumber;
+                    prize.serialNumber = serialNumber;
+
+                    if (!isPointOrRandom && rawId && existingAllCardIds.has(rawId)) {
+                        soldCardIdsToLock.add(rawId);
+                    }
                 }
+
+                // 原子鎖定已抽出的大獎卡片狀態，防止任何卡池/福袋/拼卡再次調用
+                soldCardIdsToLock.forEach((soldCardId) => {
+                    transaction.update(doc(firestore, 'allCards', soldCardId), {
+                        isSold: true,
+                        status: 'sold',
+                        soldVia: 'draw',
+                        soldFromPoolId: poolId,
+                        soldBy: user.uid,
+                        soldAt: serverTimestamp(),
+                    });
+                });
 
                 // 4. 套用使用者資產更新 (扣除專屬券、免費券或花費)
                 const updateFields: any = {};
@@ -583,7 +689,7 @@ export default function OpenPackPage() {
 
                 // 5. 更新卡池資料 (全面清理 undefined 屬性，杜絕 Transaction.update 錯誤)
                 const poolUpdates: any = {
-                    remainingPacks: increment(-drawn.length),
+                    remainingPacks: increment(-packsConsumed),
                     cards: updatedCards
                 };
                 if (updatedPointPrizes && updatedPointPrizes.length > 0) {
@@ -591,6 +697,9 @@ export default function OpenPackPage() {
                 }
                 if (updatedTickets && updatedTickets.length > 0) {
                     poolUpdates.kujiTickets = updatedTickets;
+                }
+                if (claimLastPrize) {
+                    poolUpdates.lastPrizeClaimed = true;
                 }
                 transaction.update(poolDocRef, cleanFirestoreData(poolUpdates));
 
@@ -601,8 +710,8 @@ export default function OpenPackPage() {
                     poolSize: cardPool.totalPacks || 80
                 });
 
-                const primaryPrize = drawn[0];
-                const primaryCardName = primaryPrize?.name || (primaryPrize as any)?.cardName || '卡牌';
+                const notablePrize = drawn.find((p: any) => (p.type === 'card' || p.type === 'last-prize') && (p.rarity === 'legendary' || p.rarity === 'rare')) || drawn[0];
+                const primaryCardName = notablePrize?.name || (notablePrize as any)?.cardName || '卡牌';
                 const prizeSummaryText = drawn.length === 1
                     ? `獲得【${primaryCardName}】`
                     : `獲得【${primaryCardName}】等共 ${drawn.length} 張卡牌`;
@@ -649,15 +758,23 @@ export default function OpenPackPage() {
                 // 7. 更新統計
                 const todayStr = format(new Date(), 'yyyy-MM-dd');
                 const poolStatsData = poolStatsSnap.exists() ? poolStatsSnap.data() : { count: 0, totalCount: 0, lastDrawDate: '' };
-                const newCount = (poolStatsData.lastDrawDate === todayStr ? (poolStatsData.count || 0) : 0) + drawn.length;
-                const newTotalCount = (poolStatsData.totalCount || poolStatsData.count || 0) + drawn.length;
+                const newCount = (poolStatsData.lastDrawDate === todayStr ? (poolStatsData.count || 0) : 0) + packsConsumed;
+                const newTotalCount = (poolStatsData.totalCount || poolStatsData.count || 0) + packsConsumed;
                 transaction.set(poolStatsRef, cleanFirestoreData({
                   count: newCount,
                   totalCount: newTotalCount,
                   lastDrawDate: todayStr
                 }), { merge: true });
 
-                return { drawn, updatedCards, updatedPointPrizes, updatedTickets };
+                return {
+                    drawn,
+                    packsConsumed,
+                    claimLastPrize,
+                    updatedCards,
+                    updatedPointPrizes,
+                    updatedTickets,
+                    winnerName: (userData as any)?.username || user.displayName || '神秘藏家'
+                };
             });
 
             if (result && result.drawn) {
@@ -674,15 +791,36 @@ export default function OpenPackPage() {
                 setTargetPickCount(undefined);
 
                 // 立即更新本地 cardPool 狀態，確保已抽出的號碼立即在前端標記為 isDrawn: true，杜絕下一抽重複選取
-                if (result.updatedTickets && result.updatedTickets.length > 0) {
-                    setCardPool(prev => prev ? {
-                        ...prev,
-                        remainingPacks: Math.max(0, (prev.remainingPacks || 0) - result.drawn.length),
-                        cards: result.updatedCards || prev.cards,
-                        pointPrizes: (result.updatedPointPrizes && result.updatedPointPrizes.length > 0) ? result.updatedPointPrizes : prev.pointPrizes,
-                        kujiTickets: result.updatedTickets,
-                    } : prev);
+                setCardPool(prev => prev ? {
+                    ...prev,
+                    remainingPacks: Math.max(0, (prev.remainingPacks || 0) - result.packsConsumed),
+                    cards: result.updatedCards || prev.cards,
+                    pointPrizes: (result.updatedPointPrizes && result.updatedPointPrizes.length > 0) ? result.updatedPointPrizes : prev.pointPrizes,
+                    kujiTickets: (result.updatedTickets && result.updatedTickets.length > 0) ? result.updatedTickets : prev.kujiTickets,
+                    ...(result.claimLastPrize ? { lastPrizeClaimed: true } : {}),
+                } as CardPool : prev);
+
+                // 若抽中稀有賞或傳奇賞大獎，非同步發布中獎榮譽榜公告
+                const bigHits = result.drawn.filter(
+                    (p: any) => (p.type === 'card' || p.type === 'last-prize') && (p.rarity === 'legendary' || p.rarity === 'rare')
+                );
+                if (bigHits.length > 0) {
+                    Promise.allSettled(
+                        bigHits.map((hit: any) =>
+                            setDoc(doc(collection(firestore, 'announcements')), cleanFirestoreData({
+                                username: result.winnerName,
+                                action: hit.type === 'last-prize' ? '抱走了最後賞' : '抽中了',
+                                prize: hit.name || '精選頂級球員卡',
+                                prizeImageUrl: hit.imageUrl || '',
+                                rarity: hit.rarity || 'legendary',
+                                section: 'draw',
+                                poolName: cardPool.name || '',
+                                timestamp: serverTimestamp(),
+                            }))
+                        )
+                    ).catch(() => {});
                 }
+
                 if (typeof window !== 'undefined') {
                     const url = new URL(window.location.href);
                     if (url.searchParams.has('numbers') || url.searchParams.has('pick')) {
@@ -708,35 +846,70 @@ export default function OpenPackPage() {
         }
     }, [poolId, firestore, user, cardPool, isUsingTicket, isUsingEventTicket, toast, allCardsMap, selectedNumbers]);
 
-    const handleSqueezeStart = (e: React.PointerEvent) => { 
-        if (step !== 'ready-to-reveal' || isChanging) return; 
+    const handleSqueezeStart = (e: React.PointerEvent) => {
+        if (step !== 'ready-to-reveal' || isChanging) return;
         window.getSelection()?.removeAllRanges();
-        setIsSqueezing(true); 
-        startY.current = e.clientY; 
-        (e.target as HTMLElement).setPointerCapture(e.pointerId); 
+        const rect = squeezeRef.current?.getBoundingClientRect();
+        const corner = rect ? detectPeelCorner(e.clientX, e.clientY, rect) : 'tr';
+        setPeelCorner(corner);
+        startGestureRef.current = {
+            x: e.clientX,
+            y: e.clientY,
+            time: Date.now(),
+            width: rect?.width || 230,
+            height: rect?.height || 368,
+            corner,
+        };
+        setIsSqueezing(true);
+        try {
+            (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+        } catch {
+            // ignore pointer capture failure on synthetic events
+        }
     };
-    
-    const handleSqueezeMove = (e: React.PointerEvent) => { 
-        if (!isSqueezing) return; 
-        const deltaY = startY.current - e.clientY; 
-        const containerHeight = squeezeRef.current?.offsetHeight || 400; 
-        setRevealPercent(Math.max(0, Math.min(100, (deltaY / (containerHeight * 0.6)) * 100))); 
+
+    const handleSqueezeMove = (e: React.PointerEvent) => {
+        if (!isSqueezing) return;
+        const g = startGestureRef.current;
+        const dx = e.clientX - g.x;
+        const dy = e.clientY - g.y;
+        const nextPct = computeCornerPeelPercent(g.corner, dx, dy, g.width, g.height);
+        setRevealPercent(nextPct);
+        if (nextPct >= 94) {
+            setIsSqueezing(false);
+            completeReveal();
+        }
     };
-    
-    const handleSqueezeEnd = () => { 
-        if (!isSqueezing) return; 
-        setIsSqueezing(false); 
-        if (revealPercent > 60) { 
+
+    const handleSqueezeEnd = (e: React.PointerEvent) => {
+        if (!isSqueezing) return;
+        setIsSqueezing(false);
+        const g = startGestureRef.current;
+        const elapsed = Date.now() - g.time;
+        const moveDist = Math.hypot(e.clientX - g.x, e.clientY - g.y);
+        const rect = squeezeRef.current?.getBoundingClientRect();
+
+        // 若玩家直接輕觸四個折角任一處，立即沿該角落順暢掀開
+        if (elapsed < 280 && moveDist < 12 && rect && isNearCornerHotspot(e.clientX, e.clientY, rect)) {
+            setPeelCorner(g.corner);
+            setRevealPercent(18);
+            requestAnimationFrame(() => {
+                completeReveal();
+            });
+            return;
+        }
+
+        if (revealPercent >= 40) {
             completeReveal();
         } else {
-            setRevealPercent(0); 
+            setRevealPercent(0);
         }
     };
 
     const completeReveal = () => {
-        setRevealPercent(100); 
-        setStep('revealing'); 
-        const p = drawnPrizes[revealedIndex]; 
+        setRevealPercent(100);
+        setStep('revealing');
+        const p = drawnPrizes[revealedIndex];
         if (p) {
             if (p.rarity === 'legendary' || p.type === 'last-prize') {
                 setShowCelebration('legendary');
@@ -945,24 +1118,36 @@ export default function OpenPackPage() {
             {/* Status & Title Header */}
             <div className="w-full flex flex-col items-center justify-center shrink-0 z-[15] select-none py-1 min-h-[48px]">
                 {(step === 'ready-to-reveal' || step === 'revealing') && currentPrize && revealPercent === 100 && (
-                    <div className="text-center animate-fade-in-up select-none max-w-xs px-2">
+                    <div className="text-center animate-fade-in-up select-none max-w-sm px-2">
                         <p className="text-[10px] text-white/50 uppercase font-black tracking-[0.2em]">
                             {currentPrize.type === 'last-prize' ? '🎉 最後賞限定' : `第 ${revealedIndex + 1} / ${drawnPrizes.length} 項`}
                         </p>
                         <div className="flex items-center justify-center gap-1.5 mt-0.5">
                             {(currentPrize.type === 'points' || currentPrize.isPoints || currentPrize.name?.includes('隨機球員')) ? (
-                                <h2 className="text-base sm:text-xl font-headline font-black text-white uppercase drop-shadow-lg truncate max-w-[260px]">
+                                <h2 className="text-base sm:text-xl font-headline font-black text-white uppercase drop-shadow-lg truncate max-w-[280px]">
                                     {currentPrize.rarity === 'rare' || currentPrize.rarity === 'legendary' ? '隨機球員 特卡' : '隨機球員 普/特 卡'}
                                 </h2>
                             ) : (
-                                <h2 className="text-base sm:text-xl font-headline font-black text-white uppercase drop-shadow-lg truncate max-w-[260px]">
+                                <h2 className="text-base sm:text-xl font-headline font-black text-white drop-shadow-lg truncate max-w-[280px]">
                                     {currentPrize.name}
                                 </h2>
                             )}
                         </div>
-                        <p className={cn("text-[10px] font-black uppercase tracking-[0.25em] mt-0.5", visual.label === '點數獎' ? 'text-cyan-400' : visual.color)}>
-                            {(currentPrize.type === 'points' || currentPrize.isPoints || currentPrize.name?.includes('隨機球員')) ? (currentPrize.rarity === 'rare' || currentPrize.rarity === 'legendary' ? '特卡' : '普/特卡') : visual.label}
-                        </p>
+                        <div className="flex items-center justify-center gap-2 mt-0.5 flex-wrap">
+                            <span className={cn("text-[10px] font-black uppercase tracking-[0.25em]", visual.label === '點數獎' ? 'text-cyan-400' : visual.color)}>
+                                {(currentPrize.type === 'points' || currentPrize.isPoints || currentPrize.name?.includes('隨機球員')) ? (currentPrize.rarity === 'rare' || currentPrize.rarity === 'legendary' ? '特卡' : '普/特卡') : visual.label}
+                            </span>
+                            {!(currentPrize.type === 'points' || currentPrize.isPoints || currentPrize.name?.includes('隨機球員')) && currentPrize.category && (
+                                <span className="text-[10px] font-bold text-slate-300 px-1.5 py-0.2 rounded bg-white/10 border border-white/15">
+                                    {currentPrize.category}
+                                </span>
+                            )}
+                            {!(currentPrize.type === 'points' || currentPrize.isPoints || currentPrize.name?.includes('隨機球員')) && (currentPrize.sellPrice || 0) > 0 && (
+                                <span className="text-[10px] font-code font-black text-amber-300 px-1.5 py-0.2 rounded bg-amber-500/15 border border-amber-400/30">
+                                    估值 {Number(currentPrize.sellPrice).toLocaleString()}
+                                </span>
+                            )}
+                        </div>
                     </div>
                 )}
                 {step === 'done' && (
@@ -1030,64 +1215,111 @@ export default function OpenPackPage() {
                                 : (step === 'revealing' && revealPercent === 100 && visual.glow),
                             !isLegendaryRevealed && "border-slate-950"
                         )}>
-                            <div 
-                                ref={squeezeRef} 
-                                className="relative bg-transparent rounded-[1.1rem] sm:rounded-[1.3rem] border-2 border-slate-950/60 overflow-hidden w-full h-full flex items-center justify-center touch-none cursor-pointer select-none transition-transform duration-100"
-                                style={{ transform: isSqueezing ? `perspective(1000px) rotateX(${revealPercent * 0.2}deg) rotateY(-${revealPercent * 0.1}deg) scale(1.03)` : 'none' }}
-                                onPointerDown={handleSqueezeStart} 
-                                onPointerMove={handleSqueezeMove} 
-                                onPointerUp={handleSqueezeEnd} 
-                                onPointerCancel={handleSqueezeEnd}
-                            >
-                                <div className={cn(
-                                    "relative w-full h-full z-10 flex items-center justify-center pointer-events-none select-none transition-opacity duration-200",
-                                    isChanging ? "opacity-0" : "opacity-100"
-                                )}>
-                                    {currentPrize && (
-                                        (currentPrize.type === 'card' || currentPrize.type === 'last-prize') ? (
-                                            <div className="relative w-full h-full rounded-xl overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)]">
-                                                <CardItem 
-                                                    name={currentPrize.name} 
-                                                    imageUrl={currentPrize.imageUrl} 
-                                                    backImageUrl={currentPrize.backImageUrl} 
-                                                    imageHint={currentPrize.name} 
-                                                    rarity={currentPrize.rarity} 
-                                                    serialNumber={currentPrize.serialNumber} 
-                                                    isFlippable={true} 
-                                                    className="w-full h-full aspect-[2.5/4]"
-                                                    priority 
-                                                />
+                            {(() => {
+                                const peelGeo = getCornerPeelGeometry(peelCorner, revealPercent);
+                                return (
+                                    <div 
+                                        ref={squeezeRef} 
+                                        className="relative bg-transparent rounded-[1.1rem] sm:rounded-[1.3rem] border-2 border-slate-950/60 overflow-hidden w-full h-full flex items-center justify-center touch-none cursor-grab active:cursor-grabbing select-none transition-transform duration-150"
+                                        style={{ transform: isSqueezing && revealPercent > 0 ? peelGeo.tiltTransform : 'none' }}
+                                        onPointerDown={handleSqueezeStart} 
+                                        onPointerMove={handleSqueezeMove} 
+                                        onPointerUp={handleSqueezeEnd} 
+                                        onPointerCancel={handleSqueezeEnd}
+                                    >
+                                        <div className={cn(
+                                            "relative w-full h-full z-10 flex items-center justify-center pointer-events-none select-none transition-opacity duration-200",
+                                            isChanging ? "opacity-0" : "opacity-100"
+                                        )}>
+                                            {currentPrize && (
+                                                (currentPrize.type === 'card' || currentPrize.type === 'last-prize') ? (
+                                                    <div className="relative w-full h-full rounded-xl overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+                                                        <CardItem 
+                                                            key={`${revealedIndex}-${currentPrize.id}`}
+                                                            name={currentPrize.name} 
+                                                            imageUrl={currentPrize.imageUrl} 
+                                                            backImageUrl={currentPrize.backImageUrl} 
+                                                            imageHint={currentPrize.name} 
+                                                            rarity={currentPrize.rarity} 
+                                                            serialNumber={currentPrize.serialNumber} 
+                                                            isFlippable={true} 
+                                                            className="w-full h-full aspect-[2.5/4]"
+                                                            priority 
+                                                        />
+                                                    </div>
+                                                ) : (
+                                                    <div className="relative w-full h-full rounded-xl overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+                                                        <RandomPlayerCard 
+                                                            rarity={currentPrize.rarity} 
+                                                            points={currentPrize.points} 
+                                                            title={currentPrize.rarity === 'rare' || currentPrize.rarity === 'legendary' ? '隨機球員 特卡' : '隨機球員 普/特 卡'} 
+                                                            showBuybackHint={false} 
+                                                            className="w-full h-full aspect-[2.5/4] !rounded-xl"
+                                                        />
+                                                    </div>
+                                                )
+                                            )}
+                                        </div>
+
+                                        {/* 四角自由撕開遮罩 (支援左上 / 右上 / 左下 / 右下任一角往內滑動或輕觸掀開) */}
+                                        <div 
+                                            className={cn(
+                                                "absolute inset-0 z-30 bg-slate-900 rounded-[1.1rem] sm:rounded-[1.3rem] border-2 sm:border-3 border-primary/50 flex flex-col items-center justify-center pointer-events-none select-none shadow-[inset_0_0_24px_rgba(6,182,212,0.3)]",
+                                                isSqueezing || isChanging
+                                                    ? "transition-none"
+                                                    : "transition-[clip-path,opacity] duration-400 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                                                revealPercent >= 100 ? "opacity-0" : "opacity-100"
+                                            )} 
+                                            style={{ clipPath: peelGeo.coverClipPath }} 
+                                        >
+                                            {/* 四個角落的擬真微折角引導標記 */}
+                                            {revealPercent === 0 && (
+                                                <>
+                                                    <div className="absolute top-1.5 left-1.5 w-6 h-6 border-t-2 border-l-2 border-amber-300/80 rounded-tl-lg flex items-start justify-start p-0.5">
+                                                        <div className="w-2.5 h-2.5 bg-gradient-to-br from-amber-300/60 to-transparent rounded-tl-sm" />
+                                                    </div>
+                                                    <div className="absolute top-1.5 right-1.5 w-6 h-6 border-t-2 border-r-2 border-amber-300/80 rounded-tr-lg flex items-start justify-end p-0.5">
+                                                        <div className="w-2.5 h-2.5 bg-gradient-to-bl from-amber-300/60 to-transparent rounded-tr-sm" />
+                                                    </div>
+                                                    <div className="absolute bottom-1.5 left-1.5 w-6 h-6 border-b-2 border-l-2 border-amber-300/80 rounded-bl-lg flex items-end justify-start p-0.5">
+                                                        <div className="w-2.5 h-2.5 bg-gradient-to-tr from-amber-300/60 to-transparent rounded-bl-sm" />
+                                                    </div>
+                                                    <div className="absolute bottom-1.5 right-1.5 w-6 h-6 border-b-2 border-r-2 border-amber-300/80 rounded-br-lg flex items-end justify-end p-0.5">
+                                                        <div className="w-2.5 h-2.5 bg-gradient-to-tl from-amber-300/60 to-transparent rounded-br-sm" />
+                                                    </div>
+                                                </>
+                                            )}
+
+                                            <div className="relative">
+                                                <div className="absolute inset-0 bg-primary/25 blur-xl" />
+                                                <Disc3 className="w-10 h-10 sm:w-12 sm:h-12 text-primary animate-spin-slow mb-2 sm:mb-3 relative z-10" />
                                             </div>
-                                        ) : (
-                                            <div className="relative w-full h-full rounded-xl overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)]">
-                                                <RandomPlayerCard 
-                                                    rarity={currentPrize.rarity} 
-                                                    points={currentPrize.points} 
-                                                    title={currentPrize.rarity === 'rare' || currentPrize.rarity === 'legendary' ? '隨機球員 特卡' : '隨機球員 普/特 卡'} 
-                                                    showBuybackHint={false} 
-                                                    className="w-full h-full aspect-[2.5/4] !rounded-xl"
-                                                />
-                                            </div>
-                                        )
-                                    )}
-                                </div>
-                                
-                                <div 
-                                    className={cn(
-                                        "absolute inset-0 z-30 bg-slate-900 rounded-[1.1rem] sm:rounded-[1.3rem] border-2 sm:border-3 border-primary/50 flex flex-col items-center justify-center pointer-events-none select-none shadow-[inset_0_0_20px_rgba(6,182,212,0.3)]",
-                                        (!isSqueezing && (revealPercent === 0 || isChanging)) ? "" : "transition-all duration-500 ease-out",
-                                        (revealPercent >= 100) ? "opacity-0" : "opacity-100"
-                                    )} 
-                                    style={{ transform: `translateY(-${revealPercent}%)` }} 
-                                >
-                                    <div className="relative">
-                                        <div className="absolute inset-0 bg-primary/25 blur-xl" />
-                                        <Disc3 className="w-10 h-10 sm:w-12 sm:h-12 text-primary animate-spin-slow mb-2 sm:mb-3 relative z-10" />
+                                            <span className="font-headline text-xs sm:text-sm font-black text-primary tracking-[0.25em] italic drop-shadow-md">P+ CARDER</span>
+                                            <p className="text-[10px] text-amber-200/90 mt-2 sm:mt-3 font-black tracking-wider text-center px-3">
+                                                {isSqueezing && revealPercent > 0
+                                                    ? `正從${PEEL_CORNER_LABELS[peelCorner]}角掀開...`
+                                                    : '任選四角滑動或輕觸掀開'}
+                                            </p>
+                                        </div>
+
+                                        {/* 3D 擬真鋁箔折角反光層 (隨所選角落動態對角翻折) */}
+                                        {revealPercent > 0 && revealPercent < 100 && (
+                                            <div
+                                                className={cn(
+                                                    "absolute inset-0 z-40 pointer-events-none select-none drop-shadow-[0_8px_16px_rgba(0,0,0,0.85)]",
+                                                    isSqueezing
+                                                        ? "transition-none"
+                                                        : "transition-[clip-path,opacity] duration-400 ease-[cubic-bezier(0.22,1,0.36,1)]"
+                                                )}
+                                                style={{
+                                                    clipPath: peelGeo.flapClipPath,
+                                                    background: peelGeo.flapGradient,
+                                                }}
+                                            />
+                                        )}
                                     </div>
-                                    <span className="font-headline text-xs sm:text-sm font-black text-primary tracking-[0.25em] italic drop-shadow-md">P+ CARDER</span>
-                                    <p className="text-[9px] text-primary/70 mt-2 sm:mt-3 uppercase font-black tracking-widest">往上掀開</p>
-                                </div>
-                            </div>
+                                );
+                            })()}
                         </div>
 
                         {currentPrize?.ticketNumber && (
@@ -1139,17 +1371,18 @@ export default function OpenPackPage() {
                                     </div>
                                 )}
                                 {p.type === 'points' || p.isPoints || p.name?.includes('隨機球員') ? (
-                                    <div className="w-full aspect-[2.5/4]">
+                                    <div className="w-full aspect-[2.5/4] rounded-xl overflow-hidden shadow-2xl transition-transform duration-200 hover:scale-[1.03] relative">
                                         <RandomPlayerCard 
                                             rarity={p.rarity} 
                                             points={p.points}
                                             title={p.name}
+                                            className="w-full h-full aspect-[2.5/4] rounded-xl hover:scale-100"
                                             onClick={() => setPreviewCard({ ...p, isPoints: true })} 
                                         />
                                     </div>
                                 ) : (
                                     <div 
-                                        className="w-full aspect-[2.5/4] rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl transition-all hover:scale-105 group border border-white/10 h-full cursor-zoom-in relative"
+                                        className="w-full aspect-[2.5/4] rounded-xl overflow-hidden shadow-2xl transition-transform duration-200 hover:scale-[1.03] group cursor-zoom-in relative"
                                         onClick={() => setPreviewCard({ ...p, rarity: p.rarity })}
                                     >
                                         <CardItem 
@@ -1158,7 +1391,7 @@ export default function OpenPackPage() {
                                             backImageUrl={p.backImageUrl} 
                                             imageHint={p.name} 
                                             rarity={p.rarity} 
-                                            className="h-full"
+                                            className="w-full h-full aspect-[2.5/4] hover:scale-100"
                                             isFlippable={false}
                                         />
                                     </div>
@@ -1347,20 +1580,43 @@ export default function OpenPackPage() {
                     <DialogTitle><VisuallyHiddenPrimitive.Root>卡片預覽</VisuallyHiddenPrimitive.Root></DialogTitle>
                     {previewCard && (
                         <div className="w-full flex flex-col items-center gap-3">
-                            {/* 卡片標題 */}
-                            <div className="text-center w-full px-2">
-                                <p className="text-xs font-black text-white leading-snug line-clamp-2">{previewCard.name}</p>
+                            {/* 卡片標題與資訊 */}
+                            <div className="text-center w-full px-2 space-y-1">
+                                <p className="text-sm font-black text-white leading-snug line-clamp-2">{previewCard.name}</p>
+                                {!(previewCard.isPoints || previewCard.type === 'points' || previewCard.name?.includes('隨機球員')) && (
+                                    <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                                        {previewCard.category && (
+                                            <span className="text-[10px] font-bold text-slate-300 px-2 py-0.5 rounded-full bg-white/10 border border-white/15">
+                                                {previewCard.category}
+                                            </span>
+                                        )}
+                                        {(previewCard.sellPrice || 0) > 0 && (
+                                            <span className="text-[10px] font-code font-black text-amber-300 px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-400/30">
+                                                參考估值 {Number(previewCard.sellPrice).toLocaleString()}
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
                             </div>
-                            <div className="w-full max-w-[230px] aspect-[2.5/3.5] drop-shadow-[0_15px_30px_rgba(0,0,0,0.85)]">
+                            <div className="w-full max-w-[230px] aspect-[2.5/4] drop-shadow-[0_15px_30px_rgba(0,0,0,0.85)]">
                                 {previewCard.isPoints || previewCard.type === 'points' || previewCard.name?.includes('隨機球員') ? (
                                     <RandomPlayerCard 
                                         rarity={previewCard.rarity} 
                                         points={previewCard.points} 
                                         title={previewCard.name}
-                                        showBuybackHint={false} 
+                                        showBuybackHint={false}
+                                        className="w-full h-full aspect-[2.5/4] rounded-xl"
                                     />
                                 ) : (
-                                    <CardItem name={previewCard.name} imageUrl={previewCard.imageUrl} backImageUrl={previewCard.backImageUrl} imageHint={previewCard.name} rarity={previewCard.rarity} isFlippable={true}/>
+                                    <CardItem
+                                        name={previewCard.name}
+                                        imageUrl={previewCard.imageUrl}
+                                        backImageUrl={previewCard.backImageUrl}
+                                        imageHint={previewCard.name}
+                                        rarity={previewCard.rarity}
+                                        isFlippable={true}
+                                        className="w-full h-full aspect-[2.5/4]"
+                                    />
                                 )}
                             </div>
                             {!previewCard.isPoints && (

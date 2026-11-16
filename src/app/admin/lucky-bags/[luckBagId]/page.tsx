@@ -168,11 +168,13 @@ export default function LuckBagDetailPage() {
   const globallyAssignedCardIds = useMemo(() => {
     const ids = new Set<string>();
     allCardPools?.forEach(p => {
-        p.cards?.forEach((c: any) => ids.add(c.cardId));
+        p.cards?.forEach((c: any) => { if (c?.cardId) ids.add(c.cardId); });
+        p.kujiTickets?.forEach((t: any) => { if (t?.cardId) ids.add(t.cardId); });
         if (p.lastPrizeCardId) ids.add(p.lastPrizeCardId);
     });
     bettingItems?.forEach(item => {
         item.allCardIds?.forEach((id: string) => ids.add(id));
+        item.soldCardIds?.forEach((id: string) => ids.add(id));
     });
     allLuckBags?.forEach(bag => {
         if (bag.id === luckBagId) return; // Skip current bag
@@ -533,9 +535,24 @@ export default function LuckBagDetailPage() {
   const handleDuplicate = async () => {
     if (!firestore || !luckBag) return;
     try {
+        const soldOrUnavailable = new Set(
+          (allCards || [])
+            .filter((c: any) => c.isSold || c.isRecycled || c.status === 'sold')
+            .map(c => c.id)
+        );
         const { id, winners, ...bagToCopy } = luckBag;
+        const safePrizes = {
+          first: bagToCopy.prizes?.first && !soldOrUnavailable.has(bagToCopy.prizes.first) ? bagToCopy.prizes.first : '',
+          second: bagToCopy.prizes?.second && !soldOrUnavailable.has(bagToCopy.prizes.second) ? bagToCopy.prizes.second : '',
+          third: bagToCopy.prizes?.third && !soldOrUnavailable.has(bagToCopy.prizes.third) ? bagToCopy.prizes.third : '',
+        };
+        const safeOtherPrizes = (bagToCopy.otherPrizes || []).filter(p =>
+          p.type !== 'card' || (p.cardId && !soldOrUnavailable.has(p.cardId))
+        );
         const newBagData: any = {
             ...bagToCopy,
+            prizes: safePrizes,
+            otherPrizes: safeOtherPrizes,
             name: `${luckBag.name} (複製)`,
             status: 'draft' as const,
             revealLottery: false,
@@ -543,7 +560,7 @@ export default function LuckBagDetailPage() {
         };
 
         const docRef = await addDoc(collection(firestore, 'luckBags'), newBagData);
-        toast({ title: '複製成功', description: '已建立活動副本，正在跳轉...' });
+        toast({ title: '複製成功', description: '已建立活動副本（已自動過濾已抽出/已售出之大獎卡片）。' });
         router.push(`/admin/lucky-bags/${docRef.id}`);
     } catch (error) {
         console.error("Error duplicating luck bag:", error);
@@ -614,8 +631,8 @@ export default function LuckBagDetailPage() {
     const otherPrizesIds = new Set(luckBag?.otherPrizes?.map(p => p.cardId).filter((id): id is string => !!id) || []);
     
     return allCards.filter(c => {
-        // Basic: Must not be sold and not in other areas
-        const isFree = !c.isSold && !globallyAssignedCardIds.has(c.id) && c.source !== 'group-break';
+        // Basic: Must not be sold/recycled and not in other areas
+        const isFree = !c.isSold && !(c as any).isRecycled && (c as any).status !== 'sold' && !globallyAssignedCardIds.has(c.id) && c.source !== 'group-break';
         
         if (selectedPrizeLevel === 'other') {
             // Adding to other prizes: must be free AND not already in "other prizes"

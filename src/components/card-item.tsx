@@ -2,7 +2,7 @@
 
 import { SafeImage } from '@/components/safe-image';
 import { cn } from '@/lib/utils';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { RotateCw, Gem, Search } from 'lucide-react';
 import { PLACEHOLDER_CARD_IMAGE } from '@/lib/placeholders';
 import { useAutoMatteImage } from '@/hooks/use-auto-matte-image';
@@ -54,6 +54,14 @@ export function CardItem({
   const [imgError, setImgError] = useState(false);
   const [backImgError, setBackImgError] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setImgError(false);
+  }, [imageUrl]);
+
+  useEffect(() => {
+    setBackImgError(false);
+  }, [backImageUrl]);
 
   const fallbackUrl = PLACEHOLDER_CARD_IMAGE;
   const isFrontValid = Boolean(imageUrl && typeof imageUrl === 'string' && imageUrl.trim() !== '');

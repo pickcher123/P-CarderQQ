@@ -4,6 +4,7 @@ import { RandomPlayerCard } from '@/components/random-player-card';
 import { Button } from '@/components/ui/button';
 import { FastForward, Disc3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { type PeelCorner, PEEL_CORNER_LABELS, getCornerPeelGeometry } from '@/lib/corner-peel';
 
 export function RevealComponent({
     currentPrize,
@@ -11,6 +12,7 @@ export function RevealComponent({
     isChanging,
     isSqueezing,
     revealPercent,
+    peelCorner = 'tr',
     rarityVisuals,
     pointPrizeRarityStyles,
     handleSqueezeStart,
@@ -24,6 +26,7 @@ export function RevealComponent({
     isChanging: boolean,
     isSqueezing: boolean,
     revealPercent: number,
+    peelCorner?: PeelCorner,
     rarityVisuals: any,
     pointPrizeRarityStyles: any,
     handleSqueezeStart: any,
@@ -35,6 +38,7 @@ export function RevealComponent({
     const shouldReduceMotion = useReducedMotion();
     const visual = currentPrize ? (rarityVisuals[currentPrize.rarity] || rarityVisuals.common) : rarityVisuals.common;
     const isLegendaryRevealed = (step === 'revealing' || revealPercent === 100) && currentPrize && (currentPrize.rarity === 'legendary' || currentPrize.type === 'last-prize');
+    const peelGeo = getCornerPeelGeometry(peelCorner, revealPercent);
 
     return (
         <motion.div 
@@ -85,8 +89,8 @@ export function RevealComponent({
             )}>
                 <div 
                     ref={squeezeRef} 
-                    className="relative bg-transparent rounded-[1.1rem] border-[5px] border-slate-950 overflow-hidden aspect-[2.5/4] flex items-center justify-center touch-none cursor-pointer select-none transition-transform duration-100"
-                    style={{ transform: isSqueezing ? `perspective(1000px) rotateX(${revealPercent * 0.2}deg) rotateY(-${revealPercent * 0.1}deg) scale(1.05)` : 'none' }}
+                    className="relative bg-transparent rounded-[1.1rem] border-[5px] border-slate-950 overflow-hidden aspect-[2.5/4] flex items-center justify-center touch-none cursor-grab active:cursor-grabbing select-none transition-transform duration-150"
+                    style={{ transform: isSqueezing && revealPercent > 0 ? peelGeo.tiltTransform : 'none' }}
                     onPointerDown={handleSqueezeStart} 
                     onPointerMove={handleSqueezeMove} 
                     onPointerUp={handleSqueezeEnd} 
@@ -135,21 +139,47 @@ export function RevealComponent({
                     <div 
                         className={cn(
                             "absolute inset-0 z-30 bg-slate-900 rounded-xl border-4 border-primary/50 flex flex-col items-center justify-center pointer-events-none select-none shadow-[inset_0_0_20px_rgba(6,182,212,0.3)]",
-                            (!isSqueezing && (revealPercent === 0 || isChanging)) ? "" : "transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]",
-                            (revealPercent >= 100) ? "opacity-0" : "opacity-100"
+                            isSqueezing || isChanging
+                                ? "transition-none"
+                                : "transition-[clip-path,opacity] duration-400 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                            revealPercent >= 100 ? "opacity-0" : "opacity-100"
                         )} 
-                        style={{ transform: `translateY(-${revealPercent}%)` }} 
+                        style={{ clipPath: peelGeo.coverClipPath }} 
                     >
-                        <div className="absolute -right-2 top-2 bottom-2 w-2 bg-primary/20 rounded-r-lg shadow-lg" />
-                        <div className="absolute -bottom-2 left-2 right-2 h-2 bg-primary/20 rounded-b-lg shadow-lg" />
-                        
+                        {revealPercent === 0 && (
+                            <>
+                                <div className="absolute top-1.5 left-1.5 w-5 h-5 border-t-2 border-l-2 border-amber-300/80 rounded-tl-md" />
+                                <div className="absolute top-1.5 right-1.5 w-5 h-5 border-t-2 border-r-2 border-amber-300/80 rounded-tr-md" />
+                                <div className="absolute bottom-1.5 left-1.5 w-5 h-5 border-b-2 border-l-2 border-amber-300/80 rounded-bl-md" />
+                                <div className="absolute bottom-1.5 right-1.5 w-5 h-5 border-b-2 border-r-2 border-amber-300/80 rounded-br-md" />
+                            </>
+                        )}
                         <div className="relative">
                             <div className="absolute inset-0 bg-primary/30 blur-xl" />
                             <Disc3 className="w-12 h-12 text-primary animate-spin-slow mb-3 relative z-10" />
                         </div>
                         <span className="font-headline text-sm font-black text-primary tracking-[0.3em] italic drop-shadow-md">P+ CARDER</span>
-                        <p className="text-[9px] text-primary/70 mt-4 uppercase font-black tracking-widest">往上掀開</p>
+                        <p className="text-[9px] text-amber-200/90 mt-3 font-black tracking-wider text-center px-2">
+                            {isSqueezing && revealPercent > 0
+                                ? `正從${PEEL_CORNER_LABELS[peelCorner]}角掀開...`
+                                : '任選四角滑動或輕觸掀開'}
+                        </p>
                     </div>
+
+                    {revealPercent > 0 && revealPercent < 100 && (
+                        <div
+                            className={cn(
+                                "absolute inset-0 z-40 pointer-events-none select-none drop-shadow-[0_8px_16px_rgba(0,0,0,0.85)]",
+                                isSqueezing
+                                    ? "transition-none"
+                                    : "transition-[clip-path,opacity] duration-400 ease-[cubic-bezier(0.22,1,0.36,1)]"
+                            )}
+                            style={{
+                                clipPath: peelGeo.flapClipPath,
+                                background: peelGeo.flapGradient,
+                            }}
+                        />
+                    )}
                 </div>
             </div>
             {step === 'ready-to-reveal' && (
