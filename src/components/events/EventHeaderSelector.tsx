@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Sparkles, Disc3, Ticket, Eye, Grid3X3, Flame, Trophy, Crown, Gift, QrCode } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { CheckInTicketIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
 
 export type EventTabType = 'wheel' | 'kuji' | 'price-guess' | 'punch-grid';
@@ -107,15 +108,15 @@ export function EventHeaderSelector({ currentTab, onSelectTab, onOpenPromoModal 
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2.5 self-start md:self-auto">
-                    {/* 🎁 簽到/領券入口按鈕 */}
+                    {/* 簽到/領券入口按鈕 */}
                     {onOpenPromoModal && (
                         <Button
                             id="btn-open-promo-center"
                             onClick={onOpenPromoModal}
-                            className="h-9 px-4 rounded-xl bg-gradient-to-r from-pink-500 via-purple-600 to-indigo-600 hover:from-pink-400 hover:to-indigo-500 text-white font-black text-xs shadow-[0_0_20px_rgba(236,72,153,0.4)] border border-pink-400/40 animate-pulse active:scale-95 transition-all cursor-pointer"
+                            className="h-9 px-3.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] text-slate-100 hover:text-white font-medium text-xs shadow-[0_1px_2px_rgba(0,0,0,0.4)] border border-white/[0.12] hover:border-amber-300/40 active:scale-[0.97] transition-[background-color,border-color,color,transform] duration-150 cursor-pointer"
                         >
-                            <Gift className="w-4 h-4 mr-1.5" />
-                            🎁 簽到/領券 (兌換碼)
+                            <CheckInTicketIcon className="w-4 h-4 mr-1.5 text-amber-300" />
+                            簽到/領券 (兌換碼)
                         </Button>
                     )}
 

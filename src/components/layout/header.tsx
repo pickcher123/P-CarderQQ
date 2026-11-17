@@ -1,8 +1,8 @@
 'use client';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { User, LogIn, LogOut, ShieldCheck, Loader2, Package, Library, Plus, Users2, ChevronDown, Crown, Info, Sparkles, Wallet, Award, Trophy, Calendar, Gift, Ticket, CalendarCheck, HelpCircle } from 'lucide-react';
-import { Logo, CrossedCardsIcon, LuckyBagIcon, PPlusIcon, NavDrawIcon, NavCollectionIcon, DiamondIcon } from '@/components/icons';
+import { User, LogIn, LogOut, Loader2, Package, Library, Plus, Users2, ChevronDown, Crown, Info, Sparkles, Wallet, Award, Trophy, Calendar, Gift, Ticket, HelpCircle } from 'lucide-react';
+import { Logo, CrossedCardsIcon, LuckyBagIcon, PPlusIcon, NavDrawIcon, NavCollectionIcon, DiamondIcon, AdminConsoleIcon, CheckInTicketIcon } from '@/components/icons';
 import { useUser, useAuth, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { useRouter, usePathname } from 'next/navigation';
@@ -128,28 +128,27 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
         
         <div className="flex items-center justify-end gap-1.5 sm:gap-2.5 shrink-0 ml-auto">
             {isUserAdmin && (
-              <Button variant="outline" size="sm" asChild className="hidden md:flex h-8 px-3 rounded-xl border-amber-500/40 text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 shadow-[0_0_10px_rgba(245,158,11,0.2)] shrink-0">
+              <Button variant="outline" size="sm" asChild className="hidden md:flex h-8 px-3 rounded-lg border-white/[0.1] text-slate-200 bg-white/[0.04] hover:bg-white/[0.08] hover:border-amber-400/35 hover:text-amber-200 shadow-[0_1px_2px_rgba(0,0,0,0.4)] transition-[background-color,border-color,color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] shrink-0">
                 <Link href="/admin" className="flex items-center">
-                  <ShieldCheck className="h-3.5 w-3.5 text-amber-400 mr-1.5 shrink-0" />
-                  <span>管理後台</span>
+                  <AdminConsoleIcon className="h-3.5 w-3.5 text-amber-400/90 mr-1.5 shrink-0" />
+                  <span className="text-xs font-medium tracking-wide">管理後台</span>
                 </Link>
               </Button>
             )}
 
-            {/* 🎁 簽到/領券按鈕 (移動至鑽石旁邊) */}
+            {/* 簽到/領券按鈕 */}
             <button
               type="button"
               id="header-free-ticket-btn"
               onClick={() => setIsPromoModalOpen(true)}
-              className="relative flex items-center justify-center gap-1 sm:gap-1.5 h-8 sm:h-9 px-2 sm:px-3 rounded-full bg-gradient-to-r from-pink-500/20 via-rose-500/20 to-pink-500/15 border border-pink-500/40 hover:border-pink-400/80 shadow-[0_0_12px_rgba(244,63,94,0.2)] text-pink-300 hover:text-white transition-[border-color,color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] group cursor-pointer shrink-0"
+              className="relative flex items-center justify-center gap-1.5 h-8 sm:h-9 px-2.5 sm:px-3.5 rounded-lg bg-white/[0.05] hover:bg-white/[0.09] border border-white/[0.12] hover:border-amber-300/40 shadow-[0_1px_2px_rgba(0,0,0,0.4)] text-slate-100 hover:text-white transition-[background-color,border-color,color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] group cursor-pointer shrink-0"
               title="簽到/領券"
             >
               <div className="relative flex items-center justify-center">
-                <CalendarCheck className="h-4 w-4 text-pink-400 [@media(hover:hover)_and_(pointer:fine)]:group-hover:scale-110 [@media(hover:hover)_and_(pointer:fine)]:group-hover:rotate-6 transition-transform duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]" />
-                {/* 手機版微型發光紅點 */}
-                <span className="sm:hidden absolute -top-1 -right-1 w-2 h-2 rounded-full bg-pink-500 border border-pink-200 animate-pulse shadow-[0_0_6px_rgba(244,63,94,0.8)]" />
+                <CheckInTicketIcon className="h-4 w-4 text-amber-300 [@media(hover:hover)_and_(pointer:fine)]:group-hover:-rotate-6 transition-transform duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]" />
+                <span className="sm:hidden absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-amber-400 ring-2 ring-[#070b14]" />
               </div>
-              <span className="text-xs font-bold tracking-tight hidden sm:inline">簽到/領券</span>
+              <span className="text-xs font-medium tracking-wide hidden sm:inline">簽到/領券</span>
             </button>
 
             {/* 點數區塊 (電競晶鑽膠囊) */}
@@ -277,16 +276,15 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                       id="header-avatar-trigger"
                       className="relative flex items-center justify-center p-0.5 rounded-full [@media(hover:hover)_and_(pointer:fine)]:hover:scale-105 active:scale-[0.97] transition-transform duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] outline-none group ml-0.5 sm:ml-1"
                     >
-                      {/* 頭像外圈霓虹光環 */}
+                      {/* 頭像外圈金屬框 */}
                       <div className={cn(
-                        "relative flex items-center justify-center rounded-full p-[2px] transition-opacity duration-150 shadow-[0_0_14px_rgba(6,182,212,0.25)] group-hover:shadow-[0_0_20px_rgba(6,182,212,0.5)]",
+                        "relative flex items-center justify-center rounded-full p-[1.5px] transition-all duration-150 shadow-[0_2px_10px_rgba(0,0,0,0.55)] group-hover:brightness-110",
                         levelInfo.border,
-                        levelInfo.glow,
-                        "bg-gradient-to-br from-cyan-400/40 via-white/10 to-blue-900/60"
+                        "border bg-white/[0.06]"
                       )}>
                         {/* 頭像主體 */}
                         <div className={cn(
-                          "w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center overflow-hidden border border-black/60 shadow-inner bg-slate-900 relative",
+                          "w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center overflow-hidden ring-1 ring-inset ring-white/15 relative",
                           levelInfo.bg
                         )}>
                           {userProfile?.photoURL ? (
@@ -299,18 +297,20 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                             />
                           ) : (
                             <LevelIcon className={cn(
-                              "w-4 h-4 sm:w-4.5 sm:h-4.5 drop-shadow-[0_0_8px_currentColor]",
-                              levelInfo.color,
+                              "w-6 h-6 sm:w-7 sm:h-7 drop-shadow-[0_2px_6px_rgba(0,0,0,0.85)]",
                               levelInfo.animate
                             )} />
                           )}
                         </div>
 
                         {/* 右下角等級微型皇冠角標 */}
-                        <div className="absolute -bottom-0.5 -right-0.5 flex items-center justify-center w-4 h-4 rounded-full bg-[#080d19] border border-cyan-500/40 shadow-[0_0_8px_rgba(0,0,0,0.8)]">
+                        <div className={cn(
+                          "absolute -bottom-0.5 -right-0.5 flex items-center justify-center w-3.5 h-3.5 rounded-full bg-[#080d19] border shadow-[0_1px_4px_rgba(0,0,0,0.9)]",
+                          levelInfo.border
+                        )}>
                           <Crown className={cn(
-                            "w-2.5 h-2.5",
-                            isHighTier ? "text-amber-400 fill-amber-400/40 animate-pulse" : "text-cyan-400"
+                            "w-2 h-2",
+                            isHighTier ? "text-amber-400 fill-amber-400/35" : "text-slate-300"
                           )} />
                         </div>
                       </div>
@@ -335,7 +335,7 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                                     className="rounded-full object-cover" 
                                   />
                                 ) : (
-                                  <LevelIcon className={cn("w-5 h-5", levelInfo.color)} />
+                                  <LevelIcon className={cn("w-7 h-7 drop-shadow-[0_2px_6px_rgba(0,0,0,0.85)]", levelInfo.color)} />
                                 )}
                               </div>
                               <div className="flex flex-col min-w-0">
@@ -355,19 +355,19 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                       <div className="p-1 space-y-1">
                           {isUserAdmin && (
                             <>
-                              <DropdownMenuItem asChild className="rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30 cursor-pointer shadow-[0_0_12px_rgba(245,158,11,0.15)] py-2">
+                              <DropdownMenuItem asChild className="rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-slate-100 hover:text-amber-200 font-medium border border-white/[0.08] cursor-pointer py-2">
                                   <Link href="/admin" className="flex items-center justify-between w-full">
                                       <div className="flex items-center">
-                                          <ShieldCheck className="mr-2 h-4 w-4 text-amber-400" />
+                                          <AdminConsoleIcon className="mr-2 h-4 w-4 text-amber-400/90" />
                                           <span>後台管理中心</span>
                                       </div>
-                                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono font-bold tracking-wider border border-amber-500/30">ADMIN</span>
+                                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-400/15 text-amber-300 font-mono font-semibold tracking-wider border border-amber-400/25">ADMIN</span>
                                   </Link>
                               </DropdownMenuItem>
-                              <DropdownMenuItem asChild className="hidden sm:flex rounded-xl focus:bg-purple-500/15 focus:text-purple-300 text-purple-400 font-bold cursor-pointer">
+                              <DropdownMenuItem asChild className="hidden sm:flex rounded-lg focus:bg-white/[0.08] focus:text-white text-slate-200 font-medium cursor-pointer">
                                   <Link href="/lucky-wheel">
-                                      <Sparkles className="mr-2.5 h-4 w-4 text-purple-400" />
-                                      <span>🎪 活動轉盤專區</span>
+                                      <Sparkles className="mr-2.5 h-4 w-4 text-amber-300" />
+                                      <span>活動轉盤專區</span>
                                   </Link>
                               </DropdownMenuItem>
                             </>

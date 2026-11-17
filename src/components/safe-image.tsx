@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image, { ImageProps } from 'next/image';
 import { cn } from '@/lib/utils';
 import { PLACEHOLDER_CARD_IMAGE } from '@/lib/placeholders';
@@ -48,12 +48,19 @@ export function SafeImage({
   const [imgSrc, setImgSrc] = useState(initialSrc);
   const [hasError, setHasError] = useState(!initialValid);
   const [isLoaded, setIsLoaded] = useState(false);
+  const imgRef = useRef<HTMLImageElement | null>(null);
 
   useEffect(() => {
     if (isValidSrc(src)) {
-      setImgSrc(typeof src === 'string' ? src.trim() : src);
+      const nextSrc = typeof src === 'string' ? src.trim() : src;
+      setImgSrc(nextSrc);
       setHasError(false);
-      setIsLoaded(false);
+      // 若瀏覽器已快取該圖片，立即顯示避免閃爍骨架屏
+      if (imgRef.current?.complete && imgRef.current?.naturalWidth > 0) {
+        setIsLoaded(true);
+      } else {
+        setIsLoaded(false);
+      }
     } else {
       setImgSrc(safeFallback);
       setHasError(true);
@@ -87,11 +94,12 @@ export function SafeImage({
 
       <Image
         {...props}
+        ref={imgRef}
         unoptimized={shouldUnoptimize}
         src={effectiveSrc}
         alt={alt || 'Card Image'}
         referrerPolicy="no-referrer"
-        loading={safePriority ? undefined : 'lazy'}
+        loading={safePriority ? undefined : (props.loading ?? 'lazy')}
         decoding="async"
         className={cn(
           "transition-opacity duration-300 ease-out",

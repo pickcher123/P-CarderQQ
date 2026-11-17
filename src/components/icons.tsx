@@ -290,3 +290,30 @@ export function NavVipIcon({ className }: { className?: string }) {
     </svg>
   );
 }
+
+/**
+ * 管理後台專用圖示：極簡控制台徽章
+ */
+export function AdminConsoleIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <rect x="3.5" y="4.5" width="17" height="15" rx="3" />
+      <path d="M8 9.5H16" />
+      <path d="M8 14.5H16" />
+      <circle cx="10.5" cy="9.5" r="1.5" fill="currentColor" stroke="none" />
+      <circle cx="14" cy="14.5" r="1.5" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+/**
+ * 簽到/領券專用圖示：精緻票券 / 通行證
+ */
+export function CheckInTicketIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M4 7.5C4 6.4 4.9 5.5 6 5.5H18C19.1 5.5 20 6.4 20 7.5V9.8C18.9 10.1 18.2 11 18.2 12C18.2 13 18.9 13.9 20 14.2V16.5C20 17.6 19.1 18.5 18 18.5H6C4.9 18.5 4 17.6 4 16.5V14.2C5.1 13.9 5.8 13 5.8 12C5.8 11 5.1 10.1 4 9.8V7.5Z" />
+      <path d="M9.5 12L11.2 13.7L14.8 10.2" />
+    </svg>
+  );
+}

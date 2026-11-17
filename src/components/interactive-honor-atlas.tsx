@@ -31,6 +31,15 @@ import { Slider } from '@/components/ui/slider';
 import { RefinedPoints } from '@/components/ui/refined-points';
 import { cn } from '@/lib/utils';
 import { userLevels } from '@/components/member-level-crown';
+import {
+  RankNoviceEmblem,
+  RankAdeptEmblem,
+  RankVeteranEmblem,
+  RankMasterEmblem,
+  RankHallOfFameEmblem,
+  RankLegendaryEmblem,
+  RankGodEmblem,
+} from '@/components/rank-emblems';
 
 export interface TierDetailInfo {
   level: string;
@@ -61,7 +70,7 @@ export const TIER_DETAILS: TierDetailInfo[] = [
     subtitle: '榮耀啟程 · 初入卡牌殿堂',
     threshold: 0,
     rate: 0,
-    icon: Shield,
+    icon: RankNoviceEmblem,
     themeColor: 'text-slate-300',
     glowColor: 'rgba(148, 163, 184, 0.4)',
     accentBg: 'bg-slate-500/10',
@@ -82,7 +91,7 @@ export const TIER_DETAILS: TierDetailInfo[] = [
     subtitle: '破曉之星 · 嶄露收藏鋒芒',
     threshold: 15000,
     rate: 1,
-    icon: Star,
+    icon: RankAdeptEmblem,
     themeColor: 'text-slate-100',
     glowColor: 'rgba(203, 213, 225, 0.5)',
     accentBg: 'bg-slate-300/10',
@@ -103,7 +112,7 @@ export const TIER_DETAILS: TierDetailInfo[] = [
     subtitle: '黃金先驅 · 縱橫展覽現場',
     threshold: 50000,
     rate: 1.5,
-    icon: Award,
+    icon: RankVeteranEmblem,
     themeColor: 'text-amber-400',
     glowColor: 'rgba(245, 158, 11, 0.5)',
     accentBg: 'bg-amber-500/10',
@@ -124,7 +133,7 @@ export const TIER_DETAILS: TierDetailInfo[] = [
     subtitle: '晶鑽匠人 · 頂尖對決者',
     threshold: 100000,
     rate: 2,
-    icon: Gem,
+    icon: RankMasterEmblem,
     themeColor: 'text-yellow-300',
     glowColor: 'rgba(253, 224, 71, 0.6)',
     accentBg: 'bg-yellow-500/15',
@@ -145,7 +154,7 @@ export const TIER_DETAILS: TierDetailInfo[] = [
     subtitle: '熾紅霸主 · 屹立榮耀殿堂',
     threshold: 500000,
     rate: 4,
-    icon: Trophy,
+    icon: RankHallOfFameEmblem,
     themeColor: 'text-rose-400',
     glowColor: 'rgba(244, 63, 94, 0.6)',
     accentBg: 'bg-rose-500/15',
@@ -166,7 +175,7 @@ export const TIER_DETAILS: TierDetailInfo[] = [
     subtitle: '永恆星芒 · 虛空神話再臨',
     threshold: 1000000,
     rate: 5,
-    icon: Sparkles,
+    icon: RankLegendaryEmblem,
     themeColor: 'text-purple-400',
     glowColor: 'rgba(192, 132, 252, 0.7)',
     accentBg: 'bg-purple-500/15',
@@ -187,7 +196,7 @@ export const TIER_DETAILS: TierDetailInfo[] = [
     subtitle: '至高無上 · 全站天花板神話',
     threshold: 2000000,
     rate: 10,
-    icon: Crown,
+    icon: RankGodEmblem,
     themeColor: 'text-cyan-400',
     glowColor: 'rgba(34, 211, 238, 0.8)',
     accentBg: 'bg-cyan-500/20',
@@ -614,7 +623,7 @@ export function InteractiveHonorAtlas({
                           boxShadow: isSelected ? `0 0 25px ${tier.glowColor}` : undefined
                         }}
                       >
-                        <Icon className={cn("w-6 h-6 transition-transform duration-300 group-hover:scale-110", tier.themeColor)} />
+                        <Icon className={cn("w-7 h-7 sm:w-8 sm:h-8 transition-transform duration-300 group-hover:scale-110 drop-shadow-[0_2px_6px_rgba(0,0,0,0.65)]", tier.themeColor)} />
 
                         {/* 解鎖或鎖定微型角標 */}
                         <div className="absolute -bottom-1 -right-1">
@@ -678,7 +687,7 @@ export function InteractiveHonorAtlas({
                       )}
                       style={{ boxShadow: `0 0 30px ${activeTier.glowColor}` }}
                     >
-                      <ActiveIcon className={cn("w-9 h-9 sm:w-11 sm:h-11", activeTier.themeColor)} />
+                      <ActiveIcon className={cn("w-10 h-10 sm:w-12 sm:h-12 drop-shadow-[0_4px_10px_rgba(0,0,0,0.65)]", activeTier.themeColor)} />
                       <div className="absolute -inset-1 rounded-3xl border border-white/20 animate-pulse pointer-events-none" />
                     </div>
 

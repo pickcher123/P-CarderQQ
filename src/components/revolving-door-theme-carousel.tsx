@@ -78,6 +78,19 @@ export function RevolvingDoorThemeCarousel({
     setCurrentIndex((prev) => (prev - 1 + total) % total);
   }, [total]);
 
+  // 預載所有主題卡池圖片至瀏覽器快取，避免切換或首次開啟時等待
+  useEffect(() => {
+    if (typeof window === 'undefined' || categories.length === 0) return;
+    categories.forEach((cat) => {
+      const url = getCategoryArtwork(cat.name, cat.imageUrl);
+      if (url && (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/'))) {
+        const img = new window.Image();
+        img.decoding = 'async';
+        img.src = url;
+      }
+    });
+  }, [categories]);
+
   // Subtle auto-rotation when user is not hovering or interacting
   useEffect(() => {
     if (isHovered || total <= 1 || shouldReduceMotion) return;
@@ -243,9 +256,7 @@ export function RevolvingDoorThemeCarousel({
             const offset = getOffset(index);
             const isCenter = offset === 0;
             const absOffset = Math.abs(offset);
-
-            // 只呈現視野前後兩翼
-            if (absOffset > 2) return null;
+            const isHidden = absOffset > 2;
 
             // 計算 3D 旋轉門視角變換數值 (Portrait Dimensions)
             let rotateY = 0;
@@ -295,6 +306,14 @@ export function RevolvingDoorThemeCarousel({
               scale = 0.68;
               opacity = 0.35;
               zIndex = 10;
+            } else {
+              // 隱藏但保留掛載，切換時零延遲
+              rotateY = offset > 0 ? -60 : 60;
+              translateX = offset > 0 ? '110%' : '-110%';
+              translateZ = -180;
+              scale = 0.55;
+              opacity = 0;
+              zIndex = 0;
             }
 
             const artworkUrl = getCategoryArtwork(category.name, category.imageUrl);
@@ -303,7 +322,11 @@ export function RevolvingDoorThemeCarousel({
             return (
               <motion.div
                 key={category.id || category.name}
-                className="absolute w-[170px] h-[226px] sm:w-[225px] sm:h-[300px] md:w-[255px] md:h-[340px] origin-center cursor-pointer select-none"
+                aria-hidden={isHidden}
+                className={cn(
+                  "absolute w-[170px] h-[226px] sm:w-[225px] sm:h-[300px] md:w-[255px] md:h-[340px] origin-center select-none",
+                  isHidden ? "pointer-events-none" : "cursor-pointer"
+                )}
                 style={{
                   zIndex,
                 }}
@@ -340,12 +363,14 @@ export function RevolvingDoorThemeCarousel({
                     src={artworkUrl}
                     alt={category.name}
                     fill
+                    unoptimized
+                    loading="eager"
                     className={cn(
                       "object-cover transition-[transform,opacity] duration-250 ease-[cubic-bezier(0.23,1,0.32,1)] pointer-events-none",
                       isCenter ? "scale-105 opacity-85 [@media(hover:hover)_and_(pointer:fine)]:group-hover:scale-110" : "scale-100 opacity-60"
                     )}
                     sizes="(max-width: 768px) 250px, 350px"
-                    priority={isCenter}
+                    priority={absOffset <= 1}
                   />
 
                   {/* 賽博暗黑漸層遮罩 */}

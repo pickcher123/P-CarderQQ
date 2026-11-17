@@ -8,10 +8,9 @@ import {
   Calendar, 
   Gift, 
   Library, 
-  Users2,
-  CalendarCheck
+  Users2
 } from 'lucide-react';
-import { CrossedCardsIcon, LuckyBagIcon } from '@/components/icons';
+import { CrossedCardsIcon, LuckyBagIcon, CheckInTicketIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import type { SystemConfig } from '@/types/system';
 import { useFeatureFlags } from '@/hooks/use-feature-flags';
@@ -102,12 +101,12 @@ export function HomeFeatureNav({ systemConfig, onOpenPromoModal }: HomeFeatureNa
       desc: '每日簽到與領抽卡券',
       isAction: true,
       onClick: onOpenPromoModal,
-      icon: CalendarCheck,
+      icon: CheckInTicketIcon,
       badge: '福利',
-      badgeClass: 'bg-pink-500/25 text-pink-300 border-pink-500/40 shadow-[0_0_8px_rgba(236,72,153,0.35)] animate-pulse',
-      colorClass: 'text-pink-400 group-hover:text-pink-300',
-      bgGlow: 'group-hover:bg-pink-500/10 group-hover:border-pink-500/40',
-      iconBg: 'bg-pink-500/15 text-pink-400 border-pink-500/30',
+      badgeClass: 'bg-amber-500/15 text-amber-300 border-amber-400/30',
+      colorClass: 'text-amber-300 group-hover:text-amber-200',
+      bgGlow: 'group-hover:bg-white/[0.06] group-hover:border-amber-400/35',
+      iconBg: 'bg-white/[0.06] text-amber-300 border-white/[0.12]',
     },
     {
       id: 'collection',
