@@ -31,7 +31,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { 
-  PlusCircle, Edit, Trash2, ArrowLeft, Search, Loader2, 
+  Edit, Trash2, ArrowLeft, Search, Loader2, 
   UploadCloud, Files, X, Archive, Ban, Calendar, CalendarDays, 
   Clock, ArrowUpDown, Sparkles, LayoutList, LayoutGrid, RotateCcw, Filter,
   AlertTriangle, CheckSquare, UserCheck
@@ -44,8 +44,6 @@ import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { userLevels } from '@/components/member-level-crown';
-import { SmartBulkCardUploadDialog } from '@/components/admin/smart-bulk-card-upload-dialog';
-import { CardUploadGuideDialog } from '@/components/admin/card-upload-guide-dialog';
 
 interface CardData {
     id?: string;
@@ -914,9 +912,9 @@ export default function CardAreaManagementPage() {
                 </div>
             </div>
             
-            <div className="flex flex-wrap items-center gap-3">
-                {/* 批量移除快捷按鈕 (有勾選卡片時顯著發光) */}
-                {selectedCardIds.length > 0 && (
+            {selectedCardIds.length > 0 && (
+                <div className="flex flex-wrap items-center gap-3">
+                    {/* 批量移除快捷按鈕 (有勾選卡片時顯著發光) */}
                     <Button 
                         onClick={() => setIsBatchDeleteDialogOpen(true)}
                         className="h-10 rounded-xl font-black bg-rose-600 hover:bg-rose-700 text-white shadow-lg shadow-rose-600/30 flex items-center gap-1.5 animate-pulse"
@@ -924,41 +922,8 @@ export default function CardAreaManagementPage() {
                         <Trash2 className="h-4 w-4" />
                         <span>批量移除 ({selectedCardIds.length})</span>
                     </Button>
-                )}
-
-                {/* 運作機制說明 (紅色圈圈位置) */}
-                <CardUploadGuideDialog />
-
-                <SmartBulkCardUploadDialog 
-                    area={area} 
-                    onComplete={() => {
-                        setDateFilter('today');
-                        setSortBy('date-desc');
-                        if (forceRefetch) forceRefetch();
-                    }} 
-                />
-                <Button 
-                    onClick={() => { 
-                        setIsEditMode(false); 
-                        setCurrentCard({
-                            name: '', 
-                            category: '其他', 
-                            sellPrice: 10, 
-                            isSold: area === 'group-break', 
-                            dailyLimit: 0, 
-                            minLevel: '新手收藏家',
-                            createdAt: new Date().toISOString()
-                        }); 
-                        setPreviewUrl(null); 
-                        setBackPreviewUrl(null); 
-                        setIsCardDialogOpen(true); 
-                    }} 
-                    variant="outline"
-                    className="h-10 rounded-xl font-bold border-slate-200 bg-white text-slate-800 hover:bg-slate-50"
-                >
-                    <PlusCircle className="mr-2 h-4 w-4" /> 單張手動新增
-                </Button>
-            </div>
+                </div>
+            )}
         </div>
 
         {/* 批量操作工具條 (當有選取卡片時顯著浮現) */}

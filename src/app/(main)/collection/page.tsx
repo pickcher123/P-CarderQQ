@@ -40,12 +40,12 @@ import {
   Users, Users2, MapPin, SearchCode, X, Sparkles, ChevronRight, Package, 
   Library, Hash, Info, AlertTriangle, RotateCcw, Filter, ArrowUpDown, 
   RotateCw, ArrowLeft, Search, Check, Flame, SlidersHorizontal, Layers, Eye,
-  Coins, Truck, ShieldCheck, HelpCircle, Crown, Award, Grid3X3, Grid2X2, CheckCheck
+  Coins, Truck, ShieldCheck, HelpCircle, Crown, Award, Grid3X3, Grid2X2, CheckCheck, Gift
 } from 'lucide-react';
 import { useCollection, useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { getBonusMultiplier, isBonusEventActive } from '@/lib/bonus-event';
 import type { SystemConfig } from '@/types/system';
-import { collection, doc, writeBatch, serverTimestamp, getDoc, increment, updateDoc, getDocs, arrayRemove } from 'firebase/firestore';
+import { collection, doc, writeBatch, serverTimestamp, getDoc, increment, updateDoc, getDocs, arrayRemove, query, where } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -59,6 +59,8 @@ import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { PPlusIcon, CrossedCardsIcon } from '@/components/icons';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ClaimWonPrizeDialog, type WonPrizeClaim } from '@/components/prize-wheel-dialog';
+import { SafeImage } from '@/components/safe-image';
 
 type Rarity = 'common' | 'rare' | 'legendary';
 type ShippingMethod = '7-11' | '郵寄' | '面交自取';
@@ -130,7 +132,7 @@ export default function CollectionPage() {
   const [shippingAddress, setShippingAddress] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'all' | 'standard' | 'break' | 'random'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'standard' | 'prizes' | 'break' | 'random'>('all');
   const [sortOption, setSortOption] = useState<'price_desc' | 'price_asc' | 'unsold' | 'latest'>('latest');
 
   const userProfileRef = useMemoFirebase(() => {
@@ -163,6 +165,39 @@ export default function CollectionPage() {
   const { data: allCards, isLoading: isLoadingCards } = useCollection<AllCards>(
     useMemoFirebase(() => firestore ? collection(firestore, 'allCards') : null, [firestore])
   );
+
+  // 讀取會員尚未兌換的命運轉盤實體獎品卡
+  const wonPrizesQuery = useMemoFirebase(() => {
+    if (!firestore || !user?.uid) return null;
+    return query(collection(firestore, 'users', user.uid, 'wonPrizes'), where('status', '==', 'unclaimed'));
+  }, [firestore, user?.uid]);
+  const { data: rawWonPrizes, isLoading: isLoadingWonPrizes, forceRefetch: refetchWonPrizes } = useCollection<WonPrizeClaim>(wonPrizesQuery);
+
+  const allUnclaimedWonPrizes = useMemo(() => {
+    if (!rawWonPrizes) return [];
+    return rawWonPrizes.filter(p => p.status !== 'claimed');
+  }, [rawWonPrizes]);
+
+  const filteredWonPrizes = useMemo(() => {
+    if (activeTab !== 'all' && activeTab !== 'prizes') return [];
+    if (filterCategory) return [];
+    let list = [...allUnclaimedWonPrizes];
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      list = list.filter(p =>
+        p.itemName?.toLowerCase().includes(q) ||
+        `#${p.winningSpot}`.includes(q)
+      );
+    }
+    if (sortOption === 'price_desc') {
+      list.sort((a, b) => (b.pointsValue || 0) - (a.pointsValue || 0));
+    } else if (sortOption === 'price_asc') {
+      list.sort((a, b) => (a.pointsValue || 0) - (b.pointsValue || 0));
+    } else {
+      list.sort((a, b) => (b.wonAt?.seconds || 0) - (a.wonAt?.seconds || 0));
+    }
+    return list;
+  }, [allUnclaimedWonPrizes, activeTab, filterCategory, searchQuery, sortOption]);
   
   const mergedCards: MergedCard[] = useMemo(() => {
     if (!userCards || !allCards) return [];
@@ -347,15 +382,16 @@ export default function CollectionPage() {
     });
 
     return {
-      totalCards: mergedCards.length,
+      totalCards: mergedCards.length + allUnclaimedWonPrizes.length,
       standardCount: mergedCards.filter(c => c.source !== 'group-break').length,
       uniqueCount: mergedCards.filter(c => c.source !== 'group-break' && !isRandomPlayerCard(c)).length,
+      prizeCount: allUnclaimedWonPrizes.length,
       breakCount: mergedCards.filter(c => c.source === 'group-break').length,
       randomCount: randomPlayerCards.length,
       totalDiamonds: Math.round(totalEstimatedDiamonds),
       totalPPoints: Math.round(totalEstimatedPPoints)
     };
-  }, [mergedCards, randomPlayerCards]);
+  }, [mergedCards, randomPlayerCards, allUnclaimedWonPrizes]);
 
   const handleSelectRandomCards = () => {
     const randomCardIds = randomPlayerCards.map(c => c.id);
@@ -708,11 +744,15 @@ export default function CollectionPage() {
                     <Layers className="w-3.5 h-3.5 text-cyan-400" />
                     <span className="text-[10px] font-bold uppercase tracking-wider">持有藏品</span>
                   </div>
-                  <span className="font-code text-xl sm:text-3xl font-black text-white mt-1">
-                    {isLoadingUserCards ? '--' : portfolioStats.totalCards}
+                  <span className="font-code text-xl sm:text-3xl font-black text-white mt-1 tabular-nums">
+                    {(isLoadingUserCards || isLoadingWonPrizes) ? '--' : portfolioStats.totalCards}
                   </span>
                   <span className="text-[9.5px] text-cyan-300/90 font-bold mt-0.5 truncate max-w-full">
-                    {portfolioStats.breakCount > 0 ? `${portfolioStats.uniqueCount}個人 / ${portfolioStats.breakCount}團拆` : `${portfolioStats.uniqueCount} 張卡片`}
+                    {portfolioStats.prizeCount > 0
+                      ? `${portfolioStats.uniqueCount}張卡片 · ${portfolioStats.prizeCount}張兌換卡`
+                      : portfolioStats.breakCount > 0
+                        ? `${portfolioStats.uniqueCount}個人 / ${portfolioStats.breakCount}團拆`
+                        : `${portfolioStats.uniqueCount} 張卡片`}
                   </span>
                 </div>
 
@@ -772,7 +812,7 @@ export default function CollectionPage() {
                     "text-[10px] px-1.5 py-0.2 rounded-md font-code",
                     activeTab === 'all' && !filterCategory ? "bg-slate-950/30 text-slate-950 font-black" : "bg-white/10 text-slate-400"
                   )}>
-                    {mergedCards.length}
+                    {portfolioStats.totalCards}
                   </span>
                 </button>
 
@@ -792,6 +832,25 @@ export default function CollectionPage() {
                     activeTab === 'standard' ? "bg-slate-950/30 text-slate-950 font-black" : "bg-white/10 text-slate-400"
                   )}>
                     {portfolioStats.uniqueCount}
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => { setActiveTab('prizes'); setFilterCategory(null); }}
+                  className={cn(
+                    "px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer",
+                    activeTab === 'prizes' 
+                      ? "bg-gradient-to-r from-emerald-400 to-teal-300 text-slate-950 shadow-md shadow-emerald-500/20" 
+                      : "text-slate-400 hover:text-white hover:bg-white/5"
+                  )}
+                >
+                  <Gift className="w-3.5 h-3.5" />
+                  <span>實體兌換卡</span>
+                  <span className={cn(
+                    "text-[10px] px-1.5 py-0.2 rounded-md font-code",
+                    activeTab === 'prizes' ? "bg-slate-950/30 text-slate-950 font-black" : "bg-white/10 text-slate-400"
+                  )}>
+                    {portfolioStats.prizeCount}
                   </span>
                 </button>
 
@@ -1012,6 +1071,128 @@ export default function CollectionPage() {
 
           {/* === CARDS GALLERY SECTION === */}
           <div className="space-y-8 pt-2">
+
+            {/* 0. Prize Wheel Redemption Cards (命運轉盤實體獎品兌換卡) */}
+            {filteredWonPrizes.length > 0 && (activeTab === 'all' || activeTab === 'prizes') && (
+              <motion.section
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25 }}
+                className="space-y-3.5"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
+                      <Gift className="w-4 h-4" />
+                    </div>
+                    <h2 className="text-base sm:text-lg font-black font-headline text-white tracking-wide flex items-center gap-2">
+                      <span>實體獎品兌換卡</span>
+                      <span className="text-xs font-code font-bold text-emerald-300 tabular-nums">
+                        {filteredWonPrizes.length} 張
+                      </span>
+                    </h2>
+                  </div>
+                  <div className="h-px flex-1 mx-4 bg-gradient-to-r from-emerald-500/20 to-transparent hidden sm:block" />
+                </div>
+
+                <div className={cn(
+                  "gap-2.5 sm:gap-4",
+                  viewMode === 'grid' 
+                    ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-6" 
+                    : "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10"
+                )}>
+                  {filteredWonPrizes.map((claim, index) => (
+                    <ClaimWonPrizeDialog
+                      key={claim.id}
+                      claim={claim}
+                      onClaimed={() => {
+                        if (refetchWonPrizes) refetchWonPrizes();
+                      }}
+                    >
+                      <button
+                        type="button"
+                        className={cn(
+                          "text-left group relative flex flex-col rounded-2xl overflow-hidden cursor-pointer transition-all duration-200 select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400",
+                          viewMode === 'grid' ? "p-2 sm:p-2.5" : "p-1.5",
+                          "bg-gradient-to-b from-white/10 via-slate-900/95 to-slate-950 border border-emerald-400/50 hover:border-emerald-300 hover:shadow-[0_0_24px_rgba(16,185,129,0.28)] hover:-translate-y-1 shadow-xl backdrop-blur-md"
+                        )}
+                      >
+                        {/* Magnetic Case Slab Header Accent */}
+                        {viewMode === 'grid' && (
+                          <div className="flex items-center justify-between px-1 pb-1.5 opacity-80 group-hover:opacity-100 transition-opacity w-full">
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 border border-emerald-700 shadow-sm" />
+                            <span className="text-[7.5px] font-mono tracking-widest text-emerald-300 uppercase whitespace-nowrap">
+                              PRIZE CARD · #{claim.winningSpot}
+                            </span>
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 border border-emerald-700 shadow-sm" />
+                          </div>
+                        )}
+
+                        {/* Card Image Wrapper */}
+                        <div className="relative w-full aspect-[2.5/3.5] rounded-xl overflow-hidden bg-slate-950 shadow-inner">
+                          <SafeImage
+                            src={claim.itemImageUrl}
+                            alt={claim.itemName}
+                            fill
+                            priority={index < 6}
+                            className="object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent pointer-events-none" />
+
+                          {/* Corner Ticket Number */}
+                          <span className="absolute top-1.5 right-1.5 z-10 text-[9px] font-mono font-bold text-emerald-200 bg-black/70 px-1.5 py-0.5 rounded-md tabular-nums">
+                            #{claim.winningSpot}
+                          </span>
+
+                          {/* Bottom Card Stamp */}
+                          <div className="absolute inset-x-2 bottom-2 z-10 flex items-center justify-between text-[10px] font-bold text-emerald-200 pointer-events-none">
+                            <span>免運兌換券</span>
+                            <span className="font-mono tabular-nums text-amber-300">
+                              {(claim.pointsValue || 0).toLocaleString()} P+
+                            </span>
+                          </div>
+
+                          {/* Hover Action Hint */}
+                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none z-20">
+                            <span className="px-2.5 py-1 rounded-lg bg-emerald-400 text-slate-950 text-[10px] font-black flex items-center gap-1 shadow-xl whitespace-nowrap">
+                              <Truck className="w-3 h-3" /> 點擊填寫收件
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Card Info & Redeem Action */}
+                        <div className={cn("mt-1.5 space-y-1.5 w-full", viewMode === 'compact' && "mt-1 space-y-1")}>
+                          <h4
+                            className={cn(
+                              "font-bold text-white group-hover:text-emerald-300 transition-colors leading-tight truncate",
+                              viewMode === 'grid' ? "text-xs" : "text-[10px]"
+                            )}
+                            title={claim.itemName}
+                          >
+                            {claim.itemName}
+                          </h4>
+
+                          <div className="flex items-center justify-between text-[10px] text-slate-400">
+                            <span className="truncate">命運轉盤 · 免運</span>
+                            <span className="font-mono font-bold text-emerald-300 tabular-nums shrink-0">
+                              待領取
+                            </span>
+                          </div>
+
+                          <div className={cn(
+                            "w-full rounded-lg bg-gradient-to-r from-emerald-400 to-teal-300 text-slate-950 font-black flex items-center justify-center gap-1 transition-transform group-active:scale-[0.97] whitespace-nowrap",
+                            viewMode === 'grid' ? "h-8 text-[11px] px-2" : "h-6 text-[9px] px-1.5"
+                          )}>
+                            <Truck className="w-3 h-3 shrink-0" />
+                            <span>立即兌換</span>
+                          </div>
+                        </div>
+                      </button>
+                    </ClaimWonPrizeDialog>
+                  ))}
+                </div>
+              </motion.section>
+            )}
 
             {/* 1. Standard Collection Section (一般卡片 / 個人精選卡片藏品) */}
             {uniqueStandardCards.length > 0 && (activeTab === 'all' || activeTab === 'standard') && (
@@ -1569,7 +1750,7 @@ export default function CollectionPage() {
             )}
 
             {/* Skeletons Loading State */}
-            {(isLoadingUserCards || isLoadingCards) && (
+            {(isLoadingUserCards || isLoadingCards || isLoadingWonPrizes) && (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3 sm:gap-4">
                 {Array.from({ length: 12 }).map((_, i) => (
                   <div key={i} className="aspect-[2.5/4] rounded-2xl bg-slate-900/60 border border-white/5 p-2 space-y-2 animate-pulse">
@@ -1582,7 +1763,7 @@ export default function CollectionPage() {
             )}
 
             {/* Empty Collection State */}
-            {!isLoadingUserCards && !isLoadingCards && mergedCards.length === 0 && (
+            {!isLoadingUserCards && !isLoadingCards && !isLoadingWonPrizes && mergedCards.length === 0 && allUnclaimedWonPrizes.length === 0 && (
               <motion.div 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -1613,7 +1794,7 @@ export default function CollectionPage() {
             )}
 
             {/* Filtered Empty Results */}
-            {!isLoadingUserCards && !isLoadingCards && mergedCards.length > 0 && sortedMergedCards.length === 0 && (
+            {!isLoadingUserCards && !isLoadingCards && !isLoadingWonPrizes && (mergedCards.length > 0 || allUnclaimedWonPrizes.length > 0) && sortedMergedCards.length === 0 && filteredWonPrizes.length === 0 && (
               <div className="text-center py-16 px-4 bg-slate-900/30 rounded-2xl border border-white/5 space-y-3">
                 <SearchCode className="w-10 h-10 text-slate-500 mx-auto" />
                 <p className="text-sm font-bold text-slate-300">查無符合條件的卡片</p>

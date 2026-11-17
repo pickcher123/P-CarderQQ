@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import {
     AlertCircle, Sparkles, X, Play, CheckCircle2,
     RotateCcw, Dices, Trophy, Wallet, ShieldCheck,
-    Gift, ShoppingBag, Truck, Loader2, Percent, Disc3
+    Gift, ShoppingBag, Truck, Loader2, Percent, Disc3, Package, MapPin
 } from 'lucide-react';
 import { PPlusIcon, DiamondIcon } from '@/components/icons';
 import {
@@ -308,7 +308,7 @@ export function PrizeWheelDialog({
                 if (txRes.won) {
                     toast({
                         title: '🎉 命運轉盤大中獎！',
-                        description: `恭喜命中 #${txRes.spot}，成功贏得「${item.name}」！請填寫收件資訊安排寄出。`,
+                        description: `恭喜命中 #${txRes.spot}，成功贏得「${item.name}」！已存入您的收藏庫，可立即填寫收件資訊或稍後至收藏庫兌換。`,
                     });
                 }
             }, 3900);
@@ -902,7 +902,7 @@ export function PrizeWheelDialog({
                                                 <div className="p-3.5 rounded-xl bg-slate-950/85 border border-emerald-400/30 space-y-3">
                                                     <div className="flex items-center gap-1.5 text-xs font-black text-amber-300">
                                                         <Truck className="w-4 h-4 text-amber-400" />
-                                                        <span>請填寫收件資訊（免運費寄出，若稍後填寫亦可於專區上方領取）</span>
+                                                        <span>請填寫收件資訊（免運費寄出，亦可關閉後前往「我的收藏庫」兌換卡領取）</span>
                                                     </div>
                                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                                                         <Input
@@ -1082,12 +1082,16 @@ export function PrizeWheelDialog({
     );
 }
 
+const PRIZE_PICKUP_ADDRESS = '台北市中山區林森北路50號3樓之4';
+
 export function ClaimWonPrizeDialog({
     claim,
     children,
+    onClaimed,
 }: {
     claim: WonPrizeClaim;
     children: React.ReactNode;
+    onClaimed?: () => void;
 }) {
     const [isOpen, setIsOpen] = useState(false);
     const { user } = useUser();
@@ -1100,6 +1104,7 @@ export function ClaimWonPrizeDialog({
     );
     const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
 
+    const [shippingMethod, setShippingMethod] = useState<'7-11' | '郵寄' | '面交自取'>('7-11');
     const [realName, setRealName] = useState('');
     const [phone, setPhone] = useState('');
     const [address, setAddress] = useState('');
@@ -1115,7 +1120,11 @@ export function ClaimWonPrizeDialog({
 
     const handleClaim = async () => {
         if (!user || !firestore) return;
-        if (!realName.trim() || !phone.trim() || !address.trim()) {
+        const finalAddress = shippingMethod === '面交自取'
+            ? `${PRIZE_PICKUP_ADDRESS} (自取)`
+            : address.trim();
+
+        if (!realName.trim() || !phone.trim() || !finalAddress) {
             toast({ variant: 'destructive', title: '請填寫完整收件資訊' });
             return;
         }
@@ -1123,27 +1132,28 @@ export function ClaimWonPrizeDialog({
         try {
             const batch = writeBatch(firestore);
             const orderRef = doc(collection(firestore, 'shippingOrders'));
-            batch.set(orderRef, {
+            batch.set(orderRef, sanitizeFirestorePayload({
                 userId: user.uid,
                 name: realName.trim(),
                 phone: phone.trim(),
-                address: address.trim(),
+                address: finalAddress,
                 cardCount: 1,
                 cardIds: [],
-                redemptionItem: `${claim.itemName} (命運轉盤中獎)`,
+                redemptionItem: `${claim.itemName || '實體獎品'} (命運轉盤中獎)`,
                 status: 'pending',
-                shippingMethod: '7-11',
+                shippingMethod,
                 createdAt: serverTimestamp(),
                 fee: 0,
-            });
+            }));
             batch.update(doc(firestore, 'users', user.uid, 'wonPrizes', claim.id), {
                 status: 'claimed',
                 shippingOrderId: orderRef.id,
                 claimedAt: serverTimestamp(),
             });
             await batch.commit();
-            toast({ title: '📦 領取成功！', description: `「${claim.itemName}」已送出免運出貨申請！` });
+            toast({ title: '📦 兌換申請已送出！', description: `「${claim.itemName}」已建立免運出貨單，可至會員中心追蹤進度。` });
             setIsOpen(false);
+            if (onClaimed) onClaimed();
         } catch (err: any) {
             toast({ variant: 'destructive', title: '提交失敗', description: err?.message });
         } finally {
@@ -1151,13 +1161,20 @@ export function ClaimWonPrizeDialog({
         }
     };
 
+    const addressLabel =
+        shippingMethod === '7-11'
+            ? '7-11 門市名稱或店號'
+            : shippingMethod === '郵寄'
+                ? '詳細收件地址'
+                : '自取門市資訊';
+
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>{children}</DialogTrigger>
-            <DialogContent className="max-w-md rounded-3xl bg-slate-950 border border-amber-500/40 text-white p-6 space-y-4">
-                <DialogTitle className="text-lg font-black text-amber-300 flex items-center gap-2">
-                    <Gift className="w-5 h-5 text-amber-400" />
-                    領取轉盤中獎獎品
+            <DialogContent className="max-w-md rounded-3xl bg-slate-950 border border-emerald-500/40 text-white p-6 space-y-4">
+                <DialogTitle className="text-lg font-black text-emerald-300 flex items-center gap-2">
+                    <Gift className="w-5 h-5 text-emerald-400" />
+                    兌換實體獎品（免運寄送）
                 </DialogTitle>
                 <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/10">
                     <div className="relative w-14 h-14 rounded-xl overflow-hidden shrink-0 bg-slate-900">
@@ -1165,16 +1182,82 @@ export function ClaimWonPrizeDialog({
                     </div>
                     <div className="min-w-0">
                         <p className="font-black text-sm text-white truncate">{claim.itemName}</p>
-                        <p className="text-xs text-emerald-400 font-bold mt-0.5">🎉 命運轉盤 #{claim.winningSpot} 中獎（免運寄送）</p>
+                        <p className="text-xs text-emerald-400 font-bold mt-0.5 tabular-nums">
+                            命運轉盤 #{claim.winningSpot} 中獎 · 免運兌換
+                        </p>
                     </div>
                 </div>
-                <div className="space-y-2.5">
-                    <Input value={realName} onChange={e => setRealName(e.target.value)} placeholder="收件人真實姓名" className="bg-slate-900 border-white/15 h-10 text-xs" />
-                    <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="聯絡手機 (09xx...)" className="bg-slate-900 border-white/15 h-10 text-xs" />
-                    <Input value={address} onChange={e => setAddress(e.target.value)} placeholder="7-11 門市名稱/店號 或 收件地址" className="bg-slate-900 border-white/15 h-10 text-xs" />
+
+                {/* 配送方式選擇 */}
+                <div className="grid grid-cols-3 gap-2">
+                    <button
+                        type="button"
+                        onClick={() => setShippingMethod('7-11')}
+                        className={cn(
+                            'p-2.5 rounded-xl border flex flex-col items-center justify-center text-center gap-1 transition-all cursor-pointer',
+                            shippingMethod === '7-11'
+                                ? 'bg-emerald-500/15 border-emerald-400 text-white'
+                                : 'bg-slate-900/80 border-white/10 text-slate-400 hover:text-white'
+                        )}
+                    >
+                        <Package className="w-4 h-4 text-emerald-400" />
+                        <span className="text-[11px] font-black whitespace-nowrap">7-11 超商</span>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setShippingMethod('郵寄')}
+                        className={cn(
+                            'p-2.5 rounded-xl border flex flex-col items-center justify-center text-center gap-1 transition-all cursor-pointer',
+                            shippingMethod === '郵寄'
+                                ? 'bg-emerald-500/15 border-emerald-400 text-white'
+                                : 'bg-slate-900/80 border-white/10 text-slate-400 hover:text-white'
+                        )}
+                    >
+                        <Truck className="w-4 h-4 text-emerald-400" />
+                        <span className="text-[11px] font-black whitespace-nowrap">掛號郵寄</span>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setShippingMethod('面交自取')}
+                        className={cn(
+                            'p-2.5 rounded-xl border flex flex-col items-center justify-center text-center gap-1 transition-all cursor-pointer',
+                            shippingMethod === '面交自取'
+                                ? 'bg-emerald-500/15 border-emerald-400 text-white'
+                                : 'bg-slate-900/80 border-white/10 text-slate-400 hover:text-white'
+                        )}
+                    >
+                        <MapPin className="w-4 h-4 text-emerald-400" />
+                        <span className="text-[11px] font-black whitespace-nowrap">門市自取</span>
+                    </button>
                 </div>
-                <Button onClick={handleClaim} disabled={isSubmitting} className="w-full h-11 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black">
-                    {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : '確認送出免運出貨單'}
+
+                <div className="space-y-2.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <Input value={realName} onChange={e => setRealName(e.target.value)} placeholder="收件人真實姓名" className="bg-slate-900 border-white/15 h-10 text-xs" />
+                        <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="聯絡手機 (09xx...)" className="bg-slate-900 border-white/15 h-10 text-xs" />
+                    </div>
+                    {shippingMethod === '面交自取' ? (
+                        <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs text-emerald-200 space-y-1">
+                            <p className="font-bold flex items-center gap-1.5">
+                                <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                                <span>{PRIZE_PICKUP_ADDRESS}</span>
+                            </p>
+                            <p className="text-[11px] text-slate-400">
+                                提交後請聯繫官方 LINE 客服預約取件時段。
+                            </p>
+                        </div>
+                    ) : (
+                        <Input
+                            value={address}
+                            onChange={e => setAddress(e.target.value)}
+                            placeholder={addressLabel}
+                            className="bg-slate-900 border-white/15 h-10 text-xs"
+                        />
+                    )}
+                </div>
+
+                <Button onClick={handleClaim} disabled={isSubmitting} className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-400 to-teal-400 hover:brightness-110 text-slate-950 font-black cursor-pointer">
+                    {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : '確認送出免運兌換單'}
                 </Button>
             </DialogContent>
         </Dialog>

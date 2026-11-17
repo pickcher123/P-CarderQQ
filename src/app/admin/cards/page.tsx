@@ -7,12 +7,10 @@ import { useRequest, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Package, Swords, Ticket, Users2, ChevronRight, Layers, CreditCard, Plus, UploadCloud, Sparkles, ScanLine } from 'lucide-react';
+import { Package, Swords, Ticket, Users2, ChevronRight, Layers, CreditCard, Plus, UploadCloud } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { SmartBulkCardUploadDialog } from '@/components/admin/smart-bulk-card-upload-dialog';
-import { CardUploadGuideDialog } from '@/components/admin/card-upload-guide-dialog';
 
 interface CardData {
     id: string;
@@ -136,16 +134,9 @@ export default function CardsAdminAreaListPage() {
                         className="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-600 text-white font-black rounded-xl shadow-xs"
                     >
                         <Link href="/admin/cards/scanner">
-                            <ScanLine className="mr-2 h-4 w-4" /> 掃描自動分割 (PRO)
+                            <UploadCloud className="mr-2 h-4 w-4" /> 上傳卡片
                         </Link>
                     </Button>
-                    <CardUploadGuideDialog />
-                    <SmartBulkCardUploadDialog 
-                        area="all" 
-                        onComplete={() => {
-                            router.push('/admin/cards/area/all');
-                        }} 
-                    />
                     <Button 
                         onClick={() => router.push('/admin/cards/area/all')}
                         variant="outline"
