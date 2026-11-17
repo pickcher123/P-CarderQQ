@@ -5,13 +5,9 @@ import { UnifiedEventCalendar } from '@/components/calendar/unified-event-calend
 
 export default function ExhibitionsPage() {
   return (
-    <div className="min-h-screen relative overflow-x-hidden bg-slate-950 text-white pb-28 pt-2 sm:pt-6">
-      {/* Ambient Background Lighting */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1100px] h-[450px] bg-gradient-to-b from-amber-500/15 via-purple-500/10 to-transparent blur-[140px] pointer-events-none -z-10" />
-      <div className="absolute top-[600px] right-0 w-[600px] h-[600px] bg-amber-500/5 blur-[160px] pointer-events-none -z-10" />
-
-      <div className="container mx-auto px-3 sm:px-6 max-w-7xl space-y-5 sm:space-y-6 pt-2 sm:pt-4">
-        <div className="space-y-1 border-b border-slate-800/80 pb-4">
+    <div className="min-h-screen relative overflow-x-hidden bg-[#060912] text-white pb-24 pt-2 sm:pt-6">
+      <div className="container mx-auto px-3 sm:px-6 max-w-6xl space-y-6 pt-2 sm:pt-4">
+        <div className="space-y-1.5 border-b border-white/[0.08] pb-4">
           <h1 className="text-2xl sm:text-3xl font-bold font-headline tracking-tight text-white">
             卡展行事曆
           </h1>

@@ -27,25 +27,28 @@ interface RevolvingDoorThemeCarouselProps {
   headerAction?: React.ReactNode;
 }
 
-// Fallback high-impact sports visuals matching target design
+// 優先使用本地壓縮最佳化後的主題封面圖（600x800px，約 40KB），確保秒開載入
 function getCategoryArtwork(categoryName: string = '', originalUrl?: string): string {
+  const name = categoryName.toLowerCase();
+  if (name.includes('籃球') || name.includes('nba') || name.includes('basketball')) {
+    return '/images/themes/basketball.jpg';
+  }
+  if (name.includes('棒球') || name.includes('mlb') || name.includes('baseball')) {
+    return '/images/themes/baseball.jpg';
+  }
+  if (name.includes('足球') || name.includes('fifa') || name.includes('soccer') || name.includes('football')) {
+    return '/images/themes/soccer.jpg';
+  }
+  if (name.includes('寶可夢') || name.includes('pokemon') || name.includes('tcg') || name.includes('動漫')) {
+    return '/images/themes/pokemon.jpg';
+  }
+  if (name.includes('其他') || name.includes('other') || name.includes('綜合')) {
+    return '/images/themes/other.jpg';
+  }
   if (originalUrl && originalUrl.trim().length > 0 && !originalUrl.includes('placeholder')) {
     return originalUrl;
   }
-  const name = categoryName.toLowerCase();
-  if (name.includes('籃球') || name.includes('nba') || name.includes('basketball')) {
-    return 'https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=800&auto=format&fit=crop';
-  }
-  if (name.includes('棒球') || name.includes('mlb') || name.includes('baseball')) {
-    return 'https://images.unsplash.com/photo-1508344928928-7165b67de128?q=80&w=800&auto=format&fit=crop';
-  }
-  if (name.includes('足球') || name.includes('fifa') || name.includes('soccer') || name.includes('football')) {
-    return 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?q=80&w=800&auto=format&fit=crop';
-  }
-  if (name.includes('寶可夢') || name.includes('pokemon') || name.includes('tcg') || name.includes('動漫')) {
-    return 'https://images.unsplash.com/photo-1613771404784-3a5686aa2be3?q=80&w=800&auto=format&fit=crop';
-  }
-  return 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?q=80&w=800&auto=format&fit=crop';
+  return '/images/themes/other.jpg';
 }
 
 export function RevolvingDoorThemeCarousel({

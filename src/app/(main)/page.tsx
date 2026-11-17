@@ -305,28 +305,21 @@ export default function Home() {
       )}
 
       {/* 最新消息 */}
-      <section className="relative py-10 sm:py-16 bg-gradient-to-b from-slate-950/80 via-slate-900/40 to-slate-950/80 border-y border-slate-800/80 overflow-hidden">
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-amber-500/5 rounded-full blur-[140px] pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-amber-500/5 rounded-full blur-[120px] pointer-events-none" />
-        <div className="container relative z-10 px-3 sm:px-4 max-w-7xl mx-auto">
+      <section className="relative py-10 sm:py-16 bg-[#060912]/80 border-y border-white/[0.06] overflow-hidden">
+        <div className="container relative z-10 px-3 sm:px-4 max-w-6xl mx-auto">
             
-            {/* 統一區塊標題列 */}
-            <div className="flex items-end justify-between gap-4 pb-4 mb-6 sm:mb-8 border-b border-slate-800/80">
-                <div className="flex items-center gap-3 min-w-0">
-                    <div className="p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 shrink-0">
-                        <Newspaper className="w-5 h-5 text-amber-400" />
-                    </div>
-                    <div className="min-w-0 space-y-0.5">
-                        <h2 className="text-lg sm:text-2xl font-bold font-headline tracking-tight text-white truncate">
-                            最新消息
-                        </h2>
-                        <p className="text-xs sm:text-sm text-slate-400 truncate">
-                            活動公告 · 機台更新 · 限定企劃
-                        </p>
-                    </div>
+            {/* 區塊標題列 */}
+            <div className="flex items-end justify-between gap-4 pb-4 mb-6 sm:mb-8 border-b border-white/[0.08]">
+                <div className="min-w-0 space-y-1">
+                    <h2 className="text-xl sm:text-2xl font-bold font-headline tracking-tight text-white">
+                        最新消息
+                    </h2>
+                    <p className="text-xs sm:text-sm text-slate-400">
+                        活動公告 · 機台更新 · 限定企劃
+                    </p>
                 </div>
 
-                <Button variant="ghost" asChild className="hover:bg-slate-800/80 h-9 px-3.5 rounded-xl font-bold text-amber-400 hover:text-amber-300 text-xs sm:text-sm shrink-0">
+                <Button variant="ghost" asChild className="hover:bg-white/[0.05] h-9 px-3 rounded-lg font-medium text-amber-300 hover:text-amber-200 text-xs sm:text-sm shrink-0">
                     <Link href="/news" className="flex items-center gap-1 whitespace-nowrap">
                         <span>查看全部</span>
                         <ChevronRight className="h-4 w-4" />
@@ -344,7 +337,7 @@ export default function Home() {
                     {isLoadingNews ? (
                         Array.from({ length: 3 }).map((_, i) => (
                             <CarouselItem key={i} className="pl-3 sm:pl-4 basis-[86%] xs:basis-[82%] sm:basis-1/2 lg:basis-1/3">
-                                <div className="aspect-[4/3] sm:aspect-[16/11] w-full rounded-2xl overflow-hidden bg-slate-900/90 border border-slate-800 flex flex-col p-4 justify-between">
+                                <div className="h-[320px] w-full rounded-2xl overflow-hidden bg-[#0a0f1c]/90 border border-white/[0.08] flex flex-col p-5 justify-between">
                                     <Skeleton className="w-full h-36 rounded-xl" />
                                     <div className="space-y-2 mt-4">
                                         <Skeleton className="w-3/4 h-4 rounded" />
@@ -355,7 +348,18 @@ export default function Home() {
                         ))
                     ) : (
                         effectiveNews.map((item) => {
-                            const snippet = item.content ? item.content.replace(/<[^>]+>/g, '').trim() : '';
+                            const hasCoverImage = item.type === 'image' && Boolean(item.imageUrl);
+                            const cleanTitle = (item.title || '')
+                              .replace(/^[\p{Extended_Pictographic}\uFE0F\u200D\s]+/gu, '')
+                              .trim() || item.title;
+                            const rawSnippet = item.content
+                              ? item.content
+                                  .replace(/\{\/\*[\s\S]*?\*\/\}/g, ' ')
+                                  .replace(/<[^>]+>/g, ' ')
+                                  .replace(/[\p{Extended_Pictographic}\uFE0F\u200D]+/gu, '')
+                                  .replace(/\s+/g, ' ')
+                                  .trim()
+                              : '';
 
                             return (
                                 <CarouselItem key={item.id} className="pl-3 sm:pl-4 basis-[86%] xs:basis-[82%] sm:basis-1/2 lg:basis-1/3 flex flex-col">
@@ -365,72 +369,98 @@ export default function Home() {
                                       role="button"
                                       tabIndex={0}
                                     >
-                                        <div className="h-full overflow-hidden bg-slate-900/90 border border-slate-800/80 hover:border-amber-400/60 transition-all duration-200 rounded-2xl shadow-lg hover:-translate-y-1 flex flex-col justify-between">
+                                        <div className={cn(
+                                          "h-full overflow-hidden bg-[#0a0f1c]/95 border border-white/[0.08] hover:border-amber-400/40 transition-colors duration-200 rounded-2xl flex flex-col justify-between",
+                                          !hasCoverImage && "border-t-2 border-t-amber-400/45"
+                                        )}>
                                             
-                                            {/* 上半部：封面 */}
-                                            <div className="aspect-[16/9] w-full relative overflow-hidden bg-slate-950 shrink-0">
-                                                {item.type === 'image' && item.imageUrl ? (
-                                                    <>
-                                                        <SafeImage 
-                                                            src={item.imageUrl} 
-                                                            alt={item.title} 
-                                                            width={600}
-                                                            height={338}
-                                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                                        />
-                                                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent pointer-events-none" />
-                                                    </>
-                                                ) : (
-                                                    <div className="absolute inset-0 bg-gradient-to-br from-amber-950/30 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-4 overflow-hidden">
-                                                        <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 mb-2 z-10">
-                                                            <Newspaper className="w-6 h-6" />
+                                            {hasCoverImage ? (
+                                              <>
+                                                {/* 有封面圖：16:9 乾淨圖片區 */}
+                                                <div className="aspect-[16/9] w-full relative overflow-hidden bg-slate-950 shrink-0">
+                                                    <SafeImage 
+                                                        src={item.imageUrl} 
+                                                        alt={cleanTitle} 
+                                                        width={600}
+                                                        height={338}
+                                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                                    />
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-[#0a0f1c] via-[#0a0f1c]/20 to-transparent pointer-events-none" />
+
+                                                    {item.isPinned && (
+                                                        <div className="absolute top-3 left-3 z-10">
+                                                            <span className="bg-amber-400 text-slate-950 font-bold text-[11px] px-2 py-0.5 rounded">
+                                                                置頂
+                                                            </span>
                                                         </div>
-                                                        <span className="text-xs font-medium text-amber-300/80 tracking-wider z-10">
-                                                            官方公告
-                                                        </span>
-                                                    </div>
-                                                )}
-
-                                                {item.isPinned && (
-                                                    <div className="absolute top-3 left-3 z-10">
-                                                        <span className="bg-amber-400 text-slate-950 font-bold text-[11px] px-2 py-0.5 rounded shadow-sm">
-                                                            置頂
-                                                        </span>
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {/* 下半部：乾淨中繼資訊、標題、摘要 */}
-                                            <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-3">
-                                                <div className="space-y-1.5">
-                                                    <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
-                                                        <span className="text-amber-300/90">{item.category || '官方公告'}</span>
-                                                        <span aria-hidden="true">·</span>
-                                                        <span className="font-code">{item.createdAt ? format(new Date(item.createdAt.seconds * 1000), 'yyyy-MM-dd') : '---'}</span>
-                                                    </div>
-
-                                                    <h3 className="font-headline font-bold text-base sm:text-lg text-white group-hover:text-amber-300 transition-colors line-clamp-2 leading-snug text-left">
-                                                        {item.title}
-                                                    </h3>
-
-                                                    {snippet ? (
-                                                        <p className="text-xs sm:text-sm text-slate-400 line-clamp-2 leading-relaxed text-left">
-                                                            {snippet}
-                                                        </p>
-                                                    ) : (
-                                                        <p className="text-xs sm:text-sm text-slate-500 line-clamp-1 leading-relaxed text-left">
-                                                            點擊查看完整公告內容
-                                                        </p>
                                                     )}
                                                 </div>
 
-                                                <div className="pt-2.5 border-t border-slate-800/70 flex items-center justify-end text-xs">
-                                                    <span className="text-amber-400 group-hover:text-amber-300 font-semibold flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">
-                                                        <span>閱讀全文</span>
-                                                        <ChevronRight className="w-3.5 h-3.5" />
-                                                    </span>
+                                                <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between gap-4">
+                                                    <div className="space-y-2">
+                                                        <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
+                                                            <span className="text-amber-300/90">{item.category || '官方公告'}</span>
+                                                            <span aria-hidden="true">·</span>
+                                                            <span className="font-code">{item.createdAt ? format(new Date(item.createdAt.seconds * 1000), 'yyyy-MM-dd') : '---'}</span>
+                                                        </div>
+
+                                                        <h3 className="font-headline font-bold text-base sm:text-lg text-white group-hover:text-amber-200 transition-colors line-clamp-2 leading-snug text-left">
+                                                            {cleanTitle}
+                                                        </h3>
+
+                                                        {rawSnippet ? (
+                                                            <p className="text-xs sm:text-sm text-slate-400 line-clamp-2 leading-relaxed text-left">
+                                                                {rawSnippet}
+                                                            </p>
+                                                        ) : (
+                                                            <p className="text-xs sm:text-sm text-slate-500 line-clamp-1 leading-relaxed text-left">
+                                                                點擊查看完整公告內容
+                                                            </p>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="pt-3 border-t border-white/[0.06] flex items-center justify-end text-xs">
+                                                        <span className="text-amber-300 group-hover:text-amber-200 font-medium flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">
+                                                            <span>閱讀全文</span>
+                                                            <ChevronRight className="w-3.5 h-3.5" />
+                                                        </span>
+                                                    </div>
                                                 </div>
-                                            </div>
+                                              </>
+                                            ) : (
+                                              /* 無封面圖：純文字編輯式公告卡，不顯示空佔位圖框 */
+                                              <div className="p-5 sm:p-6 flex-1 flex flex-col justify-between gap-5">
+                                                  <div className="space-y-3">
+                                                      <div className="flex items-center justify-between gap-2">
+                                                          <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
+                                                              <span className="text-amber-300/90">{item.category || '官方公告'}</span>
+                                                              <span aria-hidden="true">·</span>
+                                                              <span className="font-code">{item.createdAt ? format(new Date(item.createdAt.seconds * 1000), 'yyyy-MM-dd') : '---'}</span>
+                                                          </div>
+                                                          {item.isPinned && (
+                                                              <span className="bg-amber-400/15 text-amber-300 border border-amber-400/30 font-semibold text-[10px] px-2 py-0.5 rounded">
+                                                                  置頂
+                                                              </span>
+                                                          )}
+                                                      </div>
+
+                                                      <h3 className="font-headline font-bold text-base sm:text-lg text-white group-hover:text-amber-200 transition-colors line-clamp-2 leading-snug text-left">
+                                                          {cleanTitle}
+                                                      </h3>
+
+                                                      <p className="text-xs sm:text-sm text-slate-400 line-clamp-6 leading-relaxed text-left">
+                                                          {rawSnippet || '點擊查看完整公告內容'}
+                                                      </p>
+                                                  </div>
+
+                                                  <div className="pt-3 border-t border-white/[0.06] flex items-center justify-end text-xs">
+                                                      <span className="text-amber-300 group-hover:text-amber-200 font-medium flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">
+                                                          <span>閱讀全文</span>
+                                                          <ChevronRight className="w-3.5 h-3.5" />
+                                                      </span>
+                                                  </div>
+                                              </div>
+                                            )}
 
                                         </div>
                                     </div>
@@ -440,8 +470,8 @@ export default function Home() {
                     )}
                 </CarouselContent>
                 
-                <CarouselPrevious className="hidden md:flex -left-4 h-9 w-9 bg-slate-900 border-slate-700 text-slate-200 hover:bg-amber-500 hover:text-slate-950 shadow-lg" />
-                <CarouselNext className="hidden md:flex -right-4 h-9 w-9 bg-slate-900 border-slate-700 text-slate-200 hover:bg-amber-500 hover:text-slate-950 shadow-lg" />
+                <CarouselPrevious className="hidden md:flex -left-4 h-9 w-9 bg-[#0a0f1c] border-white/[0.12] text-slate-200 hover:bg-amber-400 hover:text-slate-950 shadow-lg" />
+                <CarouselNext className="hidden md:flex -right-4 h-9 w-9 bg-[#0a0f1c] border-white/[0.12] text-slate-200 hover:bg-amber-400 hover:text-slate-950 shadow-lg" />
 
                 {/* 手機專用滑動指示圓點 (修正為 effectiveNews 同步數量) */}
                 {effectiveNews.length > 1 && (
