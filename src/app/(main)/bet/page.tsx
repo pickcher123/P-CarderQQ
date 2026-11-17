@@ -1,17 +1,17 @@
 'use client';
 
 import { BettingGameDialog } from '@/components/betting-game-dialog';
-import { PrizeWheelDialog, ClaimWonPrizeDialog, type RedemptionItem, type WonPrizeClaim } from '@/components/prize-wheel-dialog';
+import { PrizeWheelDialog, type RedemptionItem } from '@/components/prize-wheel-dialog';
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { SafeImage } from '@/components/safe-image';
 import { useCollection, useFirestore, useMemoFirebase, useUser, useDoc } from '@/firebase';
-import { collection, query, orderBy, doc, where } from 'firebase/firestore';
+import { collection, query, orderBy, doc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CrossedCardsIcon, DiamondIcon, PPlusIcon } from '@/components/icons';
 import { useIsAdmin } from '@/hooks/use-is-admin';
 import { 
-    Sparkles, ShoppingBag, Truck,
+    Sparkles, ShoppingBag,
     Settings, Target, ShieldCheck, 
     XCircle, Search, Flame, Eye,
     Percent, Coins, Award, X, Disc3, HelpCircle, Gift
@@ -116,13 +116,6 @@ export default function BetLandingPage() {
     // 讀取兌換獎品 (同時支援 P+ 直購兌換 & 命運轉盤)
     const redemptionsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'redemptionItems') : null, [firestore]);
     const { data: rawRedemptionItems, isLoading: isLoadingPrizes } = useCollection<RedemptionItem>(redemptionsQuery);
-
-    // 讀取使用者尚未填寫收件資料的轉盤中獎獎品
-    const unclaimedPrizesQuery = useMemoFirebase(() => {
-        if (!firestore || !user?.uid) return null;
-        return query(collection(firestore, 'users', user.uid, 'wonPrizes'), where('status', '==', 'unclaimed'));
-    }, [firestore, user?.uid]);
-    const { data: unclaimedPrizes } = useCollection<WonPrizeClaim>(unclaimedPrizesQuery);
 
     const redemptionItems = useMemo(() => {
         if (!rawRedemptionItems) return [];
@@ -352,35 +345,6 @@ export default function BetLandingPage() {
                         </div>
                     )}
                 </div>
-
-                {/* 🎉 待領取轉盤中獎獎品提醒列 */}
-                {unclaimedPrizes && unclaimedPrizes.length > 0 && (
-                    <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-emerald-950/90 via-slate-900/95 to-amber-950/80 border border-emerald-400/50 shadow-[0_0_25px_rgba(16,185,129,0.2)] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div className="flex items-center gap-2.5">
-                            <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center shrink-0">
-                                <Gift className="w-5 h-5 text-emerald-300 animate-bounce" />
-                            </div>
-                            <div>
-                                <div className="text-xs sm:text-sm font-black text-emerald-200">
-                                    🎉 您有 {unclaimedPrizes.length} 件命運轉盤中獎獎品尚未填寫收件資訊！
-                                </div>
-                                <div className="text-[11px] text-slate-300">
-                                    點擊右側按鈕填寫收件門市或地址，立即為您免費寄出。
-                                </div>
-                            </div>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                            {unclaimedPrizes.map((claim) => (
-                                <ClaimWonPrizeDialog key={claim.id} claim={claim}>
-                                    <Button size="sm" className="h-9 rounded-xl bg-gradient-to-r from-emerald-400 to-teal-400 hover:brightness-110 text-slate-950 font-black text-xs cursor-pointer">
-                                        <Truck className="w-3.5 h-3.5 mr-1.5" />
-                                        領取「{claim.itemName}」
-                                    </Button>
-                                </ClaimWonPrizeDialog>
-                            ))}
-                        </div>
-                    </div>
-                )}
 
                 {activeSection === 'cards' ? (
                     <>

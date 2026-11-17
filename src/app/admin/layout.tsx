@@ -47,7 +47,7 @@ import {
   X,
   Compass,
   Home,
-  ScanLine,
+  UploadCloud,
   LogIn,
   Wrench
 } from 'lucide-react';
@@ -91,7 +91,7 @@ const sidebarNavItems: NavSection[] = [
     badge: '玩法',
     items: [
       { href: '/admin/cards', label: '卡片總管', icon: CreditCard, permission: 'cards', desc: '卡牌資產庫與批次上傳' },
-      { href: '/admin/cards/scanner', label: '掃描分割 (PRO)', icon: ScanLine, permission: 'cards', desc: 'AI 辨識、邊框偵測與正反面裁切' },
+      { href: '/admin/cards/scanner', label: '上傳卡片', icon: UploadCloud, permission: 'cards', desc: '卡片上傳、邊框偵測與正反面裁切' },
       { href: '/admin/card-pools', label: '抽卡管理', icon: Package, permission: 'card-pools', desc: '抽卡機率與卡池設定' },
       { href: '/admin/betting', label: '拼卡管理', icon: Swords, permission: 'betting', desc: '拼卡項目與選號管理' },
       { href: '/admin/lucky-bags', label: '福袋管理', icon: Ticket, permission: 'lucky-bags', desc: '福袋獎品配置與上架' },
