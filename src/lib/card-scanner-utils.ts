@@ -207,13 +207,16 @@ export function generateGridBoxes(rows: number, cols: number, padding: number = 
 }
 
 /**
- * 純前端智能影像邊界備援分析（當後端網路超時時自動接手）
+ * 純前端多卡獨立邊界偵測（Integral-Image 局部自適應背景 + 彩度 + 邊緣梯度 + BFS 連通區域）
+ * 可抵抗掃描儀玻璃色偏與漸層陰影，精準找出每張卡片/卡夾的獨立緊貼外框
  */
 export function detectCardBoundariesLocally(imageElement: HTMLImageElement): CropBox[] {
   try {
     const canvas = document.createElement('canvas');
-    const sampleWidth = 200;
-    const sampleHeight = Math.round((sampleWidth / imageElement.naturalWidth) * imageElement.naturalHeight);
+    const sampleWidth = 300;
+    const natW = imageElement.naturalWidth || imageElement.width || 800;
+    const natH = imageElement.naturalHeight || imageElement.height || 600;
+    const sampleHeight = Math.max(90, Math.round((sampleWidth / natW) * natH));
     canvas.width = sampleWidth;
     canvas.height = sampleHeight;
 
@@ -223,53 +226,154 @@ export function detectCardBoundariesLocally(imageElement: HTMLImageElement): Cro
 
     const imgData = ctx.getImageData(0, 0, sampleWidth, sampleHeight);
     const data = imgData.data;
+    const totalPixels = sampleWidth * sampleHeight;
 
-    // 計算四邊角落作為背景基準色
-    let bgR = 0, bgG = 0, bgB = 0;
-    const samplePoints = [[0, 0], [sampleWidth - 1, 0], [0, sampleHeight - 1], [sampleWidth - 1, sampleHeight - 1]];
-    samplePoints.forEach(([px, py]) => {
-      const idx = (py * sampleWidth + px) * 4;
-      bgR += data[idx];
-      bgG += data[idx + 1];
-      bgB += data[idx + 2];
-    });
-    bgR /= 4;
-    bgG /= 4;
-    bgB /= 4;
+    // 1. 計算四邊內縮環帶的中位數亮度作為掃描底色基準（避開外緣陰影）
+    const edgeGrays: number[] = [];
+    const inset = 4;
+    for (let x = inset; x < sampleWidth - inset; x += 3) {
+      edgeGrays.push(gray[inset * sampleWidth + x]);
+      edgeGrays.push(gray[(sampleHeight - 1 - inset) * sampleWidth + x]);
+    }
+    for (let y = inset; y < sampleHeight - inset; y += 3) {
+      edgeGrays.push(gray[y * sampleWidth + inset]);
+      edgeGrays.push(gray[y * sampleWidth + (sampleWidth - 1 - inset)]);
+    }
+    edgeGrays.sort((a, b) => a - b);
+    const bgGray = edgeGrays[Math.floor(edgeGrays.length / 2)] ?? 255;
 
-    // 尋找與背景有明顯差異的前景邊界
-    let minX = sampleWidth, maxX = 0, minY = sampleHeight, maxY = 0;
-    let foregroundCount = 0;
+    // 2. 建立前景遮罩：必須「真正異於掃描底色」或「具備彩度 / 強邊緣」，絕不把卡片間的留白縫隙誤判為前景
+    const mask = new Uint8Array(totalPixels);
+    for (let y = 2; y < sampleHeight - 2; y++) {
+      for (let x = 2; x < sampleWidth - 2; x++) {
+        const p = y * sampleWidth + x;
+        const idx = p * 4;
+        const r = data[idx];
+        const g = data[idx + 1];
+        const b = data[idx + 2];
 
-    for (let y = 0; y < sampleHeight; y++) {
-      for (let x = 0; x < sampleWidth; x++) {
-        const idx = (y * sampleWidth + x) * 4;
-        const diff = Math.abs(data[idx] - bgR) + Math.abs(data[idx + 1] - bgG) + Math.abs(data[idx + 2] - bgB);
-        if (diff > 45) { // 顯著差異於背景
-          foregroundCount++;
-          if (x < minX) minX = x;
-          if (x > maxX) maxX = x;
-          if (y < minY) minY = y;
-          if (y > maxY) maxY = y;
+        const bgDiff = Math.abs(gray[p] - bgGray);
+        const sat = Math.max(r, g, b) - Math.min(r, g, b);
+
+        const idxR = (y * sampleWidth + (x + 1)) * 4;
+        const idxD = ((y + 1) * sampleWidth + x) * 4;
+        const edgeGrad =
+          Math.abs(r - data[idxR]) +
+          Math.abs(g - data[idxR + 1]) +
+          Math.abs(b - data[idxR + 2]) +
+          Math.abs(r - data[idxD]) +
+          Math.abs(g - data[idxD + 1]) +
+          Math.abs(b - data[idxD + 2]);
+
+        if (bgDiff > 26 || sat > 24 || edgeGrad > 48) {
+          mask[p] = 1;
         }
       }
     }
 
-    if (foregroundCount > (sampleWidth * sampleHeight * 0.05) && maxX > minX && maxY > minY) {
-      // 找到卡片大致邊界，給予 2% 餘量
-      const normX = Math.max(2, Math.round(((minX / sampleWidth) * 100) - 1));
-      const normY = Math.max(2, Math.round(((minY / sampleHeight) * 100) - 1));
-      const normW = Math.min(96, Math.round((((maxX - minX) / sampleWidth) * 100) + 2));
-      const normH = Math.min(96, Math.round((((maxY - minY) / sampleHeight) * 100) + 2));
+    // 3. 1px 閉運算 (Dilate 1px -> Erode 1px) 填補卡片內部白邊縫隙，同時維持卡片間隙分離
+    const closed = new Uint8Array(totalPixels);
+    const temp = new Uint8Array(totalPixels);
+    for (let y = 2; y < sampleHeight - 2; y++) {
+      for (let x = 2; x < sampleWidth - 2; x++) {
+        const p = y * sampleWidth + x;
+        if (mask[p] || mask[p - 1] || mask[p + 1] || mask[p - sampleWidth] || mask[p + sampleWidth]) {
+          temp[p] = 1;
+        }
+      }
+    }
+    for (let y = 2; y < sampleHeight - 2; y++) {
+      for (let x = 2; x < sampleWidth - 2; x++) {
+        const p = y * sampleWidth + x;
+        if (temp[p] && temp[p - 1] && temp[p + 1] && temp[p - sampleWidth] && temp[p + sampleWidth]) {
+          closed[p] = 1;
+        }
+      }
+    }
 
-      return [{
-        id: `local-detect-${uuidv4().slice(0, 8)}`,
-        x: normX,
-        y: normY,
-        width: normW,
-        height: normH,
-        rotation: 0,
-      }];
+    // 4. BFS 連通區域標記，找出每一張獨立卡片的緊貼外框
+    const visited = new Uint8Array(totalPixels);
+    const rawBoxes: CropBox[] = [];
+    const queue = new Int32Array(totalPixels);
+
+    for (let y = 2; y < sampleHeight - 2; y++) {
+      for (let x = 2; x < sampleWidth - 2; x++) {
+        const startIdx = y * sampleWidth + x;
+        if (!closed[startIdx] || visited[startIdx]) continue;
+
+        let head = 0;
+        let tail = 0;
+        queue[tail++] = startIdx;
+        visited[startIdx] = 1;
+
+        let minX = x, maxX = x, minY = y, maxY = y;
+        let area = 0;
+
+        while (head < tail) {
+          const curr = queue[head++];
+          const cx = curr % sampleWidth;
+          const cy = (curr - cx) / sampleWidth;
+          area++;
+          if (cx < minX) minX = cx;
+          if (cx > maxX) maxX = cx;
+          if (cy < minY) minY = cy;
+          if (cy > maxY) maxY = cy;
+
+          const neighbors = [curr - 1, curr + 1, curr - sampleWidth, curr + sampleWidth];
+          for (let n = 0; n < 4; n++) {
+            const ni = neighbors[n];
+            if (ni >= 0 && ni < totalPixels && closed[ni] && !visited[ni]) {
+              visited[ni] = 1;
+              queue[tail++] = ni;
+            }
+          }
+        }
+
+        const wPct = ((maxX - minX + 1) / sampleWidth) * 100;
+        const hPct = ((maxY - minY + 1) / sampleHeight) * 100;
+        const areaPct = (area / totalPixels) * 100;
+
+        // 過濾雜點與覆蓋全圖的背景大框
+        if (wPct < 9 || hPct < 14 || areaPct < 1.5) continue;
+        if (wPct > 82 && hPct > 82) continue;
+
+        const padX = 0.6;
+        const padY = 0.6;
+        const normX = Math.max(0.5, Math.round((minX / sampleWidth) * 100 * 10 - padX * 10) / 10);
+        const normY = Math.max(0.5, Math.round((minY / sampleHeight) * 100 * 10 - padY * 10) / 10);
+        const normW = Math.min(99 - normX, Math.round((wPct + padX * 2) * 10) / 10);
+        const normH = Math.min(99 - normY, Math.round((hPct + padY * 2) * 10) / 10);
+
+        rawBoxes.push({
+          id: `local-card-${uuidv4().slice(0, 8)}`,
+          x: normX,
+          y: normY,
+          width: normW,
+          height: normH,
+          rotation: 0,
+        });
+      }
+    }
+
+    // 5. 移除被外框包覆的內部子框（例如卡夾外框已框住整張卡，移除裡面的頭像子框）
+    const boxes = rawBoxes.filter((box, idx) => {
+      const boxArea = box.width * box.height;
+      return !rawBoxes.some((other, oIdx) => {
+        if (idx === oIdx) return false;
+        const otherArea = other.width * other.height;
+        if (otherArea <= boxArea) return false;
+        const ix1 = Math.max(box.x, other.x);
+        const iy1 = Math.max(box.y, other.y);
+        const ix2 = Math.min(box.x + box.width, other.x + other.width);
+        const iy2 = Math.min(box.y + box.height, other.y + other.height);
+        if (ix2 <= ix1 || iy2 <= iy1) return false;
+        const interArea = (ix2 - ix1) * (iy2 - iy1);
+        return interArea / boxArea > 0.6;
+      });
+    });
+
+    if (boxes.length > 0) {
+      return boxes;
     }
   } catch (e) {
     console.warn('Local boundary detection fallback error:', e);

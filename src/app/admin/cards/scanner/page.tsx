@@ -404,16 +404,12 @@ export default function CardScannerProPage() {
         console.warn('Cloud AI detect failed, switching to local detector:', apiErr);
       }
 
-      // 2. 若雲端未能回傳有效框，自動切換至純前端影像分析演算法備援
+      // 2. 若雲端未能回傳有效框，自動切換至純前端多卡連通區域邊界偵測（精準貼合每張卡片獨立外框）
       if (detectedBoxes.length === 0) {
         detectedBoxes = detectCardBoundariesLocally(imgRef.current);
-        // 本地過濾，若只回傳了一個覆蓋全圖的框，自動採用 2x3 網格
-        if (detectedBoxes.length === 1 && (detectedBoxes[0].width > 75 && detectedBoxes[0].height > 75)) {
-          detectedBoxes = generateGridBoxes(2, 3);
-        }
         toast({
           title: '已啟用本地智慧邊緣對比偵測',
-          description: `成功分析並定位 ${detectedBoxes.length} 個卡片區域。`,
+          description: `成功分析並定位 ${detectedBoxes.length} 張卡片的獨立邊界。`,
         });
       } else {
         toast({

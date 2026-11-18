@@ -494,94 +494,113 @@ export default function AdminDashboardPage() {
 
       {/* 4 Core KPI Highlights */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-        <Card className="border-slate-200/90 shadow-xs bg-white rounded-xl">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-1.5">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">會員規模</span>
-            <Users className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
-            {isLoadingUsers ? (
-              <Skeleton className="h-7 w-20 my-1" />
-            ) : (
-              <div className="text-2xl font-bold text-slate-900 font-mono">
-                {totalUsers.toLocaleString()}
+        <Link href="/admin/users" className="block group">
+          <Card className="border-slate-200/90 shadow-xs bg-white rounded-xl hover:border-slate-300 hover:shadow-sm transition-all h-full">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-2">
+              <span className="text-xs font-bold text-slate-500">會員規模</span>
+              <div className="h-8 w-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                <Users className="h-4 w-4" />
               </div>
-            )}
-            <div className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-1.5">
-              <span>{adminUsers} 位管理人員</span>
-              <span aria-hidden="true">·</span>
-              <span className="text-emerald-600 font-medium">持續成長</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-slate-200/90 shadow-xs bg-white rounded-xl">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-1.5">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">在庫卡牌</span>
-            <Archive className="h-4 w-4 text-indigo-600" />
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
-            {isLoadingCards ? (
-              <Skeleton className="h-7 w-20 my-1" />
-            ) : (
-              <div className="text-2xl font-bold text-slate-900 font-mono">
-                {cardsInStock.toLocaleString()}
-              </div>
-            )}
-            <div className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-1.5">
-              <span>總建檔 {totalCards} 張</span>
-              <span aria-hidden="true">·</span>
-              <span>在庫率 {totalCards > 0 ? Math.round((cardsInStock / totalCards) * 100) : 0}%</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className={cn(
-          "border-slate-200/90 shadow-xs bg-white rounded-xl transition-colors",
-          pendingCount > 0 && "border-amber-300/80 bg-amber-50/20"
-        )}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-1.5">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">待出貨訂單</span>
-            <Truck className={cn("h-4 w-4", pendingCount > 0 ? "text-amber-600" : "text-slate-400")} />
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
-            {isLoadingOrders ? (
-              <Skeleton className="h-7 w-16 my-1" />
-            ) : (
-              <div className={cn("text-2xl font-bold font-mono", pendingCount > 0 ? "text-amber-600" : "text-slate-900")}>
-                {pendingCount}
-              </div>
-            )}
-            <div className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-1.5">
-              {pendingCount > 0 ? (
-                <span className="text-amber-700 font-semibold">需要安排出貨發送</span>
+            </CardHeader>
+            <CardContent className="p-4 pt-0">
+              {isLoadingUsers ? (
+                <Skeleton className="h-7 w-20 my-1" />
               ) : (
-                <span className="text-slate-500">已全數完成發貨審核</span>
+                <div className="text-2xl font-bold text-slate-900 font-mono tabular-nums">
+                  {totalUsers.toLocaleString()}
+                </div>
               )}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-slate-200/90 shadow-xs bg-white rounded-xl">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-1.5">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">在線玩法專案</span>
-            <Package className="h-4 w-4 text-emerald-600" />
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
-            {isLoadingCardPools || isLoadingLuckBags ? (
-              <Skeleton className="h-7 w-20 my-1" />
-            ) : (
-              <div className="text-2xl font-bold text-slate-900 font-mono">
-                {activePoolsCount + (luckBags?.length || 0)}
+              <div className="text-xs text-slate-500 mt-1 flex items-center gap-1.5 tabular-nums">
+                <span>{adminUsers} 位管理人員</span>
+                <span aria-hidden="true">·</span>
+                <span className="text-emerald-600 font-semibold">持續成長</span>
               </div>
-            )}
-            <div className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-1.5">
-              <span>{activePoolsCount} 個在線抽卡池</span>
-              <span aria-hidden="true">·</span>
-              <span>{luckBags?.length || 0} 個福袋</span>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/admin/cards" className="block group">
+          <Card className="border-slate-200/90 shadow-xs bg-white rounded-xl hover:border-slate-300 hover:shadow-sm transition-all h-full">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-2">
+              <span className="text-xs font-bold text-slate-500">在庫卡牌</span>
+              <div className="h-8 w-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                <Archive className="h-4 w-4" />
+              </div>
+            </CardHeader>
+            <CardContent className="p-4 pt-0">
+              {isLoadingCards ? (
+                <Skeleton className="h-7 w-20 my-1" />
+              ) : (
+                <div className="text-2xl font-bold text-slate-900 font-mono tabular-nums">
+                  {cardsInStock.toLocaleString()}
+                </div>
+              )}
+              <div className="text-xs text-slate-500 mt-1 flex items-center gap-1.5 tabular-nums">
+                <span>總建檔 {totalCards} 張</span>
+                <span aria-hidden="true">·</span>
+                <span>在庫率 {totalCards > 0 ? Math.round((cardsInStock / totalCards) * 100) : 0}%</span>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/admin/shipping" className="block group">
+          <Card className={cn(
+            "border-slate-200/90 shadow-xs bg-white rounded-xl hover:shadow-sm transition-all h-full",
+            pendingCount > 0 ? "border-amber-300/90 bg-amber-50/25 hover:border-amber-400" : "hover:border-slate-300"
+          )}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-2">
+              <span className="text-xs font-bold text-slate-500">待出貨訂單</span>
+              <div className={cn(
+                "h-8 w-8 rounded-lg flex items-center justify-center",
+                pendingCount > 0 ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-500"
+              )}>
+                <Truck className="h-4 w-4" />
+              </div>
+            </CardHeader>
+            <CardContent className="p-4 pt-0">
+              {isLoadingOrders ? (
+                <Skeleton className="h-7 w-16 my-1" />
+              ) : (
+                <div className={cn("text-2xl font-bold font-mono tabular-nums", pendingCount > 0 ? "text-amber-700" : "text-slate-900")}>
+                  {pendingCount}
+                </div>
+              )}
+              <div className="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
+                {pendingCount > 0 ? (
+                  <span className="text-amber-700 font-semibold">點擊立即審核出貨</span>
+                ) : (
+                  <span className="text-slate-500">已全數完成發貨審核</span>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/admin/card-pools" className="block group">
+          <Card className="border-slate-200/90 shadow-xs bg-white rounded-xl hover:border-slate-300 hover:shadow-sm transition-all h-full">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-2">
+              <span className="text-xs font-bold text-slate-500">在線玩法專案</span>
+              <div className="h-8 w-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                <Package className="h-4 w-4" />
+              </div>
+            </CardHeader>
+            <CardContent className="p-4 pt-0">
+              {isLoadingCardPools || isLoadingLuckBags ? (
+                <Skeleton className="h-7 w-20 my-1" />
+              ) : (
+                <div className="text-2xl font-bold text-slate-900 font-mono tabular-nums">
+                  {activePoolsCount + (luckBags?.length || 0)}
+                </div>
+              )}
+              <div className="text-xs text-slate-500 mt-1 flex items-center gap-1.5 tabular-nums">
+                <span>{activePoolsCount} 個抽卡池</span>
+                <span aria-hidden="true">·</span>
+                <span>{luckBags?.length || 0} 個福袋</span>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
 
       {/* Quick Action Bar */}
@@ -593,19 +612,19 @@ export default function AdminDashboardPage() {
               key={action.label}
               href={action.href}
               className={cn(
-                "p-3 rounded-xl border bg-white shadow-2xs hover:shadow-xs transition-all flex items-center gap-3 group",
+                "p-3.5 rounded-xl border bg-white shadow-2xs hover:shadow-sm transition-all flex items-center gap-3 group",
                 action.accent
               )}
             >
-              <div className="h-8 w-8 rounded-lg bg-white shadow-2xs flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <div className="h-9 w-9 rounded-xl bg-white shadow-2xs flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
                 <Icon className="h-4 w-4" />
               </div>
               <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-bold text-slate-900 group-hover:text-primary transition-colors">{action.label}</h3>
-                  <ArrowUpRight className="h-3 w-3 text-slate-400 opacity-60 group-hover:opacity-100 transition-opacity" />
+                <div className="flex items-center justify-between gap-1">
+                  <h3 className="text-[13px] font-bold text-slate-900 truncate">{action.label}</h3>
+                  <ArrowUpRight className="h-3.5 w-3.5 text-slate-400 opacity-60 group-hover:opacity-100 transition-opacity shrink-0" />
                 </div>
-                <p className="text-[10px] text-slate-500 truncate">{action.desc}</p>
+                <p className="text-[11px] text-slate-500 truncate mt-0.5">{action.desc}</p>
               </div>
             </Link>
           );
@@ -828,8 +847,8 @@ export default function AdminDashboardPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {CORE_MODULES.map((group) => (
               <Card key={group.category} className="border-slate-200/90 shadow-xs bg-white rounded-xl">
-                <CardHeader className="p-4 pb-2 border-b border-slate-100">
-                  <CardTitle className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                <CardHeader className="p-4 pb-2.5 border-b border-slate-100">
+                  <CardTitle className="text-xs font-bold tracking-wider text-slate-600">
                     {group.category}
                   </CardTitle>
                 </CardHeader>
@@ -840,18 +859,18 @@ export default function AdminDashboardPage() {
                       <Link
                         key={item.href}
                         href={item.href}
-                        className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 text-slate-700 hover:text-slate-900 transition-colors group"
+                        className="flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-50 text-slate-700 hover:text-slate-950 transition-colors group"
                       >
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="h-7 w-7 rounded-md bg-slate-100 group-hover:bg-white border border-transparent group-hover:border-slate-200 flex items-center justify-center shrink-0 transition-colors">
-                            <Icon className="h-3.5 w-3.5 text-slate-600 group-hover:text-slate-900" />
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="h-8 w-8 rounded-lg bg-slate-100 group-hover:bg-white border border-transparent group-hover:border-slate-200 flex items-center justify-center shrink-0 transition-colors">
+                            <Icon className="h-4 w-4 text-slate-600 group-hover:text-slate-900" />
                           </div>
                           <div className="min-w-0">
-                            <p className="text-xs font-semibold truncate leading-tight">{item.label}</p>
-                            <p className="text-[10px] text-slate-400 truncate">{item.desc}</p>
+                            <p className="text-[13px] font-bold truncate leading-tight">{item.label}</p>
+                            <p className="text-[11px] text-slate-500 truncate mt-0.5">{item.desc}</p>
                           </div>
                         </div>
-                        <ArrowUpRight className="h-3 w-3 text-slate-300 group-hover:text-slate-600 shrink-0 ml-2" />
+                        <ArrowUpRight className="h-3.5 w-3.5 text-slate-300 group-hover:text-slate-700 shrink-0 ml-2" />
                       </Link>
                     );
                   })}

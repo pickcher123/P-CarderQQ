@@ -157,6 +157,10 @@ function SidebarNav({
   };
 
   const filterText = (searchFilter || '').trim().toLowerCase();
+  const allNavHrefs = useMemo(
+    () => sidebarNavItems.flatMap((s) => s.items.map((i) => i.href)),
+    []
+  );
   
   return (
     <nav className="space-y-4 py-3">
@@ -172,30 +176,40 @@ function SidebarNav({
         return (
           <div key={section.title} className="px-3">
             {!isCollapsed && (
-              <div className="flex items-center justify-between px-2 mb-1.5">
-                <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              <div className="flex items-center justify-between px-2.5 mb-2">
+                <h3 className="text-[11px] font-bold tracking-wider text-slate-500">
                   {section.title}
                 </h3>
-                <span className="text-[10px] font-semibold text-slate-400 bg-slate-100/90 px-1.5 py-0.5 rounded-sm">
+                <span className="text-[10px] font-mono font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded tabular-nums">
                   {visibleItems.length}
                 </span>
               </div>
             )}
-            <div className="space-y-0.5">
+            <div className="space-y-1">
               {visibleItems.map((item) => {
-                const isActive = pathname === item.href || (item.href !== '/admin' && pathname.startsWith(item.href));
+                const hasMoreSpecificMatch = allNavHrefs.some(
+                  (otherHref) =>
+                    otherHref !== item.href &&
+                    otherHref.startsWith(item.href + '/') &&
+                    (pathname === otherHref || pathname.startsWith(otherHref + '/'))
+                );
+                const isActive =
+                  pathname === item.href ||
+                  (item.href !== '/admin' &&
+                    pathname.startsWith(item.href + '/') &&
+                    !hasMoreSpecificMatch);
                 const IconComponent = item.icon;
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
                     onClick={onItemClick}
-                    title={isCollapsed ? item.label : undefined}
+                    title={isCollapsed ? `${item.label} — ${item.desc}` : item.desc}
                     className={cn(
-                      "group relative flex items-center rounded-lg px-2.5 py-2 text-xs font-semibold transition-all duration-150",
+                      "group relative flex items-center rounded-xl px-3 py-2.5 text-[13px] font-semibold transition-all duration-150",
                       isActive 
-                        ? "bg-slate-900 text-white shadow-xs" 
-                        : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+                        ? "bg-slate-900 text-white shadow-sm" 
+                        : "text-slate-600 hover:bg-slate-100/90 hover:text-slate-950",
                       isCollapsed && "justify-center px-2 py-2.5"
                     )}
                   >
@@ -205,10 +219,10 @@ function SidebarNav({
                     )} />
                     
                     {!isCollapsed && (
-                      <div className="ml-2.5 min-w-0 flex-1 flex items-center justify-between">
+                      <div className="ml-3 min-w-0 flex-1 flex items-center justify-between">
                         <span className="truncate">{item.label}</span>
                         {isActive && (
-                          <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                          <span className="h-1.5 w-1.5 rounded-full bg-amber-400 shrink-0" />
                         )}
                       </div>
                     )}
@@ -247,8 +261,8 @@ function MobileHeader({ permissions, isSuperAdmin, isMaintenanceActive }: { perm
                   <ShieldCheck className="h-4 w-4"/>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-xs font-black tracking-wide">CARD MASTER</span>
-                  <span className="text-[9px] text-slate-400 font-medium tracking-wider">管理控制台</span>
+                  <span className="text-xs font-black tracking-wide">P+CARDER</span>
+                  <span className="text-[10px] text-slate-400 font-medium tracking-wider">後台管理中心</span>
                 </div>
               </Link>
             </div>
@@ -353,14 +367,16 @@ export default function AdminLayout({
   };
 
   const currentNav = useMemo(() => {
-    return sidebarNavItems.flatMap(s => s.items).find(item => 
-      item.href === pathname || (item.href !== '/admin' && pathname.startsWith(item.href))
+    const matches = sidebarNavItems.flatMap(s => s.items).filter(item =>
+      item.href === pathname || (item.href !== '/admin' && pathname.startsWith(item.href + '/'))
     );
+    return matches.sort((a, b) => b.href.length - a.href.length)[0];
   }, [pathname]);
 
   const currentCategory = useMemo(() => {
-    return sidebarNavItems.find(s => s.items.some(i => i.href === pathname || (i.href !== '/admin' && pathname.startsWith(i.href))));
-  }, [pathname]);
+    if (!currentNav) return undefined;
+    return sidebarNavItems.find(s => s.items.some(i => i.href === currentNav.href));
+  }, [currentNav]);
 
   const { isAdmin: isHookAdmin, isLoading: isHookAdminLoading } = useIsAdmin();
 
@@ -679,22 +695,22 @@ export default function AdminLayout({
 
         {/* Search Bar */}
         {!isCollapsed && (
-          <div className="px-3 pt-2.5 pb-1 shrink-0">
+          <div className="px-3 pt-3 pb-1.5 shrink-0">
             <div className="relative">
-              <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-400" />
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
               <input
                 type="text"
                 value={navSearch}
                 onChange={(e) => setNavSearch(e.target.value)}
-                placeholder="搜尋功能選單..."
-                className="w-full h-7.5 pl-8 pr-6 text-xs bg-slate-50 hover:bg-slate-100 focus:bg-white rounded-md border border-slate-200 focus:border-slate-400 outline-none transition-colors placeholder:text-slate-400"
+                placeholder="快速搜尋功能模組..."
+                className="w-full h-9 pl-9 pr-7 text-[13px] bg-slate-50 hover:bg-slate-100/80 focus:bg-white rounded-xl border border-slate-200 focus:border-slate-400 outline-none transition-colors placeholder:text-slate-400 text-slate-900"
               />
               {navSearch && (
                 <button 
                   onClick={() => setNavSearch('')} 
-                  className="absolute right-2 top-2 text-slate-400 hover:text-slate-600"
+                  className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
                 >
-                  <X className="h-3 w-3" />
+                  <X className="h-3.5 w-3.5" />
                 </button>
               )}
             </div>
@@ -770,19 +786,24 @@ export default function AdminLayout({
         />
         
         {/* Desktop Header */}
-        <header className="hidden md:flex h-12 items-center justify-between px-6 border-b border-slate-200 bg-white shrink-0">
-          <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
-            <Link href="/admin" className="hover:text-slate-900 transition-colors">控制台</Link>
+        <header className="hidden md:flex h-14 items-center justify-between px-6 border-b border-slate-200/90 bg-white shrink-0">
+          <div className="flex items-center gap-2.5 text-[13px] text-slate-500 font-medium min-w-0">
+            <Link href="/admin" className="hover:text-slate-900 transition-colors shrink-0">控制台</Link>
             {currentCategory && (
               <>
                 <span className="text-slate-300">/</span>
-                <span>{currentCategory.title}</span>
+                <span className="shrink-0">{currentCategory.title}</span>
               </>
             )}
             {currentNav && currentNav.href !== '/admin' && (
               <>
                 <span className="text-slate-300">/</span>
-                <span className="font-semibold text-slate-900">{currentNav.label}</span>
+                <span className="font-bold text-slate-900 shrink-0">{currentNav.label}</span>
+                {currentNav.desc && (
+                  <span className="hidden lg:inline-block text-xs text-slate-400 font-normal truncate pl-2 border-l border-slate-200">
+                    {currentNav.desc}
+                  </span>
+                )}
               </>
             )}
           </div>

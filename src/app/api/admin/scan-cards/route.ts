@@ -5,10 +5,11 @@ export async function POST(req: NextRequest) {
   try {
     const { 
       image, // base64 data string (with or without data:image/...;base64, prefix)
-      mode = 'recognize', // 'recognize' | 'detect'
+      mode = 'recognize', // 'recognize' | 'detect' | 'ocr_slab' | 'price_estimate'
+      cardList = [],
     } = await req.json();
 
-    if (!image) {
+    if (!image && mode !== 'price_estimate') {
       return NextResponse.json({ error: '未提供圖片資料' }, { status: 400 });
     }
 
@@ -20,9 +21,9 @@ export async function POST(req: NextRequest) {
     const ai = new GoogleGenAI({ apiKey });
 
     // 提取乾淨的 base64 與 mimeType
-    let base64Data = image;
+    let base64Data = image || '';
     let mimeType = 'image/jpeg';
-    if (image.startsWith('data:')) {
+    if (image && image.startsWith('data:')) {
       const matches = image.match(/^data:([^;]+);base64,(.+)$/);
       if (matches) {
         mimeType = matches[1];
@@ -33,23 +34,23 @@ export async function POST(req: NextRequest) {
     if (mode === 'detect') {
       // 模式 1：自動偵測多卡邊界框 (Bounding Boxes)
       const detectPrompt = `
-請分析這張包含一張或多張球員卡／收藏卡的掃描圖或合拍照。
-請找出畫面中所有獨立卡片（包括裸卡、卡夾或 PSA/BGS/CGC 評級鑑定卡殼）的位置，回傳每張卡片的標準邊界框 (Bounding Box)。
+請精準偵測這張圖片中「每一張獨立的球員卡／收藏卡／卡夾／PSA或BGS鑑定殼」的實際外框位置。
 
-【極度重要約束】：
-1. 嚴禁框選整張大圖、背景或整個掃描儀面板（絕對不能回傳覆蓋整個圖片的大外框，例如 (0,0) 到 (1000,1000)）。
-2. 每張卡片或評級鑑定殼必須框選完整的高度（從卡片/鑑定殼最頂部直到最底部，不可只框頂部標籤或只框中間球員）。
-3. 每張卡片的座標請以 0 到 1000 的整數百分比表示：
-   - ymin: 上邊界 (0-1000)
-   - xmin: 左邊界 (0-1000)
-   - ymax: 下邊界 (0-1000)
-   - xmax: 右邊界 (0-1000)
-4. 請依從左至右、從上至下的閱讀順序排列。
+【嚴格規則】：
+1. 每一張卡片（包含其白邊、透明卡夾或鑑定殼外框）只能對應「一個」獨立的邊界框，必須緊貼該張卡片的最外圍物理邊緣。
+2. 如果畫面中有多張卡片（例如 2 張、4 張、6 張或 9 張），請逐一為每一張卡片分別建立獨立邊界框；絕對不可把多張卡片合併成一個框，也不可把同一張卡片拆成多個框（例如只框人像或只框標籤）。
+3. 嚴禁框選整張大圖或空白掃描背景（不可回傳覆蓋整張圖的大框）。
+4. 座標系統為 0 到 1000 的正規化整數：
+   - ymin: 卡片最上緣 (0-1000)
+   - xmin: 卡片最左緣 (0-1000)
+   - ymax: 卡片最下緣 (0-1000)
+   - xmax: 卡片最右緣 (0-1000)
+5. 依從上到下（同一排由左到右）排序輸出。
 請僅回傳標準 JSON。
 `;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
+        model: 'gemini-2.5-flash',
         contents: [
           {
             role: 'user',
@@ -65,6 +66,7 @@ export async function POST(req: NextRequest) {
           },
         ],
         config: {
+          temperature: 0.1,
           responseMimeType: 'application/json',
           responseSchema: {
             type: Type.OBJECT,
@@ -90,25 +92,42 @@ export async function POST(req: NextRequest) {
       });
 
       const parsed = JSON.parse(response.text || '{"boxes":[]}');
-      let rawBoxes = parsed.boxes || [];
+      const rawBoxes = Array.isArray(parsed.boxes) ? parsed.boxes : [];
 
-      // 後端嚴格過濾：過濾掉面積 > 70% 或長寬皆超過 800 的全圖/背景外框
-      const filteredBoxes = rawBoxes.filter((b: any) => {
-        const w = (b.xmax - b.xmin);
-        const h = (b.ymax - b.ymin);
+      // 後端嚴格過濾：過濾掉全圖背景外框、過小雜點，並移除被大框完全包含的子框
+      const validBoxes = rawBoxes.filter((b: any) => {
+        const w = Number(b.xmax) - Number(b.xmin);
+        const h = Number(b.ymax) - Number(b.ymin);
+        if (!Number.isFinite(w) || !Number.isFinite(h)) return false;
         const areaRatio = (w * h) / (1000 * 1000);
         if (w > 820 && h > 820) return false;
         if (areaRatio > 0.68) return false;
-        if (w < 40 || h < 40) return false; // 排除太小雜點
+        if (w < 60 || h < 80) return false;
         return true;
       });
 
-      return NextResponse.json({ boxes: filteredBoxes });
+      // 移除嵌套子框（避免同一張卡同時框到外框與內部人像）
+      const filteredBoxes = validBoxes.filter((box: any, idx: number) => {
+        const area = (box.xmax - box.xmin) * (box.ymax - box.ymin);
+        return !validBoxes.some((other: any, oIdx: number) => {
+          if (idx === oIdx) return false;
+          const otherArea = (other.xmax - other.xmin) * (other.ymax - other.ymin);
+          if (otherArea <= area) return false;
+          const ix1 = Math.max(box.xmin, other.xmin);
+          const iy1 = Math.max(box.ymin, other.ymin);
+          const ix2 = Math.min(box.xmax, other.xmax);
+          const iy2 = Math.min(box.ymax, other.ymax);
+          if (ix2 <= ix1 || iy2 <= iy1) return false;
+          const interArea = (ix2 - ix1) * (iy2 - iy1);
+          return interArea / area > 0.75;
+        });
+      });
+
+      return NextResponse.json({ boxes: filteredBoxes, source: 'gemini' });
     }
 
     if (mode === 'price_estimate') {
       // 模式 3：卡價行情智慧查詢 (估算 eBay / 130point / 台灣市場行情)
-      const { cardList } = await req.json().catch(() => ({ cardList: [] }));
       const pricePrompt = `
 你是一位精通全球球員卡拍賣市場（eBay, 130point, PWCC, Goldin, 台灣各大卡店）的資深估價師。
 請根據以下卡片資訊（球員姓名、發行年份、系列品牌、卡號、特徵如簽名/RC/限量、以及 PSA/BGS 評級），
@@ -126,7 +145,7 @@ ${JSON.stringify(cardList, null, 2)}
 `;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
+        model: 'gemini-2.5-flash',
         contents: [{ role: 'user', parts: [{ text: pricePrompt }] }],
         config: {
           responseMimeType: 'application/json',
