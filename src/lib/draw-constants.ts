@@ -1,7 +1,7 @@
 export const rarityVisuals: Record<string, { color: string, glow: string, celebration: 'none' | 'rare' | 'legendary', label: string }> = {
   legendary: { color: 'text-accent', glow: 'shadow-[0_0_60px_rgba(234,179,8,0.6)]', celebration: 'legendary', label: 'LEGENDARY' },
   rare: { color: 'text-primary', glow: 'shadow-[0_0_50px_rgba(6,182,212,0.5)]', celebration: 'rare', label: 'RARE' },
-  common: { color: 'text-slate-900', glow: 'shadow-black/5', celebration: 'none', label: 'COMMON' },
+  common: { color: 'text-slate-200', glow: 'shadow-black/5', celebration: 'none', label: 'COMMON' },
 };
 
 export const pointPrizeRarityStyles: Record<string, { text: string, bg: string, border: string }> = {

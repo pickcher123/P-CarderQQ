@@ -367,32 +367,39 @@ export function BonusDoubleTicker({ onOpenDetail }: { onOpenDetail?: () => void 
   return (
     <div 
       onClick={onOpenDetail}
-      className="w-full bg-gradient-to-r from-amber-950/95 via-orange-950/95 to-amber-950/95 border-b border-amber-500/40 py-1.5 px-2.5 sm:px-3 flex items-center justify-between text-xs text-amber-200 cursor-pointer hover:bg-amber-900/60 transition-colors shadow-sm relative z-30 select-none"
+      className="w-full bg-gradient-to-r from-[#120c05] via-[#221608] to-[#120c05] border-b border-amber-400/30 py-2 px-2.5 sm:px-4 flex items-center justify-between text-xs text-[#FDF6E3] cursor-pointer hover:brightness-110 transition-all relative z-30 select-none overflow-hidden"
     >
-      <div className="container max-w-7xl mx-auto flex items-center justify-between gap-2 overflow-hidden">
-        <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
-          <span className="px-1.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-rose-500 text-slate-950 font-black text-[9px] shrink-0 shadow-sm animate-pulse">
-            🔥 {multiplier}X 加倍
+      {/* 中心柔和金箔高光 */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_50%,rgba(251,191,36,0.13),transparent_68%)] pointer-events-none" />
+      <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-amber-300/35 to-transparent pointer-events-none" />
+
+      <div className="container max-w-7xl mx-auto flex items-center justify-between gap-3 overflow-hidden relative z-10">
+        <div className="flex items-center gap-2.5 min-w-0 flex-1 overflow-hidden">
+          <span className="px-2.5 py-0.5 rounded-md bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 text-slate-950 font-mono font-bold text-[10px] tracking-wide shrink-0 shadow-[0_2px_10px_rgba(245,158,11,0.35)]">
+            {multiplier}X 加倍
           </span>
 
-          {/* 📱 行動端：平滑跑馬燈滾動，完整呈現內容且杜絕每日...截斷 */}
+          {/* 行動端：平滑跑馬燈滾動 */}
           <div className="flex-1 overflow-hidden sm:hidden">
             <MarqueeContainer speed="slow">
-              <span className="font-medium text-[11px] text-amber-200 pr-8 inline-block whitespace-nowrap">
-                <strong className="text-amber-300">【限時狂歡】</strong> 全站紅利加倍開啟！每日簽到送 {checkInRewardPoints} 點、儲值贈點翻倍、卡片轉點享雙倍 P+ 點數！
+              <span className="font-medium text-[11px] text-[#F5EAD3] pr-8 inline-block whitespace-nowrap">
+                <span className="text-amber-300 font-bold">限時紅利盛典</span> · 每日簽到送 <strong className="text-amber-200 font-semibold">{checkInRewardPoints} 點</strong>、儲值贈點翻倍、卡片轉點享雙倍 P+ 點數！
               </span>
             </MarqueeContainer>
           </div>
 
-          {/* 💻 桌面端：完整清晰文字 */}
-          <p className="hidden sm:block truncate font-medium text-xs text-amber-200">
-            <strong className="text-amber-300">【限時狂歡】</strong> 全站紅利加倍開啟！每日簽到送 {checkInRewardPoints} 點、儲值贈點翻倍、卡片轉點享雙倍 P+ 點數！
+          {/* 桌面端：完整清晰文字 */}
+          <p className="hidden sm:block truncate text-xs text-[#F5EAD3]">
+            <span className="text-amber-300 font-bold">限時紅利盛典</span>
+            <span className="text-amber-400/50 mx-1.5">·</span>
+            每日簽到送 <strong className="text-amber-200 font-semibold">{checkInRewardPoints} 點</strong>、儲值贈點翻倍、卡片轉點享雙倍 P+ 點數
           </p>
         </div>
 
-        <span className="text-[10px] sm:text-[11px] font-black text-amber-400 hover:text-amber-300 shrink-0 whitespace-nowrap flex items-center gap-0.5">
-          <span className="hidden sm:inline underline">點擊查看活動特權 &gt;</span>
-          <span className="sm:hidden px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">特權 &gt;</span>
+        <span className="text-[11px] font-semibold text-amber-200 hover:text-white shrink-0 whitespace-nowrap inline-flex items-center gap-0.5 px-2.5 py-0.5 rounded-md bg-amber-400/12 border border-amber-300/30 transition-colors">
+          <span className="hidden sm:inline">查看活動特權</span>
+          <span className="sm:hidden text-[10px]">特權</span>
+          <ChevronRight className="w-3.5 h-3.5" />
         </span>
       </div>
     </div>

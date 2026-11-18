@@ -43,8 +43,9 @@ export function LuckyBagRedPacketCard({
   const isNearFull = progress >= 80 && !isDone;
   const remainingSlots = Math.max(0, (bag.totalParticipants || 0) - (bag.participantCount || 0));
 
-  // 自動對頭獎卡牌執行外圍黑邊消除與智慧去背
-  const mattedImageUrl = useAutoMatteImage(bag.prizeCards?.first?.imageUrl, {
+  // 僅對中央主卡或列表主卡執行智慧去背，兩翼卡片直接渲染以大幅加快載入速度
+  const shouldMatte = variant === 'standard' || isCenter;
+  const mattedImageUrl = useAutoMatteImage(shouldMatte ? bag.prizeCards?.first?.imageUrl : undefined, {
     darkThreshold: 65,
     trimInset: 2,
     feather: true,
@@ -276,15 +277,15 @@ export function LuckyBagRedPacketCard({
         <div className="absolute top-0 inset-x-0 h-[2.5px] bg-gradient-to-r from-amber-600 via-yellow-200 to-amber-600 z-30" />
 
         {/* 狀態角標 (左上方) */}
-        <div className="absolute top-2.5 left-2.5 z-30">
+        <div className="absolute top-2.5 left-3 z-30">
           <Badge
             className={cn(
-              "text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded-full border shadow font-mono flex items-center gap-1 leading-none",
+              "text-[10px] sm:text-[11px] font-semibold tracking-wide px-2.5 py-0.5 rounded-full border shadow-sm flex items-center gap-1 leading-tight",
               isDone
                 ? "bg-slate-900/90 text-amber-200 border-amber-800"
                 : bag.revealLottery
                 ? "bg-rose-600 text-white border-yellow-300 animate-pulse"
-                : "bg-amber-400 text-slate-950 border-yellow-200 font-black shadow-sm"
+                : "bg-amber-400 text-slate-950 border-yellow-200 font-bold"
             )}
           >
             {isDone ? '已開獎' : bag.revealLottery ? '開獎中' : '募集中'}
@@ -292,9 +293,9 @@ export function LuckyBagRedPacketCard({
         </div>
 
         {/* 剩餘格數徽章 (右上方) */}
-        <div className="absolute top-2.5 right-2.5 z-30">
-          <div className="text-[9px] sm:text-[10px] font-mono font-black text-yellow-300 bg-black/60 px-2 py-0.5 rounded-full border border-amber-400/50 shadow-sm backdrop-blur-sm">
-            剩 {remainingSlots} 格
+        <div className="absolute top-2.5 right-3 z-30">
+          <div className="text-[10px] sm:text-[11px] font-medium tabular-nums text-[#FFF3C4] bg-black/55 px-2.5 py-0.5 rounded-full border border-amber-300/40 backdrop-blur-sm leading-tight">
+            剩 <span className="font-mono font-bold">{remainingSlots}</span> 格
           </div>
         </div>
 
@@ -391,8 +392,8 @@ export function LuckyBagRedPacketCard({
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_35%,rgba(250,204,21,0.12),transparent_70%)] pointer-events-none" />
         
         {/* 紅包袋名稱 */}
-        <div className="w-full text-center shrink-0 pt-0.5">
-          <h3 className="font-headline font-black text-sm sm:text-base text-amber-200 line-clamp-1 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] px-1">
+        <div className="w-full text-center shrink-0 pt-1">
+          <h3 className="font-sans font-bold text-base sm:text-lg tracking-wide text-[#FFF7E2] line-clamp-1 drop-shadow-[0_1px_4px_rgba(0,0,0,0.75)] px-1">
             {bag.name}
           </h3>
         </div>
@@ -426,45 +427,45 @@ export function LuckyBagRedPacketCard({
         {/* 3. 底部價格、進度與按鈕 (固定高度並保證完全顯示，絕不被裁切) */}
         <div className="w-full space-y-1.5 sm:space-y-2 mt-1.5 shrink-0">
           {/* 金額展示 */}
-          <div className="flex items-center justify-between px-1">
-            <div className="flex items-center gap-1">
-              <span className="text-[10px] sm:text-[11px] text-amber-200/90 font-bold">單格</span>
-              <span className="text-base sm:text-xl font-black text-amber-300 font-headline leading-none">
+          <div className="flex items-baseline justify-between px-1">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] sm:text-xs text-amber-100/80 font-medium tracking-wide">單格</span>
+              <span className="text-lg sm:text-xl font-bold font-mono tabular-nums text-[#FDE68A] leading-none">
                 {(bag.price || 0).toLocaleString()}
               </span>
               {currency === 'diamond' ? (
                 <Gem className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-cyan-400" />
               ) : (
-                <PPlusIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
+                <PPlusIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-300" />
               )}
             </div>
-            <div className="text-[10px] sm:text-[11px] font-mono font-bold text-yellow-300">
+            <div className="text-[11px] sm:text-xs font-mono tabular-nums font-semibold text-amber-100/90">
               {progress}%
             </div>
           </div>
 
           {/* 紅金進度條 */}
-          <div className="w-full bg-[#2a040b] h-1.5 sm:h-2 rounded-full overflow-hidden border border-amber-400/40 p-0.2">
+          <div className="w-full bg-black/55 h-1.5 sm:h-2 rounded-full overflow-hidden border border-amber-300/35 p-[0.5px]">
             <div
               className={cn(
-                "h-full rounded-full transition-all duration-700",
+                "h-full rounded-full transition-all duration-500",
                 isDone
                   ? "bg-slate-600"
                   : isNearFull
-                  ? "bg-gradient-to-r from-yellow-400 via-amber-400 to-rose-500 animate-pulse"
-                  : "bg-gradient-to-r from-amber-500 to-yellow-300"
+                  ? "bg-gradient-to-r from-[#FDE68A] via-amber-400 to-rose-500 animate-pulse"
+                  : "bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-500"
               )}
               style={{ width: `${progress}%` }}
             />
           </div>
 
-          {/* 拆開紅包按鈕 (實體黃金質感 CTA，100% 完整展示) */}
+          {/* 拆開紅包按鈕 (香檳金質感 CTA) */}
           <div
             className={cn(
-              "w-full py-2 sm:py-2.5 px-2 rounded-xl font-headline font-black text-xs sm:text-[13px] text-center flex items-center justify-center gap-1.5 shadow-lg transition-all shrink-0",
+              "w-full py-2 sm:py-2.5 px-2.5 rounded-xl font-sans font-black tracking-wide text-xs sm:text-sm text-center flex items-center justify-center gap-1.5 shadow-lg transition-all shrink-0",
               isCenter
-                ? "bg-gradient-to-r from-yellow-400 via-amber-300 to-yellow-500 text-slate-950 border border-yellow-200 shadow-[0_2px_15px_rgba(245,158,11,0.5)] hover:scale-[1.02] active:scale-[0.98]"
-                : "bg-amber-500/25 text-amber-200 border border-amber-400/40"
+                ? "bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] border border-amber-200/80 shadow-[0_6px_22px_rgba(251,191,36,0.35)] hover:brightness-105 active:scale-[0.98]"
+                : "bg-black/45 text-[#FDE68A]/90 border border-amber-300/30"
             )}
           >
             <span>{isDone ? '開獎結果' : isCenter ? '拆開紅包 · 進入選位' : '點擊檢視'}</span>

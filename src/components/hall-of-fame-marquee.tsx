@@ -141,10 +141,10 @@ export function HallOfFameMarquee({ className }: HallOfFameMarqueeProps = {}) {
             <div 
                 onClick={() => setSelectedItem(item)}
                 title="點擊查看得獎詳情"
-                className="flex items-center gap-2 sm:gap-2.5 px-3 py-1.5 mx-1.5 sm:mx-2 rounded-full bg-slate-900/90 hover:bg-slate-850 border border-amber-500/25 hover:border-amber-400/60 shadow-[0_2px_8px_rgba(0,0,0,0.4)] transition-all duration-200 cursor-pointer shrink-0 select-none group"
+                className="flex items-center gap-2 sm:gap-2.5 px-3 py-1.5 mx-1.5 rounded-xl bg-gradient-to-b from-white/[0.06] to-white/[0.02] hover:from-amber-500/15 hover:to-amber-950/25 border border-white/[0.1] hover:border-amber-400/45 shadow-[0_2px_8px_rgba(0,0,0,0.4)] transition-all duration-200 cursor-pointer shrink-0 select-none group"
             >
-                {/* 迷你頭像 / 獎像圖標 */}
-                <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full overflow-hidden bg-amber-500/15 border border-amber-400/30 flex items-center justify-center shrink-0">
+                {/* 金邊縮圖 / 點數圖標 */}
+                <div className="w-6 h-6 rounded-lg overflow-hidden bg-amber-500/15 ring-1 ring-amber-300/35 flex items-center justify-center shrink-0">
                     {isPointPrize ? (
                         <PPlusIcon className="w-3.5 h-3.5 text-amber-300" />
                     ) : item.prizeImageUrl ? (
@@ -159,7 +159,7 @@ export function HallOfFameMarquee({ className }: HallOfFameMarqueeProps = {}) {
                             />
                         </div>
                     ) : (
-                        <Trophy className="w-3 h-3 text-amber-400" />
+                        <Trophy className="w-3.5 h-3.5 text-amber-300" />
                     )}
                 </div>
 
@@ -168,15 +168,15 @@ export function HallOfFameMarquee({ className }: HallOfFameMarqueeProps = {}) {
                     {item.username}
                 </span>
 
-                <span className="text-[11px] text-slate-400 shrink-0 font-medium">喜獲</span>
+                <span className="text-[11px] text-slate-400 shrink-0">喜獲</span>
 
                 {/* 獎品名稱 */}
-                <span className="text-xs font-black text-slate-100 group-hover:text-white transition-colors max-w-[150px] sm:max-w-[240px] truncate">
+                <span className="text-xs font-semibold text-white max-w-[150px] sm:max-w-[240px] truncate">
                     {item.prize}
                 </span>
 
                 {/* 時間戳 */}
-                <span className="text-[10px] text-slate-400/80 font-mono pl-1.5 border-l border-white/10 shrink-0">
+                <span className="text-[10px] text-slate-400 font-mono pl-2 border-l border-white/[0.12] shrink-0">
                     {timeText}
                 </span>
             </div>
@@ -185,18 +185,20 @@ export function HallOfFameMarquee({ className }: HallOfFameMarqueeProps = {}) {
 
     return (
         <div className={cn("relative z-10", className)}>
-            {/* 輕盈單行跑馬燈容器（簡單明瞭、極致緊湊） */}
-            <div className="flex items-center bg-gradient-to-r from-slate-950/95 via-[#0b101d]/90 to-slate-950/95 border border-amber-500/30 rounded-2xl py-1.5 px-2 sm:px-3 shadow-[0_4px_16px_rgba(0,0,0,0.6),0_0_12px_rgba(245,158,11,0.08)]">
-                {/* 左側固定標籤 */}
-                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-amber-500/20 to-amber-500/10 border border-amber-400/40 rounded-xl text-amber-300 text-xs font-black shrink-0 shadow-sm select-none">
-                    <Trophy className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-                    <span className="tracking-wider">傳奇大獎</span>
+            {/* 奢華黑金廣播跑馬燈外框 */}
+            <div className="relative flex items-center bg-gradient-to-r from-[#090d18] via-[#11172a] to-[#090d18] border border-amber-400/25 rounded-2xl py-2 px-2.5 sm:px-3 shadow-[0_10px_30px_rgba(0,0,0,0.65)] overflow-hidden">
+                <div className="absolute top-0 inset-x-12 h-px bg-gradient-to-r from-transparent via-amber-300/45 to-transparent pointer-events-none" />
+
+                {/* 左側金箔錨點徽章 */}
+                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 rounded-xl text-slate-950 text-xs font-bold shrink-0 shadow-[0_2px_12px_rgba(245,158,11,0.3)] select-none">
+                    <Trophy className="w-3.5 h-3.5 text-slate-950" />
+                    <span className="tracking-wide">傳奇大獎</span>
                 </div>
 
-                {/* 跑馬燈內容區（帶有左右邊界柔和漸層） */}
-                <div className="relative flex-1 overflow-hidden flex items-center ml-1 sm:ml-2">
-                    <div className="absolute inset-y-0 left-0 w-6 sm:w-10 bg-gradient-to-r from-slate-950 to-transparent z-10 pointer-events-none" />
-                    <div className="absolute inset-y-0 right-0 w-6 sm:w-10 bg-gradient-to-l from-slate-950 to-transparent z-10 pointer-events-none" />
+                {/* 跑馬燈內容區 */}
+                <div className="relative flex-1 overflow-hidden flex items-center ml-2 sm:ml-2.5">
+                    <div className="absolute inset-y-0 left-0 w-6 sm:w-10 bg-gradient-to-r from-[#0b101d] to-transparent z-10 pointer-events-none" />
+                    <div className="absolute inset-y-0 right-0 w-6 sm:w-10 bg-gradient-to-l from-[#0b101d] to-transparent z-10 pointer-events-none" />
 
                     <MarqueeContainer speed="normal">
                         {displayList.map((item, index) => (

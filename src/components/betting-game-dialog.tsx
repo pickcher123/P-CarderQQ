@@ -4,10 +4,9 @@ import { useState, useMemo } from 'react';
 import { useFirestore, useMemoFirebase, useUser, useDoc } from '@/firebase';
 import { collection, doc, serverTimestamp, increment, runTransaction, arrayUnion } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
-import { 
-    AlertCircle, Sparkles, X, Play, CheckCircle2, 
-    RotateCcw, Dices, Trophy, Wallet, ShieldCheck, 
-    Award, Percent
+import {
+    AlertCircle, Sparkles, X, Play,
+    RotateCcw, Dices, ShieldCheck, Library
 } from 'lucide-react';
 import { PPlusIcon, DiamondIcon } from '@/components/icons';
 import {
@@ -24,11 +23,11 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTrigger, DialogTitle } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@/components/ui/visually-hidden';
 import { CardItem } from '@/components/card-item';
+import { FortuneWheel } from '@/components/fortune-wheel';
 import { useToast } from '@/hooks/use-toast';
 import { userLevels } from '@/components/member-level-crown';
 import type { UserProfile } from '@/types/user-profile';
 import type { LevelBenefit } from '@/types/system';
-import { RefinedPoints } from '@/components/ui/refined-points';
 import Link from 'next/link';
 import { createProvablyFairRound, sanitizeFirestorePayload, type ProvablyFairData } from '@/lib/provably-fair';
 
@@ -69,38 +68,38 @@ function calculateLevel(totalSpent: number, benefits?: LevelBenefit[]): string {
     return matched ? matched.level : DEFAULT_LEVELS[0].level;
 }
 
-const ITEM_HEIGHT = 110; // 老虎機滾輪數字項目高度 (px)
-
-export function BettingGameDialog({ 
-    card, 
-    children, 
-    categoryName, 
-    onSpinStart, 
+export function BettingGameDialog({
+    card,
+    children,
+    categoryName,
+    onSpinStart,
     onClose,
     disabled = false
-}: { 
-    card: CardData; 
-    children: React.ReactNode; 
-    categoryName: string; 
-    onSpinStart?: () => void; 
-    onClose?: () => void; 
+}: {
+    card: CardData;
+    children: React.ReactNode;
+    categoryName: string;
+    onSpinStart?: () => void;
+    onClose?: () => void;
     disabled?: boolean;
 }) {
     const [isOpen, setIsOpen] = useState(false);
-    const [selectedNumbers, setSelectedNumbers] = useState<number[]>([]);
+    const [selectedNumbers, setSelectedNumbers] = useState<number[]>([1]);
     const [paymentCurrency, setPaymentCurrency] = useState<'diamond' | 'pplus'>('diamond');
     const [isSpinning, setIsSpinning] = useState(false);
-    const [spinActive, setSpinActive] = useState(false);
+    const [spinTransition, setSpinTransition] = useState(false);
+    const [wheelRotation, setWheelRotation] = useState(0);
     const [finalResult, setFinalResult] = useState<{ spot: number; won: boolean } | null>(null);
-    const [wheelStrip, setWheelStrip] = useState<number[]>([]);
-    const [spinTranslateY, setSpinTranslateY] = useState(0);
     const [currentRoundFairness, setCurrentRoundFairness] = useState<ProvablyFairData | null>(null);
 
     const { user } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
-    // 🚀 效能大幅優化：僅當彈窗開啟時才建立 Firestore 監聽，避免列表頁數十張卡牌同時監聽造成記憶體飆升與重繪卡頓
-    const userProfileRef = useMemoFirebase(() => (firestore && user && isOpen) ? doc(firestore, 'users', user.uid) : null, [firestore, user, isOpen]);
+
+    const userProfileRef = useMemoFirebase(
+        () => (firestore && user && isOpen) ? doc(firestore, 'users', user.uid) : null,
+        [firestore, user, isOpen]
+    );
     const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
 
     const isOutOfStock = Boolean(card?.isSold);
@@ -108,47 +107,51 @@ export function BettingGameDialog({
     const diamondBalance = userProfile?.points ?? 0;
     const pplusBalance = userProfile?.bonusPoints ?? 0;
 
-    // 單注價格：卡片原價的 10%
+    // 單格價格：卡片原價的 10%
     const diamondUnitPrice = useMemo(() => {
         if (!card?.sellPrice) return 10;
         return Math.max(1, Math.round(card.sellPrice * 0.1));
     }, [card?.sellPrice]);
 
-    const unitPrice = useMemo(() => {
-        return paymentCurrency === 'diamond' ? diamondUnitPrice : diamondUnitPrice * 10;
-    }, [diamondUnitPrice, paymentCurrency]);
+    const pplusUnitPrice = useMemo(() => diamondUnitPrice * 10, [diamondUnitPrice]);
 
-    const totalPrice = useMemo(() => selectedNumbers.length * unitPrice, [selectedNumbers, unitPrice]);
-
+    const unitPrice = paymentCurrency === 'diamond' ? diamondUnitPrice : pplusUnitPrice;
+    const totalPrice = selectedNumbers.length * unitPrice;
     const currentBalance = paymentCurrency === 'diamond' ? diamondBalance : pplusBalance;
     const isInsufficientFunds = currentBalance < totalPrice;
+    const winProbability = selectedNumbers.length * 10;
 
     const numbers = useMemo(() => Array.from({ length: 10 }, (_, i) => i + 1), []);
 
     const toggleNumber = (num: number) => {
         if (isOutOfStock || isSpinning) return;
         setFinalResult(null);
-        setWheelStrip([]);
 
         if (selectedNumbers.includes(num)) {
             setSelectedNumbers(selectedNumbers.filter(n => n !== num));
         } else {
+            if (selectedNumbers.length >= 9) {
+                toast({
+                    title: '提示：最多可選 9 格 (90% 勝率)',
+                    description: '為維持公平競技機制，單次轉盤最多選擇 9 個號碼。',
+                });
+                return;
+            }
             setSelectedNumbers([...selectedNumbers, num].sort((a, b) => a - b));
         }
     };
 
-    // 快捷選號
-    const handleQuickSelect = (type: 'all' | 'odd' | 'even' | 'random' | 'clear') => {
+    const handleQuickSelect = (type: 'random' | 'odd' | 'even' | 'high8' | 'clear') => {
         if (isOutOfStock || isSpinning) return;
         setFinalResult(null);
-        setWheelStrip([]);
 
-        if (type === 'all') {
-            setSelectedNumbers([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-        } else if (type === 'odd') {
+        if (type === 'odd') {
             setSelectedNumbers([1, 3, 5, 7, 9]);
         } else if (type === 'even') {
             setSelectedNumbers([2, 4, 6, 8, 10]);
+        } else if (type === 'high8') {
+            const shuffled = [...numbers].sort(() => Math.random() - 0.5).slice(0, 8).sort((a, b) => a - b);
+            setSelectedNumbers(shuffled);
         } else if (type === 'random') {
             const randomNum = Math.floor(Math.random() * 10) + 1;
             setSelectedNumbers([randomNum]);
@@ -157,7 +160,7 @@ export function BettingGameDialog({
         }
     };
 
-    const handleSpin = async () => {
+    const handleSpinWheel = async () => {
         if (!user || !firestore || !card || selectedNumbers.length === 0 || isSpinning || isOutOfStock) return;
 
         if (userProfile && card.minLevel && card.minLevel !== '不限' && card.minLevel !== '新手收藏家') {
@@ -166,7 +169,11 @@ export function BettingGameDialog({
             const userLvlIndex = levelNames.indexOf(userLvl);
             const reqLvlIndex = levelNames.indexOf(card.minLevel);
             if (userLvlIndex < reqLvlIndex) {
-                toast({ variant: 'destructive', title: '等級權限不足', description: `本項目僅限「${card.minLevel}」以上會員挑戰，您目前的階級為「${userLvl}」。` });
+                toast({
+                    variant: 'destructive',
+                    title: '等級權限不足',
+                    description: `本項目僅限「${card.minLevel}」以上會員挑戰，您目前的階級為「${userLvl}」。`,
+                });
                 return;
             }
         }
@@ -175,14 +182,14 @@ export function BettingGameDialog({
             toast({
                 variant: 'destructive',
                 title: '點數餘額不足',
-                description: `需要 ${totalPrice.toLocaleString()} ${paymentCurrency === 'diamond' ? '鑽石 💎' : 'P+ 點'}，目前僅有 ${currentBalance.toLocaleString()}`
+                description: `需要 ${totalPrice.toLocaleString()} ${paymentCurrency === 'diamond' ? '鑽石' : 'P+ 點'}，目前僅有 ${currentBalance.toLocaleString()}`,
             });
             return;
         }
 
         if (onSpinStart) onSpinStart();
         setIsSpinning(true);
-        setSpinActive(false);
+        setSpinTransition(false);
         setFinalResult(null);
 
         try {
@@ -192,29 +199,27 @@ export function BettingGameDialog({
                 const cardData = cardSnap.data();
 
                 if (!cardSnap.exists() || cardData?.isSold) {
-                    throw new Error("此卡片已被其他玩家抽出或已下架！");
+                    throw new Error('此卡片已被其他玩家抽出或已下架！');
                 }
 
                 if (cardData?.lockedBy && cardData.lockedBy !== user.uid && cardData.lockedAt) {
                     const lockedTime = typeof cardData.lockedAt.toMillis === 'function' ? cardData.lockedAt.toMillis() : 0;
                     if (Date.now() - lockedTime < 25000) {
-                        throw new Error("此卡片正在被其他玩家挑戰中，請稍候 30 秒再試。");
+                        throw new Error('此卡片正在被其他玩家挑戰中，請稍候 30 秒再試。');
                     }
                 }
 
                 const userRef = doc(firestore, 'users', user.uid);
                 const uSnap = await transaction.get(userRef);
-                if (!uSnap.exists()) throw new Error("找不到使用者資料");
-                
+                if (!uSnap.exists()) throw new Error('找不到使用者資料');
+
                 const userData = uSnap.data() as UserProfile;
                 const walletBalance = paymentCurrency === 'diamond' ? (userData.points || 0) : (userData.bonusPoints || 0);
-                if (walletBalance < totalPrice) throw new Error("錢包餘額不足，請先儲值或調整注數。");
+                if (walletBalance < totalPrice) throw new Error('錢包餘額不足，請先儲值或調整格數。');
 
-                // 隨機開獎 1 ~ 10
                 const winningSpot = Math.floor(Math.random() * 10) + 1;
                 const didWin = selectedNumbers.includes(winningSpot);
 
-                // 扣款
                 const walletField = paymentCurrency === 'diamond' ? 'points' : 'bonusPoints';
                 const updateObj: any = { [walletField]: increment(-totalPrice) };
                 if (paymentCurrency === 'diamond') {
@@ -223,7 +228,6 @@ export function BettingGameDialog({
                 }
                 transaction.update(userRef, updateObj);
 
-                // 產生 Provably Fair 密碼學參數 (10 格拼卡轉盤)
                 const pfData = await createProvablyFairRound({
                     clientSeed: `${user.uid.substring(0, 8)}_${Date.now()}`,
                     outcomeType: 'bet',
@@ -235,10 +239,9 @@ export function BettingGameDialog({
                     winningSpot,
                     isWin: didWin,
                     luckyNumber: (winningSpot - 1) * 1000 + 500,
-                    luckyPercent: Number((((winningSpot - 1) * 10) + 5).toFixed(2))
+                    luckyPercent: Number((((winningSpot - 1) * 10) + 5).toFixed(2)),
                 });
 
-                // 寫入交易紀錄
                 const winText = didWin ? '中獎' : '未中獎';
                 const detailString = `【拼卡】${card.name || '卡牌'} (${paymentCurrency === 'diamond' ? '鑽石' : 'P+'}) 下注:[${selectedNumbers.join(',')}] 開出:[${winningSpot}] 結果:${winText}`;
 
@@ -251,16 +254,15 @@ export function BettingGameDialog({
                     amount: -totalPrice,
                     details: detailString,
                     provablyFair: fullFairness,
-                    transactionDate: serverTimestamp()
+                    transactionDate: serverTimestamp(),
                 }));
 
                 const cardUpdates: any = {
                     lockedBy: null,
-                    lockedAt: null
+                    lockedAt: null,
                 };
 
                 if (didWin) {
-                    // 發放卡片到收藏庫
                     transaction.set(doc(collection(firestore, 'users', user.uid, 'userCards')), sanitizeFirestorePayload({
                         userId: user.uid,
                         cardId: card.id,
@@ -268,17 +270,15 @@ export function BettingGameDialog({
                         rarity: card.rarity || 'unknown',
                         category: card.category || 'betting',
                         source: 'betting',
-                        acquiredAt: serverTimestamp()
+                        acquiredAt: serverTimestamp(),
                     }));
 
-                    // 標記卡片售出並鎖定不再重複調用
                     cardUpdates.isSold = true;
                     cardUpdates.status = 'sold';
                     cardUpdates.soldVia = 'betting';
                     cardUpdates.soldBy = user.uid;
                     cardUpdates.soldAt = serverTimestamp();
 
-                    // 更新主題分類中的 soldCardIds
                     const targetCategory = card.category || decodeURIComponent(categoryName);
                     if (targetCategory && targetCategory !== 'all') {
                         const bettingCatRef = doc(firestore, 'betting-items', targetCategory);
@@ -291,669 +291,427 @@ export function BettingGameDialog({
                 return {
                     won: didWin,
                     spot: winningSpot,
-                    fairness: fullFairness
+                    fairness: fullFairness,
                 };
             });
 
-            // 構建老虎機滾輪帶動畫：嚴格按照 1 -> 2 -> 3 ... -> 10 依序連續滾動，最後順序滾至中獎號碼
-            const totalRounds = 4;
-            const strip: number[] = [];
-            for (let r = 0; r < totalRounds; r++) {
-                for (let n = 1; n <= 10; n++) {
-                    strip.push(n);
+            const sliceCenterDeg = (transactionResult.spot - 1) * 36;
+            const targetMod = (360 - sliceCenterDeg) % 360;
+            const currentMod = ((wheelRotation % 360) + 360) % 360;
+            const delta = (targetMod - currentMod + 360) % 360;
+            const nextRotation = wheelRotation + 360 * 5 + delta;
+
+            setSpinTransition(true);
+            setWheelRotation(nextRotation);
+
+            setTimeout(() => {
+                setIsSpinning(false);
+                setSpinTransition(false);
+                setFinalResult({
+                    spot: transactionResult.spot,
+                    won: transactionResult.won,
+                });
+                setCurrentRoundFairness(transactionResult.fairness);
+
+                if (transactionResult.won) {
+                    toast({
+                        title: '恭喜中獎！',
+                        description: `命中 #${transactionResult.spot}，成功贏得「${card.name}」，已存入您的收藏庫。`,
+                    });
+                } else {
+                    toast({
+                        title: '未命中幸運格',
+                        description: `指針停在 #${transactionResult.spot}，未命中 [${selectedNumbers.join(', ')}]。`,
+                        variant: 'destructive',
+                    });
                 }
-            }
-            // 最後一輪依序由 1 轉至中獎號碼，保證數字完全連續不跳號
-            for (let n = 1; n <= transactionResult.spot; n++) {
-                strip.push(n);
-            }
-
-            setWheelStrip(strip);
-            const targetIndex = strip.length - 1;
-            const targetOffset = -(targetIndex * ITEM_HEIGHT);
-
-            requestAnimationFrame(() => {
-                setSpinTranslateY(0);
-                setTimeout(() => {
-                    setSpinActive(true);
-                    setSpinTranslateY(targetOffset);
-
-                    setTimeout(() => {
-                        setIsSpinning(false);
-                        setSpinActive(false);
-                        setFinalResult(transactionResult);
-                        setCurrentRoundFairness(transactionResult.fairness);
-
-                        if (transactionResult.won) {
-                            toast({
-                                title: '🎉 恭喜中獎！',
-                                description: `幸運號碼開出【${transactionResult.spot}】，您已成功奪得《${card.name}》！卡片已放入個人數位收藏庫。`,
-                                variant: 'default',
-                            });
-                        } else {
-                            toast({
-                                title: '😅 差一點點！',
-                                description: `開出幸運號碼【${transactionResult.spot}】，未命中您的投注 [${selectedNumbers.join(', ')}]，再接再載！`,
-                                variant: 'destructive',
-                            });
-                        }
-                    }, 3500);
-                }, 50);
-            });
-
+            }, 5700);
         } catch (e: any) {
             console.error('Betting error:', e);
-            toast({ title: '拼卡失敗', description: e.message || '系統連線異常，請稍後再試', variant: 'destructive' });
+            toast({
+                title: '拼卡失敗',
+                description: e.message || '系統連線異常，請稍後再試',
+                variant: 'destructive',
+            });
             setIsSpinning(false);
-            setSpinActive(false);
+            setSpinTransition(false);
         }
     };
 
     const handleDialogClose = (open: boolean) => {
+        if (isSpinning) return;
         if (!open) {
             setFinalResult(null);
-            setSelectedNumbers([]);
-            setIsSpinning(false);
-            setSpinActive(false);
-            setWheelStrip([]);
-            setSpinTranslateY(0);
+            setCurrentRoundFairness(null);
+            setSelectedNumbers([1]);
+            setSpinTransition(false);
             if (onClose) onClose();
         }
         setIsOpen(open);
     };
-
-    const winProbability = selectedNumbers.length * 10;
 
     return (
         <Dialog open={isOpen} onOpenChange={handleDialogClose}>
             <DialogTrigger asChild disabled={disabled}>
                 {children}
             </DialogTrigger>
-            <DialogContent className="max-w-[96vw] lg:max-w-5xl p-0 overflow-hidden rounded-[2rem] bg-gradient-to-b from-[#180c1b] via-[#0e0712] to-[#08040a] backdrop-blur-2xl border border-rose-500/40 shadow-[0_0_80px_rgba(244,63,94,0.25),0_25px_60px_rgba(0,0,0,0.95)] text-slate-100 max-h-[94vh] overflow-y-auto custom-scrollbar [&>button:last-child]:hidden">
+            <DialogContent className="max-w-4xl w-[95vw] max-h-[92vh] overflow-y-auto p-0 bg-[#0a0f1c] border border-white/[0.1] text-slate-100 rounded-2xl shadow-[0_24px_64px_rgba(0,0,0,0.85)] [&>button]:hidden">
                 <VisuallyHidden>
-                    <DialogTitle>1/10 命運拼卡競技場 - {card.name}</DialogTitle>
+                    <DialogTitle>球員卡命運轉盤拼卡 - {card.name}</DialogTitle>
                 </VisuallyHidden>
 
-                <div className="relative w-full flex flex-col lg:flex-row">
-                    {/* 右上角關閉按鈕 */}
-                    <button 
-                        onClick={() => handleDialogClose(false)} 
-                        className="absolute top-4 right-4 z-40 p-2.5 text-slate-400 hover:text-white hover:bg-slate-800/80 rounded-full transition-all cursor-pointer border border-slate-700/50 bg-slate-900/80 backdrop-blur-md shadow-lg"
-                        aria-label="關閉對話框"
-                    >
-                        <X className="w-5 h-5" />
-                    </button>
-
-                    {/* 左側：商品展示與獎勵卡牌 */}
-                    <div className="w-full lg:w-5/12 p-6 lg:p-8 flex flex-col items-center justify-between relative bg-gradient-to-b from-[#180a14]/90 via-[#0e070d] to-[#060408] border-b lg:border-b-0 lg:border-r border-rose-500/20">
-                        {/* 氛圍背景光暈 */}
-                        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-56 h-56 bg-rose-500/15 blur-[100px] rounded-full pointer-events-none" />
-                        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-48 h-48 bg-amber-500/10 blur-[80px] rounded-full pointer-events-none" />
-
-                        {/* 卡片主體展示 */}
-                        <div className={cn(
-                            "relative w-full max-w-[240px] sm:max-w-[265px] aspect-[2.5/3.6] rounded-2xl transition-all duration-500 p-1 bg-gradient-to-b from-slate-700 via-slate-800 to-slate-950 border-2 border-rose-500/50 shadow-[0_0_35px_rgba(244,63,94,0.25)] flex flex-col justify-between overflow-hidden group",
-                            isOutOfStock && "grayscale-[0.9] opacity-60 border-slate-800"
-                        )}>
-                            <CardItem 
-                                name={card.name} 
-                                imageUrl={card.imageUrl} 
-                                backImageUrl={card.backImageUrl} 
-                                imageHint={card.imageHint || card.name} 
-                                isFlippable={!isOutOfStock} 
-                                rarity={(card.rarity as any) || "legendary"} 
-                            />
-
-                            {isOutOfStock && (
-                                <div className="absolute inset-0 z-30 flex items-center justify-center bg-slate-950/85 backdrop-blur-sm rounded-2xl p-2 pointer-events-none">
-                                    <div className="border-2 border-rose-500 bg-rose-950/90 px-5 py-2.5 rounded-xl transform -rotate-12 shadow-[0_0_25px_rgba(244,63,94,0.6)]">
-                                        <span className="text-rose-200 font-black text-lg tracking-widest uppercase">
-                                            已被玩家抽出
-                                        </span>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* 卡片資訊與價格對比 */}
-                        <div className="mt-5 text-center space-y-2 z-10 w-full">
-                            <h2 className="text-base sm:text-lg font-black tracking-wide text-white line-clamp-1">{card.name}</h2>
-                            <div className="flex items-center justify-center gap-3 text-xs bg-slate-900/80 border border-slate-800/90 rounded-xl py-2 px-3">
-                                <div className="text-slate-400 flex items-center gap-1">
-                                    卡片原值: <span className="text-slate-200 font-mono font-bold">{card.sellPrice ? card.sellPrice.toLocaleString() : '---'}</span>
-                                    <DiamondIcon className="w-3.5 h-3.5" />
-                                </div>
-                                <div className="h-3 w-px bg-slate-700" />
-                                <div className="text-rose-300 font-bold flex items-center gap-1">
-                                    單注僅: <span className="font-mono font-black text-rose-400">{diamondUnitPrice.toLocaleString()}</span>
-                                    <DiamondIcon className="w-3.5 h-3.5" />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* 底部保障標記 */}
-                        <div className="mt-4 pt-3 border-t border-slate-800/80 w-full flex items-center justify-center gap-2 text-[11px] text-slate-400">
-                            <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-                            <span>100% 真實隨機驗證 · 中獎直接入庫可轉移</span>
+                {/* 精簡頂部列：標題 + 餘額 + 關閉 */}
+                <div className="sticky top-0 z-40 flex items-center justify-between gap-3 px-5 py-3.5 bg-[#0a0f1c]/95 backdrop-blur-xl border-b border-white/[0.08]">
+                    <div className="flex items-center gap-3 min-w-0">
+                        <span className="w-[3px] h-7 rounded-full bg-gradient-to-b from-amber-200 via-amber-400 to-amber-700 shrink-0" aria-hidden="true" />
+                        <div className="min-w-0">
+                            <h3 className="text-base sm:text-lg font-bold tracking-wide truncate flex items-center gap-1.5">
+                                <span className="text-white">球員卡</span>
+                                <span className="text-amber-400/70 font-normal">·</span>
+                                <span className="text-[#FDE68A]">命運轉盤拼卡</span>
+                            </h3>
+                            <p className="text-[11px] text-slate-400 tracking-wide hidden sm:block">
+                                每格 10% 中獎機率 · 抽中立即存入個人收藏庫
+                            </p>
                         </div>
                     </div>
 
-                    {/* 右側：操作面板與老虎機轉盤區 */}
-                    <div className="w-full lg:w-7/12 p-6 lg:p-8 flex flex-col justify-between relative space-y-5 bg-[#0e070d]">
-                        
-                        {/* 頂部：錢包餘額資訊列 */}
-                        <div className="p-3.5 rounded-2xl bg-gradient-to-r from-slate-900/90 via-slate-950/90 to-slate-900/90 border border-slate-800/90 flex items-center justify-between shadow-inner">
-                            <div className="flex items-center gap-2 text-xs text-slate-300 font-bold">
-                                <Wallet className="w-4 h-4 text-rose-400" />
-                                <span>我的錢包餘額</span>
-                            </div>
-                            <div className="flex items-center gap-2.5 text-xs font-mono font-black">
-                                <div className="flex items-center gap-1.5 text-cyan-300 bg-cyan-950/50 px-2.5 py-1 rounded-lg border border-cyan-500/20">
-                                    <DiamondIcon className="w-3.5 h-3.5 shrink-0" />
-                                    <RefinedPoints value={diamondBalance} currency="diamond" size="xs" variant="luxury" />
-                                </div>
-                                <div className="flex items-center gap-1.5 text-amber-300 bg-amber-950/50 px-2.5 py-1 rounded-lg border border-amber-500/20">
-                                    <PPlusIcon className="w-3.5 h-3.5 shrink-0" />
-                                    <RefinedPoints value={pplusBalance} currency="pplus" size="xs" variant="luxury" />
-                                </div>
-                            </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                        <div className="hidden sm:flex items-center gap-2.5 text-xs font-mono font-semibold tabular-nums bg-black/35 border border-white/[0.08] rounded-lg px-3 py-1.5">
+                            <span className="flex items-center gap-1 text-cyan-300">
+                                <DiamondIcon className="w-3.5 h-3.5" />
+                                {diamondBalance.toLocaleString()}
+                            </span>
+                            <span className="h-3 w-px bg-white/[0.12]" />
+                            <span className="flex items-center gap-1 text-amber-300">
+                                <PPlusIcon className="w-3.5 h-3.5 text-amber-400" />
+                                {pplusBalance.toLocaleString()}
+                            </span>
                         </div>
 
-                        {/* STEP 01: 選擇支付幣別 */}
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <span className="bg-gradient-to-r from-cyan-400 to-cyan-500 text-slate-950 font-black px-2.5 py-0.5 text-[10px] rounded-md tracking-wider shadow-sm">
-                                        STEP 1
-                                    </span>
-                                    <span className="text-cyan-300 font-bold text-sm">選擇支付幣別</span>
-                                </div>
-                                <span className="text-[11px] text-slate-400 flex items-center gap-1">1 <DiamondIcon className="w-3 h-3" /> = 10 P+ 點</span>
-                            </div>
-                            
-                            <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                                <button 
-                                    type="button"
-                                    onClick={() => !isOutOfStock && !isSpinning && setPaymentCurrency('diamond')}
-                                    disabled={isOutOfStock || isSpinning}
-                                    className={cn(
-                                        "relative flex items-center p-2 sm:p-3 rounded-2xl border transition-all duration-300 cursor-pointer text-left min-w-0 overflow-hidden",
-                                        paymentCurrency === 'diamond' 
-                                            ? 'bg-cyan-950/60 border-cyan-400 text-cyan-100 shadow-[0_0_25px_rgba(6,182,212,0.25)] ring-1 ring-cyan-400/40' 
-                                             : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:bg-slate-800/80 hover:text-slate-200',
-                                        (isOutOfStock || isSpinning) && 'opacity-50 cursor-not-allowed'
-                                    )}
-                                >
-                                    <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0 w-full pr-3.5 sm:pr-0">
-                                        <div className={cn("w-7 h-7 sm:w-9 sm:h-9 rounded-xl border flex items-center justify-center shrink-0", paymentCurrency === 'diamond' ? 'bg-cyan-500/20 border-cyan-500/40 text-cyan-300' : 'bg-slate-800 border-slate-700 text-slate-400')}>
-                                            <DiamondIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                                        </div>
-                                        <div className="min-w-0 flex-1">
-                                            <div className="font-black text-xs sm:text-sm text-slate-100 whitespace-nowrap leading-tight">鑽石支付</div>
-                                            <div className="text-[10px] sm:text-xs font-mono text-cyan-400 font-bold flex items-center gap-0.5 sm:gap-1 whitespace-nowrap leading-tight mt-0.5">
-                                                <span>{diamondUnitPrice.toLocaleString()}</span>
-                                                <DiamondIcon className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" />
-                                                <span>/ 注</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {paymentCurrency === 'diamond' && (
-                                        <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-cyan-400 absolute top-1.5 right-1.5 sm:top-2 sm:right-2 shrink-0 pointer-events-none" />
-                                    )}
-                                </button>
-                                
-                                <button 
-                                    type="button"
-                                    onClick={() => !isOutOfStock && !isSpinning && setPaymentCurrency('pplus')}
-                                    disabled={isOutOfStock || isSpinning}
-                                    className={cn(
-                                        "relative flex items-center p-2 sm:p-3 rounded-2xl border transition-all duration-300 cursor-pointer text-left min-w-0 overflow-hidden",
-                                        paymentCurrency === 'pplus' 
-                                            ? 'bg-amber-950/60 border-amber-400 text-amber-100 shadow-[0_0_25px_rgba(245,158,11,0.25)] ring-1 ring-amber-400/40' 
-                                            : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:bg-slate-800/80 hover:text-slate-200',
-                                        (isOutOfStock || isSpinning) && 'opacity-50 cursor-not-allowed'
-                                    )}
-                                >
-                                    <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0 w-full pr-3.5 sm:pr-0">
-                                        <div className={cn("w-7 h-7 sm:w-9 sm:h-9 rounded-xl border flex items-center justify-center shrink-0", paymentCurrency === 'pplus' ? 'bg-amber-500/20 border-amber-500/40 text-amber-300' : 'bg-slate-800 border-slate-700 text-slate-400')}>
-                                            <PPlusIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                                        </div>
-                                        <div className="min-w-0 flex-1">
-                                            <div className="font-black text-xs sm:text-sm text-slate-100 whitespace-nowrap leading-tight">P+ 點數</div>
-                                            <div className="text-[10px] sm:text-xs font-mono text-amber-400 font-bold whitespace-nowrap leading-tight mt-0.5">
-                                                {(diamondUnitPrice * 10).toLocaleString()} P+ / 注
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {paymentCurrency === 'pplus' && (
-                                        <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 absolute top-1.5 right-1.5 sm:top-2 sm:right-2 shrink-0 pointer-events-none" />
-                                    )}
-                                </button>
-                            </div>
-                        </div>
+                        <button
+                            type="button"
+                            onClick={() => handleDialogClose(false)}
+                            disabled={isSpinning}
+                            className="p-1.5 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] text-slate-400 hover:text-white transition-colors cursor-pointer disabled:opacity-40"
+                            aria-label="關閉對話框"
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
+                    </div>
+                </div>
 
-                        {/* STEP 02: 挑選幸運號碼 & 快捷選號 */}
-                        <div className="space-y-2.5">
-                            <div className="flex items-center justify-between flex-wrap gap-2">
-                                <div className="flex items-center gap-2">
-                                    <span className="bg-gradient-to-r from-cyan-400 to-cyan-500 text-slate-950 font-black px-2.5 py-0.5 text-[10px] rounded-md tracking-wider shadow-sm">
-                                        STEP 2
-                                    </span>
-                                    <span className="text-cyan-300 font-bold text-xs sm:text-sm">挑選幸運號碼 (1~10)</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-[11px] sm:text-xs font-bold text-slate-300 bg-slate-900/90 px-2.5 sm:px-3 py-1 rounded-lg border border-slate-800 flex items-center gap-1 sm:gap-1.5">
-                                        <span>已選 <strong className="text-cyan-400 font-mono text-xs sm:text-sm">{selectedNumbers.length}</strong> 注</span>
-                                        <span className="text-slate-600">|</span>
-                                        <span className="flex items-center gap-1">
-                                            <Percent className="w-3 h-3 text-emerald-400" />
-                                            勝率 <strong className={cn("font-mono text-xs sm:text-sm", winProbability >= 50 ? "text-amber-300" : "text-emerald-400")}>{winProbability}%</strong>
+                <div className="flex flex-col lg:flex-row">
+                    {/* 左欄：卡片展示與價格摘要 */}
+                    <div className="w-full lg:w-[38%] p-5 sm:p-6 flex flex-col items-center justify-between bg-[#070b14] border-b lg:border-b-0 lg:border-r border-white/[0.08] gap-5">
+                        <div className="w-full flex flex-col items-center space-y-4">
+                            <div className={cn(
+                                "relative w-full max-w-[200px] sm:max-w-[230px] aspect-[2.5/3.6] rounded-xl overflow-hidden border border-white/[0.12] bg-black/50 p-1",
+                                isOutOfStock && "grayscale-[0.9] opacity-60"
+                            )}>
+                                <CardItem
+                                    name={card.name}
+                                    imageUrl={card.imageUrl}
+                                    backImageUrl={card.backImageUrl}
+                                    imageHint={card.imageHint || card.name}
+                                    isFlippable={!isOutOfStock}
+                                    rarity={(card.rarity as any) || 'legendary'}
+                                />
+
+                                {isOutOfStock && (
+                                    <div className="absolute inset-0 z-30 flex items-center justify-center bg-slate-950/85 backdrop-blur-sm rounded-xl p-2 pointer-events-none">
+                                        <span className="border border-rose-400/70 bg-rose-950/90 px-4 py-1.5 rounded-lg text-rose-200 font-bold text-sm tracking-widest">
+                                            已被玩家抽出
                                         </span>
-                                    </span>
-                                </div>
+                                    </div>
+                                )}
                             </div>
 
-                            {/* 勝率進度條 */}
-                            <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-800 p-0.5">
-                                <div 
-                                    className="h-full bg-gradient-to-r from-rose-500 via-pink-400 to-amber-400 rounded-full transition-all duration-300 shadow-[0_0_10px_rgba(244,63,94,0.5)]" 
-                                    style={{ width: `${winProbability}%` }}
-                                    />
+                            <div className="text-center space-y-3 w-full">
+                                <h2 className="text-base sm:text-lg font-bold text-white leading-snug line-clamp-2">
+                                    {card.name}
+                                </h2>
+
+                                <div className="grid grid-cols-2 divide-x divide-white/[0.08] py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                                    <div className="px-2 text-center">
+                                        <span className="text-[11px] text-slate-400 block">卡片原值</span>
+                                        <span className="text-sm font-mono font-semibold text-slate-200 inline-flex items-center gap-1 mt-0.5 tabular-nums">
+                                            <DiamondIcon className="w-3.5 h-3.5" />
+                                            {card.sellPrice ? card.sellPrice.toLocaleString() : '---'}
+                                        </span>
+                                    </div>
+                                    <div className="px-2 text-center">
+                                        <span className="text-[11px] text-slate-400 block">單格挑戰</span>
+                                        <span className="text-sm font-mono font-semibold text-amber-300 inline-flex items-center gap-1 mt-0.5 tabular-nums">
+                                            <DiamondIcon className="w-3.5 h-3.5" />
+                                            {diamondUnitPrice.toLocaleString()}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="pt-3 border-t border-white/[0.06] w-full flex items-center justify-center gap-1.5 text-[11px] text-slate-500">
+                            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400/80 shrink-0" />
+                            <span>Provably Fair 公平驗證 · 中獎直入收藏庫</span>
+                        </div>
+                    </div>
+
+                    {/* 右欄：轉盤與簡潔操作區 */}
+                    <div className="w-full lg:w-[62%] p-5 sm:p-6 space-y-4">
+                        {/* 手機版餘額列 */}
+                        <div className="flex sm:hidden items-center justify-between px-3 py-2 rounded-xl bg-white/[0.03] border border-white/[0.08] text-xs font-mono tabular-nums">
+                            <span className="text-slate-400 font-sans">我的餘額</span>
+                            <div className="flex items-center gap-3">
+                                <span className="flex items-center gap-1 text-cyan-300 font-semibold">
+                                    <DiamondIcon className="w-3.5 h-3.5" />
+                                    {diamondBalance.toLocaleString()}
+                                </span>
+                                <span className="flex items-center gap-1 text-amber-300 font-semibold">
+                                    <PPlusIcon className="w-3.5 h-3.5 text-amber-400" />
+                                    {pplusBalance.toLocaleString()}
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* 圓形 10 等分命運轉盤 */}
+                        <FortuneWheel
+                            idPrefix="bet-wheel"
+                            selectedNumbers={selectedNumbers}
+                            wheelRotation={wheelRotation}
+                            spinTransition={spinTransition}
+                            disabled={isSpinning || isOutOfStock}
+                            onToggleNumber={toggleNumber}
+                        />
+
+                        {/* 支付幣別 + 快捷選號 */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1">
+                            {/* 幣別切換 */}
+                            <div className="grid grid-cols-2 bg-black/40 p-1 rounded-lg border border-white/[0.08] shrink-0">
+                                <button
+                                    type="button"
+                                    disabled={isSpinning || isOutOfStock}
+                                    onClick={() => setPaymentCurrency('diamond')}
+                                    className={cn(
+                                        'px-2.5 py-1.5 rounded-md text-xs font-medium flex items-center justify-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap',
+                                        paymentCurrency === 'diamond'
+                                            ? 'bg-white/[0.12] text-cyan-200'
+                                            : 'text-slate-400 hover:text-slate-200'
+                                    )}
+                                >
+                                    <DiamondIcon className="w-3.5 h-3.5" />
+                                    <span>{diamondUnitPrice}/格</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    disabled={isSpinning || isOutOfStock}
+                                    onClick={() => setPaymentCurrency('pplus')}
+                                    className={cn(
+                                        'px-2.5 py-1.5 rounded-md text-xs font-medium flex items-center justify-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap',
+                                        paymentCurrency === 'pplus'
+                                            ? 'bg-white/[0.12] text-amber-200'
+                                            : 'text-slate-400 hover:text-slate-200'
+                                    )}
+                                >
+                                    <PPlusIcon className="w-3.5 h-3.5 text-amber-400" />
+                                    <span>{pplusUnitPrice.toLocaleString()}/格</span>
+                                </button>
                             </div>
 
                             {/* 快捷按鈕 */}
                             <div className="flex items-center gap-1.5 flex-wrap">
                                 <button
                                     type="button"
-                                    onClick={() => handleQuickSelect('all')}
-                                    disabled={isOutOfStock || isSpinning}
-                                    className={cn(
-                                        "px-2 sm:px-2.5 py-1 rounded-lg text-[11px] sm:text-xs font-black transition-all flex items-center gap-1 border cursor-pointer whitespace-nowrap",
-                                        selectedNumbers.length === 10 
-                                            ? "bg-amber-500 border-amber-400 text-slate-950 shadow-[0_0_15px_rgba(245,158,11,0.5)]" 
-                                            : "bg-amber-500/15 hover:bg-amber-500/25 border-amber-500/30 text-amber-300"
-                                    )}
-                                >
-                                    <Trophy className="w-3 h-3 text-amber-400 shrink-0" />
-                                    <span>100% 包牌必得</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => handleQuickSelect('odd')}
-                                    disabled={isOutOfStock || isSpinning}
-                                    className="px-2 sm:px-2.5 py-1 rounded-lg bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-300 text-[11px] sm:text-xs font-bold transition-colors cursor-pointer whitespace-nowrap"
-                                >
-                                    單數 (5注/50%)
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => handleQuickSelect('even')}
-                                    disabled={isOutOfStock || isSpinning}
-                                    className="px-2 sm:px-2.5 py-1 rounded-lg bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-300 text-[11px] sm:text-xs font-bold transition-colors cursor-pointer whitespace-nowrap"
-                                >
-                                    雙數 (5注/50%)
-                                </button>
-                                <button
-                                    type="button"
+                                    disabled={isSpinning || isOutOfStock}
                                     onClick={() => handleQuickSelect('random')}
-                                    disabled={isOutOfStock || isSpinning}
-                                    className="px-2 sm:px-2.5 py-1 rounded-lg bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-300 text-[11px] sm:text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap"
+                                    className="px-2.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.09] border border-white/[0.08] text-slate-200 text-[11px] font-medium flex items-center gap-1 cursor-pointer"
                                 >
-                                    <Dices className="w-3 h-3 text-rose-400 shrink-0" />
-                                    <span>隨機 1 注</span>
+                                    <Dices className="w-3 h-3 text-rose-300" /> 隨機
+                                </button>
+                                <button
+                                    type="button"
+                                    disabled={isSpinning || isOutOfStock}
+                                    onClick={() => handleQuickSelect('odd')}
+                                    className="px-2.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.09] border border-white/[0.08] text-slate-300 text-[11px] font-medium cursor-pointer"
+                                >
+                                    單數
+                                </button>
+                                <button
+                                    type="button"
+                                    disabled={isSpinning || isOutOfStock}
+                                    onClick={() => handleQuickSelect('even')}
+                                    className="px-2.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.09] border border-white/[0.08] text-slate-300 text-[11px] font-medium cursor-pointer"
+                                >
+                                    雙數
+                                </button>
+                                <button
+                                    type="button"
+                                    disabled={isSpinning || isOutOfStock}
+                                    onClick={() => handleQuickSelect('high8')}
+                                    className="px-2.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.09] border border-white/[0.08] text-amber-300 text-[11px] font-medium cursor-pointer"
+                                >
+                                    8格 (80%)
                                 </button>
                                 {selectedNumbers.length > 0 && (
                                     <button
                                         type="button"
+                                        disabled={isSpinning || isOutOfStock}
                                         onClick={() => handleQuickSelect('clear')}
-                                        disabled={isOutOfStock || isSpinning}
-                                        className="px-2 sm:px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 text-[11px] sm:text-xs font-bold transition-colors ml-auto flex items-center gap-1 cursor-pointer whitespace-nowrap"
+                                        className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.09] border border-white/[0.08] text-slate-400 hover:text-white cursor-pointer"
+                                        title="清空選號"
                                     >
-                                        <RotateCcw className="w-3 h-3 shrink-0" />
-                                        <span>清空</span>
+                                        <RotateCcw className="w-3.5 h-3.5" />
                                     </button>
                                 )}
                             </div>
-                            
-                            {/* 1 ~ 10 號碼按鈕矩陣 (精緻賽博微晶按鈕，數字適度縮小更精煉) */}
-                            <div className="grid grid-cols-5 gap-1.5 sm:gap-2 p-2 sm:p-2.5 rounded-2xl bg-black/40 border border-white/5 shadow-inner">
-                                {numbers.map(num => {
-                                    const isSelected = selectedNumbers.includes(num);
-                                    return (
-                                        <button
-                                            type="button"
-                                            key={num}
-                                            onClick={() => toggleNumber(num)}
-                                            disabled={isOutOfStock || isSpinning}
-                                            className={cn(
-                                                "relative h-11 sm:h-12 flex flex-col items-center justify-center rounded-xl text-sm sm:text-base font-black font-mono transition-all duration-200 border cursor-pointer select-none group/num overflow-hidden",
-                                                isOutOfStock || isSpinning 
-                                                    ? 'bg-slate-950/40 border-slate-900 text-slate-600 cursor-not-allowed' 
-                                                    : isSelected 
-                                                    ? 'bg-gradient-to-b from-rose-500 via-pink-600 to-rose-700 border-rose-300/90 text-white shadow-[0_0_18px_rgba(244,63,94,0.65)] scale-[1.02] z-10' 
-                                                    : 'bg-gradient-to-b from-[#170e1b]/90 to-[#0e0712]/90 border-rose-500/20 text-slate-300 hover:border-rose-400/60 hover:text-white hover:bg-rose-950/30'
-                                            )}
-                                        >
-                                            {isSelected && (
-                                                <div className="absolute top-0 inset-x-0 h-[2px] bg-white shadow-[0_0_6px_#ffffff]" />
-                                            )}
-                                            <span className={cn(
-                                                "leading-none transition-transform",
-                                                isSelected ? "text-white font-black scale-105" : "text-slate-300 group-hover/num:text-rose-200"
-                                            )}>
-                                                {num < 10 ? '0' + String(num) : num}
-                                            </span>
-                                            {isSelected ? (
-                                                <span className="text-[8px] font-sans font-black tracking-tighter text-rose-100 opacity-90 mt-0.5">
-                                                    已選
-                                                </span>
-                                            ) : (
-                                                <span className="text-[7.5px] font-mono text-slate-500 uppercase tracking-tighter mt-0.5 group-hover/num:text-rose-400/70">
-                                                    10%
-                                                </span>
-                                            )}
-                                        </button>
-                                    );
-                                })}
-                            </div>
                         </div>
 
-                        {/* STEP 03: 命運轉盤與開獎視窗 */}
-                        <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <span className="bg-gradient-to-r from-amber-400 to-yellow-400 text-slate-950 font-black px-2.5 py-0.5 text-[10px] rounded-md tracking-wider shadow-sm">
-                                        STEP 3
-                                    </span>
-                                    <span className="text-amber-300 font-bold text-sm">命運老虎機開獎</span>
-                                </div>
-
-                                <div className="flex items-center gap-1.5 text-xs">
-                                    <span className="text-slate-400">總計扣除:</span>
-                                    <span className={cn(
-                                        "font-mono font-black text-base flex items-center gap-1",
-                                        isInsufficientFunds ? "text-rose-400" : "text-amber-300"
-                                    )}>
-                                        {paymentCurrency === 'diamond' ? <DiamondIcon className="w-4 h-4" /> : <PPlusIcon className="w-4 h-4 text-amber-400" />}
-                                        {totalPrice.toLocaleString()}
-                                    </span>
-                                </div>
-                            </div>
-
-                            {/* 老虎機視窗 */}
-                            <div className="relative w-full h-[110px] bg-gradient-to-b from-[#140817] via-slate-950 to-[#0c040e] rounded-2xl border-2 border-rose-500/40 shadow-[inset_0_5px_30px_rgba(0,0,0,0.95),0_0_20px_rgba(244,63,94,0.15)] overflow-hidden flex items-center justify-center">
-                                {/* 頂部反光與陰影 */}
-                                <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black/80 pointer-events-none z-20" />
-
-                                {/* 兩側金屬導軌 */}
-                                <div className="absolute left-0 top-0 bottom-0 w-10 bg-gradient-to-r from-slate-900 via-slate-900/80 to-transparent border-r border-slate-800/80 z-20 flex items-center justify-center">
-                                    <div className="w-1.5 h-12 bg-rose-500/40 rounded-full" />
-                                </div>
-                                <div className="absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-slate-900 via-slate-900/80 to-transparent border-l border-slate-800/80 z-20 flex items-center justify-center">
-                                    <div className="w-1.5 h-12 bg-rose-500/40 rounded-full" />
-                                </div>
-
-                                {/* 中間指針雷射標線 */}
-                                <div className="absolute left-8 right-8 top-1/2 -translate-y-1/2 h-[2px] bg-rose-400 z-30 shadow-[0_0_15px_rgba(244,63,94,1)]" />
-                                <div className="absolute left-4 top-1/2 -translate-y-1/2 w-0 h-0 border-t-[7px] border-t-transparent border-b-[7px] border-b-transparent border-l-[10px] border-l-rose-400 z-30 drop-shadow-[0_0_8px_rgba(244,63,94,1)]" />
-                                <div className="absolute right-4 top-1/2 -translate-y-1/2 w-0 h-0 border-t-[7px] border-t-transparent border-b-[7px] border-b-transparent border-r-[10px] border-r-rose-400 z-30 drop-shadow-[0_0_8px_rgba(244,63,94,1)]" />
-
-                                {/* 滾輪帶 */}
-                                <div className="w-36 h-full bg-slate-900/90 relative z-10 flex flex-col items-center border-x-2 border-slate-800 overflow-hidden shadow-inner">
-                                    <div 
-                                        className="flex flex-col w-full text-white font-mono font-black"
-                                        style={{
-                                            transition: spinActive ? 'transform 3.5s cubic-bezier(0.1, 0.85, 0.25, 1)' : 'none',
-                                            transform: `translateY(${spinTranslateY}px)`
-                                        }}
-                                    >
-                                        {wheelStrip.length > 0 ? (
-                                            wheelStrip.map((num, i) => (
-                                                <div 
-                                                    key={i} 
-                                                    style={{ height: `${ITEM_HEIGHT}px` }} 
-                                                    className="flex-shrink-0 flex items-center justify-center text-5xl font-black text-rose-300 drop-shadow-[0_0_15px_rgba(244,63,94,0.9)]"
-                                                >
-                                                    {num}
-                                                </div>
-                                            ))
-                                        ) : (
-                                            <div 
-                                                style={{ height: `${ITEM_HEIGHT}px` }} 
-                                                className="flex-shrink-0 flex items-center justify-center text-5xl text-slate-500 font-bold"
-                                            >
-                                                {isOutOfStock ? '-' : (selectedNumbers.length > 0 ? selectedNumbers[0] : '?')}
-                                            </div>
+                        {/* 1~10 精簡單列號碼條 */}
+                        <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5">
+                            {numbers.map(num => {
+                                const isSelected = selectedNumbers.includes(num);
+                                return (
+                                    <button
+                                        key={num}
+                                        type="button"
+                                        disabled={isSpinning || isOutOfStock}
+                                        onClick={() => toggleNumber(num)}
+                                        className={cn(
+                                            'h-8 rounded-lg font-mono text-xs font-semibold border transition-colors cursor-pointer',
+                                            isSelected
+                                                ? 'bg-rose-500/25 border-amber-300/70 text-white'
+                                                : 'bg-white/[0.03] border-white/[0.08] text-slate-400 hover:border-white/[0.2] hover:text-white'
                                         )}
-                                    </div>
-                                </div>
-                            </div>
+                                    >
+                                        {num}
+                                    </button>
+                                );
+                            })}
+                        </div>
 
-                            {/* 開獎結果提示 */}
-                            {finalResult && (
-                                <div className={cn(
-                                    "p-4 rounded-2xl border flex items-center justify-between animate-in fade-in zoom-in-95",
-                                    finalResult.won 
-                                        ? "bg-emerald-950/60 border-emerald-500/50 text-emerald-100 shadow-[0_0_30px_rgba(16,185,129,0.25)]" 
-                                        : "bg-rose-950/60 border-rose-500/50 text-rose-100"
-                                )}>
-                                    <div className="flex items-center gap-3">
-                                        <div className={cn("p-2.5 rounded-xl text-xl font-black font-mono", finalResult.won ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40" : "bg-rose-500/20 text-rose-300 border border-rose-500/40")}>
-                                            {finalResult.spot}
+                        {/* 開獎結果提示 */}
+                        {finalResult && (
+                            <div className={cn(
+                                'p-3.5 rounded-xl border space-y-2.5 animate-in fade-in zoom-in-95',
+                                finalResult.won
+                                    ? 'bg-emerald-950/40 border-emerald-400/40 text-emerald-100'
+                                    : 'bg-rose-950/35 border-rose-500/30 text-rose-100'
+                            )}>
+                                <div className="flex items-center justify-between gap-3">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <div className={cn(
+                                            'w-10 h-10 rounded-lg flex items-center justify-center font-mono text-base font-bold border shrink-0',
+                                            finalResult.won
+                                                ? 'bg-emerald-500/20 border-emerald-400/60 text-emerald-300'
+                                                : 'bg-rose-500/20 border-rose-400/40 text-rose-300'
+                                        )}>
+                                            #{finalResult.spot}
                                         </div>
-                                        <div>
-                                            <div className="font-black text-sm flex items-center gap-1.5">
-                                                {finalResult.won ? "🎉 恭喜中獎！卡片已入庫" : "😅 差一點點！號碼未命中"}
+                                        <div className="min-w-0">
+                                            <div className="font-semibold text-sm truncate">
+                                                {finalResult.won ? `命中 #${finalResult.spot}，成功獲得卡片` : `指針停在 #${finalResult.spot}，差一點點`}
                                             </div>
-                                            <div className="text-xs opacity-85">
-                                                開出號碼 【{finalResult.spot}】，投注號碼 [{selectedNumbers.join(', ')}]
+                                            <div className="text-xs text-slate-400 font-mono">
+                                                已選格數：[{selectedNumbers.join(', ')}]
                                             </div>
                                         </div>
                                     </div>
-
                                     {finalResult.won ? (
-                                        <Button asChild size="sm" className="rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black text-xs">
-                                            <Link href="/collection">前往收藏庫</Link>
+                                        <Button asChild size="sm" className="h-8 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-bold text-xs shrink-0">
+                                            <Link href="/collection" className="flex items-center gap-1">
+                                                <Library className="w-3.5 h-3.5" />
+                                                前往收藏庫
+                                            </Link>
                                         </Button>
                                     ) : (
                                         <button
                                             type="button"
                                             onClick={() => { setFinalResult(null); setCurrentRoundFairness(null); }}
-                                            className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-colors cursor-pointer"
+                                            className="px-3 py-1.5 rounded-lg bg-white/[0.08] hover:bg-white/[0.14] text-xs font-medium text-white shrink-0 cursor-pointer"
                                         >
-                                            再拼一次
+                                            再轉一次
                                         </button>
                                     )}
                                 </div>
-                            )}
 
-                            {/* 本局 Provably Fair 密碼學開獎明細與參數複製面板 */}
-                            {finalResult && currentRoundFairness && (
-                                <div className="p-3.5 rounded-2xl bg-black/60 border border-emerald-500/30 space-y-2.5 animate-in fade-in duration-300">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-400">
-                                            <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                                            <span>本局 Provably Fair 密碼學開獎明細</span>
-                                        </div>
-                                        <Button
-                                            asChild
-                                            size="sm"
-                                            variant="ghost"
-                                            className="h-6 px-2.5 text-[11px] font-bold text-emerald-300 hover:text-emerald-200 hover:bg-emerald-950/40 rounded-lg"
+                                {currentRoundFairness && (
+                                    <div className="pt-2 border-t border-white/[0.08] flex items-center justify-between text-[11px] text-slate-400">
+                                        <span className="font-mono truncate max-w-[220px]">Hash: {currentRoundFairness.serverHash.slice(0, 18)}...</span>
+                                        <Link
+                                            href={`/fairness?serverSeed=${encodeURIComponent(currentRoundFairness.serverSeed)}&serverHash=${encodeURIComponent(currentRoundFairness.serverHash)}&clientSeed=${encodeURIComponent(currentRoundFairness.clientSeed)}&nonce=${currentRoundFairness.nonce}&tab=bet&prob=10`}
+                                            target="_blank"
+                                            className="text-emerald-400 hover:underline font-medium shrink-0"
                                         >
-                                            <Link
-                                                href={`/fairness?serverSeed=${encodeURIComponent(currentRoundFairness.serverSeed)}&serverHash=${encodeURIComponent(currentRoundFairness.serverHash)}&clientSeed=${encodeURIComponent(currentRoundFairness.clientSeed)}&nonce=${currentRoundFairness.nonce}&tab=bet&prob=10`}
-                                                target="_blank"
-                                            >
-                                                帶入線上驗證器 ↗
-                                            </Link>
-                                        </Button>
+                                            公平驗證 ↗
+                                        </Link>
                                     </div>
+                                )}
+                            </div>
+                        )}
 
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] font-mono">
-                                        <div className="p-2 rounded-xl bg-slate-950/80 border border-white/5 space-y-0.5">
-                                            <div className="text-slate-400 flex items-center justify-between font-sans text-[10px]">
-                                                <span>Server Seed (未雜湊)</span>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        navigator.clipboard.writeText(currentRoundFairness.serverSeed);
-                                                        toast({ title: '已複製 Server Seed' });
-                                                    }}
-                                                    className="text-emerald-400 hover:underline cursor-pointer"
-                                                >
-                                                    複製
-                                                </button>
-                                            </div>
-                                            <div className="text-emerald-300 truncate text-[10px]" title={currentRoundFairness.serverSeed}>
-                                                {currentRoundFairness.serverSeed}
-                                            </div>
-                                        </div>
-
-                                        <div className="p-2 rounded-xl bg-slate-950/80 border border-white/5 space-y-0.5">
-                                            <div className="text-slate-400 flex items-center justify-between font-sans text-[10px]">
-                                                <span>Server Hash (承諾)</span>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        navigator.clipboard.writeText(currentRoundFairness.serverHash);
-                                                        toast({ title: '已複製 Server Hash' });
-                                                    }}
-                                                    className="text-emerald-400 hover:underline cursor-pointer"
-                                                >
-                                                    複製
-                                                </button>
-                                            </div>
-                                            <div className="text-slate-200 truncate text-[10px]" title={currentRoundFairness.serverHash}>
-                                                {currentRoundFairness.serverHash}
-                                            </div>
-                                        </div>
-
-                                        <div className="p-2 rounded-xl bg-slate-950/80 border border-white/5 space-y-0.5">
-                                            <div className="text-slate-400 flex items-center justify-between font-sans text-[10px]">
-                                                <span>Client Seed (玩家種子)</span>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        navigator.clipboard.writeText(currentRoundFairness.clientSeed);
-                                                        toast({ title: '已複製 Client Seed' });
-                                                    }}
-                                                    className="text-cyan-400 hover:underline cursor-pointer"
-                                                >
-                                                    複製
-                                                </button>
-                                            </div>
-                                            <div className="text-cyan-300 truncate text-[10px]" title={currentRoundFairness.clientSeed}>
-                                                {currentRoundFairness.clientSeed}
-                                            </div>
-                                        </div>
-
-                                        <div className="p-2 rounded-xl bg-slate-950/80 border border-white/5 space-y-0.5">
-                                            <div className="text-slate-400 flex items-center justify-between font-sans text-[10px]">
-                                                <span>局數 Nonce</span>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        navigator.clipboard.writeText(String(currentRoundFairness.nonce));
-                                                        toast({ title: '已複製 Nonce' });
-                                                    }}
-                                                    className="text-amber-400 hover:underline cursor-pointer"
-                                                >
-                                                    複製
-                                                </button>
-                                            </div>
-                                            <div className="text-amber-300 text-[10px]">
-                                                {currentRoundFairness.nonce}
-                                            </div>
-                                        </div>
+                        {/* 啟動轉盤按鈕 */}
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <button
+                                    type="button"
+                                    disabled={isOutOfStock || selectedNumbers.length === 0 || isSpinning || isInsufficientFunds}
+                                    className={cn(
+                                        'w-full h-11 rounded-xl font-bold tracking-wide flex items-center justify-center gap-2 transition-all text-sm cursor-pointer select-none',
+                                        isOutOfStock || isInsufficientFunds
+                                            ? 'bg-rose-950/40 border border-rose-500/30 text-rose-300 cursor-not-allowed'
+                                            : selectedNumbers.length > 0 && !isSpinning
+                                            ? 'bg-gradient-to-r from-rose-500 to-amber-500 hover:brightness-110 text-white shadow-[0_4px_20px_rgba(244,63,94,0.3)]'
+                                            : 'bg-white/[0.04] text-slate-500 border border-white/[0.08] cursor-not-allowed'
+                                    )}
+                                >
+                                    {isOutOfStock ? (
+                                        <><AlertCircle className="w-4 h-4" /> 此卡片已被玩家抽出</>
+                                    ) : isSpinning ? (
+                                        <><Sparkles className="w-4 h-4 animate-spin" /> 轉盤旋轉中...</>
+                                    ) : isInsufficientFunds ? (
+                                        <><AlertCircle className="w-4 h-4" /> 餘額不足 (需 {totalPrice.toLocaleString()} {paymentCurrency === 'pplus' ? 'P+' : '鑽石'})</>
+                                    ) : selectedNumbers.length === 0 ? (
+                                        <><Dices className="w-4 h-4" /> 請選擇至少 1 個幸運格</>
+                                    ) : (
+                                        <><Play className="w-4 h-4 fill-current" /> 啟動轉盤 · {selectedNumbers.length} 格 ({winProbability}%) · {totalPrice.toLocaleString()} {paymentCurrency === 'pplus' ? 'P+' : '鑽石'}</>
+                                    )}
+                                </button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="rounded-2xl bg-[#0a0f1c] border border-white/[0.12] text-slate-100 max-w-md shadow-2xl">
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle className="font-bold text-white text-base">
+                                        確認啟動命運轉盤
+                                    </AlertDialogTitle>
+                                </AlertDialogHeader>
+                                <div className="p-4 rounded-xl border border-white/[0.08] bg-black/35 text-xs text-slate-300 space-y-2.5">
+                                    <div className="flex justify-between border-b border-white/[0.06] pb-2">
+                                        <span className="text-slate-400">目標球員卡</span>
+                                        <span className="font-semibold text-white truncate max-w-[200px]">{card.name}</span>
+                                    </div>
+                                    <div className="flex justify-between border-b border-white/[0.06] pb-2">
+                                        <span className="text-slate-400">選取號碼</span>
+                                        <span className="font-mono font-semibold text-rose-300">[{selectedNumbers.join(', ')}] ({winProbability}%)</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-slate-400">本次消耗</span>
+                                        <span className="font-mono font-bold text-amber-300">
+                                            {totalPrice.toLocaleString()} {paymentCurrency === 'pplus' ? '紅利 P+ 點' : '鑽石'}
+                                        </span>
                                     </div>
                                 </div>
-                            )}
-
-                            {/* 啟動下注按鈕 */}
-                            {isOutOfStock ? (
-                                <button 
-                                    type="button" 
-                                    disabled 
-                                    className="w-full py-4 rounded-2xl font-black tracking-widest flex items-center justify-center gap-2 bg-slate-900 border border-slate-800 text-slate-500 cursor-not-allowed text-sm"
-                                >
-                                    <AlertCircle className="w-5 h-5" />
-                                    此品項已被其他玩家抽出
-                                </button>
-                            ) : (
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                        <button 
-                                            type="button" 
-                                            disabled={selectedNumbers.length === 0 || isSpinning || isInsufficientFunds}
-                                            className={cn(
-                                                "w-full py-4 rounded-2xl font-black tracking-widest flex items-center justify-center gap-2 transition-all duration-300 relative overflow-hidden group text-sm cursor-pointer select-none",
-                                                isInsufficientFunds 
-                                                    ? 'bg-rose-950/60 border border-rose-500/40 text-rose-300 cursor-not-allowed'
-                                                    : selectedNumbers.length > 0 && !isSpinning 
-                                                    ? 'bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 hover:brightness-110 text-white font-black shadow-[0_0_35px_rgba(244,63,94,0.6)] border border-rose-200/80' 
-                                                    : 'bg-slate-900 text-slate-500 border border-slate-800 cursor-not-allowed'
-                                            )}
-                                        >
-                                            {isSpinning ? (
-                                                <><Sparkles className="w-5 h-5 animate-spin text-white" /> 命運轉盤旋轉中...</>
-                                            ) : isInsufficientFunds ? (
-                                                <><AlertCircle className="w-5 h-5 text-rose-400" /> 點數餘額不足 (尚差 {(totalPrice - currentBalance).toLocaleString()} 點)</>
-                                            ) : selectedNumbers.length === 0 ? (
-                                                <><Dices className="w-5 h-5" /> 請先在上方挑選至少 1 個幸運號碼</>
-                                            ) : (
-                                                <><Play className="w-5 h-5 fill-current" /> 確認拼卡 · 啟動命運轉盤 ({selectedNumbers.length} 注 / {totalPrice.toLocaleString()} {paymentCurrency === 'diamond' ? '💎' : 'P+'})</>
-                                            )}
-                                        </button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent className="rounded-3xl bg-slate-950 border-rose-500/30 border-2 text-slate-100 max-w-md shadow-2xl">
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle className="font-headline font-black text-rose-400 text-lg flex items-center gap-2">
-                                                <Sparkles className="w-5 h-5 text-rose-400" /> 拼卡下注確認
-                                            </AlertDialogTitle>
-                                        </AlertDialogHeader>
-                                        <div className="p-4 rounded-2xl border border-rose-500/20 bg-rose-950/20 text-xs text-slate-300 space-y-3">
-                                            <div className="flex justify-between border-b border-slate-800/80 pb-2">
-                                                <span className="text-slate-400">挑戰卡片：</span>
-                                                <span className="font-bold text-white truncate max-w-[200px]">{card.name}</span>
-                                            </div>
-                                            <div className="flex justify-between border-b border-slate-800/80 pb-2">
-                                                <span className="text-slate-400">選擇號碼：</span>
-                                                <span className="font-mono font-black text-rose-300">[{selectedNumbers.join(', ')}] ({selectedNumbers.length} 注)</span>
-                                            </div>
-                                            <div className="flex justify-between border-b border-slate-800/80 pb-2">
-                                                <span className="text-slate-400">中獎勝率：</span>
-                                                <span className="font-mono font-black text-emerald-400">{selectedNumbers.length * 10}%</span>
-                                            </div>
-                                            <div className="flex justify-between border-b border-slate-800/80 pb-2">
-                                                <span className="text-slate-400">扣除金額：</span>
-                                                <span className="font-mono font-black text-amber-400">
-                                                    {totalPrice.toLocaleString()} {paymentCurrency === 'diamond' ? '鑽石 💎' : 'P+ 點數'}
-                                                </span>
-                                            </div>
-                                            <div className="space-y-1 text-[11px] text-slate-400 pt-1">
-                                                <p className="font-bold text-rose-400 flex items-center gap-1">
-                                                    <ShieldCheck className="w-3.5 h-3.5" /> 遊戲規則提示：
-                                                </p>
-                                                <p>1. 本系統隨機開出 1~10 號碼，命中即 100% 獲得該卡片並放入個人收藏庫。</p>
-                                                <p>2. 按下確認後將立即扣除錢包點數並執行轉盤開獎。</p>
-                                            </div>
-                                        </div>
-                                        <AlertDialogFooter className="gap-2">
-                                            <AlertDialogCancel className="h-11 rounded-xl font-bold bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-800">
-                                                 再想想
-                                            </AlertDialogCancel>
-                                            <AlertDialogAction 
-                                                onClick={handleSpin} 
-                                                className="h-11 rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-400 hover:to-pink-400 text-white font-black border-none shadow-[0_0_20px_rgba(244,63,94,0.4)]"
-                                            >
-                                                確認下注並開獎
-                                            </AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
-                            )}
-                        </div>
+                                <AlertDialogFooter className="gap-2">
+                                    <AlertDialogCancel className="h-9 rounded-lg font-medium bg-white/[0.05] text-slate-300 border-white/[0.1] hover:bg-white/[0.1]">
+                                        取消
+                                    </AlertDialogCancel>
+                                    <AlertDialogAction
+                                        onClick={handleSpinWheel}
+                                        className="h-9 rounded-lg bg-gradient-to-r from-rose-500 to-amber-500 hover:brightness-110 text-white font-semibold border-none"
+                                    >
+                                        確認轉動
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
                     </div>
                 </div>
             </DialogContent>

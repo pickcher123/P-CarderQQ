@@ -59,6 +59,20 @@ import {
 import { useToast } from '@/hooks/use-toast';
 
 export type CardExhibitionRegion = 'all' | 'taiwan' | 'asia' | 'usa';
+export type ExhibitionTimeStatus = 'all' | 'upcoming' | 'ongoing' | 'ended';
+
+const getExhibitionTimeStatus = (startDate: Date, endDate: Date): Exclude<ExhibitionTimeStatus, 'all'> => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+
+    if (today >= start && today <= end) return 'ongoing';
+    if (today < start) return 'upcoming';
+    return 'ended';
+};
 
 export interface RegionConfig {
     id: CardExhibitionRegion;
@@ -295,6 +309,8 @@ export function UnifiedEventCalendar({
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
     // 區域篩選：全部 / 台灣 / 亞洲 / 美國 (共用同一張行事曆)
     const [activeRegion, setActiveRegion] = useState<CardExhibitionRegion>(defaultRegion);
+    // 狀態篩選：全部 / 尚未開始 / 展期進行中 / 已閉幕
+    const [statusFilter, setStatusFilter] = useState<ExhibitionTimeStatus>('all');
     // 關鍵字搜尋
     const [keyword, setKeyword] = useState<string>('');
     // 詳情彈窗
@@ -352,11 +368,41 @@ export function UnifiedEventCalendar({
         };
     }, [allExhibitionEvents]);
 
-    // 根據區域與關鍵字篩選
+    // 狀態統計數量（依目前所選區域計算）
+    const statusCounts = useMemo(() => {
+        const regionFiltered = activeRegion === 'all'
+            ? allExhibitionEvents
+            : allExhibitionEvents.filter(ev => ev.region === activeRegion);
+
+        let upcoming = 0;
+        let ongoing = 0;
+        let ended = 0;
+        regionFiltered.forEach((ev) => {
+            const st = getExhibitionTimeStatus(ev.startDate, ev.endDate);
+            if (st === 'upcoming') upcoming += 1;
+            else if (st === 'ongoing') ongoing += 1;
+            else ended += 1;
+        });
+
+        return {
+            all: regionFiltered.length,
+            upcoming,
+            ongoing,
+            ended,
+        };
+    }, [allExhibitionEvents, activeRegion]);
+
+    // 根據區域、狀態與關鍵字篩選
     const filteredEvents = useMemo(() => {
-        return allExhibitionEvents.filter(ev => {
+        const list = allExhibitionEvents.filter(ev => {
             // 區域篩選
             if (activeRegion !== 'all' && ev.region !== activeRegion) return false;
+
+            // 狀態篩選（已閉幕 / 尚未開始 / 展期進行中）
+            if (statusFilter !== 'all') {
+                const st = getExhibitionTimeStatus(ev.startDate, ev.endDate);
+                if (st !== statusFilter) return false;
+            }
 
             // 關鍵字搜尋
             if (keyword.trim()) {
@@ -369,7 +415,12 @@ export function UnifiedEventCalendar({
 
             return true;
         });
-    }, [allExhibitionEvents, activeRegion, keyword]);
+
+        if (statusFilter === 'ended') {
+            return [...list].sort((a, b) => b.startDate.getTime() - a.startDate.getTime());
+        }
+        return list;
+    }, [allExhibitionEvents, activeRegion, statusFilter, keyword]);
 
     // 月曆計算邏輯 (Month Matrix)
     const monthStart = startOfMonth(currentMonth);
@@ -680,24 +731,60 @@ export function UnifiedEventCalendar({
                     </div>
                 </div>
 
-                {/* 第二列：關鍵字搜尋與回到本月 */}
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5">
-                    <div className="relative w-full sm:flex-1 sm:max-w-md">
+                {/* 第二列：關鍵字搜尋、狀態分類（尚未開始 / 已閉幕）與回到本月 */}
+                <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-2.5">
+                    <div className="relative w-full lg:flex-1 lg:max-w-sm">
                         <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                         <Input
                             placeholder="搜尋卡展名稱、國家城市、場館地址..."
                             value={keyword}
                             onChange={(e) => setKeyword(e.target.value)}
-                            className="bg-black/35 border-white/[0.08] text-white pl-9 pr-4 h-9 rounded-lg text-xs placeholder:text-slate-500 focus-visible:ring-white/20 focus-visible:border-white/25 w-full"
+                            className="bg-black/35 border-white/[0.08] text-white pl-9 pr-4 h-9 rounded-xl text-xs placeholder:text-slate-500 focus-visible:ring-amber-300/30 focus-visible:border-amber-300/40 w-full"
                         />
                     </div>
 
-                    <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 justify-end">
+                    <div className="flex flex-wrap items-center justify-between lg:justify-end gap-2">
+                        {/* 展期狀態分類篩選 */}
+                        <div className="flex items-center gap-1 bg-black/40 p-1 rounded-xl border border-white/[0.08] overflow-x-auto scrollbar-none">
+                            {([
+                                { id: 'all', label: '全部狀態', count: statusCounts.all, dot: 'bg-slate-400' },
+                                { id: 'upcoming', label: '尚未開始', count: statusCounts.upcoming, dot: 'bg-amber-300' },
+                                ...(statusCounts.ongoing > 0
+                                    ? [{ id: 'ongoing' as const, label: '展期進行中', count: statusCounts.ongoing, dot: 'bg-emerald-400' }]
+                                    : []),
+                                { id: 'ended', label: '已閉幕', count: statusCounts.ended, dot: 'bg-slate-500' },
+                            ] as const).map((tab) => {
+                                const isActive = statusFilter === tab.id;
+                                return (
+                                    <button
+                                        key={tab.id}
+                                        type="button"
+                                        onClick={() => setStatusFilter(tab.id)}
+                                        className={cn(
+                                            "flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors cursor-pointer border shrink-0",
+                                            isActive
+                                                ? "bg-white/[0.1] text-[#FDE68A] border-amber-300/35"
+                                                : "bg-transparent text-slate-400 hover:text-slate-200 border-transparent hover:bg-white/[0.04]"
+                                        )}
+                                    >
+                                        <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", tab.dot)} />
+                                        <span>{tab.label}</span>
+                                        <span className={cn(
+                                            "text-[11px] font-mono tabular-nums px-1.5 py-0.2 rounded",
+                                            isActive ? "bg-amber-300/15 text-[#FDE68A]" : "text-slate-500"
+                                        )}>
+                                            {tab.count}
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+
                         <Button
                             variant="outline"
                             size="sm"
                             onClick={goToToday}
-                            className="border-white/[0.1] bg-white/[0.04] hover:bg-white/[0.08] text-slate-200 hover:text-white font-medium rounded-lg text-xs h-9 px-3 gap-1.5 cursor-pointer"
+                            className="border-white/[0.1] bg-white/[0.04] hover:bg-white/[0.08] text-slate-200 hover:text-white font-medium rounded-xl text-xs h-9 px-3 gap-1.5 cursor-pointer shrink-0"
                         >
                             <CalendarCheck className="w-3.5 h-3.5 text-amber-300" />
                             <span>回到本月</span>

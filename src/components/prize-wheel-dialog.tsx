@@ -25,6 +25,7 @@ import { Dialog, DialogContent, DialogTrigger, DialogTitle } from '@/components/
 import { Input } from '@/components/ui/input';
 import { VisuallyHidden } from '@/components/ui/visually-hidden';
 import { SafeImage } from '@/components/safe-image';
+import { FortuneWheel } from '@/components/fortune-wheel';
 import { useToast } from '@/hooks/use-toast';
 import type { UserProfile } from '@/types/user-profile';
 import type { LevelBenefit } from '@/types/system';
@@ -290,7 +291,7 @@ export function PrizeWheelDialog({
             const targetMod = (360 - sliceCenterDeg) % 360;
             const currentMod = ((wheelRotation % 360) + 360) % 360;
             const delta = (targetMod - currentMod + 360) % 360;
-            const nextRotation = wheelRotation + 360 * 6 + delta;
+            const nextRotation = wheelRotation + 360 * 5 + delta;
 
             setSpinTransition(true);
             setWheelRotation(nextRotation);
@@ -311,7 +312,7 @@ export function PrizeWheelDialog({
                         description: `恭喜命中 #${txRes.spot}，成功贏得「${item.name}」！已存入您的收藏庫，可立即填寫收件資訊或稍後至收藏庫兌換。`,
                     });
                 }
-            }, 3900);
+            }, 5700);
         } catch (err: any) {
             setIsSpinning(false);
             setSpinTransition(false);
@@ -439,43 +440,6 @@ export function PrizeWheelDialog({
         }
     };
 
-    // 預先計算 10 格圓形轉盤 SVG 座標 (半徑 148, 中心 160,160)
-    const wheelSlices = useMemo(() => {
-        const cx = 160;
-        const cy = 160;
-        const r = 148;
-        const rText = 104;
-
-        return Array.from({ length: 10 }, (_, idx) => {
-            const num = idx + 1;
-            const centerDeg = idx * 36 - 90;
-            const startDeg = centerDeg - 18;
-            const endDeg = centerDeg + 18;
-            const startRad = (startDeg * Math.PI) / 180;
-            const endRad = (endDeg * Math.PI) / 180;
-            const centerRad = (centerDeg * Math.PI) / 180;
-
-            const x1 = cx + r * Math.cos(startRad);
-            const y1 = cy + r * Math.sin(startRad);
-            const x2 = cx + r * Math.cos(endRad);
-            const y2 = cy + r * Math.sin(endRad);
-
-            const tx = cx + rText * Math.cos(centerRad);
-            const ty = cy + rText * Math.sin(centerRad);
-
-            const path = `M ${cx} ${cy} L ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 0 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z`;
-
-            return {
-                num,
-                idx,
-                path,
-                tx,
-                ty,
-                rotateDeg: idx * 36,
-            };
-        });
-    }, []);
-
     return (
         <Dialog
             open={isOpen}
@@ -490,78 +454,91 @@ export function PrizeWheelDialog({
             }}
         >
             <DialogTrigger asChild>{children}</DialogTrigger>
-            <DialogContent className="max-w-4xl w-[95vw] max-h-[92vh] overflow-y-auto p-0 bg-[#090612] border border-amber-500/35 text-slate-100 rounded-3xl shadow-[0_0_80px_rgba(245,158,11,0.22)] [&>button]:hidden">
+            <DialogContent className="max-w-4xl w-[95vw] max-h-[92vh] overflow-y-auto p-0 bg-[#0a0f1c] border border-white/[0.1] text-slate-100 rounded-2xl shadow-[0_24px_64px_rgba(0,0,0,0.85)] [&>button]:hidden">
                 <VisuallyHidden>
                     <DialogTitle>{item.name} - 獎品命運轉盤與紅利兌換</DialogTitle>
                 </VisuallyHidden>
 
-                {/* 頂部狀態列 */}
-                <div className="sticky top-0 z-40 flex items-center justify-between px-5 py-3.5 bg-[#090612]/95 backdrop-blur-xl border-b border-amber-500/20">
-                    <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500/25 to-rose-500/25 border border-amber-400/40 flex items-center justify-center">
-                            <Disc3 className="w-4 h-4 text-amber-300 animate-spin" style={{ animationDuration: '8s' }} />
-                        </div>
-                        <div>
-                            <h3 className="text-sm sm:text-base font-black text-white tracking-wide">
-                                實體獎品 · 命運轉盤 & 兌換館
+                {/* 精簡頂部列：標題 + 餘額 + 關閉 */}
+                <div className="sticky top-0 z-40 flex items-center justify-between gap-3 px-5 py-3.5 bg-[#0a0f1c]/95 backdrop-blur-xl border-b border-white/[0.08]">
+                    <div className="flex items-center gap-3 min-w-0">
+                        <span className="w-[3px] h-7 rounded-full bg-gradient-to-b from-amber-200 via-amber-400 to-amber-700 shrink-0" aria-hidden="true" />
+                        <div className="min-w-0">
+                            <h3 className="text-base sm:text-lg font-bold tracking-wide truncate flex items-center gap-1.5">
+                                <span className="text-white">實體獎品</span>
+                                <span className="text-amber-400/70 font-normal">·</span>
+                                <span className="text-[#FDE68A]">命運轉盤與兌換</span>
                             </h3>
-                            <p className="text-[11px] text-slate-400 hidden sm:block">
-                                可用 1/10 點數挑戰命運轉盤，或使用 P+ 點數 100% 直接兌換免運寄出
+                            <p className="text-[11px] text-slate-400 tracking-wide hidden sm:block">
+                                可用 1/10 點數挑戰轉盤 · 或使用 P+ 全額直接兌換免運寄出
                             </p>
                         </div>
                     </div>
 
-                    <button
-                        type="button"
-                        onClick={() => !isSpinning && setIsOpen(false)}
-                        disabled={isSpinning}
-                        className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer disabled:opacity-40"
-                    >
-                        <X className="w-5 h-5" />
-                    </button>
+                    <div className="flex items-center gap-3 shrink-0">
+                        <div className="hidden sm:flex items-center gap-2.5 text-xs font-mono font-semibold tabular-nums bg-black/35 border border-white/[0.08] rounded-lg px-3 py-1.5">
+                            <span className="flex items-center gap-1 text-amber-300">
+                                <PPlusIcon className="w-3.5 h-3.5 text-amber-400" />
+                                {pplusBalance.toLocaleString()}
+                            </span>
+                            <span className="h-3 w-px bg-white/[0.12]" />
+                            <span className="flex items-center gap-1 text-cyan-300">
+                                <DiamondIcon className="w-3.5 h-3.5" />
+                                {diamondBalance.toLocaleString()}
+                            </span>
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={() => !isSpinning && setIsOpen(false)}
+                            disabled={isSpinning}
+                            className="p-1.5 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] text-slate-400 hover:text-white transition-colors cursor-pointer disabled:opacity-40"
+                            aria-label="關閉對話框"
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
+                    </div>
                 </div>
 
                 <div className="flex flex-col lg:flex-row">
-                    {/* 左側：獎品精緻展示卡 */}
-                    <div className="w-full lg:w-5/12 p-5 sm:p-7 flex flex-col items-center justify-between bg-gradient-to-b from-[#1a1019]/90 via-[#0e0812] to-[#07050a] border-b lg:border-b-0 lg:border-r border-amber-500/20 relative overflow-hidden">
-                        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-56 h-56 bg-amber-500/15 blur-[90px] rounded-full pointer-events-none" />
-
-                        <div className="w-full flex flex-col items-center space-y-4 relative z-10">
-                            <div className="relative w-full max-w-[230px] sm:max-w-[260px] aspect-square rounded-2xl overflow-hidden border-2 border-amber-400/40 bg-slate-950/90 shadow-[0_0_35px_rgba(245,158,11,0.2)]">
+                    {/* 左欄：獎品展示與價格摘要 */}
+                    <div className="w-full lg:w-[38%] p-5 sm:p-6 flex flex-col items-center justify-between bg-[#070b14] border-b lg:border-b-0 lg:border-r border-white/[0.08] gap-5">
+                        <div className="w-full flex flex-col items-center space-y-4">
+                            <div className="relative w-full max-w-[200px] sm:max-w-[230px] aspect-square rounded-xl overflow-hidden border border-white/[0.12] bg-black/50">
                                 <SafeImage
                                     src={item.imageUrl}
                                     alt={item.name}
                                     fill
                                     className="object-cover"
-                                    sizes="280px"
+                                    sizes="260px"
                                 />
-                                <div className="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full bg-black/75 backdrop-blur-md border border-amber-400/40 text-[10px] font-black text-amber-300 flex items-center gap-1">
-                                    <Gift className="w-3 h-3 text-amber-400" />
-                                    實體獎品免運
+                                <div className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-md bg-black/75 backdrop-blur-md border border-white/[0.12] text-[10px] font-medium text-amber-300 flex items-center gap-1">
+                                    <Gift className="w-3 h-3 text-amber-300" />
+                                    <span>實體免運</span>
                                 </div>
                             </div>
 
-                            <div className="text-center space-y-2 w-full">
-                                <h2 className="text-lg sm:text-xl font-black text-white leading-snug">
+                            <div className="text-center space-y-2.5 w-full">
+                                <h2 className="text-base sm:text-lg font-bold text-white leading-snug line-clamp-2">
                                     {item.name}
                                 </h2>
                                 {item.description && (
-                                    <p className="text-xs text-slate-400 leading-relaxed line-clamp-3 px-2">
+                                    <p className="text-xs text-slate-400 leading-relaxed line-clamp-3 px-1">
                                         {item.description}
                                     </p>
                                 )}
 
-                                <div className="grid grid-cols-2 gap-2 pt-2">
-                                    <div className="p-2.5 rounded-xl bg-slate-900/90 border border-amber-500/25 text-center">
-                                        <span className="text-[10px] text-slate-400 block">直購兌換價</span>
-                                        <span className="text-sm font-mono font-black text-amber-300 flex items-center justify-center gap-1 mt-0.5">
+                                <div className="grid grid-cols-2 divide-x divide-white/[0.08] py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                                    <div className="px-2 text-center">
+                                        <span className="text-[11px] text-slate-400 block">直購兌換價</span>
+                                        <span className="text-sm font-mono font-semibold text-amber-300 inline-flex items-center gap-1 mt-0.5 tabular-nums">
                                             <PPlusIcon className="w-3.5 h-3.5 text-amber-400" />
                                             {item.points.toLocaleString()}
                                         </span>
                                     </div>
-                                    <div className="p-2.5 rounded-xl bg-rose-950/30 border border-rose-500/30 text-center">
-                                        <span className="text-[10px] text-rose-300 block">轉盤單格挑戰</span>
-                                        <span className="text-sm font-mono font-black text-rose-300 flex items-center justify-center gap-1 mt-0.5">
+                                    <div className="px-2 text-center">
+                                        <span className="text-[11px] text-slate-400 block">單格挑戰</span>
+                                        <span className="text-sm font-mono font-semibold text-rose-300 inline-flex items-center gap-1 mt-0.5 tabular-nums">
                                             <PPlusIcon className="w-3.5 h-3.5 text-amber-400" />
                                             {pplusUnitPrice.toLocaleString()}
                                         </span>
@@ -570,285 +547,174 @@ export function PrizeWheelDialog({
                             </div>
                         </div>
 
-                        <div className="mt-5 pt-3 border-t border-white/10 w-full flex items-center justify-center gap-2 text-[11px] text-slate-400 relative z-10">
-                            <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                        <div className="pt-3 border-t border-white/[0.06] w-full flex items-center justify-center gap-1.5 text-[11px] text-slate-500">
+                            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400/80 shrink-0" />
                             <span>Provably Fair 公平驗證 · 實體寄送到府</span>
                         </div>
                     </div>
 
-                    {/* 右側：雙模式互動區 (命運轉盤 / 直接兌換) */}
-                    <div className="w-full lg:w-7/12 p-5 sm:p-7 space-y-5 bg-[#0c0814]">
-                        {/* 錢包餘額列 */}
-                        <div className="p-3 rounded-2xl bg-slate-900/90 border border-white/10 flex items-center justify-between">
-                            <div className="flex items-center gap-2 text-xs text-slate-300 font-bold">
-                                <Wallet className="w-4 h-4 text-amber-400" />
-                                <span>我的餘額</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-xs font-mono font-black">
-                                <div className="flex items-center gap-1.5 text-amber-300 bg-amber-950/50 px-2.5 py-1 rounded-lg border border-amber-500/25">
-                                    <PPlusIcon className="w-3.5 h-3.5 shrink-0" />
-                                    <RefinedPoints value={pplusBalance} currency="pplus" size="xs" variant="luxury" />
-                                </div>
-                                <div className="flex items-center gap-1.5 text-cyan-300 bg-cyan-950/50 px-2.5 py-1 rounded-lg border border-cyan-500/25">
-                                    <DiamondIcon className="w-3.5 h-3.5 shrink-0" />
-                                    <RefinedPoints value={diamondBalance} currency="diamond" size="xs" variant="luxury" />
-                                </div>
+                    {/* 右欄：雙模式互動區 (命運轉盤 / 直接兌換) */}
+                    <div className="w-full lg:w-[62%] p-5 sm:p-6 space-y-4">
+                        {/* 手機版餘額列 */}
+                        <div className="flex sm:hidden items-center justify-between px-3 py-2 rounded-xl bg-white/[0.03] border border-white/[0.08] text-xs font-mono tabular-nums">
+                            <span className="text-slate-400 font-sans">我的餘額</span>
+                            <div className="flex items-center gap-3">
+                                <span className="flex items-center gap-1 text-amber-300 font-semibold">
+                                    <PPlusIcon className="w-3.5 h-3.5 text-amber-400" />
+                                    {pplusBalance.toLocaleString()}
+                                </span>
+                                <span className="flex items-center gap-1 text-cyan-300 font-semibold">
+                                    <DiamondIcon className="w-3.5 h-3.5" />
+                                    {diamondBalance.toLocaleString()}
+                                </span>
                             </div>
                         </div>
 
                         {/* 模式切換器 */}
-                        <div className="grid grid-cols-2 p-1 rounded-2xl bg-slate-950 border border-white/10">
+                        <div className="grid grid-cols-2 p-1 rounded-xl bg-black/40 border border-white/[0.08] gap-1">
                             <button
                                 type="button"
                                 disabled={isSpinning}
                                 onClick={() => setMode('wheel')}
                                 className={cn(
-                                    "py-2.5 px-3 rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer",
+                                    'py-2 px-3 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer',
                                     mode === 'wheel'
-                                        ? "bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 text-white shadow-[0_0_20px_rgba(244,63,94,0.35)]"
-                                        : "text-slate-400 hover:text-white"
+                                        ? 'bg-white/[0.1] text-white border border-rose-400/35'
+                                        : 'text-slate-400 hover:text-slate-200 border border-transparent'
                                 )}
                             >
-                                <Disc3 className="w-4 h-4" />
-                                <span>🎡 命運轉盤拼獎品</span>
+                                <Disc3 className={cn('w-4 h-4', mode === 'wheel' ? 'text-rose-400' : 'text-slate-400')} />
+                                <span>命運轉盤拼獎品</span>
                             </button>
                             <button
                                 type="button"
                                 disabled={isSpinning}
                                 onClick={() => setMode('redeem')}
                                 className={cn(
-                                    "py-2.5 px-3 rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer",
+                                    'py-2 px-3 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer',
                                     mode === 'redeem'
-                                        ? "bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 shadow-[0_0_20px_rgba(245,158,11,0.35)]"
-                                        : "text-slate-400 hover:text-white"
+                                        ? 'bg-white/[0.1] text-white border border-amber-400/35'
+                                        : 'text-slate-400 hover:text-slate-200 border border-transparent'
                                 )}
                             >
-                                <ShoppingBag className="w-4 h-4" />
-                                <span>🛍️ P+ 全額直接兌換</span>
+                                <ShoppingBag className={cn('w-4 h-4', mode === 'redeem' ? 'text-amber-300' : 'text-slate-400')} />
+                                <span>P+ 全額直接兌換</span>
                             </button>
                         </div>
 
                         {mode === 'wheel' ? (
                             <div className="space-y-4">
-                                {/* 圓形 10 等分命運轉盤 */}
-                                <div className="relative flex flex-col items-center justify-center py-2">
-                                    {/* 頂部 12 點鐘黃金指針 */}
-                                    <div className="relative z-30 -mb-3 flex flex-col items-center pointer-events-none">
-                                        <div className="w-4 h-4 rounded-full bg-amber-300 border-2 border-white shadow-[0_0_12px_#fbbf24]" />
-                                        <div className="w-0 h-0 border-l-[11px] border-l-transparent border-r-[11px] border-r-transparent border-t-[20px] border-t-amber-400 -mt-1 drop-shadow-[0_4px_10px_rgba(251,191,36,0.95)]" />
-                                    </div>
+                                {/* 精工機械腕錶風格 10 等分命運轉盤 */}
+                                <FortuneWheel
+                                    idPrefix="prize-wheel"
+                                    selectedNumbers={selectedNumbers}
+                                    wheelRotation={wheelRotation}
+                                    spinTransition={spinTransition}
+                                    disabled={isSpinning}
+                                    onToggleNumber={toggleNumber}
+                                />
 
-                                    {/* 轉盤外框光環 */}
-                                    <div className="relative w-[260px] h-[260px] sm:w-[296px] sm:h-[296px] rounded-full p-2 bg-gradient-to-b from-amber-400/40 via-rose-500/30 to-slate-900 border-2 border-amber-400/50 shadow-[0_0_45px_rgba(244,63,94,0.25),inset_0_0_25px_rgba(0,0,0,0.9)] flex items-center justify-center">
-                                        <svg
-                                            viewBox="0 0 320 320"
-                                            className="w-full h-full rounded-full overflow-visible select-none"
-                                            style={{
-                                                transform: `rotate(${wheelRotation}deg)`,
-                                                transition: spinTransition ? 'transform 3.8s cubic-bezier(0.12, 0.88, 0.2, 1)' : 'none',
-                                            }}
+                                {/* 支付幣別切換 + 快捷選號 */}
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1">
+                                    <div className="grid grid-cols-2 bg-black/40 p-1 rounded-lg border border-white/[0.08] shrink-0">
+                                        <button
+                                            type="button"
+                                            disabled={isSpinning}
+                                            onClick={() => setPaymentCurrency('pplus')}
+                                            className={cn(
+                                                'px-2.5 py-1.5 rounded-md text-xs font-medium flex items-center justify-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap',
+                                                paymentCurrency === 'pplus'
+                                                    ? 'bg-white/[0.12] text-amber-200'
+                                                    : 'text-slate-400 hover:text-slate-200'
+                                            )}
                                         >
-                                            <defs>
-                                                <linearGradient id="prizeSliceActive" x1="0%" y1="0%" x2="100%" y2="100%">
-                                                    <stop offset="0%" stopColor="#f43f5e" />
-                                                    <stop offset="55%" stopColor="#ec4899" />
-                                                    <stop offset="100%" stopColor="#f59e0b" />
-                                                </linearGradient>
-                                                <linearGradient id="prizeSliceOdd" x1="0%" y1="0%" x2="100%" y2="100%">
-                                                    <stop offset="0%" stopColor="#131b2e" />
-                                                    <stop offset="100%" stopColor="#0b101d" />
-                                                </linearGradient>
-                                                <linearGradient id="prizeSliceEven" x1="0%" y1="0%" x2="100%" y2="100%">
-                                                    <stop offset="0%" stopColor="#1b1326" />
-                                                    <stop offset="100%" stopColor="#100b18" />
-                                                </linearGradient>
-                                            </defs>
-
-                                            {wheelSlices.map((slice) => {
-                                                const isSelected = selectedNumbers.includes(slice.num);
-                                                return (
-                                                    <g
-                                                        key={slice.num}
-                                                        onClick={() => toggleNumber(slice.num)}
-                                                        className={cn(!isSpinning && "cursor-pointer hover:brightness-110 transition-all")}
-                                                    >
-                                                        <path
-                                                            d={slice.path}
-                                                            fill={
-                                                                isSelected
-                                                                    ? 'url(#prizeSliceActive)'
-                                                                    : slice.idx % 2 === 0
-                                                                    ? 'url(#prizeSliceOdd)'
-                                                                    : 'url(#prizeSliceEven)'
-                                                            }
-                                                            stroke={isSelected ? '#fde68a' : 'rgba(255,255,255,0.12)'}
-                                                            strokeWidth={isSelected ? 2 : 1}
-                                                        />
-                                                        <text
-                                                            x={slice.tx}
-                                                            y={slice.ty}
-                                                            textAnchor="middle"
-                                                            dominantBaseline="central"
-                                                            transform={`rotate(${slice.rotateDeg}, ${slice.tx}, ${slice.ty})`}
-                                                            fill={isSelected ? '#ffffff' : '#94a3b8'}
-                                                            fontSize={isSelected ? '18' : '15'}
-                                                            fontWeight="900"
-                                                            fontFamily="monospace"
-                                                        >
-                                                            {slice.num}
-                                                        </text>
-                                                    </g>
-                                                );
-                                            })}
-
-                                            {/* 外圈裝飾珠 */}
-                                            {Array.from({ length: 20 }, (_, i) => {
-                                                const deg = i * 18;
-                                                const rad = (deg * Math.PI) / 180;
-                                                const bx = 160 + 153 * Math.cos(rad);
-                                                const by = 160 + 153 * Math.sin(rad);
-                                                return (
-                                                    <circle
-                                                        key={i}
-                                                        cx={bx}
-                                                        cy={by}
-                                                        r={i % 2 === 0 ? 2.5 : 1.8}
-                                                        fill={i % 2 === 0 ? '#fbbf24' : '#f43f5e'}
-                                                    />
-                                                );
-                                            })}
-                                        </svg>
-
-                                        {/* 轉盤正中央勝率核心 */}
-                                        <div className="absolute inset-0 m-auto w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-b from-slate-900 via-[#120b1d] to-black border-2 border-amber-400/70 shadow-[0_0_25px_rgba(0,0,0,0.95)] flex flex-col items-center justify-center z-20 pointer-events-none">
-                                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">中獎勝率</span>
-                                            <span className="text-lg sm:text-xl font-black font-mono text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-rose-300 leading-none mt-0.5">
-                                                {winProbability}%
-                                            </span>
-                                            <span className="text-[9px] text-amber-400/90 font-mono mt-0.5">
-                                                {selectedNumbers.length}/10 格
-                                            </span>
-                                        </div>
+                                            <PPlusIcon className="w-3.5 h-3.5 text-amber-400" />
+                                            <span>{pplusUnitPrice.toLocaleString()}/格</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            disabled={isSpinning}
+                                            onClick={() => setPaymentCurrency('diamond')}
+                                            className={cn(
+                                                'px-2.5 py-1.5 rounded-md text-xs font-medium flex items-center justify-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap',
+                                                paymentCurrency === 'diamond'
+                                                    ? 'bg-white/[0.12] text-cyan-200'
+                                                    : 'text-slate-400 hover:text-slate-200'
+                                            )}
+                                        >
+                                            <DiamondIcon className="w-3.5 h-3.5" />
+                                            <span>{diamondUnitPrice.toLocaleString()}/格</span>
+                                        </button>
                                     </div>
 
-                                    <p className="text-[11px] text-slate-400 mt-2">
-                                        👆 可直接點擊轉盤扇區或下方號碼選擇幸運格（每格 10% 機率）
-                                    </p>
-                                </div>
-
-                                {/* 支付幣別切換 */}
-                                <div className="grid grid-cols-2 gap-2">
-                                    <button
-                                        type="button"
-                                        disabled={isSpinning}
-                                        onClick={() => setPaymentCurrency('pplus')}
-                                        className={cn(
-                                            "p-2.5 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer",
-                                            paymentCurrency === 'pplus'
-                                                ? "bg-amber-950/50 border-amber-400 text-amber-100 shadow-[0_0_15px_rgba(245,158,11,0.2)]"
-                                                : "bg-slate-900/60 border-white/10 text-slate-400 hover:text-white"
-                                        )}
-                                    >
-                                        <div className="flex items-center gap-2">
-                                            <PPlusIcon className="w-4 h-4 text-amber-400 shrink-0" />
-                                            <div>
-                                                <div className="text-xs font-black">紅利 P+ 支付</div>
-                                                <div className="text-[10px] font-mono text-amber-300">{pplusUnitPrice.toLocaleString()} P+ / 格</div>
-                                            </div>
-                                        </div>
-                                        {paymentCurrency === 'pplus' && <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" />}
-                                    </button>
-
-                                    <button
-                                        type="button"
-                                        disabled={isSpinning}
-                                        onClick={() => setPaymentCurrency('diamond')}
-                                        className={cn(
-                                            "p-2.5 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer",
-                                            paymentCurrency === 'diamond'
-                                                ? "bg-cyan-950/50 border-cyan-400 text-cyan-100 shadow-[0_0_15px_rgba(6,182,212,0.2)]"
-                                                : "bg-slate-900/60 border-white/10 text-slate-400 hover:text-white"
-                                        )}
-                                    >
-                                        <div className="flex items-center gap-2">
-                                            <DiamondIcon className="w-4 h-4 shrink-0" />
-                                            <div>
-                                                <div className="text-xs font-black">鑽石支付</div>
-                                                <div className="text-[10px] font-mono text-cyan-300">{diamondUnitPrice.toLocaleString()} 💎 / 格</div>
-                                            </div>
-                                        </div>
-                                        {paymentCurrency === 'diamond' && <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" />}
-                                    </button>
-                                </div>
-
-                                {/* 快捷選號與 1~10 格按鈕 */}
-                                <div className="space-y-2">
                                     <div className="flex items-center gap-1.5 flex-wrap">
                                         <button
                                             type="button"
                                             disabled={isSpinning}
                                             onClick={() => handleQuickSelect('random')}
-                                            className="px-2.5 py-1 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 text-[11px] font-bold flex items-center gap-1 cursor-pointer"
+                                            className="px-2.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.09] border border-white/[0.08] text-slate-200 text-[11px] font-medium flex items-center gap-1 cursor-pointer"
                                         >
-                                            <Dices className="w-3 h-3" /> 隨機 1 格 (10%)
+                                            <Dices className="w-3 h-3 text-rose-300" /> 隨機
                                         </button>
                                         <button
                                             type="button"
                                             disabled={isSpinning}
                                             onClick={() => handleQuickSelect('odd')}
-                                            className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-white/10 text-slate-300 text-[11px] font-bold cursor-pointer"
+                                            className="px-2.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.09] border border-white/[0.08] text-slate-300 text-[11px] font-medium cursor-pointer"
                                         >
-                                            單數 (50%)
+                                            單數
                                         </button>
                                         <button
                                             type="button"
                                             disabled={isSpinning}
                                             onClick={() => handleQuickSelect('even')}
-                                            className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-white/10 text-slate-300 text-[11px] font-bold cursor-pointer"
+                                            className="px-2.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.09] border border-white/[0.08] text-slate-300 text-[11px] font-medium cursor-pointer"
                                         >
-                                            雙數 (50%)
+                                            雙數
                                         </button>
                                         <button
                                             type="button"
                                             disabled={isSpinning}
                                             onClick={() => handleQuickSelect('high8')}
-                                            className="px-2.5 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-[11px] font-bold cursor-pointer"
+                                            className="px-2.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.09] border border-white/[0.08] text-amber-300 text-[11px] font-medium cursor-pointer"
                                         >
-                                            8 格高勝率 (80%)
+                                            8格 (80%)
                                         </button>
                                         {selectedNumbers.length > 0 && (
                                             <button
                                                 type="button"
                                                 disabled={isSpinning}
                                                 onClick={() => handleQuickSelect('clear')}
-                                                className="px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 text-[11px] font-bold ml-auto flex items-center gap-1 cursor-pointer"
+                                                className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.09] border border-white/[0.08] text-slate-400 hover:text-white cursor-pointer"
+                                                title="清空選號"
                                             >
-                                                <RotateCcw className="w-3 h-3" /> 清空
+                                                <RotateCcw className="w-3.5 h-3.5" />
                                             </button>
                                         )}
                                     </div>
+                                </div>
 
-                                    <div className="grid grid-cols-5 gap-1.5">
-                                        {numbers.map(num => {
-                                            const isSelected = selectedNumbers.includes(num);
-                                            return (
-                                                <button
-                                                    key={num}
-                                                    type="button"
-                                                    disabled={isSpinning}
-                                                    onClick={() => toggleNumber(num)}
-                                                    className={cn(
-                                                        "h-9 rounded-xl font-mono text-xs sm:text-sm font-black border transition-all cursor-pointer",
-                                                        isSelected
-                                                            ? "bg-gradient-to-r from-rose-500 to-amber-500 border-amber-200 text-white shadow-[0_0_12px_rgba(244,63,94,0.5)]"
-                                                            : "bg-slate-900/80 border-white/10 text-slate-400 hover:border-rose-400/50 hover:text-white"
-                                                    )}
-                                                >
-                                                    #{num}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
+                                {/* 1~10 精簡單列號碼條 */}
+                                <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5">
+                                    {numbers.map(num => {
+                                        const isSelected = selectedNumbers.includes(num);
+                                        return (
+                                            <button
+                                                key={num}
+                                                type="button"
+                                                disabled={isSpinning}
+                                                onClick={() => toggleNumber(num)}
+                                                className={cn(
+                                                    'h-8 rounded-lg font-mono text-xs font-semibold border transition-colors cursor-pointer',
+                                                    isSelected
+                                                        ? 'bg-rose-500/25 border-amber-300/70 text-white'
+                                                        : 'bg-white/[0.03] border-white/[0.08] text-slate-400 hover:border-white/[0.2] hover:text-white'
+                                                )}
+                                            >
+                                                {num}
+                                            </button>
+                                        );
+                                    })}
                                 </div>
 
                                 {/* 開獎結果與中獎收件表單 */}

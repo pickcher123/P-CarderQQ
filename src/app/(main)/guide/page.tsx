@@ -114,7 +114,7 @@ export default function BeginnerGuidePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#070b14] text-slate-100 pb-28 pt-4 sm:pt-8 relative overflow-hidden">
+    <div className="min-h-screen text-slate-100 pb-28 pt-4 sm:pt-8 relative overflow-hidden">
       {/* 頂部賽博氛圍光暈 */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-[400px] bg-gradient-to-b from-amber-500/10 via-cyan-500/5 to-transparent blur-[140px] pointer-events-none" />
 

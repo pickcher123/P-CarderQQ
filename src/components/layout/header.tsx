@@ -10,6 +10,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { doc } from 'firebase/firestore';
 import type { UserProfile } from '@/types/user-profile';
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import type { SystemConfig } from '@/types/system';
 import { userLevels } from '@/components/member-level-crown';
@@ -58,6 +59,26 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
 
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
 
+  // 閒置時預載核心導覽頁面，讓區域切換更即時
+  useEffect(() => {
+    const enabledRoutes = navLinks
+      .filter((link) => !link.flag || isFeatureEnabled(link.flag))
+      .map((link) => link.href);
+
+    const prefetchRoutes = () => {
+      enabledRoutes.forEach((href) => {
+        router.prefetch(href);
+      });
+    };
+
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      const idleId = (window as any).requestIdleCallback(prefetchRoutes, { timeout: 1500 });
+      return () => (window as any).cancelIdleCallback(idleId);
+    }
+    const timer = setTimeout(prefetchRoutes, 600);
+    return () => clearTimeout(timer);
+  }, [router, isFeatureEnabled]);
+
   // 用戶登入時自動同步本地儲存之領券福利至 Firestore
   useEffect(() => {
     if (user && firestore) {
@@ -105,11 +126,20 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                 <Link
                   key={link.href}
                   href={link.href}
+                  prefetch={true}
+                  onMouseEnter={() => router.prefetch(link.href)}
                   className={cn(
-                    "flex items-center gap-1.5 transition-[background-color,color,opacity,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] hover:opacity-100 whitespace-nowrap py-1 px-1.5 rounded-lg hover:bg-white/5",
-                    isActive ? "text-cyan-300 font-bold bg-cyan-500/10" : "text-muted-foreground opacity-80"
+                    "relative flex items-center gap-1.5 transition-[color,opacity,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] hover:opacity-100 whitespace-nowrap py-1.5 px-2.5 rounded-lg hover:bg-white/[0.04]",
+                    isActive ? "text-cyan-300 font-semibold" : "text-muted-foreground opacity-80"
                   )}
                 >
+                  {isActive && (
+                    <motion.span
+                      layoutId="header-nav-active-pill"
+                      transition={{ type: "spring", stiffness: 480, damping: 36 }}
+                      className="absolute inset-0 rounded-lg bg-cyan-500/10 border border-cyan-400/20 -z-10"
+                    />
+                  )}
                   <Icon className={cn(
                     "h-3.5 w-3.5 transition-colors duration-150", 
                     isActive ? link.color : "text-muted-foreground"

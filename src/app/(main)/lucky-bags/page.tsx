@@ -75,8 +75,7 @@ export interface LuckBagWithCount extends LuckBag {
 export default function LuckyBagsPage() {
     const firestore = useFirestore();
     const router = useRouter();
-    const [luckyBagsWithData, setLuckyBagsWithData] = useState<LuckBagWithCount[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [participantCounts, setParticipantCounts] = useState<Record<string, number>>({});
     const [showAllCompleted, setShowAllCompleted] = useState(false);
     const [activeCarouselIndex, setActiveCarouselIndex] = useState(0);
     const [viewMode, setViewMode] = useState<'carousel' | 'list'>('carousel');
@@ -91,66 +90,81 @@ export default function LuckyBagsPage() {
 
     const { data: allLuckyBags, isLoading: isLoadingBags } = useCollection<LuckBag>(luckBagsQuery);
     
-    const { data: allCards, isLoading: isLoadingCards } = useCollection<CardData>(
+    const { data: allCards } = useCollection<CardData>(
         useMemoFirebase(() => firestore ? collection(firestore, 'allCards') : null, [firestore])
     );
 
-    const fetchExtraData = useCallback(async () => {
-        if (!allLuckyBags || !firestore || !allCards) return;
+    // 僅針對「進行中」的福袋並行查詢參與格數，已開獎福袋直接使用 totalParticipants，大幅加快載入速度
+    useEffect(() => {
+        if (!allLuckyBags || !firestore) return;
+        const activeBags = allLuckyBags.filter(b => b.status !== '已開獎');
+        if (activeBags.length === 0) return;
 
-        // 僅在初次無資料時展示骨架屏，後續背景更新靜默平滑更新，杜絕頁面閃爍鈍感
-        if (luckyBagsWithData.length === 0) {
-            setIsLoading(true);
-        }
-        try {
-            const cardMap = new Map(allCards.map(c => [c.id, c]));
-
-            const bagsWithData = await Promise.all(
-                allLuckyBags.map(async (bag) => {
+        let cancelled = false;
+        Promise.all(
+            activeBags.map(async (bag) => {
+                try {
                     const purchasesColRef = collection(firestore, 'luckBags', bag.id, 'luckBagPurchases');
                     const countSnapshot = await getCountFromServer(query(purchasesColRef));
-                    const participantCount = countSnapshot.data().count;
+                    return [bag.id, countSnapshot.data().count] as const;
+                } catch {
+                    return [bag.id, 0] as const;
+                }
+            })
+        ).then((entries) => {
+            if (cancelled) return;
+            setParticipantCounts((prev) => {
+                const next = { ...prev };
+                for (const [id, count] of entries) {
+                    next[id] = count;
+                }
+                return next;
+            });
+        });
 
-                    const prizeCards = {
-                        first: bag.prizes?.first ? cardMap.get(bag.prizes.first) : undefined,
-                        second: bag.prizes?.second ? cardMap.get(bag.prizes.second) : undefined,
-                        third: bag.prizes?.third ? cardMap.get(bag.prizes.third) : undefined,
-                    };
-                    
-                    const otherPrizesList = (bag.otherPrizes || [])
-                        .filter(p => p.type !== 'points')
-                        .map(p => {
-                            const card = cardMap.get(p.cardId);
-                            return card ? { ...card, prizeId: p.prizeId } : null;
-                        })
-                        .filter((c): c is CardData & { prizeId: string } => !!c);
-                    
-                    const otherPointsList = (bag.otherPrizes || [])
-                        .filter(p => p.type === 'points')
-                        .map(p => ({ prizeId: p.prizeId, points: p.points || 0 }));
+        return () => {
+            cancelled = true;
+        };
+    }, [allLuckyBags, firestore]);
 
-                    return {
-                        ...bag,
-                        participantCount,
-                        prizeCards,
-                        otherPrizesList,
-                        otherPointsList,
-                    };
+    // 即時組合福袋資料，不阻塞等待 allCards 或所有子集合查詢
+    const luckyBagsWithData = useMemo<LuckBagWithCount[]>(() => {
+        if (!allLuckyBags) return [];
+        const cardMap = new Map((allCards || []).map(c => [c.id, c]));
+
+        return allLuckyBags.map((bag) => {
+            const participantCount =
+                bag.status === '已開獎'
+                    ? (bag.totalParticipants || 0)
+                    : (participantCounts[bag.id] ?? 0);
+
+            const prizeCards = {
+                first: bag.prizes?.first ? cardMap.get(bag.prizes.first) : undefined,
+                second: bag.prizes?.second ? cardMap.get(bag.prizes.second) : undefined,
+                third: bag.prizes?.third ? cardMap.get(bag.prizes.third) : undefined,
+            };
+
+            const otherPrizesList = (bag.otherPrizes || [])
+                .filter(p => p.type !== 'points')
+                .map(p => {
+                    const card = cardMap.get(p.cardId);
+                    return card ? { ...card, prizeId: p.prizeId } : null;
                 })
-            );
-            setLuckyBagsWithData(bagsWithData);
-        } catch (error) {
-            console.error("Error fetching luck bag data:", error);
-        } finally {
-            setIsLoading(false);
-        }
-    }, [allLuckyBags, allCards, firestore, luckyBagsWithData.length]);
+                .filter((c): c is CardData & { prizeId: string } => !!c);
 
-    useEffect(() => {
-        if (!isLoadingBags && !isLoadingCards && allLuckyBags) {
-            fetchExtraData();
-        }
-    }, [allLuckyBags, allCards, isLoadingBags, isLoadingCards, fetchExtraData]);
+            const otherPointsList = (bag.otherPrizes || [])
+                .filter(p => p.type === 'points')
+                .map(p => ({ prizeId: p.prizeId, points: p.points || 0 }));
+
+            return {
+                ...bag,
+                participantCount,
+                prizeCards,
+                otherPrizesList,
+                otherPointsList,
+            };
+        });
+    }, [allLuckyBags, allCards, participantCounts]);
 
     const { inProgressBags, completedBags } = useMemo(() => {
         const inProgress = luckyBagsWithData.filter(bag => bag.status !== '已開獎');
@@ -158,7 +172,7 @@ export default function LuckyBagsPage() {
         return { inProgressBags: inProgress, completedBags: completed };
     }, [luckyBagsWithData]);
 
-    const finalIsLoading = (isLoadingBags || isLoadingCards || isLoading) && luckyBagsWithData.length === 0;
+    const finalIsLoading = isLoadingBags && luckyBagsWithData.length === 0;
 
     // 當前旋轉門聚焦的紅包福袋
     const currentActiveBag = inProgressBags[activeCarouselIndex] || inProgressBags[0];
@@ -201,14 +215,14 @@ export default function LuckyBagsPage() {
                                                   </div>
                                                   <div className="min-w-0 flex-1">
                                                       <div className="flex items-center gap-2">
-                                                          <span className="text-[10px] font-black text-amber-300 uppercase tracking-wider">
+                                                          <span className="text-[11px] font-semibold text-amber-300 tracking-wide">
                                                               當前紅包焦點
                                                           </span>
-                                                          <span className="text-[10px] text-yellow-300 font-mono">
+                                                          <span className="text-[11px] text-amber-100/80 font-mono tabular-nums">
                                                               (已認購 {currentActiveBag.participantCount} / {currentActiveBag.totalParticipants} 格)
                                                           </span>
                                                       </div>
-                                                      <p className="text-sm sm:text-base font-black text-white truncate">
+                                                      <p className="text-sm sm:text-base font-bold tracking-wide text-[#FFF7E2] truncate mt-0.5">
                                                           {currentActiveBag.name}
                                                       </p>
                                                   </div>
@@ -216,7 +230,7 @@ export default function LuckyBagsPage() {
 
                                               <Link
                                                   href={`/lucky-bags/${currentActiveBag.id}`}
-                                                  className="w-full sm:w-auto shrink-0 flex items-center justify-center gap-2 font-headline font-black text-xs sm:text-sm text-slate-950 bg-gradient-to-r from-yellow-400 via-amber-300 to-yellow-500 px-6 py-2.5 rounded-xl shadow-[0_0_20px_rgba(245,158,11,0.5)] hover:brightness-110 active:scale-95 transition-all border border-yellow-200"
+                                                  className="w-full sm:w-auto shrink-0 flex items-center justify-center gap-2 font-sans font-bold tracking-wide text-xs sm:text-sm text-slate-950 bg-gradient-to-r from-yellow-400 via-amber-300 to-yellow-500 px-6 py-2.5 rounded-xl shadow-[0_0_20px_rgba(245,158,11,0.45)] hover:brightness-110 active:scale-95 transition-all border border-yellow-200"
                                               >
                                                   <span>拆開紅包 · 立即選位</span>
                                                   <ArrowRight className="w-4 h-4" />

@@ -41,6 +41,7 @@ import {
   type PeelCorner,
   PEEL_CORNER_LABELS,
   detectPeelCorner,
+  detectPeelDirectionFromSwipe,
   isNearCornerHotspot,
   computeCornerPeelPercent,
   getCornerPeelGeometry,
@@ -850,7 +851,7 @@ export default function OpenPackPage() {
         if (step !== 'ready-to-reveal' || isChanging) return;
         window.getSelection()?.removeAllRanges();
         const rect = squeezeRef.current?.getBoundingClientRect();
-        const corner = rect ? detectPeelCorner(e.clientX, e.clientY, rect) : 'tr';
+        const corner = rect ? detectPeelCorner(e.clientX, e.clientY, rect) : 'bottom';
         setPeelCorner(corner);
         startGestureRef.current = {
             x: e.clientX,
@@ -859,7 +860,8 @@ export default function OpenPackPage() {
             width: rect?.width || 230,
             height: rect?.height || 368,
             corner,
-        };
+            locked: false,
+        } as any;
         setIsSqueezing(true);
         try {
             (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
@@ -870,12 +872,22 @@ export default function OpenPackPage() {
 
     const handleSqueezeMove = (e: React.PointerEvent) => {
         if (!isSqueezing) return;
-        const g = startGestureRef.current;
+        const g = startGestureRef.current as typeof startGestureRef.current & { locked?: boolean };
         const dx = e.clientX - g.x;
         const dy = e.clientY - g.y;
+        const dist = Math.hypot(dx, dy);
+
+        // 依據實際滑動向量動態決定全方位 8 向翻開方向
+        if (!g.locked && dist >= 10) {
+            const dir = detectPeelDirectionFromSwipe(dx, dy);
+            g.corner = dir;
+            g.locked = true;
+            setPeelCorner(dir);
+        }
+
         const nextPct = computeCornerPeelPercent(g.corner, dx, dy, g.width, g.height);
         setRevealPercent(nextPct);
-        if (nextPct >= 94) {
+        if (nextPct >= 92) {
             setIsSqueezing(false);
             completeReveal();
         }
@@ -1118,32 +1130,39 @@ export default function OpenPackPage() {
             {/* Status & Title Header */}
             <div className="w-full flex flex-col items-center justify-center shrink-0 z-[15] select-none py-1 min-h-[48px]">
                 {(step === 'ready-to-reveal' || step === 'revealing') && currentPrize && revealPercent === 100 && (
-                    <div className="text-center animate-fade-in-up select-none max-w-sm px-2">
-                        <p className="text-[10px] text-white/50 uppercase font-black tracking-[0.2em]">
-                            {currentPrize.type === 'last-prize' ? '🎉 最後賞限定' : `第 ${revealedIndex + 1} / ${drawnPrizes.length} 項`}
+                    <div className="text-center animate-fade-in-up select-none w-full max-w-xl px-3">
+                        <p className="text-[10px] text-slate-400 font-bold tracking-[0.18em] tabular-nums">
+                            {currentPrize.type === 'last-prize' ? '最後賞限定' : `第 ${revealedIndex + 1} / ${drawnPrizes.length} 項`}
                         </p>
-                        <div className="flex items-center justify-center gap-1.5 mt-0.5">
+                        <div className="flex items-center justify-center mt-0.5">
                             {(currentPrize.type === 'points' || currentPrize.isPoints || currentPrize.name?.includes('隨機球員')) ? (
-                                <h2 className="text-base sm:text-xl font-headline font-black text-white uppercase drop-shadow-lg truncate max-w-[280px]">
+                                <h2 className="text-xs sm:text-sm font-bold text-white leading-snug text-center break-words">
                                     {currentPrize.rarity === 'rare' || currentPrize.rarity === 'legendary' ? '隨機球員 特卡' : '隨機球員 普/特 卡'}
                                 </h2>
                             ) : (
-                                <h2 className="text-base sm:text-xl font-headline font-black text-white drop-shadow-lg truncate max-w-[280px]">
+                                <h2 className="text-[11px] sm:text-xs font-bold text-white leading-snug text-center break-words">
                                     {currentPrize.name}
                                 </h2>
                             )}
                         </div>
-                        <div className="flex items-center justify-center gap-2 mt-0.5 flex-wrap">
-                            <span className={cn("text-[10px] font-black uppercase tracking-[0.25em]", visual.label === '點數獎' ? 'text-cyan-400' : visual.color)}>
+                        <div className="flex items-center justify-center gap-1.5 mt-1 flex-wrap">
+                            <span className={cn(
+                                "text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border",
+                                visual.label === 'LEGENDARY'
+                                    ? "bg-amber-400/15 text-[#FDE68A] border-amber-300/40"
+                                    : visual.label === 'RARE'
+                                    ? "bg-cyan-400/15 text-cyan-300 border-cyan-400/35"
+                                    : "bg-white/[0.08] text-slate-200 border-white/[0.15]"
+                            )}>
                                 {(currentPrize.type === 'points' || currentPrize.isPoints || currentPrize.name?.includes('隨機球員')) ? (currentPrize.rarity === 'rare' || currentPrize.rarity === 'legendary' ? '特卡' : '普/特卡') : visual.label}
                             </span>
                             {!(currentPrize.type === 'points' || currentPrize.isPoints || currentPrize.name?.includes('隨機球員')) && currentPrize.category && (
-                                <span className="text-[10px] font-bold text-slate-300 px-1.5 py-0.2 rounded bg-white/10 border border-white/15">
+                                <span className="text-[9px] font-bold text-slate-200 px-2 py-0.5 rounded-full bg-white/[0.06] border border-white/[0.12]">
                                     {currentPrize.category}
                                 </span>
                             )}
                             {!(currentPrize.type === 'points' || currentPrize.isPoints || currentPrize.name?.includes('隨機球員')) && (currentPrize.sellPrice || 0) > 0 && (
-                                <span className="text-[10px] font-code font-black text-amber-300 px-1.5 py-0.2 rounded bg-amber-500/15 border border-amber-400/30">
+                                <span className="text-[9px] font-mono font-bold text-[#FDE68A] px-2 py-0.5 rounded-full bg-amber-400/15 border border-amber-300/35 tabular-nums">
                                     估值 {Number(currentPrize.sellPrice).toLocaleString()}
                                 </span>
                             )}
@@ -1151,12 +1170,13 @@ export default function OpenPackPage() {
                     </div>
                 )}
                 {step === 'done' && (
-                    <div className="text-center animate-fade-in-up select-none">
-                        <h2 className="text-xl sm:text-3xl font-headline font-black text-white uppercase italic drop-shadow-[0_0_20px_rgba(6,182,212,0.4)]">
-                            開獎結算
-                        </h2>
-                        <p className="text-[10px] sm:text-xs text-primary font-bold mt-0.5 uppercase tracking-wider">
-                            本次共獲得 {sessionPrizes.length} 項戰利品
+                    <div className="text-center animate-fade-in-up select-none space-y-1">
+                        <div className="inline-flex items-center gap-2 px-3 py-0.5 rounded-full bg-white/[0.04] border border-amber-300/30">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#FDE68A]" />
+                            <span className="text-[10px] font-bold tracking-widest text-[#FDE68A] uppercase">開獎結算</span>
+                        </div>
+                        <p className="text-xs sm:text-sm text-slate-200 font-bold tabular-nums">
+                            本次共獲得 <span className="text-[#FDE68A] font-black">{sessionPrizes.length}</span> 項戰利品
                         </p>
                     </div>
                 )}
@@ -1264,7 +1284,7 @@ export default function OpenPackPage() {
                                         {/* 四角自由撕開遮罩 (支援左上 / 右上 / 左下 / 右下任一角往內滑動或輕觸掀開) */}
                                         <div 
                                             className={cn(
-                                                "absolute inset-0 z-30 bg-slate-900 rounded-[1.1rem] sm:rounded-[1.3rem] border-2 sm:border-3 border-primary/50 flex flex-col items-center justify-center pointer-events-none select-none shadow-[inset_0_0_24px_rgba(6,182,212,0.3)]",
+                                                "absolute inset-0 z-30 bg-[#0a0f1c] rounded-[1.1rem] sm:rounded-[1.3rem] border-2 sm:border-3 border-amber-300/45 flex flex-col items-center justify-center pointer-events-none select-none shadow-[inset_0_0_24px_rgba(251,191,36,0.16)]",
                                                 isSqueezing || isChanging
                                                     ? "transition-none"
                                                     : "transition-[clip-path,opacity] duration-400 ease-[cubic-bezier(0.22,1,0.36,1)]",
@@ -1291,14 +1311,14 @@ export default function OpenPackPage() {
                                             )}
 
                                             <div className="relative">
-                                                <div className="absolute inset-0 bg-primary/25 blur-xl" />
-                                                <Disc3 className="w-10 h-10 sm:w-12 sm:h-12 text-primary animate-spin-slow mb-2 sm:mb-3 relative z-10" />
+                                                <div className="absolute inset-0 bg-amber-400/20 blur-xl" />
+                                                <Disc3 className="w-10 h-10 sm:w-12 sm:h-12 text-[#FDE68A] animate-spin-slow mb-2 sm:mb-3 relative z-10" />
                                             </div>
-                                            <span className="font-headline text-xs sm:text-sm font-black text-primary tracking-[0.25em] italic drop-shadow-md">P+ CARDER</span>
-                                            <p className="text-[10px] text-amber-200/90 mt-2 sm:mt-3 font-black tracking-wider text-center px-3">
+                                            <span className="font-headline text-xs sm:text-sm font-black text-[#FDE68A] tracking-[0.25em] italic drop-shadow-md">P+ CARDER</span>
+                                            <p className="text-[10px] text-slate-300 mt-2 sm:mt-3 font-bold tracking-wider text-center px-3">
                                                 {isSqueezing && revealPercent > 0
-                                                    ? `正從${PEEL_CORNER_LABELS[peelCorner]}角掀開...`
-                                                    : '任選四角滑動或輕觸掀開'}
+                                                    ? `正從${PEEL_CORNER_LABELS[peelCorner]}掀開...`
+                                                    : '全方向滑動掀開，或輕觸翻牌'}
                                             </p>
                                         </div>
 
@@ -1323,29 +1343,29 @@ export default function OpenPackPage() {
                         </div>
 
                         {currentPrize?.ticketNumber && (
-                            <div className="mt-1.5 px-3 py-1 rounded-full bg-amber-400 text-slate-950 font-black text-xs shadow-md border border-yellow-200 flex items-center gap-1">
-                                <span>🎯 一番賞番號 #{currentPrize.ticketNumber}</span>
+                            <div className="mt-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-[#FDE68A] to-amber-400 text-[#120d02] font-black text-xs shadow-md flex items-center gap-1 tabular-nums">
+                                <span>一番賞番號 #{currentPrize.ticketNumber}</span>
                             </div>
                         )}
 
                         {step === 'ready-to-reveal' && (
-                            <div className="flex items-center gap-2 mt-2 sm:mt-3 shrink-0">
+                            <div className="flex items-center gap-2 mt-2.5 sm:mt-3 shrink-0">
                                 <Button 
                                     variant="ghost" 
                                     size="sm" 
                                     onClick={completeReveal}
-                                    className="h-7 sm:h-8 px-3 sm:px-4 rounded-full bg-white/10 border border-white/20 text-[9px] sm:text-[10px] font-black text-primary uppercase tracking-wider hover:bg-primary/20 transition-all shadow-lg shrink-0 cursor-pointer"
+                                    className="h-8 px-3.5 sm:px-4 rounded-full bg-white/[0.06] border border-white/[0.15] text-[10px] sm:text-xs font-bold text-white hover:bg-white/[0.12] hover:border-amber-300/40 transition-all shadow-lg shrink-0 cursor-pointer"
                                 >
-                                    <FastForward className="w-3 h-3 mr-1" /> 翻開本張
+                                    <FastForward className="w-3.5 h-3.5 mr-1 text-[#FDE68A]" /> 翻開本張
                                 </Button>
                                 {drawnPrizes.length > 1 && (
                                     <Button 
                                         variant="ghost" 
                                         size="sm" 
                                         onClick={skipAllToDone}
-                                        className="h-7 sm:h-8 px-3 sm:px-4 rounded-full bg-amber-500/20 border border-amber-500/40 text-[9px] sm:text-[10px] font-black text-amber-300 uppercase tracking-wider hover:bg-amber-500/30 transition-all shadow-lg shrink-0 cursor-pointer"
+                                        className="h-8 px-3.5 sm:px-4 rounded-full bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] text-[10px] sm:text-xs font-black hover:brightness-105 transition-all shadow-lg shrink-0 cursor-pointer"
                                     >
-                                        <Zap className="w-3 h-3 mr-1 text-amber-400 fill-amber-400" /> 全部跳過結算
+                                        <Zap className="w-3.5 h-3.5 mr-1 fill-[#120d02]" /> 全部跳過結算
                                     </Button>
                                 )}
                             </div>
@@ -1353,25 +1373,28 @@ export default function OpenPackPage() {
                     </motion.div>
                 </div>
             ) : (
-                <div className="flex-1 w-full max-w-4xl px-2 sm:px-4 z-20 min-h-0 flex flex-col justify-center relative select-none py-1">
-                    {/* Horizontal swipeable prize shelf */}
+                <div className="flex-1 w-full max-w-5xl px-2 sm:px-4 z-20 min-h-0 flex flex-col justify-center relative select-none py-1">
+                    {/* Horizontal swipeable prize shelf (centered when <= 3 items) */}
                     <div 
                         id="prize-scroll-container" 
-                        className="flex flex-row gap-3 sm:gap-4 py-2 px-2 overflow-x-auto snap-x snap-mandatory scrollbar-hide scroll-smooth items-center min-h-0"
+                        className={cn(
+                            "flex flex-row gap-3 sm:gap-4 py-2 px-2 overflow-x-auto snap-x snap-mandatory scrollbar-hide scroll-smooth items-center min-h-0",
+                            sessionPrizes.length <= 3 && "justify-center"
+                        )}
                     >
                         {sessionPrizes.map((p, i) => (
                             <div 
                                 key={i} 
-                                className="animate-fade-in-up snap-center w-[125px] sm:w-[170px] md:w-[200px] flex-shrink-0 relative" 
+                                className="animate-fade-in-up snap-center w-[145px] sm:w-[175px] md:w-[200px] flex-shrink-0 relative flex flex-col gap-1.5" 
                                 style={{ animationDelay: `${i * 70}ms` }}
                             >
                                 {p.ticketNumber && (
-                                    <div className="absolute top-2 left-2 z-30 px-2 py-0.5 rounded-md bg-amber-400 text-slate-950 font-black text-[10px] shadow-md border border-yellow-200 pointer-events-none">
-                                        🎯 #{p.ticketNumber}
+                                    <div className="absolute top-2 left-2 z-30 px-2 py-0.5 rounded-md bg-gradient-to-r from-[#FDE68A] to-amber-400 text-[#120d02] font-black text-[10px] shadow-md pointer-events-none tabular-nums">
+                                        #{p.ticketNumber}
                                     </div>
                                 )}
                                 {p.type === 'points' || p.isPoints || p.name?.includes('隨機球員') ? (
-                                    <div className="w-full aspect-[2.5/4] rounded-xl overflow-hidden shadow-2xl transition-transform duration-200 hover:scale-[1.03] relative">
+                                    <div className="w-full aspect-[2.5/4] rounded-xl overflow-hidden shadow-2xl border border-white/[0.1] hover:border-amber-300/45 transition-all duration-200 hover:scale-[1.03] relative">
                                         <RandomPlayerCard 
                                             rarity={p.rarity} 
                                             points={p.points}
@@ -1382,7 +1405,7 @@ export default function OpenPackPage() {
                                     </div>
                                 ) : (
                                     <div 
-                                        className="w-full aspect-[2.5/4] rounded-xl overflow-hidden shadow-2xl transition-transform duration-200 hover:scale-[1.03] group cursor-zoom-in relative"
+                                        className="w-full aspect-[2.5/4] rounded-xl overflow-hidden shadow-2xl border border-white/[0.1] hover:border-amber-300/45 transition-all duration-200 hover:scale-[1.03] group cursor-zoom-in relative"
                                         onClick={() => setPreviewCard({ ...p, rarity: p.rarity })}
                                     >
                                         <CardItem 
@@ -1396,6 +1419,9 @@ export default function OpenPackPage() {
                                         />
                                     </div>
                                 )}
+                                <div className="px-2 py-1 rounded-lg bg-[#0a0f1c]/90 border border-white/[0.08] text-center">
+                                    <p className="text-[11px] font-bold text-slate-200 truncate">{p.name || '戰利品'}</p>
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -1404,7 +1430,7 @@ export default function OpenPackPage() {
                     {sessionPrizes.length > 2 && (
                         <>
                             <button 
-                                className="absolute left-1 top-1/2 -translate-y-1/2 z-50 bg-black/70 backdrop-blur-md p-2.5 rounded-full border border-white/20 shadow-xl hover:bg-white/10 transition-all hidden md:flex items-center justify-center cursor-pointer text-white"
+                                className="absolute left-1 top-1/2 -translate-y-1/2 z-50 bg-[#0a0f1c]/85 backdrop-blur-md p-2.5 rounded-full border border-amber-300/40 shadow-xl hover:bg-amber-400/15 transition-all hidden md:flex items-center justify-center cursor-pointer text-[#FDE68A]"
                                 onClick={() => {
                                     const container = document.getElementById('prize-scroll-container');
                                     if (container) container.scrollBy({ left: -260, behavior: 'smooth' });
@@ -1414,7 +1440,7 @@ export default function OpenPackPage() {
                             </button>
 
                             <button 
-                                className="absolute right-1 top-1/2 -translate-y-1/2 z-50 bg-black/70 backdrop-blur-md p-2.5 rounded-full border border-white/20 shadow-xl hover:bg-white/10 transition-all hidden md:flex items-center justify-center cursor-pointer text-white"
+                                className="absolute right-1 top-1/2 -translate-y-1/2 z-50 bg-[#0a0f1c]/85 backdrop-blur-md p-2.5 rounded-full border border-amber-300/40 shadow-xl hover:bg-amber-400/15 transition-all hidden md:flex items-center justify-center cursor-pointer text-[#FDE68A]"
                                 onClick={() => {
                                     const container = document.getElementById('prize-scroll-container');
                                     if (container) container.scrollBy({ left: 260, behavior: 'smooth' });
@@ -1425,46 +1451,46 @@ export default function OpenPackPage() {
                         </>
                     )}
 
-                    <p className="text-center text-[10px] text-white/40 font-bold mt-1">
-                        👉 左右滑動瀏覽戰利品 • 點擊卡片放大查看
+                    <p className="text-center text-[11px] text-slate-400 font-medium mt-1">
+                        {sessionPrizes.length > 1 ? '左右滑動瀏覽戰利品 • 點擊卡片放大查看' : '點擊卡片放大查看詳情'}
                     </p>
                 </div>
             )}
 
             {/* Bottom Action Area: Strictly Anchored, Compact & Mobile-Safe */}
-            <div className="w-full max-w-sm shrink-0 z-30 pb-2 sm:pb-3 px-2">
+            <div className="w-full max-w-md shrink-0 z-30 pb-2 sm:pb-4 px-2">
                  {(step === 'revealing' || step === 'done') && (
-                    <div className="bg-slate-950/90 backdrop-blur-2xl border border-white/15 p-2.5 sm:p-3.5 rounded-2xl sm:rounded-3xl w-full shadow-[0_10px_40px_rgba(0,0,0,0.85)] animate-fade-in-up transition-all space-y-2">
+                    <div className="bg-[#0a0f1c]/95 backdrop-blur-2xl border border-white/[0.1] border-t-2 border-t-amber-300/60 p-3 sm:p-4 rounded-2xl w-full shadow-[0_24px_64px_rgba(0,0,0,0.88)] animate-fade-in-up transition-all space-y-2.5">
                         {cashbackPPoints > 0 && (
-                            <div className="flex items-center justify-center gap-1.5 font-black text-[10px] uppercase text-accent animate-pulse">
-                                <Sparkles className="w-3 h-3" />
-                                <span>VIP回饋: +{cashbackPPoints}</span>
-                                <PPlusIcon className="w-3 h-3" />
+                            <div className="flex items-center justify-center gap-1.5 font-bold text-[11px] text-[#FDE68A] tabular-nums">
+                                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                                <span>VIP 回饋：+{cashbackPPoints}</span>
+                                <PPlusIcon className="w-3.5 h-3.5 text-amber-300" />
                             </div>
                         )}
                         
                         {step === 'revealing' && revealedIndex < drawnPrizes.length - 1 ? (
-                            <div className="space-y-1.5">
+                            <div className="space-y-2">
                                 <Button 
                                     onClick={nextPrize} 
-                                    className="w-full h-11 sm:h-12 font-black bg-primary text-primary-foreground rounded-xl sm:rounded-2xl shadow-xl text-xs sm:text-sm hover:brightness-110 active:scale-95 transition-all cursor-pointer"
+                                    className="w-full h-11 sm:h-12 font-black bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] rounded-xl shadow-[0_8px_24px_rgba(251,191,36,0.28)] text-xs sm:text-sm hover:brightness-105 active:scale-[0.98] transition-all cursor-pointer tabular-nums"
                                 >
-                                    {drawnPrizes[revealedIndex+1]?.type === 'last-prize' ? '🎉 揭曉最後賞限定！' : `揭曉下一項 (${revealedIndex+1}/${drawnPrizes.length})`}
+                                    {drawnPrizes[revealedIndex+1]?.type === 'last-prize' ? '揭曉最後賞限定！' : `揭曉下一項 (${revealedIndex+1}/${drawnPrizes.length})`}
                                 </Button>
                                 <Button 
                                     variant="outline"
                                     onClick={skipAllToDone} 
-                                    className="w-full h-8 font-black bg-amber-500/10 border-amber-500/30 text-amber-300 rounded-xl text-[11px] hover:bg-amber-500/20 active:scale-95 transition-all cursor-pointer gap-1"
+                                    className="w-full h-8 font-bold bg-white/[0.04] border-white/[0.1] text-amber-200 rounded-xl text-[11px] hover:bg-white/[0.08] hover:border-amber-300/40 active:scale-[0.98] transition-all cursor-pointer gap-1"
                                 >
-                                    <Zap className="w-3 h-3 text-amber-400 fill-amber-400" />
+                                    <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
                                     <span>跳過剩餘動畫，直接結算全部</span>
                                 </Button>
                             </div>
                         ) : (step === 'done' || (step === 'revealing' && revealedIndex === drawnPrizes.length - 1)) && (
-                            <div className="space-y-1.5">
-                                <div className="flex gap-1.5 w-full">
+                            <div className="space-y-2">
+                                <div className="flex gap-2 w-full">
                                     {isLimitReachedForSingle ? (
-                                        <Button disabled className="flex-1 h-12 text-xs font-black rounded-xl bg-slate-800 text-slate-500 border border-slate-700 opacity-50 italic">
+                                        <Button disabled className="flex-1 h-12 text-xs font-bold rounded-xl bg-white/[0.04] text-slate-500 border border-white/[0.08]">
                                             今日次數已用完
                                         </Button>
                                     ) : (
@@ -1491,20 +1517,20 @@ export default function OpenPackPage() {
                                         />
                                     )}
                                 </div>
-                                <div className="grid grid-cols-2 gap-1.5 pt-0.5">
-                                    <Button asChild variant="outline" className="h-9 text-[11px] font-bold border-white/10 rounded-xl bg-white/5 hover:bg-white/10 text-slate-200">
+                                <div className="grid grid-cols-2 gap-2 pt-0.5">
+                                    <Button asChild variant="outline" className="h-9 text-xs font-semibold border-white/[0.1] rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-200 hover:text-white">
                                         <Link href="/draw">返回卡池</Link>
                                     </Button>
                                     
                                     {step === 'done' ? (
-                                        <Button asChild variant="outline" className="h-9 text-[11px] font-bold border-primary/50 text-primary rounded-xl bg-primary/10 shadow-[0_0_15px_rgba(6,182,212,0.25)] hover:bg-primary/20">
+                                        <Button asChild variant="outline" className="h-9 text-xs font-bold border-amber-300/40 text-[#FDE68A] rounded-xl bg-amber-400/[0.12] hover:bg-amber-400/[0.2] hover:text-amber-200">
                                             <Link href="/collection">前往收藏庫</Link>
                                         </Button>
                                     ) : (
                                         <Button 
                                             onClick={() => setStep('done')} 
                                             variant="outline" 
-                                            className="h-9 text-[11px] font-bold border-primary/50 text-primary rounded-xl bg-primary/10 shadow-[0_0_15px_rgba(6,182,212,0.25)] hover:bg-primary/20 cursor-pointer"
+                                            className="h-9 text-xs font-bold border-amber-300/40 text-[#FDE68A] rounded-xl bg-amber-400/[0.12] hover:bg-amber-400/[0.2] hover:text-amber-200 cursor-pointer"
                                         >
                                             查看本次總結
                                         </Button>
@@ -1513,24 +1539,24 @@ export default function OpenPackPage() {
 
                                 {/* 🌟 拼卡 · 自選專區專屬動線引導 */}
                                 {step === 'done' && (
-                                    <div className="mt-2.5 p-2.5 sm:p-3 rounded-2xl bg-gradient-to-r from-rose-950/80 via-slate-950 to-pink-950/70 border border-rose-500/30 flex items-center justify-between gap-2.5 shadow-[0_0_20px_rgba(244,63,94,0.15)]">
-                                        <div className="flex items-center gap-2 min-w-0">
-                                            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-300 shrink-0">
-                                                <CrossedCardsIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                    <div className="mt-1 p-2.5 sm:p-3 rounded-xl bg-white/[0.03] border border-amber-300/25 flex items-center justify-between gap-2.5">
+                                        <div className="flex items-center gap-2.5 min-w-0">
+                                            <div className="w-8 h-8 rounded-xl bg-amber-400/15 border border-amber-300/35 flex items-center justify-center text-[#FDE68A] shrink-0">
+                                                <CrossedCardsIcon className="w-4 h-4" />
                                             </div>
                                             <div className="min-w-0">
                                                 <div className="flex items-center gap-1.5 flex-wrap">
-                                                    <span className="text-xs font-black text-white">沒抽到心儀大獎？</span>
-                                                    <span className="px-1.5 py-0.2 rounded text-[9px] font-black bg-rose-500 text-white shadow-xs">
+                                                    <span className="text-xs font-bold text-white">沒抽到心儀大獎？</span>
+                                                    <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-amber-400/15 text-[#FDE68A] border border-amber-300/30">
                                                         自選專區
                                                     </span>
                                                 </div>
-                                                <p className="text-[10px] text-slate-300 truncate mt-0.5">
+                                                <p className="text-[10px] text-slate-400 truncate mt-0.5">
                                                     前往「拼卡」挑選自選卡片與實體獎品，1/10 成本直接挑戰！
                                                 </p>
                                             </div>
                                         </div>
-                                        <Button asChild size="sm" className="h-7 sm:h-8 px-2.5 sm:px-3 text-[11px] font-black rounded-xl bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white shrink-0 shadow-md">
+                                        <Button asChild size="sm" className="h-8 px-3 text-xs font-black rounded-xl bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 hover:brightness-105 text-[#120d02] shrink-0 shadow-md">
                                             <Link href="/bet">前往拼卡</Link>
                                         </Button>
                                     </div>

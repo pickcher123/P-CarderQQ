@@ -123,28 +123,38 @@ export function PurchasePointsDialog({ children }: { children: React.ReactNode }
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="max-w-[min(92vw,390px)] p-0 overflow-hidden rounded-2xl bg-[#080d1a] border border-cyan-500/30 shadow-[0_20px_50px_rgba(0,0,0,0.85)] text-white">
+      <DialogContent className="max-w-[min(94vw,440px)] p-0 overflow-hidden rounded-2xl bg-[#0a0f1c]/95 backdrop-blur-2xl border border-amber-300/20 shadow-[0_24px_64px_rgba(0,0,0,0.88)] text-white">
         
-        {/* Top Glow Accent */}
-        <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-48 h-20 bg-cyan-500/20 rounded-full blur-2xl pointer-events-none" />
-        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_12px_#22d3ee]" />
+        {/* Top Ambient Rim & Glow */}
+        <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-64 h-28 bg-amber-400/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -top-16 right-8 w-36 h-20 bg-cyan-400/10 rounded-full blur-2xl pointer-events-none" />
+        <div className="absolute top-0 left-0 right-0 h-[1.5px] bg-gradient-to-r from-transparent via-amber-300/70 to-transparent" />
 
-        <div className="relative z-10 p-4 sm:p-5 space-y-4">
+        <div className="relative z-10 p-5 sm:p-6 space-y-5">
           {/* Header */}
-          <DialogHeader className="space-y-1 text-left pr-8">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/30">
-                  <DiamondIcon className="h-4 w-4 text-cyan-400" />
+          <DialogHeader className="space-y-1.5 text-left pr-8">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-400/15 via-white/[0.04] to-amber-400/15 border border-white/10 flex items-center justify-center shadow-inner">
+                  <DiamondIcon className="h-4.5 w-4.5 text-cyan-300 drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]" />
                 </div>
-                <DialogTitle className="text-lg font-black font-headline tracking-wide text-white">
-                  點數儲值
-                </DialogTitle>
+                <div>
+                  <DialogTitle className="text-lg font-black font-headline tracking-wide text-white leading-tight">
+                    點數儲值
+                  </DialogTitle>
+                  <DialogDescription className="text-slate-400 text-xs mt-0.5">
+                    即時入帳 • {isBonusActive && bonusMultiplier > 1 ? (
+                      <span className="text-amber-300 font-bold">限時狂歡 {bonusMultiplier}X 加贈中</span>
+                    ) : (
+                      <>高額方案享最高 <span className="text-amber-300 font-bold">10%</span> 加贈</>
+                    )}
+                  </DialogDescription>
+                </div>
               </div>
 
               {/* Current Points Badge */}
               {user && (
-                <div className="flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-slate-900/90 border border-cyan-500/25 text-xs shadow-[0_0_10px_rgba(6,182,212,0.12)]">
+                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.09] text-xs shrink-0">
                   <span className="text-[11px] text-slate-400 font-medium">餘額</span>
                   <RefinedPoints 
                     value={userProfile?.points ?? 0}
@@ -155,18 +165,10 @@ export function PurchasePointsDialog({ children }: { children: React.ReactNode }
                 </div>
               )}
             </div>
-
-            <DialogDescription className="text-slate-400 text-xs">
-              即時入帳 • {isBonusActive && bonusMultiplier > 1 ? (
-                <span className="text-amber-300 font-black animate-pulse">🔥 限時狂歡：高額方案額外享 {bonusMultiplier}X 雙倍紅利贈點！</span>
-              ) : (
-                <>高額方案享最高 <span className="text-amber-400 font-bold">10%</span> 加贈</>
-              )}
-            </DialogDescription>
           </DialogHeader>
 
           {/* Package Selection Grid (3 Columns) */}
-          <div className="grid grid-cols-3 gap-2 pt-0.5">
+          <div className="grid grid-cols-3 gap-2.5 pt-1">
             {effectivePackages.map((pkg) => {
               const isSelected = selectedPackage.price === pkg.price;
               return (
@@ -175,28 +177,35 @@ export function PurchasePointsDialog({ children }: { children: React.ReactNode }
                   type="button"
                   onClick={() => setSelectedPackage(pkg)}
                   className={cn(
-                    'relative flex flex-col items-center justify-center p-2.5 rounded-xl border transition-all duration-150 text-center outline-none cursor-pointer',
+                    'group relative flex flex-col items-center justify-between px-2.5 py-3.5 rounded-xl border transition-all duration-200 text-center outline-none cursor-pointer',
                     isSelected
-                      ? 'bg-gradient-to-b from-cyan-950/80 to-slate-900 border-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.25)] ring-1 ring-cyan-400/50 scale-[1.02]'
-                      : 'bg-slate-900/60 border-white/10 hover:border-cyan-500/40 hover:bg-slate-900/90'
+                      ? 'bg-gradient-to-b from-amber-400/[0.12] via-[#101729] to-[#0a0f1c] border-amber-300/65 shadow-[0_0_24px_rgba(251,191,36,0.14)] ring-1 ring-amber-300/30'
+                      : 'bg-white/[0.03] border-white/[0.08] hover:border-amber-300/30 hover:bg-white/[0.05]'
                   )}
                 >
                   {/* Bonus Tag */}
                   {pkg.bonus ? (
-                    <div className="absolute -top-2 left-1/2 -translate-x-1/2 z-10">
+                    <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 z-10">
                       <div className={cn(
-                        "text-slate-950 text-[9px] font-black px-1.5 py-0.2 rounded-full shadow border whitespace-nowrap",
+                        'text-[10px] font-black px-2 py-0.5 rounded-full shadow-md border whitespace-nowrap tracking-wide',
                         pkg.isDoubleEvent 
-                          ? "bg-gradient-to-r from-amber-400 to-rose-500 text-white border-amber-300 animate-pulse shadow-sm" 
-                          : "bg-amber-500 border-amber-300/40"
+                          ? 'bg-gradient-to-r from-amber-400 to-rose-500 text-white border-amber-200/60 animate-pulse' 
+                          : 'bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] border-amber-200/70'
                       )}>
-                        {pkg.isDoubleEvent ? `🔥 +${pkg.bonus}% (${bonusMultiplier}X)` : `+${pkg.bonus}%`}
+                        {pkg.isDoubleEvent ? `+${pkg.bonus}% (${bonusMultiplier}X)` : `+${pkg.bonus}%`}
                       </div>
                     </div>
                   ) : null}
 
+                  {/* Selected Check Dot */}
+                  {isSelected && (
+                    <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-amber-300/20 border border-amber-300/50 flex items-center justify-center">
+                      <Check className="w-2.5 h-2.5 text-amber-300 stroke-[3]" />
+                    </div>
+                  )}
+
                   {/* Main Points Amount */}
-                  <div className="flex items-center justify-center gap-1 mt-0.5">
+                  <div className="flex items-center justify-center gap-1 mt-1">
                     <RefinedPoints 
                       value={pkg.points}
                       currency="diamond"
@@ -204,31 +213,67 @@ export function PurchasePointsDialog({ children }: { children: React.ReactNode }
                       variant={isSelected ? 'luxury' : 'glow'}
                       className="font-black"
                     />
-                    <DiamondIcon className="w-3.5 h-3.5 text-cyan-400 shrink-0 drop-shadow-[0_0_6px_rgba(34,211,238,0.6)]" />
+                    <DiamondIcon className={cn(
+                      'w-3.5 h-3.5 shrink-0 transition-transform duration-200',
+                      isSelected
+                        ? 'text-cyan-300 drop-shadow-[0_0_8px_rgba(34,211,238,0.7)] scale-110'
+                        : 'text-cyan-400/80 group-hover:text-cyan-300'
+                    )} />
+                  </div>
+
+                  {/* Bonus Subtext */}
+                  <div className="h-4 flex items-center justify-center mt-0.5">
+                    {pkg.bonusPoints > 0 ? (
+                      <span className={cn(
+                        'text-[10px] font-semibold tabular-nums',
+                        isSelected ? 'text-amber-300' : 'text-amber-300/75'
+                      )}>
+                        含贈 {pkg.bonusPoints.toLocaleString()} 點
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-slate-500 font-medium">標準方案</span>
+                    )}
                   </div>
 
                   {/* NT$ Price */}
                   <div
                     className={cn(
-                      'text-[11px] font-numbers font-bold mt-1 px-2 py-0.5 rounded transition-colors tabular-nums',
+                      'w-full text-[11px] font-numbers font-bold mt-2 py-1 rounded-lg transition-colors tabular-nums border',
                       isSelected
-                        ? 'bg-cyan-500/20 text-cyan-200 border border-cyan-500/30'
-                        : 'text-slate-400 bg-white/5'
+                        ? 'bg-amber-400/15 text-amber-200 border-amber-300/35'
+                        : 'bg-white/[0.04] text-slate-300 border-white/[0.06] group-hover:border-white/15'
                     )}
                   >
-                    ${pkg.price.toLocaleString()}
+                    NT$ {pkg.price.toLocaleString()}
                   </div>
                 </button>
               );
             })}
           </div>
 
+          {/* Selected Summary Bar */}
+          <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.08] text-xs">
+            <div className="flex items-center gap-1.5 text-slate-400">
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              <span>本次實得</span>
+              {currentSelectedPkg.bonusPoints > 0 && (
+                <span className="text-[11px] text-amber-300/90 font-medium tabular-nums">
+                  ({currentSelectedPkg.basePoints.toLocaleString()} + {currentSelectedPkg.bonusPoints.toLocaleString()} 贈點)
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-1 font-black text-white tabular-nums">
+              <span className="text-sm text-amber-200">{currentSelectedPkg.points.toLocaleString()}</span>
+              <DiamondIcon className="w-3.5 h-3.5 text-cyan-300" />
+            </div>
+          </div>
+
           {/* Action Button & Security Notice */}
-          <div className="space-y-2 pt-1">
+          <div className="space-y-2.5">
             <Button
               onClick={handlePurchase}
               disabled={isProcessing}
-              className="w-full h-11 rounded-xl bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 font-black text-sm shadow-[0_0_20px_rgba(6,182,212,0.35)] transition-all active:scale-[0.98] cursor-pointer"
+              className="w-full h-11 rounded-xl bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 hover:from-[#FEF08A] hover:to-amber-300 text-[#120d02] font-black text-sm shadow-[0_8px_28px_rgba(251,191,36,0.28)] transition-all active:scale-[0.98] cursor-pointer"
             >
               {isProcessing ? (
                 <div className="flex items-center gap-1.5">
@@ -237,15 +282,15 @@ export function PurchasePointsDialog({ children }: { children: React.ReactNode }
                 </div>
               ) : (
                 <span className="flex items-center justify-center gap-1.5">
-                  <span>支付 NT$ {currentSelectedPkg.price.toLocaleString()}（得 {currentSelectedPkg.points.toLocaleString()} 點）</span>
-                  <ArrowRight className="w-3.5 h-3.5 stroke-[2.5]" />
+                  <span>立即支付 NT$ {currentSelectedPkg.price.toLocaleString()}</span>
+                  <ArrowRight className="w-4 h-4 stroke-[2.5]" />
                 </span>
               )}
             </Button>
 
-            <div className="flex items-center justify-center gap-1 text-[10px] text-slate-400 font-mono">
-              <ShieldCheck className="w-3 h-3 text-emerald-400 shrink-0" />
-              <span>支援 信用卡 / ATM 轉帳 • PAYUNi 安全加密</span>
+            <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-400">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              <span>支援信用卡 / ATM 轉帳 • PAYUNi 安全加密</span>
             </div>
           </div>
 

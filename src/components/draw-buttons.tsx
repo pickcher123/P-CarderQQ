@@ -174,35 +174,26 @@ export function DrawButtons({
                 }
 
                 return (
-                    <div className="flex gap-1.5 w-full">
+                    <div className="flex gap-2 w-full">
                         {configs.map((cfg) => {
                             const isDisabled = !isTrialMode && (isLoadingStats || !cfg.canDraw);
+                            const isHighlighted = !isDisabled && (cfg.isThird || cfg.isAllIn);
                             return (
                                 <Button
                                     key={cfg.count}
                                     className={cn(
-                                        "flex-1 h-12 sm:h-14 text-xs sm:text-sm font-black border-2 transition-all shadow-md rounded-xl sm:rounded-2xl flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1 px-1 py-1 cursor-pointer",
+                                        "flex-1 h-12 sm:h-13 text-xs sm:text-sm font-bold border transition-all rounded-xl flex flex-col items-center justify-center gap-0.5 px-1.5 py-1.5 cursor-pointer active:scale-[0.97]",
                                         isTrialMode
                                             ? cfg.isThird
-                                                ? "bg-fuchsia-950 text-fuchsia-100 border-fuchsia-500 hover:bg-fuchsia-900"
-                                                : cfg.count === 3
-                                                    ? "bg-purple-900 text-purple-100 border-purple-500 hover:bg-purple-800"
-                                                    : "bg-purple-950 text-purple-100 border-purple-600 hover:bg-purple-900"
+                                                ? "bg-gradient-to-br from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] border-amber-200/80 font-black"
+                                                : "bg-white/[0.05] hover:bg-white/[0.09] text-white border-white/[0.12] hover:border-amber-300/45"
                                             : isDisabled
-                                                ? "bg-slate-900 text-slate-500 border-slate-800 opacity-60"
-                                                : cfg.isAllIn
-                                                    ? "bg-gradient-to-r from-amber-950 via-rose-950 to-amber-950 text-amber-200 border-amber-500/80 hover:border-amber-400 hover:bg-amber-900 shadow-amber-500/20"
-                                                    : cfg.isThird
-                                                        ? isPPoint 
-                                                            ? "bg-yellow-950 text-yellow-100 border border-yellow-700 hover:bg-yellow-900" 
-                                                            : "bg-amber-950 text-amber-100 border border-amber-800 hover:bg-amber-900 hover:border-amber-700"
-                                                        : cfg.count === 3
-                                                            ? isPPoint 
-                                                                ? "bg-amber-900 text-amber-100 border border-amber-700 hover:bg-amber-800" 
-                                                                : "bg-indigo-950 text-indigo-100 border border-indigo-800 hover:bg-indigo-900 hover:border-indigo-700"
-                                                            : isPPoint 
-                                                                ? "bg-amber-950/80 text-amber-100 border border-amber-800/80 hover:border-amber-600 hover:bg-amber-900/80" 
-                                                                : "bg-slate-950 text-slate-200 border border-slate-800 hover:border-slate-600 hover:bg-slate-900"
+                                                ? "bg-white/[0.02] text-slate-500 border-white/[0.06] opacity-60 cursor-not-allowed"
+                                                : isHighlighted
+                                                    ? cfg.isAllIn
+                                                        ? "bg-gradient-to-br from-[#FDE68A] via-amber-400 to-rose-400 text-[#120d02] border-amber-200/80 font-black shadow-[0_6px_20px_rgba(244,63,94,0.25)] hover:brightness-105"
+                                                        : "bg-gradient-to-br from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] border-amber-200/80 font-black shadow-[0_6px_20px_rgba(251,191,36,0.25)] hover:brightness-105"
+                                                    : "bg-white/[0.04] hover:bg-white/[0.09] text-white border-white/[0.12] hover:border-amber-300/45"
                                     )}
                                     onClick={() => handleButtonClick(cfg.count)}
                                     disabled={isDisabled}
@@ -214,14 +205,27 @@ export function DrawButtons({
                                     ) : (
                                         <>
                                             <span className={cn(
-                                                "text-[10px] sm:text-xs opacity-90 whitespace-nowrap",
-                                                cfg.isAllIn && "text-amber-300 font-black animate-pulse"
+                                                "text-[11px] sm:text-xs whitespace-nowrap leading-tight",
+                                                isHighlighted ? "text-[#120d02] font-black" : "text-slate-200 font-bold"
                                             )}>
                                                 {cfg.label}
                                             </span>
-                                            <span className="text-[11px] sm:text-xs flex items-center font-headline truncate font-bold">
-                                                <CurrencyIcon />
-                                                {isTrialMode ? '免費' : cfg.price.toLocaleString()}
+                                            <span className={cn(
+                                                "text-[11px] sm:text-xs flex items-center font-mono font-black tabular-nums leading-tight",
+                                                isHighlighted ? "text-[#120d02]" : "text-[#FDE68A]"
+                                            )}>
+                                                {isTrialMode ? (
+                                                    '免費'
+                                                ) : (
+                                                    <>
+                                                        {isPPoint ? (
+                                                            <PPlusIcon className={cn("w-3 h-3 mr-0.5 shrink-0", isHighlighted ? "text-[#120d02]" : "text-amber-300")} />
+                                                        ) : (
+                                                            <DiamondIcon className={cn("w-3 h-3 mr-0.5 shrink-0", isHighlighted ? "text-[#120d02]" : "text-cyan-300")} />
+                                                        )}
+                                                        {cfg.price.toLocaleString()}
+                                                    </>
+                                                )}
                                             </span>
                                         </>
                                     )}
@@ -234,11 +238,11 @@ export function DrawButtons({
 
             {isTrialMode && (
                 <Button 
-                    className="w-full h-9 sm:h-10 text-xs font-black rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-slate-950 border-b-2 border-amber-800 shadow-[0_0_15px_rgba(245,158,11,0.4)] hover:brightness-110 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                    className="w-full h-9 sm:h-10 text-xs font-black rounded-xl bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] shadow-[0_6px_20px_rgba(251,191,36,0.25)] hover:brightness-105 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                     onClick={() => performDraw(1)}
                 >
-                    <Sparkles className="w-3.5 h-3.5 fill-slate-950" />
-                    <span>⚡ 轉為正式開獎 (扣 {isPPoint ? 'P點' : '鑽石'} 派發真卡)</span>
+                    <Sparkles className="w-3.5 h-3.5 fill-[#120d02]" />
+                    <span>轉為正式開獎 (扣 {isPPoint ? 'P點' : '鑽石'} 派發真卡)</span>
                 </Button>
             )}
         </div>

@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
+import { RouteProgressBar } from "@/components/layout/route-progress-bar";
 import { AnimatedBackground } from "@/components/animated-background";
 import { useDoc, useFirestore, useMemoFirebase } from "@/firebase";
 import { doc } from "firebase/firestore";
@@ -108,6 +109,7 @@ export default function MainLayout({
         particleEffect={activeParticleEffect}
       />
       <div className="relative z-10 flex min-h-screen flex-col w-full flex-1">
+        <RouteProgressBar />
         {isMaintenanceActive && isAdmin && (
           <div className="sticky top-0 z-50 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 px-3.5 py-1.5 text-xs font-black flex items-center justify-between shadow-lg border-b border-amber-600">
             <div className="flex items-center gap-2">
@@ -123,9 +125,10 @@ export default function MainLayout({
         <Header systemConfig={systemConfig} />
         {isMarqueeVisible && <NewsMarquee isDrawing={isDrawing} />}
         <motion.main 
-          initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 8 }}
+          key={pathname}
+          initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 6 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
+          transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
           className="flex-1 pb-36 sm:pb-40 md:pb-16 overflow-x-hidden max-w-full w-full"
         >
           {children}

@@ -7,7 +7,7 @@ import { doc } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Trophy, Clock, Zap, Star, Diamond, Layers, X, Package, Sparkles, Eye, ChevronRight, Gift, Ticket, Target, Lock, Unlock, Flame, AlertCircle, ShieldAlert } from 'lucide-react';
+import { Trophy, Clock, Zap, Star, Diamond, Layers, X, Package, Sparkles, Eye, ChevronLeft, ChevronRight, Gift, Ticket, Target, Lock, Unlock, Flame, AlertCircle, ShieldAlert } from 'lucide-react';
 import { PPlusIcon, DiamondIcon } from '@/components/icons';
 import { SafeImage } from '@/components/safe-image';
 import { format } from 'date-fns';
@@ -647,20 +647,13 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                     {/* 🌟 卡包一體化背景系統 (深黑曜石拉絲鋁箔、菱形光柵折射、卡片專屬聚光台與卡包立體摺痕) */}
                     <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
                         {/* 1. 底層：深黑曜石拉絲金屬鋁箔基底 (Obsidian Brushed Foil Base) */}
-                        <div className="absolute inset-0 bg-gradient-to-b from-[#080a10] via-[#0d121c] to-[#07090f]" />
+                        <div className="absolute inset-0 bg-gradient-to-b from-[#0a0f1c] via-[#0d1424] to-[#070a12]" />
 
-                        {/* 2. 實體卡包微菱格鋁箔折射紋理 (Prism Diamond Foil Micro-Pattern) */}
+                        {/* 2. 實體卡包斜向拉絲金屬微紋理 (Sleek Diagonal Brushed Foil Micro-Pattern) */}
                         <div 
-                            className="absolute inset-0 opacity-[0.14] group-hover:opacity-[0.22] transition-opacity duration-700"
+                            className="absolute inset-0 opacity-[0.45] group-hover:opacity-[0.65] transition-opacity duration-700"
                             style={{
-                                backgroundImage: `
-                                    linear-gradient(45deg, rgba(245, 158, 11, 0.25) 25%, transparent 25%),
-                                    linear-gradient(-45deg, rgba(245, 158, 11, 0.25) 25%, transparent 25%),
-                                    linear-gradient(45deg, transparent 75%, rgba(245, 158, 11, 0.25) 75%),
-                                    linear-gradient(-45deg, transparent 75%, rgba(245, 158, 11, 0.25) 75%)
-                                `,
-                                backgroundSize: '16px 16px',
-                                backgroundPosition: '0 0, 0 8px, 8px -8px, -8px 0px'
+                                backgroundImage: `repeating-linear-gradient(135deg, rgba(253, 230, 138, 0.03) 0px, rgba(253, 230, 138, 0.03) 1px, transparent 1px, transparent 12px)`
                             }}
                         />
 
@@ -952,20 +945,95 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                     </div>
                                 </div>
                                 
-                                {/* 卡片角標 */}
-                                <div className="absolute top-1.5 left-1.5 z-30">
-                                    <span className="bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-black text-[9px] px-1.5 py-0.2 rounded shadow uppercase tracking-wider flex items-center gap-0.5">
-                                        <Star className="w-2.5 h-2.5 fill-slate-950" />
+                                {/* 卡片角標 (TOP / 最後賞) */}
+                                <div className="absolute top-2 left-2 z-40 flex items-center gap-1.5">
+                                    <span className="bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] font-black text-[9px] px-2 py-0.5 rounded-full shadow-md uppercase tracking-wider flex items-center gap-0.5">
+                                        <Star className="w-2.5 h-2.5 fill-[#120d02]" />
                                         <span>{featuredPrize.isLastPrize ? '最後賞' : 'TOP'}</span>
+                                    </span>
+                                    {topPrizesPreview.length > 1 && (
+                                        <span className="bg-black/65 backdrop-blur-md text-amber-200/90 border border-white/15 font-mono text-[9px] px-1.5 py-0.5 rounded-full tabular-nums">
+                                            {selectedPrizeIndex + 1}/{topPrizesPreview.length}
+                                        </span>
+                                    )}
+                                </div>
+
+                                {/* 右上角：查看卡池明細按鈕 */}
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setInventoryFilterRarity('all');
+                                        setIsInventoryOpen(true);
+                                    }}
+                                    className="absolute top-2 right-2 z-40 flex items-center gap-1 px-2 py-1 rounded-full bg-black/75 hover:bg-amber-400/20 border border-white/15 hover:border-amber-300/50 text-[10px] font-bold text-slate-200 hover:text-[#FDE68A] backdrop-blur-md transition-colors cursor-pointer"
+                                >
+                                    <Eye className="w-3 h-3 text-amber-300" />
+                                    <span>查看卡表</span>
+                                </button>
+
+                                {/* 左右切換大賞卡箭頭 (當有多張展示卡時顯示，z-40 確保不被完售遮罩擋住) */}
+                                {topPrizesPreview.length > 1 && (
+                                    <>
+                                        <button
+                                            type="button"
+                                            aria-label="上一張展示卡"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setSelectedPrizeIndex((prev) => (prev - 1 + topPrizesPreview.length) % topPrizesPreview.length);
+                                            }}
+                                            className="absolute left-2 top-1/2 -translate-y-1/2 z-40 w-8 h-8 rounded-full bg-[#0a0f1c]/85 hover:bg-amber-400/20 border border-amber-300/35 hover:border-amber-300/75 text-[#FDE68A] flex items-center justify-center backdrop-blur-md shadow-lg transition-all cursor-pointer active:scale-95"
+                                        >
+                                            <ChevronLeft className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            aria-label="下一張展示卡"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setSelectedPrizeIndex((prev) => (prev + 1) % topPrizesPreview.length);
+                                            }}
+                                            className="absolute right-2 top-1/2 -translate-y-1/2 z-40 w-8 h-8 rounded-full bg-[#0a0f1c]/85 hover:bg-amber-400/20 border border-amber-300/35 hover:border-amber-300/75 text-[#FDE68A] flex items-center justify-center backdrop-blur-md shadow-lg transition-all cursor-pointer active:scale-95"
+                                        >
+                                            <ChevronRight className="w-4 h-4" />
+                                        </button>
+                                    </>
+                                )}
+
+                                {/* 完售遮罩 (z-30 且 pointer-events-none，確保蓋在 z-20 卡片上且不遮擋 z-40 切換按鈕) */}
+                                {featuredPrize.quantity <= 0 && !featuredPrize.isPoolCover && (
+                                    <div className="absolute inset-0 bg-black/65 backdrop-blur-[2px] flex items-center justify-center z-30 pointer-events-none">
+                                        <span className="px-3.5 py-1.5 rounded-xl bg-[#0a0f1c]/90 border border-rose-400/60 text-rose-300 font-black text-xs tracking-wider shadow-[0_8px_24px_rgba(0,0,0,0.75)]">
+                                            已抽出
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* 展台下方：精選卡名 + 切換指示點 */}
+                            <div className="w-full mt-1.5 px-1 flex flex-col items-center gap-1.5">
+                                <div className="w-full flex items-center justify-center px-2.5 py-1.5 rounded-xl bg-white/[0.03] border border-white/[0.07]">
+                                    <span className="text-[11px] font-bold text-slate-200 truncate text-center">
+                                        {featuredPrize.name}
                                     </span>
                                 </div>
 
-                                {/* 完售遮罩 */}
-                                {featuredPrize.quantity <= 0 && !featuredPrize.isPoolCover && (
-                                    <div className="absolute inset-0 bg-black/75 backdrop-blur-[2px] flex items-center justify-center z-30">
-                                        <span className="bg-rose-600 text-white font-black text-xs px-2.5 py-1 rounded-lg border border-rose-400 shadow-lg">
-                                            已抽出
-                                        </span>
+                                {topPrizesPreview.length > 1 && (
+                                    <div className="flex items-center justify-center gap-1.5">
+                                        {topPrizesPreview.slice(0, 6).map((_, idx) => (
+                                            <button
+                                                key={idx}
+                                                type="button"
+                                                aria-label={`檢視第 ${idx + 1} 張卡片`}
+                                                onClick={() => setSelectedPrizeIndex(idx)}
+                                                className={cn(
+                                                    "h-1.5 rounded-full transition-all cursor-pointer",
+                                                    selectedPrizeIndex === idx
+                                                        ? "w-4 bg-[#FDE68A]"
+                                                        : "w-1.5 bg-white/20 hover:bg-white/40"
+                                                )}
+                                            />
+                                        ))}
                                     </div>
                                 )}
                             </div>
@@ -973,8 +1041,8 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                     );
                 })()}
 
-                        {/* 📊 賞別微統計與剩餘進度條（黑金卡包金屬質感，點擊傳說/稀有/普通即可查看該賞別剩下什麼卡） */}
-                        <div className="mb-2 bg-gradient-to-b from-slate-950/95 via-black/95 to-slate-950/95 backdrop-blur-xl rounded-xl border border-amber-500/30 p-2 sm:p-2.5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.08),0_4px_20px_rgba(0,0,0,0.6)]">
+                        {/* 📊 賞別微統計與剩餘進度條（暗黑曜石 × 香檳金質感，點擊傳說/稀有/普通即可查看該賞別剩下什麼卡） */}
+                        <div className="mb-2.5 bg-white/[0.03] backdrop-blur-xl rounded-xl border border-white/[0.08] p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
                             {/* 3 欄可點擊賞別數據 (傳說金 / 稀有紫 / 普通銀) */}
                             <div className="grid grid-cols-3 gap-1.5 text-center font-mono">
                                 {RARITIES.map((r) => {
@@ -992,14 +1060,14 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                             }}
                                             title={`點擊查看${rarityStyles[r].label}剩餘卡牌`}
                                             className={cn(
-                                                "flex items-center justify-center gap-1.5 py-1.5 px-1 rounded-lg border text-xs transition-[transform,background-color,border-color,opacity] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] cursor-pointer group/rarity active:scale-[0.97] select-none relative overflow-hidden",
+                                                "flex items-center justify-center gap-1.5 py-1.5 px-1 rounded-lg border text-xs transition-all duration-150 cursor-pointer group/rarity active:scale-[0.97] select-none relative overflow-hidden",
                                                 isSoldOut
-                                                    ? "bg-slate-950/60 border-slate-900 text-slate-600 opacity-60 hover:opacity-100 hover:border-slate-700"
+                                                    ? "bg-black/35 border-white/[0.05] text-slate-500 opacity-65 hover:opacity-100 hover:border-white/15"
                                                     : r === 'legendary' 
-                                                    ? "bg-gradient-to-b from-amber-500/20 via-amber-950/35 to-black/80 border-amber-400/60 text-amber-300 font-black shadow-[0_0_12px_rgba(245,158,11,0.2)] hover:border-amber-300 hover:bg-amber-500/30 [@media(hover:hover)_and_(pointer:fine)]:hover:scale-[1.02]" 
+                                                    ? "bg-amber-400/[0.12] border-amber-300/45 text-[#FDE68A] font-black shadow-[0_0_12px_rgba(251,191,36,0.12)] hover:border-amber-300/75 hover:bg-amber-400/20" 
                                                     : r === 'rare' 
-                                                    ? "bg-gradient-to-b from-purple-500/20 via-purple-950/35 to-black/80 border-purple-400/50 text-purple-200 font-bold shadow-[0_0_12px_rgba(168,85,247,0.18)] hover:border-purple-300 hover:bg-purple-500/30 [@media(hover:hover)_and_(pointer:fine)]:hover:scale-[1.02]" 
-                                                    : "bg-gradient-to-b from-slate-700/20 via-slate-900/40 to-black/80 border-slate-600/60 text-slate-200 font-bold hover:border-slate-400 hover:bg-slate-800/40 [@media(hover:hover)_and_(pointer:fine)]:hover:scale-[1.02]"
+                                                    ? "bg-purple-400/[0.1] border-purple-400/35 text-purple-200 font-bold hover:border-purple-300/60 hover:bg-purple-400/15" 
+                                                    : "bg-white/[0.05] border-white/[0.14] text-slate-200 font-bold hover:border-white/30 hover:bg-white/[0.09]"
                                             )}
                                         >
                                             <RarityIcon className={cn(
@@ -1007,41 +1075,41 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                                 r === 'common' && "text-slate-300"
                                             )} />
                                             <span className="text-[10px] font-black">{rarityStyles[r].label.replace('賞', '')}</span>
-                                            <span className="font-black text-xs">{detail.count}</span>
+                                            <span className="font-black text-xs tabular-nums">{detail.count}</span>
                                         </button>
                                     );
                                 })}
                             </div>
 
-                    {/* 剩餘進度條 (香檳金卡包流光風格) */}
-                    <div className="mt-2 pt-2 border-t border-amber-500/15">
+                    {/* 剩餘進度條 (香檳金流光風格) */}
+                    <div className="mt-2.5 pt-2 border-t border-white/[0.06]">
                         <div className="flex justify-between items-center text-[10px] mb-1.5 font-mono">
-                            <span className={cn("font-bold flex items-center gap-1", isLastChance ? "text-amber-400" : "text-amber-200/90")}>
-                                <span className={cn("w-1.5 h-1.5 rounded-full", isLastChance ? "bg-rose-500 animate-ping" : "bg-amber-400 animate-pulse")} />
-                                {isLastChance ? '🔥 搶包中' : '剩餘包數'}
+                            <span className={cn("font-bold flex items-center gap-1.5", isLastChance ? "text-rose-300" : "text-slate-300")}>
+                                <span className={cn("w-1.5 h-1.5 rounded-full", isLastChance ? "bg-rose-500 animate-ping" : "bg-[#FDE68A] animate-pulse")} />
+                                {isLastChance ? '搶包倒數中' : '剩餘包數'}
                             </span>
-                            <div className="flex items-center gap-1">
-                                <span className={cn("font-black", isLastChance ? "text-amber-300" : "text-amber-100")}>
+                            <div className="flex items-center gap-1 tabular-nums">
+                                <span className={cn("font-black", isLastChance ? "text-rose-300" : "text-[#FDE68A]")}>
                                     {pool.remainingPacks}
                                 </span>
-                                <span className="text-slate-500">/{pool.totalPacks}</span>
+                                <span className="text-slate-500">/ {pool.totalPacks}</span>
                                 <span className={cn(
-                                    "font-black ml-1 px-1.5 py-0.2 rounded text-[9px]", 
+                                    "font-black ml-1 px-1.5 py-0.5 rounded-md text-[9px]", 
                                     isLastChance 
-                                        ? "bg-rose-950/80 text-rose-300 border border-rose-500/40" 
-                                        : "bg-amber-950/80 text-amber-300 border border-amber-500/40 shadow-sm"
+                                        ? "bg-rose-500/20 text-rose-300 border border-rose-400/40" 
+                                        : "bg-amber-400/10 text-[#FDE68A] border border-amber-300/30"
                                 )}>
                                     {remainingPercent}%
                                 </span>
                             </div>
                         </div>
-                        <div className="h-2 w-full rounded-full overflow-hidden bg-black/95 border border-amber-500/25 p-[0.5px]">
+                        <div className="h-2 w-full rounded-full overflow-hidden bg-black/60 border border-white/[0.08] p-[1px]">
                             <div 
                                 className={cn(
-                                    "h-full w-full rounded-full origin-left transition-transform duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-sm will-change-transform",
+                                    "h-full w-full rounded-full origin-left transition-transform duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] will-change-transform",
                                     isLastChance 
-                                        ? "bg-gradient-to-r from-amber-400 via-rose-500 to-red-600 animate-pulse" 
-                                        : "bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-300 shadow-[0_0_8px_rgba(245,158,11,0.5)]"
+                                        ? "bg-gradient-to-r from-amber-400 via-rose-500 to-red-500 animate-pulse" 
+                                        : "bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-500 shadow-[0_0_8px_rgba(251,191,36,0.45)]"
                                 )}
                                 style={{ transform: `scaleX(${Math.max(0, Math.min(100, remainingPercent)) / 100})` }}
                             />
@@ -1188,25 +1256,30 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                     key={drawCount}
                                     disabled={!canDraw || isDrawing}
                                     className={cn(
-                                        "relative h-auto min-h-[48px] sm:min-h-[52px] py-1.5 px-1 flex flex-col items-center justify-center rounded-xl transition-[transform,background-color,border-color] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] overflow-hidden border group cursor-pointer shadow-md select-none",
+                                        "relative h-auto min-h-[52px] sm:min-h-[56px] py-2 px-1.5 flex flex-col items-center justify-center rounded-xl transition-all duration-150 active:scale-[0.97] overflow-hidden border group cursor-pointer select-none",
                                         isHighlighted
                                             ? opt.isAllIn
-                                                ? "bg-gradient-to-b from-amber-500/35 via-amber-950/60 to-slate-950 border-2 border-amber-400 hover:border-yellow-300 shadow-[0_0_20px_rgba(245,158,11,0.4)] hover:brightness-110"
-                                                : "bg-gradient-to-b from-amber-500/25 via-amber-950/40 to-slate-950 border-2 border-amber-400 hover:border-amber-300 shadow-[0_0_18px_rgba(245,158,11,0.35)] hover:brightness-110"
-                                            : "bg-gradient-to-b from-slate-900/90 via-slate-950 to-black border border-amber-500/35 hover:border-amber-400/70 hover:bg-slate-900/90 shadow-sm"
+                                                ? "bg-gradient-to-br from-[#FDE68A] via-amber-400 to-rose-400 text-[#120d02] border-amber-200/80 shadow-[0_6px_22px_rgba(244,63,94,0.28)] hover:brightness-105"
+                                                : "bg-gradient-to-br from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] border-amber-200/80 shadow-[0_6px_22px_rgba(251,191,36,0.28)] hover:brightness-105"
+                                            : "bg-white/[0.04] hover:bg-white/[0.08] border-white/[0.12] hover:border-amber-300/45 text-white shadow-sm"
                                     )}
                                     onClick={() => handleDraw(drawCount)}
                                 >
-                                    {/* 按鈕頂部金屬倒角高光線 */}
-                                    <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-amber-300/40 to-transparent pointer-events-none" />
+                                    {/* 按鈕頂部微高光 */}
+                                    <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/35 to-transparent pointer-events-none" />
 
-                                    {/* 優惠/全包極簡角標 (緊湊嵌合右上角，金屬黑金倒角) */}
+                                    {/* 優惠/全包極簡角標 */}
                                     {opt.isAllIn ? (
-                                        <span className="absolute top-0 right-0 bg-gradient-to-r from-amber-400 to-rose-500 text-slate-950 font-black text-[8px] px-1.5 py-0.5 rounded-bl-md leading-none z-10 shadow-sm">
+                                        <span className="absolute top-0 right-0 bg-[#120d02]/90 text-[#FDE68A] font-black text-[8px] px-1.5 py-0.5 rounded-bl-lg leading-none z-10 border-l border-b border-amber-300/30">
                                             全包
                                         </span>
                                     ) : savings > 0 ? (
-                                        <span className="absolute top-0 right-0 bg-gradient-to-r from-amber-400 to-yellow-300 text-slate-950 font-black text-[8px] px-1.5 py-0.5 rounded-bl-md leading-none z-10 shadow-sm">
+                                        <span className={cn(
+                                            "absolute top-0 right-0 font-black text-[8px] px-1.5 py-0.5 rounded-bl-lg leading-none z-10",
+                                            isHighlighted
+                                                ? "bg-[#120d02]/85 text-[#FDE68A]"
+                                                : "bg-gradient-to-r from-[#FDE68A] to-amber-400 text-[#120d02]"
+                                        )}>
                                             省{savings >= 10000 ? `${(savings / 1000).toFixed(0)}k` : savings}
                                         </span>
                                     ) : null}
@@ -1215,19 +1288,22 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                     <span className={cn(
                                         "font-black text-xs sm:text-sm tracking-tight leading-tight",
                                         isHighlighted 
-                                            ? "text-amber-200 drop-shadow-[0_1px_4px_rgba(245,158,11,0.4)]" 
-                                            : "text-slate-100 group-hover:text-amber-100 transition-colors"
+                                            ? "text-[#120d02]" 
+                                            : "text-slate-100 group-hover:text-[#FDE68A] transition-colors"
                                     )}>
                                         {label}
                                     </span>
                                     
                                     {/* 價格標示 */}
-                                    <span className="flex items-center justify-center text-white font-mono font-black text-xs sm:text-sm tracking-tight mt-0.5 leading-none">
-                                        <span className={cn(isHighlighted && "text-amber-100")}>{price.toLocaleString()}</span>
+                                    <span className={cn(
+                                        "flex items-center justify-center font-mono font-black text-xs sm:text-sm tracking-tight mt-0.5 leading-none tabular-nums",
+                                        isHighlighted ? "text-[#120d02]" : "text-amber-200"
+                                    )}>
+                                        <span>{price.toLocaleString()}</span>
                                         {isPPoint ? (
-                                            <PPlusIcon className="w-3.5 h-3.5 ml-0.5 shrink-0 text-amber-400" />
+                                            <PPlusIcon className={cn("w-3.5 h-3.5 ml-0.5 shrink-0", isHighlighted ? "text-[#120d02]" : "text-amber-300")} />
                                         ) : (
-                                            <DiamondIcon className="w-3.5 h-3.5 ml-0.5 shrink-0 text-amber-300" />
+                                            <DiamondIcon className={cn("w-3.5 h-3.5 ml-0.5 shrink-0", isHighlighted ? "text-[#120d02]" : "text-cyan-300")} />
                                         )}
                                     </span>
                                 </Button>

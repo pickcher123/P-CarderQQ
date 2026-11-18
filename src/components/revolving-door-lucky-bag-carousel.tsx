@@ -111,11 +111,15 @@ export function RevolvingDoorLuckyBagCarousel({
   if (isLoading) {
     return (
       <div className="w-full max-w-4xl mx-auto py-8">
-        <div className="h-[380px] sm:h-[460px] w-full flex items-center justify-center">
-          <div className="w-[210px] h-[330px] sm:w-[250px] sm:h-[390px] rounded-[2rem] bg-gradient-to-b from-rose-950/60 to-black border-2 border-amber-500/30 animate-pulse flex flex-col items-center justify-center p-4">
-            <div className="w-12 h-12 rounded-full border-2 border-amber-400/40 bg-amber-500/20 mb-4" />
-            <div className="h-4 w-32 bg-amber-500/20 rounded mb-2" />
-            <div className="h-32 w-28 bg-black/60 rounded-xl" />
+        <div className="h-[440px] sm:h-[500px] w-full flex items-center justify-center">
+          <div className="w-[245px] h-[445px] sm:w-[285px] sm:h-[490px] rounded-[2rem] bg-[#0a0f1c]/90 border border-amber-300/25 animate-pulse flex flex-col items-center justify-between p-6 shadow-2xl">
+            <div className="w-11 h-11 rounded-full border border-amber-300/35 bg-amber-400/15" />
+            <div className="h-4 w-32 bg-white/[0.06] rounded-lg" />
+            <div className="h-44 w-36 bg-white/[0.04] rounded-xl border border-white/[0.06]" />
+            <div className="w-full space-y-2">
+              <div className="h-2 w-full bg-white/[0.06] rounded-full" />
+              <div className="h-9 w-full bg-amber-400/20 rounded-xl" />
+            </div>
           </div>
         </div>
       </div>
@@ -187,10 +191,10 @@ export function RevolvingDoorLuckyBagCarousel({
           <button
             type="button"
             onClick={handlePrev}
-            className="absolute left-2 sm:left-6 z-40 p-2 sm:p-3 text-amber-300 hover:text-yellow-200 transition-[transform,color] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] cursor-pointer [@media(hover:hover)_and_(pointer:fine)]:hover:scale-110 active:scale-[0.97] drop-shadow-[0_0_14px_rgba(245,158,11,0.9)]"
+            className="absolute left-2 sm:left-6 z-40 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#0a0f1c]/85 hover:bg-amber-400/20 border border-amber-300/35 hover:border-amber-300/75 text-[#FDE68A] flex items-center justify-center backdrop-blur-md shadow-lg transition-all duration-150 cursor-pointer active:scale-95"
             aria-label="上一個紅包福袋"
           >
-            <ChevronLeft className="w-8 h-8 sm:w-10 sm:h-10" />
+            <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
         )}
 
@@ -199,10 +203,10 @@ export function RevolvingDoorLuckyBagCarousel({
           <button
             type="button"
             onClick={handleNext}
-            className="absolute right-2 sm:right-6 z-40 p-2 sm:p-3 text-amber-300 hover:text-yellow-200 transition-[transform,color] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] cursor-pointer [@media(hover:hover)_and_(pointer:fine)]:hover:scale-110 active:scale-[0.97] drop-shadow-[0_0_14px_rgba(245,158,11,0.9)]"
+            className="absolute right-2 sm:right-6 z-40 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#0a0f1c]/85 hover:bg-amber-400/20 border border-amber-300/35 hover:border-amber-300/75 text-[#FDE68A] flex items-center justify-center backdrop-blur-md shadow-lg transition-all duration-150 cursor-pointer active:scale-95"
             aria-label="下一個紅包福袋"
           >
-            <ChevronRight className="w-8 h-8 sm:w-10 sm:h-10" />
+            <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
         )}
 
@@ -290,8 +294,9 @@ export function RevolvingDoorLuckyBagCarousel({
                   ease: [0.23, 1, 0.32, 1],
                 } : {
                   type: 'spring',
-                  duration: 0.45,
-                  bounce: 0.15,
+                  stiffness: 320,
+                  damping: 28,
+                  mass: 0.8,
                 }}
                 onClick={() => handleBagClick(bag, index)}
               >

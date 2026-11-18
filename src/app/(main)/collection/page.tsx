@@ -684,17 +684,17 @@ export default function CollectionPage() {
   };
 
   if (!isUserLoading && !user) return (
-    <div className="min-h-[70vh] flex flex-col items-center justify-center p-6 text-center space-y-6 animate-fade-in-up">
-      <div className="w-20 h-20 rounded-3xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center shadow-[0_0_50px_rgba(6,182,212,0.2)]">
-        <Library className="w-10 h-10 text-cyan-400" />
+    <div className="min-h-[70vh] flex flex-col items-center justify-center p-6 text-center space-y-5 animate-fade-in-up">
+      <div className="w-16 h-16 rounded-2xl bg-white/[0.04] border border-white/[0.1] flex items-center justify-center">
+        <Library className="w-7 h-7 text-cyan-300" />
       </div>
       <div className="space-y-2 max-w-sm">
-        <h2 className="text-2xl font-black font-headline text-white tracking-wide">請先登入以開啟收藏庫</h2>
-        <p className="text-sm text-slate-400 leading-relaxed">
+        <h2 className="text-xl sm:text-2xl font-bold font-headline text-white tracking-tight">請先登入以開啟收藏庫</h2>
+        <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
           登入後即可隨時檢視您的珍稀卡牌、數位資產、申請實體出貨與快速轉點。
         </p>
       </div>
-      <Button asChild className="h-12 px-8 rounded-xl bg-gradient-to-r from-cyan-500 to-sky-400 hover:from-cyan-400 hover:to-sky-300 text-slate-950 font-black shadow-lg shadow-cyan-500/20">
+      <Button asChild className="h-10 px-6 rounded-lg bg-white/[0.08] hover:bg-white/[0.14] text-white border border-white/[0.14] font-semibold text-sm">
         <Link href="/login">前往會員登入</Link>
       </Button>
     </div>
@@ -715,75 +715,68 @@ export default function CollectionPage() {
 
   return (
     <TooltipProvider>
-      <div className="min-h-screen bg-transparent text-white pb-40">
-        {/* Glow Effects */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-[380px] bg-gradient-to-b from-cyan-500/15 via-purple-500/10 to-transparent blur-[140px] pointer-events-none -z-10" />
-
-        <div className="container px-3.5 sm:px-6 py-4 max-w-7xl mx-auto space-y-5 sm:space-y-7">
+      <div className="min-h-screen text-white pb-36">
+        <div className="container px-3.5 sm:px-6 py-4 sm:py-6 max-w-7xl mx-auto space-y-5 sm:space-y-6">
           
-          {/* === TOP HERO / STATS HEADER (賽博數位保險庫) === */}
-          <div className="relative rounded-2xl sm:rounded-3xl p-5 sm:p-7 overflow-hidden border border-cyan-500/25 bg-gradient-to-b from-slate-900/95 via-[#0b101f]/95 to-[#060913] shadow-[0_25px_60px_rgba(0,0,0,0.85)] backdrop-blur-2xl">
-            {/* Grid pattern background & Top Laser Line */}
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,#06b6d408_1px,transparent_1px),linear-gradient(to_bottom,#06b6d408_1px,transparent_1px)] bg-[size:24px_24px] opacity-60 pointer-events-none" />
-            <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_15px_#22d3ee]" />
+          {/* === TOP VAULT HEADER & STATS === */}
+          <div className="relative rounded-2xl p-5 sm:p-6 border border-white/[0.08] border-t-2 border-t-amber-300/60 bg-gradient-to-r from-[#0d1322] via-[#0a0f1c] to-[#0d1322] flex flex-col lg:flex-row lg:items-center justify-between gap-5 overflow-hidden">
+            <div className="absolute -top-10 left-1/4 w-72 h-24 bg-amber-400/10 blur-3xl pointer-events-none" />
 
-            <div className="relative z-10 flex flex-col items-center text-center justify-center gap-5 sm:gap-6">
-              
-              {/* Centered Title */}
-              <div className="max-w-2xl mx-auto text-center flex flex-col items-center">
-                <h1 className="font-headline text-2xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-200 to-amber-300 drop-shadow-[0_0_25px_rgba(6,182,212,0.45)] tracking-tight leading-none">
-                  我的卡牌典藏庫
+            <div className="relative z-10 flex items-center gap-3.5 text-left">
+              <span className="w-[3px] h-10 rounded-full bg-gradient-to-b from-amber-200 via-amber-400 to-amber-700 shrink-0" aria-hidden="true" />
+              <div className="space-y-1">
+                <h1 className="font-headline text-2xl sm:text-3xl font-bold tracking-wide flex items-center gap-1.5">
+                  <span className="text-white">我的卡牌</span>
+                  <span className="text-[#FDE68A]">典藏庫</span>
                 </h1>
+                <p className="text-xs sm:text-sm text-slate-400">
+                  管理您的數位卡片資產、申請實體寄送或即時轉點
+                </p>
+              </div>
+            </div>
+
+            {/* 3 欄極簡數據儀表 */}
+            <div className="relative z-10 grid grid-cols-3 divide-x divide-white/[0.08] rounded-xl bg-black/40 border border-white/[0.08] py-3 px-2 sm:px-4 lg:min-w-[460px] shrink-0">
+              <div className="px-2 sm:px-4 text-center sm:text-left">
+                <div className="text-[11px] text-slate-400 font-medium flex items-center justify-center sm:justify-start gap-1">
+                  <Layers className="w-3 h-3 text-slate-400" />
+                  <span>持有藏品</span>
+                </div>
+                <div className="font-code text-lg sm:text-2xl font-bold text-white mt-0.5 tabular-nums">
+                  {(isLoadingUserCards || isLoadingWonPrizes) ? '--' : portfolioStats.totalCards}
+                </div>
+                <div className="text-[10px] text-slate-400 mt-0.5 truncate">
+                  {portfolioStats.prizeCount > 0
+                    ? `${portfolioStats.uniqueCount}張卡 · ${portfolioStats.prizeCount}兌換`
+                    : `${portfolioStats.uniqueCount} 張卡片`}
+                </div>
               </div>
 
-              {/* Centered Portfolio Live Stats (奢華金屬數據儀表板) */}
-              <div className="grid grid-cols-3 gap-2.5 sm:gap-4 w-full max-w-xl mx-auto shrink-0">
-                {/* Total Cards Stat */}
-                <div className="relative p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-b from-slate-900/95 to-slate-950 border border-white/10 flex flex-col items-center justify-center text-center shadow-lg group hover:border-cyan-500/40 transition-colors">
-                  <div className="flex items-center gap-1 text-slate-400">
-                    <Layers className="w-3.5 h-3.5 text-cyan-400" />
-                    <span className="text-[10px] font-bold uppercase tracking-wider">持有藏品</span>
-                  </div>
-                  <span className="font-code text-xl sm:text-3xl font-black text-white mt-1 tabular-nums">
-                    {(isLoadingUserCards || isLoadingWonPrizes) ? '--' : portfolioStats.totalCards}
-                  </span>
-                  <span className="text-[9.5px] text-cyan-300/90 font-bold mt-0.5 truncate max-w-full">
-                    {portfolioStats.prizeCount > 0
-                      ? `${portfolioStats.uniqueCount}張卡片 · ${portfolioStats.prizeCount}張兌換卡`
-                      : portfolioStats.breakCount > 0
-                        ? `${portfolioStats.uniqueCount}個人 / ${portfolioStats.breakCount}團拆`
-                        : `${portfolioStats.uniqueCount} 張卡片`}
-                  </span>
+              <div className="px-2 sm:px-4 text-center sm:text-left">
+                <div className="text-[11px] text-cyan-300 font-medium flex items-center justify-center sm:justify-start gap-1">
+                  <Gem className="w-3 h-3 text-cyan-300" />
+                  <span>預估鑽石</span>
                 </div>
-
-                {/* Diamonds Recycle Value */}
-                <div className="relative p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-b from-cyan-950/40 to-slate-950 border border-cyan-500/30 flex flex-col items-center justify-center text-center shadow-lg group hover:border-cyan-400/60 transition-colors">
-                  <div className="flex items-center gap-1 text-cyan-300">
-                    <Gem className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
-                    <span className="text-[10px] font-bold uppercase tracking-wider">預估鑽石</span>
-                  </div>
-                  <span className="font-code text-xl sm:text-3xl font-black text-cyan-400 mt-1 drop-shadow-[0_0_12px_rgba(6,182,212,0.35)]">
-                    {isLoadingUserCards ? '--' : portfolioStats.totalDiamonds.toLocaleString()}
-                  </span>
-                  <span className="text-[9.5px] text-slate-400 font-bold mt-0.5">即刻變現回估</span>
+                <div className="font-code text-lg sm:text-2xl font-bold text-cyan-300 mt-0.5 tabular-nums">
+                  {isLoadingUserCards ? '--' : portfolioStats.totalDiamonds.toLocaleString()}
                 </div>
+                <div className="text-[10px] text-slate-400 mt-0.5">即刻變現回估</div>
+              </div>
 
-                {/* P+ Points Recycle Value */}
-                <div className="relative p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-b from-amber-950/40 to-slate-950 border border-amber-500/30 flex flex-col items-center justify-center text-center shadow-lg group hover:border-amber-400/60 transition-colors">
-                  <div className="flex items-center gap-1 text-amber-300">
-                    <PPlusIcon className="w-3.5 h-3.5 text-amber-400" />
-                    <span className="text-[10px] font-bold uppercase tracking-wider">紅利點數</span>
-                  </div>
-                  <span className="font-code text-xl sm:text-3xl font-black text-amber-400 mt-1 drop-shadow-[0_0_12px_rgba(245,158,11,0.35)]">
-                    {isLoadingUserCards ? '--' : portfolioStats.totalPPoints.toLocaleString()}
-                  </span>
-                  <span className="text-[9.5px] font-bold mt-0.5 flex items-center gap-0.5 text-amber-300/90">
-                    {isBonusActive && bonusMultiplier > 1 ? (
-                      <span className="text-rose-400 animate-pulse">🔥 {bonusMultiplier}X 加倍收益</span>
-                    ) : (
-                      <span className="text-slate-400">紅利回饋累積</span>
-                    )}
-                  </span>
+              <div className="px-2 sm:px-4 text-center sm:text-left">
+                <div className="text-[11px] text-amber-300 font-medium flex items-center justify-center sm:justify-start gap-1">
+                  <PPlusIcon className="w-3 h-3 text-amber-300" />
+                  <span>紅利點數</span>
+                </div>
+                <div className="font-code text-lg sm:text-2xl font-bold text-amber-300 mt-0.5 tabular-nums">
+                  {isLoadingUserCards ? '--' : portfolioStats.totalPPoints.toLocaleString()}
+                </div>
+                <div className="text-[10px] mt-0.5">
+                  {isBonusActive && bonusMultiplier > 1 ? (
+                    <span className="text-amber-300 font-medium">{bonusMultiplier}X 加倍收益</span>
+                  ) : (
+                    <span className="text-slate-400">紅利回饋累積</span>
+                  )}
                 </div>
               </div>
             </div>
@@ -796,22 +789,19 @@ export default function CollectionPage() {
             <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
               
               {/* Main Category Tabs */}
-              <div className="flex items-center gap-1.5 p-1 bg-slate-900/90 border border-white/10 rounded-xl overflow-x-auto no-scrollbar shrink-0">
+              <div className="flex items-center gap-1 p-1 bg-[#0a0f1c]/95 border border-white/[0.08] rounded-xl overflow-x-auto no-scrollbar shrink-0">
                 <button
                   onClick={() => { setActiveTab('all'); setFilterCategory(null); }}
                   className={cn(
-                    "px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer",
+                    "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 whitespace-nowrap cursor-pointer border",
                     activeTab === 'all' && !filterCategory
-                      ? "bg-gradient-to-r from-cyan-500 to-sky-400 text-slate-950 shadow-md shadow-cyan-500/20" 
-                      : "text-slate-400 hover:text-white hover:bg-white/5"
+                      ? "bg-white/[0.1] text-white border-white/[0.15]" 
+                      : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] border-transparent"
                   )}
                 >
-                  <Layers className="w-3.5 h-3.5" />
+                  <Layers className="w-3.5 h-3.5 text-cyan-300" />
                   <span>全部藏品</span>
-                  <span className={cn(
-                    "text-[10px] px-1.5 py-0.2 rounded-md font-code",
-                    activeTab === 'all' && !filterCategory ? "bg-slate-950/30 text-slate-950 font-black" : "bg-white/10 text-slate-400"
-                  )}>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded font-code bg-white/[0.08] text-slate-300">
                     {portfolioStats.totalCards}
                   </span>
                 </button>
@@ -819,18 +809,15 @@ export default function CollectionPage() {
                 <button
                   onClick={() => { setActiveTab('standard'); setFilterCategory(null); }}
                   className={cn(
-                    "px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer",
+                    "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 whitespace-nowrap cursor-pointer border",
                     activeTab === 'standard' 
-                      ? "bg-gradient-to-r from-cyan-500 to-sky-400 text-slate-950 shadow-md shadow-cyan-500/20" 
-                      : "text-slate-400 hover:text-white hover:bg-white/5"
+                      ? "bg-white/[0.1] text-white border-white/[0.15]" 
+                      : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] border-transparent"
                   )}
                 >
-                  <Library className="w-3.5 h-3.5" />
+                  <Library className="w-3.5 h-3.5 text-sky-300" />
                   <span>個人藏品</span>
-                  <span className={cn(
-                    "text-[10px] px-1.5 py-0.2 rounded-md font-code",
-                    activeTab === 'standard' ? "bg-slate-950/30 text-slate-950 font-black" : "bg-white/10 text-slate-400"
-                  )}>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded font-code bg-white/[0.08] text-slate-300">
                     {portfolioStats.uniqueCount}
                   </span>
                 </button>
@@ -838,18 +825,15 @@ export default function CollectionPage() {
                 <button
                   onClick={() => { setActiveTab('prizes'); setFilterCategory(null); }}
                   className={cn(
-                    "px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer",
+                    "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 whitespace-nowrap cursor-pointer border",
                     activeTab === 'prizes' 
-                      ? "bg-gradient-to-r from-emerald-400 to-teal-300 text-slate-950 shadow-md shadow-emerald-500/20" 
-                      : "text-slate-400 hover:text-white hover:bg-white/5"
+                      ? "bg-white/[0.1] text-white border-emerald-400/35" 
+                      : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] border-transparent"
                   )}
                 >
-                  <Gift className="w-3.5 h-3.5" />
+                  <Gift className="w-3.5 h-3.5 text-emerald-300" />
                   <span>實體兌換卡</span>
-                  <span className={cn(
-                    "text-[10px] px-1.5 py-0.2 rounded-md font-code",
-                    activeTab === 'prizes' ? "bg-slate-950/30 text-slate-950 font-black" : "bg-white/10 text-slate-400"
-                  )}>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded font-code bg-white/[0.08] text-slate-300">
                     {portfolioStats.prizeCount}
                   </span>
                 </button>
@@ -857,18 +841,15 @@ export default function CollectionPage() {
                 <button
                   onClick={() => { setActiveTab('break'); setFilterCategory(null); }}
                   className={cn(
-                    "px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer",
+                    "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 whitespace-nowrap cursor-pointer border",
                     activeTab === 'break' 
-                      ? "bg-gradient-to-r from-orange-500 to-amber-400 text-slate-950 shadow-md shadow-orange-500/20" 
-                      : "text-slate-400 hover:text-white hover:bg-white/5"
+                      ? "bg-white/[0.1] text-white border-amber-400/35" 
+                      : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] border-transparent"
                   )}
                 >
-                  <Users2 className="w-3.5 h-3.5" />
+                  <Users2 className="w-3.5 h-3.5 text-amber-300" />
                   <span>團拆藏品</span>
-                  <span className={cn(
-                    "text-[10px] px-1.5 py-0.2 rounded-md font-code",
-                    activeTab === 'break' ? "bg-slate-950/30 text-slate-950 font-black" : "bg-white/10 text-slate-400"
-                  )}>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded font-code bg-white/[0.08] text-slate-300">
                     {portfolioStats.breakCount}
                   </span>
                 </button>
@@ -876,18 +857,15 @@ export default function CollectionPage() {
                 <button
                   onClick={() => { setActiveTab('random'); setFilterCategory(null); }}
                   className={cn(
-                    "px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer",
+                    "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 whitespace-nowrap cursor-pointer border",
                     activeTab === 'random' 
-                      ? "bg-gradient-to-r from-purple-500 to-indigo-400 text-slate-950 shadow-md shadow-purple-500/20" 
-                      : "text-slate-400 hover:text-white hover:bg-white/5"
+                      ? "bg-white/[0.1] text-white border-purple-400/35" 
+                      : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] border-transparent"
                   )}
                 >
-                  <Package className="w-3.5 h-3.5" />
+                  <Package className="w-3.5 h-3.5 text-purple-300" />
                   <span>累積小卡</span>
-                  <span className={cn(
-                    "text-[10px] px-1.5 py-0.2 rounded-md font-code",
-                    activeTab === 'random' ? "bg-slate-950/30 text-slate-950 font-black" : "bg-white/10 text-slate-400"
-                  )}>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded font-code bg-white/[0.08] text-slate-300">
                     {portfolioStats.randomCount}
                   </span>
                 </button>
@@ -976,13 +954,13 @@ export default function CollectionPage() {
               
               <div className="flex items-center gap-2 flex-wrap">
                 {/* Rarity Filter */}
-                <div className="flex items-center gap-1 bg-slate-900/60 p-0.5 rounded-lg border border-white/10 text-[11px] font-bold">
-                  <span className="px-2 text-slate-500 flex items-center gap-1">稀有度:</span>
+                <div className="flex items-center gap-1 bg-[#0a0f1c]/95 p-1 rounded-lg border border-white/[0.08] text-[11px] font-medium">
+                  <span className="px-2 text-slate-400">稀有度</span>
                   <button
                     onClick={() => setFilterRarity('all')}
                     className={cn(
-                      "px-2 py-0.5 rounded-md transition-all cursor-pointer",
-                      filterRarity === 'all' ? "bg-white/15 text-white font-black" : "text-slate-400 hover:text-white"
+                      "px-2.5 py-0.5 rounded-md transition-colors cursor-pointer",
+                      filterRarity === 'all' ? "bg-white/[0.12] text-white font-semibold" : "text-slate-400 hover:text-white"
                     )}
                   >
                     全部
@@ -990,26 +968,28 @@ export default function CollectionPage() {
                   <button
                     onClick={() => setFilterRarity('legendary')}
                     className={cn(
-                      "px-2 py-0.5 rounded-md transition-all cursor-pointer flex items-center gap-1",
-                      filterRarity === 'legendary' ? "bg-amber-500/30 text-amber-300 border border-amber-400/50 font-black" : "text-amber-400/70 hover:text-amber-300"
+                      "px-2.5 py-0.5 rounded-md transition-colors cursor-pointer inline-flex items-center gap-1.5",
+                      filterRarity === 'legendary' ? "bg-amber-400/20 text-amber-200 border border-amber-400/40 font-semibold" : "text-amber-300/80 hover:text-amber-200"
                     )}
                   >
-                    <Sparkles className="w-2.5 h-2.5" /> 傳奇
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-300" />
+                    <span>傳奇</span>
                   </button>
                   <button
                     onClick={() => setFilterRarity('rare')}
                     className={cn(
-                      "px-2 py-0.5 rounded-md transition-all cursor-pointer",
-                      filterRarity === 'rare' ? "bg-sky-500/30 text-sky-300 border border-sky-400/50 font-black" : "text-sky-400/70 hover:text-sky-300"
+                      "px-2.5 py-0.5 rounded-md transition-colors cursor-pointer inline-flex items-center gap-1.5",
+                      filterRarity === 'rare' ? "bg-sky-400/20 text-sky-200 border border-sky-400/40 font-semibold" : "text-sky-300/80 hover:text-sky-200"
                     )}
                   >
-                    稀有
+                    <span className="w-1.5 h-1.5 rounded-full bg-sky-300" />
+                    <span>稀有</span>
                   </button>
                   <button
                     onClick={() => setFilterRarity('common')}
                     className={cn(
-                      "px-2 py-0.5 rounded-md transition-all cursor-pointer",
-                      filterRarity === 'common' ? "bg-slate-700/50 text-slate-200 border border-slate-500/50 font-black" : "text-slate-400 hover:text-white"
+                      "px-2.5 py-0.5 rounded-md transition-colors cursor-pointer",
+                      filterRarity === 'common' ? "bg-white/[0.1] text-slate-100 border border-white/[0.18] font-semibold" : "text-slate-400 hover:text-white"
                     )}
                   >
                     普通
@@ -1022,8 +1002,8 @@ export default function CollectionPage() {
                     <button
                       onClick={() => setFilterCategory(null)}
                       className={cn(
-                        "px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer",
-                        !filterCategory ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40" : "bg-white/5 text-slate-400 hover:text-white border border-transparent"
+                        "px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors cursor-pointer border",
+                        !filterCategory ? "bg-white/[0.1] text-white border-white/[0.18]" : "bg-transparent text-slate-400 hover:text-white border-transparent hover:bg-white/[0.04]"
                       )}
                     >
                       全部分類
@@ -1034,10 +1014,10 @@ export default function CollectionPage() {
                         key={cat}
                         onClick={() => setFilterCategory(filterCategory === cat ? null : cat)}
                         className={cn(
-                          "px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer",
+                          "px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors cursor-pointer border",
                           filterCategory === cat 
-                            ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40" 
-                            : "bg-white/5 text-slate-400 hover:text-white border border-transparent"
+                            ? "bg-white/[0.1] text-white border-white/[0.18]" 
+                            : "bg-transparent text-slate-400 hover:text-white border-transparent hover:bg-white/[0.04]"
                         )}
                       >
                         {cat}
@@ -1082,17 +1062,15 @@ export default function CollectionPage() {
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <div className="p-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
-                      <Gift className="w-4 h-4" />
-                    </div>
-                    <h2 className="text-base sm:text-lg font-black font-headline text-white tracking-wide flex items-center gap-2">
+                    <span className="w-[3px] h-5 rounded-full bg-emerald-400 shrink-0" aria-hidden="true" />
+                    <h2 className="text-base sm:text-lg font-bold font-headline text-white tracking-wide flex items-center gap-2">
                       <span>實體獎品兌換卡</span>
-                      <span className="text-xs font-code font-bold text-emerald-300 tabular-nums">
+                      <span className="text-xs font-code font-semibold text-emerald-300 tabular-nums">
                         {filteredWonPrizes.length} 張
                       </span>
                     </h2>
                   </div>
-                  <div className="h-px flex-1 mx-4 bg-gradient-to-r from-emerald-500/20 to-transparent hidden sm:block" />
+                  <div className="h-px flex-1 mx-4 bg-white/[0.08] hidden sm:block" />
                 </div>
 
                 <div className={cn(
@@ -1112,19 +1090,16 @@ export default function CollectionPage() {
                       <button
                         type="button"
                         className={cn(
-                          "text-left group relative flex flex-col rounded-2xl overflow-hidden cursor-pointer transition-all duration-200 select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400",
+                          "text-left group relative flex flex-col rounded-xl overflow-hidden cursor-pointer transition-[border-color,transform] duration-200 select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400",
                           viewMode === 'grid' ? "p-2 sm:p-2.5" : "p-1.5",
-                          "bg-gradient-to-b from-white/10 via-slate-900/95 to-slate-950 border border-emerald-400/50 hover:border-emerald-300 hover:shadow-[0_0_24px_rgba(16,185,129,0.28)] hover:-translate-y-1 shadow-xl backdrop-blur-md"
+                          "bg-[#0a0f1c]/95 border border-emerald-400/35 hover:border-emerald-300/75 hover:-translate-y-0.5 shadow-[0_6px_18px_rgba(0,0,0,0.45)]"
                         )}
                       >
-                        {/* Magnetic Case Slab Header Accent */}
                         {viewMode === 'grid' && (
-                          <div className="flex items-center justify-between px-1 pb-1.5 opacity-80 group-hover:opacity-100 transition-opacity w-full">
-                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 border border-emerald-700 shadow-sm" />
-                            <span className="text-[7.5px] font-mono tracking-widest text-emerald-300 uppercase whitespace-nowrap">
+                          <div className="flex items-center justify-center pb-1.5 opacity-75 group-hover:opacity-100 transition-opacity w-full">
+                            <span className="text-[8.5px] font-mono tracking-widest text-emerald-300 uppercase whitespace-nowrap">
                               PRIZE CARD · #{claim.winningSpot}
                             </span>
-                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 border border-emerald-700 shadow-sm" />
                           </div>
                         )}
 
@@ -1204,17 +1179,15 @@ export default function CollectionPage() {
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <div className="p-1.5 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.2)]">
-                      <Library className="w-4 h-4" />
-                    </div>
-                    <h2 className="text-base sm:text-lg font-black font-headline text-white tracking-wide flex items-center gap-2">
+                    <span className="w-[3px] h-5 rounded-full bg-cyan-400 shrink-0" aria-hidden="true" />
+                    <h2 className="text-base sm:text-lg font-bold font-headline text-white tracking-wide flex items-center gap-2">
                       <span>個人評級卡磚藏品</span>
-                      <span className="text-[10px] font-code font-black text-cyan-300 bg-cyan-500/15 px-2 py-0.5 rounded-full border border-cyan-500/30">
+                      <span className="text-xs font-code font-semibold text-cyan-300 tabular-nums">
                         {uniqueStandardCards.length} 張
                       </span>
                     </h2>
                   </div>
-                  <div className="h-px flex-1 mx-4 bg-gradient-to-r from-cyan-500/20 to-transparent hidden sm:block" />
+                  <div className="h-px flex-1 mx-4 bg-white/[0.08] hidden sm:block" />
                 </div>
 
                 {/* Card Gallery: Adaptive Grid / Compact Mode */}
@@ -1237,27 +1210,24 @@ export default function CollectionPage() {
                         transition={{ delay: Math.min(index * 0.015, 0.25) }}
                         onClick={() => setPreviewCard(card)}
                         className={cn(
-                          "group relative flex flex-col rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 select-none",
+                          "group relative flex flex-col rounded-xl overflow-hidden cursor-pointer transition-[border-color,transform,background-color] duration-200 select-none",
                           viewMode === 'grid' ? "p-2 sm:p-2.5" : "p-1.5",
-                          // Magnetic Acrylic Slab Styling
-                          "bg-gradient-to-b from-white/10 via-slate-900/95 to-slate-950 border backdrop-blur-md shadow-xl",
+                          "bg-[#0a0f1c]/95 border shadow-[0_6px_18px_rgba(0,0,0,0.45)]",
                           isSelected 
-                            ? "border-cyan-400 ring-2 ring-cyan-400/80 shadow-[0_0_25px_rgba(6,182,212,0.45)] bg-cyan-950/40 scale-[1.02]" 
+                            ? "border-cyan-400 ring-2 ring-cyan-400/50 bg-cyan-950/30 scale-[1.01]" 
                             : isLegendary
-                              ? "border-amber-400/50 hover:border-amber-300 hover:shadow-[0_0_25px_rgba(245,158,11,0.35)] hover:-translate-y-1"
+                              ? "border-amber-400/45 hover:border-amber-300/80 hover:-translate-y-0.5"
                               : isRare
-                                ? "border-sky-400/40 hover:border-sky-300 hover:shadow-[0_0_20px_rgba(56,189,248,0.3)] hover:-translate-y-1"
-                                : "border-white/15 hover:border-cyan-400/50 hover:shadow-[0_0_20px_rgba(6,182,212,0.2)] hover:-translate-y-0.5"
+                                ? "border-sky-400/35 hover:border-sky-300/70 hover:-translate-y-0.5"
+                                : "border-white/[0.08] hover:border-white/[0.22] hover:-translate-y-0.5"
                         )}
                       >
-                        {/* Magnetic Case Slab Header Accent (螺絲仿真與標牌) */}
+                        {/* 卡磚頂部類別標籤 */}
                         {viewMode === 'grid' && (
-                          <div className="flex items-center justify-between px-1 pb-1.5 opacity-70 group-hover:opacity-100 transition-opacity">
-                            <div className="w-1.5 h-1.5 rounded-full bg-slate-400 border border-slate-600 shadow-sm" title="磁吸螺栓" />
-                            <span className="text-[7.5px] font-mono tracking-widest text-slate-400 uppercase">
+                          <div className="flex items-center justify-center pb-1.5 opacity-65 group-hover:opacity-100 transition-opacity">
+                            <span className="text-[8.5px] font-mono tracking-widest text-slate-400 uppercase truncate">
                               {card.category || 'PSA 10 GEM MINT'}
                             </span>
-                            <div className="w-1.5 h-1.5 rounded-full bg-slate-400 border border-slate-600 shadow-sm" title="磁吸螺栓" />
                           </div>
                         )}
 

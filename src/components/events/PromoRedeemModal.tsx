@@ -790,60 +790,64 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
     return (
         <>
             <Dialog open={open} onOpenChange={onOpenChange}>
-                <DialogContent className="w-[calc(100vw-20px)] sm:w-full sm:max-w-lg h-auto max-h-[88vh] flex flex-col p-0 gap-0 overflow-hidden bg-[#0c101a] border border-slate-800/90 rounded-2xl shadow-2xl text-slate-100">
-                    <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-slate-800/80 shrink-0 bg-[#0c101a] pr-10 text-left">
-                        <div className="space-y-1">
-                            <DialogTitle className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                                <CalendarCheck className="w-5 h-5 text-amber-400 shrink-0" />
-                                <span>簽到 / 領券中心</span>
-                            </DialogTitle>
-                            <DialogDescription className="text-xs text-slate-400 leading-tight">
-                                每日簽到領紅利 P+ 點，輸入兌換碼或加入社群享免費抽卡！
-                            </DialogDescription>
+                <DialogContent className="w-[calc(100vw-20px)] sm:w-full sm:max-w-lg h-auto max-h-[88vh] flex flex-col p-0 gap-0 overflow-hidden bg-[#0a0f1c] border border-white/[0.1] border-t-2 border-t-amber-300/65 rounded-2xl shadow-[0_24px_64px_rgba(0,0,0,0.85)] text-slate-100">
+                    <DialogHeader className="relative p-4 sm:p-5 pb-3.5 border-b border-white/[0.08] shrink-0 bg-gradient-to-r from-[#0d1322] via-[#0a0f1c] to-[#0d1322] pr-10 text-left overflow-hidden">
+                        <div className="absolute -top-8 left-1/4 w-56 h-20 bg-amber-400/10 blur-2xl pointer-events-none" />
+                        <div className="relative z-10 flex items-center gap-3">
+                            <span className="w-[3px] h-8 rounded-full bg-gradient-to-b from-amber-200 via-amber-400 to-amber-700 shrink-0" aria-hidden="true" />
+                            <div className="space-y-0.5">
+                                <DialogTitle className="text-base sm:text-lg font-bold tracking-wide flex items-center gap-1.5">
+                                    <span className="text-white">簽到 /</span>
+                                    <span className="text-[#FDE68A]">領券中心</span>
+                                </DialogTitle>
+                                <DialogDescription className="text-xs text-slate-400 leading-tight">
+                                    每日簽到領紅利 P+ 點，輸入兌換碼或加入社群享免費抽卡
+                                </DialogDescription>
+                            </div>
                         </div>
 
                         {/* 自適應分頁導航 */}
-                        <div className="grid grid-cols-3 gap-1 mt-3 bg-slate-950/80 p-1 rounded-xl border border-slate-800/70">
+                        <div className="relative z-10 grid grid-cols-3 gap-1 mt-3.5 bg-black/40 p-1 rounded-xl border border-white/[0.08]">
                             <button
                                 type="button"
                                 onClick={() => setSelectedTab('redeem')}
                                 className={cn(
-                                    "py-1.5 px-1 sm:px-2 rounded-lg text-[11px] sm:text-xs font-semibold transition-all flex items-center justify-center gap-1",
+                                    "py-1.5 px-1 sm:px-2 rounded-lg text-[11px] sm:text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer border",
                                     selectedTab === 'redeem'
-                                        ? "bg-slate-800 text-white border border-slate-700 shadow-sm"
-                                        : "text-slate-400 hover:text-slate-200"
+                                        ? "bg-white/[0.1] text-[#FDE68A] border-amber-300/35"
+                                        : "text-slate-400 hover:text-slate-200 border-transparent"
                                 )}
                             >
-                                <CalendarCheck className="w-3.5 h-3.5 shrink-0 text-amber-400" />
+                                <CalendarCheck className="w-3.5 h-3.5 shrink-0" />
                                 <span className="truncate">簽到領券</span>
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setSelectedTab('referral')}
                                 className={cn(
-                                    "py-1.5 px-1 sm:px-2 rounded-lg text-[11px] sm:text-xs font-semibold transition-all flex items-center justify-center gap-1",
+                                    "py-1.5 px-1 sm:px-2 rounded-lg text-[11px] sm:text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer border",
                                     selectedTab === 'referral'
-                                        ? "bg-slate-800 text-white border border-slate-700 shadow-sm"
-                                        : "text-slate-400 hover:text-slate-200"
+                                        ? "bg-white/[0.1] text-[#FDE68A] border-amber-300/35"
+                                        : "text-slate-400 hover:text-slate-200 border-transparent"
                                 )}
                             >
-                                <Share2 className="w-3.5 h-3.5 shrink-0 text-cyan-400" />
+                                <Share2 className="w-3.5 h-3.5 shrink-0" />
                                 <span className="truncate">會員推薦</span>
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setSelectedTab('history')}
                                 className={cn(
-                                    "py-1.5 px-1 sm:px-2 rounded-lg text-[11px] sm:text-xs font-semibold transition-all flex items-center justify-center gap-1",
+                                    "py-1.5 px-1 sm:px-2 rounded-lg text-[11px] sm:text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer border",
                                     selectedTab === 'history'
-                                        ? "bg-slate-800 text-white border border-slate-700 shadow-sm"
-                                        : "text-slate-400 hover:text-slate-200"
+                                        ? "bg-white/[0.1] text-[#FDE68A] border-amber-300/35"
+                                        : "text-slate-400 hover:text-slate-200 border-transparent"
                                 )}
                             >
                                 <Ticket className="w-3.5 h-3.5 shrink-0" />
                                 <span className="truncate">領取紀錄</span>
                                 {allClaimedRecords.length > 0 && (
-                                    <span className="hidden xs:inline-block px-1.5 py-0.2 rounded-full bg-slate-700 text-[10px] text-slate-300 font-mono shrink-0">
+                                    <span className="hidden xs:inline-block px-1.5 py-0.2 rounded bg-white/[0.1] text-[10px] text-slate-200 font-mono shrink-0">
                                         {allClaimedRecords.length}
                                     </span>
                                 )}
@@ -856,19 +860,19 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
                         {/* 1. 兌換區 */}
                         {selectedTab === 'redeem' && (
                             <div className="space-y-4">
-                                {/* 福利卡片列表 - 僅展示尚未領取的項目，已領取的自動移至「領取紀錄」 */}
+                                {/* 福利卡片列表 */}
                                 {areAllRegularRewardsClaimed ? (
-                                    <div className="p-3.5 sm:p-4 rounded-xl bg-gradient-to-r from-emerald-950/40 via-slate-900/90 to-slate-900/90 border border-emerald-500/30 flex items-center justify-between gap-3 shadow-sm">
+                                    <div className="p-3.5 sm:p-4 rounded-xl bg-white/[0.03] border border-emerald-400/25 flex items-center justify-between gap-3">
                                         <div className="flex items-center gap-2.5 min-w-0">
-                                            <div className="p-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 shrink-0">
-                                                <CheckCircle2 className="w-5 h-5" />
+                                            <div className="p-2 rounded-lg bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 shrink-0">
+                                                <CheckCircle2 className="w-4 h-4" />
                                             </div>
                                             <div className="min-w-0">
-                                                <p className="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5">
-                                                    <span>常態福利皆已領取完畢</span>
+                                                <p className="text-xs sm:text-sm font-semibold text-white">
+                                                    常態福利皆已領取完畢
                                                 </p>
                                                 <p className="text-[11px] text-slate-400 truncate mt-0.5">
-                                                    簽到與專屬禮已移至「領取紀錄」，明日 00:00 重置簽到
+                                                    簽到與專屬禮已移至「領取紀錄」，明日 00:00 重置
                                                 </p>
                                             </div>
                                         </div>
@@ -877,7 +881,7 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
                                             variant="outline"
                                             size="sm"
                                             onClick={() => setSelectedTab('history')}
-                                            className="h-8 px-2.5 sm:px-3 text-xs font-bold border-slate-700 bg-slate-800 text-amber-300 hover:text-amber-200 shrink-0 flex items-center gap-1 cursor-pointer"
+                                            className="h-8 px-2.5 sm:px-3 text-xs font-medium border-amber-300/30 bg-amber-400/10 text-amber-200 hover:bg-amber-400/20 shrink-0 flex items-center gap-1 cursor-pointer"
                                         >
                                             <span>領取紀錄</span>
                                             <ChevronRight className="w-3.5 h-3.5" />
@@ -885,26 +889,26 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
                                     </div>
                                 ) : (
                                     <div className="space-y-2.5">
-                                        {/* 🌟 每日簽到福利卡片 (若尚未簽到才顯示) */}
+                                        {/* 每日簽到福利卡片 (香檳金焦點卡) */}
                                         {showCheckInCard && (
-                                            <div className="relative overflow-hidden p-3.5 sm:p-4 rounded-xl bg-gradient-to-br from-amber-500/15 via-rose-500/10 to-slate-900 border border-amber-500/40 shadow-[0_4px_20px_rgba(245,158,11,0.12)] flex flex-col gap-2.5 group">
+                                            <div className="relative overflow-hidden p-3.5 sm:p-4 rounded-xl bg-gradient-to-br from-[#1b1408] via-[#0e1320] to-[#0a0f1c] border border-amber-300/35 flex flex-col gap-2.5">
                                                 <div className="flex items-center justify-between gap-2.5">
                                                     <div className="space-y-1 min-w-0 flex-1">
                                                         <div className="flex items-center gap-1.5 flex-wrap">
-                                                            <div className="flex items-center gap-1 font-black text-xs sm:text-sm text-white whitespace-nowrap">
-                                                                <CalendarCheck className="w-4 h-4 text-amber-400" />
+                                                            <div className="flex items-center gap-1.5 font-bold text-xs sm:text-sm text-[#FFF8E7] whitespace-nowrap">
+                                                                <CalendarCheck className="w-4 h-4 text-amber-300" />
                                                                 <span>每日簽到福利</span>
                                                             </div>
-                                                            <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30 text-[10px] font-mono px-1.5 py-0 h-4.5 whitespace-nowrap">
-                                                                +{rewardPoints} 紅利 P+ 點
+                                                            <Badge className="bg-amber-400/15 text-amber-200 border border-amber-300/30 text-[10px] font-mono px-1.5 py-0 h-4.5 whitespace-nowrap">
+                                                                +{rewardPoints} P+
                                                             </Badge>
                                                             {bonusMultiplier > 1 && (
-                                                                <Badge className="bg-gradient-to-r from-amber-500 to-rose-600 text-slate-950 font-black text-[9px] px-1.5 py-0 h-4.5 animate-pulse">
-                                                                    🔥 {bonusMultiplier}X 加倍
+                                                                <Badge className="bg-gradient-to-r from-amber-300 to-yellow-200 text-slate-950 font-bold text-[9px] px-1.5 py-0 h-4.5 border-0">
+                                                                    {bonusMultiplier}X 加倍
                                                                 </Badge>
                                                             )}
                                                         </div>
-                                                        <p className="text-[11px] text-slate-300 leading-tight">
+                                                        <p className="text-[11px] text-slate-300/85 leading-tight">
                                                             天天登入免費簽到，累積紅利點數換專屬好禮
                                                         </p>
                                                     </div>
@@ -913,7 +917,7 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
                                                         <Button
                                                             size="sm"
                                                             asChild
-                                                            className="h-8 px-3 rounded-lg text-xs font-bold bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-sm shrink-0 whitespace-nowrap"
+                                                            className="h-8 px-3.5 rounded-lg text-xs font-bold bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 hover:brightness-105 text-slate-950 shrink-0 whitespace-nowrap"
                                                         >
                                                             <Link href="/login">
                                                                 登入簽到
@@ -924,27 +928,24 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
                                                             size="sm"
                                                             disabled={isCheckingIn}
                                                             onClick={handleCheckIn}
-                                                            className="h-8 px-3 rounded-lg text-xs font-bold shrink-0 transition-all whitespace-nowrap flex items-center gap-1.5 bg-gradient-to-r from-amber-400 to-rose-400 hover:from-amber-300 hover:to-rose-300 text-slate-950 shadow-[0_0_12px_rgba(245,158,11,0.4)] active:scale-95 cursor-pointer"
+                                                            className="h-8 px-3.5 rounded-lg text-xs font-bold shrink-0 transition-all whitespace-nowrap flex items-center gap-1.5 bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 hover:brightness-105 text-slate-950 active:scale-95 cursor-pointer"
                                                         >
                                                             {isCheckingIn ? (
                                                                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                                                             ) : (
-                                                                <>
-                                                                    <Sparkles className="w-3.5 h-3.5 shrink-0" />
-                                                                    <span>立即簽到</span>
-                                                                </>
+                                                                <span>立即簽到</span>
                                                             )}
                                                         </Button>
                                                     )}
                                                 </div>
 
                                                 {user && (
-                                                    <div className="flex items-center justify-between pt-2 border-t border-white/5 text-[11px] text-slate-400">
-                                                        <span className="flex items-center gap-1">
-                                                            <span className="w-1.5 h-1.5 rounded-full inline-block bg-amber-400 animate-ping" />
+                                                    <div className="flex items-center justify-between pt-2 border-t border-white/[0.06] text-[11px] text-slate-400">
+                                                        <span className="flex items-center gap-1.5">
+                                                            <span className="w-1.5 h-1.5 rounded-full inline-block bg-amber-300" />
                                                             <span>今日尚未簽到，點擊立即領取獎勵</span>
                                                         </span>
-                                                        <span className="font-mono text-amber-300/90 font-bold">
+                                                        <span className="font-mono text-amber-200 font-semibold tabular-nums">
                                                             目前紅利：{(userProfile?.bonusPoints ?? 0).toLocaleString()} 點
                                                         </span>
                                                     </div>
@@ -952,13 +953,13 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
                                             </div>
                                         )}
 
-                                        {/* 新手首抽福利卡片 (若尚未領取才顯示) */}
+                                        {/* 新手首抽福利卡片 */}
                                         {showStarterCard && (
-                                            <div className="p-3 sm:p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between gap-2.5">
+                                            <div className="p-3 sm:p-3.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.05] border border-white/[0.08] hover:border-amber-300/30 transition-colors flex items-center justify-between gap-2.5">
                                                 <div className="space-y-1 min-w-0 flex-1">
                                                     <div className="flex items-center gap-1.5 flex-wrap">
-                                                        <span className="text-xs font-bold text-white whitespace-nowrap">新手首抽禮</span>
-                                                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 whitespace-nowrap">
+                                                        <span className="text-xs font-semibold text-white whitespace-nowrap">新手首抽禮</span>
+                                                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-400/12 text-amber-200 border border-amber-300/25 whitespace-nowrap">
                                                             免費 1 次
                                                         </span>
                                                     </div>
@@ -969,23 +970,23 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
                                                 <Button
                                                     size="sm"
                                                     onClick={handleOneClickLoginClaim}
-                                                    className="h-8 px-3 rounded-lg text-xs font-bold shrink-0 transition-colors whitespace-nowrap bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-sm cursor-pointer active:scale-95"
+                                                    className="h-8 px-3 rounded-lg text-xs font-semibold shrink-0 transition-colors whitespace-nowrap bg-amber-400/15 hover:bg-amber-400/25 text-amber-200 border border-amber-300/35 cursor-pointer active:scale-95"
                                                 >
                                                     立即領取
                                                 </Button>
                                             </div>
                                         )}
 
-                                        {/* 加入社群首抽福利卡片 (若尚未領取才顯示) */}
+                                        {/* 加入社群首抽福利卡片 */}
                                         {showCommunityCard && (
-                                            <div className="p-3 sm:p-3.5 rounded-xl bg-gradient-to-r from-blue-950/40 via-slate-900/90 to-indigo-950/40 border border-blue-500/30 flex items-center justify-between gap-2.5">
+                                            <div className="p-3 sm:p-3.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.05] border border-white/[0.08] hover:border-amber-300/30 transition-colors flex items-center justify-between gap-2.5">
                                                 <div className="space-y-1 min-w-0 flex-1">
                                                     <div className="flex items-center gap-1.5 flex-wrap">
-                                                        <span className="text-xs font-bold text-white flex items-center gap-1 whitespace-nowrap">
-                                                            <Users className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                                                        <span className="text-xs font-semibold text-white flex items-center gap-1.5 whitespace-nowrap">
+                                                            <Users className="w-3.5 h-3.5 text-amber-300 shrink-0" />
                                                             <span>官方社群禮</span>
                                                         </span>
-                                                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-400/30 whitespace-nowrap">
+                                                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-400/12 text-amber-200 border border-amber-300/25 whitespace-nowrap">
                                                             免費 1 次
                                                         </span>
                                                     </div>
@@ -997,7 +998,7 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
                                                     size="sm"
                                                     disabled={isClaimingCommunity}
                                                     onClick={handleClaimCommunityReward}
-                                                    className="h-8 px-2.5 sm:px-3 rounded-lg text-xs font-bold shrink-0 transition-colors flex items-center gap-1 whitespace-nowrap bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_12px_rgba(37,99,235,0.4)] cursor-pointer active:scale-95"
+                                                    className="h-8 px-2.5 sm:px-3 rounded-lg text-xs font-semibold shrink-0 transition-colors flex items-center gap-1 whitespace-nowrap bg-white/[0.07] hover:bg-white/[0.12] text-slate-100 border border-white/[0.12] cursor-pointer active:scale-95"
                                                 >
                                                     {isClaimingCommunity ? (
                                                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1005,21 +1006,21 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
                                                         <>
                                                             <span className="hidden xs:inline">加入領取</span>
                                                             <span className="xs:hidden">領取</span>
-                                                            <ExternalLink className="w-3 h-3 shrink-0" />
+                                                            <ExternalLink className="w-3 h-3 shrink-0 text-amber-300" />
                                                         </>
                                                     )}
                                                 </Button>
                                             </div>
                                         )}
                                         {/* 會員推薦好友加碼卡片 */}
-                                        <div className="p-3 sm:p-3.5 rounded-xl bg-gradient-to-r from-violet-950/40 via-slate-900/90 to-cyan-950/40 border border-violet-500/30 flex items-center justify-between gap-2.5">
+                                        <div className="p-3 sm:p-3.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.05] border border-white/[0.08] hover:border-amber-300/30 transition-colors flex items-center justify-between gap-2.5">
                                             <div className="space-y-1 min-w-0 flex-1">
                                                 <div className="flex items-center gap-1.5 flex-wrap">
-                                                    <span className="text-xs font-bold text-white flex items-center gap-1 whitespace-nowrap">
-                                                        <Share2 className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                                                    <span className="text-xs font-semibold text-white flex items-center gap-1.5 whitespace-nowrap">
+                                                        <Share2 className="w-3.5 h-3.5 text-amber-300 shrink-0" />
                                                         <span>會員好友推薦禮</span>
                                                     </span>
-                                                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 whitespace-nowrap">
+                                                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-400/12 text-amber-200 border border-amber-300/25 whitespace-nowrap">
                                                         雙向加碼
                                                     </span>
                                                 </div>
@@ -1030,17 +1031,17 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
                                             <Button
                                                 size="sm"
                                                 onClick={() => setSelectedTab('referral')}
-                                                className="h-8 px-2.5 sm:px-3 rounded-lg text-xs font-bold shrink-0 transition-colors flex items-center gap-1 whitespace-nowrap bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-500 hover:to-cyan-500 text-white shadow-sm cursor-pointer active:scale-95"
+                                                className="h-8 px-2.5 sm:px-3 rounded-lg text-xs font-semibold shrink-0 transition-colors flex items-center gap-1 whitespace-nowrap bg-white/[0.07] hover:bg-white/[0.12] text-slate-100 border border-white/[0.12] cursor-pointer active:scale-95"
                                             >
                                                 <span>推薦專區</span>
-                                                <ChevronRight className="w-3 h-3 shrink-0" />
+                                                <ChevronRight className="w-3 h-3 shrink-0 text-amber-300" />
                                             </Button>
                                         </div>
                                     </div>
                                 )}
 
                                 {/* 代碼輸入 */}
-                                <div className="space-y-1.5">
+                                <div className="space-y-1.5 pt-1">
                                     <div className="flex items-center justify-between">
                                         <Label className="text-xs font-medium text-slate-300">
                                             輸入兌換碼 / 推薦碼
@@ -1048,7 +1049,7 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
                                         <button
                                             type="button"
                                             onClick={() => setSelectedTab('referral')}
-                                            className="text-[11px] text-cyan-400 hover:underline flex items-center gap-0.5"
+                                            className="text-[11px] text-amber-300 hover:text-amber-200 flex items-center gap-0.5 cursor-pointer"
                                         >
                                             <span>好友推薦碼專區</span>
                                             <ChevronRight className="w-3 h-3" />
@@ -1060,11 +1061,11 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
                                             value={inputCode}
                                             onChange={(e) => setInputCode(e.target.value)}
                                             onKeyDown={(e) => e.key === 'Enter' && handleRedeem()}
-                                            className="h-10 bg-slate-900 border-slate-800 text-white font-mono uppercase tracking-wider text-xs sm:text-sm rounded-xl focus-visible:ring-1 focus-visible:ring-slate-400 flex-1 min-w-0"
+                                            className="h-10 bg-black/40 border-white/[0.1] text-white font-mono uppercase tracking-wider text-xs sm:text-sm rounded-xl focus-visible:ring-1 focus-visible:ring-amber-300/40 focus-visible:border-amber-300/50 flex-1 min-w-0"
                                         />
                                         <Button
                                             onClick={() => handleRedeem()}
-                                            className="h-10 px-4 sm:px-5 rounded-xl bg-slate-100 hover:bg-white text-slate-950 font-bold text-xs shrink-0 whitespace-nowrap active:scale-95 transition-transform"
+                                            className="h-10 px-4 sm:px-5 rounded-xl bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 hover:brightness-105 text-slate-950 font-bold text-xs shrink-0 whitespace-nowrap active:scale-95 transition-all cursor-pointer"
                                         >
                                             兌換
                                         </Button>
@@ -1113,50 +1114,50 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
                         {/* 2. 會員推薦碼專區 */}
                         {selectedTab === 'referral' && (
                             <div className="space-y-4">
-                                {/* 頂部推薦計畫說明橫幅 */}
-                                <div className="relative overflow-hidden p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-violet-950/70 via-slate-900/90 to-cyan-950/50 border border-violet-500/30 shadow-md">
+                                {/* 頂部推薦計畫說明橫幅 (香檳金焦點卡) */}
+                                <div className="relative overflow-hidden p-4 sm:p-5 rounded-xl bg-gradient-to-br from-[#1b1408] via-[#0e1320] to-[#0a0f1c] border border-amber-300/35">
                                     <div className="space-y-1.5">
-                                        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-violet-500/20 border border-violet-500/30 text-violet-300 text-[11px] font-bold">
-                                            <Sparkles className="w-3 h-3 text-violet-400" />
+                                        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-amber-400/15 border border-amber-300/30 text-amber-200 text-[11px] font-semibold">
+                                            <Share2 className="w-3 h-3 text-amber-300" />
                                             <span>好友推廣分享計畫</span>
                                         </div>
-                                        <h4 className="text-sm sm:text-base font-black text-white">
-                                            邀請好友加入，雙方皆享豪華贈禮！
+                                        <h4 className="text-sm sm:text-base font-bold text-[#FFF8E7]">
+                                            邀請好友加入，雙方皆享專屬贈禮
                                         </h4>
                                         <p className="text-xs text-slate-300 leading-relaxed">
-                                            好友註冊即可獲得 <span className="text-amber-400 font-bold">+{bonusForReferee} 紅利 P+</span> 及 <span className="text-cyan-400 font-bold">{ticketsForReferee} 張免費抽卡券</span>；每成功推薦一位好友，您亦立得 <span className="text-amber-400 font-bold">+{bonusForReferrer} 紅利 P+</span>！
+                                            好友註冊即可獲得 <span className="text-amber-300 font-semibold">+{bonusForReferee} 紅利 P+</span> 及 <span className="text-amber-200 font-semibold">{ticketsForReferee} 張免費抽卡券</span>；每成功推薦一位好友，您亦立得 <span className="text-amber-300 font-semibold">+{bonusForReferrer} 紅利 P+</span>。
                                         </p>
                                     </div>
 
                                     {/* 推薦成效簡要統計 */}
-                                    <div className="grid grid-cols-2 gap-2 pt-3 mt-3 border-t border-white/10">
-                                        <div className="p-2.5 rounded-xl bg-black/40 border border-white/5 text-center">
+                                    <div className="grid grid-cols-2 divide-x divide-white/[0.08] pt-3 mt-3 border-t border-white/[0.08] bg-black/30 rounded-lg py-2.5">
+                                        <div className="text-center px-2">
                                             <p className="text-[10px] text-slate-400 font-medium">已成功推薦</p>
-                                            <p className="text-lg font-black font-mono text-cyan-400">
+                                            <p className="text-lg font-bold font-mono tabular-nums text-white mt-0.5">
                                                 {userProfile?.inviteCount || 0} <span className="text-[10px] text-slate-400 font-normal">人</span>
                                             </p>
                                         </div>
-                                        <div className="p-2.5 rounded-xl bg-black/40 border border-white/5 text-center">
+                                        <div className="text-center px-2">
                                             <p className="text-[10px] text-slate-400 font-medium">累計推薦紅利</p>
-                                            <p className="text-lg font-black font-mono text-amber-400">
-                                                {((userProfile?.inviteCount || 0) * bonusForReferrer).toLocaleString()} <span className="text-[10px] text-slate-400 font-normal">P+</span>
+                                            <p className="text-lg font-bold font-mono tabular-nums text-amber-300 mt-0.5">
+                                                {((userProfile?.inviteCount || 0) * bonusForReferrer).toLocaleString()} <span className="text-[10px] text-amber-200/70 font-normal">P+</span>
                                             </p>
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* 專屬推薦碼管理卡片 */}
-                                <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
+                                <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.08] space-y-3">
                                     <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-1.5 text-xs font-bold text-white">
-                                            <Gift className="w-4 h-4 text-amber-400" />
+                                        <div className="flex items-center gap-1.5 text-xs font-semibold text-white">
+                                            <Gift className="w-4 h-4 text-amber-300" />
                                             <span>我的專屬推薦碼</span>
                                         </div>
                                         {currentInviteCode && !showCustomReferralInput && (
                                             <button
                                                 type="button"
                                                 onClick={() => setShowCustomReferralInput(true)}
-                                                className="text-[11px] text-cyan-400 hover:text-cyan-300 transition-colors"
+                                                className="text-[11px] text-amber-300 hover:text-amber-200 transition-colors cursor-pointer"
                                             >
                                                 自訂好記代碼
                                             </button>
@@ -1164,18 +1165,18 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
                                     </div>
 
                                     {!user ? (
-                                        <div className="p-4 text-center space-y-2 bg-slate-950/60 rounded-xl border border-slate-800/80">
+                                        <div className="p-4 text-center space-y-2.5 bg-black/35 rounded-xl border border-white/[0.06]">
                                             <p className="text-xs text-slate-400">登入會員即可啟用您的專屬推薦碼與推廣網址</p>
-                                            <Button size="sm" asChild className="h-8 px-4 text-xs font-bold bg-amber-400 hover:bg-amber-300 text-slate-950">
+                                            <Button size="sm" asChild className="h-8 px-4 text-xs font-bold bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 hover:brightness-105 text-slate-950">
                                                 <Link href="/login">前往登入</Link>
                                             </Button>
                                         </div>
                                     ) : currentInviteCode ? (
                                         <div className="space-y-2.5">
-                                            <div className="p-3 sm:p-3.5 rounded-xl bg-slate-950 border border-amber-500/30 flex items-center justify-between shadow-inner gap-2">
+                                            <div className="p-3 sm:p-3.5 rounded-xl bg-black/40 border border-amber-300/30 flex items-center justify-between gap-2">
                                                 <div className="min-w-0">
                                                     <span className="text-[9px] text-slate-500 uppercase font-mono tracking-wider block">REFERRAL CODE</span>
-                                                    <span className="text-xl sm:text-2xl font-black font-mono tracking-wider text-amber-400 truncate block">
+                                                    <span className="text-xl sm:text-2xl font-bold font-mono tracking-wider text-amber-300 truncate block">
                                                         {currentInviteCode}
                                                     </span>
                                                 </div>
@@ -1183,8 +1184,10 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
                                                     size="sm"
                                                     onClick={handleCopyReferralCode}
                                                     className={cn(
-                                                        "h-8 px-3 text-xs font-bold shrink-0 transition-all",
-                                                        copiedReferralCode ? "bg-emerald-500 hover:bg-emerald-600 text-white" : "bg-amber-400 hover:bg-amber-300 text-slate-950"
+                                                        "h-8 px-3 text-xs font-bold shrink-0 transition-all cursor-pointer",
+                                                        copiedReferralCode
+                                                            ? "bg-emerald-500 hover:bg-emerald-400 text-slate-950"
+                                                            : "bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 hover:brightness-105 text-slate-950"
                                                     )}
                                                 >
                                                     {copiedReferralCode ? (
@@ -1200,21 +1203,21 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
                                             </div>
 
                                             {showCustomReferralInput && (
-                                                <div className="p-3 rounded-xl bg-white/5 border border-white/10 space-y-2 animate-in fade-in duration-200">
-                                                    <label className="text-[11px] font-bold text-slate-300 block">自訂個人推薦碼 (4-12 位英數字)</label>
+                                                <div className="p-3 rounded-xl bg-black/35 border border-white/[0.08] space-y-2 animate-in fade-in duration-200">
+                                                    <label className="text-[11px] font-medium text-slate-300 block">自訂個人推薦碼 (4-12 位英數字)</label>
                                                     <div className="flex gap-2">
                                                         <Input
                                                             value={customReferralInput}
                                                             onChange={e => setCustomReferralInput(e.target.value.toUpperCase())}
                                                             placeholder="如：VIPCARD88"
-                                                            className="h-8 bg-black/50 border-white/10 font-mono text-white text-xs uppercase"
+                                                            className="h-8 bg-black/50 border-white/[0.1] font-mono text-white text-xs uppercase focus-visible:border-amber-300/50"
                                                             maxLength={12}
                                                         />
                                                         <Button
                                                             size="sm"
                                                             onClick={() => handleGenerateReferralCode(customReferralInput)}
                                                             disabled={isSavingCustomReferral || customReferralInput.length < 4}
-                                                            className="h-8 px-3 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs"
+                                                            className="h-8 px-3 bg-amber-300 hover:bg-amber-200 text-slate-950 font-bold text-xs cursor-pointer"
                                                         >
                                                             {isSavingCustomReferral ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : '儲存'}
                                                         </Button>
@@ -1222,7 +1225,7 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
                                                             size="sm"
                                                             variant="ghost"
                                                             onClick={() => setShowCustomReferralInput(false)}
-                                                            className="h-8 px-2 text-xs text-slate-400 hover:text-white"
+                                                            className="h-8 px-2 text-xs text-slate-400 hover:text-white cursor-pointer"
                                                         >
                                                             取消
                                                         </Button>
@@ -1237,30 +1240,32 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
                                                     <Input
                                                         readOnly
                                                         value={inviteLink}
-                                                        className="h-8 bg-slate-950 border-slate-800 text-cyan-300 font-mono text-xs select-all truncate"
+                                                        className="h-8 bg-black/40 border-white/[0.08] text-amber-200/90 font-mono text-xs select-all truncate"
                                                     />
                                                     <Button
                                                         size="sm"
                                                         onClick={handleCopyReferralLink}
                                                         className={cn(
-                                                            "h-8 px-3 text-xs font-bold shrink-0 transition-all",
-                                                            copiedReferralLink ? "bg-emerald-500 hover:bg-emerald-600 text-white" : "bg-cyan-500 hover:bg-cyan-400 text-slate-950"
+                                                            "h-8 px-3 text-xs font-semibold shrink-0 transition-colors cursor-pointer",
+                                                            copiedReferralLink
+                                                                ? "bg-emerald-500 hover:bg-emerald-400 text-slate-950"
+                                                                : "bg-white/[0.08] hover:bg-white/[0.14] text-slate-100 border border-white/[0.12]"
                                                         )}
                                                     >
-                                                        {copiedReferralLink ? <Check className="w-3.5 h-3.5 mr-1" /> : <Copy className="w-3.5 h-3.5 mr-1" />}
+                                                        {copiedReferralLink ? <Check className="w-3.5 h-3.5 mr-1" /> : <Copy className="w-3.5 h-3.5 mr-1 text-amber-300" />}
                                                         {copiedReferralLink ? '已複製' : '複製連結'}
                                                     </Button>
                                                 </div>
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="text-center py-4 space-y-2 bg-slate-950/60 rounded-xl border border-slate-800/80">
+                                        <div className="text-center py-4 space-y-2.5 bg-black/35 rounded-xl border border-white/[0.06]">
                                             <p className="text-xs text-slate-300">您尚未啟用專屬會員推薦碼</p>
                                             <Button
                                                 size="sm"
                                                 onClick={() => handleGenerateReferralCode()}
                                                 disabled={isGeneratingReferralCode}
-                                                className="h-9 px-5 rounded-xl font-bold text-xs bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 shadow-md cursor-pointer hover:scale-105 active:scale-95 transition-all"
+                                                className="h-9 px-5 rounded-lg font-bold text-xs bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 hover:brightness-105 text-slate-950 cursor-pointer active:scale-95 transition-all"
                                             >
                                                 {isGeneratingReferralCode ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Sparkles className="w-3.5 h-3.5 mr-1.5" />}
                                                 立即免費啟用推薦碼
@@ -1270,21 +1275,21 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
                                 </div>
 
                                 {/* 綁定好友推薦碼卡片 */}
-                                <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-2.5">
+                                <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.08] space-y-2.5">
                                     <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-1.5 text-xs font-bold text-white">
-                                            <UserPlus className="w-4 h-4 text-emerald-400" />
+                                        <div className="flex items-center gap-1.5 text-xs font-semibold text-white">
+                                            <UserPlus className="w-4 h-4 text-amber-300" />
                                             <span>綁定好友推薦碼（迎新加碼禮）</span>
                                         </div>
                                         {userProfile?.referredBy && (
-                                            <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 text-[10px]">
+                                            <Badge className="bg-emerald-500/15 text-emerald-300 border border-emerald-400/30 text-[10px]">
                                                 已完成綁定
                                             </Badge>
                                         )}
                                     </div>
 
                                     {userProfile?.referredBy ? (
-                                        <div className="p-3 rounded-xl bg-emerald-950/30 border border-emerald-500/30 flex items-center justify-between text-xs text-slate-300">
+                                        <div className="p-3 rounded-xl bg-emerald-950/25 border border-emerald-400/25 flex items-center justify-between text-xs text-slate-300">
                                             <div className="flex items-center gap-2">
                                                 <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                                                 <span>已綁定好友推薦碼：<strong className="font-mono text-emerald-300">{userProfile.referredBy}</strong></span>
@@ -1294,7 +1299,7 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
                                     ) : (
                                         <div className="space-y-2">
                                             <p className="text-[11px] text-slate-400">
-                                                輸入好友提供的專屬推薦碼，立即額外獲得 +{bonusForReferee} 紅利 P+ 及 {ticketsForReferee} 張免費抽卡券！
+                                                輸入好友提供的專屬推薦碼，立即額外獲得 +{bonusForReferee} 紅利 P+ 及 {ticketsForReferee} 張免費抽卡券
                                             </p>
                                             <div className="flex gap-2">
                                                 <Input
@@ -1302,13 +1307,13 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
                                                     value={friendReferralInput}
                                                     onChange={e => setFriendReferralInput(e.target.value.toUpperCase())}
                                                     onKeyDown={e => e.key === 'Enter' && handleApplyFriendReferral()}
-                                                    className="h-9 bg-slate-950 border-slate-800 text-white font-mono uppercase text-xs rounded-xl"
+                                                    className="h-9 bg-black/40 border-white/[0.1] text-white font-mono uppercase text-xs rounded-lg focus-visible:border-amber-300/50"
                                                 />
                                                 <Button
                                                     size="sm"
                                                     disabled={isApplyingReferral || !friendReferralInput.trim()}
                                                     onClick={() => handleApplyFriendReferral()}
-                                                    className="h-9 px-4 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 shrink-0 cursor-pointer active:scale-95"
+                                                    className="h-9 px-4 rounded-lg text-xs font-bold bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 hover:brightness-105 text-slate-950 shrink-0 cursor-pointer active:scale-95"
                                                 >
                                                     {isApplyingReferral ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : '確認綁定'}
                                                 </Button>
@@ -1319,32 +1324,32 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
 
                                 {/* 推薦好友名單明細 */}
                                 {user && (
-                                    <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-2.5">
+                                    <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.08] space-y-2.5">
                                         <div className="flex items-center justify-between text-xs">
-                                            <span className="font-bold text-white flex items-center gap-1.5">
-                                                <Users className="w-3.5 h-3.5 text-cyan-400" />
+                                            <span className="font-semibold text-white flex items-center gap-1.5">
+                                                <Users className="w-3.5 h-3.5 text-amber-300" />
                                                 <span>我推薦的好友 ({myReferralLogs?.length || 0} 位)</span>
                                             </span>
                                             <span className="text-[11px] text-slate-400">最新推薦明細</span>
                                         </div>
 
                                         {isLoadingLogs ? (
-                                            <div className="py-4 text-center text-xs text-slate-500">
-                                                <Loader2 className="w-4 h-4 animate-spin mx-auto mb-1 text-cyan-400" />
+                                            <div className="py-4 text-center text-xs text-slate-400">
+                                                <Loader2 className="w-4 h-4 animate-spin mx-auto mb-1 text-amber-300" />
                                                 載入推薦紀錄中...
                                             </div>
                                         ) : myReferralLogs && myReferralLogs.length > 0 ? (
                                             <div className="space-y-1.5 max-h-36 overflow-y-auto">
                                                 {myReferralLogs.map((log: any) => (
-                                                    <div key={log.id} className="p-2 rounded-lg bg-slate-950/80 border border-white/5 flex items-center justify-between text-xs">
+                                                    <div key={log.id} className="p-2.5 rounded-lg bg-black/35 border border-white/[0.06] flex items-center justify-between text-xs">
                                                         <div className="flex items-center gap-2 min-w-0">
-                                                            <div className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-300 text-[10px] font-bold flex items-center justify-center shrink-0">
+                                                            <div className="w-5 h-5 rounded-full bg-amber-400/15 border border-amber-300/30 text-amber-200 text-[10px] font-bold flex items-center justify-center shrink-0">
                                                                 {(log.newUserName || '友').charAt(0)}
                                                             </div>
-                                                            <span className="font-bold text-white truncate text-[11px]">{log.newUserName || '新會員'}</span>
+                                                            <span className="font-semibold text-white truncate text-[11px]">{log.newUserName || '新會員'}</span>
                                                         </div>
                                                         <div className="flex items-center gap-2 shrink-0">
-                                                            <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30 text-[9px] font-mono">
+                                                            <Badge className="bg-amber-400/15 text-amber-200 border border-amber-300/30 text-[9px] font-mono">
                                                                 +{log.referrerBonusGiven || bonusForReferrer} P+
                                                             </Badge>
                                                             <span className="text-[10px] text-slate-500 font-mono">
@@ -1370,36 +1375,35 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
                         {selectedTab === 'history' && (
                             <div className="space-y-3">
                                 {allClaimedRecords.length === 0 ? (
-                                    <div className="py-12 text-center text-slate-500 space-y-2">
-                                        <Ticket className="w-10 h-10 mx-auto text-slate-600 stroke-[1.5]" />
-                                        <p className="text-xs font-medium">尚無已領取之福利或票券</p>
-                                        <p className="text-[11px] text-slate-600">完成簽到或兌換活動代碼後將在此呈現</p>
+                                    <div className="py-12 rounded-xl bg-white/[0.02] border border-white/[0.06] text-center text-slate-400 space-y-2">
+                                        <Ticket className="w-9 h-9 mx-auto text-amber-300/40 stroke-[1.5]" />
+                                        <p className="text-xs font-medium text-slate-300">尚無已領取之福利或票券</p>
+                                        <p className="text-[11px] text-slate-500">完成簽到或兌換活動代碼後將在此呈現</p>
                                     </div>
                                 ) : (
                                     <div className="space-y-2">
                                         {allClaimedRecords.map((item) => (
                                             <div
                                                 key={item.id}
-                                                className="p-3 sm:p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between gap-3 text-xs transition-colors hover:border-slate-700"
+                                                className="p-3 sm:p-3.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.05] border border-white/[0.08] hover:border-amber-300/30 flex items-center justify-between gap-3 text-xs transition-colors"
                                             >
                                                 <div className="flex items-center gap-2.5 min-w-0 flex-1">
                                                     <div className={cn(
-                                                        "p-2 rounded-lg shrink-0",
-                                                        item.type === 'checkin' ? "bg-amber-500/15 text-amber-400 border border-amber-500/30" :
-                                                        item.type === 'community' ? "bg-blue-500/15 text-blue-400 border border-blue-500/30" :
-                                                        item.type === 'starter' ? "bg-rose-500/15 text-rose-400 border border-rose-500/30" :
-                                                        "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                                                        "p-2 rounded-lg shrink-0 border",
+                                                        item.type === 'checkin'
+                                                            ? "bg-amber-400/12 text-amber-300 border-amber-300/30"
+                                                            : "bg-white/[0.05] text-amber-200 border-white/[0.1]"
                                                     )}>
                                                         {item.type === 'checkin' ? <CalendarCheck className="w-4 h-4" /> :
                                                          item.type === 'community' ? <Users className="w-4 h-4" /> :
-                                                         item.type === 'starter' ? <Sparkles className="w-4 h-4" /> :
+                                                         item.type === 'starter' ? <Gift className="w-4 h-4" /> :
                                                          <Ticket className="w-4 h-4" />}
                                                     </div>
                                                     <div className="space-y-0.5 min-w-0 flex-1">
                                                         <div className="flex items-center gap-1.5 flex-wrap">
-                                                            <span className="font-bold text-white text-xs truncate">{item.title}</span>
+                                                            <span className="font-semibold text-white text-xs truncate">{item.title}</span>
                                                             {item.code && (
-                                                                <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 border border-slate-700/60">
+                                                                <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-white/[0.06] text-slate-300 border border-white/[0.08]">
                                                                     {item.code}
                                                                 </span>
                                                             )}
@@ -1413,10 +1417,10 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
 
                                                 <div className="text-right shrink-0">
                                                     <span className={cn(
-                                                        "text-xs font-bold font-mono px-2 py-0.5 rounded-md inline-block",
+                                                        "text-[11px] font-semibold font-mono tabular-nums px-2 py-0.5 rounded-md inline-block border",
                                                         item.rewardType === 'points' 
-                                                            ? "bg-amber-500/15 text-amber-300 border border-amber-500/30" 
-                                                            : "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30"
+                                                            ? "bg-amber-400/12 text-amber-200 border-amber-300/30" 
+                                                            : "bg-emerald-500/12 text-emerald-300 border-emerald-400/30"
                                                     )}>
                                                         {item.rewardText}
                                                     </span>
@@ -1428,10 +1432,10 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
 
                                 {/* 帳戶當前資產總覽小卡 */}
                                 {user && allClaimedRecords.length > 0 && (
-                                    <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 flex items-center justify-between text-xs text-slate-400 mt-2">
+                                    <div className="p-3 rounded-xl bg-black/35 border border-white/[0.08] flex items-center justify-between text-xs text-slate-300 mt-2">
                                         <div className="flex items-center gap-1.5">
-                                            <Coins className="w-3.5 h-3.5 text-amber-400" />
-                                            <span>累積紅利：<span className="font-mono font-bold text-amber-300">{(userProfile?.bonusPoints ?? 0).toLocaleString()}</span> 點</span>
+                                            <Coins className="w-3.5 h-3.5 text-amber-300" />
+                                            <span>累積紅利：<span className="font-mono font-bold tabular-nums text-amber-300">{(userProfile?.bonusPoints ?? 0).toLocaleString()}</span> 點</span>
                                         </div>
                                         <Button
                                             size="sm"

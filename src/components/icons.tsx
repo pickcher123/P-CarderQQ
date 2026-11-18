@@ -157,23 +157,51 @@ export function PPlusIcon({ className }: { className?: string }) {
 }
 
 /**
- * 拼卡專區圖示：兩張卡片交叉 (Crossed Cards)
+ * 拼卡專區圖示：雙卡對決徽章
  */
 export function CrossedCardsIcon({ className }: { className?: string }) {
   return (
-    <svg 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      strokeLinecap="round" 
-      strokeLinejoin="round" 
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
       className={className}
     >
-      <rect x="3" y="6" width="10" height="14" rx="2" transform="rotate(-15 8 13)" />
-      <rect x="11" y="4" width="10" height="14" rx="2" transform="rotate(15 16 11)" />
-      <path d="M12 8v8" opacity="0.3" />
-      <path d="M8 12h8" opacity="0.3" />
+      <path d="M5.5 7.5L13.5 5.5C14.6 5.2 15.7 5.9 16 7L18.5 16.5C18.8 17.6 18.1 18.7 17 19L9 21C7.9 21.3 6.8 20.6 6.5 19.5L4 10C3.7 8.9 4.4 7.8 5.5 7.5Z" opacity="0.45" />
+      <rect x="8" y="3.5" width="11" height="15.5" rx="2.2" fill="#0a0f1c" fillOpacity="0.65" />
+      <path d="M13.5 8.5L15.8 11.25L13.5 14L11.2 11.25L13.5 8.5Z" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+/**
+ * 命運轉盤圖示：八分區輪盤與頂部指針
+ */
+export function WheelPrizeIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <circle cx="12" cy="13" r="8.5" />
+      <circle cx="12" cy="13" r="2.2" fill="currentColor" stroke="none" />
+      <path d="M12 4.5V10.8" />
+      <path d="M12 15.2V21.5" />
+      <path d="M3.5 13H9.8" />
+      <path d="M14.2 13H20.5" />
+      <path d="M6 7L10.4 11.4" opacity="0.55" />
+      <path d="M13.6 14.6L18 19" opacity="0.55" />
+      <path d="M18 7L13.6 11.4" opacity="0.55" />
+      <path d="M10.4 14.6L6 19" opacity="0.55" />
+      <polygon points="12,4.8 10,1.5 14,1.5" fill="currentColor" stroke="none" />
     </svg>
   );
 }

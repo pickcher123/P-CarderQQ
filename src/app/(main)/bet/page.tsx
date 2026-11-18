@@ -8,7 +8,7 @@ import { SafeImage } from '@/components/safe-image';
 import { useCollection, useFirestore, useMemoFirebase, useUser, useDoc } from '@/firebase';
 import { collection, query, orderBy, doc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CrossedCardsIcon, DiamondIcon, PPlusIcon } from '@/components/icons';
+import { CrossedCardsIcon, DiamondIcon, PPlusIcon, WheelPrizeIcon } from '@/components/icons';
 import { useIsAdmin } from '@/hooks/use-is-admin';
 import { 
     Sparkles, ShoppingBag,
@@ -283,24 +283,24 @@ export default function BetLandingPage() {
 
             <div className="container px-3 sm:px-6 pt-3 sm:pt-7 pb-20 max-w-7xl mx-auto space-y-4 sm:space-y-6">
 
-                {/* 🎯 頂部雙專區快速切換器：球員卡拼卡 vs 兌換獎品 (命運轉盤) */}
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-2 sm:p-2.5 rounded-2xl bg-slate-950/90 border border-white/10 shadow-[0_10px_35px_rgba(0,0,0,0.65)] backdrop-blur-xl">
-                    <div className="grid grid-cols-2 gap-1.5 sm:gap-2 flex-1 max-w-xl">
+                {/* 頂部雙專區切換列：球員卡拼卡 vs 兌換獎品 (命運轉盤) */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 p-1.5 sm:px-3 sm:py-2 rounded-2xl bg-[#0a0f1c]/95 border border-white/[0.08]">
+                    <div className="grid grid-cols-2 sm:inline-flex items-center bg-black/40 p-1 rounded-xl border border-white/[0.06] gap-1">
                         <button
                             type="button"
                             onClick={() => setActiveSection('cards')}
                             className={cn(
-                                "h-11 sm:h-12 px-3 sm:px-5 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer",
+                                "h-9 sm:h-10 px-3 sm:px-4 rounded-lg font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-[background-color,border-color,color] duration-150 cursor-pointer border whitespace-nowrap",
                                 activeSection === 'cards'
-                                    ? "bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 text-white shadow-[0_0_20px_rgba(244,63,94,0.4)] border border-rose-300/40"
-                                    : "bg-white/[0.03] hover:bg-white/[0.07] text-slate-300 border border-transparent"
+                                    ? "bg-white/[0.09] text-white border-rose-400/35 shadow-[0_1px_2px_rgba(0,0,0,0.45)]"
+                                    : "bg-transparent hover:bg-white/[0.04] text-slate-400 hover:text-slate-200 border-transparent"
                             )}
                         >
-                            <CrossedCardsIcon className="w-4 h-4 shrink-0" />
+                            <CrossedCardsIcon className={cn("w-4 h-4 shrink-0", activeSection === 'cards' ? "text-rose-400" : "text-slate-400")} />
                             <span>球員卡拼卡</span>
                             <span className={cn(
-                                "text-[10px] font-mono px-1.5 py-0.5 rounded-md",
-                                activeSection === 'cards' ? "bg-black/25 text-rose-100" : "bg-white/10 text-slate-400"
+                                "text-[11px] font-mono px-1.5 py-0.2 rounded",
+                                activeSection === 'cards' ? "bg-rose-500/20 text-rose-200" : "bg-white/[0.06] text-slate-400"
                             )}>
                                 {finalIsLoading ? '--' : stats.availableItems}
                             </span>
@@ -310,34 +310,34 @@ export default function BetLandingPage() {
                             type="button"
                             onClick={() => setActiveSection('prizes')}
                             className={cn(
-                                "relative h-11 sm:h-12 px-3 sm:px-5 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer",
+                                "h-9 sm:h-10 px-3 sm:px-4 rounded-lg font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-[background-color,border-color,color] duration-150 cursor-pointer border whitespace-nowrap",
                                 activeSection === 'prizes'
-                                    ? "bg-gradient-to-r from-amber-400 via-orange-400 to-rose-500 text-slate-950 shadow-[0_0_24px_rgba(245,158,11,0.45)] border border-yellow-200/70"
-                                    : "bg-amber-500/10 hover:bg-amber-500/20 text-amber-200 border border-amber-500/25"
+                                    ? "bg-white/[0.09] text-white border-amber-400/35 shadow-[0_1px_2px_rgba(0,0,0,0.45)]"
+                                    : "bg-transparent hover:bg-white/[0.04] text-slate-400 hover:text-slate-200 border-transparent"
                             )}
                         >
-                            <Disc3 className={cn("w-4 h-4 shrink-0", activeSection === 'prizes' ? "text-slate-950 animate-spin" : "text-amber-400")} style={{ animationDuration: '6s' }} />
+                            <WheelPrizeIcon className={cn("w-4 h-4 shrink-0", activeSection === 'prizes' ? "text-amber-300" : "text-slate-400")} />
                             <span>兌換獎品 · 命運轉盤</span>
                             <span className={cn(
-                                "text-[10px] font-mono px-1.5 py-0.5 rounded-md",
-                                activeSection === 'prizes' ? "bg-black/20 text-slate-950 font-black" : "bg-amber-500/20 text-amber-300"
+                                "text-[11px] font-mono px-1.5 py-0.2 rounded",
+                                activeSection === 'prizes' ? "bg-amber-500/20 text-amber-200" : "bg-white/[0.06] text-slate-400"
                             )}>
                                 {isLoadingPrizes ? '--' : totalActivePrizeCount}
                             </span>
                         </button>
                     </div>
 
-                    {/* 右側即時紅利 P+ 餘額提示 */}
+                    {/* 右側即時可用資產 */}
                     {user && userProfile && (
-                        <div className="flex items-center justify-between sm:justify-end gap-3 px-3 py-1.5 rounded-xl bg-slate-900/80 border border-white/5 text-xs">
-                            <span className="text-slate-400 font-medium">可用資產：</span>
-                            <div className="flex items-center gap-3 font-mono font-black">
-                                <span className="flex items-center gap-1 text-amber-300">
+                        <div className="flex items-center justify-between sm:justify-end gap-3 px-2.5 py-1 text-xs">
+                            <span className="text-slate-400 text-[11px] font-medium">可用資產</span>
+                            <div className="flex items-center gap-2.5 font-mono font-semibold tabular-nums">
+                                <span className="flex items-center gap-1.5 text-amber-300">
                                     <PPlusIcon className="w-3.5 h-3.5 text-amber-400" />
                                     {(userProfile.bonusPoints ?? 0).toLocaleString()}
                                 </span>
-                                <span className="text-white/15">|</span>
-                                <span className="flex items-center gap-1 text-cyan-300">
+                                <span className="h-3.5 w-px bg-white/[0.12]" aria-hidden="true" />
+                                <span className="flex items-center gap-1.5 text-cyan-300">
                                     <DiamondIcon className="w-3.5 h-3.5" />
                                     {(userProfile.points ?? 0).toLocaleString()}
                                 </span>
