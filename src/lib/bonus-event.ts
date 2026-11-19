@@ -33,20 +33,47 @@ export const DEFAULT_BONUS_EVENT: BonusEventConfig = {
   },
 };
 
+function getLocalDateString(now: Date = new Date()): string {
+  return (
+    now.getFullYear() +
+    '-' +
+    String(now.getMonth() + 1).padStart(2, '0') +
+    '-' +
+    String(now.getDate()).padStart(2, '0')
+  );
+}
+
+function normalizeDateString(dateStr?: string): string | undefined {
+  return dateStr?.trim().replace(/\//g, '-') || undefined;
+}
+
+/**
+ * 檢查紅利加倍活動是否已超過結束日期
+ */
+export function isBonusEventExpired(config?: Partial<BonusEventConfig> | null): boolean {
+  const target = config ?? DEFAULT_BONUS_EVENT;
+  const endDate = normalizeDateString(target.endDate || DEFAULT_BONUS_EVENT.endDate);
+  if (!endDate) return false;
+
+  try {
+    return getLocalDateString() > endDate;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * 檢查紅利加倍活動目前是否在生傚期間內
  */
 export function isBonusEventActive(config?: Partial<BonusEventConfig> | null): boolean {
-  // 若未傳入或 isActive 未特別設為 false，則預設為啟用
-  if (!config) return DEFAULT_BONUS_EVENT.isActive;
+  // 若未傳入或 isActive 未特別設為 false，則預設為啟用並檢查起訖日期
+  if (!config) return isBonusEventActive(DEFAULT_BONUS_EVENT);
   if (config.isActive === false) return false;
 
   try {
-    const now = new Date();
-    const todayStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
-
-    const startDate = config.startDate || DEFAULT_BONUS_EVENT.startDate;
-    const endDate = config.endDate || DEFAULT_BONUS_EVENT.endDate;
+    const todayStr = getLocalDateString();
+    const startDate = normalizeDateString(config.startDate || DEFAULT_BONUS_EVENT.startDate);
+    const endDate = normalizeDateString(config.endDate || DEFAULT_BONUS_EVENT.endDate);
 
     if (startDate && todayStr < startDate) {
       return false;

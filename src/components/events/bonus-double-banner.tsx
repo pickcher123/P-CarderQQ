@@ -20,6 +20,22 @@ interface BonusDoubleBannerProps {
   className?: string;
 }
 
+function useIsBonusEventActive(eventConfig: BonusEventConfig): boolean {
+  const [tick, setTick] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTick((t) => t + 1);
+    }, 30_000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return useMemo(() => {
+    void tick;
+    return isBonusEventActive(eventConfig);
+  }, [eventConfig, tick]);
+}
+
 export function BonusDoubleBanner({
   onOpenPromoModal,
   onOpenPurchaseModal,
@@ -39,8 +55,8 @@ export function BonusDoubleBanner({
     };
   }, [systemConfig]);
 
-  // 確保活動預設啟動，絕不因非同步載入而白屏或隱藏
-  const isActive = eventConfig.isActive !== false;
+  // 依活動開關與起訖日期判斷是否生效（到期自動關閉隱藏）
+  const isActive = useIsBonusEventActive(eventConfig);
   const multiplier = eventConfig.multiplier || 2;
   const baseCheckInPoints = missions?.[0]?.rewardPoints ?? 10;
   const checkInRewardPoints = Math.round(baseCheckInPoints * multiplier);
@@ -301,7 +317,8 @@ export function BonusDoubleHeroPill({ onOpenDetail }: { onOpenDetail?: () => voi
     };
   }, [systemConfig]);
 
-  if (eventConfig.isActive === false) return null;
+  const isActive = useIsBonusEventActive(eventConfig);
+  if (!isActive) return null;
   const multiplier = eventConfig.multiplier || 2;
 
   return (
@@ -359,7 +376,8 @@ export function BonusDoubleTicker({ onOpenDetail }: { onOpenDetail?: () => void 
     };
   }, [systemConfig]);
 
-  if (eventConfig.isActive === false) return null;
+  const isActive = useIsBonusEventActive(eventConfig);
+  if (!isActive) return null;
   const multiplier = eventConfig.multiplier || 2;
   const baseCheckInPoints = missions?.[0]?.rewardPoints ?? 10;
   const checkInRewardPoints = Math.round(baseCheckInPoints * multiplier);

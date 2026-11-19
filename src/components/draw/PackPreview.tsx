@@ -140,15 +140,6 @@ export function PackPreview({
                                     )}>
                                         {effectiveTickets} 張可用
                                     </span>
-                                    {effectiveTickets === 0 && (
-                                        <button
-                                            type="button"
-                                            onClick={() => setIsPromoModalOpen(true)}
-                                            className="text-[11px] font-bold text-[#FDE68A] hover:text-amber-200 underline underline-offset-2 cursor-pointer"
-                                        >
-                                            去領券
-                                        </button>
-                                    )}
                                 </div>
                             </div>
                             
@@ -416,32 +407,15 @@ export function PackPreview({
                                 ) : selectedNumbers && selectedNumbers.length > 0 ? (
                                     <><Zap className="mr-2 h-4 w-4 fill-[#120d02]" /> 啟動自選開獎 ({selectedNumbers.map(n => '#' + n).join(', ')})</>
                                 ) : (
-                                    <><Zap className="mr-2 h-4 w-4 fill-[#120d02]" /> 啟動正式開獎 ({cost.toLocaleString()} {isPPoint ? 'P點' : '鑽'})</>
+                                    <><Zap className="mr-2 h-4 w-4 fill-[#120d02]" /> 啟動正式開獎</>
                                 )}
                             </Button>
                         )}
                     </div>
                 </div>
 
-                {/* 第一次玩教學 & 公平驗證 & 取消 */}
+                {/* 取消 */}
                 <div className="flex flex-wrap items-center justify-center gap-2 pt-0.5">
-                    <BeginnerGuideDialog
-                        triggerVariant="compact"
-                        buttonText="新手開獎須知"
-                        triggerClassName="h-8 text-[11px] bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-amber-300/35 text-amber-200 rounded-xl"
-                    />
-                    <ProvablyFairDialog
-                        variant="button"
-                        trigger={
-                            <button
-                                type="button"
-                                className="h-8 px-3 rounded-xl border border-white/[0.08] hover:border-emerald-400/40 text-emerald-300 bg-white/[0.04] hover:bg-emerald-400/10 text-[11px] font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer"
-                            >
-                                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                                <span>公平驗證</span>
-                            </button>
-                        }
-                    />
                     <Button asChild variant="ghost" className="h-8 px-3 text-slate-400 hover:text-white bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] font-semibold text-[11px] rounded-xl">
                         <Link href="/draw">
                             <ArrowLeft className="w-3.5 h-3.5 mr-1" /> 取消

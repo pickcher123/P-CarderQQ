@@ -33,6 +33,7 @@ import {
   Home,
   Wrench,
   ShieldAlert,
+  Lock,
   Calendar
 } from 'lucide-react';
 import { useRequest, useFirestore, useMemoFirebase, useDoc, useUser } from "@/firebase";
@@ -362,6 +363,8 @@ export default function AdminDashboardPage() {
   };
 
   const isSuperAdmin = isSuperAdminEmail(currentUser?.email);
+  const [isSystemTabUnlocked, setIsSystemTabUnlocked] = useState(false);
+  const [systemPasscodeInput, setSystemPasscodeInput] = useState('');
 
   const totalUsers = users?.length ?? 0;
   const adminUsers = users?.filter((u: any) => u.role === 'admin').length ?? 0;
@@ -1051,6 +1054,49 @@ export default function AdminDashboardPage() {
 
         {/* Tab 4: System Information */}
         <TabsContent value="system" className="space-y-4">
+          {!isSystemTabUnlocked ? (
+            <Card className="bg-[#0a0f1c] border border-white/[0.1] border-t-2 border-t-amber-300/65 text-white rounded-2xl shadow-[0_24px_64px_rgba(0,0,0,0.65)]">
+              <CardContent className="p-8 sm:p-10 flex flex-col items-center text-center max-w-md mx-auto space-y-5">
+                <div className="w-14 h-14 rounded-2xl bg-amber-400/10 border border-amber-300/35 flex items-center justify-center">
+                  <Lock className="w-7 h-7 text-[#FDE68A]" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-lg font-black text-white">系統資訊與安全驗證</h3>
+                  <p className="text-xs text-slate-400">
+                    此區域包含全站核心架構與機密保護設定，請輸入授權密碼後進入。
+                  </p>
+                </div>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (systemPasscodeInput.trim() === '90301251') {
+                      setIsSystemTabUnlocked(true);
+                      setSystemPasscodeInput('');
+                      toast({ title: '驗證成功', description: '已解鎖系統資訊與安全專區。' });
+                    } else {
+                      toast({ variant: 'destructive', title: '密碼錯誤', description: '請輸入正確的授權密碼。' });
+                    }
+                  }}
+                  className="w-full space-y-3"
+                >
+                  <Input
+                    type="password"
+                    placeholder="請輸入授權密碼"
+                    value={systemPasscodeInput}
+                    onChange={(e) => setSystemPasscodeInput(e.target.value)}
+                    className="h-11 bg-black/50 border-white/15 text-white text-center font-mono tracking-widest rounded-xl"
+                  />
+                  <Button
+                    type="submit"
+                    className="w-full h-10 rounded-xl bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] font-black text-xs cursor-pointer"
+                  >
+                    驗證並進入
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          ) : (
+            <>
           {/* 🚀 全站版本即時切換控制卡 */}
           <Card className="border-slate-200/90 shadow-xs bg-white rounded-xl overflow-hidden">
             <CardHeader className="p-5 pb-3 border-b border-slate-100 bg-gradient-to-r from-amber-50/50 via-white to-slate-50/50">
@@ -1179,16 +1225,129 @@ export default function AdminDashboardPage() {
               </div>
 
               {isSuperAdmin && (
-                <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-800">最高主管維護功能</h4>
-                    <p className="text-[11px] text-slate-500 mt-0.5">重置測試期間生成的交易訂單與帳號數據（需輸入授權密碼）。</p>
+                <div className="pt-4 border-t border-slate-100 space-y-4">
+                  {/* 極度機密系統：店家保護功能（僅超級管理員可見） */}
+                  <div className="rounded-2xl bg-[#0a0f1c] border border-amber-300/45 p-5 text-white shadow-xl space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-[3px] h-8 rounded-full bg-gradient-to-b from-amber-200 via-amber-400 to-amber-700" />
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-sm font-black text-[#FDE68A]">店家保護功能</h4>
+                            <Badge className="bg-rose-500/20 text-rose-300 border-rose-400/40 text-[10px] font-black">
+                              極度機密 · 僅超級管理員可見
+                            </Badge>
+                          </div>
+                          <p className="text-[11px] text-slate-400 mt-0.5">
+                            控制卡池大獎出獎進度門檻與拼卡最低轉數門檻，防止開局前段被秒抽大獎。
+                          </p>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={Boolean(systemConfig?.storeProtection?.enabled)}
+                        onCheckedChange={async (checked) => {
+                          if (!firestore) return;
+                          await setDoc(
+                            doc(firestore, 'systemConfig', 'main'),
+                            {
+                              storeProtection: {
+                                enabled: checked,
+                                poolMinProgressPct: systemConfig?.storeProtection?.poolMinProgressPct ?? 30,
+                                bettingMinSpin: systemConfig?.storeProtection?.bettingMinSpin ?? 3,
+                              },
+                            },
+                            { merge: true }
+                          );
+                          toast({
+                            title: checked ? '🛡️ 已啟用店家保護功能' : '已關閉店家保護功能',
+                            description: checked
+                              ? '卡池需抽過門檻比例、拼卡需達最低轉數後才會釋出大獎。'
+                              : '已恢復完全隨機機率出獎。',
+                          });
+                        }}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-white/[0.08]">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-bold text-slate-300">
+                          卡池大獎解鎖門檻（已抽進度 %）
+                        </Label>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            min={0}
+                            max={90}
+                            defaultValue={systemConfig?.storeProtection?.poolMinProgressPct ?? 30}
+                            onBlur={async (e) => {
+                              if (!firestore) return;
+                              const val = Math.max(0, Math.min(90, Number(e.target.value || 30)));
+                              await setDoc(
+                                doc(firestore, 'systemConfig', 'main'),
+                                {
+                                  storeProtection: {
+                                    enabled: Boolean(systemConfig?.storeProtection?.enabled),
+                                    poolMinProgressPct: val,
+                                    bettingMinSpin: systemConfig?.storeProtection?.bettingMinSpin ?? 3,
+                                  },
+                                },
+                                { merge: true }
+                              );
+                              toast({ title: '已更新卡池保護門檻', description: `已抽超過 ${val}% 後才釋出大獎。` });
+                            }}
+                            className="h-9 bg-black/50 border-white/15 text-white font-mono text-xs w-28"
+                          />
+                          <span className="text-xs text-slate-400">% 以上才出大獎（預設 30%）</span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-bold text-slate-300">
+                          拼卡最低出獎轉數門檻（轉）
+                        </Label>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            min={1}
+                            max={20}
+                            defaultValue={systemConfig?.storeProtection?.bettingMinSpin ?? 3}
+                            onBlur={async (e) => {
+                              if (!firestore) return;
+                              const val = Math.max(1, Math.min(20, Number(e.target.value || 3)));
+                              await setDoc(
+                                doc(firestore, 'systemConfig', 'main'),
+                                {
+                                  storeProtection: {
+                                    enabled: Boolean(systemConfig?.storeProtection?.enabled),
+                                    poolMinProgressPct: systemConfig?.storeProtection?.poolMinProgressPct ?? 30,
+                                    bettingMinSpin: val,
+                                  },
+                                },
+                                { merge: true }
+                              );
+                              toast({ title: '已更新拼卡保護門檻', description: `達第 ${val} 轉（含）以上才可出大獎。` });
+                            }}
+                            className="h-9 bg-black/50 border-white/15 text-white font-mono text-xs w-28"
+                          />
+                          <span className="text-xs text-slate-400">轉以上才出大獎（預設 3 轉）</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <BetaWipeDialog />
+
+                  <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-800">最高主管維護功能</h4>
+                      <p className="text-[11px] text-slate-500 mt-0.5">重置測試期間生成的交易訂單與帳號數據（需輸入授權密碼）。</p>
+                    </div>
+                    <BetaWipeDialog />
+                  </div>
                 </div>
               )}
             </CardContent>
           </Card>
+            </>
+          )}
         </TabsContent>
       </Tabs>
     </div>

@@ -18,6 +18,7 @@ export const userLevels = [
     { 
         level: '新手收藏家', 
         threshold: 0, 
+        rebateRate: 0, 
         color: 'text-slate-300', 
         border: 'border-slate-500/50', 
         glow: 'shadow-[0_4px_14px_rgba(0,0,0,0.65)]', 
@@ -28,6 +29,7 @@ export const userLevels = [
     { 
         level: '進階收藏家', 
         threshold: 15000, 
+        rebateRate: 1, 
         color: 'text-slate-100', 
         border: 'border-slate-300/60', 
         glow: 'shadow-[0_4px_16px_rgba(148,163,184,0.2)]', 
@@ -38,6 +40,7 @@ export const userLevels = [
     { 
         level: '資深收藏家', 
         threshold: 50000, 
+        rebateRate: 1.5, 
         color: 'text-amber-300', 
         border: 'border-amber-400/60', 
         glow: 'shadow-[0_4px_18px_rgba(245,158,11,0.22)]', 
@@ -48,6 +51,7 @@ export const userLevels = [
     { 
         level: '卡牌大師', 
         threshold: 100000, 
+        rebateRate: 2, 
         color: 'text-yellow-300', 
         border: 'border-yellow-400/70', 
         glow: 'shadow-[0_4px_20px_rgba(250,204,21,0.28)]', 
@@ -58,6 +62,7 @@ export const userLevels = [
     { 
         level: '殿堂級玩家', 
         threshold: 500000, 
+        rebateRate: 4, 
         color: 'text-rose-300', 
         border: 'border-rose-400/75', 
         glow: 'shadow-[0_4px_22px_rgba(244,63,94,0.3)]', 
@@ -68,6 +73,7 @@ export const userLevels = [
     { 
         level: '傳奇收藏家', 
         threshold: 1000000, 
+        rebateRate: 5, 
         color: 'text-purple-300', 
         border: 'border-purple-400/80', 
         glow: 'shadow-[0_4px_24px_rgba(168,85,247,0.35)]', 
@@ -78,6 +84,7 @@ export const userLevels = [
     { 
         level: 'P+卡神', 
         threshold: 2000000, 
+        rebateRate: 10, 
         color: 'text-cyan-300', 
         border: 'border-cyan-400/85', 
         glow: 'shadow-[0_4px_26px_rgba(34,211,238,0.38)]', 

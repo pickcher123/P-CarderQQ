@@ -130,33 +130,6 @@ export function CelebrationVFX({ type }: CelebrationVFXProps) {
         }} 
       />
 
-      {/* 5. 傳奇專屬：極簡黑金橫幅 */}
-      {isLegendary && (
-        <motion.div
-          initial={{ scale: shouldReduceMotion ? 1 : 1.08, opacity: 0, y: shouldReduceMotion ? 0 : -12 }}
-          animate={{ scale: 1, opacity: 1, y: 0 }}
-          transition={shouldReduceMotion ? {
-            duration: 0.2,
-            ease: [0.23, 1, 0.32, 1],
-          } : { 
-            type: "spring",
-            duration: 0.4,
-            bounce: 0.15,
-            delay: 0.05
-          }}
-          className="absolute top-12 sm:top-14 inset-x-0 flex items-center justify-center z-40 px-3 pointer-events-none will-change-transform"
-        >
-          <div className="relative">
-            <div className="absolute -inset-1 rounded-full bg-amber-400/50 blur-md opacity-80" />
-            <div className="relative px-6 sm:px-7 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-[#171105] via-[#2b1f06] to-[#171105] border border-yellow-300/90 shadow-[0_0_30px_rgba(245,158,11,0.65)] flex items-center justify-center">
-              <span className="font-headline text-sm sm:text-lg font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-100 via-amber-200 to-amber-400 tracking-[0.35em] pl-[0.35em] leading-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.85)]">
-                傳奇
-              </span>
-            </div>
-          </div>
-        </motion.div>
-      )}
-
       {/* 6. 四面擴散流星金星炸裂粒子 (Star Bursts) */}
       {!shouldReduceMotion && stars.map((star) => (
         <div 

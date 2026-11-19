@@ -57,6 +57,11 @@ export interface SystemConfig {
     showPromoCodeHints?: boolean; // 前台活動專區是否公開顯示熱門兌換碼清單 (預設隱藏)
     levelBenefits?: LevelBenefit[];
     bettingAutoRelistOnBuyBack?: boolean; // 拼卡 Buy Back (轉點) 自動重新上架開關
+    storeProtection?: {
+        enabled?: boolean;
+        poolMinProgressPct?: number; // 卡池大獎解鎖進度門檻（預設 30%）
+        bettingMinSpin?: number;     // 拼卡最低出獎轉數門檻（預設 3 轉）
+    };
     bonusEvent?: {
         isActive?: boolean;
         multiplier?: number;

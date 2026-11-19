@@ -210,14 +210,29 @@ export function BettingGameDialog({
                 }
 
                 const userRef = doc(firestore, 'users', user.uid);
-                const uSnap = await transaction.get(userRef);
+                const sysConfigRef = doc(firestore, 'systemConfig', 'main');
+                const [uSnap, sysSnap] = await Promise.all([
+                    transaction.get(userRef),
+                    transaction.get(sysConfigRef),
+                ]);
                 if (!uSnap.exists()) throw new Error('找不到使用者資料');
 
                 const userData = uSnap.data() as UserProfile;
+                const storeProtection = sysSnap.exists() ? (sysSnap.data() as any)?.storeProtection : undefined;
                 const walletBalance = paymentCurrency === 'diamond' ? (userData.points || 0) : (userData.bonusPoints || 0);
                 if (walletBalance < totalPrice) throw new Error('錢包餘額不足，請先儲值或調整格數。');
 
-                const winningSpot = Math.floor(Math.random() * 10) + 1;
+                const prevSpinCount = Number((cardSnap.data() as any)?.bettingSpinCount || 0);
+                const nextSpinCount = prevSpinCount + 1;
+                const minSpinRequired = Number(storeProtection?.bettingMinSpin ?? 3);
+
+                let winningSpot = Math.floor(Math.random() * 10) + 1;
+                if (storeProtection?.enabled && nextSpinCount < minSpinRequired) {
+                    const nonWinningSpots = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].filter((n) => !selectedNumbers.includes(n));
+                    if (nonWinningSpots.length > 0) {
+                        winningSpot = nonWinningSpots[Math.floor(Math.random() * nonWinningSpots.length)];
+                    }
+                }
                 const didWin = selectedNumbers.includes(winningSpot);
 
                 const walletField = paymentCurrency === 'diamond' ? 'points' : 'bonusPoints';
@@ -260,6 +275,7 @@ export function BettingGameDialog({
                 const cardUpdates: any = {
                     lockedBy: null,
                     lockedAt: null,
+                    bettingSpinCount: nextSpinCount,
                 };
 
                 if (didWin) {

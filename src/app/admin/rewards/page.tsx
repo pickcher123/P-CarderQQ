@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, ChangeEvent } from 'react';
+import { useState, useEffect, useRef, ChangeEvent } from 'react';
 import { useCollection, useFirestore, useMemoFirebase, useDoc, useStorage } from '@/firebase';
 import { collection, addDoc, updateDoc, doc, query, where, limit, deleteDoc, orderBy, setDoc } from '@/lib/audited-firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
@@ -22,7 +22,7 @@ import { SafeImage } from '@/components/safe-image';
 import type { DailyMission } from '@/types/missions';
 import type { SystemConfig, LevelBenefit } from '@/types/system';
 import { PPlusIcon } from '@/components/icons';
-import { DEFAULT_BONUS_EVENT, type BonusEventConfig } from '@/lib/bonus-event';
+import { DEFAULT_BONUS_EVENT, isBonusEventActive, isBonusEventExpired, type BonusEventConfig } from '@/lib/bonus-event';
 import { Flame, Sparkles } from 'lucide-react';
 
 const DEFAULT_LEVELS: LevelBenefit[] = [
@@ -86,27 +86,60 @@ export default function RewardsAdminPage() {
 
   // 🔥 紅利加倍活動設定
   const [bonusEvent, setBonusEvent] = useState<BonusEventConfig>(DEFAULT_BONUS_EVENT);
+  const autoClosedExpiredRef = useRef(false);
 
   useEffect(() => {
     const event = systemConfig?.bonusEvent;
     if (event) {
-      setBonusEvent(prev => ({
+      const merged: BonusEventConfig = {
         ...DEFAULT_BONUS_EVENT,
         ...event,
         targets: {
           ...DEFAULT_BONUS_EVENT.targets,
           ...(event.targets || {})
         }
-      }));
+      };
+
+      if (merged.isActive !== false && isBonusEventExpired(merged)) {
+        const closedEvent: BonusEventConfig = { ...merged, isActive: false };
+        setBonusEvent(closedEvent);
+        if (!autoClosedExpiredRef.current && systemConfigRef) {
+          autoClosedExpiredRef.current = true;
+          setDoc(systemConfigRef, { bonusEvent: closedEvent }, { merge: true }).catch(() => {});
+          toast({
+            title: '⏰ 紅利加倍活動已到期',
+            description: '活動結束日期已過，系統已自動關閉活動總開關。'
+          });
+        }
+      } else {
+        setBonusEvent(merged);
+      }
     }
-  }, [systemConfig]);
+  }, [systemConfig, systemConfigRef, toast]);
 
   const handleSaveBonusEvent = async () => {
     if (!firestore || !systemConfigRef) return;
     setIsProcessing(true);
     try {
-      await setDoc(systemConfigRef, { bonusEvent }, { merge: true });
-      toast({ title: '🔥 紅利加倍活動設定已儲存', description: '前台加倍倍率與活動橫幅已即時更新生效！' });
+      const expired = isBonusEventExpired(bonusEvent);
+      const payload: BonusEventConfig =
+        bonusEvent.isActive && expired
+          ? { ...bonusEvent, isActive: false }
+          : bonusEvent;
+
+      if (payload !== bonusEvent) {
+        setBonusEvent(payload);
+      }
+
+      await setDoc(systemConfigRef, { bonusEvent: payload }, { merge: true });
+      if (bonusEvent.isActive && expired) {
+        toast({
+          title: '⏰ 活動結束日期已過期',
+          description: '已儲存設定並自動關閉活動總開關。'
+        });
+      } else {
+        toast({ title: '🔥 紅利加倍活動設定已儲存', description: '前台加倍倍率與活動橫幅已即時更新生效！' });
+      }
     } catch (e: any) {
       toast({ variant: 'destructive', title: '儲存失敗', description: e.message || '請稍後再試' });
     } finally {
@@ -199,7 +232,7 @@ export default function RewardsAdminPage() {
                             <PPlusIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" />
                             <Input type="number" value={checkInPoints} onChange={e => setCheckInPoints(Number(e.target.value))} className="h-12 pl-10 border-slate-200 font-bold bg-white text-slate-900" />
                         </div>
-                        {bonusEvent?.isActive && (bonusEvent?.targets?.checkIn ?? true) && (
+                        {isBonusEventActive(bonusEvent) && (bonusEvent?.targets?.checkIn ?? true) && (
                             <p className="text-xs text-amber-600 font-medium bg-amber-50 border border-amber-200/60 rounded-lg p-2.5">
                                 🔥 <strong>紅利加倍活動生效中</strong>：前台實際發放 <span className="font-bold font-mono text-amber-700">{Math.round(checkInPoints * (bonusEvent.multiplier || 1))}</span> 點（含 {bonusEvent.multiplier || 1}X 加倍）
                             </p>
@@ -220,6 +253,11 @@ export default function RewardsAdminPage() {
                             <span>紅利加倍活動設定</span>
                         </span>
                         <div className="flex items-center gap-2">
+                            {isBonusEventExpired(bonusEvent) && (
+                                <span className="text-[11px] font-bold text-rose-500 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full">
+                                    已到期自動關閉
+                                </span>
+                            )}
                             <span className="text-xs font-bold text-slate-500">活動總開關</span>
                             <Switch 
                                 checked={bonusEvent.isActive} 

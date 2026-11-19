@@ -11,9 +11,10 @@ export async function performDrawAction(userId: string, poolId: string, count: n
       const userRef = adminDb.collection('users').doc(userId);
       const poolRef = adminDb.collection('cardPools').doc(poolId);
 
-      const [userSnap, poolSnap] = await Promise.all([
+      const [userSnap, poolSnap, sysConfigSnap] = await Promise.all([
         transaction.get(userRef),
-        transaction.get(poolRef)
+        transaction.get(poolRef),
+        transaction.get(adminDb.collection('systemConfig').doc('main'))
       ]);
 
       if (!userSnap.exists) {
@@ -68,7 +69,8 @@ export async function performDrawAction(userId: string, poolId: string, count: n
       }
 
       // 抽卡邏輯
-      const { drawn, updatedCards, updatedPointPrizes } = drawFromPool(poolData, count, cardsMap);
+      const storeProtection = sysConfigSnap.exists ? sysConfigSnap.data()?.storeProtection : undefined;
+      const { drawn, updatedCards, updatedPointPrizes } = drawFromPool(poolData, count, cardsMap, false, storeProtection);
       if (drawn.length === 0) throw new Error('卡池目前已無獎項可供抽取');
 
       const packsConsumed = drawn.length;

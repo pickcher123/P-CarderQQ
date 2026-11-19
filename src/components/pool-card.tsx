@@ -91,6 +91,10 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
     const [isDrawing, setIsDrawing] = useState(false);
     const [isInventoryOpen, setIsInventoryOpen] = useState(false);
     const [inventoryFilterRarity, setInventoryFilterRarity] = useState<Rarity | 'all'>('all');
+    const [inventoryFilterTier, setInventoryFilterTier] = useState<'all' | 'A' | 'SP' | 'B' | 'C' | 'D'>('all');
+    const [isHybridBoardOpen, setIsHybridBoardOpen] = useState(false);
+    const [hybridBoardLogs, setHybridBoardLogs] = useState<any[]>([]);
+    const [isLoadingBoardLogs, setIsLoadingBoardLogs] = useState(false);
     const [isAgeVerifiedModalOpen, setIsAgeVerifiedModalOpen] = useState(false);
     const [isFreeTicketConfirmOpen, setIsFreeTicketConfirmOpen] = useState(false);
     const [pendingDraws, setPendingDraws] = useState<number>(0);
@@ -344,7 +348,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                 const data = allCardsMap.get(c.cardId);
                 if (data) {
                     const rarity = pool.cardRarities?.[c.cardId] || (data as any).rarity || 'common';
-                    const cardVal = (data as any).sellPrice ?? (data as any).estimatedValue ?? (data as any).price ?? (data as any).points ?? (data as any).value ?? 0;
+                    const cardVal = pool.cardCosts?.[c.cardId] ?? (data as any).sellPrice ?? (data as any).estimatedValue ?? (data as any).price ?? (data as any).points ?? (data as any).value ?? 0;
                     
                     availableCards.push({
                         ...data,
@@ -368,7 +372,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                 const data = allCardsMap.get(id);
                 const qty = pool.cards?.filter(c => c.cardId === id).reduce((acc, c) => acc + (c.quantity || 0), 0) || 0;
                 if (data) {
-                    const cardVal = (data as any).sellPrice ?? (data as any).estimatedValue ?? (data as any).price ?? (data as any).points ?? (data as any).value ?? 0;
+                    const cardVal = pool.cardCosts?.[id] ?? (data as any).sellPrice ?? (data as any).estimatedValue ?? (data as any).price ?? (data as any).points ?? (data as any).value ?? 0;
                     availableCards.push({
                         ...data,
                         type: 'card',
@@ -401,23 +405,17 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
         const rarityOrder: Record<string, number> = { legendary: 3, rare: 2, common: 1 };
 
         availableCards.sort((a, b) => {
-            // 剩餘庫存 > 0 優先展示
-            const aHasStock = (a.quantity || 0) > 0 ? 1 : 0;
-            const bHasStock = (b.quantity || 0) > 0 ? 1 : 0;
-            if (bHasStock !== aHasStock) {
-                return bHasStock - aHasStock;
-            }
-            // 估值最高優先 (前兩張有價值的卡)
+            // 最貴的卡片永遠優先顯示（依卡片價值由高到低排序）
             const valA = Number(a.cardVal) || 0;
             const valB = Number(b.cardVal) || 0;
             if (valB !== valA) {
                 return valB - valA;
             }
-            // 稀有度最高優先
-            const rA = rarityOrder[a.rarity] || 0;
-            const rB = rarityOrder[b.rarity] || 0;
-            if (rB !== rA) {
-                return rB - rA;
+            // 同價位時有庫存優先
+            const aHasStock = (a.quantity || 0) > 0 ? 1 : 0;
+            const bHasStock = (b.quantity || 0) > 0 ? 1 : 0;
+            if (bHasStock !== aHasStock) {
+                return bHasStock - aHasStock;
             }
             return (a.name || '').localeCompare(b.name || '');
         });
@@ -804,15 +802,10 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                 <Flame className="w-3 h-3 fill-slate-950" />
                                 <span>🔥 搶包衝刺 (剩 {remainingPacks} 包)</span>
                             </Badge>
-                        ) : (
-                            <Badge className="bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 font-bold text-[10px] sm:text-[11px] px-2.5 py-0.5 flex items-center gap-1">
-                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                                <span>現正開放中</span>
-                            </Badge>
-                        )}
+                        ) : null}
 
-                        {/* 2. 頭獎在席即時狀況（盲盒模式改顯示神秘盲盒標籤，不透露是否已開出） */}
-                        {pool.isBlindBoxMode ? (
+                        {/* 2. 頭獎在席即時狀況（盲盒與 GodPack 一番賞不透露個別卡片是否已開出） */}
+                        {pool.isHybridBlindSpMode ? null : pool.isBlindBoxMode ? (
                             <Badge className="bg-amber-400/15 text-[#FDE68A] border border-amber-300/40 font-bold text-[10px] px-2.5 py-0.5 flex items-center gap-1">
                                 <Sparkles className="w-3 h-3 text-[#FDE68A]" />
                                 <span>神秘盲盒</span>
@@ -995,18 +988,15 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                     </div>
                                 </div>
                                 
-                                {/* 卡片角標 (TOP / 最後賞) */}
-                                <div className="absolute top-2 left-2 z-40 flex items-center gap-1.5">
-                                    <span className="bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] font-black text-[9px] px-2 py-0.5 rounded-full shadow-md uppercase tracking-wider flex items-center gap-0.5">
-                                        <Star className="w-2.5 h-2.5 fill-[#120d02]" />
-                                        <span>{featuredPrize.isLastPrize ? '最後賞' : 'TOP'}</span>
-                                    </span>
-                                    {topPrizesPreview.length > 1 && (
-                                        <span className="bg-black/65 backdrop-blur-md text-amber-200/90 border border-white/15 font-mono text-[9px] px-1.5 py-0.5 rounded-full tabular-nums">
-                                            {selectedPrizeIndex + 1}/{topPrizesPreview.length}
+                                {/* 卡片角標 (僅最後賞顯示) */}
+                                {featuredPrize.isLastPrize && (
+                                    <div className="absolute top-2 left-2 z-40 flex items-center gap-1.5">
+                                        <span className="bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] font-black text-[9px] px-2 py-0.5 rounded-full shadow-md uppercase tracking-wider flex items-center gap-0.5">
+                                            <Star className="w-2.5 h-2.5 fill-[#120d02]" />
+                                            <span>最後賞</span>
                                         </span>
-                                    )}
-                                </div>
+                                    </div>
+                                )}
 
                                 {/* 右上角：查看卡池明細按鈕 */}
                                 <button
@@ -1050,8 +1040,8 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                     </>
                                 )}
 
-                                {/* 完售遮罩 (盲盒模式不顯示已抽出狀態，保持神秘感) */}
-                                {!pool.isBlindBoxMode && featuredPrize.quantity <= 0 && !featuredPrize.isPoolCover && (
+                                {/* 完售遮罩 (盲盒與 GodPack 一番賞不顯示個別卡片已抽出狀態，只看卡包剩餘數量) */}
+                                {!pool.isBlindBoxMode && !pool.isHybridBlindSpMode && featuredPrize.quantity <= 0 && !featuredPrize.isPoolCover && (
                                     <div className="absolute inset-0 bg-black/65 backdrop-blur-[2px] flex items-center justify-center z-30 pointer-events-none">
                                         <span className="px-3.5 py-1.5 rounded-xl bg-[#0a0f1c]/90 border border-rose-400/60 text-rose-300 font-black text-xs tracking-wider shadow-[0_8px_24px_rgba(0,0,0,0.75)]">
                                             已抽出
@@ -1101,11 +1091,22 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                     </span>
                                     <button
                                         type="button"
-                                        onClick={() => {
-                                            setInventoryFilterRarity('all');
-                                            setIsInventoryOpen(true);
+                                        onClick={async () => {
+                                            setIsHybridBoardOpen(true);
+                                            setIsLoadingBoardLogs(true);
+                                            try {
+                                                const res = await fetch(`/api/pools/${pool.id}`);
+                                                if (res.ok) {
+                                                    const json = await res.json();
+                                                    setHybridBoardLogs(Array.isArray(json.drawLogs) ? json.drawLogs : []);
+                                                }
+                                            } catch {
+                                                // ignore
+                                            } finally {
+                                                setIsLoadingBoardLogs(false);
+                                            }
                                         }}
-                                        className="text-[10px] font-bold text-slate-300 hover:text-[#FDE68A] flex items-center gap-1 cursor-pointer"
+                                        className="text-[10px] font-bold text-[#FDE68A] hover:text-amber-200 flex items-center gap-1 cursor-pointer"
                                     >
                                         <Eye className="w-3 h-3 text-amber-300" />
                                         看盤明細
@@ -1462,10 +1463,14 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                             <span className="w-[1px] h-2.5 bg-slate-300" />
                         </div>
 
-                        {/* 中央卡包正版官方認證印記 (Authentic Booster Stamp) */}
+                        {/* 中央卡包正版官方認證印記 / 功能池模式標示 */}
                         <div className="relative z-10 text-center">
-                            <span className="text-[7.5px] sm:text-[8px] font-bold text-amber-300/80 tracking-[0.25em] uppercase font-mono drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
-                                ✦ P+ CARDER OFFICIAL PACK ✦
+                            <span className="text-[8px] sm:text-[8.5px] font-bold text-[#FDE68A] tracking-[0.2em] uppercase font-mono drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+                                {pool.isHybridBlindSpMode
+                                    ? '✦ GODPACK 一番賞 ✦'
+                                    : pool.isBlindBoxMode
+                                    ? '✦ 神秘盲盒模式 ✦'
+                                    : '✦ P+ CARDER OFFICIAL PACK ✦'}
                             </span>
                         </div>
 
@@ -1490,6 +1495,153 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                 </div>
             </div>
             
+            {/* 📊 GodPack 一番賞：即時看盤數據分析與抽卡機率彈窗 */}
+            {isHybridBoardOpen && (
+                <div
+                    className="fixed inset-0 z-[105] bg-black/90 backdrop-blur-md flex items-center justify-center p-2.5 sm:p-4 animate-fade-in"
+                    onClick={() => setIsHybridBoardOpen(false)}
+                >
+                    <div
+                        className="relative max-w-3xl w-full bg-[#0a0f1c] border border-white/[0.1] border-t-2 border-t-amber-300/65 rounded-2xl p-4 sm:p-6 max-h-[88vh] overflow-y-auto shadow-[0_24px_64px_rgba(0,0,0,0.9)] text-slate-100 space-y-5"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+                            <div className="flex items-center gap-2.5">
+                                <div className="w-[3px] h-7 rounded-full bg-gradient-to-b from-amber-200 via-amber-400 to-amber-700" />
+                                <div>
+                                    <h2 className="text-base sm:text-lg font-black text-white">
+                                        {pool.name} · 即時看盤數據分析
+                                    </h2>
+                                    <p className="text-[11px] text-slate-400">
+                                        即時依剩餘抽數動態重算各色卡包抽中機率與公開開獎紀錄
+                                    </p>
+                                </div>
+                            </div>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setIsHybridBoardOpen(false)}
+                                className="rounded-full text-slate-400 hover:text-white hover:bg-white/10 h-8 w-8"
+                            >
+                                <X className="w-4 h-4" />
+                            </Button>
+                        </div>
+
+                        {/* 4 個核心即時分析指標 */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                            <div className="rounded-xl bg-white/[0.03] border border-white/[0.08] p-3">
+                                <div className="text-[11px] text-slate-400">剩餘抽數</div>
+                                <div className="text-base font-black text-white font-mono tabular-nums mt-0.5">
+                                    {remainingPacks} <span className="text-xs text-slate-400 font-normal">/ {totalPacks}</span>
+                                </div>
+                            </div>
+                            <div className="rounded-xl bg-white/[0.03] border border-amber-300/35 p-3">
+                                <div className="text-[11px] text-slate-400">翻倍大獎率 (A+SP+B)</div>
+                                <div className="text-base font-black text-[#FDE68A] font-mono tabular-nums mt-0.5">
+                                    {hybridStats.doubleHitRatePct.toFixed(2)}%
+                                </div>
+                            </div>
+                            <div className="rounded-xl bg-white/[0.03] border border-white/[0.08] p-3">
+                                <div className="text-[11px] text-slate-400">頂級大獎率 (A+SP)</div>
+                                <div className="text-base font-black text-emerald-400 font-mono tabular-nums mt-0.5">
+                                    {remainingPacks > 0
+                                        ? (((hybridStats.counts.A + hybridStats.counts.SP) / remainingPacks) * 100).toFixed(2)
+                                        : '0.00'}
+                                    %
+                                </div>
+                            </div>
+                            <div className="rounded-xl bg-white/[0.03] border border-white/[0.08] p-3">
+                                <div className="text-[11px] text-slate-400">包尾全包成本</div>
+                                <div className="text-base font-black text-cyan-300 font-mono tabular-nums mt-0.5">
+                                    {(remainingPacks * (pool.price || 0)).toLocaleString()}{' '}
+                                    <span className="text-[11px]">{pool.currency === 'p-point' ? 'P' : '💎'}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 五色卡包即時抽中機率分佈 */}
+                        <div className="space-y-2.5">
+                            <div className="flex items-center justify-between text-xs font-black text-white">
+                                <span>五色卡包即時機率分佈</span>
+                                <span className="text-[11px] font-mono text-slate-400 tabular-nums">
+                                    有效剩餘總包數：{remainingPacks} 包
+                                </span>
+                            </div>
+                            <div className="space-y-2">
+                                {(['A', 'SP', 'B', 'C', 'D'] as const).map((t) => {
+                                    const meta = HYBRID_TIER_META[t];
+                                    const count = hybridStats.counts[t];
+                                    const prob = remainingPacks > 0 ? (count / remainingPacks) * 100 : 0;
+                                    return (
+                                        <div
+                                            key={t}
+                                            className="rounded-xl bg-white/[0.03] border border-white/[0.08] p-3 space-y-2"
+                                        >
+                                            <div className="flex items-center justify-between gap-2">
+                                                <div className="flex items-center gap-2.5">
+                                                    <BlindBoxVisual tier={t} size="xs" />
+                                                    <div>
+                                                        <div className="text-xs font-black text-white">{meta.label}</div>
+                                                        <div className="text-[10px] text-slate-400">
+                                                            {t === 'A' || t === 'B'
+                                                                ? '明池盲開（抽中後從該賞別隨機開出其一）'
+                                                                : t === 'SP'
+                                                                ? '隱藏黑包（抽中可實體寄送或 80% 點數回收）'
+                                                                : t === 'C'
+                                                                ? '標準化回血卡包'
+                                                                : '標準化保底卡包'}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right font-mono tabular-nums shrink-0">
+                                                    <div className="text-sm font-black text-[#FDE68A]">{prob.toFixed(2)}%</div>
+                                                    <div className="text-[10px] text-slate-400">剩餘 {count} 包</div>
+                                                </div>
+                                            </div>
+                                            <div className="h-1.5 w-full rounded-full bg-black/50 overflow-hidden">
+                                                <div
+                                                    className="h-full rounded-full bg-gradient-to-r from-[#FDE68A] to-amber-400 transition-all duration-500"
+                                                    style={{ width: `${Math.min(100, prob)}%` }}
+                                                />
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* 公開開獎紀錄（防作弊證明） */}
+                        <div className="space-y-2">
+                            <div className="text-xs font-black text-white">公開開獎紀錄（最近 20 筆）</div>
+                            <div className="rounded-xl border border-white/[0.08] bg-black/40 max-h-52 overflow-y-auto divide-y divide-white/[0.06]">
+                                {isLoadingBoardLogs ? (
+                                    <div className="p-4 text-center text-xs text-slate-400">載入紀錄中...</div>
+                                ) : hybridBoardLogs.length === 0 ? (
+                                    <div className="p-4 text-center text-xs text-slate-500">目前尚無開獎紀錄，快來搶頭香！</div>
+                                ) : (
+                                    hybridBoardLogs.slice(0, 20).map((log: any) => (
+                                        <div key={log.id} className="px-3 py-2 flex items-center justify-between gap-2 text-xs">
+                                            <div className="flex items-center gap-2 min-w-0">
+                                                <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-white/[0.06] text-slate-300 tabular-nums">
+                                                    #{log.pullNumber}
+                                                </span>
+                                                <span className="font-mono text-slate-300">{log.maskedUsername}</span>
+                                                <Badge className="text-[10px] bg-amber-400/15 text-[#FDE68A] border-amber-300/35">
+                                                    {HYBRID_TIER_META[log.tierCode as HybridTierCode]?.label || log.tierCode}
+                                                </Badge>
+                                            </div>
+                                            <span className="text-[11px] text-slate-300 truncate max-w-[180px]">
+                                                {log.prizeName}
+                                            </span>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {isInventoryOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-2 sm:p-4 animate-in fade-in-0 duration-200" onClick={() => setIsInventoryOpen(false)}>
                     <div 
@@ -1521,7 +1673,46 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                             </Button>
                         </div>
 
-                        {/* 賞別快速切換標籤列 */}
+                        {/* 賞別快速切換標籤列（GodPack 一番賞改顯示五色卡包切換） */}
+                        {pool.isHybridBlindSpMode ? (
+                            <div className="flex items-center gap-1.5 overflow-x-auto pb-2 mb-3 no-scrollbar">
+                                <button
+                                    type="button"
+                                    onClick={() => setInventoryFilterTier('all')}
+                                    className={cn(
+                                        "px-3 py-1 rounded-full text-xs font-black transition-all cursor-pointer whitespace-nowrap border",
+                                        inventoryFilterTier === 'all'
+                                            ? "bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] border-amber-300 shadow-md"
+                                            : "bg-slate-900/80 text-slate-400 hover:text-white border-slate-800"
+                                    )}
+                                >
+                                    全部卡包
+                                </button>
+                                {(['A', 'SP', 'B', 'C', 'D'] as const).map((t) => {
+                                    const meta = HYBRID_TIER_META[t];
+                                    const isSelected = inventoryFilterTier === t;
+                                    const count = hybridStats.counts[t];
+                                    return (
+                                        <button
+                                            key={t}
+                                            type="button"
+                                            onClick={() => setInventoryFilterTier(t)}
+                                            className={cn(
+                                                "px-3 py-1 rounded-full text-xs font-black transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 border",
+                                                isSelected
+                                                    ? cn(meta.badgeClass, "shadow-md ring-1 ring-white/25")
+                                                    : "bg-slate-900/80 text-slate-400 hover:text-white border-slate-800"
+                                            )}
+                                        >
+                                            <span>{meta.label}</span>
+                                            <span className={cn("text-[10px] px-1.5 py-0.2 rounded-full font-mono", isSelected ? "bg-black/35 text-white" : "bg-slate-950 text-slate-400")}>
+                                                {count}
+                                            </span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        ) : (
                         <div className="flex items-center gap-1.5 overflow-x-auto pb-2 mb-3 no-scrollbar">
                             <button
                                 type="button"
@@ -1564,6 +1755,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                 );
                             })}
                         </div>
+                        )}
 
                         {/* 內容區域 - 直接展示卡片與獎項名冊 */}
                         <div className="space-y-4 sm:space-y-5">
@@ -1588,8 +1780,91 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                 </div>
                             )}
 
-                            {/* 各稀有度群組 (根據 inventoryFilterRarity 過濾) */}
-                            {(inventoryFilterRarity === 'all' ? RARITIES : RARITIES.filter(r => r === inventoryFilterRarity)).map(r => { 
+                            {/* 各稀有度群組（GodPack 一番賞改依五色卡包 A / SP / B / C / D 分組） */}
+                            {pool.isHybridBlindSpMode ? (
+                                (inventoryFilterTier === 'all' ? (['A', 'SP', 'B', 'C', 'D'] as const) : ([inventoryFilterTier] as const)).map((tierCode) => {
+                                    const prizes = allPrizesInPool.filter((x: any) => {
+                                        if (x.type === 'points') {
+                                            const pTier = x.tierCode || (x.rarity === 'rare' ? 'C' : 'D');
+                                            return pTier === tierCode;
+                                        }
+                                        const cTier = pool.cardTiers?.[x.id] || (x.rarity === 'legendary' ? 'A' : x.rarity === 'rare' ? 'B' : 'C');
+                                        return cTier === tierCode;
+                                    });
+                                    if (prizes.length === 0) return null;
+                                    const meta = HYBRID_TIER_META[tierCode];
+                                    const totalQtyInTier = prizes.reduce((sum, p) => sum + (p.quantity || 0), 0);
+
+                                    return (
+                                        <div key={tierCode} className="space-y-2">
+                                            <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                                                <div className="flex items-center gap-2">
+                                                    <BlindBoxVisual tier={tierCode} size="xs" />
+                                                    <h3 className="font-black text-xs sm:text-sm tracking-wider text-[#FDE68A]">
+                                                        {meta.label}
+                                                    </h3>
+                                                </div>
+                                                <span className="text-[10px] sm:text-[11px] font-mono text-slate-400 bg-slate-900 px-2.5 py-0.5 rounded-full border border-slate-800">
+                                                    {prizes.length} 款品項 · 剩餘 <span className="font-bold text-[#FDE68A]">{totalQtyInTier}</span> 包
+                                                </span>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+                                                {prizes.map((c: any) => {
+                                                    const isMaskedSp = Boolean(!pool.spRevealed && tierCode === 'SP' && c.type !== 'points');
+                                                    const spBuyback = pool.spBuybackPoints?.[c.id] ?? Math.round(Number(pool.cardCosts?.[c.id] ?? c.sellPrice ?? 0) * 0.8);
+
+                                                    if (isMaskedSp) {
+                                                        return (
+                                                            <div
+                                                                key={`hidden-sp-${c.id}`}
+                                                                className="relative flex flex-col items-center p-2 rounded-xl border border-amber-300/55 bg-[#0a0f1c] shadow-[0_0_20px_rgba(253,230,138,0.12)]"
+                                                            >
+                                                                <div className="w-full aspect-[2.5/3.5] mb-1.5 rounded-lg bg-black/50 border border-amber-300/35 flex flex-col items-center justify-center p-2">
+                                                                    <BlindBoxVisual tier="SP" size="md" />
+                                                                </div>
+                                                                <p className="text-[11px] font-black text-[#FDE68A] text-center">神秘隱藏黑包（SP 賞）</p>
+                                                                <p className="text-[10px] font-mono text-slate-300 tabular-nums mt-0.5">
+                                                                    保底回收 {spBuyback.toLocaleString()} 點
+                                                                </p>
+                                                            </div>
+                                                        );
+                                                    }
+
+                                                    return (
+                                                        <div
+                                                            key={c.id}
+                                                            className="group/item relative flex flex-col items-center p-2 rounded-xl border transition-all duration-300 cursor-pointer bg-slate-900/80 hover:bg-slate-900 border-slate-800 hover:border-amber-300/50 hover:-translate-y-0.5"
+                                                            onClick={() => setPreviewCard(c)}
+                                                        >
+                                                            <div className="relative w-full aspect-[2.5/3.5] mb-1.5 rounded-lg overflow-hidden border border-white/15 bg-slate-900 flex flex-col items-center justify-center">
+                                                                {c.type === 'points' ? (
+                                                                    <RandomPlayerCard
+                                                                        rarity={c.rarity}
+                                                                        points={c.points}
+                                                                        title={c.name}
+                                                                        showBuybackHint={false}
+                                                                        className="w-full h-full aspect-[2.5/3.5] !rounded-lg"
+                                                                    />
+                                                                ) : (
+                                                                    <SafeImage src={c.imageUrl} alt={c.name} sizes="160px" fill className="object-contain p-0.5" />
+                                                                )}
+                                                            </div>
+                                                            <p className="text-[11px] font-bold text-slate-100 truncate w-full text-center">{c.name}</p>
+                                                            {c.type === 'points' && (
+                                                                <span className="text-[10px] font-mono text-[#FDE68A] mt-0.5">
+                                                                    剩餘: {c.quantity} 包
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    );
+                                })
+                            ) : (
+                            (inventoryFilterRarity === 'all' ? RARITIES : RARITIES.filter(r => r === inventoryFilterRarity)).map(r => { 
                                 const prizes = allPrizesInPool.filter(x => x.rarity === r); 
                                 if (prizes.length === 0) return null; 
                                 const style = rarityStyles[r];
@@ -1635,7 +1910,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                                             <div className="w-full aspect-[2.5/3.5] mb-1.5 rounded-lg bg-black/50 border border-amber-300/35 flex flex-col items-center justify-center p-2">
                                                                 <BlindBoxVisual tier="SP" size="md" />
                                                             </div>
-                                                            <p className="text-[11px] font-black text-[#FDE68A] text-center">神秘隱藏黑盒（SP 賞）</p>
+                                                            <p className="text-[11px] font-black text-[#FDE68A] text-center">神秘隱藏黑包（SP 賞）</p>
                                                             <p className="text-[10px] font-mono text-slate-300 tabular-nums mt-0.5">
                                                                 保底回收 {spBuyback.toLocaleString()} 點
                                                             </p>
@@ -1701,7 +1976,8 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                         </div>
                                     </div>
                                 );
-                            })}
+                            })
+                            )}
                         </div>
                     </div>
                 </div>

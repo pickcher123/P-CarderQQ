@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { BlindBoxVisual } from '@/components/draw/BlindBoxVisual';
 import {
   HYBRID_68_PRESET,
@@ -51,7 +51,7 @@ interface HybridBoxWorkspaceProps {
   onCardCertChange: (cardId: string, certNumber: string) => void;
   onRemoveCard: (cardId: string) => void;
   onUpdateStandardBoxPrize: (tier: 'C' | 'D', quantity: number, unitCost: number) => void;
-  onQuickAddRandomPlayerToD?: () => void;
+  onQuickAddRandomPlayerToD?: (qty: number) => void;
 }
 
 const BOX_ORDER: Array<'A' | 'SP' | 'B' | 'C' | 'D'> = ['A', 'SP', 'B', 'C', 'D'];
@@ -73,15 +73,16 @@ export function HybridBoxWorkspace({
   onUpdateStandardBoxPrize,
   onQuickAddRandomPlayerToD,
 }: HybridBoxWorkspaceProps) {
+  const [randomAddQty, setRandomAddQty] = useState<number>(10);
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2.5">
           <div className="w-[3px] h-7 rounded-full bg-gradient-to-b from-amber-200 via-amber-400 to-amber-700" />
           <div>
-            <h3 className="text-lg font-black text-slate-900">五色盲盒獎項與成本配置</h3>
+            <h3 className="text-lg font-black text-slate-900">五色卡包獎項與成本配置</h3>
             <p className="text-xs text-slate-500">
-              直接將卡片加入指定顏色的盒子，系統會即時連動計算該盒單價、小計與整池還元率
+              直接將卡片加入指定顏色的卡包，系統會即時連動計算該卡包單價、小計與整池還元率
             </p>
           </div>
         </div>
@@ -174,7 +175,7 @@ export function HybridBoxWorkspace({
                         目前均價：<strong>{(tierVal?.qty ?? 0) > 0 ? `NT$${Math.round(tierVal?.avgCost ?? 0).toLocaleString()}` : '-'}</strong>
                       </span>
                       <span>
-                        盒子小計：<strong className="text-amber-600">NT${(tierVal?.subtotal ?? 0).toLocaleString()}</strong>
+                        卡包小計：<strong className="text-amber-600">NT${(tierVal?.subtotal ?? 0).toLocaleString()}</strong>
                       </span>
                     </div>
                   </div>
@@ -182,16 +183,26 @@ export function HybridBoxWorkspace({
 
                 <div className="flex flex-wrap items-center gap-2 shrink-0">
                   {tierCode === 'D' && onQuickAddRandomPlayerToD && (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={onQuickAddRandomPlayerToD}
-                      className="h-9 px-3 rounded-xl border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 font-black text-xs gap-1.5 shadow-sm"
-                    >
-                      <PlusCircle className="w-3.5 h-3.5 text-amber-600" />
-                      加入隨機球員 普/特 卡 (50💎)
-                    </Button>
+                    <div className="flex items-center gap-1.5 rounded-xl border border-amber-300 bg-amber-50 p-1 shadow-sm">
+                      <Input
+                        type="number"
+                        min={1}
+                        value={randomAddQty}
+                        onChange={(e) => setRandomAddQty(Math.max(1, Number(e.target.value || 1)))}
+                        className="h-7 w-14 text-xs font-mono font-bold text-center bg-white border-amber-200"
+                        title="一次加入張數"
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => onQuickAddRandomPlayerToD(Math.max(1, randomAddQty))}
+                        className="h-7 px-2.5 rounded-lg hover:bg-amber-100 text-amber-900 font-black text-xs gap-1"
+                      >
+                        <PlusCircle className="w-3.5 h-3.5 text-amber-600" />
+                        加入隨機球員 普/特 卡 (50💎)
+                      </Button>
+                    </div>
                   )}
                   <Button
                     type="button"
@@ -242,7 +253,7 @@ export function HybridBoxWorkspace({
                         />
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-bold text-slate-600">單盒成本/點數</span>
+                        <span className="text-xs font-bold text-slate-600">單包成本/點數</span>
                         <Input
                           type="number"
                           min={0}
@@ -257,6 +268,90 @@ export function HybridBoxWorkspace({
                           className="h-8 w-24 text-xs font-mono text-right bg-white"
                         />
                       </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* D 賞 / C 賞已加入之標準化盲盒項目列（顯示張數並可直接刪減） */}
+                {isStandardBox && standardPrize && standardPrize.quantity > 0 && (
+                  <div className="rounded-xl border border-slate-200 bg-white p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-14 rounded-lg bg-[#0a0f1c] border border-amber-300/60 flex flex-col items-center justify-center shrink-0 text-[10px] font-black text-[#FDE68A]">
+                        <span>P+</span>
+                        <span className="text-[8px] text-slate-300">50💎</span>
+                      </div>
+                      <div>
+                        <div className="text-sm font-black text-slate-900">
+                          {standardPrize.name || (tierCode === 'D' ? '隨機球員 普/特 卡' : 'C 賞回血盲盒')}
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-500 font-mono tabular-nums">
+                          <span>目前數量：<strong className="text-slate-900">{standardPrize.quantity} 張</strong></span>
+                          <span>·</span>
+                          <span>單張價值：{standardPrize.unitCost ?? standardPrize.points ?? 50} 💎</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          onUpdateStandardBoxPrize(
+                            tierCode,
+                            Math.max(0, standardPrize.quantity - 1),
+                            standardPrize.unitCost ?? standardPrize.points ?? tierCfg.target_unit_cost
+                          )
+                        }
+                        className="h-8 px-2.5 rounded-lg font-mono font-black text-xs"
+                      >
+                        -1
+                      </Button>
+                      <Input
+                        type="number"
+                        min={0}
+                        value={standardPrize.quantity}
+                        onChange={(e) =>
+                          onUpdateStandardBoxPrize(
+                            tierCode,
+                            Math.max(0, Number(e.target.value || 0)),
+                            standardPrize.unitCost ?? standardPrize.points ?? tierCfg.target_unit_cost
+                          )
+                        }
+                        className="h-8 w-16 text-xs font-mono text-center"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          onUpdateStandardBoxPrize(
+                            tierCode,
+                            standardPrize.quantity + 1,
+                            standardPrize.unitCost ?? standardPrize.points ?? tierCfg.target_unit_cost
+                          )
+                        }
+                        className="h-8 px-2.5 rounded-lg font-mono font-black text-xs"
+                      >
+                        +1
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() =>
+                          onUpdateStandardBoxPrize(
+                            tierCode,
+                            0,
+                            standardPrize.unitCost ?? standardPrize.points ?? tierCfg.target_unit_cost
+                          )
+                        }
+                        title="全部移除"
+                        className="h-8 w-8 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
                   </div>
                 )}
@@ -295,11 +390,11 @@ export function HybridBoxWorkspace({
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="A" className="text-xs font-bold">A 賞（金盒）</SelectItem>
-                              <SelectItem value="SP" className="text-xs font-bold">SP 賞（黑盒）</SelectItem>
-                              <SelectItem value="B" className="text-xs font-bold">B 賞（銀盒）</SelectItem>
-                              <SelectItem value="C" className="text-xs font-bold">C 賞（銅盒）</SelectItem>
-                              <SelectItem value="D" className="text-xs font-bold">D 賞（白盒）</SelectItem>
+                              <SelectItem value="A" className="text-xs font-bold">A 賞（金包）</SelectItem>
+                              <SelectItem value="SP" className="text-xs font-bold">SP 賞（黑包）</SelectItem>
+                              <SelectItem value="B" className="text-xs font-bold">B 賞（銀包）</SelectItem>
+                              <SelectItem value="C" className="text-xs font-bold">C 賞（銅包）</SelectItem>
+                              <SelectItem value="D" className="text-xs font-bold">D 賞（白包）</SelectItem>
                             </SelectContent>
                           </Select>
 

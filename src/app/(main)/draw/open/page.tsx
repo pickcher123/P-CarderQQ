@@ -571,7 +571,9 @@ export default function OpenPackPage() {
                     updatedPointPrizes = kujiRes.updatedPointPrizes;
                     updatedTickets = kujiRes.updatedTickets;
                 } else {
-                    const normalRes = drawFromPool(poolData, actualDrawCount, txCardsMap);
+                    const sysSnap = await transaction.get(doc(firestore, 'systemConfig', 'main'));
+                    const storeProtection = sysSnap.exists() ? (sysSnap.data() as any)?.storeProtection : undefined;
+                    const normalRes = drawFromPool(poolData, actualDrawCount, txCardsMap, false, storeProtection);
                     drawn = normalRes.drawn;
                     updatedCards = normalRes.updatedCards;
                     updatedPointPrizes = normalRes.updatedPointPrizes;
@@ -1101,6 +1103,13 @@ export default function OpenPackPage() {
     }
 
     if (step === 'summoning' && drawnPrizes.length > 0) {
+        const tierOrder: Record<string, number> = { LAST: 6, SP: 5, A: 4, B: 3, C: 2, D: 1 };
+        const topHybridTier = cardPool?.isHybridBlindSpMode
+            ? drawnPrizes.reduce((best: any, cur: any) => {
+                  const t = cur?.tierCode || (cur?.type === 'last-prize' ? 'LAST' : cur?.rarity === 'legendary' ? 'A' : cur?.rarity === 'rare' ? 'B' : 'D');
+                  return !best || (tierOrder[t] || 0) > (tierOrder[best] || 0) ? t : best;
+              }, undefined)
+            : undefined;
         return (
             <CloveSummoningAnimation
                 highestRarity={topRarityCelebration}
@@ -1108,6 +1117,7 @@ export default function OpenPackPage() {
                 poolName={cardPool?.name || '頂級卡包'}
                 backgroundUrl={activeBackgroundUrl}
                 selectedNumbers={selectedNumbers.length > 0 ? selectedNumbers : undefined}
+                hybridTier={topHybridTier}
                 onAnimationComplete={() => {
                     setStep('ready-to-reveal');
                 }}
@@ -1186,13 +1196,31 @@ export default function OpenPackPage() {
                         <div className="flex items-center justify-center gap-1.5 mt-1 flex-wrap">
                             <span className={cn(
                                 "text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border",
-                                visual.label === 'LEGENDARY'
+                                currentPrize.tierCode === 'A' || currentPrize.tierCode === 'LAST' || (!currentPrize.tierCode && visual.label === 'LEGENDARY')
                                     ? "bg-amber-400/15 text-[#FDE68A] border-amber-300/40"
-                                    : visual.label === 'RARE'
-                                    ? "bg-cyan-400/15 text-cyan-300 border-cyan-400/35"
+                                    : currentPrize.tierCode === 'SP'
+                                    ? "bg-[#0a0f1c] text-[#FDE68A] border-amber-300/65"
+                                    : currentPrize.tierCode === 'B' || (!currentPrize.tierCode && visual.label === 'RARE')
+                                    ? "bg-slate-200/15 text-slate-100 border-slate-300/45"
+                                    : currentPrize.tierCode === 'C'
+                                    ? "bg-amber-700/30 text-amber-200 border-amber-500/45"
                                     : "bg-white/[0.08] text-slate-200 border-white/[0.15]"
                             )}>
-                                {(currentPrize.type === 'points' || currentPrize.isPoints || currentPrize.name?.includes('隨機球員')) ? (currentPrize.rarity === 'rare' || currentPrize.rarity === 'legendary' ? '特卡' : '普/特卡') : visual.label}
+                                {currentPrize.tierCode === 'A'
+                                    ? 'A 賞・金包'
+                                    : currentPrize.tierCode === 'SP'
+                                    ? 'SP 賞・黑包'
+                                    : currentPrize.tierCode === 'B'
+                                    ? 'B 賞・銀包'
+                                    : currentPrize.tierCode === 'C'
+                                    ? 'C 賞・銅包'
+                                    : currentPrize.tierCode === 'D'
+                                    ? 'D 賞・白包'
+                                    : currentPrize.tierCode === 'LAST'
+                                    ? '最後賞'
+                                    : (currentPrize.type === 'points' || currentPrize.isPoints || currentPrize.name?.includes('隨機球員'))
+                                    ? (currentPrize.rarity === 'rare' || currentPrize.rarity === 'legendary' ? '特卡' : '普/特卡')
+                                    : visual.label}
                             </span>
                             {!(currentPrize.type === 'points' || currentPrize.isPoints || currentPrize.name?.includes('隨機球員')) && currentPrize.category && (
                                 <span className="text-[9px] font-bold text-slate-200 px-2 py-0.5 rounded-full bg-white/[0.06] border border-white/[0.12]">
@@ -1222,31 +1250,6 @@ export default function OpenPackPage() {
 
             {/* Central Stage: Scratch / Reveal OR Result Shelf */}
             {step !== 'done' ? (
-                cardPool?.isHybridBlindSpMode ? (
-                    <div className="flex-1 flex flex-col items-center justify-center w-full relative z-[20] min-h-0 py-1">
-                        <BoxOpeningStage
-                            prizes={drawnPrizes}
-                            isTrialMode={isTrialMode}
-                            onCompleteAll={skipAllToDone}
-                            onRedeemSpBuyback={async (prize) => {
-                                if (!user?.uid || !prize?.userCardId) {
-                                    toast({ variant: 'destructive', title: '無法回收', description: '請先登入並於正式抽卡中操作。' });
-                                    return false;
-                                }
-                                const res = await redeemSpBuybackAction(user.uid, prize.userCardId, poolId || undefined);
-                                if (res.success) {
-                                    toast({
-                                        title: '✅ SP 賞點數回收成功',
-                                        description: `已將 ${(res.creditedPoints || 0).toLocaleString()} 點數即時入帳至您的錢包！`,
-                                    });
-                                    return true;
-                                }
-                                toast({ variant: 'destructive', title: '回收失敗', description: res.error || '請稍後再試' });
-                                return false;
-                            }}
-                        />
-                    </div>
-                ) : (
                 <div className="flex-1 flex flex-col items-center justify-center w-full relative z-[20] min-h-0 py-1">
                     <motion.div 
                         initial={{ y: -300, opacity: 0, scale: 0.6, rotate: -8 }}
@@ -1273,30 +1276,62 @@ export default function OpenPackPage() {
                         }}
                         className="flex flex-col items-center w-[min(65vw,215px)] sm:w-[235px] relative transform-gpu will-change-transform"
                     >
-                        {/* 傳奇卡片身後向外擴散的雙重黃金衝擊波 */}
-                        {isLegendaryRevealed && (
+                        {/* 依卡包顏色發散的能量衝擊波（金包發金光、黑包發紫金光、銀包發銀光、銅包發銅光、白包發白光） */}
+                        {(isLegendaryRevealed || (revealPercent === 100 && Boolean(currentPrize?.tierCode))) && (
                             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[-1]">
                                 <motion.div
                                     initial={{ scale: 0.8, opacity: 0.9 }}
                                     animate={{ scale: [0.8, 2.2], opacity: [0.9, 0] }}
                                     transition={{ duration: 1.1, ease: "easeOut", repeat: Infinity, repeatDelay: 0.4 }}
-                                    className="absolute w-full h-full rounded-[2.2rem] border-2 border-amber-300 shadow-[0_0_30px_rgba(251,191,36,0.6)] transform-gpu will-change-transform"
+                                    className={cn(
+                                        "absolute w-full h-full rounded-[2.2rem] border-2 transform-gpu will-change-transform",
+                                        currentPrize?.tierCode === 'SP'
+                                            ? "border-purple-400 shadow-[0_0_35px_rgba(168,85,247,0.7)]"
+                                            : currentPrize?.tierCode === 'B'
+                                            ? "border-slate-200 shadow-[0_0_30px_rgba(226,232,240,0.7)]"
+                                            : currentPrize?.tierCode === 'C'
+                                            ? "border-amber-600 shadow-[0_0_28px_rgba(217,119,6,0.65)]"
+                                            : currentPrize?.tierCode === 'D'
+                                            ? "border-white shadow-[0_0_24px_rgba(255,255,255,0.6)]"
+                                            : "border-amber-300 shadow-[0_0_30px_rgba(251,191,36,0.6)]"
+                                    )}
                                 />
                                 <motion.div
                                     initial={{ scale: 0.8, opacity: 0.7 }}
                                     animate={{ scale: [0.8, 2.7], opacity: [0.7, 0] }}
                                     transition={{ duration: 1.3, ease: "easeOut", delay: 0.2, repeat: Infinity, repeatDelay: 0.4 }}
-                                    className="absolute w-full h-full rounded-[2.8rem] border border-yellow-200 shadow-[0_0_40px_rgba(245,158,11,0.5)] transform-gpu will-change-transform"
+                                    className={cn(
+                                        "absolute w-full h-full rounded-[2.8rem] border transform-gpu will-change-transform",
+                                        currentPrize?.tierCode === 'SP'
+                                            ? "border-amber-300 shadow-[0_0_40px_rgba(253,230,138,0.55)]"
+                                            : currentPrize?.tierCode === 'B'
+                                            ? "border-slate-300 shadow-[0_0_35px_rgba(203,213,225,0.5)]"
+                                            : currentPrize?.tierCode === 'C'
+                                            ? "border-amber-500 shadow-[0_0_30px_rgba(217,119,6,0.45)]"
+                                            : currentPrize?.tierCode === 'D'
+                                            ? "border-slate-100 shadow-[0_0_28px_rgba(255,255,255,0.4)]"
+                                            : "border-yellow-200 shadow-[0_0_40px_rgba(245,158,11,0.5)]"
+                                    )}
                                 />
                             </div>
                         )}
 
                         <div className={cn(
                             "relative w-full aspect-[2.5/4] p-0.5 sm:p-1 bg-slate-900 border-[3px] sm:border-[4px] rounded-[1.4rem] sm:rounded-[1.6rem] shadow-2xl overflow-hidden transition-all duration-500 flex items-center justify-center shrink-0", 
-                            isLegendaryRevealed
+                            revealPercent === 100 && currentPrize?.tierCode
+                                ? currentPrize.tierCode === 'A' || currentPrize.tierCode === 'LAST'
+                                    ? "border-amber-400 shadow-[0_0_85px_rgba(245,158,11,1),0_0_160px_rgba(251,191,36,0.75)] ring-4 ring-amber-300/90 scale-[1.03]"
+                                    : currentPrize.tierCode === 'SP'
+                                    ? "border-amber-300 shadow-[0_0_85px_rgba(168,85,247,0.8),0_0_140px_rgba(253,230,138,0.65)] ring-4 ring-amber-300/80 scale-[1.03]"
+                                    : currentPrize.tierCode === 'B'
+                                    ? "border-slate-200 shadow-[0_0_75px_rgba(226,232,240,0.85)] ring-2 ring-slate-200/80 scale-[1.02]"
+                                    : currentPrize.tierCode === 'C'
+                                    ? "border-amber-600 shadow-[0_0_65px_rgba(217,119,6,0.75)] ring-2 ring-amber-500/70"
+                                    : "border-white shadow-[0_0_55px_rgba(248,250,252,0.7)] ring-2 ring-white/75"
+                                : isLegendaryRevealed
                                 ? "border-amber-400 shadow-[0_0_85px_rgba(245,158,11,1),0_0_160px_rgba(251,191,36,0.75),inset_0_0_30px_rgba(254,240,138,0.85)] ring-4 ring-amber-300/90 scale-[1.03]"
                                 : (step === 'revealing' && revealPercent === 100 && visual.glow),
-                            !isLegendaryRevealed && "border-slate-950"
+                            !isLegendaryRevealed && !(revealPercent === 100 && currentPrize?.tierCode) && "border-slate-950"
                         )}>
                             {(() => {
                                 const peelGeo = getCornerPeelGeometry(peelCorner, revealPercent);
@@ -1435,7 +1470,6 @@ export default function OpenPackPage() {
                         )}
                     </motion.div>
                 </div>
-                )
             ) : (
                 <div className="flex-1 w-full max-w-5xl px-2 sm:px-4 z-20 min-h-0 flex flex-col justify-center relative select-none py-1">
                     {/* Horizontal swipeable prize shelf (centered when <= 3 items) */}

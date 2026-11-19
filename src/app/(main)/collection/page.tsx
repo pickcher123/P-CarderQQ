@@ -44,6 +44,7 @@ import {
 } from 'lucide-react';
 import { useCollection, useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { getBonusMultiplier, isBonusEventActive } from '@/lib/bonus-event';
+import { userLevels } from '@/components/member-level-crown';
 import type { SystemConfig } from '@/types/system';
 import { collection, doc, writeBatch, serverTimestamp, getDoc, increment, updateDoc, getDocs, arrayRemove, query, where } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -415,10 +416,7 @@ export default function CollectionPage() {
     setIsProcessing(true);
     try {
       const batch = writeBatch(firestore);
-      const basePointsPerCard = 300;
-      const effectivePointsPerCard = basePointsPerCard * (bonusMultiplier || 1);
-      const pPointsGained = actualCount * effectivePointsPerCard;
-      const diamondsGained = actualCount * 10;
+      const diamondsGained = actualCount * 40;
       const soldCardNames = `隨機球員 普/特 卡 x ${actualCount}`;
 
       for (const card of cardsToSell) {
@@ -435,25 +433,14 @@ export default function CollectionPage() {
         section: 'admin'
       });
 
-      batch.set(doc(collection(firestore, 'transactions')), {
-        userId: user.uid,
-        transactionType: 'QuickSell',
-        currency: 'p-point',
-        amount: pPointsGained,
-        details: `普特卡批量轉點 ${actualCount} 張 (獲得紅利P點)。卡片內容: [${soldCardNames}]`,
-        transactionDate: serverTimestamp(),
-        section: 'admin'
-      });
-
       batch.update(doc(firestore, 'users', user.uid), { 
         points: increment(diamondsGained),
-        bonusPoints: increment(pPointsGained)
       });
 
       await batch.commit();
       toast({ 
         title: "普特卡轉點成功！", 
-        description: `已成功將 ${actualCount} 張普特卡變現，獲得 +${diamondsGained} 鑽石 與 +${pPointsGained.toLocaleString()} 紅利P點！` 
+        description: `已成功將 ${actualCount} 張普特卡買回，獲得 +${diamondsGained.toLocaleString()} 鑽石！` 
       });
       setIsRandomSellDialogOpen(false);
       setSelectedCardIds(prev => {
@@ -518,19 +505,25 @@ export default function CollectionPage() {
     setSelectedCardIds(new Set());
   };
 
+  const memberLevelInfo = useMemo(() => {
+    const levelName = userProfile?.userLevel || '新手收藏家';
+    return userLevels.find(l => l.level === levelName) || userLevels[0];
+  }, [userProfile?.userLevel]);
+
   const conversionValues = useMemo(() => {
     const cardsToSell = mergedCards.filter(c => selectedCardIds.has(c.id) && c.source !== 'group-break');
     let diamonds = 0;
     let pPoints = 0;
+    const rebateRatePct = memberLevelInfo.rebateRate || 0;
     
     cardsToSell.forEach(card => {
         const mult = bonusMultiplier || 1;
         if (card.name.includes('隨機球員')) {
-            diamonds += 50;
+            diamonds += 40;
         } else {
             const basePrice = card.sellPrice || 10;
-            diamonds += basePrice * 0.7;
-            pPoints += (basePrice * 0.1 * 10) * mult; 
+            diamonds += basePrice * 0.8;
+            pPoints += (basePrice * (rebateRatePct / 100)) * mult; 
         }
     });
 
@@ -540,9 +533,10 @@ export default function CollectionPage() {
         eligibleCount: cardsToSell.length,
         ineligibleCount: selectedCardIds.size - cardsToSell.length,
         isBonusActive: isBonusActive && (bonusMultiplier > 1),
-        bonusMultiplier
+        bonusMultiplier,
+        rebateRatePct,
     };
-  }, [mergedCards, selectedCardIds, bonusMultiplier, isBonusActive]);
+  }, [mergedCards, selectedCardIds, bonusMultiplier, isBonusActive, memberLevelInfo]);
 
   const handleQuickSell = async () => {
     if (selectedCardIds.size === 0 || !user || !firestore) return;
@@ -949,53 +943,10 @@ export default function CollectionPage() {
               </div>
             </div>
 
-            {/* Bottom Row: Category Sub-filters & Rarity Filter & Bulk Checkbox Shortcuts */}
+            {/* Bottom Row: Category Sub-filters & Bulk Checkbox Shortcuts */}
             <div className="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t border-white/5">
               
               <div className="flex items-center gap-2 flex-wrap">
-                {/* Rarity Filter */}
-                <div className="flex items-center gap-1 bg-[#0a0f1c]/95 p-1 rounded-lg border border-white/[0.08] text-[11px] font-medium">
-                  <span className="px-2 text-slate-400">稀有度</span>
-                  <button
-                    onClick={() => setFilterRarity('all')}
-                    className={cn(
-                      "px-2.5 py-0.5 rounded-md transition-colors cursor-pointer",
-                      filterRarity === 'all' ? "bg-white/[0.12] text-white font-semibold" : "text-slate-400 hover:text-white"
-                    )}
-                  >
-                    全部
-                  </button>
-                  <button
-                    onClick={() => setFilterRarity('legendary')}
-                    className={cn(
-                      "px-2.5 py-0.5 rounded-md transition-colors cursor-pointer inline-flex items-center gap-1.5",
-                      filterRarity === 'legendary' ? "bg-amber-400/20 text-amber-200 border border-amber-400/40 font-semibold" : "text-amber-300/80 hover:text-amber-200"
-                    )}
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-300" />
-                    <span>傳奇</span>
-                  </button>
-                  <button
-                    onClick={() => setFilterRarity('rare')}
-                    className={cn(
-                      "px-2.5 py-0.5 rounded-md transition-colors cursor-pointer inline-flex items-center gap-1.5",
-                      filterRarity === 'rare' ? "bg-sky-400/20 text-sky-200 border border-sky-400/40 font-semibold" : "text-sky-300/80 hover:text-sky-200"
-                    )}
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-sky-300" />
-                    <span>稀有</span>
-                  </button>
-                  <button
-                    onClick={() => setFilterRarity('common')}
-                    className={cn(
-                      "px-2.5 py-0.5 rounded-md transition-colors cursor-pointer",
-                      filterRarity === 'common' ? "bg-white/[0.1] text-slate-100 border border-white/[0.18] font-semibold" : "text-slate-400 hover:text-white"
-                    )}
-                  >
-                    普通
-                  </button>
-                </div>
-
                 {/* Category Pills */}
                 {allCategories.length > 0 && (
                   <div className="flex items-center gap-1 flex-wrap">
@@ -1215,11 +1166,7 @@ export default function CollectionPage() {
                           "bg-[#0a0f1c]/95 border shadow-[0_6px_18px_rgba(0,0,0,0.45)]",
                           isSelected 
                             ? "border-cyan-400 ring-2 ring-cyan-400/50 bg-cyan-950/30 scale-[1.01]" 
-                            : isLegendary
-                              ? "border-amber-400/45 hover:border-amber-300/80 hover:-translate-y-0.5"
-                              : isRare
-                                ? "border-sky-400/35 hover:border-sky-300/70 hover:-translate-y-0.5"
-                                : "border-white/[0.08] hover:border-white/[0.22] hover:-translate-y-0.5"
+                            : "border-white/[0.08] hover:border-amber-300/45 hover:-translate-y-0.5"
                         )}
                       >
                         {/* 卡磚頂部類別標籤 */}
@@ -1239,7 +1186,6 @@ export default function CollectionPage() {
                             backImageUrl={card.backImageUrl}
                             imageHint={card.imageHint} 
                             isFlippable={false} 
-                            rarity={card.rarity} 
                             priority={index < 12} 
                           />
 
@@ -1367,12 +1313,8 @@ export default function CollectionPage() {
                         </div>
 
                         <div className="flex items-center gap-3 text-xs font-code pt-0.5 flex-wrap">
-                          <span className="text-cyan-400 font-bold flex items-center gap-1">
-                            <Gem className="w-3.5 h-3.5" /> 總值 {randomPlayerCards.length * 10} 鑽石
-                          </span>
-                          <span className="text-slate-500 hidden sm:inline">•</span>
-                          <span className="text-amber-400 font-bold flex items-center gap-1">
-                            <PPlusIcon className="w-3.5 h-3.5" /> 總值 {(randomPlayerCards.length * 300).toLocaleString()} P點
+                          <span className="text-cyan-400 font-bold flex items-center gap-1 tabular-nums">
+                            <Gem className="w-3.5 h-3.5" /> 總值 {(randomPlayerCards.length * 40).toLocaleString()} 鑽石（40 鑽 / 張）
                           </span>
                         </div>
                       </div>
@@ -1466,14 +1408,10 @@ export default function CollectionPage() {
                             </div>
 
                             {/* Reward Preview */}
-                            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/10 text-center">
+                            <div className="pt-2 border-t border-white/10 text-center">
                               <div className="p-2.5 rounded-lg bg-cyan-950/40 border border-cyan-500/30">
-                                <span className="text-[10px] text-slate-400 block font-bold">獲得鑽石</span>
-                                <span className="text-cyan-400 font-code font-black text-sm sm:text-base">+{randomSellQty * 10} 💎</span>
-                              </div>
-                              <div className="p-2.5 rounded-lg bg-amber-950/40 border border-amber-500/30">
-                                <span className="text-[10px] text-slate-400 block font-bold">獲得紅利P點</span>
-                                <span className="text-amber-400 font-code font-black text-sm sm:text-base">+{(randomSellQty * 300).toLocaleString()} 🎁</span>
+                                <span className="text-[10px] text-slate-400 block font-bold">獲得鑽石（每張 40 鑽）</span>
+                                <span className="text-cyan-400 font-code font-black text-sm sm:text-base tabular-nums">+{(randomSellQty * 40).toLocaleString()} 💎</span>
                               </div>
                             </div>
                           </div>
@@ -2085,17 +2023,6 @@ export default function CollectionPage() {
                   {/* Card Title & Badges */}
                   <div className="flex flex-col items-center text-center gap-1.5 relative z-10">
                     <div className="flex items-center gap-1.5 flex-wrap justify-center">
-                      <span className={cn(
-                        "px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border shadow-sm",
-                        previewCard.rarity === 'legendary' 
-                          ? "bg-amber-500/20 text-amber-300 border-amber-400/50" 
-                          : previewCard.rarity === 'rare'
-                            ? "bg-sky-500/20 text-sky-300 border-sky-400/50"
-                            : "bg-slate-800 text-slate-300 border-white/20"
-                      )}>
-                        {previewCard.rarity ? previewCard.rarity.toUpperCase() : 'COMMON'}
-                      </span>
-                      
                       {previewCard.category && (
                         <span className="bg-slate-900/90 text-cyan-300 border border-cyan-500/30 text-[10px] px-2 py-0.5 rounded-full font-bold">
                           {previewCard.category}
@@ -2150,21 +2077,11 @@ export default function CollectionPage() {
                       <RotateCw className="w-3.5 h-3.5 text-cyan-400 animate-spin-slow" /> 
                       點擊卡片即可 3D 翻轉觀看背卡
                     </p>
-
-                    <Button 
-                      onClick={() => setIsReportOpen(true)} 
-                      className="h-10 w-full rounded-xl text-xs font-black bg-gradient-to-r from-cyan-500 via-sky-400 to-cyan-400 hover:from-cyan-400 hover:to-sky-300 text-slate-950 shadow-lg shadow-cyan-500/25 transition-all cursor-pointer mt-1"
-                    >
-                      <Sparkles className="w-3.5 h-3.5 mr-1.5" /> 智能 AI 珍稀度鑑定報告
-                    </Button>
                   </div>
                 </div>
               )}
             </DialogContent>
           </Dialog>
-
-          {/* AI Report Dialog */}
-          <CardReportDialog card={previewCard} open={isReportOpen} onOpenChange={setIsReportOpen} />
 
         </div>
       </div>

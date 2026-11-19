@@ -7,6 +7,8 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { SafeImage } from '@/components/safe-image';
 
+import type { HybridTierCode } from '@/types/draw';
+
 export interface CloveSummoningAnimationProps {
   highestRarity: 'common' | 'rare' | 'legendary' | string;
   drawCount: number;
@@ -14,6 +16,7 @@ export interface CloveSummoningAnimationProps {
   backgroundUrl?: string;
   onAnimationComplete: () => void;
   selectedNumbers?: number[];
+  hybridTier?: HybridTierCode;
 }
 
 type Stage = 'idle' | 'tearing' | 'burst';
@@ -24,6 +27,7 @@ export function CloveSummoningAnimation({
   poolName = '典藏卡包',
   onAnimationComplete,
   selectedNumbers,
+  hybridTier,
 }: CloveSummoningAnimationProps) {
   const shouldReduceMotion = useReducedMotion();
   const [stage, setStage] = useState<Stage>('idle');
@@ -44,6 +48,103 @@ export function CloveSummoningAnimation({
   const isRare = highestRarity === 'rare';
 
   const tierConfig = useMemo(() => {
+    if (hybridTier) {
+      const hybridStyles: Record<
+        HybridTierCode,
+        {
+          title: string;
+          color: string;
+          badgeBg: string;
+          ambientGradient: string;
+          glowColor: string;
+          topBg: string;
+          bodyBg: string;
+          borderColor: string;
+          titleText: string;
+          subText: string;
+          isLight?: boolean;
+        }
+      > = {
+        A: {
+          title: 'A 賞・金包 (GOLD PACK)',
+          color: 'text-[#FDE68A]',
+          badgeBg: 'bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] font-black',
+          ambientGradient: 'radial-gradient(circle at 50% 45%, rgba(251, 191, 36, 0.24) 0%, rgba(180, 83, 9, 0.08) 44%, transparent 72%)',
+          glowColor: 'rgba(251, 191, 36, 0.55)',
+          topBg: 'from-[#1c170b] via-[#120e07] to-[#0a0f1c]',
+          bodyBg: 'from-[#161209] via-[#0d0b07] to-[#07090f]',
+          borderColor: 'border-[#FDE68A]/70',
+          titleText: 'text-[#FDE68A]',
+          subText: 'text-amber-200/70',
+        },
+        SP: {
+          title: 'SP 賞・黑包 (GOD PACK)',
+          color: 'text-[#FDE68A]',
+          badgeBg: 'bg-[#0a0f1c] text-[#FDE68A] border border-amber-300/75 font-black',
+          ambientGradient: 'radial-gradient(circle at 50% 45%, rgba(168, 85, 247, 0.22) 0%, rgba(253, 230, 138, 0.14) 44%, transparent 74%)',
+          glowColor: 'rgba(168, 85, 247, 0.5)',
+          topBg: 'from-[#10121e] via-[#090b12] to-[#05060b]',
+          bodyBg: 'from-[#0a0c16] via-[#06070d] to-[#020306]',
+          borderColor: 'border-amber-300/65',
+          titleText: 'text-white',
+          subText: 'text-purple-200/70',
+        },
+        B: {
+          title: 'B 賞・銀包 (SILVER PACK)',
+          color: 'text-slate-200',
+          badgeBg: 'bg-slate-200 text-slate-950 font-black',
+          ambientGradient: 'radial-gradient(circle at 50% 45%, rgba(226, 232, 240, 0.2) 0%, rgba(100, 116, 139, 0.08) 44%, transparent 72%)',
+          glowColor: 'rgba(226, 232, 240, 0.45)',
+          topBg: 'from-[#1a2232] via-[#121826] to-[#0b101b]',
+          bodyBg: 'from-[#151c2b] via-[#0d1320] to-[#080c15]',
+          borderColor: 'border-slate-300/70',
+          titleText: 'text-slate-100',
+          subText: 'text-slate-300/70',
+        },
+        C: {
+          title: 'C 賞・銅包 (BRONZE PACK)',
+          color: 'text-amber-300',
+          badgeBg: 'bg-amber-800/80 text-amber-100 border border-amber-500/50 font-black',
+          ambientGradient: 'radial-gradient(circle at 50% 45%, rgba(217, 119, 6, 0.2) 0%, rgba(120, 53, 15, 0.08) 44%, transparent 72%)',
+          glowColor: 'rgba(217, 119, 6, 0.45)',
+          topBg: 'from-[#1c130d] via-[#130d09] to-[#0b0908]',
+          bodyBg: 'from-[#17100b] via-[#100b08] to-[#080605]',
+          borderColor: 'border-amber-600/70',
+          titleText: 'text-amber-100',
+          subText: 'text-amber-300/65',
+        },
+        D: {
+          title: 'D 賞・白包 (WHITE PACK)',
+          color: 'text-white',
+          badgeBg: 'bg-white text-slate-900 border border-slate-200 font-black',
+          ambientGradient: 'radial-gradient(circle at 50% 45%, rgba(248, 250, 252, 0.18) 0%, rgba(148, 163, 184, 0.08) 44%, transparent 72%)',
+          glowColor: 'rgba(248, 250, 252, 0.38)',
+          topBg: 'from-[#181d2a] via-[#111622] to-[#0b0f18]',
+          bodyBg: 'from-[#131824] via-[#0d111b] to-[#080b12]',
+          borderColor: 'border-white/75',
+          titleText: 'text-white',
+          subText: 'text-slate-300/75',
+        },
+        LAST: {
+          title: '最後賞・王者冠包 (LAST ONE)',
+          color: 'text-[#FDE68A]',
+          badgeBg: 'bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] font-black',
+          ambientGradient: 'radial-gradient(circle at 50% 45%, rgba(251, 191, 36, 0.26) 0%, rgba(244, 63, 94, 0.1) 44%, transparent 74%)',
+          glowColor: 'rgba(251, 191, 36, 0.6)',
+          topBg: 'from-[#1e150b] via-[#140e08] to-[#0b090d]',
+          bodyBg: 'from-[#181109] via-[#0e0b0e] to-[#07070c]',
+          borderColor: 'border-amber-300/80',
+          titleText: 'text-[#FDE68A]',
+          subText: 'text-amber-200/75',
+        },
+      };
+      const hs = hybridStyles[hybridTier];
+      return {
+        ...hs,
+        icon: hybridTier === 'A' || hybridTier === 'SP' || hybridTier === 'LAST' ? Crown : Sparkles,
+      };
+    }
+
     if (isLegendary) {
       return {
         title: 'GOD PACK',
@@ -51,6 +152,11 @@ export function CloveSummoningAnimation({
         badgeBg: 'bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] font-black',
         ambientGradient: 'radial-gradient(circle at 50% 45%, rgba(251, 191, 36, 0.22) 0%, rgba(180, 83, 9, 0.1) 42%, transparent 70%)',
         glowColor: 'rgba(251, 191, 36, 0.38)',
+        topBg: 'from-[#171e30] via-[#0e1424] to-[#0a0f1c]',
+        bodyBg: 'from-[#0d1424] via-[#0a0f1c] to-[#060912]',
+        borderColor: 'border-amber-300/45',
+        titleText: 'text-white',
+        subText: 'text-amber-200/70',
         icon: Crown,
       };
     }
@@ -61,6 +167,11 @@ export function CloveSummoningAnimation({
         badgeBg: 'bg-amber-400/20 text-[#FDE68A] border border-amber-300/45 font-bold',
         ambientGradient: 'radial-gradient(circle at 50% 45%, rgba(251, 191, 36, 0.16) 0%, rgba(56, 189, 248, 0.08) 45%, transparent 72%)',
         glowColor: 'rgba(251, 191, 36, 0.26)',
+        topBg: 'from-[#171e30] via-[#0e1424] to-[#0a0f1c]',
+        bodyBg: 'from-[#0d1424] via-[#0a0f1c] to-[#060912]',
+        borderColor: 'border-amber-300/45',
+        titleText: 'text-white',
+        subText: 'text-amber-200/70',
         icon: Flame,
       };
     }
@@ -70,9 +181,14 @@ export function CloveSummoningAnimation({
       badgeBg: 'bg-white/[0.1] text-[#FDE68A] border border-amber-300/30 font-bold',
       ambientGradient: 'radial-gradient(circle at 50% 45%, rgba(253, 230, 138, 0.12) 0%, rgba(15, 23, 42, 0.1) 45%, transparent 72%)',
       glowColor: 'rgba(253, 230, 138, 0.18)',
+      topBg: 'from-[#171e30] via-[#0e1424] to-[#0a0f1c]',
+      bodyBg: 'from-[#0d1424] via-[#0a0f1c] to-[#060912]',
+      borderColor: 'border-amber-300/45',
+      titleText: 'text-white',
+      subText: 'text-amber-200/70',
       icon: Sparkles,
     };
-  }, [isLegendary, isRare]);
+  }, [isLegendary, isRare, hybridTier]);
 
   const executeRipOpen = (dir: 'ltr' | 'rtl' = 'ltr') => {
     if (stage !== 'idle' || hasOpened) return;
@@ -187,6 +303,25 @@ export function CloveSummoningAnimation({
         className="absolute inset-0 pointer-events-none -z-30 opacity-80"
         style={{ background: tierConfig.ambientGradient }}
       />
+
+      {/* 精緻進場轉場：開獎確認後的光束掃過與同色能量衝擊波 */}
+      {!shouldReduceMotion && (
+        <>
+          <motion.div
+            initial={{ scale: 0.35, opacity: 0.9 }}
+            animate={{ scale: 2.3, opacity: 0 }}
+            transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
+            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full border-2 pointer-events-none z-10"
+            style={{ borderColor: tierConfig.glowColor, boxShadow: `0 0 60px ${tierConfig.glowColor}` }}
+          />
+          <motion.div
+            initial={{ x: '-120%', opacity: 0.7 }}
+            animate={{ x: '160%', opacity: 0 }}
+            transition={{ duration: 0.75, ease: 'easeOut' }}
+            className="fixed inset-y-0 w-40 bg-gradient-to-r from-transparent via-white/25 to-transparent -skew-x-12 pointer-events-none z-30"
+          />
+        </>
+      )}
 
       {/* 頂部卡池資訊與跳過按鈕 */}
       <div
@@ -305,19 +440,25 @@ export function CloveSummoningAnimation({
           {/* 實體鋁箔卡包主體（頂部撕口封條 + 下半部卡包袋身） */}
           <motion.div
             ref={packRef}
+            initial={shouldReduceMotion ? { opacity: 0 } : { y: -70, scale: 0.7, opacity: 0, rotate: -4 }}
             animate={
               stage === 'idle'
                 ? shouldReduceMotion
-                  ? { y: 0 }
-                  : { y: [0, -3, 0] }
+                  ? { y: 0, scale: 1, opacity: 1, rotate: 0 }
+                  : { y: [0, -4, 0], scale: 1, opacity: 1, rotate: 0 }
                 : stage === 'tearing'
-                ? { y: 18, scale: 0.99 }
-                : { y: 95, scale: 0.92, opacity: 0 }
+                ? { y: 18, scale: 0.99, opacity: 1, rotate: 0 }
+                : { y: 95, scale: 0.92, opacity: 0, rotate: 0 }
             }
             transition={{
-              duration: stage === 'idle' ? (shouldReduceMotion ? 0.1 : 2.6) : 0.34,
-              repeat: stage === 'idle' && !shouldReduceMotion ? Infinity : 0,
-              ease: 'easeInOut',
+              y: {
+                duration: stage === 'idle' ? (shouldReduceMotion ? 0.1 : 2.6) : 0.34,
+                repeat: stage === 'idle' && !shouldReduceMotion ? Infinity : 0,
+                ease: 'easeInOut',
+              },
+              scale: { type: 'spring', duration: 0.55, bounce: 0.24 },
+              opacity: { duration: 0.35 },
+              rotate: { type: 'spring', duration: 0.55, bounce: 0.2 },
             }}
             className="relative z-20 w-[240px] h-[380px] sm:w-[270px] sm:h-[425px] flex flex-col drop-shadow-[0_28px_55px_rgba(0,0,0,0.88)] will-change-transform transform-gpu"
           >
@@ -339,19 +480,23 @@ export function CloveSummoningAnimation({
                     }
               }
               transition={{ duration: stage === 'idle' ? 0.06 : 0.36, ease: [0.22, 1, 0.36, 1] }}
-              className="relative w-full h-[58px] sm:h-[64px] shrink-0 rounded-t-2xl bg-gradient-to-b from-[#171e30] via-[#0e1424] to-[#0a0f1c] border-x border-t border-amber-300/45 overflow-hidden flex flex-col justify-between px-4 py-2 shadow-lg"
+              className={cn(
+                'relative w-full h-[58px] sm:h-[64px] shrink-0 rounded-t-2xl bg-gradient-to-b border-x border-t overflow-hidden flex flex-col justify-between px-4 py-2 shadow-lg',
+                tierConfig.topBg,
+                tierConfig.borderColor
+              )}
             >
               {/* 垂直熱壓壓紋 */}
               <div className="absolute inset-0 bg-[repeating-linear-gradient(90deg,rgba(253,230,138,0.06)_0px,rgba(253,230,138,0.06)_1px,transparent_1px,transparent_6px)] pointer-events-none" />
 
               {/* 頂部歐規吊孔 + PULL 指示 */}
               <div className="relative z-10 flex items-center justify-between">
-                <span className="text-[9px] font-mono font-bold tracking-widest text-amber-300/80 uppercase flex items-center gap-1">
+                <span className={cn('text-[9px] font-mono font-bold tracking-widest uppercase flex items-center gap-1', (tierConfig as any).isLight ? 'text-slate-700' : 'text-amber-300/85')}>
                   <Scissors className="w-3 h-3" />
                   <span>TEAR</span>
                 </span>
                 <div className="w-12 h-2 rounded-full bg-black/75 border border-white/15" />
-                <span className="text-[9px] font-mono font-bold tracking-widest text-amber-300/80 uppercase flex items-center gap-0.5">
+                <span className={cn('text-[9px] font-mono font-bold tracking-widest uppercase flex items-center gap-0.5', (tierConfig as any).isLight ? 'text-slate-700' : 'text-amber-300/85')}>
                   <span>OPEN</span>
                   <ChevronsRight className="w-3 h-3" />
                 </span>
@@ -359,7 +504,7 @@ export function CloveSummoningAnimation({
 
               {/* 撕開提示字樣 */}
               <div className="relative z-10 flex items-center justify-center gap-1.5 pb-0.5">
-                <span className="text-[10px] font-bold text-[#FDE68A] tracking-wider">
+                <span className={cn('text-[10px] font-bold tracking-wider', (tierConfig as any).isLight ? 'text-slate-900' : 'text-[#FDE68A]')}>
                   ← 滑動此處撕開卡包 →
                 </span>
               </div>
@@ -379,7 +524,11 @@ export function CloveSummoningAnimation({
             </div>
 
             {/* 2️⃣ 卡包主袋身 (Main Booster Body) */}
-            <div className="relative w-full flex-1 rounded-b-2xl bg-gradient-to-b from-[#0d1424] via-[#0a0f1c] to-[#060912] border-x border-b border-amber-300/35 overflow-hidden flex flex-col justify-between p-4 shadow-2xl">
+            <div className={cn(
+              'relative w-full flex-1 rounded-b-2xl bg-gradient-to-b border-x border-b overflow-hidden flex flex-col justify-between p-4 shadow-2xl',
+              tierConfig.bodyBg,
+              tierConfig.borderColor
+            )}>
               {/* 斜向拉絲金屬微紋理 */}
               <div
                 className="absolute inset-0 opacity-45 pointer-events-none"
@@ -388,11 +537,11 @@ export function CloveSummoningAnimation({
                 }}
               />
               {/* 鋁箔反光流光 */}
-              <div className="absolute -inset-full bg-gradient-to-tr from-transparent via-white/[0.06] to-transparent rotate-12 pointer-events-none" />
+              <div className="absolute -inset-full bg-gradient-to-tr from-transparent via-white/[0.08] to-transparent rotate-12 pointer-events-none" />
 
               {/* 頂部資訊列 */}
-              <div className="relative z-10 flex items-center justify-between w-full px-1 pb-2.5 border-b border-white/[0.08]">
-                <span className="text-[9px] sm:text-[10px] font-bold tracking-widest text-slate-300 uppercase">
+              <div className="relative z-10 flex items-center justify-between w-full px-1 pb-2.5 border-b border-white/[0.12]">
+                <span className={cn('text-[9px] sm:text-[10px] font-bold tracking-widest uppercase', (tierConfig as any).isLight ? 'text-slate-700' : 'text-slate-200')}>
                   OFFICIAL PACK
                 </span>
                 <span className={cn('text-[9px] sm:text-[10px] px-2.5 py-0.5 rounded-full shadow-sm tabular-nums', tierConfig.badgeBg)}>
@@ -402,15 +551,15 @@ export function CloveSummoningAnimation({
 
               {/* 卡包中央典雅燙金徽章 */}
               <div className="relative z-10 flex flex-col items-center justify-center my-auto py-2">
-                <div className="relative w-18 h-18 sm:w-20 sm:h-20 rounded-2xl bg-white/[0.04] border border-amber-300/30 backdrop-blur-xs flex items-center justify-center shadow-inner">
+                <div className={cn('relative w-18 h-18 sm:w-20 sm:h-20 rounded-2xl border backdrop-blur-xs flex items-center justify-center shadow-inner', (tierConfig as any).isLight ? 'bg-slate-900 border-slate-700' : 'bg-white/[0.08] border-amber-300/40')}>
                   <div className="absolute inset-1.5 rounded-xl border border-white/10 pointer-events-none" />
-                  <IconComponent className={cn('w-9 h-9 sm:w-10 sm:h-10 drop-shadow-lg', tierConfig.color)} />
+                  <IconComponent className={cn('w-9 h-9 sm:w-10 sm:h-10 drop-shadow-lg', (tierConfig as any).isLight ? 'text-[#FDE68A]' : tierConfig.color)} />
                 </div>
 
-                <h3 className="mt-3.5 font-headline text-lg sm:text-xl font-black text-white tracking-widest drop-shadow-md">
+                <h3 className={cn('mt-3.5 font-headline text-lg sm:text-xl font-black tracking-widest drop-shadow-md', tierConfig.titleText)}>
                   P+ CARDER
                 </h3>
-                <p className="text-[9px] sm:text-[10px] text-amber-200/70 font-bold tracking-widest uppercase mt-1">
+                <p className={cn('text-[9px] sm:text-[10px] font-bold tracking-widest uppercase mt-1', tierConfig.subText)}>
                   PREMIUM TRADING CARDS
                 </p>
               </div>

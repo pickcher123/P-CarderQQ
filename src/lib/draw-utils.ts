@@ -236,7 +236,8 @@ export function drawFromPool(
   poolData: Partial<CardPool>,
   count: number,
   cardsMap?: Map<string, CardMapItem> | Record<string, CardMapItem>,
-  isTrial: boolean = false
+  isTrial: boolean = false,
+  storeProtection?: { enabled?: boolean; poolMinProgressPct?: number }
 ): { 
   drawn: DrawnPrize[]; 
   updatedCards: { cardId: string; quantity: number }[];
@@ -310,6 +311,34 @@ export function drawFromPool(
       const weight = getWeight(rarity, q);
       return { prize: p, q, rarity, weight };
     });
+
+    // 店家保護機制：當啟用時，卡池已抽進度未達門檻（預設 30%）前不出大獎（若非大獎已抽完則放行防死池）
+    const totalPoolPacks = Math.max(1, Number(poolData.totalPacks || poolData.remainingPacks || 100));
+    const currentRemaining =
+      cardEntries.reduce((s, e) => s + e.q, 0) + pointEntries.reduce((s, e) => s + e.q, 0);
+    const drawnSoFar = Math.max(0, totalPoolPacks - currentRemaining);
+    const progressPct = (drawnSoFar / totalPoolPacks) * 100;
+    const minProgressPct = storeProtection?.poolMinProgressPct ?? 30;
+    const shouldSuppressTopHits = !isTrial && Boolean(storeProtection?.enabled) && progressPct < minProgressPct;
+
+    if (shouldSuppressTopHits) {
+      const isTopHitCard = (cardId: string, r: Rarity) => {
+        const tier = poolData.cardTiers?.[cardId];
+        return tier === 'A' || tier === 'SP' || r === 'legendary';
+      };
+      const nonTopWeight =
+        cardEntries.reduce((s, e) => s + (isTopHitCard(e.card.cardId, e.rarity) ? 0 : e.weight), 0) +
+        pointEntries.reduce((s, e) => s + (e.rarity === 'legendary' ? 0 : e.weight), 0);
+
+      if (nonTopWeight > 0) {
+        cardEntries.forEach((e) => {
+          if (isTopHitCard(e.card.cardId, e.rarity)) e.weight = 0;
+        });
+        pointEntries.forEach((e) => {
+          if (e.rarity === 'legendary') e.weight = 0;
+        });
+      }
+    }
 
     const totalWeight = cardEntries.reduce((sum, e) => sum + e.weight, 0) +
                         pointEntries.reduce((sum, e) => sum + e.weight, 0);

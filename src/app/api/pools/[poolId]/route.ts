@@ -34,7 +34,7 @@ export async function GET(
         pullNumber: data.pullNumber,
         maskedUsername: data.maskedUsername,
         tierCode: data.tierCode,
-        prizeName: hideSpName ? '神秘隱藏黑盒（SP 賞）' : data.prizeName,
+        prizeName: hideSpName ? '神秘隱藏黑包（SP 賞）' : data.prizeName,
         isOpened: Boolean(data.isOpened),
         redeemedAsPoints: Boolean(data.redeemedAsPoints),
         createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : null,

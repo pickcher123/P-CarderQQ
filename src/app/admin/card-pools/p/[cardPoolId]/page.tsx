@@ -53,8 +53,7 @@ import { PPlusIcon } from '@/components/icons';
 import { EventTicketDispatchDialog, EventTicketDispatchLogs } from '@/components/admin/event-ticket-manager';
 import { HybridPoolValuationPanel } from '@/components/admin/HybridPoolValuationPanel';
 import { HybridBoxWorkspace } from '@/components/admin/HybridBoxWorkspace';
-import { HYBRID_68_PRESET, HYBRID_TIER_META, calculateHybridPoolValuation } from '@/lib/hybrid-pool-preset';
-import { generateRandomPackSvgDataUrl } from '@/lib/pack-artwork-generator';
+import { HYBRID_68_PRESET, HYBRID_TIER_META, calculateHybridPoolValuation, suggestNicePrice } from '@/lib/hybrid-pool-preset';
 import type { HybridTierCode } from '@/types/draw';
 import { generateKujiTickets } from '@/lib/draw-utils';
 
@@ -73,30 +72,6 @@ const RARITY_BADGE_STYLES: Record<Rarity, string> = {
   rare: 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-bold shadow-sm border border-cyan-400/40',
   common: 'bg-slate-200 text-slate-700 font-bold border border-slate-300/60'
 };
-
-const PACK_PRESETS = [
-  {
-    name: '奢華黑金鋁箔包',
-    tag: '經典首選',
-    url: '/images/card_pool_bg.jpg',
-    gradient: 'from-amber-600 to-amber-950',
-    description: '沈穩黑金光澤，極具收藏威儀'
-  },
-  {
-    name: '傳奇特選紅金包',
-    tag: 'HOT 限定',
-    url: '/public/images/prize_stage_bg.jpg',
-    gradient: 'from-rose-600 to-amber-900',
-    description: '熱血冠軍紅金，適合高單價旗艦卡池'
-  },
-  {
-    name: '殿堂黑曜石極光包',
-    tag: '極光典藏',
-    url: '/draw_background.png',
-    gradient: 'from-slate-800 to-indigo-950',
-    description: '賽博極光炫彩，現代運動感十足'
-  }
-];
 
 interface CardInPool {
   cardId: string;
@@ -199,10 +174,6 @@ export default function CardPoolDetailPage() {
   const [poolRarityFilter, setPoolRarityFilter] = useState<string>('all');
   const [selectedPoolCards, setSelectedPoolCards] = useState<string[]>([]);
   const [previewZoomCard, setPreviewZoomCard] = useState<CardData | null>(null);
-
-  // 封面圖片上傳進度
-  const [isUploadingPackImage, setIsUploadingPackImage] = useState(false);
-  const [packUploadProgress, setPackUploadProgress] = useState<number | null>(null);
 
   // 儲存狀態指示
   const [isSaving, setIsSaving] = useState(false);
@@ -410,8 +381,8 @@ export default function CardPoolDetailPage() {
   const totalPrizesCount = totalCardsCount + totalPointPrizesCount;
 
   // 總卡池參考市場價值與售價預估
-  const { totalPoolValue, recommendedPrices, estimatedGrossRevenue } = useMemo(() => {
-    if (!allCards || !poolDetails) return { totalPoolValue: 0, recommendedPrices: null, estimatedGrossRevenue: 0 };
+  const { totalPoolValue, estimatedGrossRevenue } = useMemo(() => {
+    if (!allCards || !poolDetails) return { totalPoolValue: 0, estimatedGrossRevenue: 0 };
 
     let totalValue = 0;
     const cardMap = new Map(allCards.map(c => [c.id, c.sellPrice || 0]));
@@ -429,17 +400,13 @@ export default function CardPoolDetailPage() {
       totalValue += pp.points * pp.quantity;
     });
 
-    const totalPacks = poolDetails.totalPacks || totalPrizesCount || 1;
-    const single = Math.round((totalValue * 2.5) / Math.max(1, totalPacks));
-    const triple = Math.round(single * 0.95 * 3);
     const estimatedGrossRevenue = (poolDetails.price || 0) * (poolDetails.totalPacks || 0);
 
     return { 
       totalPoolValue: totalValue, 
-      recommendedPrices: { single, triple },
       estimatedGrossRevenue
     };
-  }, [allCards, poolDetails, totalPrizesCount]);
+  }, [allCards, poolDetails]);
 
   // 最後賞卡片
   const lastPrizeCard = useMemo(() => {
@@ -580,46 +547,6 @@ export default function CardPoolDetailPage() {
       toast({ variant: 'destructive', title: '儲存失敗', description: '請檢查網路連線。' });
     } finally {
       setIsSaving(false);
-    }
-  };
-
-  // 封面圖上傳處理
-  const handlePackImageUpload = async (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !storage || !cardPoolRef) return;
-
-    try {
-      setIsUploadingPackImage(true);
-      setPackUploadProgress(10);
-      const storageRef = ref(storage, `P-Carder/packs/${uuidv4()}-${file.name}`);
-      const uploadTask = uploadBytesResumable(storageRef, file);
-
-      uploadTask.on(
-        'state_changed',
-        (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          setPackUploadProgress(Math.round(progress));
-        },
-        (error) => {
-          console.error('Upload error:', error);
-          toast({ variant: 'destructive', title: '上傳失敗', description: '圖片上傳中斷，請重試。' });
-          setIsUploadingPackImage(false);
-          setPackUploadProgress(null);
-        },
-        async () => {
-          const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
-          setPoolDetails(prev => ({ ...prev, imageUrl: downloadUrl }));
-          await updateDoc(cardPoolRef, { imageUrl: downloadUrl });
-          setIsUploadingPackImage(false);
-          setPackUploadProgress(null);
-          toast({ title: '封面已上傳', description: '專屬卡包包裝圖片已成功套用！' });
-        }
-      );
-    } catch (err) {
-      console.error(err);
-      setIsUploadingPackImage(false);
-      setPackUploadProgress(null);
-      toast({ variant: 'destructive', title: '上傳異常' });
     }
   };
 
@@ -848,9 +775,13 @@ export default function CardPoolDetailPage() {
           cardRarities: existingRarities,
         };
         if (pData.isHybridBlindSpMode) {
+          const actualRemaining =
+            existingCards.reduce((s, c) => s + Math.max(0, c.quantity || 0), 0) +
+            (pData.pointPrizes || []).reduce((s: number, p: any) => s + Math.max(0, p?.quantity || 0), 0);
           updateData.cardTiers = existingTiers;
           updateData.cardCosts = existingCosts;
           updateData.spBuybackPoints = existingBuybacks;
+          updateData.remainingPacks = actualRemaining;
         } else {
           updateData.totalPacks = (pData.totalPacks || 0) + addedCount;
           updateData.remainingPacks = (pData.remainingPacks || 0) + addedCount;
@@ -941,7 +872,7 @@ export default function CardPoolDetailPage() {
       await updateDoc(cardPoolRef, {
         cards: arrayRemove(cardToRemove),
         cardRarities: newCardRarities,
-        totalPacks: Math.max(0, (cardPool.totalPacks || 0) - quantityToRemove),
+        ...(cardPool.isHybridBlindSpMode ? {} : { totalPacks: Math.max(0, (cardPool.totalPacks || 0) - quantityToRemove) }),
         remainingPacks: newRemainingPacks
       });
       toast({
@@ -1081,12 +1012,15 @@ export default function CardPoolDetailPage() {
       },
     ];
 
+    const actualRemaining =
+      (poolDetails.cards || []).reduce((s, c) => s + Math.max(0, c.quantity || 0), 0) +
+      defaultPointPrizes.reduce((s, p) => s + Math.max(0, p.quantity || 0), 0);
     const patch: Partial<CardPool> = {
       price: HYBRID_68_PRESET.price_per_pull,
       price3Draws: HYBRID_68_PRESET.price_per_pull * 3,
       price10Draws: HYBRID_68_PRESET.price_per_pull * 10,
       totalPacks: HYBRID_68_PRESET.total_pulls,
-      remainingPacks: HYBRID_68_PRESET.total_pulls,
+      remainingPacks: actualRemaining,
       presetUsed: HYBRID_68_PRESET.preset_id,
       snipeAlertThreshold: HYBRID_68_PRESET.snipe_alert_threshold,
       lastPrizeCost: poolDetails.lastPrizeCost ?? 9000,
@@ -1158,8 +1092,11 @@ export default function CardPoolDetailPage() {
     } else {
       current.push(updatedItem);
     }
-    setPoolDetails((prev) => ({ ...prev, pointPrizes: current }));
-    if (cardPoolRef) await updateDoc(cardPoolRef, cleanFirestoreData({ pointPrizes: current }));
+    const actualRemaining =
+      (poolDetails.cards || []).reduce((s, c) => s + Math.max(0, c.quantity || 0), 0) +
+      current.reduce((s, p) => s + Math.max(0, p?.quantity || 0), 0);
+    setPoolDetails((prev) => ({ ...prev, pointPrizes: current, remainingPacks: actualRemaining }));
+    if (cardPoolRef) await updateDoc(cardPoolRef, cleanFirestoreData({ pointPrizes: current, remainingPacks: actualRemaining }));
   };
 
   const handleLastPrizeCostChange = async (cost: number) => {
@@ -1189,6 +1126,50 @@ export default function CardPoolDetailPage() {
       dCost: dPrize?.unitCost ?? dPrize?.points ?? 450,
     };
   }, [hybridValuation, poolDetails.pointPrizes]);
+
+  const [balancerParams, setBalancerParams] = useState({
+    targetPayoutPct: 68.0,
+    cCost: 1800,
+    dCost: 450,
+  });
+
+  const handleBalancerParamsChange = useCallback(
+    (params: { targetPayoutPct: number; cCost: number; dCost: number }) => {
+      setBalancerParams((prev) =>
+        prev.targetPayoutPct === params.targetPayoutPct &&
+        prev.cCost === params.cCost &&
+        prev.dCost === params.dCost
+          ? prev
+          : params
+      );
+    },
+    []
+  );
+
+  const recommendedPrices = useMemo(() => {
+    if (!allCards || !poolDetails) return null;
+    const totalPacks = Math.max(1, poolDetails.totalPacks || totalPrizesCount || 1);
+
+    if (poolDetails.isHybridBlindSpMode) {
+      const single = suggestNicePrice(
+        {
+          heroPullQty: hybridHeroMetrics.heroPullQty,
+          heroTotalCost: hybridHeroMetrics.heroTotalCost,
+          cCost: balancerParams.cCost || hybridHeroMetrics.cCost,
+          dCost: balancerParams.dCost || hybridHeroMetrics.dCost,
+          targetPayoutRatio: Math.max(0.1, Math.min(0.95, balancerParams.targetPayoutPct / 100)),
+          defaultCRatio: 0.13,
+        },
+        totalPacks
+      );
+      const triple = Math.round(single * 0.95 * 3);
+      return { single, triple };
+    }
+
+    const single = Math.round((totalPoolValue * 2.5) / totalPacks);
+    const triple = Math.round(single * 0.95 * 3);
+    return { single, triple };
+  }, [allCards, poolDetails, totalPrizesCount, totalPoolValue, hybridHeroMetrics, balancerParams]);
 
   const handleAutoBalanceApply = async (params: {
     pricePerPull: number;
@@ -1224,12 +1205,15 @@ export default function CardPoolDetailPage() {
       },
     ];
 
+    const actualRemaining =
+      (poolDetails.cards || []).reduce((s, c) => s + Math.max(0, c.quantity || 0), 0) +
+      balancedPointPrizes.reduce((s, p: any) => s + Math.max(0, p?.quantity || 0), 0);
     const patch: Partial<CardPool> = {
       price: params.pricePerPull,
       price3Draws: params.pricePerPull * 3,
       price10Draws: params.pricePerPull * 10,
       totalPacks: params.totalPulls,
-      remainingPacks: params.totalPulls,
+      remainingPacks: actualRemaining,
       pointPrizes: balancedPointPrizes as any,
     };
     setPoolDetails((prev) => ({ ...prev, ...patch }));
@@ -1328,7 +1312,7 @@ export default function CardPoolDetailPage() {
 
                 {poolDetails.isHybridBlindSpMode ? (
                   <Badge className="bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] font-black text-xs px-2.5 py-0.5 flex items-center gap-1">
-                    <Package className="w-3 h-3" /> 明池盲開 ＋ 隱藏 SP 模式
+                    <Package className="w-3 h-3" /> GodPack 一番賞
                   </Badge>
                 ) : poolDetails.isBlindBoxMode ? (
                   <Badge className="bg-slate-800 text-[#FDE68A] border border-amber-300/50 font-black text-xs px-2.5 py-0.5 flex items-center gap-1">
@@ -1427,7 +1411,7 @@ export default function CardPoolDetailPage() {
           </TabsTrigger>
                   <TabsTrigger value="cards" className="rounded-xl font-black text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-md flex items-center gap-2">
                     <Layers className="w-4 h-4 text-amber-500" />
-                    <span>{poolDetails.isHybridBlindSpMode ? `五色盲盒配置 (${cardsInPool.length})` : `卡片與庫存配置 (${cardsInPool.length})`}</span>
+                    <span>{poolDetails.isHybridBlindSpMode ? `五色卡包配置 (${cardsInPool.length})` : `卡片與庫存配置 (${cardsInPool.length})`}</span>
                   </TabsTrigger>
         </TabsList>
 
@@ -1502,145 +1486,6 @@ export default function CardPoolDetailPage() {
                       className="border-slate-200 font-medium bg-white rounded-xl text-xs" 
                     />
                   </div>
-
-                  {/* 升級版：卡包封面包裝外觀設計器 */}
-                  <div className="p-5 bg-gradient-to-br from-amber-50/80 via-yellow-50/40 to-slate-50 rounded-2xl border border-amber-200/80 space-y-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                      <Label className="text-sm font-black text-slate-900 flex items-center gap-2">
-                        <Package className="w-4 h-4 text-amber-600" />
-                        卡包包裝封面圖 (Pack Artwork)
-                      </Label>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={() => {
-                            const { dataUrl, styleName } = generateRandomPackSvgDataUrl(poolDetails.name);
-                            setPoolDetails((prev) => ({ ...prev, imageUrl: dataUrl }));
-                            handleUpdatePoolDetails('imageUrl', dataUrl);
-                            toast({
-                              title: '🎲 已隨機生成專屬卡包樣式',
-                              description: `已套用「${styleName}」，每次點擊皆會生成不同配色與箔紋！`,
-                            });
-                          }}
-                          className="h-8 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-[#FDE68A] font-black text-xs gap-1.5 shadow-sm"
-                        >
-                          <Shuffle className="w-3.5 h-3.5" />
-                          隨機生成卡包樣式
-                        </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            const officialUrl = '/images/card_pool_bg.jpg';
-                            setPoolDetails((prev) => ({ ...prev, imageUrl: officialUrl }));
-                            handleUpdatePoolDetails('imageUrl', officialUrl);
-                            toast({
-                              title: '🛡️ 已套用官方版本卡包',
-                              description: '已恢復為 P+Carder 官方預設黑金鋁箔卡包。',
-                            });
-                          }}
-                          className="h-8 px-3 rounded-xl border-amber-300 bg-white hover:bg-amber-50 text-slate-800 font-bold text-xs gap-1"
-                        >
-                          <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
-                          官方預設卡包
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* 範本快捷點選 */}
-                    <div className="space-y-2">
-                      <p className="text-[11px] font-bold text-slate-600">或一鍵套用經典卡包設計風格範本：</p>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        {PACK_PRESETS.map((preset) => (
-                          <button
-                            key={preset.name}
-                            type="button"
-                            onClick={() => {
-                              setPoolDetails(prev => ({ ...prev, imageUrl: preset.url }));
-                              handleUpdatePoolDetails('imageUrl', preset.url);
-                            }}
-                            className={cn(
-                              "p-3 rounded-xl border text-left transition-all relative overflow-hidden group flex flex-col justify-between",
-                              poolDetails.imageUrl === preset.url
-                                ? "border-amber-500 bg-amber-100/60 ring-2 ring-amber-400/40 shadow-sm"
-                                : "border-slate-200 bg-white hover:border-slate-300"
-                            )}
-                          >
-                            <div className="flex items-center justify-between w-full mb-1">
-                              <span className="font-black text-xs text-slate-900">{preset.name}</span>
-                              <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-amber-300 bg-amber-50 text-amber-800 font-bold">
-                                {preset.tag}
-                              </Badge>
-                            </div>
-                            <p className="text-[10px] text-slate-500 line-clamp-1">{preset.description}</p>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* 本地上傳或輸入 URL */}
-                    <div className="flex flex-col sm:flex-row gap-3 pt-1">
-                      <div className="relative flex-1">
-                        <Input 
-                          id="pool-pack-image" 
-                          placeholder="輸入自訂卡包封面圖片網址 (https://...)" 
-                          value={poolDetails.imageUrl || ''} 
-                          onChange={e => setPoolDetails({...poolDetails, imageUrl: e.target.value})} 
-                          onBlur={e => handleUpdatePoolDetails('imageUrl', e.target.value)} 
-                          className="h-11 border-slate-200 font-mono text-xs text-slate-900 bg-white rounded-xl pl-3" 
-                        />
-                      </div>
-
-                      <div className="relative shrink-0">
-                        <input
-                          type="file"
-                          id="pack-file-upload"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={handlePackImageUpload}
-                          disabled={isUploadingPackImage}
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => document.getElementById('pack-file-upload')?.click()}
-                          disabled={isUploadingPackImage}
-                          className="h-11 px-4 rounded-xl border-amber-300 bg-white hover:bg-amber-50 font-bold text-xs text-slate-800 flex items-center gap-1.5 shadow-sm"
-                        >
-                          {isUploadingPackImage ? <Loader2 className="w-4 h-4 animate-spin text-amber-600" /> : <Upload className="w-4 h-4 text-amber-600" />}
-                          {isUploadingPackImage ? `上傳中 ${packUploadProgress}%` : '本機上傳封面'}
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* 預覽目前卡包 */}
-                    {poolDetails.imageUrl && (
-                      <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
-                        <div className="relative w-14 h-20 rounded-lg overflow-hidden border border-slate-200 bg-black shrink-0 shadow-sm">
-                          <SafeImage src={poolDetails.imageUrl} alt="卡包預覽" fill className="object-cover" />
-                        </div>
-                        <div className="text-xs space-y-1 flex-1">
-                          <p className="font-bold text-slate-900 flex items-center gap-1.5">
-                            <Check className="w-4 h-4 text-emerald-600" /> 卡包封面套用中
-                          </p>
-                          <p className="text-[11px] text-slate-500">前台抽卡展示機台、開盒撕開動畫皆會直接呈現此卡包包裝。</p>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setPoolDetails(prev => ({ ...prev, imageUrl: '' }));
-                            handleUpdatePoolDetails('imageUrl', '');
-                          }}
-                          className="text-slate-400 hover:text-rose-600 text-xs"
-                        >
-                          清除
-                        </Button>
-                      </div>
-                    )}
-                  </div>
                 </CardContent>
               </UICard>
 
@@ -1690,10 +1535,10 @@ export default function CardPoolDetailPage() {
                       <div className="flex items-center justify-between flex-wrap gap-2">
                         <span className="text-xs font-black text-[#FDE68A] flex items-center gap-1.5">
                           <Package className="w-4 h-4" />
-                          明池盲開＋隱藏 SP 專屬設定
+                          GodPack 一番賞專屬設定
                         </span>
                         <span className="text-[11px] text-slate-400">
-                          調整單抽價格或總抽數時，五色盒子建議單價與毛利將即時連動重算
+                          調整單抽價格或總抽數時，五色卡包建議單價與毛利將即時連動重算
                         </span>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -1788,7 +1633,11 @@ export default function CardPoolDetailPage() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-cyan-800 font-black text-xs uppercase tracking-wider">
                           <Calculator className="w-4 h-4 text-cyan-600" />
-                          <span>系統智能建議售價 (依據全池卡片價值試算)</span>
+                          <span>
+                            {poolDetails.isHybridBlindSpMode
+                              ? `系統智能建議售價 (連動配平引擎・目標還元率 ${balancerParams.targetPayoutPct}%)`
+                              : '系統智能建議售價 (依據全池卡片價值試算)'}
+                          </span>
                         </div>
                         <span className="text-[10px] text-cyan-700 font-bold">
                           全池參考價值：{totalPoolValue.toLocaleString()} 💎
@@ -2123,24 +1972,6 @@ export default function CardPoolDetailPage() {
                   />
                 </div>
               </UICard>
-
-              {/* 實體卡包 2.5D 預覽卡 */}
-              <UICard className="border-slate-200 bg-white shadow-sm rounded-3xl p-6 text-center space-y-3">
-                <p className="text-xs font-black uppercase text-slate-500 tracking-wider">前台機台卡包外觀預覽</p>
-                <div className="relative aspect-[2.5/3.8] max-w-[180px] mx-auto rounded-2xl overflow-hidden border-2 border-amber-300 shadow-xl bg-slate-900 group">
-                  <SafeImage 
-                    src={poolDetails.imageUrl || '/images/card_pool_bg.jpg'} 
-                    alt="卡包外觀" 
-                    fill 
-                    className="object-cover group-hover:scale-105 transition-transform" 
-                  />
-                  <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/90 to-transparent text-left">
-                    <p className="text-[10px] font-black text-amber-400 uppercase tracking-widest">{poolDetails.name || 'P+Carder Pack'}</p>
-                    <p className="text-xs font-black text-white font-code mt-0.5">{poolDetails.price || 0} {poolDetails.currency === 'p-point' ? 'P' : '💎'}</p>
-                  </div>
-                </div>
-                <p className="text-[10px] text-slate-400 font-medium">玩家在抽卡機台撕包開卡時將看到此包裝</p>
-              </UICard>
             </div>
           </div>
         </TabsContent>
@@ -2160,6 +1991,8 @@ export default function CardPoolDetailPage() {
                 forceConfirmRedHealth={forceConfirmRedHealth}
                 onForceConfirmChange={setForceConfirmRedHealth}
                 onApply68Preset={handleApply68Preset}
+                onPricePerPullChange={(nextPrice) => setPoolDetails((prev) => ({ ...prev, price: nextPrice }))}
+                onBalancerParamsChange={handleBalancerParamsChange}
                 onAutoBalanceApply={handleAutoBalanceApply}
               />
               <HybridBoxWorkspace
@@ -2197,7 +2030,8 @@ export default function CardPoolDetailPage() {
                 onCardCertChange={handleCardCertChange}
                 onRemoveCard={handleRemoveCardFromPool}
                 onUpdateStandardBoxPrize={handleUpdateStandardBoxPrize}
-                onQuickAddRandomPlayerToD={async () => {
+                onQuickAddRandomPlayerToD={async (qty: number) => {
+                  const addQty = Math.max(1, Math.round(qty || 1));
                   const current = [...(poolDetails.pointPrizes || [])] as any[];
                   const idx = current.findIndex((p) => p.tierCode === 'D' || p.prizeId === 'hybrid_d_box');
                   if (idx >= 0) {
@@ -2207,7 +2041,7 @@ export default function CardPoolDetailPage() {
                       name: '隨機球員 普/特 卡',
                       points: 50,
                       unitCost: 50,
-                      quantity: Number(prevItem.quantity || 0) + 1,
+                      quantity: Number(prevItem.quantity || 0) + addQty,
                       rarity: 'common' as Rarity,
                       tierCode: 'D',
                     };
@@ -2217,18 +2051,21 @@ export default function CardPoolDetailPage() {
                       name: '隨機球員 普/特 卡',
                       points: 50,
                       unitCost: 50,
-                      quantity: 1,
+                      quantity: addQty,
                       rarity: 'common' as Rarity,
                       tierCode: 'D',
                     });
                   }
-                  setPoolDetails((prev) => ({ ...prev, pointPrizes: current }));
+                  const actualRemaining =
+                    (poolDetails.cards || []).reduce((s, c) => s + Math.max(0, c.quantity || 0), 0) +
+                    current.reduce((s, p) => s + Math.max(0, p?.quantity || 0), 0);
+                  setPoolDetails((prev) => ({ ...prev, pointPrizes: current, remainingPacks: actualRemaining }));
                   if (cardPoolRef) {
-                    await updateDoc(cardPoolRef, cleanFirestoreData({ pointPrizes: current }));
+                    await updateDoc(cardPoolRef, cleanFirestoreData({ pointPrizes: current, remainingPacks: actualRemaining }));
                   }
                   toast({
-                    title: '已加入 D 賞「隨機球員 普/特 卡 (50💎)」',
-                    description: '已新增 1 抽至 D 賞（白盒）並同步更新估值。',
+                    title: `已加入 ${addQty} 張「隨機球員 普/特 卡 (50💎)」`,
+                    description: '已寫入 D 賞（白盒）並同步更新即時估值。',
                   });
                 }}
               />
@@ -2980,10 +2817,10 @@ export default function CardPoolDetailPage() {
             </DialogDescription>
           </DialogHeader>
 
-          {/* 明池盲開＋隱藏 SP 模式：直接選擇要放入哪一個顏色的盒子 */}
+          {/* GodPack 一番賞模式：直接選擇要放入哪一個顏色的卡包 */}
           {poolDetails.isHybridBlindSpMode && targetPrizeType !== 'last' && (
             <div className="mb-3 p-3 rounded-2xl bg-[#0a0f1c] text-white border border-amber-300/35 flex flex-wrap items-center justify-between gap-2">
-              <span className="text-xs font-black text-[#FDE68A]">選擇放入盒子顏色：</span>
+              <span className="text-xs font-black text-[#FDE68A]">選擇放入卡包顏色：</span>
               <div className="flex flex-wrap gap-1.5">
                 {(['A', 'SP', 'B', 'C', 'D'] as const).map((tier) => {
                   const meta = HYBRID_TIER_META[tier];

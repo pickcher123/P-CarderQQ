@@ -55,11 +55,11 @@ interface ExtractedExhibition {
     selected?: boolean;
 }
 
-export type DateFilterType = 'all' | 'ongoing' | 'upcoming' | 'this_month' | 'ended';
-export type RegionFilterType = 'all' | 'taiwan' | 'asia' | 'usa';
-export type SortOrderType = 'date_asc' | 'date_desc' | 'created_desc';
+type DateFilterType = 'all' | 'ongoing' | 'upcoming' | 'this_month' | 'ended';
+type RegionFilterType = 'all' | 'taiwan' | 'asia' | 'usa';
+type SortOrderType = 'date_asc' | 'date_desc' | 'created_desc';
 
-export function getExhibitionStatus(exh: any): { 
+function getExhibitionStatus(exh: any): { 
     status: 'ongoing' | 'upcoming' | 'ended'; 
     label: string; 
     color: string;
@@ -105,7 +105,7 @@ export function getExhibitionStatus(exh: any): {
     }
 }
 
-export function detectExhibitionRegion(locationStr?: string, regionField?: string): 'taiwan' | 'asia' | 'usa' {
+function detectExhibitionRegion(locationStr?: string, regionField?: string): 'taiwan' | 'asia' | 'usa' {
     if (regionField === 'taiwan' || regionField === 'asia' || regionField === 'usa') {
         return regionField;
     }

@@ -7,26 +7,54 @@ import { CardItem } from '@/components/card-item';
 import { RandomPlayerCard } from '@/components/random-player-card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { SafeImage } from '@/components/safe-image';
 import { HYBRID_TIER_META } from '@/lib/hybrid-pool-preset';
 import type { HybridTierCode } from '@/types/draw';
-import { Sparkles, PackageCheck, Coins, FastForward, CheckCircle2, Loader2, ArrowRight } from 'lucide-react';
+import {
+  Sparkles,
+  PackageCheck,
+  Coins,
+  FastForward,
+  CheckCircle2,
+  Loader2,
+  ArrowRight,
+  Gift,
+  Scissors,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+type StagePhase = 'gift' | 'box' | 'pack' | 'revealed';
 
 interface BoxOpeningStageProps {
   prizes: any[];
+  poolImageUrl?: string;
+  poolName?: string;
   isTrialMode?: boolean;
+  startRevealed?: boolean;
   onCompleteAll: () => void;
   onRedeemSpBuyback?: (prize: any) => Promise<boolean>;
 }
 
 export function BoxOpeningStage({
   prizes,
+  poolImageUrl,
+  poolName,
   isTrialMode = false,
+  startRevealed = false,
   onCompleteAll,
   onRedeemSpBuyback,
 }: BoxOpeningStageProps) {
-  const [openedIndices, setOpenedIndices] = useState<Set<number>>(() => new Set());
-  const [openingIndex, setOpeningIndex] = useState<number | null>(null);
+  const [giftOpened, setGiftOpened] = useState(startRevealed);
+  const [isUnwrappingGift, setIsUnwrappingGift] = useState(false);
+  const [phaseByIndex, setPhaseByIndex] = useState<Record<number, StagePhase>>(() => {
+    if (!startRevealed) return {};
+    const init: Record<number, StagePhase> = {};
+    prizes.forEach((_, idx) => {
+      init[idx] = 'revealed';
+    });
+    return init;
+  });
+  const [animatingPhase, setAnimatingPhase] = useState<'box' | 'pack' | null>(null);
   const [activeIndex, setActiveIndex] = useState<number>(0);
   const [redeemingIds, setRedeemingIds] = useState<Set<number>>(() => new Set());
   const [redeemedIds, setRedeemedIds] = useState<Set<number>>(() => new Set());
@@ -43,27 +71,46 @@ export function BoxOpeningStage({
           : 'D');
 
   const tierMeta = HYBRID_TIER_META[currentTier] || HYBRID_TIER_META.D;
-  const isCurrentOpened = openedIndices.has(activeIndex);
-  const isCurrentOpening = openingIndex === activeIndex;
-  const allOpened = prizes.length > 0 && openedIndices.size >= prizes.length;
+  const currentPhase: StagePhase = !giftOpened ? 'gift' : phaseByIndex[activeIndex] || 'box';
 
-  const handleOpenBox = (idx: number) => {
-    if (openedIndices.has(idx) || openingIndex !== null) return;
-    setOpeningIndex(idx);
+  const revealedCount = prizes.filter((_, idx) => phaseByIndex[idx] === 'revealed').length;
+  const allRevealed = prizes.length > 0 && revealedCount >= prizes.length;
+
+  const handleUnwrapGift = () => {
+    if (isUnwrappingGift || giftOpened) return;
+    setIsUnwrappingGift(true);
     setTimeout(() => {
-      setOpenedIndices((prev) => {
-        const next = new Set(prev);
-        next.add(idx);
-        return next;
-      });
-      setOpeningIndex(null);
+      setGiftOpened(true);
+      setIsUnwrappingGift(false);
     }, 520);
   };
 
+  const handleOpenBoxToPack = (idx: number) => {
+    if (animatingPhase) return;
+    setAnimatingPhase('box');
+    setTimeout(() => {
+      setPhaseByIndex((prev) => ({ ...prev, [idx]: 'pack' }));
+      setAnimatingPhase(null);
+    }, 480);
+  };
+
+  const handleTearPackToReveal = (idx: number) => {
+    if (animatingPhase) return;
+    setAnimatingPhase('pack');
+    setTimeout(() => {
+      setPhaseByIndex((prev) => ({ ...prev, [idx]: 'revealed' }));
+      setAnimatingPhase(null);
+    }, 460);
+  };
+
   const handleOpenAll = () => {
-    const all = new Set<number>(prizes.map((_, idx) => idx));
-    setOpenedIndices(all);
-    setOpeningIndex(null);
+    setGiftOpened(true);
+    const all: Record<number, StagePhase> = {};
+    prizes.forEach((_, idx) => {
+      all[idx] = 'revealed';
+    });
+    setPhaseByIndex(all);
+    setAnimatingPhase(null);
   };
 
   const handleSpRedeem = async (idx: number, prize: any) => {
@@ -94,22 +141,29 @@ export function BoxOpeningStage({
   const buybackPoints = Number(
     currentPrize.buybackPoints || Math.round(Number(currentPrize.sellPrice || 0) * 0.8)
   );
+  const resolvedPackImage = poolImageUrl || '/images/card_pool_bg.jpg';
 
   return (
     <div className="w-full max-w-3xl mx-auto flex flex-col items-center justify-center gap-4 px-3 py-2 select-none z-20">
-      {/* 頂部盒子進度列 */}
+      {/* 頂部步驟進度與跳過列 */}
       <div className="w-full flex items-center justify-between gap-2 bg-[#0a0f1c]/85 backdrop-blur-xl border border-white/[0.1] rounded-2xl px-4 py-2.5 shadow-xl">
         <div className="flex items-center gap-2 min-w-0">
-          <Badge className={cn('text-[11px] font-black border px-2.5 py-0.5', tierMeta.badgeClass)}>
-            {tierMeta.label}
-          </Badge>
+          {giftOpened ? (
+            <Badge className={cn('text-[11px] font-black border px-2.5 py-0.5', tierMeta.badgeClass)}>
+              {tierMeta.label}
+            </Badge>
+          ) : (
+            <Badge className="bg-amber-400/15 text-[#FDE68A] border-amber-300/45 text-[11px] font-black">
+              黑盒一番賞禮盒
+            </Badge>
+          )}
           <span className="text-xs font-bold text-slate-300 tabular-nums">
-            第 {activeIndex + 1} / {prizes.length} 盒
+            {!giftOpened ? '步驟 1/3 拆禮物' : `第 ${activeIndex + 1} / ${prizes.length} 盒`}
           </span>
         </div>
 
         <div className="flex items-center gap-2">
-          {!allOpened && (
+          {!allRevealed && (
             <Button
               size="sm"
               variant="outline"
@@ -125,43 +179,79 @@ export function BoxOpeningStage({
             onClick={onCompleteAll}
             className="h-8 rounded-xl bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] font-black text-xs gap-1 shadow-md"
           >
-            {allOpened ? '查看結算總覽' : '略過並結算'}
+            {allRevealed ? '獎項確認總覽' : '略過並結算'}
             <ArrowRight className="w-3.5 h-3.5" />
           </Button>
         </div>
       </div>
 
-      {/* 中央開盒舞台 */}
-      <div className="relative w-full min-h-[340px] sm:min-h-[390px] rounded-2xl bg-[#0a0f1c]/90 backdrop-blur-2xl border border-white/[0.1] border-t-2 border-t-amber-300/65 shadow-[0_24px_64px_rgba(0,0,0,0.88)] flex flex-col items-center justify-center p-5 overflow-hidden">
+      {/* 中央互動開獎舞台 */}
+      <div className="relative w-full min-h-[370px] sm:min-h-[420px] rounded-2xl bg-[#0a0f1c]/90 backdrop-blur-2xl border border-white/[0.1] border-t-2 border-t-amber-300/65 shadow-[0_24px_64px_rgba(0,0,0,0.88)] flex flex-col items-center justify-center p-5 overflow-hidden">
         <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-64 h-24 bg-amber-400/10 blur-2xl pointer-events-none" />
 
         <AnimatePresence mode="wait">
-          {!isCurrentOpened ? (
+          {/* 步驟一：開禮物畫面 */}
+          {currentPhase === 'gift' && (
             <motion.div
-              key={`sealed-${activeIndex}`}
-              initial={{ opacity: 0, scale: 0.9, y: 16 }}
+              key="gift-stage"
+              initial={{ opacity: 0, scale: 0.88, y: 16 }}
               animate={
-                isCurrentOpening
-                  ? {
-                      scale: [1, 1.08, 0.94, 1.15],
-                      rotate: [0, -3, 3, -4, 0],
-                      opacity: [1, 1, 1, 0],
-                    }
+                isUnwrappingGift
+                  ? { scale: [1, 1.12, 0.9, 1.25], rotate: [0, -5, 5, 0], opacity: [1, 1, 0] }
+                  : { opacity: 1, scale: 1, y: 0 }
+              }
+              exit={{ opacity: 0, scale: 1.2 }}
+              transition={{ duration: isUnwrappingGift ? 0.5 : 0.35 }}
+              onClick={handleUnwrapGift}
+              className="flex flex-col items-center justify-center gap-5 cursor-pointer group"
+            >
+              <motion.div
+                animate={!isUnwrappingGift ? { y: [0, -8, 0] } : undefined}
+                transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+                className="relative w-36 h-36 sm:w-44 sm:h-44 rounded-3xl bg-gradient-to-br from-[#1a1f33] via-[#0d121f] to-black border-2 border-amber-300/65 shadow-[0_0_50px_rgba(251,191,36,0.3)] flex items-center justify-center group-hover:scale-105 transition-transform"
+              >
+                <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-4 bg-gradient-to-r from-[#FDE68A] via-amber-400 to-[#FDE68A] opacity-85" />
+                <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-4 bg-gradient-to-b from-[#FDE68A] via-amber-400 to-[#FDE68A] opacity-85" />
+                <div className="relative z-10 w-16 h-16 rounded-2xl bg-[#0a0f1c] border border-amber-300/80 flex items-center justify-center shadow-2xl">
+                  <Gift className="w-9 h-9 text-[#FDE68A]" />
+                </div>
+              </motion.div>
+
+              <div className="text-center space-y-1.5">
+                <p className="text-lg sm:text-xl font-black text-white tracking-wide">
+                  {poolName || '黑盒一番賞'} 神秘禮盒已送達
+                </p>
+                <p className="text-xs text-[#FDE68A] font-bold flex items-center justify-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+                  點擊禮物盒拆封，揭曉您抽中的盲盒顏色！
+                </p>
+              </div>
+            </motion.div>
+          )}
+
+          {/* 步驟二：禮物打開 -> 出現對應顏色的盲盒 */}
+          {currentPhase === 'box' && (
+            <motion.div
+              key={`box-${activeIndex}`}
+              initial={{ opacity: 0, scale: 0.75, y: 24 }}
+              animate={
+                animatingPhase === 'box'
+                  ? { scale: [1, 1.1, 0.92, 1.18], rotate: [0, -4, 4, 0], opacity: [1, 1, 0] }
                   : { opacity: 1, scale: 1, y: 0 }
               }
               exit={{ opacity: 0, scale: 1.15 }}
-              transition={{ duration: isCurrentOpening ? 0.5 : 0.3 }}
-              onClick={() => handleOpenBox(activeIndex)}
+              transition={{ duration: animatingPhase === 'box' ? 0.45 : 0.35 }}
+              onClick={() => handleOpenBoxToPack(activeIndex)}
               className="flex flex-col items-center justify-center gap-4 cursor-pointer group"
             >
               <motion.div
-                animate={!isCurrentOpening ? { y: [0, -6, 0] } : undefined}
+                animate={animatingPhase !== 'box' ? { y: [0, -6, 0] } : undefined}
                 transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
               >
                 <BlindBoxVisual
                   tier={currentTier}
                   size="lg"
-                  isOpening={isCurrentOpening}
+                  isOpening={animatingPhase === 'box'}
                   className="group-hover:scale-105 transition-transform"
                 />
               </motion.div>
@@ -172,13 +262,53 @@ export function BoxOpeningStage({
                 </p>
                 <p className="text-xs text-[#FDE68A] font-bold flex items-center justify-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5 animate-pulse" />
-                  點擊盲盒立即拆封揭曉卡片
+                  點擊盲盒開啟盒蓋，取出專屬卡包
                 </p>
               </div>
             </motion.div>
-          ) : (
+          )}
+
+          {/* 步驟三：盲盒打開 -> 跑出卡包 -> 撕開卡包 */}
+          {currentPhase === 'pack' && (
             <motion.div
-              key={`opened-${activeIndex}`}
+              key={`pack-${activeIndex}`}
+              initial={{ opacity: 0, y: 40, scale: 0.8 }}
+              animate={
+                animatingPhase === 'pack'
+                  ? { scale: [1, 1.08, 1.2], opacity: [1, 1, 0] }
+                  : { opacity: 1, y: 0, scale: 1 }
+              }
+              exit={{ opacity: 0, scale: 1.1 }}
+              transition={{ type: 'spring', duration: 0.45, bounce: 0.2 }}
+              onClick={() => handleTearPackToReveal(activeIndex)}
+              className="flex flex-col items-center justify-center gap-4 cursor-pointer group"
+            >
+              <div className="relative w-[170px] sm:w-[195px] aspect-[2.5/3.8] rounded-2xl overflow-hidden border-2 border-amber-300/75 shadow-[0_0_45px_rgba(251,191,36,0.35)] bg-slate-900 group-hover:scale-[1.03] transition-transform">
+                <SafeImage src={resolvedPackImage} alt="卡包包裝" fill className="object-cover" />
+                {/* 頂部撕開虛線條 */}
+                <div className="absolute inset-x-0 top-6 border-t-2 border-dashed border-[#FDE68A]/90 flex items-center justify-center">
+                  <span className="-mt-3 px-2 py-0.5 rounded-full bg-[#0a0f1c]/90 border border-amber-300/60 text-[10px] font-black text-[#FDE68A] flex items-center gap-1">
+                    <Scissors className="w-3 h-3" /> 點擊沿線撕開
+                  </span>
+                </div>
+                <div className="absolute inset-x-0 bottom-0 p-2.5 bg-gradient-to-t from-black/90 to-transparent text-center">
+                  <Badge className={cn('text-[10px] font-black border', tierMeta.badgeClass)}>
+                    {tierMeta.label} 專屬卡包
+                  </Badge>
+                </div>
+              </div>
+
+              <p className="text-xs text-[#FDE68A] font-bold flex items-center justify-center gap-1.5">
+                <Scissors className="w-3.5 h-3.5 animate-pulse" />
+                點擊或滑動撕開卡包，揭曉最終大獎！
+              </p>
+            </motion.div>
+          )}
+
+          {/* 步驟四：卡包撕開 -> 獎項確認 */}
+          {currentPhase === 'revealed' && (
+            <motion.div
+              key={`revealed-${activeIndex}`}
               initial={{ opacity: 0, scale: 0.85, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               transition={{ type: 'spring', duration: 0.45, bounce: 0.25 }}
@@ -270,8 +400,8 @@ export function BoxOpeningStage({
         </AnimatePresence>
       </div>
 
-      {/* 底部多抽盒子切換列 */}
-      {prizes.length > 1 && (
+      {/* 底部多抽盒子切換列（禮物打開後顯示） */}
+      {giftOpened && prizes.length > 1 && (
         <div className="w-full flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
           {prizes.map((p, idx) => {
             const t: HybridTierCode =
@@ -283,7 +413,7 @@ export function BoxOpeningStage({
                   : p.rarity === 'rare'
                     ? 'B'
                     : 'D');
-            const opened = openedIndices.has(idx);
+            const phase = phaseByIndex[idx] || 'box';
             const active = idx === activeIndex;
             return (
               <button
@@ -291,16 +421,18 @@ export function BoxOpeningStage({
                 type="button"
                 onClick={() => setActiveIndex(idx)}
                 className={cn(
-                  'shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all text-left',
+                  'shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all text-left cursor-pointer',
                   active
                     ? 'bg-amber-400/15 border-amber-300/65 text-white'
                     : 'bg-[#0a0f1c]/75 border-white/[0.08] text-slate-400 hover:bg-white/[0.05]'
                 )}
               >
-                <BlindBoxVisual tier={t} size="xs" isOpened={opened} />
+                <BlindBoxVisual tier={t} size="xs" isOpened={phase !== 'box'} />
                 <div className="text-[11px] leading-tight">
                   <div className="font-bold">{HYBRID_TIER_META[t].boxName}</div>
-                  <div className="text-[10px] opacity-75">{opened ? '已拆封' : '待開啟'}</div>
+                  <div className="text-[10px] opacity-75">
+                    {phase === 'revealed' ? '已確認' : phase === 'pack' ? '待撕包' : '待開盒'}
+                  </div>
                 </div>
               </button>
             );

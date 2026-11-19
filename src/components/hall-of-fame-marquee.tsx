@@ -225,10 +225,11 @@ export function HallOfFameMarquee({ className }: HallOfFameMarqueeProps = {}) {
                     </DialogHeader>
 
                     <div className="space-y-3 pt-2">
-                        {/* 展覽大圖 */}
-                        <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden border border-amber-400/40 bg-slate-900 shadow-lg flex items-center justify-center">
+                        {/* 展覽大圖（完整直立顯示卡片，不裁切不遮擋） */}
+                        <div className="relative w-full h-[290px] sm:h-[330px] rounded-2xl overflow-hidden border border-amber-300/35 bg-[#060912] shadow-inner flex items-center justify-center p-3">
+                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(251,191,36,0.12),transparent_70%)] pointer-events-none" />
                             {selectedItem?.prize && (selectedItem.prize.includes('P+') || selectedItem.prize.includes('點數') || selectedItem.prize.includes('鑽石')) && (!selectedItem.prizeImageUrl || selectedItem.prizeImageUrl.includes('picsum') || selectedItem.prizeImageUrl.includes('placeholder')) ? (
-                                <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-amber-950 via-slate-950 to-indigo-950 p-6 text-center">
+                                <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-amber-950/60 via-slate-950 to-indigo-950/60 p-6 text-center rounded-xl">
                                     <div className="p-3 rounded-full bg-amber-500/20 border-2 border-amber-400/60 mb-2 shadow-[0_0_20px_rgba(245,158,11,0.5)]">
                                         <PPlusIcon className="w-12 h-12 text-amber-300" />
                                     </div>
@@ -236,30 +237,31 @@ export function HallOfFameMarquee({ className }: HallOfFameMarqueeProps = {}) {
                                     <span className="text-xs text-amber-200/70 mt-0.5">點數大獎</span>
                                 </div>
                             ) : (
-                                <>
+                                <div className="relative w-full h-full">
                                     <Image 
                                         src={selectedItem?.prizeImageUrl || PLACEHOLDER_CARD_IMAGE} 
                                         alt={selectedItem?.prize || 'Legendary Card'} 
                                         fill 
                                         referrerPolicy="no-referrer"
-                                        className="object-cover" 
+                                        className="object-contain drop-shadow-[0_12px_28px_rgba(0,0,0,0.85)]" 
                                     />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
-                                </>
+                                </div>
                             )}
-                            <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between text-xs font-bold text-amber-300 bg-slate-950/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-amber-500/30">
-                                <span>幸運玩家：</span>
-                                <span className="text-white font-black text-sm">{selectedItem?.username}</span>
-                            </div>
                         </div>
 
-                        {/* 出處說明 */}
-                        {selectedItem?.poolName && (
-                            <div className="bg-amber-500/10 border border-amber-500/20 px-3 py-2 rounded-xl flex items-center justify-between text-xs">
-                                <span className="text-amber-200/80">爆卡出處卡池：</span>
-                                <span className="text-amber-300 font-bold">{selectedItem.poolName}</span>
+                        {/* 幸運玩家與爆卡出處資訊列（移至卡片下方不遮擋卡面） */}
+                        <div className="space-y-2">
+                            <div className="bg-white/[0.04] border border-white/[0.1] px-3.5 py-2.5 rounded-xl flex items-center justify-between text-xs">
+                                <span className="text-slate-400 font-bold">幸運玩家：</span>
+                                <span className="text-white font-black text-sm">{selectedItem?.username}</span>
                             </div>
-                        )}
+                            {selectedItem?.poolName && (
+                                <div className="bg-amber-400/10 border border-amber-300/25 px-3.5 py-2.5 rounded-xl flex items-center justify-between text-xs">
+                                    <span className="text-amber-200/80 font-bold">爆卡出處卡池：</span>
+                                    <span className="text-[#FDE68A] font-black">{selectedItem.poolName}</span>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </DialogContent>
             </Dialog>

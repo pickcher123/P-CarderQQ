@@ -108,9 +108,9 @@ const POOL_MODE_OPTIONS: Array<{
   },
   {
     id: 'hybrid_sp',
-    label: '明池盲開＋隱藏 SP',
+    label: 'GodPack 一番賞',
     badge: '68% 穩健版',
-    desc: '結合透明看盤與二次開盒動畫，內建 68% 毛利即時估值與 SP 保底回收。',
+    desc: '結合透明看盤與五色卡包（金/黑/銀/銅/白包），內建 68% 毛利即時估值與 SP 保底回收。',
     icon: Package,
   },
 ];
@@ -171,7 +171,7 @@ export default function CardPoolsAdminPage() {
         ...(newPoolMode === 'hybrid_sp' ? {
           price: 2099,
           totalPacks: 100,
-          remainingPacks: 100,
+          remainingPacks: 0,
           presetUsed: 'high_margin_68',
           snipeAlertThreshold: 15,
         } : {}),
