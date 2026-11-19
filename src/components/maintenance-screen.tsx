@@ -159,27 +159,17 @@ export function MaintenanceScreen({ config, defaultContactUrl }: MaintenanceScre
 
         {/* 互動按鈕群 */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-2">
-          {/* 重新整理檢查按鈕 */}
-          <Button
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-sm shadow-[0_4px_20px_rgba(245,158,11,0.35)] transition-all cursor-pointer flex items-center justify-center gap-2 active:scale-95"
-          >
-            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-            <span>{isRefreshing ? '檢查中...' : '重新整理'}</span>
-          </Button>
-
           {/* 官方客服 / LINE 諮詢 */}
           {contactUrl && (
             <a
               href={contactUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-200 hover:text-white border border-slate-700/80 hover:border-amber-400/50 font-bold text-sm transition-all shadow-sm active:scale-95"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] font-black text-sm shadow-[0_4px_20px_rgba(245,158,11,0.3)] transition-all active:scale-95"
             >
-              <MessageCircle className="w-4 h-4 text-emerald-400" />
+              <MessageCircle className="w-4 h-4" />
               <span>官方客服諮詢</span>
-              <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+              <ExternalLink className="w-3.5 h-3.5" />
             </a>
           )}
         </div>

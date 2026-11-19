@@ -109,14 +109,14 @@ export async function performDrawAction(userId: string, poolId: string, count: n
         const rawId = String(prize.id || '');
         const cardPayload: any = isPointOrRandom
           ? {
-              cardId: rawId.startsWith('random-player-') ? rawId : `random-player-${rawId || 'points_300'}`,
+              cardId: rawId.startsWith('random-player-') ? rawId : `random-player-${rawId || 'points_50'}`,
               name: prize.name || '隨機球員 普/特 卡',
               userId,
               category: '抽賞',
               rarity: prize.rarity || 'common',
               isFoil: false,
               isPoints: true,
-              points: Number((prize as any).points || 300),
+              points: Number((prize as any).points || 50),
               source: 'draw',
               poolId,
               serialNumber,
@@ -137,15 +137,48 @@ export async function performDrawAction(userId: string, poolId: string, count: n
               poolId,
               poolName: poolData.name || '',
               serialNumber,
+              ...( (prize as any).tierCode ? { tierCode: (prize as any).tierCode } : {} ),
+              ...( (prize as any).buybackPoints ? { buybackPoints: (prize as any).buybackPoints } : {} ),
               createdAt: admin.firestore.FieldValue.serverTimestamp(),
             };
         transaction.set(newUserCardRef, cleanFirestoreData(cardPayload));
         (prize as any).serialNumber = serialNumber;
+        (prize as any).userCardId = newUserCardRef.id;
 
         if (!isPointOrRandom && rawId && cardsMap.has(rawId)) {
           soldCardIdsToLock.add(rawId);
         }
       }
+
+      // 若為明池盲開＋隱藏 SP 模式，寫入公開開獎紀錄（防作弊證明）
+      const totalPacksNum = Number(poolData.totalPacks || 100);
+      const prevRemainingNum = Number(poolData.remainingPacks ?? totalPacksNum);
+      const rawDisplayName = String(userData.displayName || userData.username || userData.email || userId);
+      const maskedUsername = rawDisplayName.length <= 2
+        ? `${rawDisplayName[0] || 'u'}***`
+        : `${rawDisplayName.slice(0, 2)}***${rawDisplayName.slice(-1)}`;
+      let spDrawnInBatch = false;
+
+      drawn.forEach((prize: any, idx: number) => {
+        if (prize.tierCode === 'SP') spDrawnInBatch = true;
+        const pullNumber = prize.type === 'last-prize'
+          ? totalPacksNum
+          : Math.max(1, totalPacksNum - prevRemainingNum + idx + 1);
+        const publicLogRef = poolRef.collection('drawLogs').doc();
+        transaction.set(publicLogRef, cleanFirestoreData({
+          poolId,
+          pullNumber,
+          userId,
+          maskedUsername,
+          tierCode: prize.type === 'last-prize' ? 'LAST' : (prize.tierCode || (prize.rarity === 'legendary' ? 'A' : prize.rarity === 'rare' ? 'B' : 'D')),
+          prizeId: String(prize.id || ''),
+          prizeName: prize.name || '典藏卡包獎項',
+          userCardId: prize.userCardId || null,
+          isOpened: true,
+          redeemedAsPoints: false,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        }));
+      });
 
       soldCardIdsToLock.forEach((soldCardId) => {
         transaction.update(adminDb.collection('allCards').doc(soldCardId), {
@@ -183,10 +216,46 @@ export async function performDrawAction(userId: string, poolId: string, count: n
       if (claimLastPrize) {
         poolUpdates.lastPrizeClaimed = true;
       }
+      if (spDrawnInBatch) {
+        poolUpdates.spRevealed = true;
+      }
       transaction.update(poolRef, cleanFirestoreData(poolUpdates));
 
-      return { drawn, userData: userSnap.data()! };
+      return {
+        drawn,
+        userData: userSnap.data()!,
+        poolData,
+        newRemaining: prevRemainingNum - packsConsumed,
+        updatedCards,
+      };
     });
+
+    // 尾盤自動警報 Webhook（當剩餘抽數降至門檻以下且池內仍有 A 或 SP 賞時）
+    const snipeThreshold = Number(result.poolData.snipeAlertThreshold ?? 15);
+    if (
+      result.poolData.isHybridBlindSpMode &&
+      result.poolData.snipeWebhookUrl &&
+      result.newRemaining > 0 &&
+      result.newRemaining <= snipeThreshold
+    ) {
+      const cardTiers = result.poolData.cardTiers || {};
+      const hasTopTierLeft = (result.updatedCards || []).some(
+        (c: any) => c.quantity > 0 && (cardTiers[c.cardId] === 'A' || cardTiers[c.cardId] === 'SP')
+      );
+      if (hasTopTierLeft) {
+        fetch(String(result.poolData.snipeWebhookUrl), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            event: 'snipe_alert',
+            poolId,
+            poolName: result.poolData.name,
+            remainingPulls: result.newRemaining,
+            message: `🔥【尾盤高勝率狙擊中】「${result.poolData.name}」僅剩 ${result.newRemaining} 抽，池內仍保有 A 賞 / SP 賞大獎！`,
+          }),
+        }).catch(() => {});
+      }
+    }
 
     // 推送中獎通知
     if (result.drawn.some((card: any) => card.rarity === 'rare' || card.rarity === 'super-rare')) {
@@ -200,5 +269,74 @@ export async function performDrawAction(userId: string, poolId: string, count: n
   } catch (error: any) {
     console.error('Server Action Error:', error);
     return { success: false, error: error.message };
+  }
+}
+
+/**
+ * SP 賞（黑盒）一鍵點數回收：原子鎖定卡片並將 buybackPoints 入帳至玩家錢包
+ */
+export async function redeemSpBuybackAction(
+  userId: string,
+  userCardId: string,
+  poolId?: string
+): Promise<{ success: boolean; creditedPoints?: number; error?: string }> {
+  try {
+    if (!userId || !userCardId) {
+      throw new Error('缺少必要參數，無法執行點數回收。');
+    }
+
+    const result = await adminDb.runTransaction(async (transaction: any) => {
+      const userRef = adminDb.collection('users').doc(userId);
+      const userCardRef = userRef.collection('userCards').doc(userCardId);
+
+      const [userSnap, userCardSnap] = await Promise.all([
+        transaction.get(userRef),
+        transaction.get(userCardRef),
+      ]);
+
+      if (!userSnap.exists) throw new Error('找不到會員帳號');
+      if (!userCardSnap.exists) throw new Error('找不到該張 SP 卡片紀錄');
+
+      const cardData = userCardSnap.data()!;
+      if (cardData.isRecycled || cardData.redeemedAsPoints) {
+        throw new Error('此張 SP 賞已完成點數回收，請勿重複操作。');
+      }
+
+      const buybackPoints = Number(cardData.buybackPoints || Math.round(Number(cardData.sellPrice || 0) * 0.8));
+      if (!Number.isFinite(buybackPoints) || buybackPoints <= 0) {
+        throw new Error('無效的回收點數設定，請聯繫客服。');
+      }
+
+      transaction.update(userCardRef, {
+        isRecycled: true,
+        redeemedAsPoints: true,
+        status: 'recycled',
+        recycledAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      transaction.update(userRef, {
+        points: admin.firestore.FieldValue.increment(buybackPoints),
+      });
+
+      return { buybackPoints };
+    });
+
+    if (poolId) {
+      const logsSnap = await adminDb
+        .collection('cardPools')
+        .doc(poolId)
+        .collection('drawLogs')
+        .where('userCardId', '==', userCardId)
+        .limit(1)
+        .get();
+      if (!logsSnap.empty) {
+        await logsSnap.docs[0].ref.update({ redeemedAsPoints: true });
+      }
+    }
+
+    return { success: true, creditedPoints: result.buybackPoints };
+  } catch (error: any) {
+    console.error('SP Buyback Error:', error);
+    return { success: false, error: error.message || 'SP 點數回收失敗' };
   }
 }

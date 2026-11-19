@@ -58,7 +58,9 @@ export default function AdminCouponsPage() {
         try {
             await setDoc(systemConfigRef, {
                 showPromoCodeHints: enabled,
-                'featureFlags.showPromoHints': enabled
+                featureFlags: {
+                    showPromoHints: enabled,
+                },
             }, { merge: true });
             toast({
                 title: enabled ? '已開啟前台代碼展示' : '已隱藏前台代碼',

@@ -1,4 +1,4 @@
-import { DrawnPrize, CardPool, Rarity, KujiTicketItem } from '@/types/draw';
+import { DrawnPrize, CardPool, Rarity, KujiTicketItem, HybridTierCode } from '@/types/draw';
 
 export interface CardMapItem {
   id: string;
@@ -202,7 +202,7 @@ export function drawKujiTickets(
         pointEntry.quantity -= 1;
       }
       const rarity = (pointEntry?.rarity as Rarity) || 'common';
-      const points = pointEntry?.points || 300;
+      const points = pointEntry?.points || 50;
       const prizeName = pointEntry?.name || '隨機球員 普/特 卡';
       const isRandomCardPrize = prizeName.includes('隨機球員') || prizeName.includes('普/特') || !pointEntry?.name;
       const normalizedPrizeId = isRandomCardPrize
@@ -263,6 +263,8 @@ export function drawFromPool(
             rarity: (p.rarity as Rarity) || 'common',
           };
           if (p.name) item.name = p.name;
+          if (p.tierCode) item.tierCode = p.tierCode;
+          if (p.unitCost !== undefined) item.unitCost = p.unitCost;
           return item;
         }) 
     : [];
@@ -335,17 +337,32 @@ export function drawFromPool(
           ? cardDetails.category
           : '一般';
 
+        const cardIdKey = cardDetails?.id || entry.card.cardId;
+        const resolvedTier: HybridTierCode | undefined = poolData.isHybridBlindSpMode
+          ? ((poolData.cardTiers?.[cardIdKey] as HybridTierCode) ||
+              (entry.rarity === 'legendary' ? 'A' : entry.rarity === 'rare' ? 'B' : 'C'))
+          : undefined;
+        const unitCost = poolData.cardCosts?.[cardIdKey] ?? cardDetails?.sellPrice ?? 0;
+        const resolvedBuybackPoints =
+          resolvedTier === 'SP'
+            ? (poolData.spBuybackPoints?.[cardIdKey] ?? Math.round(unitCost * 0.8))
+            : undefined;
+        const resolvedCertNumber = poolData.cardCertNumbers?.[cardIdKey] || cardDetails?.serialNumber || '';
+
         drawn.push({
-          id: cardDetails?.id || entry.card.cardId,
+          id: cardIdKey,
           name: resolvedName,
           imageUrl: resolvedImage,
           backImageUrl: cardDetails?.backImageUrl || '',
-          serialNumber: cardDetails?.serialNumber || '',
+          serialNumber: resolvedCertNumber,
+          certNumber: resolvedCertNumber,
           imageHint: resolvedName,
           category: resolvedCategory,
           rarity: entry.rarity || cardDetails?.rarity || 'common',
-          sellPrice: cardDetails?.sellPrice || 0,
-          type: 'card'
+          sellPrice: unitCost || cardDetails?.sellPrice || 0,
+          type: 'card',
+          ...(resolvedTier ? { tierCode: resolvedTier } : {}),
+          ...(resolvedTier === 'SP' ? { isHiddenSp: true, buybackPoints: resolvedBuybackPoints } : {}),
         } as any);
         break;
       }
@@ -362,17 +379,22 @@ export function drawFromPool(
           drawnFound = true;
           const pPrize = entry.prize;
 
+          const resolvedPointTier: HybridTierCode | undefined = poolData.isHybridBlindSpMode
+            ? ((pPrize as any).tierCode || (entry.rarity === 'rare' ? 'C' : 'D'))
+            : undefined;
+
           if (pPrize.name === '隨機球員 普/特 卡' || pPrize.name?.includes('隨機球員')) {
             drawn.push({
               id: `random-player-${pPrize.prizeId}`,
               name: pPrize.name || '隨機球員 普/特 卡',
-              points: pPrize.points || 300,
+              points: pPrize.points || 50,
               imageUrl: '',
               imageHint: '隨機球員賞',
               category: '抽賞',
               rarity: entry.rarity,
               type: 'points',
-              isPoints: true
+              isPoints: true,
+              ...(resolvedPointTier ? { tierCode: resolvedPointTier } : {}),
             } as any);
           } else {
             drawn.push({
@@ -384,7 +406,8 @@ export function drawFromPool(
               category: '紅利',
               rarity: entry.rarity,
               type: 'points',
-              isPoints: true
+              isPoints: true,
+              ...(resolvedPointTier ? { tierCode: resolvedPointTier } : {}),
             } as any);
           }
           break;

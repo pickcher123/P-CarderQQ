@@ -97,7 +97,6 @@ const CORE_MODULES = [
       { label: '拼卡管理', desc: '選號競猜項目', href: '/admin/betting', icon: Swords },
       { label: '福袋管理', desc: '福袋獎品配置與上架', href: '/admin/lucky-bags', icon: Ticket },
       { label: '團拆管理', desc: '直播拆盒專案', href: '/admin/group-breaks', icon: Layers },
-      { label: '幸運轉盤', desc: '大轉盤號碼抽獎', href: '/admin/lucky-wheel', icon: Disc3 },
     ]
   },
   {
@@ -385,7 +384,10 @@ export default function AdminDashboardPage() {
     if (!systemConfigRef) return;
     try {
       await setDoc(systemConfigRef, {
-        [`featureFlags.${flagName}`]: isEnabled,
+        featureFlags: {
+          [flagName]: isEnabled,
+        },
+        ...(flagName === 'showPromoHints' ? { showPromoCodeHints: isEnabled } : {}),
       }, { merge: true });
       toast({ title: '已更新開關', description: '模組運行狀態已即時生效。' });
       if (forceRefetch) forceRefetch();

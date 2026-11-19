@@ -1,9 +1,41 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
+import { doc } from 'firebase/firestore';
+import { Settings } from 'lucide-react';
+import { useFirestore, useMemoFirebase, useDoc } from '@/firebase';
+import { Button } from '@/components/ui/button';
+import type { SystemConfig } from '@/types/system';
 import { UnifiedEventCalendar } from '@/components/calendar/unified-event-calendar';
 
 export default function ExhibitionsPage() {
+  const firestore = useFirestore();
+  const systemConfigRef = useMemoFirebase(
+    () => (firestore ? doc(firestore, 'systemConfig', 'main') : null),
+    [firestore]
+  );
+  const { data: systemConfig } = useDoc<SystemConfig>(systemConfigRef);
+
+  if (systemConfig?.featureFlags?.isExhibitionsEnabled === false) {
+    return (
+      <div className="container py-32 flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6 animate-fade-in-up">
+        <div className="p-8 rounded-full bg-[#0a0f1c]/90 border border-amber-300/30 shadow-[0_0_40px_rgba(251,191,36,0.12)]">
+          <Settings className="w-16 h-16 text-[#FDE68A]" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-3xl font-black font-headline tracking-widest text-white">維護中</h2>
+          <p className="text-slate-400 text-sm max-w-md mx-auto leading-relaxed">
+            卡展行事曆目前暫停開放，我們正在進行展訊更新與優化，請稍後再試。
+          </p>
+        </div>
+        <Button asChild variant="outline" className="h-11 px-8 rounded-xl border-amber-300/40 text-[#FDE68A] hover:bg-amber-400/15 font-bold">
+          <Link href="/">返回大廳</Link>
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen relative overflow-x-hidden text-white pb-24 pt-2 sm:pt-6">
       <div className="container mx-auto px-3 sm:px-6 max-w-6xl space-y-6 pt-2 sm:pt-4">

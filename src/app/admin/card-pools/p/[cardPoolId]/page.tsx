@@ -51,6 +51,11 @@ import { Progress } from '@/components/ui/progress';
 import { userLevels } from '@/components/member-level-crown';
 import { PPlusIcon } from '@/components/icons';
 import { EventTicketDispatchDialog, EventTicketDispatchLogs } from '@/components/admin/event-ticket-manager';
+import { HybridPoolValuationPanel } from '@/components/admin/HybridPoolValuationPanel';
+import { HybridBoxWorkspace } from '@/components/admin/HybridBoxWorkspace';
+import { HYBRID_68_PRESET, HYBRID_TIER_META, calculateHybridPoolValuation } from '@/lib/hybrid-pool-preset';
+import { generateRandomPackSvgDataUrl } from '@/lib/pack-artwork-generator';
+import type { HybridTierCode } from '@/types/draw';
 import { generateKujiTickets } from '@/lib/draw-utils';
 
 const CATEGORIES = ["籃球", "棒球", "足球", "女孩卡", "女優", "TCG", "其他", "全部"];
@@ -140,6 +145,16 @@ interface CardPool {
   categoryId?: string;
   isAdult?: boolean;
   enablePickNumber?: boolean;
+  isBlindBoxMode?: boolean;
+  isHybridBlindSpMode?: boolean;
+  presetUsed?: string;
+  snipeAlertThreshold?: number;
+  snipeWebhookUrl?: string;
+  cardTiers?: Record<string, HybridTierCode>;
+  cardCosts?: Record<string, number>;
+  cardCertNumbers?: Record<string, string>;
+  spBuybackPoints?: Record<string, number>;
+  lastPrizeCost?: number;
   totalTicketsCount?: number;
   kujiTickets?: any[];
   lastPrizeClaimed?: boolean;
@@ -196,9 +211,11 @@ export default function CardPoolDetailPage() {
   // 一番賞籤位篩選
   const [kujiFilter, setKujiFilter] = useState<'all' | 'available' | 'drawn'>('all');
 
-  const [newPointPrize, setNewPointPrize] = useState({ points: 100, quantity: 10, rarity: 'common' as Rarity });
+  const [newPointPrize, setNewPointPrize] = useState({ points: 50, quantity: 10, rarity: 'common' as Rarity });
   const [isDispatchDialogOpen, setIsDispatchDialogOpen] = useState(false);
   const [isLogsDialogOpen, setIsLogsDialogOpen] = useState(false);
+  const [forceConfirmRedHealth, setForceConfirmRedHealth] = useState(false);
+  const [targetBoxTier, setTargetBoxTier] = useState<'A' | 'SP' | 'B' | 'C' | 'D'>('A');
 
   const agentsQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'agents') : null), [firestore]);
   const { data: agents } = useCollection<{ id: string, name: string }>(agentsQuery);
@@ -323,6 +340,16 @@ export default function CardPoolDetailPage() {
         eventRules: cardPool.eventRules || '',
         eventMaxDrawsPerUser: cardPool.eventMaxDrawsPerUser || 0,
         enablePickNumber: cardPool.enablePickNumber || false,
+        isBlindBoxMode: cardPool.isBlindBoxMode || false,
+        isHybridBlindSpMode: cardPool.isHybridBlindSpMode || false,
+        presetUsed: cardPool.presetUsed || 'high_margin_68',
+        snipeAlertThreshold: cardPool.snipeAlertThreshold ?? 15,
+        snipeWebhookUrl: cardPool.snipeWebhookUrl || '',
+        cardTiers: cardPool.cardTiers || {},
+        cardCosts: cardPool.cardCosts || {},
+        cardCertNumbers: cardPool.cardCertNumbers || {},
+        spBuybackPoints: cardPool.spBuybackPoints || {},
+        lastPrizeCost: cardPool.lastPrizeCost ?? 9000,
         totalTicketsCount: cardPool.totalTicketsCount || cardPool.remainingPacks || 80,
         kujiTickets: cardPool.kujiTickets || [],
         isAdult: cardPool.isAdult || false,
@@ -777,6 +804,9 @@ export default function CardPoolDetailPage() {
 
         const existingCards = [...(pData.cards || [])];
         const existingRarities = { ...(pData.cardRarities || {}) };
+        const existingTiers = { ...(pData.cardTiers || {}) };
+        const existingCosts = { ...(pData.cardCosts || {}) };
+        const existingBuybacks = { ...(pData.spBuybackPoints || {}) };
         let addedCount = 0;
 
         cardSnaps.forEach((cSnap, index) => {
@@ -792,18 +822,41 @@ export default function CardPoolDetailPage() {
             throw new Error(`卡片「${cData.name || cardId}」已存在於此卡池中，不可重複配置！`);
           }
           existingCards.push({ cardId, quantity: 1 });
-          if (!existingRarities[cardId]) {
+          if (pData.isHybridBlindSpMode) {
+            existingTiers[cardId] = targetBoxTier;
+            existingRarities[cardId] =
+              targetBoxTier === 'A' || targetBoxTier === 'SP'
+                ? 'legendary'
+                : targetBoxTier === 'B' || targetBoxTier === 'C'
+                  ? 'rare'
+                  : 'common';
+            const tierCfg = HYBRID_68_PRESET.tiers.find((t) => t.code === targetBoxTier);
+            const fallbackCost = Math.round(Number(pData.price || HYBRID_68_PRESET.price_per_pull) * (tierCfg?.cost_multiple_of_price || 1));
+            const resolvedCost = Number(cData.sellPrice || fallbackCost);
+            existingCosts[cardId] = resolvedCost;
+            if (targetBoxTier === 'SP') {
+              existingBuybacks[cardId] = Math.round(resolvedCost * HYBRID_68_PRESET.sp_buyback_rate);
+            }
+          } else if (!existingRarities[cardId]) {
             existingRarities[cardId] = 'common';
           }
           addedCount += 1;
         });
 
-        transaction.update(cardPoolRef, cleanFirestoreData({
+        const updateData: any = {
           cards: existingCards,
           cardRarities: existingRarities,
-          totalPacks: (pData.totalPacks || 0) + addedCount,
-          remainingPacks: (pData.remainingPacks || 0) + addedCount
-        }));
+        };
+        if (pData.isHybridBlindSpMode) {
+          updateData.cardTiers = existingTiers;
+          updateData.cardCosts = existingCosts;
+          updateData.spBuybackPoints = existingBuybacks;
+        } else {
+          updateData.totalPacks = (pData.totalPacks || 0) + addedCount;
+          updateData.remainingPacks = (pData.remainingPacks || 0) + addedCount;
+        }
+
+        transaction.update(cardPoolRef, cleanFirestoreData(updateData));
       });
 
       toast({ title: '成功', description: `${uniqueSelectedIds.length} 張卡片已加入卡池。`});
@@ -911,7 +964,7 @@ export default function CardPoolDetailPage() {
     }
     const prizeToAdd: PointPrize = { 
       prizeId: uuidv4(),
-      points: 300,
+      points: 50,
       quantity: Number(newPointPrize.quantity),
       name: '隨機球員 普/特 卡',
       rarity: newPointPrize.rarity || 'common'
@@ -967,6 +1020,224 @@ export default function CardPoolDetailPage() {
       console.error("Error removing point prize:", error);
       toast({ variant: "destructive", title: "錯誤", description: "移除獎項失敗。" });
     }
+  };
+
+  const hybridValuation = useMemo(() => {
+    const items: Array<{ tierCode: HybridTierCode; cost: number; qty: number }> = [];
+    const tiersMap = poolDetails.cardTiers || {};
+    const costsMap = poolDetails.cardCosts || {};
+    const raritiesMap = poolDetails.cardRarities || {};
+
+    (poolDetails.cards || []).forEach((c) => {
+      if (!c?.cardId || (c.quantity || 0) <= 0) return;
+      const cardDoc = (allCards || []).find((x) => x.id === c.cardId);
+      const fallbackTier: HybridTierCode =
+        raritiesMap[c.cardId] === 'legendary' ? 'A' : raritiesMap[c.cardId] === 'rare' ? 'B' : 'C';
+      const tierCode = (tiersMap[c.cardId] as HybridTierCode) || fallbackTier;
+      const cost = costsMap[c.cardId] ?? cardDoc?.sellPrice ?? 0;
+      items.push({ tierCode, cost, qty: c.quantity || 0 });
+    });
+
+    (poolDetails.pointPrizes || []).forEach((p: any) => {
+      if (!p || (p.quantity || 0) <= 0) return;
+      const tierCode: HybridTierCode = p.tierCode || (p.rarity === 'rare' ? 'C' : 'D');
+      const cost = p.unitCost !== undefined ? Number(p.unitCost) : Number(p.points || 0);
+      items.push({ tierCode, cost, qty: p.quantity || 0 });
+    });
+
+    if (poolDetails.lastPrizeCardId) {
+      const lpDoc = (allCards || []).find((x) => x.id === poolDetails.lastPrizeCardId);
+      const lpCost = poolDetails.lastPrizeCost ?? lpDoc?.sellPrice ?? 0;
+      items.push({ tierCode: 'LAST', cost: lpCost, qty: 1 });
+    }
+
+    return calculateHybridPoolValuation({
+      pricePerPull: Number(poolDetails.price || HYBRID_68_PRESET.price_per_pull),
+      totalPulls: Number(poolDetails.totalPacks || HYBRID_68_PRESET.total_pulls),
+      items,
+    });
+  }, [poolDetails, allCards]);
+
+  const handleApply68Preset = async () => {
+    if (!cardPoolRef) return;
+    const defaultPointPrizes = [
+      {
+        prizeId: 'hybrid_c_box',
+        name: 'C 賞（銅盒・回血盲盒）',
+        points: 1800,
+        unitCost: 1800,
+        quantity: 13,
+        rarity: 'rare' as Rarity,
+        tierCode: 'C' as const,
+      },
+      {
+        prizeId: 'hybrid_d_box',
+        name: 'D 賞（白盒・保底盲盒）',
+        points: 450,
+        unitCost: 450,
+        quantity: 78,
+        rarity: 'common' as Rarity,
+        tierCode: 'D' as const,
+      },
+    ];
+
+    const patch: Partial<CardPool> = {
+      price: HYBRID_68_PRESET.price_per_pull,
+      price3Draws: HYBRID_68_PRESET.price_per_pull * 3,
+      price10Draws: HYBRID_68_PRESET.price_per_pull * 10,
+      totalPacks: HYBRID_68_PRESET.total_pulls,
+      remainingPacks: HYBRID_68_PRESET.total_pulls,
+      presetUsed: HYBRID_68_PRESET.preset_id,
+      snipeAlertThreshold: HYBRID_68_PRESET.snipe_alert_threshold,
+      lastPrizeCost: poolDetails.lastPrizeCost ?? 9000,
+      pointPrizes: defaultPointPrizes as any,
+    };
+
+    setPoolDetails((prev) => ({ ...prev, ...patch }));
+    await updateDoc(cardPoolRef, cleanFirestoreData(patch));
+    toast({
+      title: '✅ 已套用「68% 高毛利穩健版」範本',
+      description: '單抽 NT$2,099、總抽數 100 抽，並自動建立 C 賞 13 抽與 D 賞 78 抽。請再加入 A/SP/B 賞與最後賞卡片。',
+    });
+  };
+
+  const handleCardTierChange = async (cardId: string, tier: HybridTierCode) => {
+    const nextTiers = { ...(poolDetails.cardTiers || {}), [cardId]: tier };
+    const nextRarities = {
+      ...(poolDetails.cardRarities || {}),
+      [cardId]: (tier === 'A' || tier === 'SP' ? 'legendary' : tier === 'B' ? 'rare' : 'common') as Rarity,
+    };
+    const updates: any = { cardTiers: nextTiers, cardRarities: nextRarities };
+    if (tier === 'SP') {
+      const cardDoc = (allCards || []).find((x) => x.id === cardId);
+      const unitCost = poolDetails.cardCosts?.[cardId] ?? cardDoc?.sellPrice ?? 14000;
+      updates.spBuybackPoints = {
+        ...(poolDetails.spBuybackPoints || {}),
+        [cardId]: Math.round(unitCost * HYBRID_68_PRESET.sp_buyback_rate),
+      };
+    }
+    setPoolDetails((prev) => ({ ...prev, ...updates }));
+    if (cardPoolRef) await updateDoc(cardPoolRef, cleanFirestoreData(updates));
+  };
+
+  const handleCardCostChange = async (cardId: string, cost: number) => {
+    const safeCost = Math.max(0, Math.round(cost || 0));
+    const nextCosts = { ...(poolDetails.cardCosts || {}), [cardId]: safeCost };
+    const updates: any = { cardCosts: nextCosts };
+    if (poolDetails.cardTiers?.[cardId] === 'SP') {
+      updates.spBuybackPoints = {
+        ...(poolDetails.spBuybackPoints || {}),
+        [cardId]: Math.round(safeCost * HYBRID_68_PRESET.sp_buyback_rate),
+      };
+    }
+    setPoolDetails((prev) => ({ ...prev, ...updates }));
+    if (cardPoolRef) await updateDoc(cardPoolRef, cleanFirestoreData(updates));
+  };
+
+  const handleCardCertChange = async (cardId: string, certNumber: string) => {
+    const nextCerts = { ...(poolDetails.cardCertNumbers || {}), [cardId]: certNumber };
+    setPoolDetails((prev) => ({ ...prev, cardCertNumbers: nextCerts }));
+    if (cardPoolRef) await updateDoc(cardPoolRef, cleanFirestoreData({ cardCertNumbers: nextCerts }));
+  };
+
+  const handleUpdateStandardBoxPrize = async (tier: 'C' | 'D', quantity: number, unitCost: number) => {
+    const prizeId = tier === 'C' ? 'hybrid_c_box' : 'hybrid_d_box';
+    const current = [...(poolDetails.pointPrizes || [])] as any[];
+    const idx = current.findIndex((p) => p.tierCode === tier || p.prizeId === prizeId);
+    const updatedItem = {
+      prizeId,
+      name: tier === 'C' ? 'C 賞（銅盒・回血盲盒）' : 'D 賞（白盒・保底盲盒）',
+      points: unitCost,
+      unitCost,
+      quantity,
+      rarity: (tier === 'C' ? 'rare' : 'common') as Rarity,
+      tierCode: tier,
+    };
+    if (idx >= 0) {
+      current[idx] = updatedItem;
+    } else {
+      current.push(updatedItem);
+    }
+    setPoolDetails((prev) => ({ ...prev, pointPrizes: current }));
+    if (cardPoolRef) await updateDoc(cardPoolRef, cleanFirestoreData({ pointPrizes: current }));
+  };
+
+  const handleLastPrizeCostChange = async (cost: number) => {
+    setPoolDetails((prev) => ({ ...prev, lastPrizeCost: cost }));
+    if (cardPoolRef) await updateDoc(cardPoolRef, cleanFirestoreData({ lastPrizeCost: cost }));
+  };
+
+  const handleRemoveLastPrize = async () => {
+    setPoolDetails((prev) => ({ ...prev, lastPrizeCardId: undefined }));
+    if (cardPoolRef) await updateDoc(cardPoolRef, { lastPrizeCardId: null });
+  };
+
+  const hybridHeroMetrics = useMemo(() => {
+    const aTier = hybridValuation.tiers.find((t) => t.code === 'A');
+    const spTier = hybridValuation.tiers.find((t) => t.code === 'SP');
+    const bTier = hybridValuation.tiers.find((t) => t.code === 'B');
+    const lastTier = hybridValuation.tiers.find((t) => t.code === 'LAST');
+    const heroPullQty = (aTier?.qty || 0) + (spTier?.qty || 0) + (bTier?.qty || 0);
+    const heroTotalCost =
+      (aTier?.subtotal || 0) + (spTier?.subtotal || 0) + (bTier?.subtotal || 0) + (lastTier?.subtotal || 0);
+    const cPrize = (poolDetails.pointPrizes || []).find((p: any) => p.tierCode === 'C' || p.prizeId === 'hybrid_c_box') as any;
+    const dPrize = (poolDetails.pointPrizes || []).find((p: any) => p.tierCode === 'D' || p.prizeId === 'hybrid_d_box') as any;
+    return {
+      heroPullQty,
+      heroTotalCost,
+      cCost: cPrize?.unitCost ?? cPrize?.points ?? 1800,
+      dCost: dPrize?.unitCost ?? dPrize?.points ?? 450,
+    };
+  }, [hybridValuation, poolDetails.pointPrizes]);
+
+  const handleAutoBalanceApply = async (params: {
+    pricePerPull: number;
+    totalPulls: number;
+    cCost: number;
+    dCost: number;
+    qtyC: number;
+    qtyD: number;
+  }) => {
+    if (!cardPoolRef) return;
+    const otherPointPrizes = (poolDetails.pointPrizes || []).filter(
+      (p: any) => p.tierCode !== 'C' && p.tierCode !== 'D' && p.prizeId !== 'hybrid_c_box' && p.prizeId !== 'hybrid_d_box'
+    );
+    const balancedPointPrizes = [
+      ...otherPointPrizes,
+      {
+        prizeId: 'hybrid_c_box',
+        name: 'C 賞（銅盒・回血盲盒）',
+        points: params.cCost,
+        unitCost: params.cCost,
+        quantity: params.qtyC,
+        rarity: 'rare' as Rarity,
+        tierCode: 'C' as const,
+      },
+      {
+        prizeId: 'hybrid_d_box',
+        name: 'D 賞（白盒・保底盲盒）',
+        points: params.dCost,
+        unitCost: params.dCost,
+        quantity: params.qtyD,
+        rarity: 'common' as Rarity,
+        tierCode: 'D' as const,
+      },
+    ];
+
+    const patch: Partial<CardPool> = {
+      price: params.pricePerPull,
+      price3Draws: params.pricePerPull * 3,
+      price10Draws: params.pricePerPull * 10,
+      totalPacks: params.totalPulls,
+      remainingPacks: params.totalPulls,
+      pointPrizes: balancedPointPrizes as any,
+    };
+    setPoolDetails((prev) => ({ ...prev, ...patch }));
+    await updateDoc(cardPoolRef, cleanFirestoreData(patch));
+    toast({
+      title: '⚡ 已自動配平 C／D 賞數量',
+      description: `單抽 NT$${params.pricePerPull.toLocaleString()} × ${params.totalPulls} 抽｜已寫入 C 賞 ${params.qtyC} 抽、D 賞 ${params.qtyD} 抽`,
+    });
   };
 
   if (isLoadingPool || !cardPool) {
@@ -1055,15 +1326,25 @@ export default function CardPoolDetailPage() {
                   </Badge>
                 )}
 
-                {poolDetails.isEventPool && (
-                  <Badge className="bg-purple-600 text-white font-black text-xs px-2.5 py-0.5 flex items-center gap-1">
-                    <Ticket className="w-3 h-3" /> 活動專屬券限定
+                {poolDetails.isHybridBlindSpMode ? (
+                  <Badge className="bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] font-black text-xs px-2.5 py-0.5 flex items-center gap-1">
+                    <Package className="w-3 h-3" /> 明池盲開 ＋ 隱藏 SP 模式
                   </Badge>
-                )}
-
-                {poolDetails.enablePickNumber && (
+                ) : poolDetails.isBlindBoxMode ? (
+                  <Badge className="bg-slate-800 text-[#FDE68A] border border-amber-300/50 font-black text-xs px-2.5 py-0.5 flex items-center gap-1">
+                    <Sparkles className="w-3 h-3 text-[#FDE68A]" /> Blez 盲盒模式（保密）
+                  </Badge>
+                ) : poolDetails.enablePickNumber ? (
                   <Badge className="bg-gradient-to-r from-yellow-500 to-amber-500 text-slate-950 font-black text-xs px-2.5 py-0.5 flex items-center gap-1">
                     <Flame className="w-3 h-3 fill-slate-950" /> 一番賞挑號模式
+                  </Badge>
+                ) : poolDetails.isEventPool ? (
+                  <Badge className="bg-purple-600 text-white font-black text-xs px-2.5 py-0.5 flex items-center gap-1">
+                    <Ticket className="w-3 h-3" /> 活動專屬卡池
+                  </Badge>
+                ) : (
+                  <Badge className="bg-white/15 text-white border border-white/25 font-black text-xs px-2.5 py-0.5 flex items-center gap-1">
+                    <Layers className="w-3 h-3" /> 一般抽卡池（公開機率）
                   </Badge>
                 )}
               </div>
@@ -1139,19 +1420,15 @@ export default function CardPoolDetailPage() {
 
       {/* 核心分頁切換 Tabs */}
       <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as any)} className="space-y-6">
-        <TabsList className="bg-slate-200/70 p-1.5 rounded-2xl h-14 w-full sm:w-auto grid grid-cols-3 max-w-xl border border-slate-200 shadow-inner">
+        <TabsList className="bg-slate-200/70 p-1.5 rounded-2xl h-14 w-full sm:w-auto grid grid-cols-2 max-w-md border border-slate-200 shadow-inner">
           <TabsTrigger value="basic" className="rounded-xl font-black text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-md flex items-center gap-2">
             <Settings className="w-4 h-4 text-primary" />
             <span>基本與銷售定價</span>
           </TabsTrigger>
-          <TabsTrigger value="cards" className="rounded-xl font-black text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-md flex items-center gap-2">
-            <Layers className="w-4 h-4 text-amber-500" />
-            <span>卡片與庫存配置 ({cardsInPool.length})</span>
-          </TabsTrigger>
-          <TabsTrigger value="special" className="rounded-xl font-black text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-md flex items-center gap-2">
-            <Gift className="w-4 h-4 text-rose-500" />
-            <span>最後賞與特殊玩法</span>
-          </TabsTrigger>
+                  <TabsTrigger value="cards" className="rounded-xl font-black text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-md flex items-center gap-2">
+                    <Layers className="w-4 h-4 text-amber-500" />
+                    <span>{poolDetails.isHybridBlindSpMode ? `五色盲盒配置 (${cardsInPool.length})` : `卡片與庫存配置 (${cardsInPool.length})`}</span>
+                  </TabsTrigger>
         </TabsList>
 
         {/* ===================== TAB 1: 基本與定價銷售 ===================== */}
@@ -1233,9 +1510,43 @@ export default function CardPoolDetailPage() {
                         <Package className="w-4 h-4 text-amber-600" />
                         卡包包裝封面圖 (Pack Artwork)
                       </Label>
-                      <span className="text-[11px] text-amber-800 font-bold bg-amber-100/80 px-2.5 py-0.5 rounded-full">
-                        若未設定將自動生成預設黑金鋁箔卡包
-                      </span>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => {
+                            const { dataUrl, styleName } = generateRandomPackSvgDataUrl(poolDetails.name);
+                            setPoolDetails((prev) => ({ ...prev, imageUrl: dataUrl }));
+                            handleUpdatePoolDetails('imageUrl', dataUrl);
+                            toast({
+                              title: '🎲 已隨機生成專屬卡包樣式',
+                              description: `已套用「${styleName}」，每次點擊皆會生成不同配色與箔紋！`,
+                            });
+                          }}
+                          className="h-8 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-[#FDE68A] font-black text-xs gap-1.5 shadow-sm"
+                        >
+                          <Shuffle className="w-3.5 h-3.5" />
+                          隨機生成卡包樣式
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const officialUrl = '/images/card_pool_bg.jpg';
+                            setPoolDetails((prev) => ({ ...prev, imageUrl: officialUrl }));
+                            handleUpdatePoolDetails('imageUrl', officialUrl);
+                            toast({
+                              title: '🛡️ 已套用官方版本卡包',
+                              description: '已恢復為 P+Carder 官方預設黑金鋁箔卡包。',
+                            });
+                          }}
+                          className="h-8 px-3 rounded-xl border-amber-300 bg-white hover:bg-amber-50 text-slate-800 font-bold text-xs gap-1"
+                        >
+                          <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
+                          官方預設卡包
+                        </Button>
+                      </div>
                     </div>
 
                     {/* 範本快捷點選 */}
@@ -1372,6 +1683,57 @@ export default function CardPoolDetailPage() {
                       </div>
                     </RadioGroup>
                   </div>
+
+                  {/* 明池盲開＋隱藏 SP 專屬參數（總抽數與尾盤狙擊警報） */}
+                  {poolDetails.isHybridBlindSpMode && (
+                    <div className="p-4 rounded-2xl bg-[#0a0f1c] text-white border border-amber-300/40 space-y-3">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <span className="text-xs font-black text-[#FDE68A] flex items-center gap-1.5">
+                          <Package className="w-4 h-4" />
+                          明池盲開＋隱藏 SP 專屬設定
+                        </span>
+                        <span className="text-[11px] text-slate-400">
+                          調整單抽價格或總抽數時，五色盒子建議單價與毛利將即時連動重算
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div className="space-y-1">
+                          <Label className="text-[11px] text-slate-300 font-bold">總抽數（預設 100 抽）</Label>
+                          <Input
+                            type="number"
+                            value={poolDetails.totalPacks ?? 100}
+                            onChange={(e) => setPoolDetails({ ...poolDetails, totalPacks: Math.max(1, Number(e.target.value)) })}
+                            onBlur={(e) => {
+                              const val = Math.max(1, Number(e.target.value || 100));
+                              handleUpdatePoolDetails('totalPacks', val);
+                            }}
+                            className="h-10 bg-black/50 border-white/15 text-white font-mono font-bold"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-[11px] text-slate-300 font-bold">尾盤狙擊警報門檻（抽）</Label>
+                          <Input
+                            type="number"
+                            value={poolDetails.snipeAlertThreshold ?? 15}
+                            onChange={(e) => setPoolDetails({ ...poolDetails, snipeAlertThreshold: Math.max(1, Number(e.target.value)) })}
+                            onBlur={(e) => handleUpdatePoolDetails('snipeAlertThreshold', Math.max(1, Number(e.target.value || 15)))}
+                            className="h-10 bg-black/50 border-white/15 text-white font-mono font-bold"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-[11px] text-slate-300 font-bold">LINE / Discord 推播 Webhook</Label>
+                          <Input
+                            type="url"
+                            placeholder="https://..."
+                            value={poolDetails.snipeWebhookUrl || ''}
+                            onChange={(e) => setPoolDetails({ ...poolDetails, snipeWebhookUrl: e.target.value })}
+                            onBlur={(e) => handleUpdatePoolDetails('snipeWebhookUrl', e.target.value)}
+                            className="h-10 bg-black/50 border-white/15 text-white text-xs"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* 價格輸入 */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -1673,6 +2035,24 @@ export default function CardPoolDetailPage() {
                   <Switch
                     checked={poolDetails.isActive !== false}
                     onCheckedChange={(checked) => {
+                      if (checked && poolDetails.isHybridBlindSpMode) {
+                        if (!hybridValuation.totalPullsMatch) {
+                          toast({
+                            variant: 'destructive',
+                            title: '抽數總和不符，無法上架',
+                            description: `目前可抽獎項合計 ${hybridValuation.pullItemsTotalQty} 抽，需等於總抽數 ${poolDetails.totalPacks || 0} 抽才能發布上架。`,
+                          });
+                          return;
+                        }
+                        if (hybridValuation.requiresForceConfirm && !forceConfirmRedHealth) {
+                          toast({
+                            variant: 'destructive',
+                            title: '紅燈風險警示',
+                            description: '請先於「即時財務估值與偏差估算器」勾選『強制確認』後再上架。',
+                          });
+                          return;
+                        }
+                      }
                       setPoolDetails({ ...poolDetails, isActive: checked });
                       handleUpdatePoolDetails('isActive', checked);
                     }}
@@ -1767,6 +2147,94 @@ export default function CardPoolDetailPage() {
 
         {/* ===================== TAB 2: 卡片與庫存配置 ===================== */}
         <TabsContent value="cards" className="space-y-8 animate-in fade-in-50 duration-200">
+          {poolDetails.isHybridBlindSpMode ? (
+            <>
+              <HybridPoolValuationPanel
+                valuation={hybridValuation}
+                pricePerPull={Number(poolDetails.price || HYBRID_68_PRESET.price_per_pull)}
+                totalPulls={Number(poolDetails.totalPacks || HYBRID_68_PRESET.total_pulls)}
+                heroPullQty={hybridHeroMetrics.heroPullQty}
+                heroTotalCost={hybridHeroMetrics.heroTotalCost}
+                cCost={hybridHeroMetrics.cCost}
+                dCost={hybridHeroMetrics.dCost}
+                forceConfirmRedHealth={forceConfirmRedHealth}
+                onForceConfirmChange={setForceConfirmRedHealth}
+                onApply68Preset={handleApply68Preset}
+                onAutoBalanceApply={handleAutoBalanceApply}
+              />
+              <HybridBoxWorkspace
+                valuation={hybridValuation}
+                cardsInPool={cardsInPool.map((c) => {
+                  const mappedRarity = poolDetails.cardRarities?.[c.id];
+                  const tierCode: HybridTierCode =
+                    (poolDetails.cardTiers?.[c.id] as HybridTierCode) ||
+                    (mappedRarity === 'legendary' ? 'A' : mappedRarity === 'rare' ? 'B' : 'C');
+                  const unitCost = poolDetails.cardCosts?.[c.id] ?? c.sellPrice ?? 0;
+                  return {
+                    id: c.id,
+                    name: c.name,
+                    imageUrl: c.imageUrl,
+                    sellPrice: c.sellPrice,
+                    quantity: c.quantity,
+                    tierCode,
+                    unitCost,
+                    certNumber: poolDetails.cardCertNumbers?.[c.id] || '',
+                    buybackPoints: poolDetails.spBuybackPoints?.[c.id] ?? Math.round(unitCost * 0.8),
+                  };
+                })}
+                pointPrizes={(poolDetails.pointPrizes || []) as any}
+                lastPrizeCard={lastPrizeCard}
+                lastPrizeCost={poolDetails.lastPrizeCost ?? lastPrizeCard?.sellPrice ?? 9000}
+                onOpenAddCardToBox={(tier) => {
+                  setTargetBoxTier(tier);
+                  handleOpenAddCardDialog('standard');
+                }}
+                onOpenSelectLastPrize={() => handleOpenAddCardDialog('last')}
+                onRemoveLastPrize={handleRemoveLastPrize}
+                onLastPrizeCostChange={handleLastPrizeCostChange}
+                onCardTierChange={handleCardTierChange}
+                onCardCostChange={handleCardCostChange}
+                onCardCertChange={handleCardCertChange}
+                onRemoveCard={handleRemoveCardFromPool}
+                onUpdateStandardBoxPrize={handleUpdateStandardBoxPrize}
+                onQuickAddRandomPlayerToD={async () => {
+                  const current = [...(poolDetails.pointPrizes || [])] as any[];
+                  const idx = current.findIndex((p) => p.tierCode === 'D' || p.prizeId === 'hybrid_d_box');
+                  if (idx >= 0) {
+                    const prevItem = current[idx];
+                    current[idx] = {
+                      ...prevItem,
+                      name: '隨機球員 普/特 卡',
+                      points: 50,
+                      unitCost: 50,
+                      quantity: Number(prevItem.quantity || 0) + 1,
+                      rarity: 'common' as Rarity,
+                      tierCode: 'D',
+                    };
+                  } else {
+                    current.push({
+                      prizeId: 'hybrid_d_box',
+                      name: '隨機球員 普/特 卡',
+                      points: 50,
+                      unitCost: 50,
+                      quantity: 1,
+                      rarity: 'common' as Rarity,
+                      tierCode: 'D',
+                    });
+                  }
+                  setPoolDetails((prev) => ({ ...prev, pointPrizes: current }));
+                  if (cardPoolRef) {
+                    await updateDoc(cardPoolRef, cleanFirestoreData({ pointPrizes: current }));
+                  }
+                  toast({
+                    title: '已加入 D 賞「隨機球員 普/特 卡 (50💎)」',
+                    description: '已新增 1 抽至 D 賞（白盒）並同步更新估值。',
+                  });
+                }}
+              />
+            </>
+          ) : (
+            <>
           {/* 大獎卡片清單與稀有度管理 */}
           <UICard className="border-slate-200 bg-white shadow-sm rounded-3xl overflow-hidden">
             <CardHeader className="bg-slate-50/70 border-b border-slate-100 p-6">
@@ -1782,6 +2250,41 @@ export default function CardPoolDetailPage() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      if (!cardPoolRef || !firestore) return;
+                      const prizeToAdd: PointPrize = {
+                        prizeId: uuidv4(),
+                        points: 50,
+                        quantity: 1,
+                        name: '隨機球員 普/特 卡',
+                        rarity: 'common',
+                      };
+                      await runTransaction(firestore, async (transaction) => {
+                        const poolDoc = await transaction.get(cardPoolRef);
+                        if (!poolDoc.exists()) throw new Error('找不到卡池');
+                        const currentPool = poolDoc.data() as CardPool;
+                        const existing = [...(currentPool.pointPrizes || [])];
+                        existing.push(prizeToAdd);
+                        transaction.update(
+                          cardPoolRef,
+                          cleanFirestoreData({
+                            pointPrizes: existing,
+                            totalPacks: (currentPool.totalPacks || 0) + 1,
+                            remainingPacks: (currentPool.remainingPacks || 0) + 1,
+                          })
+                        );
+                      });
+                      toast({ title: '已加入「隨機球員 普/特 卡 (50💎)」', description: '已新增 1 包至小賞清單。' });
+                    }}
+                    className="h-10 px-3.5 rounded-xl border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 font-black text-xs shadow-sm flex items-center gap-1.5"
+                  >
+                    <PlusCircle className="h-4 w-4 text-amber-600" />
+                    加入隨機球員 普/特 卡 (50💎)
+                  </Button>
                   <Button 
                     onClick={() => handleOpenAddCardDialog('standard')} 
                     size="sm" 
@@ -1953,21 +2456,62 @@ export default function CardPoolDetailPage() {
                           </TableCell>
 
                           <TableCell>
-                            <Select
-                              value={currentRarity}
-                              onValueChange={(value) => handleCardRarityInPoolChange(card.id, value as Rarity)}
-                            >
-                              <SelectTrigger className={cn("h-9 border font-black text-xs rounded-xl", RARITY_BADGE_STYLES[currentRarity])}>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent className="rounded-xl">
-                                {RARITIES.map(r => (
-                                  <SelectItem key={r} value={r} className="font-bold text-xs">
-                                    {RARITY_LABELS[r]}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                            {poolDetails.isHybridBlindSpMode ? (
+                              <div className="space-y-1.5 min-w-[200px]">
+                                <div className="flex items-center gap-1.5">
+                                  <Select
+                                    value={(poolDetails.cardTiers?.[card.id] as HybridTierCode) || (currentRarity === 'legendary' ? 'A' : currentRarity === 'rare' ? 'B' : 'C')}
+                                    onValueChange={(value) => handleCardTierChange(card.id, value as HybridTierCode)}
+                                  >
+                                    <SelectTrigger className="h-8 text-xs font-black rounded-lg bg-slate-900 text-[#FDE68A] border-amber-300/40 w-[115px]">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent className="rounded-xl">
+                                      <SelectItem value="A" className="font-bold text-xs">A 賞（金盒）</SelectItem>
+                                      <SelectItem value="SP" className="font-bold text-xs">SP 賞（黑盒）</SelectItem>
+                                      <SelectItem value="B" className="font-bold text-xs">B 賞（銀盒）</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  <Input
+                                    type="number"
+                                    placeholder="成本 NT$"
+                                    value={poolDetails.cardCosts?.[card.id] ?? card.sellPrice ?? 0}
+                                    onChange={(e) => handleCardCostChange(card.id, Number(e.target.value))}
+                                    className="h-8 w-24 text-xs font-mono"
+                                  />
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <Input
+                                    type="text"
+                                    placeholder="PSA/BGS 鑑定編號"
+                                    value={poolDetails.cardCertNumbers?.[card.id] || ''}
+                                    onChange={(e) => handleCardCertChange(card.id, e.target.value)}
+                                    className="h-7 text-[11px] font-mono flex-1"
+                                  />
+                                  {poolDetails.cardTiers?.[card.id] === 'SP' && (
+                                    <Badge className="bg-slate-900 text-[#FDE68A] border border-amber-300/50 text-[10px] font-mono shrink-0">
+                                      回收 {(poolDetails.spBuybackPoints?.[card.id] ?? Math.round((poolDetails.cardCosts?.[card.id] ?? card.sellPrice ?? 0) * 0.8)).toLocaleString()}P
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                            ) : (
+                              <Select
+                                value={currentRarity}
+                                onValueChange={(value) => handleCardRarityInPoolChange(card.id, value as Rarity)}
+                              >
+                                <SelectTrigger className={cn("h-9 border font-black text-xs rounded-xl", RARITY_BADGE_STYLES[currentRarity])}>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="rounded-xl">
+                                  {RARITIES.map(r => (
+                                    <SelectItem key={r} value={r} className="font-bold text-xs">
+                                      {RARITY_LABELS[r]}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
                           </TableCell>
 
                           <TableCell className="text-right pr-6">
@@ -2114,14 +2658,79 @@ export default function CardPoolDetailPage() {
               </div>
             </CardContent>
           </UICard>
-        </TabsContent>
 
-        {/* ===================== TAB 3: 最後賞與特殊玩法 ===================== */}
-        <TabsContent value="special" className="space-y-8 animate-in fade-in-50 duration-200">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-            {/* 左側兩欄：特殊機制設定 */}
-            <div className="lg:col-span-2 space-y-8">
-              {/* 一番賞挑號模式 */}
+          {/* 最後賞 (Last One) 限定配置 Card — 移至卡片與庫存配置，沒新增最後賞即代表無最後賞 */}
+          <UICard className="border-2 border-amber-300 bg-gradient-to-b from-amber-50/60 to-white shadow-sm rounded-3xl overflow-hidden">
+            <CardHeader className="bg-amber-100/60 border-b border-amber-200/80 p-5">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div>
+                  <CardTitle className="flex items-center text-amber-900 text-base font-black uppercase tracking-wider">
+                    <Gift className="mr-2.5 h-5 w-5 text-amber-600" />
+                    最後賞限定配置（選填）
+                  </CardTitle>
+                  <CardDescription className="text-amber-800/80 text-xs font-medium mt-1">
+                    抽完池內最後一包的幸運藏家將額外獲得此項卡片；若未新增最後賞，即代表本卡池沒有最後賞。
+                  </CardDescription>
+                </div>
+                <Badge className="bg-amber-500 text-slate-950 font-black text-[10px]">
+                  {lastPrizeCard ? '已設定最後賞' : '無最後賞'}
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="p-5">
+              {lastPrizeCard ? (
+                <div className="flex flex-col sm:flex-row items-center gap-4">
+                  <div className="relative w-28 aspect-[2.5/3.5] rounded-2xl overflow-hidden border-2 border-amber-400 shadow-lg bg-white p-1.5 shrink-0">
+                    <div className="relative w-full h-full rounded-xl overflow-hidden border border-slate-100">
+                      <SafeImage src={lastPrizeCard.imageUrl} alt={lastPrizeCard.name} fill className="object-cover" />
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0 text-center sm:text-left space-y-2">
+                    <p className="font-black text-sm text-slate-900 truncate">{lastPrizeCard.name}</p>
+                    <div className="flex items-center justify-center sm:justify-start gap-2">
+                      <Badge className="bg-amber-400 text-slate-950 text-[10px] font-black h-5 px-2 border-none">
+                        {lastPrizeCard.category}
+                      </Badge>
+                      <span className="text-xs font-code font-black text-amber-700">
+                        {lastPrizeCard.sellPrice?.toLocaleString() || 0} 💎
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-center sm:justify-start gap-2 pt-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-9 border-slate-200 font-bold bg-white text-slate-800 rounded-xl text-xs hover:bg-slate-50"
+                        onClick={() => handleOpenAddCardDialog('last')}
+                      >
+                        更換最後賞卡片
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-9 rounded-xl text-rose-600 border-rose-200 hover:bg-rose-50 text-xs font-bold"
+                        onClick={() => handleUpdatePoolDetails('lastPrizeCardId', '')}
+                      >
+                        <Trash2 className="h-3.5 w-3.5 mr-1" />
+                        移除最後賞
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  className="w-full h-28 border-dashed border-2 border-amber-300 bg-amber-50/40 hover:bg-white hover:border-amber-500 transition-all rounded-2xl flex flex-col items-center justify-center gap-1.5 group cursor-pointer"
+                  onClick={() => handleOpenAddCardDialog('last')}
+                >
+                  <PlusCircle className="h-5 w-5 text-amber-600 group-hover:scale-110 transition-transform" />
+                  <span className="font-black text-slate-800 tracking-wider text-xs">點擊新增最後賞卡片（未設定即為無最後賞）</span>
+                </Button>
+              )}
+            </CardContent>
+          </UICard>
+
+          {/* 一番賞挑號模式（僅於啟用挑籤時顯示籤表管理） */}
+          {poolDetails.enablePickNumber && (
               <UICard className="border-2 border-amber-300 bg-gradient-to-br from-amber-50/80 via-yellow-50/40 to-slate-50 shadow-sm rounded-3xl overflow-hidden p-6 space-y-5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-amber-200/80 pb-4">
                   <div className="space-y-1">
@@ -2131,28 +2740,12 @@ export default function CardPoolDetailPage() {
                       </Badge>
                       <h3 className="text-lg font-black text-slate-950 flex items-center gap-1.5">
                         <Flame className="w-5 h-5 text-amber-600 fill-amber-500" />
-                        一番賞挑籤選號模式 (玩家自選幸運號碼牆)
+                        一番賞挑籤選號籤表管理
                       </h3>
                     </div>
                     <p className="text-xs text-slate-600">
-                      開啟後前台將出現「自選號碼（一番賞挑籤）」按鈕與 1 ~ N 號數字籤牆，藏家可自由挑選心儀幸運號碼開獎。
+                      前台將顯示「自選號碼（一番賞挑籤）」按鈕與 1 ~ N 號數字籤牆，可於下方洗籤或監控開出狀態。
                     </p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Label htmlFor="kuji-switch" className="text-xs font-bold text-slate-800">
-                      {poolDetails.enablePickNumber ? '已啟用挑籤模式' : '未啟用挑籤'}
-                    </Label>
-                    <Switch
-                      id="kuji-switch"
-                      checked={poolDetails.enablePickNumber || false}
-                      onCheckedChange={(checked) => {
-                        setPoolDetails({ ...poolDetails, enablePickNumber: checked });
-                        handleUpdatePoolDetails('enablePickNumber', checked);
-                        if (checked && (!poolDetails.kujiTickets || poolDetails.kujiTickets.length === 0)) {
-                          handleGenerateKujiTickets();
-                        }
-                      }}
-                    />
                   </div>
                 </div>
 
@@ -2263,8 +2856,10 @@ export default function CardPoolDetailPage() {
                   </div>
                 )}
               </UICard>
+              )}
 
-              {/* 活動卡池與專屬規則 */}
+              {/* 活動卡池與專屬規則（僅於活動卡池模式顯示） */}
+              {poolDetails.isEventPool && (
               <UICard className="border-2 border-purple-200 bg-gradient-to-br from-purple-50/70 via-slate-50 to-amber-50/50 shadow-sm rounded-3xl p-6 space-y-5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-purple-100 pb-4">
                   <div className="space-y-1">
@@ -2278,21 +2873,8 @@ export default function CardPoolDetailPage() {
                       </h3>
                     </div>
                     <p className="text-xs text-slate-600">
-                      將此卡池設為指定活動專屬，可啟用「僅限管理員派發專屬券抽取」等規則。
+                      此卡池為指定活動專屬，可設定「僅限管理員派發專屬券抽取」與派發抽卡券。
                     </p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Label htmlFor="event-pool-switch" className="text-xs font-bold text-slate-800">
-                      {poolDetails.isEventPool ? '已設為活動卡池' : '一般卡池'}
-                    </Label>
-                    <Switch
-                      id="event-pool-switch"
-                      checked={poolDetails.isEventPool || false}
-                      onCheckedChange={(checked) => {
-                        setPoolDetails({ ...poolDetails, isEventPool: checked });
-                        handleUpdatePoolDetails('isEventPool', checked);
-                      }}
-                    />
                   </div>
                 </div>
 
@@ -2378,164 +2960,9 @@ export default function CardPoolDetailPage() {
                   </div>
                 )}
               </UICard>
-            </div>
-
-            {/* 右側一欄：最後賞、大獎預覽與機率即時看板 */}
-            <div className="space-y-8">
-              {/* 最後賞 (Last One) 限定配置 Card */}
-              <UICard className="border-2 border-amber-300 bg-gradient-to-b from-amber-50/60 to-white shadow-md rounded-3xl overflow-hidden">
-                <CardHeader className="bg-amber-100/60 border-b border-amber-200/80 p-5">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center text-amber-800 text-base font-black uppercase tracking-wider italic">
-                      <Gift className="mr-2.5 h-5 w-5 text-amber-600"/>
-                      最後賞限定配置 (LAST ONE)
-                    </CardTitle>
-                    <Badge className="bg-amber-500 text-slate-950 font-black text-[10px]">
-                      LAST PRIZE
-                    </Badge>
-                  </div>
-                  <CardDescription className="text-amber-800/80 text-xs font-medium mt-1">
-                    抽完池內最後一包的幸運藏家將額外獲得此項傳奇資產。
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="p-5">
-                  {lastPrizeCard ? (
-                    <div className="space-y-4">
-                      <div className="relative aspect-[2.5/3.5] rounded-2xl overflow-hidden border-2 border-amber-400 shadow-xl shadow-amber-200/60 bg-white p-2 group">
-                        <div className="relative w-full h-full rounded-xl overflow-hidden border border-slate-100">
-                          <SafeImage src={lastPrizeCard.imageUrl} alt={lastPrizeCard.name} fill className="object-cover group-hover:scale-105 transition-transform" />
-                        </div>
-                        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none" />
-                        <div className="absolute bottom-3 inset-x-3 text-center">
-                          <p className="font-black text-xs text-white truncate drop-shadow-md">{lastPrizeCard.name}</p>
-                          <div className="flex items-center justify-center gap-2 mt-1">
-                            <Badge className="bg-amber-400 text-slate-950 text-[10px] font-black h-4 px-1.5 border-none">
-                              {lastPrizeCard.category}
-                            </Badge>
-                            <span className="text-[11px] font-code font-black text-amber-300">
-                              {lastPrizeCard.sellPrice?.toLocaleString() || 0} 💎
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="outline" 
-                          className="w-full h-10 border-slate-200 font-black bg-white text-slate-800 shadow-sm rounded-xl text-xs hover:bg-slate-50" 
-                          onClick={() => handleOpenAddCardDialog('last')}
-                        >
-                          更換卡片
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-10 w-10 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50" 
-                          onClick={() => handleUpdatePoolDetails('lastPrizeCardId', '')}
-                          title="移除最後賞"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <Button 
-                      variant="outline" 
-                      className="w-full h-44 border-dashed border-2 border-amber-300 bg-amber-50/40 hover:bg-white hover:border-amber-500 transition-all rounded-2xl flex flex-col items-center justify-center gap-2.5 group" 
-                      onClick={() => handleOpenAddCardDialog('last')}
-                    >
-                      <div className="p-3 bg-amber-100 rounded-full group-hover:scale-110 transition-transform">
-                        <PlusCircle className="h-6 w-6 text-amber-600" />
-                      </div>
-                      <div className="text-center">
-                        <span className="font-black text-slate-800 tracking-wider text-xs block">點擊設定最後賞</span>
-                        <span className="text-[10px] text-slate-400 font-medium">指定抽完後的加碼大獎</span>
-                      </div>
-                    </Button>
-                  )}
-                </CardContent>
-              </UICard>
-
-              {/* 大獎預覽矩陣 */}
-              <UICard className="border-slate-200 bg-white shadow-sm rounded-3xl overflow-hidden">
-                <CardHeader className="bg-slate-50/70 border-b border-slate-100 p-5">
-                  <CardTitle className="flex items-center text-slate-900 font-black text-sm uppercase tracking-wider">
-                    <Trophy className="mr-2 text-amber-500 h-4 w-4" />
-                    池內傳奇大獎矩陣
-                  </CardTitle>
-                  <CardDescription className="text-slate-500 text-xs font-medium">
-                    池中剩餘之傳奇 (Legendary) 等級卡牌展示。
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="p-5">
-                  {topPrizeCards.length > 0 ? (
-                    <div className="grid grid-cols-2 gap-3">
-                      {topPrizeCards.map(card => (
-                        <div 
-                          key={card.id} 
-                          onClick={() => setPreviewZoomCard(card)}
-                          className="aspect-[2.5/3.5] relative rounded-xl overflow-hidden border border-slate-200 bg-slate-100 shadow-sm cursor-pointer group hover:ring-2 hover:ring-amber-400"
-                        >
-                          <SafeImage src={card.imageUrl} alt={card.name} fill className="object-cover group-hover:scale-105 transition-transform"/>
-                          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-1.5">
-                            <p className="text-[10px] font-black text-white truncate">{card.name}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center text-slate-400 py-12 text-xs font-bold italic">
-                      <Archive className="w-8 h-8 mx-auto mb-2 opacity-20" />
-                      目前卡池中無剩餘傳奇獎項
-                    </div>
-                  )}
-                </CardContent>
-              </UICard>
-
-              {/* 即時機率計算卡 */}
-              <UICard className="border-slate-200 bg-white shadow-sm rounded-3xl overflow-hidden">
-                <CardHeader className="bg-slate-50/70 border-b border-slate-100 p-5">
-                  <CardTitle className="flex items-center text-slate-900 font-black text-sm uppercase tracking-wider">
-                    <GripVertical className="mr-2 text-primary h-4 w-4"/>
-                    即時開出機率預覽
-                  </CardTitle>
-                  <CardDescription className="text-slate-500 text-xs font-medium">
-                    根據池內剩餘卡牌與點數獎項數量即時試算。
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="p-5 space-y-3">
-                  <div className="flex justify-between items-center text-xs p-3 bg-amber-50/60 rounded-xl border border-amber-100">
-                    <span className="flex items-center gap-1.5 font-black text-amber-700">
-                      <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500"/>
-                      傳奇 (LEGENDARY)
-                    </span>
-                    <span className="font-code font-black text-slate-900 text-sm">
-                      {probabilities.legendary.toFixed(2)}%
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between items-center text-xs p-3 bg-cyan-50/60 rounded-xl border border-cyan-100">
-                    <span className="flex items-center gap-1.5 font-black text-cyan-700">
-                      <Diamond className="h-3.5 w-3.5 fill-cyan-500 text-cyan-500"/>
-                      稀有 (RARE)
-                    </span>
-                    <span className="font-code font-black text-slate-900 text-sm">
-                      {probabilities.rare.toFixed(2)}%
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between items-center text-xs p-3 bg-slate-50 rounded-xl border border-slate-100">
-                    <span className="flex items-center gap-1.5 font-black text-slate-600">
-                      <Layers className="h-3.5 w-3.5 text-slate-400"/>
-                      普通 (COMMON)
-                    </span>
-                    <span className="font-code font-black text-slate-900 text-sm">
-                      {probabilities.common.toFixed(2)}%
-                    </span>
-                  </div>
-                </CardContent>
-              </UICard>
-            </div>
-          </div>
+              )}
+            </>
+          )}
         </TabsContent>
       </Tabs>
 
@@ -2552,6 +2979,34 @@ export default function CardPoolDetailPage() {
                 : '勾選您想加入此卡池的卡片。已售出或已指派於其他區域的資產已被系統自動過濾。'}
             </DialogDescription>
           </DialogHeader>
+
+          {/* 明池盲開＋隱藏 SP 模式：直接選擇要放入哪一個顏色的盒子 */}
+          {poolDetails.isHybridBlindSpMode && targetPrizeType !== 'last' && (
+            <div className="mb-3 p-3 rounded-2xl bg-[#0a0f1c] text-white border border-amber-300/35 flex flex-wrap items-center justify-between gap-2">
+              <span className="text-xs font-black text-[#FDE68A]">選擇放入盒子顏色：</span>
+              <div className="flex flex-wrap gap-1.5">
+                {(['A', 'SP', 'B', 'C', 'D'] as const).map((tier) => {
+                  const meta = HYBRID_TIER_META[tier];
+                  const selected = targetBoxTier === tier;
+                  return (
+                    <button
+                      key={tier}
+                      type="button"
+                      onClick={() => setTargetBoxTier(tier)}
+                      className={cn(
+                        'px-3 py-1 rounded-xl text-xs font-black border transition-all cursor-pointer',
+                        selected
+                          ? 'bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] border-amber-300 shadow'
+                          : 'bg-white/[0.05] text-slate-300 border-white/15 hover:bg-white/10'
+                      )}
+                    >
+                      {meta.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* 搜尋與篩選列 */}
           <div className="mb-4 flex flex-wrap gap-3">

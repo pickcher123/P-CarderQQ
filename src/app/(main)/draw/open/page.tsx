@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import * as VisuallyHiddenPrimitive from "@radix-ui/react-visually-hidden";
 import { Gem, Sparkles, Loader2, RotateCcw, ArrowLeft, PlayCircle, FastForward, Check, Disc3, RotateCw, Clock, ChevronsUp, X, ShieldCheck, Star, Trophy, Layers, Zap, AlertCircle, Ban, ChevronRight, Hash, Download } from 'lucide-react';
-import { PackPreview, RevealComponent, DrawResults, CelebrationVFX, CloveSummoningAnimation, KujiNumberPickerDialog } from '@/components/draw';
+import { PackPreview, RevealComponent, DrawResults, CelebrationVFX, CloveSummoningAnimation, KujiNumberPickerDialog, BoxOpeningStage } from '@/components/draw';
 import { rarityVisuals, pointPrizeRarityStyles } from '@/lib/draw-constants';
 import { drawFromPool, drawKujiTickets } from '@/lib/draw-utils';
 import { createProvablyFairRound } from '@/lib/provably-fair';
@@ -35,7 +35,7 @@ import { Badge } from '@/components/ui/badge';
 import { userLevels } from '@/components/member-level-crown';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { performDrawAction } from '@/app/actions/draw';
+import { performDrawAction, redeemSpBuybackAction } from '@/app/actions/draw';
 import { getEffectiveTicketCount, syncLocalPromoClaimsToFirestore, getLocalAvailableTicketsCount } from '@/lib/promo-draw-service';
 import {
   type PeelCorner,
@@ -619,14 +619,14 @@ export default function OpenPackPage() {
 
                     const cardPayload: any = isPointOrRandom
                         ? {
-                            cardId: rawId.startsWith('random-player-') ? rawId : `random-player-${rawId || 'points_300'}`,
+                            cardId: rawId.startsWith('random-player-') ? rawId : `random-player-${rawId || 'points_50'}`,
                             name: prize.name || '隨機球員 普/特 卡',
                             userId: user.uid,
                             category: '抽賞',
                             rarity: prize.rarity || 'common',
                             isFoil: false,
                             isPoints: true,
-                            points: Number(prize.points || 300),
+                            points: Number(prize.points || 50),
                             source: drawSource,
                             poolId: poolId,
                             poolName: poolData.name || cardPool.name || '',
@@ -648,6 +648,8 @@ export default function OpenPackPage() {
                             poolId: poolId,
                             poolName: poolData.name || cardPool.name || '',
                             serialNumber: serialNumber,
+                            ...(prize.tierCode ? { tierCode: prize.tierCode } : {}),
+                            ...(prize.buybackPoints ? { buybackPoints: prize.buybackPoints } : {}),
                             createdAt: serverTimestamp()
                         };
 
@@ -656,6 +658,7 @@ export default function OpenPackPage() {
                     }
                     transaction.set(newUserCardRef, cleanFirestoreData(cardPayload));
                     prize.serialNumber = serialNumber;
+                    prize.userCardId = newUserCardRef.id;
 
                     if (!isPointOrRandom && rawId && existingAllCardIds.has(rawId)) {
                         soldCardIdsToLock.add(rawId);
@@ -702,7 +705,40 @@ export default function OpenPackPage() {
                 if (claimLastPrize) {
                     poolUpdates.lastPrizeClaimed = true;
                 }
+                const spDrawnInClientTx = drawn.some((p: any) => p.tierCode === 'SP');
+                if (spDrawnInClientTx) {
+                    poolUpdates.spRevealed = true;
+                }
                 transaction.update(poolDocRef, cleanFirestoreData(poolUpdates));
+
+                // 若為明池盲開＋隱藏 SP 模式，寫入公開開獎紀錄（防作弊證明）
+                if (poolData.isHybridBlindSpMode) {
+                    const totalPacksNum = Number(poolData.totalPacks || 100);
+                    const prevRemainingNum = Number(poolData.remainingPacks ?? totalPacksNum);
+                    const rawDisplayName = String(userData?.displayName || userData?.username || userData?.email || user.uid);
+                    const maskedUsername = rawDisplayName.length <= 2
+                        ? `${rawDisplayName[0] || 'u'}***`
+                        : `${rawDisplayName.slice(0, 2)}***${rawDisplayName.slice(-1)}`;
+                    drawn.forEach((p: any, idx: number) => {
+                        const pullNumber = p.type === 'last-prize'
+                            ? totalPacksNum
+                            : Math.max(1, totalPacksNum - prevRemainingNum + idx + 1);
+                        const publicLogRef = doc(collection(firestore, 'cardPools', poolId, 'drawLogs'));
+                        transaction.set(publicLogRef, cleanFirestoreData({
+                            poolId,
+                            pullNumber,
+                            userId: user.uid,
+                            maskedUsername,
+                            tierCode: p.type === 'last-prize' ? 'LAST' : (p.tierCode || (p.rarity === 'legendary' ? 'A' : p.rarity === 'rare' ? 'B' : 'D')),
+                            prizeId: String(p.id || ''),
+                            prizeName: p.name || '典藏卡包獎項',
+                            userCardId: p.userCardId || null,
+                            isOpened: true,
+                            redeemedAsPoints: false,
+                            createdAt: serverTimestamp(),
+                        }));
+                    });
+                }
 
                 // 6. 紀錄交易日誌與 Provably Fair 開獎參數
                 const pfRound = await createProvablyFairRound({
@@ -801,10 +837,12 @@ export default function OpenPackPage() {
                     ...(result.claimLastPrize ? { lastPrizeClaimed: true } : {}),
                 } as CardPool : prev);
 
-                // 若抽中稀有賞或傳奇賞大獎，非同步發布中獎榮譽榜公告
-                const bigHits = result.drawn.filter(
-                    (p: any) => (p.type === 'card' || p.type === 'last-prize') && (p.rarity === 'legendary' || p.rarity === 'rare')
-                );
+                // 若抽中稀有賞或傳奇賞大獎，非同步發布中獎榮譽榜公告（盲盒模式不對外播報，維持保密感）
+                const bigHits = !cardPool.isBlindBoxMode
+                    ? result.drawn.filter(
+                        (p: any) => (p.type === 'card' || p.type === 'last-prize') && (p.rarity === 'legendary' || p.rarity === 'rare')
+                    )
+                    : [];
                 if (bigHits.length > 0) {
                     Promise.allSettled(
                         bigHits.map((hit: any) =>
@@ -1184,6 +1222,31 @@ export default function OpenPackPage() {
 
             {/* Central Stage: Scratch / Reveal OR Result Shelf */}
             {step !== 'done' ? (
+                cardPool?.isHybridBlindSpMode ? (
+                    <div className="flex-1 flex flex-col items-center justify-center w-full relative z-[20] min-h-0 py-1">
+                        <BoxOpeningStage
+                            prizes={drawnPrizes}
+                            isTrialMode={isTrialMode}
+                            onCompleteAll={skipAllToDone}
+                            onRedeemSpBuyback={async (prize) => {
+                                if (!user?.uid || !prize?.userCardId) {
+                                    toast({ variant: 'destructive', title: '無法回收', description: '請先登入並於正式抽卡中操作。' });
+                                    return false;
+                                }
+                                const res = await redeemSpBuybackAction(user.uid, prize.userCardId, poolId || undefined);
+                                if (res.success) {
+                                    toast({
+                                        title: '✅ SP 賞點數回收成功',
+                                        description: `已將 ${(res.creditedPoints || 0).toLocaleString()} 點數即時入帳至您的錢包！`,
+                                    });
+                                    return true;
+                                }
+                                toast({ variant: 'destructive', title: '回收失敗', description: res.error || '請稍後再試' });
+                                return false;
+                            }}
+                        />
+                    </div>
+                ) : (
                 <div className="flex-1 flex flex-col items-center justify-center w-full relative z-[20] min-h-0 py-1">
                     <motion.div 
                         initial={{ y: -300, opacity: 0, scale: 0.6, rotate: -8 }}
@@ -1372,6 +1435,7 @@ export default function OpenPackPage() {
                         )}
                     </motion.div>
                 </div>
+                )
             ) : (
                 <div className="flex-1 w-full max-w-5xl px-2 sm:px-4 z-20 min-h-0 flex flex-col justify-center relative select-none py-1">
                     {/* Horizontal swipeable prize shelf (centered when <= 3 items) */}

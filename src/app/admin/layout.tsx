@@ -96,7 +96,6 @@ const sidebarNavItems: NavSection[] = [
       { href: '/admin/betting', label: '拼卡管理', icon: Swords, permission: 'betting', desc: '拼卡項目與選號管理' },
       { href: '/admin/lucky-bags', label: '福袋管理', icon: Ticket, permission: 'lucky-bags', desc: '福袋獎品配置與上架' },
       { href: '/admin/group-breaks', label: '團拆管理', icon: Users2, permission: 'group-breaks', desc: '直播團拆專案建立' },
-      { href: '/admin/lucky-wheel', label: '大轉盤福袋', icon: Disc3, permission: 'lucky-bags', desc: '自訂號碼與轉盤抽獎' },
     ]
   },
   { 

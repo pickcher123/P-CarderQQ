@@ -250,7 +250,7 @@ export default function CollectionPage() {
           imageHint: '幸運獲獎',
           category: '抽賞',
           isSold: false,
-          sellPrice: 10,
+          sellPrice: userCard.points || 50,
           serialNumber: userCard.serialNumber || '0000',
           _isRealCard: false,
         } as MergedCard;
@@ -526,7 +526,7 @@ export default function CollectionPage() {
     cardsToSell.forEach(card => {
         const mult = bonusMultiplier || 1;
         if (card.name.includes('隨機球員')) {
-            pPoints += 300 * mult;
+            diamonds += 50;
         } else {
             const basePrice = card.sellPrice || 10;
             diamonds += basePrice * 0.7;

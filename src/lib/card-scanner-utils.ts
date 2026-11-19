@@ -227,6 +227,11 @@ export function detectCardBoundariesLocally(imageElement: HTMLImageElement): Cro
     const imgData = ctx.getImageData(0, 0, sampleWidth, sampleHeight);
     const data = imgData.data;
     const totalPixels = sampleWidth * sampleHeight;
+    const gray = new Float32Array(totalPixels);
+    for (let i = 0; i < totalPixels; i++) {
+      const idx = i * 4;
+      gray[i] = 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
+    }
 
     // 1. 計算四邊內縮環帶的中位數亮度作為掃描底色基準（避開外緣陰影）
     const edgeGrays: number[] = [];

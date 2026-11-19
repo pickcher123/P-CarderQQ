@@ -443,7 +443,6 @@ export default function BettingAdminPage() {
                     <TableHeader className="bg-slate-50">
                         <TableRow>
                             <TableHead className="w-16 text-center text-[10px] font-black uppercase py-4">排序</TableHead>
-                            <TableHead className="w-20 text-[10px] font-black uppercase">封面</TableHead>
                             <TableHead className="pl-6 text-[10px] font-black uppercase">分類名稱</TableHead>
                             <TableHead className="text-[10px] font-black uppercase">卡片庫存狀態</TableHead>
                             <TableHead className="text-right pr-8 text-[10px] font-black uppercase">操作</TableHead>
@@ -453,7 +452,6 @@ export default function BettingAdminPage() {
                         {isLoading && Array.from({ length: 4 }).map((_, i) => (
                             <TableRow key={i}>
                                 <TableCell><Skeleton className="h-8 w-12 mx-auto" /></TableCell>
-                                <TableCell><Skeleton className="h-12 w-16 rounded" /></TableCell>
                                 <TableCell className="pl-6"><Skeleton className="h-5 w-48" /></TableCell>
                                 <TableCell><Skeleton className="h-5 w-20" /></TableCell>
                                 <TableCell className="text-right pr-8"><Skeleton className="h-9 w-32 ml-auto" /></TableCell>
@@ -468,11 +466,6 @@ export default function BettingAdminPage() {
                                         className="h-8 w-14 text-center font-code text-xs mx-auto bg-white border-slate-200 rounded-lg"
                                         onBlur={(e) => handleOrderChange(category.id!, parseInt(e.target.value))}
                                     />
-                                </TableCell>
-                                <TableCell>
-                                    <div className="relative h-14 w-11 rounded-xl bg-slate-50 overflow-hidden border border-slate-200 shadow-xs">
-                                        <SafeImage src={category.imageUrl} alt={category.name} fill className="object-cover" />
-                                    </div>
                                 </TableCell>
                                 <TableCell className="pl-6 font-bold text-slate-900">
                                     <button 

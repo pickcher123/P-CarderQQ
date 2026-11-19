@@ -361,7 +361,6 @@ export default function DrawCategoriesAdminPage() {
                     <TableHeader className="bg-slate-50">
                         <TableRow className="border-b-slate-200">
                             <TableHead className="w-20 text-center text-slate-900 font-black uppercase text-[10px] tracking-widest py-5">排序</TableHead>
-                            <TableHead className="w-24 text-slate-900 font-black uppercase text-[10px] tracking-widest">封面</TableHead>
                             <TableHead className="text-slate-900 font-black uppercase text-[10px] tracking-widest pl-6">分類名稱</TableHead>
                             <TableHead className="text-slate-900 font-black uppercase text-[10px] tracking-widest">卡池數量</TableHead>
                             <TableHead className="text-center text-slate-900 font-black uppercase text-[10px] tracking-widest">狀態</TableHead>
@@ -372,9 +371,9 @@ export default function DrawCategoriesAdminPage() {
                         {isLoading && Array.from({ length: 5 }).map((_, i) => (
                             <TableRow key={i}>
                                 <TableCell><Skeleton className="h-8 w-12 mx-auto" /></TableCell>
-                                <TableCell><Skeleton className="h-12 w-16 rounded-xl" /></TableCell>
                                 <TableCell className="pl-6"><Skeleton className="h-5 w-48" /></TableCell>
                                 <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                                <TableCell><Skeleton className="h-6 w-12 mx-auto rounded-full" /></TableCell>
                                 <TableCell className="text-right pr-8"><Skeleton className="h-9 w-24 ml-auto rounded-xl" /></TableCell>
                             </TableRow>
                         ))}
@@ -387,11 +386,6 @@ export default function DrawCategoriesAdminPage() {
                                         className="h-9 w-16 text-center font-code font-black mx-auto bg-white border-slate-200 rounded-lg shadow-sm"
                                         onBlur={(e) => handleOrderChange(category.id!, parseInt(e.target.value))}
                                     />
-                                </TableCell>
-                                <TableCell>
-                                    <div className="relative h-16 w-12 rounded-xl bg-slate-100 overflow-hidden border border-slate-200 shadow-sm group-hover:scale-105 transition-transform duration-500">
-                                        <SafeImage src={category.imageUrl} alt={category.name} fill className="object-cover" />
-                                    </div>
                                 </TableCell>
                                 <TableCell className="pl-6 font-black text-lg text-slate-900">
                                     <button 

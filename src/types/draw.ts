@@ -1,4 +1,5 @@
 export type Rarity = 'legendary' | 'rare' | 'common';
+export type HybridTierCode = 'A' | 'SP' | 'B' | 'C' | 'D' | 'LAST';
 
 export interface Card {
     id: string;
@@ -12,6 +13,7 @@ export interface Card {
     rarity?: Rarity;
     isPoints?: boolean;
     points?: number;
+    certNumber?: string;
 }
 
 export type CardItem = Card;
@@ -22,6 +24,8 @@ export interface PointPrize {
     quantity: number;
     rarity: Rarity;
     name?: string;
+    tierCode?: 'C' | 'D';
+    unitCost?: number;
 }
 
 export interface KujiTicketItem {
@@ -72,8 +76,41 @@ export interface CardPool {
     enablePickNumber?: boolean;
     totalTicketsCount?: number;
     kujiTickets?: KujiTicketItem[];
+    // Blez 盲盒模式（隱藏機率、剩餘數量與大獎是否已被抽出）
+    isBlindBoxMode?: boolean;
+    // 明池盲開 ＋ 隱藏 SP 賞綜合模式
+    isHybridBlindSpMode?: boolean;
+    presetUsed?: string;
+    snipeAlertThreshold?: number;
+    snipeWebhookUrl?: string;
+    cardTiers?: Record<string, HybridTierCode>;
+    cardCosts?: Record<string, number>;
+    cardCertNumbers?: Record<string, string>;
+    spBuybackPoints?: Record<string, number>;
+    lastPrizeCost?: number;
+    spRevealed?: boolean;
+    healthStatus?: 'green' | 'yellow' | 'red';
+    actualCogs?: number;
+    actualPayoutPct?: number;
+    actualGrossProfit?: number;
 }
 
-export type DrawnPrize = (Card & { rarity: Rarity; type: 'card' | 'last-prize'; serialNumber?: string; ticketNumber?: number }) | (PointPrize & { type: 'points'; rarity: Rarity; ticketNumber?: number });
+export type DrawnPrize =
+    | (Card & {
+          rarity: Rarity;
+          type: 'card' | 'last-prize';
+          serialNumber?: string;
+          ticketNumber?: number;
+          tierCode?: HybridTierCode;
+          buybackPoints?: number;
+          isHiddenSp?: boolean;
+          userCardId?: string;
+      })
+    | (PointPrize & {
+          type: 'points';
+          rarity: Rarity;
+          ticketNumber?: number;
+          tierCode?: HybridTierCode;
+      });
 
 export type Step = 'init-loading' | 'waiting-to-start' | 'loading' | 'summoning' | 'ready-to-reveal' | 'revealing' | 'done' | 'error';

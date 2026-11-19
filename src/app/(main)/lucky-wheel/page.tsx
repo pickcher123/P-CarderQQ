@@ -1597,6 +1597,30 @@ export default function LuckyWheelFrontendPage() {
         toast({ title: '📂 已載入活動存檔', description: `成功載入【${item.eventName}】資料！` });
     };
 
+    // 🔒 僅限管理員存取前台大轉盤專區
+    if (!isAdmin) {
+        return (
+            <div className="min-h-[80vh] flex items-center justify-center p-6">
+                <div className="max-w-md w-full rounded-2xl bg-[#0a0f1c] border border-white/[0.1] border-t-2 border-t-amber-300/65 p-8 text-center shadow-[0_24px_64px_rgba(0,0,0,0.85)] space-y-4">
+                    <div className="mx-auto w-14 h-14 rounded-2xl bg-amber-400/10 border border-amber-300/35 flex items-center justify-center">
+                        <Lock className="w-7 h-7 text-[#FDE68A]" />
+                    </div>
+                    <h1 className="text-xl font-black text-white">管理員專屬活動專區</h1>
+                    <p className="text-xs text-slate-400 leading-relaxed">
+                        此活動大轉盤專區目前僅開放管理員帳號使用與開啟。
+                    </p>
+                    <Button
+                        type="button"
+                        onClick={() => { window.location.href = '/'; }}
+                        className="h-10 px-6 rounded-xl bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] font-black text-xs"
+                    >
+                        返回首頁
+                    </Button>
+                </div>
+            </div>
+        );
+    }
+
     // 🔒 若尚未通過密碼驗證，顯示高質感密碼鎖介面
     if (!isUnlocked && !isCheckingPassword) {
         return (

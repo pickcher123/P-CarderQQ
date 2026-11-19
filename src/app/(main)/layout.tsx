@@ -63,8 +63,20 @@ export default function MainLayout({
 
   const isMaintenanceActive = Boolean(systemConfig?.maintenance?.enabled);
 
+  // 🚧 載入系統設定或驗證身分期間，先顯示暗色載入遮罩，避免重新整理時短暫露出前台頁面
+  if (isConfigLoading || (isMaintenanceActive && isAuthLoading)) {
+    return (
+      <div className="min-h-[100dvh] w-full flex items-center justify-center bg-[#06080d] text-slate-400 text-xs font-bold tracking-wider">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 rounded-full border-2 border-amber-400/30 border-t-amber-400 animate-spin" />
+          <span>系統連線驗證中...</span>
+        </div>
+      </div>
+    );
+  }
+
   // 🚧 若啟用了全站維護模式，且造訪者不是管理員：全面攔截並僅顯示維護中全螢幕畫面
-  if (isMaintenanceActive && !isAdmin && !isAuthLoading && !isConfigLoading) {
+  if (isMaintenanceActive && !isAdmin) {
     return (
       <MaintenanceScreen 
         config={systemConfig?.maintenance} 
