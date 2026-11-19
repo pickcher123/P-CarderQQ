@@ -108,7 +108,7 @@ export async function performDrawAction(userId: string, poolId: string, count: n
         const newUserCardRef = adminDb.collection('users').doc(userId).collection('userCards').doc();
         const serialNumber = `${Math.floor(Math.random() * 9000) + 1000}`;
         const isPointOrRandom = prize.type === 'points' || Boolean((prize as any).isPoints) || Boolean(prize.name?.includes('隨機球員'));
-        const rawId = String(prize.id || '');
+        const rawId = String((prize as any).id || (prize as any).prizeId || '');
         const cardPayload: any = isPointOrRandom
           ? {
               cardId: rawId.startsWith('random-player-') ? rawId : `random-player-${rawId || 'points_50'}`,

@@ -361,7 +361,7 @@ export default function OpenPackPage() {
         setLandingVFX('none');
         setStep('summoning');
         setSelectedNumbers([]);
-        setTargetPickCount(undefined);
+        setTargetPickCount(1);
         if (typeof window !== 'undefined') {
             const url = new URL(window.location.href);
             if (url.searchParams.has('numbers') || url.searchParams.has('pick')) {
@@ -827,7 +827,7 @@ export default function OpenPackPage() {
                 setLandingVFX('none');
                 setStep('summoning');
                 setSelectedNumbers([]);
-                setTargetPickCount(undefined);
+                setTargetPickCount(1);
 
                 // 立即更新本地 cardPool 狀態，確保已抽出的號碼立即在前端標記為 isDrawn: true，杜絕下一抽重複選取
                 setCardPool(prev => prev ? {

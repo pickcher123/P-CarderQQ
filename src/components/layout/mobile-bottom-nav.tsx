@@ -128,27 +128,15 @@ export function MobileBottomNav({ systemConfig }: MobileBottomNavProps) {
   return (
     <>
       <div className="fixed bottom-2.5 sm:bottom-4 left-0 right-0 z-50 md:hidden pointer-events-none px-2 sm:px-3 flex justify-center pb-[max(env(safe-area-inset-bottom),0px)]">
-        {/* 懸浮導覽膠囊 - 僅外框環狀 LED 炫彩 */}
+        {/* 懸浮導覽膠囊 - 暗黑曜石 × 香檳金 */}
         <div className={cn(
           "pointer-events-auto relative w-full rounded-full transition-[max-width] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]",
           count <= 4 ? "max-w-[340px]" : count <= 5 ? "max-w-[400px]" : count === 6 ? "max-w-[450px]" : "max-w-[98vw]"
         )}>
-          {/* 外框循環環繞式 LED 流光層 (細膩流暢、溫潤護眼，絕不滲透到內部) */}
-          <div className="relative p-[1.5px] sm:p-[2px] rounded-full overflow-hidden shadow-[0_12px_32px_rgba(0,0,0,0.9),0_0_20px_rgba(6,182,212,0.18)]">
-            
-            {/* 底層微光軌道 (提供科技感底線) */}
-            <div className="absolute inset-0 rounded-full border border-cyan-500/25 bg-cyan-950/20 pointer-events-none" />
-
-            {/* 360 度循環環繞式雙束極光 LED 流光束 (溫潤護眼、科技青藍紫漸層，柔和循環環繞巡航) */}
-            <div 
-              className="absolute -inset-[220%] animate-led-orbit pointer-events-none opacity-85 blur-[0.5px]"
-              style={{
-                background: "conic-gradient(from 0deg, transparent 0deg, rgba(6, 182, 212, 0.08) 35deg, rgba(34, 211, 238, 0.9) 80deg, rgba(99, 102, 241, 0.85) 120deg, transparent 155deg, transparent 180deg, rgba(6, 182, 212, 0.08) 215deg, rgba(34, 211, 238, 0.9) 260deg, rgba(99, 102, 241, 0.85) 300deg, transparent 335deg, transparent 360deg)"
-              }}
-            />
-
-            {/* 內部完全純黑不透光曜石底色 (徹底隔絕內部，中間完全無炫彩干擾) */}
-            <div className="relative w-full rounded-full bg-[#080d19] p-1 sm:p-1.5 overflow-hidden">
+          {/* 外框暗黑曜石細邊框與深層陰影（移除底部藍色發光條） */}
+          <div className="relative p-[1px] rounded-full overflow-hidden bg-gradient-to-b from-amber-300/35 via-white/[0.1] to-white/[0.06] shadow-[0_14px_36px_rgba(0,0,0,0.92)]">
+            {/* 內部完全純黑不透光曜石底色 */}
+            <div className="relative w-full rounded-full bg-[#0a0f1c]/95 backdrop-blur-2xl p-1 sm:p-1.5 overflow-hidden">
               <nav
                 className={cn(
                   "items-center relative z-10",

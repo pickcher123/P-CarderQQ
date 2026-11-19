@@ -21,7 +21,19 @@ interface ChangeLogItem {
 
 const changelogData: ChangeLogItem[] = [
   {
-    version: "公測版 6.0 (最新里程碑)",
+    version: "公測版 7.0 (最新里程碑)",
+    title: "GodPack 五色一番賞、看盤數據分析與暗黑曜石視覺全面升級",
+    type: "feature",
+    changes: [
+      "GodPack 五色一番賞與智能配平引擎：導入金／黑／銀／銅／白五色盲盒分級（A／SP／B／C／D／最後賞），卡池分子隨實際庫存即時同步，並支援配平單抽價雙向連動。",
+      "機台看盤明細與價值排序升級：看盤明細完整呈現五色卡包剩餘數量與各卡包即時抽取機率分析；卡池卡片依估值由高到低優先展示，大獎一目了然。",
+      "球員卡買回與階級加碼回收體系：球員普／特卡固定 40 鑽快速買回；其他實體卡快速轉點升級為「8 折回收＋會員階級回饋 % 數 P 點」。",
+      "紅利加倍活動自動排程：活動到期後自動關閉總開關，全站頂部廣播消息欄亦同步自動隱藏，確保活動資訊精準即時。",
+      "暗黑曜石 × 香檳金視覺純淨化：全面統一高質感暗黑曜石與香檳金介面規範，優化跑馬燈排版、精簡收藏庫與開獎確認流程，並強化後台系統安全鎖與店家保護機制。"
+    ]
+  },
+  {
+    version: "公測版 6.0",
     title: "現貨在庫承諾、密碼學機率驗證與 3D 沉浸舞台全面實裝",
     type: "feature",
     changes: [
@@ -161,47 +173,62 @@ export default function ChangeLogPage() {
 
   return (
     <div className="container py-12 md:py-20 max-w-4xl relative">
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[400px] bg-primary/5 blur-[100px] pointer-events-none" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[320px] bg-amber-400/10 blur-[120px] pointer-events-none" />
       
       <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-4 relative z-10">
         <div className="space-y-2">
-          <Button variant="ghost" asChild className="-ml-4 mb-2 hover:bg-white/5 font-bold">
+          <Button variant="ghost" asChild className="-ml-4 mb-2 hover:bg-white/[0.05] text-slate-300 hover:text-amber-200 font-bold">
             <Link href="/about"><ChevronLeft className="mr-2 h-4 w-4" /> 返回關於我們</Link>
           </Button>
-          <h1 className="font-headline text-4xl font-black tracking-tight text-white flex items-center gap-3">
-            <History className="h-10 w-10 text-primary" /> 更新日誌
-          </h1>
-          <p className="text-muted-foreground text-lg font-medium">紀錄 P+Carder 的成長軌跡與技術革新。</p>
+          <div className="flex items-center gap-3">
+            <div className="w-[3px] h-9 rounded-full bg-gradient-to-b from-amber-200 via-amber-400 to-amber-700" />
+            <h1 className="font-headline text-3xl sm:text-4xl font-black tracking-tight text-white flex items-center gap-3">
+              <History className="h-9 w-9 text-[#FDE68A]" /> 更新日誌
+            </h1>
+          </div>
+          <p className="text-slate-400 text-base sm:text-lg font-medium">紀錄 P+Carder 的成長軌跡與技術革新。</p>
         </div>
-        <Badge variant="outline" className="h-8 px-4 font-code text-base border-primary/30 text-primary bg-primary/5 shadow-[0_0_15px_rgba(6,182,212,0.2)]">
+        <Badge variant="outline" className="h-9 px-4 font-code text-sm border-amber-300/40 text-[#FDE68A] bg-amber-400/10 rounded-full tabular-nums">
           CURRENT VER: {currentVersion}
         </Badge>
       </div>
 
       <div className="space-y-6 md:space-y-8 relative z-10">
-        <div className="absolute left-[19px] top-4 bottom-4 w-px bg-white/10 hidden md:block" />
+        <div className="absolute left-[19px] top-4 bottom-4 w-px bg-white/[0.08] hidden md:block" />
 
         {changelogData.map((item, index) => {
           const Icon = typeIcons[item.type as keyof typeof typeIcons] || Bug;
+          const isLatest = index === 0;
           return (
-            <div key={item.version} className="relative md:pl-12 group animate-fade-in-up" style={{ animationDelay: `${index * 80}ms` }}>
-              <div className="absolute left-0 top-2 w-10 h-10 rounded-full bg-slate-950 border-2 border-cyan-500/30 items-center justify-center hidden md:flex group-hover:border-cyan-400 group-hover:shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-all z-10">
-                <Icon className={cn("h-5 w-5", 
-                    item.type === 'feature' ? 'text-cyan-400' : 
-                    item.type === 'fix' ? 'text-emerald-400' : 
-                    item.type === 'ui' ? 'text-purple-400' : 
-                    item.type === 'seo' ? 'text-amber-400' : 'text-red-400')} />
+            <div key={item.version} className="relative md:pl-12 group animate-fade-in-up" style={{ animationDelay: `${index * 60}ms` }}>
+              <div className={cn(
+                "absolute left-0 top-2 w-10 h-10 rounded-full bg-[#0a0f1c] border items-center justify-center hidden md:flex transition-all z-10",
+                isLatest
+                  ? "border-amber-300/65 shadow-[0_0_20px_rgba(251,191,36,0.22)]"
+                  : "border-white/[0.12] group-hover:border-amber-300/50"
+              )}>
+                <Icon className={cn("h-5 w-5", isLatest ? "text-[#FDE68A]" : "text-amber-300/80")} />
               </div>
 
-              <Card className="bg-gradient-to-b from-[#13192a]/90 via-[#0c101d]/90 to-[#080b14]/90 backdrop-blur-2xl border-white/10 hover:border-cyan-500/40 hover:shadow-[0_0_25px_rgba(6,182,212,0.15)] transition-all duration-300 rounded-3xl shadow-xl overflow-hidden">
+              <Card className={cn(
+                "bg-[#0a0f1c]/95 backdrop-blur-2xl border transition-all duration-300 rounded-2xl shadow-[0_24px_64px_rgba(0,0,0,0.85)] overflow-hidden relative",
+                isLatest
+                  ? "border-amber-300/45 border-t-2 border-t-amber-300/70"
+                  : "border-white/[0.08] hover:border-amber-300/35"
+              )}>
                 <CardHeader className="p-5 sm:p-6 md:p-7 pb-3">
                   <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                       <Badge className={cn("px-2.5 py-0.5 font-black uppercase tracking-widest text-[10px] rounded-full border", typeStyles[item.type as keyof typeof typeStyles])}>
                         {item.type === 'seo' ? 'Search Engine' : item.type}
                       </Badge>
+                      {isLatest && (
+                        <Badge className="px-2.5 py-0.5 font-black text-[10px] rounded-full bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] border-0">
+                          LATEST
+                        </Badge>
+                      )}
                     </div>
-                    <span className="text-sm sm:text-base font-black font-code text-cyan-400/80 group-hover:text-cyan-300 transition-colors">
+                    <span className="text-sm sm:text-base font-black font-code text-[#FDE68A] tabular-nums">
                       VER {item.version}
                     </span>
                   </div>
@@ -211,7 +238,7 @@ export default function ChangeLogPage() {
                   <ul className="space-y-2.5">
                     {item.changes.map((change, i) => (
                       <li key={i} className="flex items-start gap-3 text-slate-300 leading-relaxed text-sm font-medium">
-                        <div className="h-1.5 w-1.5 rounded-full bg-cyan-400 mt-2 shrink-0 shadow-[0_0_8px_rgba(6,182,212,1)]" />
+                        <div className="h-1.5 w-1.5 rounded-full bg-amber-300 mt-2 shrink-0" />
                         <span>{change}</span>
                       </li>
                     ))}
@@ -223,9 +250,9 @@ export default function ChangeLogPage() {
         })}
       </div>
 
-      <div className="mt-20 text-center space-y-4 py-12 border-t border-white/5 relative z-10">
-        <p className="text-muted-foreground font-medium italic">感謝您的支持，我們會持續進化，打造最完美的收藏殿堂。</p>
-        <Button asChild variant="outline" className="rounded-xl border-primary/30 text-primary hover:bg-primary/5 font-bold h-12 px-8">
+      <div className="mt-16 text-center space-y-4 py-10 border-t border-white/[0.08] relative z-10">
+        <p className="text-slate-400 font-medium">感謝您的支持，我們會持續進化，打造最純粹透明的收藏殿堂。</p>
+        <Button asChild className="rounded-xl bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] font-black h-11 px-8 hover:brightness-105">
           <Link href="/">回首頁開始收藏之旅</Link>
         </Button>
       </div>

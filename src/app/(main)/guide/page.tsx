@@ -36,13 +36,14 @@ import { PPlusIcon, DiamondIcon } from '@/components/icons';
 import { GUIDE_STEPS, CORE_PILLARS, FAQ_LIST } from '@/data/guide-data';
 
 const FAQ_TAG_THEMES: Record<string, { badge: string; border: string; glow: string; text: string }> = {
-  '點數體系': { badge: 'bg-amber-500/15 text-amber-300 border-amber-500/30', border: 'border-amber-500/40', glow: 'from-amber-500/20', text: 'text-amber-300' },
-  '卡片處理': { badge: 'bg-rose-500/15 text-rose-300 border-rose-500/30', border: 'border-rose-500/40', glow: 'from-rose-500/20', text: 'text-rose-300' },
-  '出貨與運費': { badge: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30', border: 'border-emerald-500/40', glow: 'from-emerald-500/20', text: 'text-emerald-300' },
-  '資金保障': { badge: 'bg-blue-500/15 text-blue-300 border-blue-500/30', border: 'border-blue-500/40', glow: 'from-blue-500/20', text: 'text-blue-300' },
-  '斷線保護': { badge: 'bg-purple-500/15 text-purple-300 border-purple-500/30', border: 'border-purple-500/40', glow: 'from-purple-500/20', text: 'text-purple-300' },
-  '新客須知': { badge: 'bg-yellow-500/15 text-yellow-300 border-yellow-500/30', border: 'border-yellow-500/40', glow: 'from-yellow-500/20', text: 'text-yellow-300' },
-  '公平保證': { badge: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30', border: 'border-cyan-500/40', glow: 'from-cyan-500/20', text: 'text-cyan-300' },
+  '玩法介紹': { badge: 'bg-amber-400/15 text-[#FDE68A] border-amber-300/35', border: 'border-amber-300/40', glow: 'from-amber-300/30', text: 'text-[#FDE68A]' },
+  '點數體系': { badge: 'bg-amber-400/15 text-amber-200 border-amber-300/30', border: 'border-amber-300/35', glow: 'from-amber-300/25', text: 'text-amber-200' },
+  '卡片處理': { badge: 'bg-white/[0.06] text-amber-200 border-white/[0.12]', border: 'border-white/[0.12]', glow: 'from-amber-300/20', text: 'text-amber-200' },
+  '出貨與運費': { badge: 'bg-emerald-400/15 text-emerald-300 border-emerald-400/30', border: 'border-emerald-400/30', glow: 'from-emerald-400/20', text: 'text-emerald-300' },
+  '資金保障': { badge: 'bg-white/[0.06] text-slate-200 border-white/[0.12]', border: 'border-white/[0.12]', glow: 'from-amber-300/20', text: 'text-slate-200' },
+  '斷線保護': { badge: 'bg-white/[0.06] text-slate-200 border-white/[0.12]', border: 'border-white/[0.12]', glow: 'from-amber-300/20', text: 'text-slate-200' },
+  '新客須知': { badge: 'bg-amber-400/15 text-[#FDE68A] border-amber-300/30', border: 'border-amber-300/35', glow: 'from-amber-300/25', text: 'text-[#FDE68A]' },
+  '公平保證': { badge: 'bg-emerald-400/15 text-emerald-300 border-emerald-400/30', border: 'border-emerald-400/35', glow: 'from-emerald-400/25', text: 'text-emerald-300' },
 };
 
 export default function BeginnerGuidePage() {
@@ -63,7 +64,7 @@ export default function BeginnerGuidePage() {
     return matchesSearch && matchesCategory;
   });
 
-  const categories = ['all', '點數體系', '卡片處理', '出貨與運費', '資金保障', '斷線保護', '新客須知', '公平保證'];
+  const categories = ['all', '玩法介紹', '點數體系', '卡片處理', '出貨與運費', '資金保障', '斷線保護', '新客須知', '公平保證'];
 
   const checkFaqScroll = () => {
     if (!faqCarouselRef.current) return;
@@ -115,44 +116,48 @@ export default function BeginnerGuidePage() {
 
   return (
     <div className="min-h-screen text-slate-100 pb-28 pt-4 sm:pt-8 relative overflow-hidden">
-      {/* 頂部賽博氛圍光暈 */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-[400px] bg-gradient-to-b from-amber-500/10 via-cyan-500/5 to-transparent blur-[140px] pointer-events-none" />
+      {/* 頂部香檳金微光 */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-[360px] bg-amber-400/10 blur-[140px] pointer-events-none" />
 
       <div className="container max-w-6xl mx-auto px-4 sm:px-6 relative z-10 space-y-10 sm:space-y-16">
         
         {/* ================= HERO BANNER ================= */}
         <div className="text-center space-y-4 pt-4 sm:pt-8 max-w-3xl mx-auto">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/10 border border-amber-300/30 text-[11px] font-bold text-[#FDE68A]">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>P+CARDER 玩法與公平百科</span>
+          </div>
           <h1 className="text-3xl sm:text-5xl font-black font-headline tracking-tight text-white">
             新手玩法指南與常見問題
           </h1>
 
-          <p className="text-sm sm:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed">
-            一篇掌握點數規則、個人數位收藏庫保存、實體保險出貨與公開公平驗證機制。
+          <p className="text-sm sm:text-base text-slate-400 max-w-2xl mx-auto leading-relaxed">
+            一篇掌握五色一番賞、拼卡對戰、看盤明細機率、買回轉點規則與公開公平驗證機制。
           </p>
 
           {/* 快速捷徑列 */}
           <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
             <a 
               href="#flow-example" 
-              className="px-3.5 py-1.5 rounded-xl bg-slate-900/90 border border-white/10 hover:border-amber-400/40 text-xs font-bold text-slate-300 hover:text-amber-300 transition-all"
+              className="px-3.5 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.08] hover:border-amber-300/45 text-xs font-bold text-slate-300 hover:text-[#FDE68A] transition-all"
             >
               6 步完整流程
             </a>
             <a 
               href="#core-questions" 
-              className="px-3.5 py-1.5 rounded-xl bg-slate-900/90 border border-white/10 hover:border-cyan-400/40 text-xs font-bold text-slate-300 hover:text-cyan-300 transition-all"
+              className="px-3.5 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.08] hover:border-amber-300/45 text-xs font-bold text-slate-300 hover:text-[#FDE68A] transition-all"
             >
               實體卡與收藏庫
             </a>
             <a 
               href="#fairness-section" 
-              className="px-3.5 py-1.5 rounded-xl bg-emerald-950/40 border border-emerald-500/40 hover:border-emerald-400 text-xs font-bold text-emerald-300 hover:text-emerald-200 transition-all"
+              className="px-3.5 py-1.5 rounded-full bg-emerald-400/10 border border-emerald-400/30 hover:border-emerald-400/60 text-xs font-bold text-emerald-300 hover:text-emerald-200 transition-all"
             >
               公開公平驗證
             </a>
             <a 
               href="#faq-section" 
-              className="px-3.5 py-1.5 rounded-xl bg-slate-900/90 border border-white/10 hover:border-rose-400/40 text-xs font-bold text-slate-300 hover:text-rose-300 transition-all"
+              className="px-3.5 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.08] hover:border-amber-300/45 text-xs font-bold text-slate-300 hover:text-[#FDE68A] transition-all"
             >
               常見問題字卡
             </a>
@@ -160,8 +165,8 @@ export default function BeginnerGuidePage() {
         </div>
 
         {/* ================= 視覺化新手四步圖解指南 ================= */}
-        <section className="rounded-3xl overflow-hidden border border-amber-500/35 bg-gradient-to-b from-[#181120] to-slate-950 shadow-[0_15px_40px_rgba(0,0,0,0.8)] relative group">
-          <div className="relative w-full aspect-[16/9] max-h-[460px] bg-slate-900">
+        <section className="rounded-2xl overflow-hidden border border-white/[0.08] border-t-2 border-t-amber-300/65 bg-[#0a0f1c] shadow-[0_24px_64px_rgba(0,0,0,0.85)] relative group">
+          <div className="relative w-full aspect-[16/9] max-h-[460px] bg-[#070b14]">
             <Image 
               src="/assets/images/beginner-tutorial-guide.jpg"
               alt="P+Carder 新手全景玩法圖解指南"
@@ -172,9 +177,9 @@ export default function BeginnerGuidePage() {
               referrerPolicy="no-referrer"
             />
           </div>
-          <div className="p-4 sm:p-5 bg-slate-950/90 border-t border-white/10 flex items-center justify-between gap-3 flex-wrap">
-            <span className="text-xs sm:text-sm font-bold text-amber-300">
-              核心流程：1. 挑選福袋卡包 · 2. 存入個人數位收藏庫 · 3. 專業防潮保護 · 4. 實體保險包裝宅配到府
+          <div className="p-4 sm:p-5 bg-[#0a0f1c]/95 border-t border-white/[0.08] flex items-center justify-between gap-3 flex-wrap">
+            <span className="text-xs sm:text-sm font-bold text-[#FDE68A]">
+              核心流程：1. 挑選五色一番賞 / 卡池 · 2. 存入數位收藏庫 · 3. 24H 恆溫防潮保護 · 4. 專業宅配或一鍵轉點
             </span>
             <span className="text-xs text-slate-400 hidden sm:inline">實體現貨在庫 · 恆溫防潮保存</span>
           </div>
@@ -200,21 +205,21 @@ export default function BeginnerGuidePage() {
               return (
                 <div
                   key={step.step}
-                  className="relative rounded-3xl p-5 bg-gradient-to-b from-[#111726]/90 via-[#0a0f1d]/90 to-[#070b14] border border-white/10 hover:border-amber-400/40 shadow-lg hover:shadow-[0_8px_30px_rgba(245,158,11,0.15)] transition-all group flex flex-col justify-between"
+                  className="relative rounded-2xl p-5 bg-[#0a0f1c] border border-white/[0.08] hover:border-amber-300/45 shadow-[0_16px_40px_rgba(0,0,0,0.6)] transition-all group flex flex-col justify-between"
                 >
                   <div>
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-xs font-bold font-code px-2.5 py-0.5 rounded-lg bg-amber-500/10 text-amber-300 border border-amber-500/30">
-                        0{step.step}
+                      <span className="text-xs font-bold font-code px-2.5 py-0.5 rounded-full bg-amber-400/10 text-[#FDE68A] border border-amber-300/35 tabular-nums">
+                        {step.step}
                       </span>
                       <span className="text-xs font-medium text-slate-400">{step.tag}</span>
                     </div>
 
                     <div className="flex items-center gap-3 mb-3">
-                      <div className={cn("w-10 h-10 rounded-xl bg-gradient-to-br flex items-center justify-center text-slate-950 shadow-md shrink-0", step.color)}>
+                      <div className={cn("w-10 h-10 rounded-xl bg-gradient-to-br flex items-center justify-center text-[#120d02] shadow-md shrink-0", step.color)}>
                         <Icon className="w-5 h-5" />
                       </div>
-                      <h3 className="text-base sm:text-lg font-bold font-headline text-white group-hover:text-amber-200 transition-colors">
+                      <h3 className="text-base sm:text-lg font-bold font-headline text-white group-hover:text-[#FDE68A] transition-colors">
                         {step.title}
                       </h3>
                     </div>
@@ -229,18 +234,18 @@ export default function BeginnerGuidePage() {
           </div>
 
           {/* 流程總結提示框 */}
-          <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-950/40 via-slate-900/90 to-cyan-950/40 border border-amber-400/30 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
+          <div className="p-4 sm:p-5 rounded-2xl bg-[#0a0f1c] border border-amber-300/35 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-[0_20px_50px_rgba(0,0,0,0.75)]">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center shrink-0 font-black shadow-md">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FDE68A] to-amber-400 text-[#120d02] flex items-center justify-center shrink-0 font-black shadow-md">
                 ✦
               </div>
               <div className="text-xs sm:text-sm">
-                <span className="text-amber-300 font-black block">卡友至上原則：不喜歡的卡片絕對不浪費！</span>
-                <span className="text-slate-300">每一張抽出的卡片皆有保底折現值，不想寄送可瞬間轉換為 P+ 點數繼續抽。</span>
+                <span className="text-[#FDE68A] font-black block">卡友至上原則：不喜歡的卡片絕對不浪費！</span>
+                <span className="text-slate-300">球員普／特卡固定 40 鑽買回，其他卡片享「8 折回收＋會員階級回饋 % 數 P 點」即時入帳！</span>
               </div>
             </div>
 
-            <Button asChild className="h-10 px-5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black text-xs shadow-md shrink-0">
+            <Button asChild className="h-10 px-5 rounded-xl bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 hover:brightness-105 text-[#120d02] font-black text-xs shadow-md shrink-0">
               <Link href="/draw">
                 <span>前往卡池親自體驗</span>
                 <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
@@ -552,29 +557,29 @@ export default function BeginnerGuidePage() {
         </section>
 
         {/* ================= BOTTOM CTA BANNER ================= */}
-        <section className="p-6 sm:p-10 rounded-3xl bg-gradient-to-r from-amber-950/40 via-slate-900 to-[#120a1c] border border-amber-500/30 text-center space-y-4 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden">
-          <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_15px_#f59e0b]" />
+        <section className="p-6 sm:p-10 rounded-2xl bg-[#0a0f1c] border border-white/[0.08] border-t-2 border-t-amber-300/65 text-center space-y-4 shadow-[0_24px_64px_rgba(0,0,0,0.85)] relative overflow-hidden">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-80 h-24 bg-amber-400/10 blur-2xl pointer-events-none" />
           
-          <div className="max-w-2xl mx-auto space-y-2">
+          <div className="max-w-2xl mx-auto space-y-2 relative z-10">
             <h3 className="text-xl sm:text-3xl font-black font-headline text-white">
               準備好開啟您的第一包正版球員卡了嗎？
             </h3>
-            <p className="text-xs sm:text-sm text-slate-300">
-              全站卡池均具備開獎防衝撞保護，支援一番賞自由挑籤號碼，立即展開收藏之旅！
+            <p className="text-xs sm:text-sm text-slate-400">
+              全站卡池均具備開獎防衝撞保護，支援五色一番賞自由挑籤與看盤明細機率披露，立即展開收藏之旅！
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-            <Button asChild size="lg" className="h-12 px-7 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 font-black shadow-lg shadow-amber-500/20 hover:brightness-110 active:scale-95 transition-all">
+          <div className="flex flex-wrap items-center justify-center gap-3 pt-2 relative z-10">
+            <Button asChild size="lg" className="h-12 px-7 rounded-xl bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] font-black shadow-lg hover:brightness-105 active:scale-95 transition-all">
               <Link href="/draw">
-                <Sparkles className="w-4 h-4 mr-2 fill-slate-950" />
+                <Sparkles className="w-4 h-4 mr-2 fill-[#120d02]" />
                 立即前往卡池大廳
               </Link>
             </Button>
 
-            <Button asChild variant="outline" size="lg" className="h-12 px-6 rounded-2xl border-white/20 bg-slate-900/80 text-white hover:bg-white/10 font-bold transition-all">
+            <Button asChild variant="outline" size="lg" className="h-12 px-6 rounded-xl border-white/[0.12] bg-white/[0.03] text-white hover:bg-white/[0.06] font-bold transition-all">
               <Link href="/collection">
-                <Layers className="w-4 h-4 mr-2 text-cyan-400" />
+                <Layers className="w-4 h-4 mr-2 text-[#FDE68A]" />
                 預先參觀我的收藏庫
               </Link>
             </Button>

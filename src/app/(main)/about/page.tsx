@@ -79,24 +79,24 @@ export default function AboutPage() {
       tag: '01 品牌起源',
       title: '那一聲清脆的撕裂，是藏家心中最純粹的悸動',
       icon: Heart,
-      accentColor: 'text-rose-400',
-      badgeBg: 'bg-rose-500/15 border-rose-500/30 text-rose-300',
+      accentColor: 'text-[#FDE68A]',
+      badgeBg: 'bg-amber-400/15 border-amber-300/35 text-[#FDE68A]',
     },
     {
       id: 'features',
       tag: '02 核心特色',
       title: '4 大核心優勢 · 打造極致玩卡信任體系',
       icon: ShieldCheck,
-      accentColor: 'text-cyan-400',
-      badgeBg: 'bg-cyan-500/15 border-cyan-500/30 text-cyan-300',
+      accentColor: 'text-[#FDE68A]',
+      badgeBg: 'bg-amber-400/15 border-amber-300/35 text-[#FDE68A]',
     },
     {
       id: 'vision',
       tag: '03 品牌願景',
       title: '讓收藏回歸熱愛，讓每一抽都充滿真實價值',
       icon: Sparkles,
-      accentColor: 'text-amber-400',
-      badgeBg: 'bg-amber-500/15 border-amber-500/30 text-amber-300',
+      accentColor: 'text-[#FDE68A]',
+      badgeBg: 'bg-amber-400/15 border-amber-300/35 text-[#FDE68A]',
     },
     {
       id: 'company',
@@ -104,42 +104,42 @@ export default function AboutPage() {
       title: '云希國際合法立案 · 官方專屬客服即時服務',
       icon: Building2,
       accentColor: 'text-emerald-400',
-      badgeBg: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300',
+      badgeBg: 'bg-emerald-400/15 border-emerald-400/35 text-emerald-300',
     },
     {
       id: 'terms',
       tag: '05 權益保障',
       title: '消保透明承諾 · 藏家消費與實體寄送權益',
       icon: Scale,
-      accentColor: 'text-purple-400',
-      badgeBg: 'bg-purple-500/15 border-purple-500/30 text-purple-300',
+      accentColor: 'text-[#FDE68A]',
+      badgeBg: 'bg-amber-400/15 border-amber-300/35 text-[#FDE68A]',
     },
   ];
 
   const coreFeatures = [
     {
       icon: ShieldCheck,
-      title: "絕對公平與機率公開",
-      desc: "堅持所有卡池與賞項機率100%公開透明，讓每一次抽卡都經得起驗證。",
-      color: "text-cyan-400 bg-cyan-500/10 border-cyan-500/30"
+      title: "絕對公平與看盤透明",
+      desc: "卡池「看盤明細」100% 公開五色卡包剩餘張數與抽取機率，並採 Provably Fair 密碼學驗證。",
+      color: "text-[#FDE68A] bg-amber-400/10 border-amber-300/30"
     },
     {
       icon: Award,
-      title: "正版品質保證",
-      desc: "嚴選全球官方授權球員卡與珍稀評級卡，每一張皆為值得典藏的資產。",
-      color: "text-amber-400 bg-amber-500/10 border-amber-500/30"
+      title: "100% 實體現貨在庫",
+      desc: "嚴選全球官方授權球員卡與珍稀評級卡，全站卡片皆實體入庫存放於 24H 恆溫防潮金庫。",
+      color: "text-[#FDE68A] bg-amber-400/10 border-amber-300/30"
     },
     {
       icon: Truck,
-      title: "實體寄送與靈活轉換",
-      desc: "抽中即可選擇申請安全實體包裹寄送到府，或靈活 Buy Back 換取 P 點。",
-      color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/30"
+      title: "實體寄送與階級加碼回收",
+      desc: "支援專業防震宅配到府；球員普/特卡 40 鑽買回，其他卡片享「8 折回收＋會員階級回饋 % 數 P 點」。",
+      color: "text-emerald-400 bg-emerald-400/10 border-emerald-400/30"
     },
     {
       icon: Zap,
-      title: "多元多元玩法體驗",
-      desc: "包含即時單抽、直播團拆 (Group Break)、幸運福袋與拼卡競技殿堂。",
-      color: "text-purple-400 bg-purple-500/10 border-purple-500/30"
+      title: "五大多元玩法體驗",
+      desc: "涵蓋 GodPack 五色一番賞、經典主題抽卡、1/10 幸運拼卡、直播團拆 (Group Break) 與幸運福袋。",
+      color: "text-[#FDE68A] bg-amber-400/10 border-amber-300/30"
     }
   ];
 
@@ -179,16 +179,15 @@ export default function AboutPage() {
 
   return (
     <div className="container max-w-5xl py-6 md:py-10 space-y-6 relative overflow-hidden select-none">
-      {/* 背景光暈效果 */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-cyan-500/10 blur-[130px] pointer-events-none rounded-full" />
-      <div className="absolute top-[40%] right-[-10%] w-[400px] h-[250px] bg-amber-500/10 blur-[120px] pointer-events-none rounded-full" />
+      {/* 背景香檳金微光效果 */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[560px] h-[260px] bg-amber-400/10 blur-[130px] pointer-events-none rounded-full" />
 
       {/* 頂部 Hero 簡短標題 */}
       <div className="text-center space-y-2 relative z-10 max-w-2xl mx-auto">
-        <h1 className="font-headline text-2xl sm:text-4xl md:text-5xl font-black tracking-tight text-white drop-shadow-[0_0_20px_rgba(6,182,212,0.35)]">
-          關於 <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-200 to-amber-300">P+CARDER</span>
+        <h1 className="font-headline text-2xl sm:text-4xl md:text-5xl font-black tracking-tight text-white">
+          關於 <span className="text-[#FDE68A]">P+CARDER</span>
         </h1>
-        <p className="text-slate-300 text-xs sm:text-sm font-medium">
+        <p className="text-slate-400 text-xs sm:text-sm font-medium">
           熱愛球員卡的藏家榮耀殿堂 · 點選或左右滑動瀏覽字卡
         </p>
       </div>
@@ -204,10 +203,10 @@ export default function AboutPage() {
               type="button"
               onClick={() => setActiveTab(idx)}
               className={cn(
-                "px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 border cursor-pointer",
+                "px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 border cursor-pointer",
                 isActive
-                  ? "bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-300 border-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.3)] scale-105"
-                  : "bg-slate-900/80 text-slate-400 hover:text-slate-200 border-slate-800 hover:border-slate-700"
+                  ? "bg-gradient-to-r from-amber-400/20 to-amber-300/10 text-[#FDE68A] border-amber-300/60 shadow-sm"
+                  : "bg-white/[0.03] text-slate-400 hover:text-slate-200 border-white/[0.08] hover:border-white/[0.18]"
               )}
             >
               <Icon className={cn("w-3.5 h-3.5", isActive ? card.accentColor : "text-slate-400")} />
@@ -228,7 +227,7 @@ export default function AboutPage() {
         <button
           type="button"
           onClick={handlePrev}
-          className="absolute -left-2 sm:-left-4 z-30 p-2 sm:p-2.5 rounded-full bg-slate-950/80 hover:bg-slate-900 border border-slate-800 text-cyan-400 hover:text-white transition-all shadow-xl hover:scale-110 active:scale-95 cursor-pointer backdrop-blur-md"
+          className="absolute -left-2 sm:-left-4 z-30 p-2 sm:p-2.5 rounded-full bg-[#0a0f1c]/90 hover:bg-[#0a0f1c] border border-white/[0.12] hover:border-amber-300/50 text-[#FDE68A] hover:text-white transition-all shadow-xl hover:scale-105 active:scale-95 cursor-pointer backdrop-blur-md"
           aria-label="上一個字卡"
         >
           <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -238,7 +237,7 @@ export default function AboutPage() {
         <button
           type="button"
           onClick={handleNext}
-          className="absolute -right-2 sm:-right-4 z-30 p-2 sm:p-2.5 rounded-full bg-slate-950/80 hover:bg-slate-900 border border-slate-800 text-cyan-400 hover:text-white transition-all shadow-xl hover:scale-110 active:scale-95 cursor-pointer backdrop-blur-md"
+          className="absolute -right-2 sm:-right-4 z-30 p-2 sm:p-2.5 rounded-full bg-[#0a0f1c]/90 hover:bg-[#0a0f1c] border border-white/[0.12] hover:border-amber-300/50 text-[#FDE68A] hover:text-white transition-all shadow-xl hover:scale-105 active:scale-95 cursor-pointer backdrop-blur-md"
           aria-label="下一個字卡"
         >
           <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -253,26 +252,26 @@ export default function AboutPage() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -25 }}
               transition={{ duration: 0.25, ease: 'easeOut' }}
-              className="w-full rounded-3xl bg-gradient-to-b from-slate-900/90 via-slate-950/95 to-black border border-cyan-500/25 p-5 sm:p-7 md:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.8)] backdrop-blur-2xl relative overflow-hidden"
+              className="w-full rounded-2xl bg-[#0a0f1c]/95 border border-white/[0.08] border-t-2 border-t-amber-300/65 p-5 sm:p-7 md:p-8 shadow-[0_24px_64px_rgba(0,0,0,0.85)] backdrop-blur-2xl relative overflow-hidden"
             >
-              {/* 卡片頂部光條飾邊 */}
-              <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-400/80 to-transparent shadow-[0_0_12px_#22d3ee]" />
+              {/* 頂部柔和香檳金光暈 */}
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-16 bg-amber-400/10 blur-2xl pointer-events-none" />
 
               {/* 卡片頂部編號與標題欄 */}
-              <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-white/10 mb-4">
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-white/[0.08] mb-4 relative z-10">
                 <div className="flex items-center gap-2">
                   <span className={cn("text-xs font-mono font-bold px-2.5 py-0.5 rounded-full border shadow-sm", cards[activeTab].badgeBg)}>
                     {cards[activeTab].tag}
                   </span>
-                  <span className="text-[11px] text-slate-400 font-medium">
+                  <span className="text-[11px] text-slate-400 font-medium tabular-nums">
                     {activeTab + 1} / {totalCards}
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 text-xs text-slate-400">
                   <span>左右橫移字卡</span>
                   <div className="flex gap-1">
-                    <ChevronLeft className="w-3.5 h-3.5 text-cyan-400" />
-                    <ChevronRight className="w-3.5 h-3.5 text-cyan-400" />
+                    <ChevronLeft className="w-3.5 h-3.5 text-[#FDE68A]" />
+                    <ChevronRight className="w-3.5 h-3.5 text-[#FDE68A]" />
                   </div>
                 </div>
               </div>

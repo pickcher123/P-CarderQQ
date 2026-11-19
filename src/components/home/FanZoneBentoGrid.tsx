@@ -80,7 +80,7 @@ export function FanZoneBentoGrid() {
     const usa: Exhibition[] = [];
 
     exhibitions.forEach(exh => {
-      const reg = exh.region || detectGlobalRegion(exh.title, exh.location);
+      const reg = exh.region || detectGlobalRegion(exh);
       if (reg === 'taiwan') taiwan.push(exh);
       else if (reg === 'asia') asia.push(exh);
       else if (reg === 'usa') usa.push(exh);
@@ -229,7 +229,7 @@ export function FanZoneBentoGrid() {
               <div className="space-y-2.5">
                 {displayedExhibitions.length > 0 ? (
                   displayedExhibitions.map((exh, idx) => {
-                    const reg = exh.region || detectGlobalRegion(exh.title, exh.location);
+                    const reg = exh.region || detectGlobalRegion(exh);
                     const flagBadge = reg === 'taiwan' ? '🇹🇼 台灣' : reg === 'asia' ? '🌏 亞洲' : '🇺🇸 美國';
                     const badgeColor = reg === 'taiwan' ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' :
                       reg === 'asia' ? 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30' :

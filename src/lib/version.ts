@@ -2,14 +2,14 @@ import type { SystemConfig, AppVersionConfig } from '@/types/system';
 
 /**
  * @fileOverview 全站版本編號管理
- * 預設版本為公測版 6.0，支援從後台 SystemConfig 動態即時切換「公測版 / 正式版」與自訂版本號。
+ * 預設版本為公測版 7.0，支援從後台 SystemConfig 動態即時切換「公測版 / 正式版」與自訂版本號。
  */
-export const DEFAULT_APP_VERSION = "公測版 6.0";
+export const DEFAULT_APP_VERSION = "公測版 7.0";
 
 export const DEFAULT_VERSION_CONFIG: AppVersionConfig = {
   stage: 'beta',
-  versionNumber: '6.0',
-  customDisplay: '公測版 6.0'
+  versionNumber: '7.0',
+  customDisplay: '公測版 7.0'
 };
 
 /**

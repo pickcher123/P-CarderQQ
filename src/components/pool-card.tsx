@@ -638,29 +638,45 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
 
                     {/* 頂部鋁箔熱壓密封板身 (圓潤柔和倒角與金曜漸層) */}
                     <div className={cn(
-                        "relative w-full px-3.5 py-2.5 bg-gradient-to-b from-[#1a1c26] via-[#10131d] to-[#0a0c14] border-x border-t border-amber-400/40 flex items-center justify-between",
+                        "relative w-full px-3 sm:px-3.5 py-2 bg-gradient-to-b from-[#1a1c26] via-[#10131d] to-[#0a0c14] border-x border-t border-amber-400/40 grid grid-cols-[1fr_auto_1fr] items-center gap-2",
                         isLastChance && "border-amber-400/60 bg-gradient-to-b from-amber-950/70 via-[#10131d] to-[#0a0c14]"
                     )}>
                         {/* 垂直細密柔和熱壓封口紋理 */}
                         <div className="absolute inset-0 bg-[repeating-linear-gradient(90deg,rgba(245,158,11,0.06)_0px,rgba(245,158,11,0.06)_1px,transparent_1px,transparent_5px)] pointer-events-none opacity-70" />
 
-                        {/* 左側微型柔和撕口提示 */}
-                        <div className="relative z-10 flex items-center gap-1 text-[8px] font-bold text-amber-300/80 tracking-wider">
-                            <span className="w-1 h-1 rounded-full bg-amber-400/70" />
-                            <span className="hidden sm:inline">PULL</span>
+                        {/* 左側：限定階級抽（無限定時顯示 PULL 撕口提示） */}
+                        <div className="relative z-10 flex items-center gap-1 justify-self-start min-w-0">
+                            {pool.minLevel && pool.minLevel !== '新手收藏家' ? (
+                                <span className="bg-white/[0.06] text-amber-200 border border-amber-300/35 font-bold text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full truncate max-w-full">
+                                    {pool.minLevel}限定
+                                </span>
+                            ) : (
+                                <div className="flex items-center gap-1 text-[8px] font-bold text-amber-300/80 tracking-wider">
+                                    <span className="w-1 h-1 rounded-full bg-amber-400/70" />
+                                    <span className="hidden sm:inline">PULL</span>
+                                </div>
+                            )}
                         </div>
 
                         {/* 中央柔和圓角歐規吊掛槽 (Soft Pill Slot) */}
-                        <div className="relative z-10 flex items-center justify-center">
-                            <div className="w-14 sm:w-16 h-2.5 rounded-full bg-slate-950/90 border border-white/20 shadow-[inset_0_1px_2px_rgba(0,0,0,0.8),0_0_8px_rgba(245,158,11,0.15)] flex items-center justify-center">
+                        <div className="relative z-10 flex items-center justify-center justify-self-center">
+                            <div className="w-12 sm:w-16 h-2.5 rounded-full bg-slate-950/90 border border-white/20 shadow-[inset_0_1px_2px_rgba(0,0,0,0.8),0_0_8px_rgba(245,158,11,0.15)] flex items-center justify-center">
                                 <div className="w-2.5 h-1 rounded-t-full border-t border-white/20 bg-black/50 -mt-0.5" />
                             </div>
                         </div>
 
-                        {/* 右側微型柔和撕口提示 */}
-                        <div className="relative z-10 flex items-center gap-1 text-[8px] font-bold text-amber-300/80 tracking-wider">
-                            <span className="hidden sm:inline">OPEN</span>
-                            <span className="w-1 h-1 rounded-full bg-amber-400/70" />
+                        {/* 右側：每日限抽（無限抽時顯示 OPEN 撕口提示） */}
+                        <div className="relative z-10 flex items-center gap-1 justify-self-end min-w-0">
+                            {Number(pool.dailyLimit) > 0 ? (
+                                <span className="bg-white/[0.06] text-slate-200 border border-white/[0.15] font-mono font-bold text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full tabular-nums whitespace-nowrap">
+                                    每日限 {pool.dailyLimit} 抽
+                                </span>
+                            ) : (
+                                <div className="flex items-center gap-1 text-[8px] font-bold text-amber-300/80 tracking-wider">
+                                    <span className="hidden sm:inline">OPEN</span>
+                                    <span className="w-1 h-1 rounded-full bg-amber-400/70" />
+                                </div>
+                            )}
                         </div>
 
                         {/* 頂部密封條下緣柔和微折線 */}
@@ -764,90 +780,80 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                 {/* 內部核心內容 (提升至 z-10 確保文字與互動按鈕清晰) */}
                 <div className="relative z-10 flex flex-col justify-between flex-1 w-full">
                 {/* 📌 卡池標題與完整即時狀態 (讓客人第一時間清楚掌握卡池目前狀態) */}
-                <div className="mb-2 sm:mb-2.5 text-center">
+                <div className="mb-2.5 sm:mb-3 text-center">
                     {/* 頂部即時狀態指示徽章群 */}
-                    <div className="flex items-center justify-center gap-1.5 mb-1.5 flex-wrap">
+                    <div className="flex items-center justify-center gap-2 mb-2 flex-wrap px-1">
                         {/* 1. 核心營運與保護鎖定狀態 */}
                         {poolStatus.status === 'sold-out' ? (
-                            <Badge className="bg-rose-950/90 text-rose-300 border border-rose-500/60 font-black text-[10px] sm:text-[11px] px-2.5 py-0.5 shadow-sm flex items-center gap-1">
+                            <Badge className="bg-rose-950/90 text-rose-300 border border-rose-500/50 font-black text-[10px] sm:text-[11px] px-2.5 py-0.5 rounded-full shadow-sm flex items-center gap-1.5">
                                 <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
                                 <span>已全數售罄</span>
                             </Badge>
                         ) : poolStatus.status === 'locked' ? (
-                            <Badge className="bg-amber-950/90 text-amber-300 border border-amber-500/60 font-black text-[10px] sm:text-[11px] px-2.5 py-0.5 shadow-sm flex items-center gap-1 animate-pulse">
-                                <Lock className="w-3 h-3 text-amber-400" />
+                            <Badge className="bg-amber-950/90 text-[#FDE68A] border border-amber-300/50 font-black text-[10px] sm:text-[11px] px-2.5 py-0.5 rounded-full shadow-sm flex items-center gap-1.5 animate-pulse tabular-nums">
+                                <Lock className="w-3 h-3 text-[#FDE68A]" />
                                 <span>挑號保護中 ({poolStatus.message})</span>
                             </Badge>
                         ) : poolStatus.status === 'locked-by-me' ? (
-                            <Badge className="bg-emerald-950/90 text-emerald-300 border border-emerald-500/60 font-black text-[10px] sm:text-[11px] px-2.5 py-0.5 shadow-sm flex items-center gap-1">
+                            <Badge className="bg-emerald-950/90 text-emerald-300 border border-emerald-400/50 font-black text-[10px] sm:text-[11px] px-2.5 py-0.5 rounded-full shadow-sm flex items-center gap-1.5 tabular-nums">
                                 <Unlock className="w-3 h-3 text-emerald-400" />
                                 <span>您保留中 ({poolStatus.message})</span>
                             </Badge>
                         ) : poolStatus.status === 'not-started' ? (
-                            <Badge className="bg-sky-950/90 text-sky-300 border border-sky-500/60 font-black text-[10px] sm:text-[11px] px-2.5 py-0.5 shadow-sm flex items-center gap-1">
-                                <Clock className="w-3 h-3 text-sky-400" />
+                            <Badge className="bg-white/[0.06] text-slate-200 border border-white/[0.15] font-bold text-[10px] sm:text-[11px] px-2.5 py-0.5 rounded-full shadow-sm flex items-center gap-1.5 tabular-nums">
+                                <Clock className="w-3 h-3 text-[#FDE68A]" />
                                 <span>{poolStatus.message}</span>
                             </Badge>
                         ) : poolStatus.status === 'expired' ? (
-                            <Badge className="bg-slate-900/90 text-slate-400 border border-slate-700 font-bold text-[10px] sm:text-[11px] px-2.5 py-0.5">
+                            <Badge className="bg-white/[0.04] text-slate-400 border border-white/[0.1] font-bold text-[10px] sm:text-[11px] px-2.5 py-0.5 rounded-full">
                                 <span>卡池已結束</span>
                             </Badge>
                         ) : hybridStats.isSnipeAlert ? (
-                            <Badge className="bg-gradient-to-r from-amber-400 to-rose-500 text-slate-950 border-0 font-black text-[10px] sm:text-[11px] px-2.5 py-0.5 shadow-sm flex items-center gap-1 animate-pulse">
-                                <Flame className="w-3 h-3 fill-slate-950" />
-                                <span>🔥 尾盤高勝率狙擊中 (剩 {remainingPacks} 抽)</span>
+                            <Badge className="bg-gradient-to-r from-[#FDE68A] via-amber-300 to-rose-400 text-[#120d02] border-0 font-black text-[10px] sm:text-[11px] px-3 py-0.5 rounded-full shadow-sm flex items-center gap-1.5 tabular-nums">
+                                <Flame className="w-3 h-3 fill-[#120d02]" />
+                                <span>尾盤高勝率狙擊中 (剩 {remainingPacks} 抽)</span>
                             </Badge>
                         ) : isLastChance ? (
-                            <Badge className="bg-gradient-to-r from-amber-500 to-rose-500 text-slate-950 border-0 font-black text-[10px] sm:text-[11px] px-2.5 py-0.5 shadow-sm flex items-center gap-1 animate-pulse">
-                                <Flame className="w-3 h-3 fill-slate-950" />
-                                <span>🔥 搶包衝刺 (剩 {remainingPacks} 包)</span>
+                            <Badge className="bg-gradient-to-r from-[#FDE68A] via-amber-300 to-rose-400 text-[#120d02] border-0 font-black text-[10px] sm:text-[11px] px-3 py-0.5 rounded-full shadow-sm flex items-center gap-1.5 tabular-nums">
+                                <Flame className="w-3 h-3 fill-[#120d02]" />
+                                <span>搶包衝刺 (剩 {remainingPacks} 包)</span>
                             </Badge>
                         ) : null}
 
                         {/* 2. 頭獎在席即時狀況（盲盒與 GodPack 一番賞不透露個別卡片是否已開出） */}
                         {pool.isHybridBlindSpMode ? null : pool.isBlindBoxMode ? (
-                            <Badge className="bg-amber-400/15 text-[#FDE68A] border border-amber-300/40 font-bold text-[10px] px-2.5 py-0.5 flex items-center gap-1">
+                            <Badge className="bg-amber-400/15 text-[#FDE68A] border border-amber-300/40 font-bold text-[10px] px-2.5 py-0.5 rounded-full flex items-center gap-1">
                                 <Sparkles className="w-3 h-3 text-[#FDE68A]" />
                                 <span>神秘盲盒</span>
                             </Badge>
                         ) : legendaryRemainingCount > 0 ? (
-                            <Badge className="bg-amber-950/80 text-amber-300 border border-amber-500/40 font-bold text-[10px] px-2 py-0.5 flex items-center gap-1">
-                                <Trophy className="w-3 h-3 text-amber-400" />
+                            <Badge className="bg-amber-400/15 text-[#FDE68A] border border-amber-300/40 font-bold text-[10px] px-2.5 py-0.5 rounded-full flex items-center gap-1 tabular-nums">
+                                <Trophy className="w-3 h-3 text-[#FDE68A]" />
                                 <span>頭獎在席 (剩 {legendaryRemainingCount})</span>
                             </Badge>
                         ) : (pool.remainingPacks ?? 0) > 0 ? (
-                            <Badge className="bg-slate-900/80 text-slate-400 border border-slate-800 text-[10px] px-2 py-0.5">
+                            <Badge className="bg-white/[0.04] text-slate-400 border border-white/[0.1] text-[10px] px-2.5 py-0.5 rounded-full">
                                 <span>頭獎已開出</span>
                             </Badge>
                         ) : null}
 
                         {/* 3. 點數加倍活動 */}
                         {isMultiplierActive && (
-                            <Badge className="bg-amber-500 text-slate-950 border-0 font-black text-[10px] px-2 py-0.5 flex items-center gap-1 shadow-[0_0_8px_rgba(245,158,11,0.5)]">
-                                <Zap className="w-3 h-3 fill-slate-950" />
+                            <Badge className="bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] border-0 font-black text-[10px] px-2.5 py-0.5 rounded-full flex items-center gap-1 tabular-nums">
+                                <Zap className="w-3 h-3 fill-[#120d02]" />
                                 <span>點數 {pool.pointMultiplier} 倍加碼</span>
                             </Badge>
                         )}
 
-                        {/* 4. 年齡/活動/等級規則標籤 */}
-                        {pool.isAdult && (
-                            <span className="bg-rose-950/80 text-rose-300 border border-rose-500/40 font-bold text-[9px] px-1.5 py-0.2 rounded-full">
+                        {/* 4. 年齡/活動規則標籤 */}
+                        {Boolean(pool.isAdult) && (
+                            <span className="bg-rose-950/80 text-rose-300 border border-rose-500/40 font-bold text-[10px] px-2 py-0.5 rounded-full">
                                 18+
                             </span>
                         )}
-                        {pool.isEventPool && (
-                            <span className="bg-purple-950/80 text-purple-300 border border-purple-500/40 font-bold text-[9px] px-1.5 py-0.2 rounded-full">
+                        {Boolean(pool.isEventPool) && (
+                            <span className="bg-amber-400/12 text-[#FDE68A] border border-amber-300/35 font-bold text-[10px] px-2 py-0.5 rounded-full">
                                 活動限定
-                            </span>
-                        )}
-                        {pool.minLevel && pool.minLevel !== '新手收藏家' && (
-                            <span className="bg-blue-950/80 text-blue-300 border border-blue-500/40 font-bold text-[9px] px-1.5 py-0.2 rounded-full">
-                                {pool.minLevel}限定
-                            </span>
-                        )}
-                        {pool.dailyLimit && (
-                            <span className="bg-slate-900/80 text-slate-300 border border-slate-700 font-mono text-[9px] px-1.5 py-0.2 rounded-full">
-                                每日限{pool.dailyLimit}抽
                             </span>
                         )}
                     </div>
@@ -1443,7 +1449,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                 <div className="relative w-full shrink-0 z-20 pointer-events-none mt-auto rounded-b-2xl sm:rounded-b-3xl overflow-hidden">
                     {/* 底部熱壓密封板身 (圓潤柔和倒角) */}
                     <div className={cn(
-                        "relative w-full px-3.5 py-1.5 bg-gradient-to-t from-slate-800/90 via-slate-850/95 to-slate-900 border-x border-b border-amber-400/30 flex items-center justify-between",
+                        "relative w-full px-3.5 py-1.5 bg-gradient-to-t from-slate-800/90 via-slate-850/95 to-slate-900 border-x border-b border-amber-400/30 grid grid-cols-[1fr_auto_1fr] items-center",
                         isLastChance && "border-amber-400/50 bg-gradient-to-t from-amber-950/60 via-slate-850 to-slate-900"
                     )}>
                         {/* 頂緣金屬熱壓摺線 */}
@@ -1453,7 +1459,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                         <div className="absolute inset-0 bg-[repeating-linear-gradient(90deg,rgba(255,255,255,0.04)_0px,rgba(255,255,255,0.04)_1px,transparent_1px,transparent_5px)] pointer-events-none opacity-50" />
 
                         {/* 左側微型條碼 (Micro Barcode Lines) */}
-                        <div className="relative z-10 flex items-center gap-[1.5px] opacity-50">
+                        <div className="relative z-10 flex items-center gap-[1.5px] opacity-50 justify-self-start">
                             <span className="w-[1px] h-2.5 bg-slate-300" />
                             <span className="w-[2px] h-2.5 bg-slate-300" />
                             <span className="w-[1px] h-2.5 bg-slate-300" />
@@ -1464,7 +1470,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                         </div>
 
                         {/* 中央卡包正版官方認證印記 / 功能池模式標示 */}
-                        <div className="relative z-10 text-center">
+                        <div className="relative z-10 text-center justify-self-center whitespace-nowrap">
                             <span className="text-[8px] sm:text-[8.5px] font-bold text-[#FDE68A] tracking-[0.2em] uppercase font-mono drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
                                 {pool.isHybridBlindSpMode
                                     ? '✦ GODPACK 一番賞 ✦'
@@ -1475,7 +1481,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                         </div>
 
                         {/* 右側防偽標識 */}
-                        <div className="relative z-10 font-mono text-[7px] text-slate-400/80 font-bold tracking-wider">
+                        <div className="relative z-10 font-mono text-[7px] text-slate-400/80 font-bold tracking-wider justify-self-end">
                             VERIFIED
                         </div>
                     </div>
