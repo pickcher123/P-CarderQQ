@@ -76,15 +76,18 @@ import {
   CropBox, 
   ScannedCardItem, 
   cropImageFromSource, 
+  cropImageForAi,
   generateGridBoxes, 
   downloadCardsZip,
   compressImageForDetection,
   detectCardBoundariesLocally,
+  sortCropBoxes,
   removeTopLeftLabelFromImage,
   detectWhiteStickerBox,
   detectStickerAtPoint,
   safeLoadImage
 } from '@/lib/card-scanner-utils';
+import { InteractiveCropOverlay } from '@/components/admin/InteractiveCropOverlay';
 
 const CATEGORIES = ["籃球", "棒球", "足球", "女孩卡", "女優", "TCG", "其他"];
 const AREAS = [
@@ -216,11 +219,135 @@ export default function CardScannerProPage() {
     });
   };
 
-  // 當正面框數量或位置變化時，同步 cards 結構
+  // 依最新正面裁切框即時重新裁切預覽圖（支援僅重裁單一變動框，不影響其他已完成去貼紙的卡片）
+  const recropFrontPreviews = async (
+    boxesToCrop: CropBox[],
+    forceAll: boolean = true,
+    onlyBoxId?: string
+  ) => {
+    if (!frontImgRef.current) return;
+    const croppedMap = new Map<string, { preview: string; blob?: Blob }>();
+    for (let i = 0; i < boxesToCrop.length; i++) {
+      const box = boxesToCrop[i];
+      if (onlyBoxId && box.id !== onlyBoxId) continue;
+      try {
+        const res = await cropImageFromSource(frontImgRef.current, box);
+        croppedMap.set(box.id, { preview: res.dataUrl, blob: res.blob });
+      } catch (e) {
+        console.error('Front crop preview error:', e);
+      }
+    }
+    setCards((prevCards) =>
+      boxesToCrop.map((box, idx) => {
+        const existing = prevCards.find((c) => c.frontCropBox.id === box.id) || prevCards[idx];
+        const recropped = croppedMap.get(box.id);
+        const keepCleaned = !recropped
+          ? Boolean(existing?.hasRemovedSticker)
+          : !forceAll && Boolean(existing?.hasRemovedSticker && existing?.frontPreview);
+        return {
+          id: existing?.id || uuidv4(),
+          index: idx + 1,
+          frontCropBox: box,
+          frontPreview: keepCleaned ? existing?.frontPreview : recropped?.preview || existing?.frontPreview,
+          frontBlob: keepCleaned ? existing?.frontBlob : recropped?.blob || existing?.frontBlob,
+          backCropBox: existing?.backCropBox,
+          backPreview: existing?.backPreview,
+          backBlob: existing?.backBlob,
+          name: existing?.name || `卡片 #${idx + 1}`,
+          category: existing?.category || '籃球',
+          sellPrice: existing?.sellPrice || 100,
+          grade: existing?.grade || 'RAW',
+          rarity: existing?.rarity || '',
+          cardNumber: existing?.cardNumber || '',
+          features: existing?.features || [],
+          description: existing?.description || '',
+          targetArea: existing?.targetArea || 'all',
+          slabLabelText: existing?.slabLabelText || '',
+          certNumber: existing?.certNumber || '',
+          subgrades: existing?.subgrades || '',
+          formattedTitle: existing?.formattedTitle || '',
+          hasRemovedSticker: keepCleaned,
+          originalFrontBlob: keepCleaned ? existing?.originalFrontBlob : undefined,
+          originalFrontPreview: keepCleaned ? existing?.originalFrontPreview : undefined,
+          priceRange: existing?.priceRange || '',
+          priceRationale: existing?.priceRationale || '',
+        };
+      })
+    );
+  };
+
+  // 依最新背面裁切框即時重新裁切背面縮圖
+  const recropBackPreviews = async (boxesToCrop: CropBox[]) => {
+    if (!backImgRef.current) return;
+    const croppedResults: Array<{ preview: string; blob?: Blob }> = [];
+    for (let i = 0; i < boxesToCrop.length; i++) {
+      try {
+        const res = await cropImageFromSource(backImgRef.current, boxesToCrop[i]);
+        croppedResults.push({ preview: res.dataUrl, blob: res.blob });
+      } catch (e) {
+        console.error('Back crop preview error:', e);
+        croppedResults.push({ preview: '' });
+      }
+    }
+    setCards((prevCards) =>
+      prevCards.map((card, idx) => ({
+        ...card,
+        backCropBox: boxesToCrop[idx],
+        backPreview: croppedResults[idx]?.preview || undefined,
+        backBlob: croppedResults[idx]?.blob || undefined,
+      }))
+    );
+  };
+
+  // 新增手動裁切框
+  const handleAddCropBox = async (isFront: boolean) => {
+    const currentBoxes = isFront ? frontBoxes : backBoxes;
+    const offset = (currentBoxes.length % 5) * 3;
+    const newBox: CropBox = {
+      id: uuidv4(),
+      x: Math.min(68, 12 + offset),
+      y: Math.min(55, 10 + offset),
+      width: 26,
+      height: 38,
+      rotation: 0,
+    };
+    const nextBoxes = [...currentBoxes, newBox];
+    if (isFront) {
+      setFrontBoxes(nextBoxes);
+      setSelectedFrontBoxId(newBox.id);
+      await recropFrontPreviews(nextBoxes, false);
+    } else {
+      setBackBoxes(nextBoxes);
+      setSelectedBackBoxId(newBox.id);
+      await recropBackPreviews(nextBoxes);
+    }
+    toast({ title: `已新增${isFront ? '正面' : '背面'}裁切框 #${nextBoxes.length}`, description: '可直接拖曳框體與四邊角點微調大小與位置。' });
+  };
+
+  // 刪除指定裁切框
+  const handleDeleteCropBox = async (isFront: boolean, boxId: string) => {
+    const currentBoxes = isFront ? frontBoxes : backBoxes;
+    if (currentBoxes.length <= 1) {
+      toast({ variant: 'destructive', title: '至少需保留 1 個裁切框' });
+      return;
+    }
+    const nextBoxes = currentBoxes.filter((b) => b.id !== boxId);
+    if (isFront) {
+      setFrontBoxes(nextBoxes);
+      setSelectedFrontBoxId(nextBoxes[0]?.id || null);
+      await recropFrontPreviews(nextBoxes, false);
+    } else {
+      setBackBoxes(nextBoxes);
+      setSelectedBackBoxId(nextBoxes[0]?.id || null);
+      await recropBackPreviews(nextBoxes);
+    }
+  };
+
+  // 當正面框數量或位置變化時，同步 cards 結構（不覆蓋已生成的最新預覽）
   useEffect(() => {
     setCards((prevCards) => {
       return frontBoxes.map((box, idx) => {
-        const existing = prevCards[idx];
+        const existing = prevCards.find((c) => c.frontCropBox.id === box.id) || prevCards[idx];
         const backBox = backBoxes[idx];
         return {
           id: existing?.id || uuidv4(),
@@ -238,6 +365,7 @@ export default function CardScannerProPage() {
           rarity: existing?.rarity || '',
           cardNumber: existing?.cardNumber || '',
           features: existing?.features || [],
+          description: existing?.description || '',
           targetArea: existing?.targetArea || 'all',
           slabLabelText: existing?.slabLabelText || '',
           certNumber: existing?.certNumber || '',
@@ -256,40 +384,12 @@ export default function CardScannerProPage() {
   // 即時預覽重新採樣
   const refreshPreviews = async () => {
     if (!frontImgRef.current && !backImgRef.current) return;
-
-    const updated = [...cards];
-    for (let i = 0; i < updated.length; i++) {
-      // 裁切正面 (若卡片已去除貼紙且具備修復圖，則予以保留，避免被大圖覆蓋還原)
-      if (frontImgRef.current && updated[i].frontCropBox) {
-        if (!updated[i].hasRemovedSticker || !updated[i].frontPreview) {
-          try {
-            const { blob, dataUrl } = await cropImageFromSource(
-              frontImgRef.current,
-              updated[i].frontCropBox
-            );
-            updated[i].frontBlob = blob;
-            updated[i].frontPreview = dataUrl;
-          } catch (e) {
-            console.error('Front crop preview error:', e);
-          }
-        }
-      }
-
-      // 裁切背面
-      if (backImgRef.current && updated[i].backCropBox) {
-        try {
-          const { blob, dataUrl } = await cropImageFromSource(
-            backImgRef.current,
-            updated[i].backCropBox!
-          );
-          updated[i].backBlob = blob;
-          updated[i].backPreview = dataUrl;
-        } catch (e) {
-          console.error('Back crop preview error:', e);
-        }
-      }
+    if (frontImgRef.current && frontBoxes.length > 0) {
+      await recropFrontPreviews(frontBoxes, false);
     }
-    setCards(updated);
+    if (backImgRef.current && backBoxes.length > 0) {
+      await recropBackPreviews(backBoxes);
+    }
   };
 
   // 快速生成正面網格並立即為每張卡片精確重新裁切
@@ -338,28 +438,29 @@ export default function CardScannerProPage() {
     toast({ title: `已生成 ${rows}x${cols} 共 ${rows * cols} 張卡片裁切框` });
   };
 
-  // 一鍵複製正面框到背面
-  const copyFrontBoxesToBack = () => {
+  // 一鍵複製正面框到背面並立即重新裁切背面縮圖
+  const copyFrontBoxesToBack = async () => {
     if (frontBoxes.length === 0) return;
     const cloned = frontBoxes.map(b => ({ ...b, id: uuidv4() }));
     setBackBoxes(cloned);
     setSelectedBackBoxId(cloned[0]?.id || null);
-    toast({ title: '已將正面框同步至背面', description: '卡片編號已自動一對一對應！' });
+    await recropBackPreviews(cloned);
+    toast({ title: '已將正面框同步至背面', description: '卡片編號與背面縮圖已自動一對一對應！' });
   };
 
-  // 一鍵鏡像背面框（左右翻轉對調）
-  const mirrorBackBoxes = () => {
+  // 一鍵鏡像背面框（左右翻轉對調）並立即重新裁切背面縮圖
+  const mirrorBackBoxes = async () => {
     if (backBoxes.length === 0) return;
-    // 將每個框的 x 座標水平鏡像翻轉：newX = 100 - x - width
     const mirrored = backBoxes.map(b => ({
       ...b,
       x: Math.round((100 - b.x - b.width) * 10) / 10,
     }));
     setBackBoxes(mirrored);
+    await recropBackPreviews(mirrored);
     toast({ title: '已鏡像翻轉背面框', description: '解決正反面翻轉掃描時左右順序對調的問題！' });
   };
 
-  // 🌟 AI 自動偵測邊界框 (精準修復卡片 #1 抓到全圖的問題)
+  // 🌟 AI 自動偵測邊界框（使用 Gemini 4 原生 box_2d 精準定位，不再被本地演算法誤覆蓋）
   const runAiDetection = async (isFront: boolean) => {
     const imgRef = isFront ? frontImgRef : backImgRef;
     if (!imgRef.current) return;
@@ -368,10 +469,11 @@ export default function CardScannerProPage() {
     else setIsAiDetectingBack(true);
 
     try {
-      // 1. 輕量化壓縮至 1024px，避免超出 HTTP Body 限制或超時
-      const base64 = compressImageForDetection(imgRef.current, 1024);
+      // 1. 壓縮至 1536px 高清 JPEG（兼顧多卡邊緣清晰度與網路傳輸穩定性）
+      const base64 = compressImageForDetection(imgRef.current, 1536);
 
       let detectedBoxes: CropBox[] = [];
+      let cloudErrorMsg = '';
 
       try {
         const res = await fetch('/api/admin/scan-cards', {
@@ -380,61 +482,62 @@ export default function CardScannerProPage() {
           body: JSON.stringify({ image: base64, mode: 'detect' }),
         });
 
-        if (res.ok) {
-          const data = await res.json();
-          if (data.boxes && data.boxes.length > 0) {
-            const rawCount = data.boxes.length;
-            detectedBoxes = data.boxes
-              .map((b: any) => ({
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          cloudErrorMsg = data?.error || `雲端 AI 偵測失敗 (HTTP ${res.status})`;
+          console.error('Cloud AI detect error:', cloudErrorMsg);
+        } else if (Array.isArray(data.boxes) && data.boxes.length > 0) {
+          const rawCount = data.boxes.length;
+          detectedBoxes = data.boxes
+            .map((b: any) => {
+              const x = Math.max(0, Math.min(99, Math.round((Number(b.xmin) / 10) * 10) / 10));
+              const y = Math.max(0, Math.min(99, Math.round((Number(b.ymin) / 10) * 10) / 10));
+              const right = Math.max(x + 4, Math.min(100, Math.round((Number(b.xmax) / 10) * 10) / 10));
+              const bottom = Math.max(y + 4, Math.min(100, Math.round((Number(b.ymax) / 10) * 10) / 10));
+              return {
                 id: uuidv4(),
-                x: Math.max(0.5, Math.round((b.xmin / 10) * 10) / 10),
-                y: Math.max(0.5, Math.round((b.ymin / 10) * 10) / 10),
-                width: Math.max(5, Math.round(((b.xmax - b.xmin) / 10) * 10) / 10),
-                height: Math.max(6, Math.round(((b.ymax - b.ymin) / 10) * 10) / 10),
+                x,
+                y,
+                width: Math.round((right - x) * 10) / 10,
+                height: Math.round((bottom - y) * 10) / 10,
                 rotation: 0,
-              }))
-              // 僅過濾多卡時誤抓全圖的背景框，保留單張近拍大卡
-              .filter((b: CropBox) => {
-                if (b.width < 5 || b.height < 6) return false;
-                if (rawCount > 1 && b.width > 88 && b.height > 88) return false;
-                if (b.width > 98 && b.height > 98) return false;
-                return true;
-              });
-          }
+              };
+            })
+            .filter((b: CropBox) => {
+              if (b.width < 4 || b.height < 4) return false;
+              // 多卡時排除誤框整張掃描底板的超大框；單卡時保留滿版近拍卡
+              if (rawCount > 1 && b.width > 92 && b.height > 92) return false;
+              return true;
+            });
         }
-      } catch (apiErr) {
-        console.warn('Cloud AI detect failed, switching to local detector:', apiErr);
+      } catch (apiErr: any) {
+        cloudErrorMsg = apiErr?.message || '網路連線異常';
+        console.warn('Cloud AI detect request failed:', apiErr);
       }
 
-      // 2. 若雲端未能回傳有效框，或雲端僅回傳 <=1 框但本地邊界偵測出多張卡片（如 2x3 六卡掃描），採用本地多卡結果
+      // 2. 僅在雲端 AI 失敗或完全未偵測到卡片時才啟用本地備援（絕不覆蓋有效的雲端 AI 結果！）
       let usedLocalFallback = false;
-      if (detectedBoxes.length <= 1) {
-        const localBoxes = detectCardBoundariesLocally(imgRef.current);
-        if (detectedBoxes.length === 0 || localBoxes.length >= 2) {
-          detectedBoxes = localBoxes;
-          usedLocalFallback = true;
-        }
+      if (detectedBoxes.length === 0) {
+        detectedBoxes = detectCardBoundariesLocally(imgRef.current);
+        usedLocalFallback = true;
       }
+
+      // 3. 動態行分群排序（由上而下、同一排由左而右）
+      detectedBoxes = sortCropBoxes(detectedBoxes);
 
       if (usedLocalFallback) {
         toast({
-          title: '已啟用本地智慧邊緣對比偵測',
-          description: `成功分析並定位 ${detectedBoxes.length} 張卡片的獨立邊界。`,
+          variant: cloudErrorMsg ? 'destructive' : 'default',
+          title: cloudErrorMsg ? '雲端 AI 偵測異常，已切換本地邊緣偵測' : '已啟用本地智慧邊緣偵測',
+          description: cloudErrorMsg
+            ? `${cloudErrorMsg}。已先為您框出 ${detectedBoxes.length} 張卡片，您可直接拖曳邊框微調。`
+            : `已定位 ${detectedBoxes.length} 張卡片邊界，可直接拖曳邊框與角點微調。`,
         });
       } else {
         toast({
           title: `PRO AI 成功精準定位 ${detectedBoxes.length} 張卡片邊界`,
-          description: '已精準框選每張獨立卡片！',
-        });
-      }
-
-      // 🌟 幾何精準排序：依照上下排（Y 差距大於 12% 視為不同排），然後由左至右（X）排序
-      if (detectedBoxes.length > 1) {
-        detectedBoxes.sort((a, b) => {
-          if (Math.abs(a.y - b.y) > 12) {
-            return a.y - b.y;
-          }
-          return a.x - b.x;
+          description: '若需微調任一邊界，可直接拖曳畫布上的裁切框或四角控制點！',
         });
       }
 
@@ -442,46 +545,15 @@ export default function CardScannerProPage() {
         setFrontBoxes(detectedBoxes);
         setSelectedFrontBoxId(detectedBoxes[0]?.id || null);
 
-        // 🌟 關鍵修復：立即針對所有 detectedBoxes 執行裁切生成全新的 cards 陣列！
-        // 杜絕前次上傳時殘留的卡片 #1 全圖預覽，確保每張卡片在偵測當下立即展示真實裁切縮圖！
-        if (imgRef.current) {
-          const freshCards: ScannedCardItem[] = [];
-          for (let i = 0; i < detectedBoxes.length; i++) {
-            const box = detectedBoxes[i];
-            let frontPreview = '';
-            let frontBlob: Blob | undefined;
-            try {
-              const crop = await cropImageFromSource(imgRef.current, box);
-              frontPreview = crop.dataUrl;
-              frontBlob = crop.blob;
-            } catch (err) {
-              console.error('Crop preview generation error for box', i, err);
-            }
-
-            const existing = cards[i];
-            freshCards.push({
-              id: uuidv4(),
-              index: i + 1,
-              frontCropBox: box,
-              frontPreview,
-              frontBlob,
-              name: (existing && !existing.name.startsWith('卡片 #')) ? existing.name : `卡片 #${i + 1}`,
-              category: existing?.category || '籃球',
-              sellPrice: existing?.sellPrice || 100,
-              grade: existing?.grade || 'RAW',
-              targetArea: existing?.targetArea || 'all',
-              features: existing?.features || [],
-              hasRemovedSticker: false,
-            });
-          }
-          setCards(freshCards);
-        }
+        // 立即生成每張卡片的真實高清裁切預覽
+        await recropFrontPreviews(detectedBoxes, true);
 
         // SOP 流程前進至步驟 3 (PRO 智慧辨識全部)
         setCurrentSopStep(3);
       } else {
         setBackBoxes(detectedBoxes);
         setSelectedBackBoxId(detectedBoxes[0]?.id || null);
+        await recropBackPreviews(detectedBoxes);
         // 上傳並辨識背面完成後前進至步驟 6 (查詢卡價)
         setCurrentSopStep(6);
       }
@@ -502,16 +574,17 @@ export default function CardScannerProPage() {
     setCards(prev => prev.map((c, i) => i === index ? { ...c, isAiRecognizing: true } : c));
 
     try {
-      const { dataUrl } = await cropImageFromSource(frontImgRef.current, card.frontCropBox);
+      // 使用輕量高清 JPEG（<= 1280px）送給 AI，杜絕原始大尺寸 PNG 導致 413 傳輸失敗
+      const aiDataUrl = await cropImageForAi(frontImgRef.current, card.frontCropBox, 1280);
 
       const res = await fetch('/api/admin/scan-cards', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: dataUrl, mode: 'recognize' }),
+        body: JSON.stringify({ image: aiDataUrl, mode: 'recognize' }),
       });
 
-      if (!res.ok) throw new Error('AI 辨識失敗');
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || `AI 辨識失敗 (HTTP ${res.status})`);
 
       setCards(prev => prev.map((c, i) => {
         if (i !== index) return c;
@@ -552,16 +625,16 @@ export default function CardScannerProPage() {
     setCards(prev => prev.map((c, i) => i === index ? { ...c, isOcrRunning: true } : c));
 
     try {
-      const { dataUrl } = await cropImageFromSource(frontImgRef.current, card.frontCropBox);
+      const aiDataUrl = await cropImageForAi(frontImgRef.current, card.frontCropBox, 1280);
 
       const res = await fetch('/api/admin/scan-cards', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: dataUrl, mode: 'ocr_slab' }),
+        body: JSON.stringify({ image: aiDataUrl, mode: 'ocr_slab' }),
       });
 
-      if (!res.ok) throw new Error('標籤辨識失敗');
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || `標籤辨識失敗 (HTTP ${res.status})`);
 
       setCards(prev => prev.map((c, i) => {
         if (i !== index) return c;
@@ -1021,12 +1094,16 @@ export default function CardScannerProPage() {
     setCards(prev => prev.map((c, i) => i === index ? { ...c, isPriceChecking: false } : c));
   };
 
-  // 旋轉控制 (正面或背面選取框)
+  // 旋轉控制 (正面或背面選取框，並即時更新對應預覽圖)
   const handleRotate = (isFront: boolean, deltaAngle: number) => {
     if (isFront) {
-      setFrontBoxes(prev => prev.map(b => b.id === selectedFrontBoxId ? { ...b, rotation: (b.rotation + deltaAngle) % 360 } : b));
+      const next = frontBoxes.map(b => b.id === selectedFrontBoxId ? { ...b, rotation: (b.rotation + deltaAngle) % 360 } : b);
+      setFrontBoxes(next);
+      recropFrontPreviews(next, true, selectedFrontBoxId || undefined);
     } else {
-      setBackBoxes(prev => prev.map(b => b.id === selectedBackBoxId ? { ...b, rotation: (b.rotation + deltaAngle) % 360 } : b));
+      const next = backBoxes.map(b => b.id === selectedBackBoxId ? { ...b, rotation: (b.rotation + deltaAngle) % 360 } : b);
+      setBackBoxes(next);
+      recropBackPreviews(next);
     }
   };
 
@@ -1641,100 +1718,132 @@ export default function CardScannerProPage() {
               {/* 正面大圖畫布可視區 (7 欄) */}
               <div className="lg:col-span-7 space-y-3">
                 <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 p-2 flex items-center justify-center min-h-[360px] max-h-[550px]">
-                  <div className="relative inline-block max-w-full">
+                  <div className="relative inline-block">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       ref={frontImgRef}
                       src={frontImageSrc}
                       alt="Front Source"
-                      className="block max-h-[520px] w-auto object-contain select-none pointer-events-none"
+                      className="block max-w-full max-h-[520px] w-auto h-auto select-none pointer-events-none"
                       onLoad={refreshPreviews}
                     />
 
-                    {/* 裁切框疊加層（與圖片本身 1:1 貼合，杜絕左右留白造成的座標偏移） */}
-                    <div className="absolute inset-0 pointer-events-none">
-                    {frontBoxes.map((box, idx) => {
-                      const isSelected = box.id === selectedFrontBoxId;
-                      return (
-                        <div
-                          key={box.id}
-                          onClick={() => setSelectedFrontBoxId(box.id)}
-                          style={{
-                            left: `${box.x}%`,
-                            top: `${box.y}%`,
-                            width: `${box.width}%`,
-                            height: `${box.height}%`,
-                            transform: `rotate(${box.rotation}deg)`,
-                          }}
-                          className={`absolute pointer-events-auto cursor-pointer rounded-lg border-2 transition-all flex flex-col justify-between p-1.5 ${
-                            isSelected
-                              ? 'border-amber-400 bg-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.5)] z-20'
-                              : 'border-cyan-400/80 bg-cyan-500/10 hover:border-cyan-300 z-10'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            {!hideBoxBadges ? (
-                              <span className="px-1.5 py-0.5 rounded bg-slate-950/80 text-white text-[10px] font-black font-mono">
-                                #{idx + 1}
-                              </span>
-                            ) : <span />}
-                            {isSelected && (
-                              <span className="px-1 py-0.5 rounded bg-amber-500 text-slate-950 text-[9px] font-black">
-                                編輯中
-                              </span>
-                            )}
-                          </div>
-
-                          <div className="text-[9px] font-mono text-white/90 bg-slate-950/60 rounded px-1 self-start">
-                            {box.rotation !== 0 ? `${box.rotation}°` : ''}
-                          </div>
-                        </div>
-                      );
-                    })}
-                    </div>
+                    {/* 可拖曳與八向縮放裁切框疊加層（與圖片像素 1:1 貼合） */}
+                    <InteractiveCropOverlay
+                      boxes={frontBoxes}
+                      selectedBoxId={selectedFrontBoxId}
+                      onSelectBox={setSelectedFrontBoxId}
+                      onChangeBoxes={setFrontBoxes}
+                      onCommitBoxes={(committed, changedBoxId) => recropFrontPreviews(committed, true, changedBoxId)}
+                      onDeleteBox={(id) => handleDeleteCropBox(true, id)}
+                      hideBoxBadges={hideBoxBadges}
+                      variant="front"
+                    />
                   </div>
                 </div>
 
-                {/* 正面裁切微調控制工具列 */}
-                {activeFrontBox && (
-                  <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-slate-600">卡片 #{frontBoxes.findIndex(b => b.id === selectedFrontBoxId) + 1} 旋轉校正:</span>
+                {/* 正面裁切微調與框體管理控制工具列 */}
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5 text-xs">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex flex-wrap items-center gap-1.5">
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleRotate(true, -90)}
-                        className="h-8 px-2 font-bold"
+                        onClick={() => runAiDetection(true)}
+                        disabled={isAiDetectingFront}
+                        className="h-8 px-2.5 font-bold border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900"
                       >
-                        <RotateCcw className="w-3.5 h-3.5 mr-1" />
-                        -90°
+                        {isAiDetectingFront ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 mr-1 text-amber-600" />}
+                        AI 重新偵測
                       </Button>
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleRotate(true, 90)}
-                        className="h-8 px-2 font-bold"
+                        onClick={() => handleAddCropBox(true)}
+                        className="h-8 px-2.5 font-bold bg-white"
                       >
-                        <RotateCw className="w-3.5 h-3.5 mr-1" />
-                        +90°
+                        <Plus className="w-3.5 h-3.5 mr-1" />
+                        新增裁切框
                       </Button>
+                      {activeFrontBox && frontBoxes.length > 1 && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleDeleteCropBox(true, activeFrontBox.id)}
+                          className="h-8 px-2.5 font-bold text-rose-600 border-rose-200 hover:bg-rose-50 bg-white"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 mr-1" />
+                          刪除框 #{frontBoxes.findIndex(b => b.id === selectedFrontBoxId) + 1}
+                        </Button>
+                      )}
                     </div>
-
-                    <div className="flex items-center gap-3 w-full sm:w-auto">
-                      <span className="text-slate-500 text-[11px]">微調角度 ({activeFrontBox.rotation}°):</span>
-                      <Slider
-                        min={-45}
-                        max={45}
-                        step={1}
-                        value={[activeFrontBox.rotation]}
-                        onValueChange={([val]) => {
-                          setFrontBoxes(prev => prev.map(b => b.id === selectedFrontBoxId ? { ...b, rotation: val } : b));
-                        }}
-                        className="w-32"
-                      />
-                    </div>
+                    <span className="text-[11px] text-slate-500">
+                      可直接拖曳框體移動，或拉動四周圓點微調裁切邊界
+                    </span>
                   </div>
-                )}
+
+                  {activeFrontBox && (
+                    <div className="pt-2 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-bold text-slate-600">
+                          卡片 #{frontBoxes.findIndex(b => b.id === selectedFrontBoxId) + 1} 旋轉:
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleRotate(true, -90)}
+                          className="h-7 px-2 font-bold bg-white"
+                        >
+                          <RotateCcw className="w-3 h-3 mr-1" />
+                          -90°
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleRotate(true, 90)}
+                          className="h-7 px-2 font-bold bg-white"
+                        >
+                          <RotateCw className="w-3 h-3 mr-1" />
+                          +90°
+                        </Button>
+                        {activeFrontBox.rotation !== 0 && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              const next = frontBoxes.map(b => b.id === selectedFrontBoxId ? { ...b, rotation: 0 } : b);
+                              setFrontBoxes(next);
+                              recropFrontPreviews(next, true, selectedFrontBoxId || undefined);
+                            }}
+                            className="h-7 px-2 text-[11px] text-slate-500 hover:text-slate-900"
+                          >
+                            歸零
+                          </Button>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-3 w-full sm:w-auto">
+                        <span className="text-slate-500 text-[11px] font-mono">
+                          微調角度 ({activeFrontBox.rotation}°):
+                        </span>
+                        <Slider
+                          min={-45}
+                          max={45}
+                          step={1}
+                          value={[Math.max(-45, Math.min(45, activeFrontBox.rotation))]}
+                          onValueChange={([val]) => {
+                            setFrontBoxes(prev => prev.map(b => b.id === selectedFrontBoxId ? { ...b, rotation: val } : b));
+                          }}
+                          onValueCommit={([val]) => {
+                            const next = frontBoxes.map(b => b.id === selectedFrontBoxId ? { ...b, rotation: val } : b);
+                            recropFrontPreviews(next, true, selectedFrontBoxId || undefined);
+                          }}
+                          className="w-32"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* 正面資訊編輯清單 (5 欄) */}
@@ -2096,98 +2205,130 @@ export default function CardScannerProPage() {
               {/* 背面大圖畫布可視區 (7 欄) */}
               <div className="lg:col-span-7 space-y-3">
                 <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 p-2 flex items-center justify-center min-h-[360px] max-h-[550px]">
-                  <div className="relative inline-block max-w-full">
+                  <div className="relative inline-block">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       ref={backImgRef}
                       src={backImageSrc}
                       alt="Back Source"
-                      className="block max-h-[520px] w-auto object-contain select-none pointer-events-none"
+                      className="block max-w-full max-h-[520px] w-auto h-auto select-none pointer-events-none"
                       onLoad={refreshPreviews}
                     />
 
-                    {/* 裁切框疊加層（與圖片本身 1:1 貼合） */}
-                    <div className="absolute inset-0 pointer-events-none">
-                    {backBoxes.map((box, idx) => {
-                      const isSelected = box.id === selectedBackBoxId;
-                      return (
-                        <div
-                          key={box.id}
-                          onClick={() => setSelectedBackBoxId(box.id)}
-                          style={{
-                            left: `${box.x}%`,
-                            top: `${box.y}%`,
-                            width: `${box.width}%`,
-                            height: `${box.height}%`,
-                            transform: `rotate(${box.rotation}deg)`,
-                          }}
-                          className={`absolute pointer-events-auto cursor-pointer rounded-lg border-2 transition-all flex flex-col justify-between p-1.5 ${
-                            isSelected
-                              ? 'border-cyan-400 bg-cyan-500/20 shadow-[0_0_15px_rgba(6,182,212,0.5)] z-20'
-                              : 'border-slate-400/80 bg-slate-500/10 hover:border-cyan-300 z-10'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="px-1.5 py-0.5 rounded bg-slate-950/80 text-white text-[10px] font-black font-mono">
-                              #{idx + 1} (背面)
-                            </span>
-                            {isSelected && (
-                              <span className="px-1 py-0.5 rounded bg-cyan-500 text-slate-950 text-[9px] font-black">
-                                校正中
-                              </span>
-                            )}
-                          </div>
-
-                          <div className="text-[9px] font-mono text-white/90 bg-slate-950/60 rounded px-1 self-start">
-                            {box.rotation !== 0 ? `${box.rotation}°` : ''}
-                          </div>
-                        </div>
-                      );
-                    })}
-                    </div>
+                    {/* 可拖曳與八向縮放裁切框疊加層（與圖片像素 1:1 貼合） */}
+                    <InteractiveCropOverlay
+                      boxes={backBoxes}
+                      selectedBoxId={selectedBackBoxId}
+                      onSelectBox={setSelectedBackBoxId}
+                      onChangeBoxes={setBackBoxes}
+                      onCommitBoxes={(committed) => recropBackPreviews(committed)}
+                      onDeleteBox={(id) => handleDeleteCropBox(false, id)}
+                      hideBoxBadges={hideBoxBadges}
+                      variant="back"
+                      badgeSuffix=" (背面)"
+                    />
                   </div>
                 </div>
 
-                {/* 背面旋轉控制列 */}
-                {activeBackBox && (
-                  <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-slate-600">背面卡片 #{backBoxes.findIndex(b => b.id === selectedBackBoxId) + 1} 旋轉:</span>
+                {/* 背面裁切微調與旋轉控制列 */}
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5 text-xs">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex flex-wrap items-center gap-1.5">
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleRotate(false, -90)}
-                        className="h-8 px-2 font-bold"
+                        onClick={() => runAiDetection(false)}
+                        disabled={isAiDetectingBack}
+                        className="h-8 px-2.5 font-bold border-cyan-300 bg-cyan-50 hover:bg-cyan-100 text-cyan-900"
                       >
-                        <RotateCcw className="w-3.5 h-3.5 mr-1" />
-                        -90°
+                        {isAiDetectingBack ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 mr-1 text-cyan-600" />}
+                        AI 偵測背面
                       </Button>
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleRotate(false, 90)}
-                        className="h-8 px-2 font-bold"
+                        onClick={() => handleAddCropBox(false)}
+                        className="h-8 px-2.5 font-bold bg-white"
                       >
-                        <RotateCw className="w-3.5 h-3.5 mr-1" />
-                        +90°
+                        <Plus className="w-3.5 h-3.5 mr-1" />
+                        新增背面框
                       </Button>
-                    </div>
-
-                    <div className="flex items-center gap-3 w-full sm:w-auto">
-                      <span className="text-slate-500 text-[11px]">角度 ({activeBackBox.rotation}°):</span>
-                      <Slider
-                        min={-45}
-                        max={45}
-                        step={1}
-                        value={[activeBackBox.rotation]}
-                        onValueChange={([val]) => {
-                          setBackBoxes(prev => prev.map(b => b.id === selectedBackBoxId ? { ...b, rotation: val } : b));
-                        }}
-                        className="w-32"
-                      />
+                      {activeBackBox && backBoxes.length > 1 && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleDeleteCropBox(false, activeBackBox.id)}
+                          className="h-8 px-2.5 font-bold text-rose-600 border-rose-200 hover:bg-rose-50 bg-white"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 mr-1" />
+                          刪除框 #{backBoxes.findIndex(b => b.id === selectedBackBoxId) + 1}
+                        </Button>
+                      )}
                     </div>
                   </div>
-                )}
+
+                  {activeBackBox && (
+                    <div className="pt-2 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-bold text-slate-600">
+                          背面卡片 #{backBoxes.findIndex(b => b.id === selectedBackBoxId) + 1} 旋轉:
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleRotate(false, -90)}
+                          className="h-7 px-2 font-bold bg-white"
+                        >
+                          <RotateCcw className="w-3 h-3 mr-1" />
+                          -90°
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleRotate(false, 90)}
+                          className="h-7 px-2 font-bold bg-white"
+                        >
+                          <RotateCw className="w-3 h-3 mr-1" />
+                          +90°
+                        </Button>
+                        {activeBackBox.rotation !== 0 && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              const next = backBoxes.map(b => b.id === selectedBackBoxId ? { ...b, rotation: 0 } : b);
+                              setBackBoxes(next);
+                              recropBackPreviews(next);
+                            }}
+                            className="h-7 px-2 text-[11px] text-slate-500 hover:text-slate-900"
+                          >
+                            歸零
+                          </Button>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-3 w-full sm:w-auto">
+                        <span className="text-slate-500 text-[11px] font-mono">
+                          角度 ({activeBackBox.rotation}°):
+                        </span>
+                        <Slider
+                          min={-45}
+                          max={45}
+                          step={1}
+                          value={[Math.max(-45, Math.min(45, activeBackBox.rotation))]}
+                          onValueChange={([val]) => {
+                            setBackBoxes(prev => prev.map(b => b.id === selectedBackBoxId ? { ...b, rotation: val } : b));
+                          }}
+                          onValueCommit={([val]) => {
+                            const next = backBoxes.map(b => b.id === selectedBackBoxId ? { ...b, rotation: val } : b);
+                            recropBackPreviews(next);
+                          }}
+                          className="w-32"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* 背面與正面對齊並排檢視清單 (5 欄) */}
