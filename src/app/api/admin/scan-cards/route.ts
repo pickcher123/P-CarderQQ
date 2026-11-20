@@ -34,12 +34,12 @@ export async function POST(req: NextRequest) {
     if (mode === 'detect') {
       // 模式 1：自動偵測多卡邊界框 (Bounding Boxes)
       const detectPrompt = `
-請精準偵測這張圖片中「每一張獨立的球員卡／收藏卡／卡夾／PSA或BGS鑑定殼」的實際外框位置。
+請精準偵測這張圖片中「每一張獨立的球員卡／收藏卡／卡夾／PSA或BGS或CGC鑑定殼」的實際最外圍邊界框位置。
 
 【嚴格規則】：
-1. 每一張卡片（包含其白邊、透明卡夾或鑑定殼外框）只能對應「一個」獨立的邊界框，必須緊貼該張卡片的最外圍物理邊緣。
-2. 如果畫面中有多張卡片（例如 2 張、4 張、6 張或 9 張），請逐一為每一張卡片分別建立獨立邊界框；絕對不可把多張卡片合併成一個框，也不可把同一張卡片拆成多個框（例如只框人像或只框標籤）。
-3. 嚴禁框選整張大圖或空白掃描背景（不可回傳覆蓋整張圖的大框）。
+1. 若畫面只有「1 張」卡片（即使是近拍佔畫面 60%~90%），請回傳「1 個」緊貼該張卡片或鑑定殼最外緣的邊界框。
+2. 若畫面中有「多張」卡片（例如 2 張、4 張、6 張、9 張），請逐一為每一張卡片分別建立獨立邊界框；絕對不可把相鄰卡片合併成一個框，也不可把同一張鑑定卡的「上方標籤」與「下方卡面」拆成兩個框。
+3. 絕對不可框選空白桌面、掃描儀背景或人像局部；邊界框必須緊貼卡片／卡夾物理四邊。
 4. 座標系統為 0 到 1000 的正規化整數：
    - ymin: 卡片最上緣 (0-1000)
    - xmin: 卡片最左緣 (0-1000)
@@ -94,19 +94,27 @@ export async function POST(req: NextRequest) {
       const parsed = JSON.parse(response.text || '{"boxes":[]}');
       const rawBoxes = Array.isArray(parsed.boxes) ? parsed.boxes : [];
 
-      // 後端嚴格過濾：過濾掉全圖背景外框、過小雜點，並移除被大框完全包含的子框
-      const validBoxes = rawBoxes.filter((b: any) => {
-        const w = Number(b.xmax) - Number(b.xmin);
-        const h = Number(b.ymax) - Number(b.ymin);
-        if (!Number.isFinite(w) || !Number.isFinite(h)) return false;
-        const areaRatio = (w * h) / (1000 * 1000);
-        if (w > 820 && h > 820) return false;
-        if (areaRatio > 0.68) return false;
-        if (w < 60 || h < 80) return false;
-        return true;
-      });
+      // 後端過濾：僅過濾極小雜點與多卡情境下的整張畫布外框（保留單張近拍大卡）
+      const validBoxes = rawBoxes
+        .map((b: any) => ({
+          ...b,
+          xmin: Math.max(0, Math.min(990, Number(b.xmin))),
+          ymin: Math.max(0, Math.min(990, Number(b.ymin))),
+          xmax: Math.max(10, Math.min(1000, Number(b.xmax))),
+          ymax: Math.max(10, Math.min(1000, Number(b.ymax))),
+        }))
+        .filter((b: any) => {
+          const w = b.xmax - b.xmin;
+          const h = b.ymax - b.ymin;
+          if (!Number.isFinite(w) || !Number.isFinite(h)) return false;
+          if (w < 50 || h < 65) return false;
+          // 多張卡片時若出現覆蓋整張畫面的外框則排除；單張卡片僅排除幾乎貼滿 98% 的無效全圖框
+          if (rawBoxes.length > 1 && w > 880 && h > 880) return false;
+          if (w > 980 && h > 980) return false;
+          return true;
+        });
 
-      // 移除嵌套子框（避免同一張卡同時框到外框與內部人像）
+      // 移除嵌套子框與高度重疊框（避免同一張卡同時框到外框與內部人像/標籤）
       const filteredBoxes = validBoxes.filter((box: any, idx: number) => {
         const area = (box.xmax - box.xmin) * (box.ymax - box.ymin);
         return !validBoxes.some((other: any, oIdx: number) => {
@@ -119,7 +127,7 @@ export async function POST(req: NextRequest) {
           const iy2 = Math.min(box.ymax, other.ymax);
           if (ix2 <= ix1 || iy2 <= iy1) return false;
           const interArea = (ix2 - ix1) * (iy2 - iy1);
-          return interArea / area > 0.75;
+          return interArea / area > 0.65;
         });
       });
 

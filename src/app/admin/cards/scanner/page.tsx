@@ -383,20 +383,22 @@ export default function CardScannerProPage() {
         if (res.ok) {
           const data = await res.json();
           if (data.boxes && data.boxes.length > 0) {
+            const rawCount = data.boxes.length;
             detectedBoxes = data.boxes
               .map((b: any) => ({
                 id: uuidv4(),
-                x: Math.round((b.xmin / 10) * 10) / 10,
-                y: Math.round((b.ymin / 10) * 10) / 10,
-                width: Math.max(10, Math.round(((b.xmax - b.xmin) / 10) * 10) / 10),
-                height: Math.max(10, Math.round(((b.ymax - b.ymin) / 10) * 10) / 10),
+                x: Math.max(0.5, Math.round((b.xmin / 10) * 10) / 10),
+                y: Math.max(0.5, Math.round((b.ymin / 10) * 10) / 10),
+                width: Math.max(5, Math.round(((b.xmax - b.xmin) / 10) * 10) / 10),
+                height: Math.max(6, Math.round(((b.ymax - b.ymin) / 10) * 10) / 10),
                 rotation: 0,
               }))
-              // 🌟 嚴格過濾掉任何覆蓋整張大圖、掃描儀玻璃背景的外框（例如寬度>80且高度>80）
+              // 僅過濾多卡時誤抓全圖的背景框，保留單張近拍大卡
               .filter((b: CropBox) => {
-                const isFullScreen = b.width > 80 && b.height > 80;
-                const isTooLarge = (b.width * b.height) > 5500; // 面積大於 55%
-                return !isFullScreen && !isTooLarge;
+                if (b.width < 5 || b.height < 6) return false;
+                if (rawCount > 1 && b.width > 88 && b.height > 88) return false;
+                if (b.width > 98 && b.height > 98) return false;
+                return true;
               });
           }
         }
@@ -404,9 +406,17 @@ export default function CardScannerProPage() {
         console.warn('Cloud AI detect failed, switching to local detector:', apiErr);
       }
 
-      // 2. 若雲端未能回傳有效框，自動切換至純前端多卡連通區域邊界偵測（精準貼合每張卡片獨立外框）
-      if (detectedBoxes.length === 0) {
-        detectedBoxes = detectCardBoundariesLocally(imgRef.current);
+      // 2. 若雲端未能回傳有效框，或雲端僅回傳 <=1 框但本地邊界偵測出多張卡片（如 2x3 六卡掃描），採用本地多卡結果
+      let usedLocalFallback = false;
+      if (detectedBoxes.length <= 1) {
+        const localBoxes = detectCardBoundariesLocally(imgRef.current);
+        if (detectedBoxes.length === 0 || localBoxes.length >= 2) {
+          detectedBoxes = localBoxes;
+          usedLocalFallback = true;
+        }
+      }
+
+      if (usedLocalFallback) {
         toast({
           title: '已啟用本地智慧邊緣對比偵測',
           description: `成功分析並定位 ${detectedBoxes.length} 張卡片的獨立邊界。`,
@@ -414,7 +424,7 @@ export default function CardScannerProPage() {
       } else {
         toast({
           title: `PRO AI 成功精準定位 ${detectedBoxes.length} 張卡片邊界`,
-          description: '已過濾背景大圖，每張卡片皆已完整框選！',
+          description: '已精準框選每張獨立卡片！',
         });
       }
 
@@ -1631,17 +1641,18 @@ export default function CardScannerProPage() {
               {/* 正面大圖畫布可視區 (7 欄) */}
               <div className="lg:col-span-7 space-y-3">
                 <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 p-2 flex items-center justify-center min-h-[360px] max-h-[550px]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    ref={frontImgRef}
-                    src={frontImageSrc}
-                    alt="Front Source"
-                    className="max-h-[520px] w-auto object-contain select-none pointer-events-none"
-                    onLoad={refreshPreviews}
-                  />
+                  <div className="relative inline-block max-w-full">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      ref={frontImgRef}
+                      src={frontImageSrc}
+                      alt="Front Source"
+                      className="block max-h-[520px] w-auto object-contain select-none pointer-events-none"
+                      onLoad={refreshPreviews}
+                    />
 
-                  {/* 裁切框疊加層 */}
-                  <div className="absolute inset-2 pointer-events-none">
+                    {/* 裁切框疊加層（與圖片本身 1:1 貼合，杜絕左右留白造成的座標偏移） */}
+                    <div className="absolute inset-0 pointer-events-none">
                     {frontBoxes.map((box, idx) => {
                       const isSelected = box.id === selectedFrontBoxId;
                       return (
@@ -1680,6 +1691,7 @@ export default function CardScannerProPage() {
                         </div>
                       );
                     })}
+                    </div>
                   </div>
                 </div>
 
@@ -2084,17 +2096,18 @@ export default function CardScannerProPage() {
               {/* 背面大圖畫布可視區 (7 欄) */}
               <div className="lg:col-span-7 space-y-3">
                 <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 p-2 flex items-center justify-center min-h-[360px] max-h-[550px]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    ref={backImgRef}
-                    src={backImageSrc}
-                    alt="Back Source"
-                    className="max-h-[520px] w-auto object-contain select-none pointer-events-none"
-                    onLoad={refreshPreviews}
-                  />
+                  <div className="relative inline-block max-w-full">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      ref={backImgRef}
+                      src={backImageSrc}
+                      alt="Back Source"
+                      className="block max-h-[520px] w-auto object-contain select-none pointer-events-none"
+                      onLoad={refreshPreviews}
+                    />
 
-                  {/* 裁切框疊加層 */}
-                  <div className="absolute inset-2 pointer-events-none">
+                    {/* 裁切框疊加層（與圖片本身 1:1 貼合） */}
+                    <div className="absolute inset-0 pointer-events-none">
                     {backBoxes.map((box, idx) => {
                       const isSelected = box.id === selectedBackBoxId;
                       return (
@@ -2131,6 +2144,7 @@ export default function CardScannerProPage() {
                         </div>
                       );
                     })}
+                    </div>
                   </div>
                 </div>
 

@@ -3,8 +3,11 @@ import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-// 預備精選之台灣定期與代表性球員卡展資料（當 API Key 未配置或聯網異常時無縫備援）
-function getFallbackExhibitions() {
+type ExhibitionRegion = 'taiwan' | 'asia' | 'usa';
+type SearchRegion = ExhibitionRegion | 'all';
+
+// 預備精選之台灣／亞洲／美國定期與代表性球員卡展資料（當 API Key 未配置或聯網異常時無縫備援）
+function getFallbackExhibitions(region: SearchRegion = 'all') {
   const currentYear = new Date().getFullYear();
   const nextMonth = new Date().getMonth() + 2; // 1-12 based
   const m1 = nextMonth > 12 ? 1 : nextMonth;
@@ -13,7 +16,7 @@ function getFallbackExhibitions() {
 
   const pad = (n: number) => n.toString().padStart(2, '0');
 
-  return [
+  const allItems = [
     // 🇹🇼 台灣卡展
     {
       title: `${currentYear} 台灣大台北球員卡交易博覽會 (Taipei Card Show)`,
@@ -120,18 +123,56 @@ function getFallbackExhibitions() {
       imageUrl: 'https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&w=1200&q=80',
     },
   ];
+
+  if (region === 'all') return allItems;
+  return allItems.filter((item) => item.region === region);
 }
 
+const REGION_PROMPT_GUIDE: Record<SearchRegion, { label: string; scope: string; keywords: string }> = {
+  taiwan: {
+    label: '台灣',
+    scope: '台灣最新（近期、下個月或今年度）的球員卡展、球卡市集、收藏卡交流會、PSA/BGS 送件卡展等活動資訊（請提取 3 到 6 場）。',
+    keywords: '台灣球員卡展, 大台北卡展, Taipei Card Show, 收藏卡交流會, 松菸卡展, 新竹卡展, 台中卡展, 高雄卡展, CARDNEX, 卡淘, 卡牌市集',
+  },
+  asia: {
+    label: '亞洲',
+    scope: '亞洲各國（日本東京／大阪、香港、韓國首爾、新加坡、上海、曼谷等，不含台灣）最新近期或年度具代表性的球員卡展與體育收藏卡博覽會（請提取 3 到 6 場）。',
+    keywords: 'Tokyo Card Show, Japan Sports Card Expo, Hong Kong Card Expo, Seoul Sports Card Show, Singapore Card Show, アジア トレカ イベント, 亞洲球員卡展',
+  },
+  usa: {
+    label: '美國',
+    scope: '美國最新近期或年度具代表性的球員卡展與大型體育收藏卡博覽會（請提取 3 到 6 場）。',
+    keywords: 'National Sports Collectors Convention, NSCC, Burbank Card Show, Dallas Card Show, Fanatics Fest NYC, Front Row Card Show, East Coast National',
+  },
+  all: {
+    label: '全球（台灣・亞洲・美國）',
+    scope: '台灣、亞洲（日本／香港／韓國／新加坡）以及美國近期或年度具代表性的球員卡展與收藏卡博覽會（請平均提取共 6 到 9 場，每個地區至少 2 場）。',
+    keywords: '台灣球員卡展, Taipei Card Show, Tokyo Card Show, Hong Kong Card Expo, Seoul Sports Card Show, NSCC, Burbank Card Show, Dallas Card Show',
+  },
+};
+
 export async function POST(req: Request) {
+  let requestedRegion: SearchRegion = 'all';
+  try {
+    const body = await req.json().catch(() => ({}));
+    if (body?.region === 'taiwan' || body?.region === 'asia' || body?.region === 'usa' || body?.region === 'all') {
+      requestedRegion = body.region;
+    }
+  } catch {
+    // ignore malformed body
+  }
+
+  const regionGuide = REGION_PROMPT_GUIDE[requestedRegion];
   const apiKey = process.env.GEMINI_API_KEY;
 
   // 若未設定 API Key，回傳結構化的精選備援卡展資料並標記提示
   if (!apiKey || apiKey.trim() === '' || apiKey.includes('your_') || apiKey === 'YOUR_API_KEY') {
     return NextResponse.json({
       success: true,
-      exhibitions: getFallbackExhibitions(),
+      exhibitions: getFallbackExhibitions(requestedRegion),
+      region: requestedRegion,
       source: 'fallback',
-      warning: '尚未在系統環境中配置有效 GEMINI_API_KEY，已自動為您載入台灣精選卡展資料庫。如需啟用即時聯網 AI 搜尋，請至設定填入 Gemini API 金鑰。',
+      warning: `尚未配置有效 GEMINI_API_KEY，已為您載入【${regionGuide.label}精選卡展資料庫】。如需啟用即時聯網 AI 搜尋，請至設定填入 Gemini API 金鑰。`,
     });
   }
 
@@ -139,26 +180,26 @@ export async function POST(req: Request) {
     const ai = new GoogleGenAI({ apiKey });
     const today = new Date().toISOString().split('T')[0];
 
-    const prompt = `你是一個專業的台灣體育球員卡與收藏卡展覽情報分析專家。
+    const prompt = `你是一個專業的全球體育球員卡與收藏卡展覽情報分析專家。
 今天是 ${today}。
-請利用 Google 搜尋台灣最新（近期、下個月或今年度）的球員卡展、球卡市集、收藏卡交流會、PSA/BGS 送件卡展等活動資訊。
-搜尋關鍵字包括但不限於：台灣球員卡展, 大台北卡展, Taipei Card Show, 收藏卡交流會, 松菸卡展, 新竹卡展, 台中卡展, 高雄卡展, CARDNEX, 卡淘, 卡牌市集等。
+請利用 Google 搜尋${regionGuide.scope}
+搜尋關鍵字包括但不限於：${regionGuide.keywords}。
 
-請提取 3 到 6 場在台灣舉辦的真實或近期/即將舉行的球員卡展資訊。
-若近期無特定精確日期，請搜尋台灣最經典且持續舉辦的代表性卡展或最新公開之場次，並提供合理規範的日期格式 (YYYY-MM-DD)。
+若近期無特定精確日期，請搜尋該地區最經典且持續舉辦的代表性卡展或最新公開之場次，並提供合理規範的日期格式 (YYYY-MM-DD)。
 
 請確保輸出為標準 JSON 格式的卡展陣列，每個物件欄位包含：
-- title: 展覽名稱 (string, 例如: 2026 大台北球員卡交易博覽會)
+- title: 展覽名稱 (string, 可附註英文原名)
+- region: 展覽所屬區域代碼 (必須為 "taiwan" | "asia" | "usa" 其一)
 - startDate: 開始日期 (string, 格式 YYYY-MM-DD)
 - endDate: 結束日期 (string, 格式 YYYY-MM-DD，若為單日則與 startDate 相同)
 - time: 展出時間 (string, 例如: 10:00 - 18:00)
-- location: 展出地點 (string, 包含場館名稱與城市/地址，例如: 台北市南港展覽館 2 館 / 龍山文創基地)
-- description: 展覽特色與簡介 (string, 100-200字，提及亮點如 PSA/BGS 現場鑑定收件、拆卡秀、卡友交換區、限定卡包發售等)
-- imageUrl: 展覽宣傳圖 (string, 若無確切圖片可提供高品質卡展風格的 Unsplash 示意圖，或保留為空字串)
+- location: 展出地點 (string, 包含場館名稱與城市/國家)
+- description: 展覽特色與簡介 (string, 100-200字，以繁體中文撰寫，提及亮點如 PSA/BGS 現場鑑定收件、拆卡秀、卡友交換區等)
+- imageUrl: 展覽宣傳圖 (string, 若無確切圖片可保留為空字串)
 `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.7-flash',
+      model: 'gemini-2.5-flash',
       contents: prompt,
       config: {
         tools: [{ googleSearch: {} }],
@@ -172,6 +213,7 @@ export async function POST(req: Request) {
                 type: Type.OBJECT,
                 properties: {
                   title: { type: Type.STRING },
+                  region: { type: Type.STRING, enum: ['taiwan', 'asia', 'usa'] },
                   startDate: { type: Type.STRING },
                   endDate: { type: Type.STRING },
                   time: { type: Type.STRING },
@@ -179,7 +221,7 @@ export async function POST(req: Request) {
                   description: { type: Type.STRING },
                   imageUrl: { type: Type.STRING },
                 },
-                required: ['title', 'startDate', 'location'],
+                required: ['title', 'region', 'startDate', 'location'],
               },
             },
           },
@@ -194,31 +236,39 @@ export async function POST(req: Request) {
     }
 
     const data = JSON.parse(resultText);
-    const exhibitions = data.exhibitions || [];
+    const exhibitions = (data.exhibitions || []).map((item: any) => ({
+      ...item,
+      region: item.region === 'taiwan' || item.region === 'asia' || item.region === 'usa'
+        ? item.region
+        : requestedRegion === 'all'
+          ? 'taiwan'
+          : requestedRegion,
+    }));
 
     if (exhibitions.length === 0) {
       return NextResponse.json({
         success: true,
-        exhibitions: getFallbackExhibitions(),
+        exhibitions: getFallbackExhibitions(requestedRegion),
+        region: requestedRegion,
         source: 'fallback',
       });
     }
 
-    return NextResponse.json({ success: true, exhibitions, source: 'ai' });
+    return NextResponse.json({ success: true, exhibitions, region: requestedRegion, source: 'ai' });
   } catch (error: any) {
     console.error('AI Fetch Exhibitions Error:', error);
     
-    // 如果是 API Key 無效（400 / API key not valid）或配額問題，優雅回退為預備資料庫，不讓管理員崩潰
     const errorMessage = error?.message || '';
     const isApiKeyError = errorMessage.includes('API key') || errorMessage.includes('400') || errorMessage.includes('PERMISSION_DENIED');
 
     return NextResponse.json({
       success: true,
-      exhibitions: getFallbackExhibitions(),
+      exhibitions: getFallbackExhibitions(requestedRegion),
+      region: requestedRegion,
       source: 'fallback',
       warning: isApiKeyError
-        ? 'Gemini API Key 無效或授權異常，系統已為您切換至【台灣精選卡展資料庫】。若需恢復 AI 聯網搜尋，請確認 Settings 中的 GEMINI_API_KEY。'
-        : 'AI 搜尋暫時繁忙，系統已自動載入【台灣精選卡展資料庫】。',
+        ? `Gemini API Key 無效或授權異常，系統已為您切換至【${regionGuide.label}精選卡展資料庫】。`
+        : `AI 搜尋暫時繁忙，系統已自動載入【${regionGuide.label}精選卡展資料庫】。`,
     });
   }
 }

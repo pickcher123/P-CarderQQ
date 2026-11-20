@@ -213,15 +213,15 @@ export function generateGridBoxes(rows: number, cols: number, padding: number = 
 export function detectCardBoundariesLocally(imageElement: HTMLImageElement): CropBox[] {
   try {
     const canvas = document.createElement('canvas');
-    const sampleWidth = 300;
+    const sampleWidth = 480;
     const natW = imageElement.naturalWidth || imageElement.width || 800;
     const natH = imageElement.naturalHeight || imageElement.height || 600;
-    const sampleHeight = Math.max(90, Math.round((sampleWidth / natW) * natH));
+    const sampleHeight = Math.max(120, Math.round((sampleWidth / natW) * natH));
     canvas.width = sampleWidth;
     canvas.height = sampleHeight;
 
     const ctx = canvas.getContext('2d');
-    if (!ctx) return generateGridBoxes(1, 1, 10);
+    if (!ctx) return generateGridBoxes(1, 1, 5);
     ctx.drawImage(imageElement, 0, 0, sampleWidth, sampleHeight);
 
     const imgData = ctx.getImageData(0, 0, sampleWidth, sampleHeight);
@@ -233,31 +233,18 @@ export function detectCardBoundariesLocally(imageElement: HTMLImageElement): Cro
       gray[i] = 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
     }
 
-    // 1. 計算四邊內縮環帶的中位數亮度作為掃描底色基準（避開外緣陰影）
-    const edgeGrays: number[] = [];
-    const inset = 4;
-    for (let x = inset; x < sampleWidth - inset; x += 3) {
-      edgeGrays.push(gray[inset * sampleWidth + x]);
-      edgeGrays.push(gray[(sampleHeight - 1 - inset) * sampleWidth + x]);
-    }
-    for (let y = inset; y < sampleHeight - inset; y += 3) {
-      edgeGrays.push(gray[y * sampleWidth + inset]);
-      edgeGrays.push(gray[y * sampleWidth + (sampleWidth - 1 - inset)]);
-    }
-    edgeGrays.sort((a, b) => a - b);
-    const bgGray = edgeGrays[Math.floor(edgeGrays.length / 2)] ?? 255;
-
-    // 2. 建立前景遮罩：必須「真正異於掃描底色」或「具備彩度 / 強邊緣」，絕不把卡片間的留白縫隙誤判為前景
+    // 1. 建立對掃描陰影完全免疫的前景遮罩：僅依據「局部邊緣梯度 + 彩度」（不使用全域亮度差，避免掃描儀陰影將多卡連成一片）
+    const padBorderX = Math.max(3, Math.round(sampleWidth * 0.015));
+    const padBorderY = Math.max(3, Math.round(sampleHeight * 0.015));
     const mask = new Uint8Array(totalPixels);
-    for (let y = 2; y < sampleHeight - 2; y++) {
-      for (let x = 2; x < sampleWidth - 2; x++) {
+    for (let y = padBorderY; y < sampleHeight - padBorderY; y++) {
+      for (let x = padBorderX; x < sampleWidth - padBorderX; x++) {
         const p = y * sampleWidth + x;
         const idx = p * 4;
         const r = data[idx];
         const g = data[idx + 1];
         const b = data[idx + 2];
 
-        const bgDiff = Math.abs(gray[p] - bgGray);
         const sat = Math.max(r, g, b) - Math.min(r, g, b);
 
         const idxR = (y * sampleWidth + (x + 1)) * 4;
@@ -270,39 +257,57 @@ export function detectCardBoundariesLocally(imageElement: HTMLImageElement): Cro
           Math.abs(g - data[idxD + 1]) +
           Math.abs(b - data[idxD + 2]);
 
-        if (bgDiff > 26 || sat > 24 || edgeGrad > 48) {
+        if (sat > 20 || edgeGrad > 34) {
           mask[p] = 1;
         }
       }
     }
 
-    // 3. 1px 閉運算 (Dilate 1px -> Erode 1px) 填補卡片內部白邊縫隙，同時維持卡片間隙分離
-    const closed = new Uint8Array(totalPixels);
+    // 2. 分離式閉運算（水平 ±2px 膨脹、垂直 ±4px 膨脹，再 ±2px 侵蝕）
+    //    既可填補卡片白邊與 PSA 標籤縫隙，又不會把左右／上下相鄰的卡片黏在一起
     const temp = new Uint8Array(totalPixels);
-    for (let y = 2; y < sampleHeight - 2; y++) {
-      for (let x = 2; x < sampleWidth - 2; x++) {
+    const closed = new Uint8Array(totalPixels);
+    for (let y = padBorderY; y < sampleHeight - padBorderY; y++) {
+      for (let x = padBorderX; x < sampleWidth - padBorderX; x++) {
         const p = y * sampleWidth + x;
-        if (mask[p] || mask[p - 1] || mask[p + 1] || mask[p - sampleWidth] || mask[p + sampleWidth]) {
-          temp[p] = 1;
+        let hit = false;
+        for (let dy = -4; dy <= 4 && !hit; dy++) {
+          const ny = y + dy;
+          if (ny < padBorderY || ny >= sampleHeight - padBorderY) continue;
+          const rowOff = ny * sampleWidth;
+          for (let dx = -2; dx <= 2; dx++) {
+            const nx = x + dx;
+            if (nx >= padBorderX && nx < sampleWidth - padBorderX && mask[rowOff + nx]) {
+              hit = true;
+              break;
+            }
+          }
         }
+        if (hit) temp[p] = 1;
       }
     }
-    for (let y = 2; y < sampleHeight - 2; y++) {
-      for (let x = 2; x < sampleWidth - 2; x++) {
+    for (let y = padBorderY + 2; y < sampleHeight - padBorderY - 2; y++) {
+      for (let x = padBorderX + 2; x < sampleWidth - padBorderX - 2; x++) {
         const p = y * sampleWidth + x;
-        if (temp[p] && temp[p - 1] && temp[p + 1] && temp[p - sampleWidth] && temp[p + sampleWidth]) {
+        if (
+          temp[p] &&
+          temp[p - 1] &&
+          temp[p + 1] &&
+          temp[p - sampleWidth] &&
+          temp[p + sampleWidth]
+        ) {
           closed[p] = 1;
         }
       }
     }
 
-    // 4. BFS 連通區域標記，找出每一張獨立卡片的緊貼外框
+    // 4. BFS 連通區域標記
     const visited = new Uint8Array(totalPixels);
-    const rawBoxes: CropBox[] = [];
+    const candidateBoxes: Array<CropBox & { areaPct: number }> = [];
     const queue = new Int32Array(totalPixels);
 
-    for (let y = 2; y < sampleHeight - 2; y++) {
-      for (let x = 2; x < sampleWidth - 2; x++) {
+    for (let y = padBorderY; y < sampleHeight - padBorderY; y++) {
+      for (let x = padBorderX; x < sampleWidth - padBorderX; x++) {
         const startIdx = y * sampleWidth + x;
         if (!closed[startIdx] || visited[startIdx]) continue;
 
@@ -338,27 +343,63 @@ export function detectCardBoundariesLocally(imageElement: HTMLImageElement): Cro
         const hPct = ((maxY - minY + 1) / sampleHeight) * 100;
         const areaPct = (area / totalPixels) * 100;
 
-        // 過濾雜點與覆蓋全圖的背景大框
-        if (wPct < 9 || hPct < 14 || areaPct < 1.5) continue;
-        if (wPct > 82 && hPct > 82) continue;
+        // 暫時保留較矮的標籤候選區（hPct >= 4），待下一步與下方卡面合併
+        if (wPct < 7 || hPct < 4 || areaPct < 0.5) continue;
+        if (wPct > 95 && hPct > 95) continue;
 
-        const padX = 0.6;
-        const padY = 0.6;
+        const padX = 0.5;
+        const padY = 0.5;
         const normX = Math.max(0.5, Math.round((minX / sampleWidth) * 100 * 10 - padX * 10) / 10);
         const normY = Math.max(0.5, Math.round((minY / sampleHeight) * 100 * 10 - padY * 10) / 10);
         const normW = Math.min(99 - normX, Math.round((wPct + padX * 2) * 10) / 10);
         const normH = Math.min(99 - normY, Math.round((hPct + padY * 2) * 10) / 10);
 
-        rawBoxes.push({
+        candidateBoxes.push({
           id: `local-card-${uuidv4().slice(0, 8)}`,
           x: normX,
           y: normY,
           width: normW,
           height: normH,
           rotation: 0,
+          areaPct,
         });
       }
     }
+
+    // 4.5. 自動合併垂直對齊的「鑑定標籤 + 卡面」（解決 PSA / BGS 鑑定殼上下分離問題）
+    const consumedLabelIndices = new Set<number>();
+    for (let i = 0; i < candidateBoxes.length; i++) {
+      const topBox = candidateBoxes[i];
+      if (topBox.height >= 15) continue; // 只合併矮的標籤條
+      for (let j = 0; j < candidateBoxes.length; j++) {
+        if (i === j || consumedLabelIndices.has(j)) continue;
+        const cardBox = candidateBoxes[j];
+        if (cardBox.height < 14) continue;
+        const overlapLeft = Math.max(topBox.x, cardBox.x);
+        const overlapRight = Math.min(topBox.x + topBox.width, cardBox.x + cardBox.width);
+        const overlapW = Math.max(0, overlapRight - overlapLeft);
+        const minW = Math.min(topBox.width, cardBox.width);
+        const verticalGap = cardBox.y - (topBox.y + topBox.height);
+
+        if (overlapW / minW > 0.55 && verticalGap >= -2 && verticalGap < 6) {
+          const mergedX = Math.min(topBox.x, cardBox.x);
+          const mergedY = Math.min(topBox.y, cardBox.y);
+          const mergedRight = Math.max(topBox.x + topBox.width, cardBox.x + cardBox.width);
+          const mergedBottom = Math.max(topBox.y + topBox.height, cardBox.y + cardBox.height);
+          cardBox.x = mergedX;
+          cardBox.y = mergedY;
+          cardBox.width = Math.round((mergedRight - mergedX) * 10) / 10;
+          cardBox.height = Math.round((mergedBottom - mergedY) * 10) / 10;
+          cardBox.areaPct += topBox.areaPct;
+          consumedLabelIndices.add(i);
+          break;
+        }
+      }
+    }
+
+    const rawBoxes: CropBox[] = candidateBoxes
+      .filter((b, idx) => !consumedLabelIndices.has(idx) && b.height >= 10 && b.areaPct >= 1.2)
+      .map(({ areaPct: _areaPct, ...rest }) => rest);
 
     // 5. 移除被外框包覆的內部子框（例如卡夾外框已框住整張卡，移除裡面的頭像子框）
     const boxes = rawBoxes.filter((box, idx) => {

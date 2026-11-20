@@ -142,6 +142,7 @@ export default function CardExhibitionsAdmin() {
     const [isAddFormExpanded, setIsAddFormExpanded] = useState(false);
 
     // AI Fetch states
+    const [aiSearchRegion, setAiSearchRegion] = useState<'all' | 'taiwan' | 'asia' | 'usa'>('all');
     const [isAiFetching, setIsAiFetching] = useState(false);
     const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
     const [aiExtractedList, setAiExtractedList] = useState<ExtractedExhibition[]>([]);
@@ -308,12 +309,13 @@ export default function CardExhibitionsAdmin() {
     }, [filteredExhibitions]);
 
     // Call AI fetch endpoint
-    const handleFetchFromAi = async () => {
+    const handleFetchFromAi = async (targetRegion: 'all' | 'taiwan' | 'asia' | 'usa' = aiSearchRegion) => {
         setIsAiFetching(true);
         try {
             const res = await adminFetch('/api/admin/fetch-exhibitions', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ region: targetRegion }),
             });
             const data = await res.json();
             if (!data.success) {
@@ -896,23 +898,39 @@ export default function CardExhibitionsAdmin() {
                         </DialogContent>
                     </Dialog>
 
-                    <Button 
-                        onClick={handleFetchFromAi} 
-                        disabled={isAiFetching}
-                        className="rounded-xl bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white font-black shadow-md border border-cyan-400/30 transition-all duration-200 active:scale-95 text-xs h-10 px-4"
-                    >
-                        {isAiFetching ? (
-                            <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin text-cyan-200" />
-                                正在全網檢索台灣卡展...
-                            </>
-                        ) : (
-                            <>
-                                <Sparkles className="mr-2 h-4 w-4 text-amber-300 animate-pulse" />
-                                🤖 AI 一鍵提取全台卡展
-                            </>
-                        )}
-                    </Button>
+                    <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl p-1 shadow-xs">
+                        <Select
+                            value={aiSearchRegion}
+                            onValueChange={(val: 'all' | 'taiwan' | 'asia' | 'usa') => setAiSearchRegion(val)}
+                        >
+                            <SelectTrigger className="h-8 border-0 bg-transparent text-xs font-bold text-slate-700 w-[125px] focus:ring-0">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">🌍 全球 (台/亞/美)</SelectItem>
+                                <SelectItem value="taiwan">🇹🇼 台灣展區</SelectItem>
+                                <SelectItem value="asia">🌏 亞洲展區</SelectItem>
+                                <SelectItem value="usa">🇺🇸 美國展區</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <Button 
+                            onClick={() => handleFetchFromAi(aiSearchRegion)} 
+                            disabled={isAiFetching}
+                            className="rounded-lg bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 hover:brightness-105 text-[#120d02] font-black shadow-xs transition-all duration-200 active:scale-95 text-xs h-8 px-3.5"
+                        >
+                            {isAiFetching ? (
+                                <>
+                                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                                    檢索中...
+                                </>
+                            ) : (
+                                <>
+                                    <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                                    AI 搜尋卡展
+                                </>
+                            )}
+                        </Button>
+                    </div>
 
                     <Button 
                         onClick={() => setIsAddFormExpanded(!isAddFormExpanded)}
@@ -1001,12 +1019,12 @@ export default function CardExhibitionsAdmin() {
             <Dialog open={isAiDialogOpen} onOpenChange={setIsAiDialogOpen}>
                 <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto bg-slate-950 text-white border-slate-800">
                     <DialogHeader>
-                        <DialogTitle className="text-xl font-bold flex items-center gap-2 text-cyan-400">
-                            <Sparkles className="h-5 w-5 text-amber-400" />
-                            AI 聯網檢索：台灣球員卡展情報 ({aiExtractedList.length} 場)
+                        <DialogTitle className="text-xl font-bold flex items-center gap-2 text-[#FDE68A]">
+                            <Sparkles className="h-5 w-5 text-amber-300" />
+                            AI 聯網檢索：{aiSearchRegion === 'taiwan' ? '台灣' : aiSearchRegion === 'asia' ? '亞洲' : aiSearchRegion === 'usa' ? '美國' : '全球 (台灣／亞洲／美國)'}球員卡展情報 ({aiExtractedList.length} 場)
                         </DialogTitle>
                         <DialogDescription className="text-slate-400 text-xs">
-                            以下為 Gemini 聯網搜尋並解析之全台卡展活動。您可以勾選欲匯入之項目，點擊匯入後將直接同步發布至前台卡展行事曆。
+                            以下為 Gemini 聯網搜尋並解析之卡展活動。您可以勾選欲匯入之項目，點擊匯入後將直接同步發布至前台卡展行事曆對應展區。
                         </DialogDescription>
                     </DialogHeader>
 
