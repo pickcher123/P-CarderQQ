@@ -384,55 +384,93 @@ STRICT DETECTION RULES:
     }
 
     if (mode === 'price_estimate') {
-      // 模式 3：卡價行情智慧查詢 (估算 eBay / 130point / 台灣市場行情)
+      // 模式 3：卡價行情智慧查詢（優先聯網檢索 eBay / 130point / PWCC / Goldin 近期成交紀錄，失敗時自動降級純模型估價）
+      const today = new Date().toISOString().split('T')[0];
       const pricePrompt = `
-你是一位精通全球球員卡拍賣市場（eBay, 130point, PWCC, Goldin, 台灣各大卡店）的資深估價師。
-請根據以下卡片資訊（球員姓名、發行年份、系列品牌、卡號、特徵如簽名/RC/限量、以及 PSA/BGS 評級），
-為每張卡片評估目前市場行情（以新台幣 TWD / 等值點數計價）：
+你是一位精通全球球員卡拍賣市場（eBay Sold、130point、PWCC、Goldin、CardLadder 與台灣各大卡店行情）的資深估價師。
+今天是 ${today}，美金匯率約 1 USD = 32.5 TWD。
+請逐一查詢並評估以下卡片的近期真實成交行情（優先搜尋 eBay Sold / 130point 近期同卡號、同平行版、同評級的成交價），再換算為新台幣 TWD 建議售價：
 
 卡片清單：
 ${JSON.stringify(cardList, null, 2)}
 
-請綜合考量：
-1. 球員知名度與歷史表現（例如梅西、大谷翔平、維尼修斯的高價值；以及潛力新星的行情）
-2. 評級等級的溢價幅度（PSA 10 往往是 PSA 9 的 2~4 倍，若是 BGS 9.5 或金標更具價值，RAW 裸卡折價）
-3. 是否包含簽名 (AUTO) 或球衣 PATCH、限量編號 (Numbered)
+【嚴格估價原則】：
+1. 優先比對完全相同的年份、系列、平行版（Refractor / Silver / Gold / Numbered / Auto / Kaboom / Stained Glass 等）與評級等級（PSA 10、PSA 9、PSA 8.5、BGS 9.5、RAW）。
+2. 評級價差必須合理：PSA 10 通常高於 PSA 9 約 1.8~3.5 倍；PSA 8.5 / PSA 8 接近或略高於 RAW 裸卡；親筆簽名（AUTO）與 RC 新秀標誌具有顯著溢價。
+3. suggestedPrice 請給出「單一新台幣整數建議售價」（例如 4500、12800，尾數取整至十位或百位，最低不低於 50）。
+4. priceRange 請同時標註台幣與美金參考區間，格式例如："NT$ 4,200 ~ 5,500 (US$ 130 ~ 170)"。
+5. rationale 請用繁體中文精簡說明（35~80 字），指出參考的市場成交區間、評級／簽名溢價與球員近期行情。
 
-請以結構化 JSON 回傳每張卡片的建議售價 (suggestedPrice，整數) 與行情區間 (priceRange，例如 "NT$ 15,000 ~ 20,000") 與簡短依據 (rationale)。
+請僅輸出標準 JSON 物件，格式為 { "estimates": [{ "id": "...", "suggestedPrice": 4500, "priceRange": "...", "rationale": "..." }] }。
 `;
 
-      const response = await callWithRetry(() =>
-        ai.models.generateContent({
-          model: GEMINI_VISION_MODEL,
-          contents: pricePrompt,
-          config: {
-            thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
-            responseMimeType: 'application/json',
-            responseSchema: {
+      const priceResponseSchema = {
+        type: Type.OBJECT,
+        properties: {
+          estimates: {
+            type: Type.ARRAY,
+            items: {
               type: Type.OBJECT,
               properties: {
-                estimates: {
-                  type: Type.ARRAY,
-                  items: {
-                    type: Type.OBJECT,
-                    properties: {
-                      id: { type: Type.STRING },
-                      suggestedPrice: { type: Type.INTEGER },
-                      priceRange: { type: Type.STRING },
-                      rationale: { type: Type.STRING },
-                    },
-                    required: ['id', 'suggestedPrice', 'priceRange'],
-                  },
-                },
+                id: { type: Type.STRING },
+                suggestedPrice: { type: Type.INTEGER },
+                priceRange: { type: Type.STRING },
+                rationale: { type: Type.STRING },
               },
-              required: ['estimates'],
+              required: ['id', 'suggestedPrice', 'priceRange', 'rationale'],
             },
           },
-        })
-      );
+        },
+        required: ['estimates'],
+      };
 
-      const parsedPrice = safeParseJson(response.text, { estimates: [] });
-      return NextResponse.json(parsedPrice);
+      let usedLiveSearch = false;
+      let responseText: string | undefined;
+
+      try {
+        const searchResp = await callWithRetry(() =>
+          ai.models.generateContent({
+            model: GEMINI_VISION_MODEL,
+            contents: pricePrompt,
+            config: {
+              tools: [{ googleSearch: {} }],
+              thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+              responseMimeType: 'application/json',
+              responseSchema: priceResponseSchema,
+            },
+          })
+        );
+        responseText = searchResp.text;
+        usedLiveSearch = true;
+      } catch (searchErr) {
+        console.warn('[scan-cards] Google Search price grounding fallback:', searchErr);
+        const fallbackResp = await callWithRetry(() =>
+          ai.models.generateContent({
+            model: GEMINI_VISION_MODEL,
+            contents: pricePrompt,
+            config: {
+              thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+              responseMimeType: 'application/json',
+              responseSchema: priceResponseSchema,
+            },
+          })
+        );
+        responseText = fallbackResp.text;
+      }
+
+      const parsedPrice = safeParseJson<{ estimates?: any[] }>(responseText, { estimates: [] });
+      const normalizedEstimates = (Array.isArray(parsedPrice.estimates) ? parsedPrice.estimates : []).map((e: any) => ({
+        id: String(e.id || ''),
+        suggestedPrice: Math.max(50, Math.round(Number(e.suggestedPrice) || 100)),
+        priceRange: String(e.priceRange || ''),
+        rationale: String(e.rationale || ''),
+      }));
+
+      return NextResponse.json({
+        estimates: normalizedEstimates,
+        usedLiveSearch,
+        model: GEMINI_VISION_MODEL,
+      });
     }
 
     // 模式 2：PRO 智慧辨識 與 PSA/BGS 評級標籤文字精準抓取 (OCR)
