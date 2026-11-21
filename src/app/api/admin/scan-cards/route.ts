@@ -1,6 +1,42 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import { NextRequest, NextResponse } from 'next/server';
 
+function safeParseJson<T>(raw: string | undefined, fallback: T): T {
+  if (!raw) return fallback;
+  try {
+    const cleaned = raw
+      .trim()
+      .replace(/^```(?:json)?\s*/i, '')
+      .replace(/```$/i, '')
+      .trim();
+    return JSON.parse(cleaned) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+async function withRetry<T>(fn: () => Promise<T>, maxRetries = 2): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (err: any) {
+      lastError = err;
+      const msg = String(err?.message || err || '');
+      const status = err?.status || err?.code;
+      const isRetryable =
+        status === 429 ||
+        status === 503 ||
+        /429|503|RESOURCE_EXHAUSTED|UNAVAILABLE|fetch failed|ETIMEDOUT|ECONNRESET/i.test(msg);
+      if (!isRetryable || attempt === maxRetries) {
+        throw err;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 600 * Math.pow(2, attempt)));
+    }
+  }
+  throw lastError;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { 
@@ -32,92 +68,92 @@ export async function POST(req: NextRequest) {
     }
 
     if (mode === 'detect') {
-      // 模式 1：自動偵測多卡邊界框 (Bounding Boxes)
+      // 模式 1：使用 Gemini box_2d (0~1000) 空間定位偵測卡片與鑑定殼外框
       const detectPrompt = `
-請精準偵測這張圖片中「每一張獨立的球員卡／收藏卡／卡夾／PSA或BGS或CGC鑑定殼」的實際最外圍邊界框位置。
+請精準偵測這張圖片中「每一張獨立的球員卡／收藏卡／卡夾／PSA、BGS、CGC、SGC 評級鑑定殼」的實際物理外框位置。
 
-【嚴格規則】：
-1. 若畫面只有「1 張」卡片（即使是近拍佔畫面 60%~90%），請回傳「1 個」緊貼該張卡片或鑑定殼最外緣的邊界框。
-2. 若畫面中有「多張」卡片（例如 2 張、4 張、6 張、9 張），請逐一為每一張卡片分別建立獨立邊界框；絕對不可把相鄰卡片合併成一個框，也不可把同一張鑑定卡的「上方標籤」與「下方卡面」拆成兩個框。
-3. 絕對不可框選空白桌面、掃描儀背景或人像局部；邊界框必須緊貼卡片／卡夾物理四邊。
-4. 座標系統為 0 到 1000 的正規化整數：
-   - ymin: 卡片最上緣 (0-1000)
-   - xmin: 卡片最左緣 (0-1000)
-   - ymax: 卡片最下緣 (0-1000)
-   - xmax: 卡片最右緣 (0-1000)
-5. 依從上到下（同一排由左到右）排序輸出。
+【嚴格空間定位規則】：
+1. 若為 PSA / BGS / CGC / SGC 評級鑑定殼，box_2d 必須「完整包含從頂部標籤到最底部透明外殼邊緣」的整個鑑定殼，絕對不可把上方標籤與下方卡面拆成兩個框，也不可漏掉頂部標籤。
+2. 若畫面只有「1 張」卡片（即使是滿版或近拍佔畫面 60%~98%），請回傳「1 個」緊貼該張卡片或鑑定殼最外緣的 box_2d。
+3. 若畫面中有「多張」卡片（例如 2 張、4 張、6 張、9 張排拍掃描），請逐一為每一張卡片分別建立獨立 box_2d；絕對不可把相鄰卡片合併成一個框，也不可進行上下文腦補合併或重複框選。
+4. 嚴禁框選空白桌面、掃描儀背景黑框或僅框選卡面內的人物頭像。
+5. 使用 box_2d: [ymin, xmin, ymax, xmax]（0 到 1000 的整數座標），並依由上到下、同排由左到右順序輸出。
 請僅回傳標準 JSON。
 `;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: [
-          {
-            role: 'user',
-            parts: [
-              { text: detectPrompt },
-              {
-                inlineData: {
-                  data: base64Data,
-                  mimeType,
-                },
-              },
-            ],
-          },
-        ],
-        config: {
-          temperature: 0.1,
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              boxes: {
-                type: Type.ARRAY,
-                items: {
-                  type: Type.OBJECT,
-                  properties: {
-                    ymin: { type: Type.INTEGER },
-                    xmin: { type: Type.INTEGER },
-                    ymax: { type: Type.INTEGER },
-                    xmax: { type: Type.INTEGER },
-                    label: { type: Type.STRING },
+      const response = await withRetry(() =>
+        ai.models.generateContent({
+          model: 'gemini-2.5-flash',
+          contents: [
+            {
+              role: 'user',
+              parts: [
+                { text: detectPrompt },
+                {
+                  inlineData: {
+                    data: base64Data,
+                    mimeType,
                   },
-                  required: ['ymin', 'xmin', 'ymax', 'xmax'],
+                },
+              ],
+            },
+          ],
+          config: {
+            temperature: 0.1,
+            responseMimeType: 'application/json',
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                boxes: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      box_2d: {
+                        type: Type.ARRAY,
+                        items: { type: Type.INTEGER },
+                      },
+                      label: { type: Type.STRING },
+                    },
+                    required: ['box_2d'],
+                  },
                 },
               },
+              required: ['boxes'],
             },
-            required: ['boxes'],
           },
-        },
-      });
+        })
+      );
 
-      const parsed = JSON.parse(response.text || '{"boxes":[]}');
+      const parsed = safeParseJson<{ boxes?: any[] }>(response.text, { boxes: [] });
       const rawBoxes = Array.isArray(parsed.boxes) ? parsed.boxes : [];
 
-      // 後端過濾：僅過濾極小雜點與多卡情境下的整張畫布外框（保留單張近拍大卡）
-      const validBoxes = rawBoxes
-        .map((b: any) => ({
-          ...b,
-          xmin: Math.max(0, Math.min(990, Number(b.xmin))),
-          ymin: Math.max(0, Math.min(990, Number(b.ymin))),
-          xmax: Math.max(10, Math.min(1000, Number(b.xmax))),
-          ymax: Math.max(10, Math.min(1000, Number(b.ymax))),
-        }))
+      // 兼容 box_2d: [ymin, xmin, ymax, xmax] 與舊版 ymin/xmin/ymax/xmax
+      const normalizedBoxes = rawBoxes
+        .map((b: any) => {
+          const coords = Array.isArray(b.box_2d) && b.box_2d.length === 4
+            ? { ymin: b.box_2d[0], xmin: b.box_2d[1], ymax: b.box_2d[2], xmax: b.box_2d[3] }
+            : { ymin: b.ymin, xmin: b.xmin, ymax: b.ymax, xmax: b.xmax };
+          const xmin = Math.max(0, Math.min(995, Number(coords.xmin)));
+          const ymin = Math.max(0, Math.min(995, Number(coords.ymin)));
+          const xmax = Math.max(5, Math.min(1000, Number(coords.xmax)));
+          const ymax = Math.max(5, Math.min(1000, Number(coords.ymax)));
+          return { ...b, xmin, ymin, xmax, ymax };
+        })
         .filter((b: any) => {
           const w = b.xmax - b.xmin;
           const h = b.ymax - b.ymin;
           if (!Number.isFinite(w) || !Number.isFinite(h)) return false;
           if (w < 50 || h < 65) return false;
-          // 多張卡片時若出現覆蓋整張畫面的外框則排除；單張卡片僅排除幾乎貼滿 98% 的無效全圖框
+          // 僅在多卡情境下過濾誤抓整張畫面的外框；單張滿版近拍予以保留
           if (rawBoxes.length > 1 && w > 880 && h > 880) return false;
-          if (w > 980 && h > 980) return false;
           return true;
         });
 
-      // 移除嵌套子框與高度重疊框（避免同一張卡同時框到外框與內部人像/標籤）
-      const filteredBoxes = validBoxes.filter((box: any, idx: number) => {
+      // 移除嵌套子框與高度重疊框
+      const filteredBoxes = normalizedBoxes.filter((box: any, idx: number) => {
         const area = (box.xmax - box.xmin) * (box.ymax - box.ymin);
-        return !validBoxes.some((other: any, oIdx: number) => {
+        return !normalizedBoxes.some((other: any, oIdx: number) => {
           if (idx === oIdx) return false;
           const otherArea = (other.xmax - other.xmin) * (other.ymax - other.ymin);
           if (otherArea <= area) return false;
@@ -152,34 +188,36 @@ ${JSON.stringify(cardList, null, 2)}
 請以結構化 JSON 回傳每張卡片的建議售價 (suggestedPrice，整數) 與行情區間 (priceRange，例如 "NT$ 15,000 ~ 20,000") 與簡短依據 (rationale)。
 `;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: [{ role: 'user', parts: [{ text: pricePrompt }] }],
-        config: {
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              estimates: {
-                type: Type.ARRAY,
-                items: {
-                  type: Type.OBJECT,
-                  properties: {
-                    id: { type: Type.STRING },
-                    suggestedPrice: { type: Type.INTEGER },
-                    priceRange: { type: Type.STRING },
-                    rationale: { type: Type.STRING },
+      const response = await withRetry(() =>
+        ai.models.generateContent({
+          model: 'gemini-2.5-flash',
+          contents: [{ role: 'user', parts: [{ text: pricePrompt }] }],
+          config: {
+            responseMimeType: 'application/json',
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                estimates: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      id: { type: Type.STRING },
+                      suggestedPrice: { type: Type.INTEGER },
+                      priceRange: { type: Type.STRING },
+                      rationale: { type: Type.STRING },
+                    },
+                    required: ['id', 'suggestedPrice', 'priceRange'],
                   },
-                  required: ['id', 'suggestedPrice', 'priceRange'],
                 },
               },
+              required: ['estimates'],
             },
-            required: ['estimates'],
           },
-        },
-      });
+        })
+      );
 
-      const parsedPrice = JSON.parse(response.text || '{"estimates":[]}');
+      const parsedPrice = safeParseJson(response.text, { estimates: [] });
       return NextResponse.json(parsedPrice);
     }
 
@@ -213,54 +251,57 @@ ${JSON.stringify(cardList, null, 2)}
 請以結構化 JSON 輸出。
 `;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
-      contents: [
-        {
-          role: 'user',
-          parts: [
-            { text: recognizePrompt },
-            {
-              inlineData: {
-                data: base64Data,
-                mimeType,
+    const response = await withRetry(() =>
+      ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              { text: recognizePrompt },
+              {
+                inlineData: {
+                  data: base64Data,
+                  mimeType,
+                },
               },
-            },
-          ],
-        },
-      ],
-      config: {
-        responseMimeType: 'application/json',
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            name: { type: Type.STRING, description: '球員或卡片完整名稱' },
-            category: { 
-              type: Type.STRING, 
-              description: '籃球 | 棒球 | 足球 | 女孩卡 | 女優 | TCG | 其他' 
-            },
-            year: { type: Type.INTEGER, description: '發行年份' },
-            series: { type: Type.STRING, description: '卡片系列品牌' },
-            cardNumber: { type: Type.STRING, description: '卡號' },
-            grade: { type: Type.STRING, description: '評級機構與分數，如 PSA 10 或 RAW' },
-            slabLabelText: { type: Type.STRING, description: 'PSA/BGS 評級標籤上完整的文字 (包含年份系列球員品名等級與證號)' },
-            certNumber: { type: Type.STRING, description: '鑑定證號 (Serial Number / Cert#)' },
-            subgrades: { type: Type.STRING, description: 'BGS/CGC 小分或簽名分' },
-            formattedTitle: { type: Type.STRING, description: '建議的標準卡牌拍賣品名' },
-            features: {
-              type: Type.ARRAY,
-              items: { type: Type.STRING },
-              description: '特徵標籤，如 RC, AUTO, PATCH, 1/1',
-            },
-            suggestedPrice: { type: Type.INTEGER, description: '建議售價（點數）' },
-            description: { type: Type.STRING, description: '簡述' },
+            ],
           },
-          required: ['name', 'category', 'grade', 'features', 'suggestedPrice'],
+        ],
+        config: {
+          temperature: isSlabOcrOnly ? 0.1 : 0.2,
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              name: { type: Type.STRING, description: '球員或卡片完整名稱' },
+              category: { 
+                type: Type.STRING, 
+                description: '籃球 | 棒球 | 足球 | 女孩卡 | 女優 | TCG | 其他' 
+              },
+              year: { type: Type.INTEGER, description: '發行年份' },
+              series: { type: Type.STRING, description: '卡片系列品牌' },
+              cardNumber: { type: Type.STRING, description: '卡號' },
+              grade: { type: Type.STRING, description: '評級機構與分數，如 PSA 10 或 RAW' },
+              slabLabelText: { type: Type.STRING, description: 'PSA/BGS 評級標籤上完整的文字 (包含年份系列球員品名等級與證號)' },
+              certNumber: { type: Type.STRING, description: '鑑定證號 (Serial Number / Cert#)' },
+              subgrades: { type: Type.STRING, description: 'BGS/CGC 小分或簽名分' },
+              formattedTitle: { type: Type.STRING, description: '建議的標準卡牌拍賣品名' },
+              features: {
+                type: Type.ARRAY,
+                items: { type: Type.STRING },
+                description: '特徵標籤，如 RC, AUTO, PATCH, 1/1',
+              },
+              suggestedPrice: { type: Type.INTEGER, description: '建議售價（點數）' },
+              description: { type: Type.STRING, description: '簡述' },
+            },
+            required: ['name', 'category', 'grade', 'features', 'suggestedPrice'],
+          },
         },
-      },
-    });
+      })
+    );
 
-    const parsed = JSON.parse(response.text || '{}');
+    const parsed = safeParseJson(response.text, {});
     return NextResponse.json(parsed);
 
   } catch (error: any) {

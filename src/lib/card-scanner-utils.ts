@@ -96,22 +96,13 @@ export async function cropImageFromSource(
       }
 
       ctx.save();
-      // 移動至中心旋轉
+      // 直接以原圖裁切中心為軸旋轉採樣，避免「先裁再轉」造成四角出現空白或被裁角
+      const centerX = pixelX + pixelWidth / 2;
+      const centerY = pixelY + pixelHeight / 2;
       ctx.translate(canvas.width / 2, canvas.height / 2);
       ctx.rotate(rotationRad);
-
-      // 繪製裁切區域
-      ctx.drawImage(
-        imageElement,
-        pixelX,
-        pixelY,
-        pixelWidth,
-        pixelHeight,
-        -pixelWidth / 2,
-        -pixelHeight / 2,
-        pixelWidth,
-        pixelHeight
-      );
+      ctx.translate(-centerX, -centerY);
+      ctx.drawImage(imageElement, 0, 0, naturalWidth, naturalHeight);
       ctx.restore();
 
       // 另行生成輕量化、極高清晰度儲存專用 Data URL（最大寬度 720px）
@@ -156,9 +147,48 @@ export async function cropImageFromSource(
 }
 
 /**
- * 將圖片縮放至適合 AI 分析的輕量解析度 (1024px，避免超出 HTTP payload 限制)
+ * 專供單卡 AI 辨識與 PSA 標籤 OCR 使用：裁切並壓縮為 1280px 高清 JPEG，避免 5~12MB 原圖造成 Payload Too Large
  */
-export function compressImageForDetection(imageElement: HTMLImageElement, maxDimension: number = 1024): string {
+export async function cropImageForAi(
+  imageElement: HTMLImageElement,
+  cropBox: CropBox,
+  maxDimension: number = 1280
+): Promise<string> {
+  const { dataUrl } = await cropImageFromSource(imageElement, cropBox, 'image/jpeg', 0.88);
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      let width = img.naturalWidth || img.width;
+      let height = img.naturalHeight || img.height;
+      if (width > maxDimension || height > maxDimension) {
+        if (width > height) {
+          height = Math.round((height * maxDimension) / width);
+          width = maxDimension;
+        } else {
+          width = Math.round((width * maxDimension) / height);
+          height = maxDimension;
+        }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        resolve(dataUrl);
+        return;
+      }
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', 0.86));
+    };
+    img.onerror = () => reject(new Error('AI 壓縮圖片載入失敗'));
+    img.src = dataUrl;
+  });
+}
+
+/**
+ * 將圖片縮放至適合 AI 邊界偵測的高清解析度 (1536px，兼具小卡文字辨識力與 HTTP 傳輸穩定度)
+ */
+export function compressImageForDetection(imageElement: HTMLImageElement, maxDimension: number = 1536): string {
   const canvas = document.createElement('canvas');
   let width = imageElement.naturalWidth;
   let height = imageElement.naturalHeight;
