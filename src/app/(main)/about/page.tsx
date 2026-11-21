@@ -36,17 +36,13 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { SafeImage } from '@/components/safe-image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
-import type { SystemConfig } from '@/types/system';
+import { useSystemConfig } from '@/components/providers/system-config-provider';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
 export default function AboutPage() {
-  const firestore = useFirestore();
   const { toast } = useToast();
-  const systemConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'systemConfig', 'main') : null, [firestore]);
-  const { data: systemConfig } = useDoc<SystemConfig>(systemConfigRef);
+  const { systemConfig } = useSystemConfig();
 
   const fallbackOriginImage = PlaceHolderImages.find(img => img.id === 'about-origin');
   const originImageUrl = systemConfig?.aboutOriginImageUrl || fallbackOriginImage?.imageUrl || '';

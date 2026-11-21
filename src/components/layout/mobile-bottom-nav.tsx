@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { motion } from "framer-motion";
 import { 
   NavDrawIcon, 
   NavBetIcon, 
@@ -14,8 +16,12 @@ import { Trophy, Calendar, Gift } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { SystemConfig } from '@/types/system';
 import { useFeatureFlags } from '@/hooks/use-feature-flags';
-import { PromoRedeemModal } from '@/components/events/PromoRedeemModal';
 import { useToast } from '@/hooks/use-toast';
+
+const PromoRedeemModal = dynamic(
+  () => import('@/components/events/PromoRedeemModal').then((m) => m.PromoRedeemModal),
+  { ssr: false }
+);
 
 interface MobileBottomNavProps {
   systemConfig?: SystemConfig | null;
@@ -157,11 +163,11 @@ export function MobileBottomNav({ systemConfig }: MobileBottomNavProps) {
                   const innerContent = (
                     <>
                       {/* 圖示與角標 */}
-                      <div className="relative flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 my-0.5">
+                      <div className="relative z-10 flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 my-0.5">
                         <Icon className={cn(
-                          "w-[18px] h-[18px] sm:w-[20px] sm:h-[20px] transition-[transform,color] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]", 
+                          "w-[18px] h-[18px] sm:w-[20px] sm:h-[20px] transition-[transform,color] duration-150", 
                           isActive 
-                            ? cn(link.activeColor, "scale-105") 
+                            ? "text-[#FDE68A] scale-105" 
                             : "text-slate-400 group-hover:text-slate-200"
                         )} />
 
@@ -175,9 +181,9 @@ export function MobileBottomNav({ systemConfig }: MobileBottomNavProps) {
 
                       {/* 標籤文字：禁止折行，保證排版簡潔 */}
                       <span className={cn(
-                        "text-[10px] tracking-tight transition-colors duration-150 text-center leading-none whitespace-nowrap mt-0.5",
+                        "relative z-10 text-[10px] tracking-tight transition-colors duration-150 text-center leading-none whitespace-nowrap mt-0.5",
                         isActive 
-                          ? "font-bold text-white" 
+                          ? "font-black text-[#FDE68A]" 
                           : "font-medium text-slate-400 group-hover:text-slate-200"
                       )}>
                         {link.label}
@@ -193,9 +199,9 @@ export function MobileBottomNav({ systemConfig }: MobileBottomNavProps) {
                         onClick={() => setIsPromoModalOpen(true)}
                         id={`mobile-nav-${link.id}`}
                         className={cn(
-                          "relative flex flex-col items-center justify-center py-1 px-1 rounded-full transition-[transform,background-color,color,border-color] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] group select-none min-h-[46px]",
+                          "relative flex flex-col items-center justify-center py-1 px-1 rounded-full transition-transform duration-150 active:scale-[0.95] group select-none min-h-[46px]",
                           isScrollable ? "flex-1 min-w-[48px] snap-center" : "",
-                          "hover:bg-white/[0.04] text-slate-400 hover:text-pink-300 border border-transparent"
+                          "hover:bg-white/[0.04] text-slate-400 hover:text-amber-200"
                         )}
                       >
                         {innerContent}
@@ -209,13 +215,18 @@ export function MobileBottomNav({ systemConfig }: MobileBottomNavProps) {
                       href={link.href!}
                       id={`mobile-nav-${link.id}`}
                       className={cn(
-                        "relative flex flex-col items-center justify-center py-1 px-1 rounded-full transition-[transform,background-color,color,border-color] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] group select-none min-h-[46px]",
+                        "relative flex flex-col items-center justify-center py-1 px-1 rounded-full transition-transform duration-150 active:scale-[0.95] group select-none min-h-[46px]",
                         isScrollable ? "flex-1 min-w-[48px] snap-center" : "",
-                        isActive 
-                          ? cn("border", link.activeBg) 
-                          : "hover:bg-white/[0.04] text-slate-400 hover:text-slate-200 border border-transparent"
+                        !isActive && "hover:bg-white/[0.04]"
                       )}
                     >
+                      {isActive && (
+                        <motion.span
+                          layoutId="mobile-nav-active-pill"
+                          transition={{ type: "spring", stiffness: 460, damping: 34 }}
+                          className="absolute inset-0 rounded-full bg-gradient-to-b from-amber-300/[0.16] to-amber-400/[0.05] border border-amber-300/45 shadow-[inset_0_1px_0_rgba(253,230,138,0.25)] pointer-events-none"
+                        />
+                      )}
                       {innerContent}
                     </Link>
                   );
@@ -226,17 +237,19 @@ export function MobileBottomNav({ systemConfig }: MobileBottomNavProps) {
         </div>
       </div>
 
-      {/* 🎁 手機版底部導覽列點擊領券時開啟的兌換彈窗 */}
-      <PromoRedeemModal
-        open={isPromoModalOpen}
-        onOpenChange={setIsPromoModalOpen}
-        onApplyReward={(targetEvent, freePlays) => {
-          toast({
-            title: '🎉 兌換成功！',
-            description: `已成功兌換 ${freePlays} 次免費試玩機會！`,
-          });
-        }}
-      />
+      {/* 🎁 手機版底部導覽列點擊領券時才動態載入兌換彈窗 */}
+      {isPromoModalOpen && (
+        <PromoRedeemModal
+          open={isPromoModalOpen}
+          onOpenChange={setIsPromoModalOpen}
+          onApplyReward={(targetEvent, freePlays) => {
+            toast({
+              title: '🎉 兌換成功！',
+              description: `已成功兌換 ${freePlays} 次免費試玩機會！`,
+            });
+          }}
+        />
+      )}
     </>
   );
 }

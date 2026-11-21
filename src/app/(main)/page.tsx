@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
 import { ChevronRight, Trophy, Sparkles, Newspaper, Calendar, ShieldCheck, Zap, Target, Megaphone, Users2, Disc3, ArrowRight, Flame, Gift, Image as ImageIcon, FileText, Radio } from 'lucide-react';
 import { LuckyBagIcon } from '@/components/icons';
@@ -14,22 +15,25 @@ import { Separator } from '@/components/ui/separator';
 import { useState, useMemo, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { NewsPopup } from '@/components/news-popup';
 import { SafeImage } from '@/components/safe-image';
-import { FloatingCardsBackground } from '@/components/floating-cards-background';
 import { HeroStageFloor } from '@/components/hero-stage-floor';
 import { PLACEHOLDER_CARD_IMAGE } from '@/lib/placeholders';
-import { CardExhibitionCalendar } from '@/components/card-exhibition-calendar';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from '@/components/ui/carousel';
-import { PoolCard } from '@/components/pool-card';
 import type { CardPool, CardItem } from '@/types';
-import { PromoRedeemModal } from '@/components/events/PromoRedeemModal';
-import { WhyChooseBentoGrid } from '@/components/home/WhyChooseBentoGrid';
 import { useToast } from '@/hooks/use-toast';
 import { claimCommunityFreeDraw } from '@/lib/promo-draw-service';
+import { useSystemConfig } from '@/components/providers/system-config-provider';
+import { usePoolCardsMap } from '@/lib/pool-cards-cache';
 import confetti from 'canvas-confetti';
 import { OFFICIAL_NEWS_LIST } from '@/lib/default-news';
 import { BeginnerGuideDialog } from '@/components/beginner-guide-dialog';
+
+const NewsPopup = dynamic(() => import('@/components/news-popup').then(m => m.NewsPopup), { ssr: false });
+const FloatingCardsBackground = dynamic(() => import('@/components/floating-cards-background').then(m => m.FloatingCardsBackground), { ssr: false });
+const CardExhibitionCalendar = dynamic(() => import('@/components/card-exhibition-calendar').then(m => m.CardExhibitionCalendar), { ssr: false });
+const PoolCard = dynamic(() => import('@/components/pool-card').then(m => m.PoolCard), { ssr: false });
+const PromoRedeemModal = dynamic(() => import('@/components/events/PromoRedeemModal').then(m => m.PromoRedeemModal), { ssr: false });
+const WhyChooseBentoGrid = dynamic(() => import('@/components/home/WhyChooseBentoGrid').then(m => m.WhyChooseBentoGrid), { ssr: false });
 
 interface NewsItem {
     id: string;
@@ -83,11 +87,6 @@ export default function Home() {
     return query(collection(firestore, 'cardPools'), orderBy('createdAt', 'desc'), limit(4));
   }, [firestore]);
 
-  const cardsQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return collection(firestore, 'allCards');
-  }, [firestore]);
-
   const categoriesQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'categories'), orderBy('order', 'asc'));
@@ -110,7 +109,6 @@ export default function Home() {
   }, [newsItems]);
 
   const { data: featuredPools, isLoading: isLoadingPools } = useCollection<CardPool>(poolsQuery);
-  const { data: cardsList } = useCollection<CardItem>(cardsQuery);
   const { data: categories } = useCollection<{ id: string; name: string; imageUrl?: string; linkUrl?: string; order?: number }>(categoriesQuery);
 
   const partnersQuery = useMemoFirebase(() => {
@@ -120,11 +118,7 @@ export default function Home() {
 
   const { data: partners, isLoading: isLoadingPartners } = useCollection<Partner>(partnersQuery);
 
-  const systemConfigRef = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return doc(firestore, 'systemConfig', 'main');
-  }, [firestore]);
-  const { data: systemConfig } = useDoc<any>(systemConfigRef);
+  const { systemConfig } = useSystemConfig();
 
   const userDocRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -187,13 +181,8 @@ export default function Home() {
     }
   };
 
-  const allCardsMap = useMemo(() => {
-    const map = new Map<string, CardItem>();
-    if (cardsList) {
-      cardsList.forEach(c => map.set(c.id, c));
-    }
-    return map;
-  }, [cardsList]);
+  // 只按需載入首頁熱門推薦卡池實際用到的卡片，並與抽卡頁共享記憶體快取
+  const allCardsMap = usePoolCardsMap(firestore, featuredPools) as unknown as Map<string, CardItem>;
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -624,17 +613,19 @@ export default function Home() {
         </DialogContent>
       </Dialog>
 
-      {/* 🎁 開幕免費領券中心 / 兌換碼彈窗 */}
-      <PromoRedeemModal
-        open={isPromoModalOpen}
-        onOpenChange={setIsPromoModalOpen}
-        onApplyReward={(targetEvent, freePlays) => {
-          toast({
-            title: '🎉 兌換成功！',
-            description: `已成功兌換 ${freePlays} 次免費試玩機會！`,
-          });
-        }}
-      />
+      {/* 🎁 開幕免費領券中心 / 兌換碼彈窗（點擊開啟時才動態載入） */}
+      {isPromoModalOpen && (
+        <PromoRedeemModal
+          open={isPromoModalOpen}
+          onOpenChange={setIsPromoModalOpen}
+          onApplyReward={(targetEvent, freePlays) => {
+            toast({
+              title: '🎉 兌換成功！',
+              description: `已成功兌換 ${freePlays} 次免費試玩機會！`,
+            });
+          }}
+        />
+      )}
     </div>
   );
 }

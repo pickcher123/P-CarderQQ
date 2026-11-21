@@ -1,24 +1,24 @@
 'use client';
 import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { motion, useReducedMotion } from "framer-motion";
 import { Header } from "@/components/layout/header";
-import { Footer } from "@/components/layout/footer";
 import { RouteProgressBar } from "@/components/layout/route-progress-bar";
 import { AnimatedBackground } from "@/components/animated-background";
-import { useDoc, useFirestore, useMemoFirebase } from "@/firebase";
-import { doc } from "firebase/firestore";
+import { useSystemConfig } from "@/components/providers/system-config-provider";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { NewsMarquee } from "@/components/news-marquee";
-import { FloatingLineButton } from "@/components/floating-line-button";
-import { InstallPWAButton } from "@/components/install-pwa-button";
-import type { SystemConfig } from "@/types/system";
 import { usePathname } from "next/navigation";
 import { useFeatureFlags } from "@/hooks/use-feature-flags";
 import { getEffectiveParticleEffect, ParticleMode } from "@/lib/daily-style";
 import { useIsAdmin } from "@/hooks/use-is-admin";
-import { MaintenanceScreen } from "@/components/maintenance-screen";
 import { ShieldAlert, ArrowRight } from "lucide-react";
 import Link from "next/link";
+
+const Footer = dynamic(() => import("@/components/layout/footer").then(m => m.Footer), { ssr: false });
+const FloatingLineButton = dynamic(() => import("@/components/floating-line-button").then(m => m.FloatingLineButton), { ssr: false });
+const InstallPWAButton = dynamic(() => import("@/components/install-pwa-button").then(m => m.InstallPWAButton), { ssr: false });
+const MaintenanceScreen = dynamic(() => import("@/components/maintenance-screen").then(m => m.MaintenanceScreen), { ssr: false });
 
 export default function MainLayout({
   children,
@@ -26,11 +26,9 @@ export default function MainLayout({
   children: React.ReactNode;
 }>) {
   const shouldReduceMotion = useReducedMotion();
-  const firestore = useFirestore();
   const pathname = usePathname();
   const { isAdmin, isLoading: isAuthLoading } = useIsAdmin();
-  const systemConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'systemConfig', 'main') : null, [firestore]);
-  const { data: systemConfig, isLoading: isConfigLoading } = useDoc<SystemConfig>(systemConfigRef);
+  const { systemConfig } = useSystemConfig();
   const { isFeatureEnabled } = useFeatureFlags(systemConfig);
   
   const [activeParticleEffect, setActiveParticleEffect] = useState<ParticleMode>('gold_dust');
@@ -63,13 +61,13 @@ export default function MainLayout({
 
   const isMaintenanceActive = Boolean(systemConfig?.maintenance?.enabled);
 
-  // 🚧 載入系統設定或驗證身分期間，先顯示暗色載入遮罩，避免重新整理時短暫露出前台頁面
-  if (isConfigLoading || (isMaintenanceActive && isAuthLoading)) {
+  // 🚧 僅在確認已開啟維護模式且正在驗證是否為管理員時顯示載入遮罩，一般開啟網頁不再出現黑屏轉圈
+  if (isMaintenanceActive && isAuthLoading) {
     return (
       <div className="min-h-[100dvh] w-full flex items-center justify-center bg-[#06080d] text-slate-400 text-xs font-bold tracking-wider">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 rounded-full border-2 border-amber-400/30 border-t-amber-400 animate-spin" />
-          <span>系統連線驗證中...</span>
+          <span>驗證管理員權限中...</span>
         </div>
       </div>
     );

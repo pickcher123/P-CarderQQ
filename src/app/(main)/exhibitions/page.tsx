@@ -2,20 +2,13 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { doc } from 'firebase/firestore';
 import { Settings } from 'lucide-react';
-import { useFirestore, useMemoFirebase, useDoc } from '@/firebase';
+import { useSystemConfig } from '@/components/providers/system-config-provider';
 import { Button } from '@/components/ui/button';
-import type { SystemConfig } from '@/types/system';
 import { UnifiedEventCalendar } from '@/components/calendar/unified-event-calendar';
 
 export default function ExhibitionsPage() {
-  const firestore = useFirestore();
-  const systemConfigRef = useMemoFirebase(
-    () => (firestore ? doc(firestore, 'systemConfig', 'main') : null),
-    [firestore]
-  );
-  const { data: systemConfig } = useDoc<SystemConfig>(systemConfigRef);
+  const { systemConfig } = useSystemConfig();
 
   if (systemConfig?.featureFlags?.isExhibitionsEnabled === false) {
     return (

@@ -20,6 +20,7 @@ type CardItemProps = {
   priority?: boolean;
   serialNumber?: string;
   className?: string;
+  enableAutoMatte?: boolean;
 };
 
 const rarityStyles = {
@@ -47,7 +48,8 @@ export function CardItem({
   onFlip,
   priority = false,
   serialNumber,
-  className
+  className,
+  enableAutoMatte
 }: CardItemProps) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [zoomPos, setZoomPos] = useState<{ x: number; y: number } | null>(null);
@@ -67,12 +69,15 @@ export function CardItem({
   const isFrontValid = Boolean(imageUrl && typeof imageUrl === 'string' && imageUrl.trim() !== '');
   const isBackValid = Boolean(backImageUrl && typeof backImageUrl === 'string' && backImageUrl.trim() !== '');
 
-  const mattedImageUrl = useAutoMatteImage(isFrontValid ? imageUrl : fallbackUrl, {
+  const shouldAutoMatte = enableAutoMatte ?? isFlippable;
+
+  // 縮圖清單模式（isFlippable=false）不透過 image-proxy 執行 Canvas 逐像素去背，大幅降低主執行緒卡頓與重複下載
+  const mattedImageUrl = useAutoMatteImage(shouldAutoMatte && isFrontValid ? imageUrl : undefined, {
     darkThreshold: 45,
     trimInset: 2,
     feather: true,
   });
-  const mattedBackImageUrl = useAutoMatteImage(isBackValid ? backImageUrl : undefined, {
+  const mattedBackImageUrl = useAutoMatteImage(shouldAutoMatte && isFlippable && isBackValid ? backImageUrl : undefined, {
     darkThreshold: 45,
     trimInset: 2,
     feather: true,
@@ -203,7 +208,8 @@ export function CardItem({
           </div>
         </div>
 
-        {/* Card Back */}
+        {/* Card Back：僅在可翻轉大圖模式才掛載背面 DOM 與圖片請求，避免縮圖列表浪費雙倍流量 */}
+        {isFlippable && (
         <div 
           className="absolute w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] rounded-xl overflow-hidden border border-white/15 bg-gradient-to-b from-slate-800 via-slate-900 to-slate-950 backdrop-blur-md"
           onMouseMove={handleMouseMove}
@@ -261,6 +267,7 @@ export function CardItem({
              </div>
            )}
         </div>
+        )}
       </div>
     </div>
   );

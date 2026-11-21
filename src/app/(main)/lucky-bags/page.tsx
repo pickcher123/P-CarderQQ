@@ -7,14 +7,14 @@ import {
   Dices, Percent, Award, Coins, Crown, LayoutGrid, RotateCw, HelpCircle
 } from 'lucide-react';
 import { LuckyBagIcon, PPlusIcon } from '@/components/icons';
-import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, query, getDocs, orderBy, doc, getCountFromServer } from 'firebase/firestore';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, getDocs, orderBy, getCountFromServer, where, documentId } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { SafeImage } from '@/components/safe-image';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import type { SystemConfig } from '@/types/system';
+import { useSystemConfig } from '@/components/providers/system-config-provider';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -72,27 +72,78 @@ export interface LuckBagWithCount extends LuckBag {
     otherPointsList: { prizeId: string; points: number }[];
 }
 
+// 模組級記憶體快取：切換分頁回到福袋頁時 0ms 秒開，且只按需查詢福袋獎項卡片（不下載整個 allCards 集合）
+let cachedLuckyBags: LuckBag[] = [];
+let cachedParticipantCounts: Record<string, number> = {};
+const cachedPrizeCardsMap = new Map<string, CardData>();
+
 export default function LuckyBagsPage() {
     const firestore = useFirestore();
     const router = useRouter();
-    const [participantCounts, setParticipantCounts] = useState<Record<string, number>>({});
+    const [participantCounts, setParticipantCounts] = useState<Record<string, number>>(() => ({ ...cachedParticipantCounts }));
+    const [prizeCardsVersion, setPrizeCardsVersion] = useState(0);
     const [showAllCompleted, setShowAllCompleted] = useState(false);
     const [activeCarouselIndex, setActiveCarouselIndex] = useState(0);
     const [viewMode, setViewMode] = useState<'carousel' | 'list'>('carousel');
 
-    const systemConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'systemConfig', 'main') : null, [firestore]);
-    const { data: systemConfig } = useDoc<SystemConfig>(systemConfigRef);
+    const { systemConfig } = useSystemConfig();
 
     const luckBagsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
         return query(collection(firestore, 'luckBags'), orderBy('order', 'asc'));
     }, [firestore]);
 
-    const { data: allLuckyBags, isLoading: isLoadingBags } = useCollection<LuckBag>(luckBagsQuery);
-    
-    const { data: allCards } = useCollection<CardData>(
-        useMemoFirebase(() => firestore ? collection(firestore, 'allCards') : null, [firestore])
-    );
+    const { data: liveLuckyBags, isLoading: isLoadingBags } = useCollection<LuckBag>(luckBagsQuery);
+
+    const allLuckyBags = useMemo(() => {
+        if (liveLuckyBags && liveLuckyBags.length > 0) {
+            cachedLuckyBags = liveLuckyBags;
+            return liveLuckyBags;
+        }
+        return liveLuckyBags ?? (cachedLuckyBags.length > 0 ? cachedLuckyBags : null);
+    }, [liveLuckyBags]);
+
+    // 只按需查詢福袋實際用到的獎項卡片（每批 30 張），取代原本下載整個 allCards 資料庫集合
+    useEffect(() => {
+        if (!allLuckyBags || !firestore) return;
+        const neededIds = new Set<string>();
+        for (const bag of allLuckyBags) {
+            if (bag.prizes?.first) neededIds.add(bag.prizes.first);
+            if (bag.prizes?.second) neededIds.add(bag.prizes.second);
+            if (bag.prizes?.third) neededIds.add(bag.prizes.third);
+            bag.otherPrizes?.forEach((p) => {
+                if (p.type !== 'points' && p.cardId) neededIds.add(p.cardId);
+            });
+        }
+
+        const missingIds = Array.from(neededIds).filter((id) => !cachedPrizeCardsMap.has(id));
+        if (missingIds.length === 0) return;
+
+        let cancelled = false;
+        const chunks: string[][] = [];
+        for (let i = 0; i < missingIds.length; i += 30) {
+            chunks.push(missingIds.slice(i, i + 30));
+        }
+
+        Promise.all(
+            chunks.map(async (chunk) => {
+                const snap = await getDocs(
+                    query(collection(firestore, 'allCards'), where(documentId(), 'in', chunk))
+                );
+                snap.forEach((d) => {
+                    cachedPrizeCardsMap.set(d.id, { id: d.id, ...(d.data() as Omit<CardData, 'id'>) });
+                });
+            })
+        ).then(() => {
+            if (!cancelled) {
+                setPrizeCardsVersion((v) => v + 1);
+            }
+        }).catch(() => {});
+
+        return () => {
+            cancelled = true;
+        };
+    }, [allLuckyBags, firestore]);
 
     // 僅針對「進行中」的福袋並行查詢參與格數，已開獎福袋直接使用 totalParticipants，大幅加快載入速度
     useEffect(() => {
@@ -118,6 +169,7 @@ export default function LuckyBagsPage() {
                 for (const [id, count] of entries) {
                     next[id] = count;
                 }
+                cachedParticipantCounts = next;
                 return next;
             });
         });
@@ -127,10 +179,10 @@ export default function LuckyBagsPage() {
         };
     }, [allLuckyBags, firestore]);
 
-    // 即時組合福袋資料，不阻塞等待 allCards 或所有子集合查詢
+    // 即時組合福袋資料，不阻塞等待所有子集合查詢
     const luckyBagsWithData = useMemo<LuckBagWithCount[]>(() => {
+        void prizeCardsVersion;
         if (!allLuckyBags) return [];
-        const cardMap = new Map((allCards || []).map(c => [c.id, c]));
 
         return allLuckyBags.map((bag) => {
             const participantCount =
@@ -139,15 +191,15 @@ export default function LuckyBagsPage() {
                     : (participantCounts[bag.id] ?? 0);
 
             const prizeCards = {
-                first: bag.prizes?.first ? cardMap.get(bag.prizes.first) : undefined,
-                second: bag.prizes?.second ? cardMap.get(bag.prizes.second) : undefined,
-                third: bag.prizes?.third ? cardMap.get(bag.prizes.third) : undefined,
+                first: bag.prizes?.first ? cachedPrizeCardsMap.get(bag.prizes.first) : undefined,
+                second: bag.prizes?.second ? cachedPrizeCardsMap.get(bag.prizes.second) : undefined,
+                third: bag.prizes?.third ? cachedPrizeCardsMap.get(bag.prizes.third) : undefined,
             };
 
             const otherPrizesList = (bag.otherPrizes || [])
                 .filter(p => p.type !== 'points')
                 .map(p => {
-                    const card = cardMap.get(p.cardId);
+                    const card = cachedPrizeCardsMap.get(p.cardId);
                     return card ? { ...card, prizeId: p.prizeId } : null;
                 })
                 .filter((c): c is CardData & { prizeId: string } => !!c);
@@ -164,7 +216,19 @@ export default function LuckyBagsPage() {
                 otherPointsList,
             };
         });
-    }, [allLuckyBags, allCards, participantCounts]);
+    }, [allLuckyBags, participantCounts, prizeCardsVersion]);
+
+    // 預載進行中福袋的頭獎卡圖片至瀏覽器快取，旋轉切換不卡頓
+    useEffect(() => {
+        if (typeof window === 'undefined' || luckyBagsWithData.length === 0) return;
+        luckyBagsWithData.forEach((bag) => {
+            if (bag.status !== '已開獎' && bag.prizeCards?.first?.imageUrl) {
+                const img = new window.Image();
+                img.decoding = 'async';
+                img.src = bag.prizeCards.first.imageUrl;
+            }
+        });
+    }, [luckyBagsWithData]);
 
     const { inProgressBags, completedBags } = useMemo(() => {
         const inProgress = luckyBagsWithData.filter(bag => bag.status !== '已開獎');

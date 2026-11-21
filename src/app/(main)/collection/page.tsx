@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
+import { useSystemConfig } from '@/components/providers/system-config-provider';
+import { useCardTemplatesByIds } from '@/lib/pool-cards-cache';
 import { CardItem } from '@/components/card-item';
 import { PLACEHOLDER_CARD_IMAGE } from '@/lib/placeholders';
 import { Button } from '@/components/ui/button';
@@ -86,6 +88,8 @@ interface UserCard {
     poolId?: string;
     poolName?: string;
     ticketNumber?: number;
+    tierCode?: string;
+    isHybridBlindSpMode?: boolean;
 }
 
 interface AllCards {
@@ -104,6 +108,10 @@ type MergedCard = UserCard & AllCards & { serialNumber: string; _isRealCard?: bo
 
 const SHIPPING_FEE = 60;
 const PICKUP_ADDRESS = "台北市中山區林森北路50號3樓之4";
+
+// 依 UID 隔離的模組級記憶體快取：切換分頁回到收藏庫時 0ms 秒開，不需等整座 allCards 下載
+const cachedUserCardsByUid = new Map<string, UserCard[]>();
+const cachedWonPrizesByUid = new Map<string, WonPrizeClaim[]>();
 
 export default function CollectionPage() {
   const router = useRouter();
@@ -141,8 +149,7 @@ export default function CollectionPage() {
   }, [firestore, user?.uid]);
   const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
 
-  const systemConfigRef = useMemoFirebase(() => (firestore ? doc(firestore, 'systemConfig', 'main') : null), [firestore]);
-  const { data: systemConfig } = useDoc<SystemConfig>(systemConfigRef);
+  const { systemConfig } = useSystemConfig();
   const bonusMultiplier = useMemo(() => {
     return getBonusMultiplier(systemConfig?.bonusEvent, 'recycling');
   }, [systemConfig]);
@@ -158,20 +165,49 @@ export default function CollectionPage() {
     }
   }, [userProfile]);
 
-  const { data: userCards, isLoading: isLoadingUserCards, forceRefetch } = useCollection<UserCard>(
+  const { data: liveUserCards, isLoading: isLoadingUserCardsRaw, forceRefetch } = useCollection<UserCard>(
     useMemoFirebase(() => (firestore && user?.uid) ? collection(firestore, 'users', user.uid, 'userCards') : null, [firestore, user?.uid])
   );
 
-  const { data: allCards, isLoading: isLoadingCards } = useCollection<AllCards>(
-    useMemoFirebase(() => firestore ? collection(firestore, 'allCards') : null, [firestore])
-  );
+  const userCards = useMemo(() => {
+    if (!user?.uid) return null;
+    if (liveUserCards) {
+      cachedUserCardsByUid.set(user.uid, liveUserCards);
+      return liveUserCards;
+    }
+    return cachedUserCardsByUid.get(user.uid) ?? null;
+  }, [liveUserCards, user?.uid]);
+
+  const isLoadingUserCards = isLoadingUserCardsRaw && userCards === null;
+
+  // 只針對玩家實際擁有的 cardId 按需批次載入模板（每批 30 筆，與首頁/抽卡頁共用快取），不再下載整座 allCards 資料庫
+  const ownedCardIds = useMemo(() => {
+    if (!userCards) return [];
+    return userCards
+      .map(c => c.cardId)
+      .filter((id): id is string => Boolean(id && !id.startsWith('random-player-')));
+  }, [userCards]);
+
+  const cardMap = useCardTemplatesByIds(firestore, ownedCardIds);
 
   // 讀取會員尚未兌換的命運轉盤實體獎品卡
   const wonPrizesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(collection(firestore, 'users', user.uid, 'wonPrizes'), where('status', '==', 'unclaimed'));
   }, [firestore, user?.uid]);
-  const { data: rawWonPrizes, isLoading: isLoadingWonPrizes, forceRefetch: refetchWonPrizes } = useCollection<WonPrizeClaim>(wonPrizesQuery);
+  const { data: liveWonPrizes, isLoading: isLoadingWonPrizesRaw, forceRefetch: refetchWonPrizes } = useCollection<WonPrizeClaim>(wonPrizesQuery);
+
+  const rawWonPrizes = useMemo(() => {
+    if (!user?.uid) return null;
+    if (liveWonPrizes) {
+      cachedWonPrizesByUid.set(user.uid, liveWonPrizes);
+      return liveWonPrizes;
+    }
+    return cachedWonPrizesByUid.get(user.uid) ?? null;
+  }, [liveWonPrizes, user?.uid]);
+
+  const isLoadingWonPrizes = isLoadingWonPrizesRaw && rawWonPrizes === null;
+  const isLoadingCards = false;
 
   const allUnclaimedWonPrizes = useMemo(() => {
     if (!rawWonPrizes) return [];
@@ -200,8 +236,7 @@ export default function CollectionPage() {
   }, [allUnclaimedWonPrizes, activeTab, filterCategory, searchQuery, sortOption]);
   
   const mergedCards: MergedCard[] = useMemo(() => {
-    if (!userCards || !allCards) return [];
-    const cardMap = new Map(allCards.map(c => [c.id, c]));
+    if (!userCards) return [];
     return userCards.map(userCard => {
       const isExplicitRandomId = Boolean(userCard.cardId?.startsWith('random-player-'));
       const cardDetails = !isExplicitRandomId && userCard.cardId ? cardMap.get(userCard.cardId) : undefined;
@@ -277,7 +312,7 @@ export default function CollectionPage() {
 
       return null;
     }).filter((c): c is MergedCard => c !== null);
-  }, [userCards, allCards]);
+  }, [userCards, cardMap]);
 
   // Categories list
   const allCategories = useMemo(() => {
@@ -364,21 +399,67 @@ export default function CollectionPage() {
   const uniqueStandardCards = useMemo(() => sortedMergedCards.filter(c => c.source !== 'group-break' && !isRandomPlayerCard(c)), [sortedMergedCards]);
   const groupBreakCards = useMemo(() => sortedMergedCards.filter(c => c.source === 'group-break'), [sortedMergedCards]);
 
-  // Total Portfolio Valuation
+  const memberLevelInfo = useMemo(() => {
+    const levelName = userProfile?.userLevel || '新手收藏家';
+    return userLevels.find(l => l.level === levelName) || userLevels[0];
+  }, [userProfile?.userLevel]);
+
+  // 統一計算單張卡片買回／變現估值（依模式與賞別區分）
+  const calculateCardBuyback = (
+    card: Pick<MergedCard, 'name' | 'sellPrice' | 'source' | 'tierCode' | 'isHybridBlindSpMode' | 'isPoints' | 'cardId'>
+  ) => {
+    if (card.source === 'group-break') {
+      return { diamonds: 0, pPoints: 0, rateLabel: '團拆限定' };
+    }
+    if (isRandomPlayerCard(card as MergedCard) || card.name?.includes('隨機球員')) {
+      return { diamonds: 40, pPoints: 0, rateLabel: '普/特卡 40 鑽買回' };
+    }
+
+    const basePrice = card.sellPrice || 10;
+    const rebateRatePct = memberLevelInfo.rebateRate || 0;
+    const mult = bonusMultiplier || 1;
+    const isGodPack = Boolean(card.isHybridBlindSpMode || card.tierCode);
+    const isBetting = card.source === 'betting' || card.source === 'bet';
+
+    if (isGodPack) {
+      const isTierCD = card.tierCode === 'C' || card.tierCode === 'D';
+      const rate = isTierCD ? 0.9 : 0.8;
+      const diamonds = Math.round(basePrice * rate);
+      const pPoints = Math.round(basePrice * (rebateRatePct / 100) * mult);
+      return {
+        diamonds,
+        pPoints,
+        rateLabel: isTierCD
+          ? `GodPack ${card.tierCode}賞 9折${rebateRatePct > 0 ? ` + 回饋${rebateRatePct}%` : ''}`
+          : `GodPack 8折${rebateRatePct > 0 ? ` + 回饋${rebateRatePct}%` : ''}`,
+      };
+    }
+
+    if (isBetting) {
+      return {
+        diamonds: Math.round(basePrice * 0.9),
+        pPoints: 0,
+        rateLabel: '拼卡專區 9折買回',
+      };
+    }
+
+    return {
+      diamonds: Math.round(basePrice * 0.8),
+      pPoints: 0,
+      rateLabel: '8折買回',
+    };
+  };
+
+  // Total Portfolio Valuation (與實際買回規則完全同步)
   const portfolioStats = useMemo(() => {
     let totalEstimatedDiamonds = 0;
     let totalEstimatedPPoints = 0;
 
     mergedCards.forEach(card => {
       if (card.source === 'group-break') return;
-      if (isRandomPlayerCard(card)) {
-        totalEstimatedPPoints += 300;
-        totalEstimatedDiamonds += 10;
-      } else {
-        const basePrice = card.sellPrice || 10;
-        totalEstimatedDiamonds += basePrice * 0.7;
-        totalEstimatedPPoints += basePrice * 0.1 * 10;
-      }
+      const val = calculateCardBuyback(card);
+      totalEstimatedDiamonds += val.diamonds;
+      totalEstimatedPPoints += val.pPoints;
     });
 
     return {
@@ -391,7 +472,7 @@ export default function CollectionPage() {
       totalDiamonds: Math.round(totalEstimatedDiamonds),
       totalPPoints: Math.round(totalEstimatedPPoints)
     };
-  }, [mergedCards, randomPlayerCards, allUnclaimedWonPrizes]);
+  }, [mergedCards, randomPlayerCards, allUnclaimedWonPrizes, memberLevelInfo, bonusMultiplier]);
 
   const handleSelectRandomCards = () => {
     const randomCardIds = randomPlayerCards.map(c => c.id);
@@ -504,11 +585,6 @@ export default function CollectionPage() {
     setSelectedCardIds(new Set());
   };
 
-  const memberLevelInfo = useMemo(() => {
-    const levelName = userProfile?.userLevel || '新手收藏家';
-    return userLevels.find(l => l.level === levelName) || userLevels[0];
-  }, [userProfile?.userLevel]);
-
   const conversionValues = useMemo(() => {
     const cardsToSell = mergedCards.filter(c => selectedCardIds.has(c.id) && c.source !== 'group-break');
     let diamonds = 0;
@@ -516,14 +592,9 @@ export default function CollectionPage() {
     const rebateRatePct = memberLevelInfo.rebateRate || 0;
     
     cardsToSell.forEach(card => {
-        const mult = bonusMultiplier || 1;
-        if (card.name.includes('隨機球員')) {
-            diamonds += 40;
-        } else {
-            const basePrice = card.sellPrice || 10;
-            diamonds += basePrice * 0.8;
-            pPoints += (basePrice * (rebateRatePct / 100)) * mult; 
-        }
+        const val = calculateCardBuyback(card);
+        diamonds += val.diamonds;
+        pPoints += val.pPoints;
     });
 
     return {
@@ -550,7 +621,7 @@ export default function CollectionPage() {
       const { diamonds, pPoints } = conversionValues;
       const soldCardNames = cardsToSell.map(c => c.name).join(', ');
 
-      const existingAllCardIds = new Set((allCards || []).map(c => c.id));
+      const existingAllCardIds = new Set(cardMap.keys());
       const autoRelistBetting = systemConfig?.bettingAutoRelistOnBuyBack !== false;
 
       let bettingItemDocs: any[] = [];
@@ -2061,22 +2132,40 @@ export default function CollectionPage() {
                   </div>
 
                   {/* Valuation & Inspection Buttons */}
-                  <div className="flex flex-col items-center gap-2.5 w-full pt-1 relative z-10">
-                    <div className="flex items-center justify-between w-full bg-slate-900/90 border border-white/10 px-4 py-2 rounded-xl text-xs font-code font-black text-white shadow-md">
-                      <span className="text-slate-400 font-sans text-xs flex items-center gap-1">
-                        <Gem className="w-3.5 h-3.5 text-cyan-400" />
-                        變現估值:
-                      </span>
-                      <span className="text-cyan-300 text-sm font-bold">
-                        {previewCard.sellPrice || 10} 鑽石
-                      </span>
-                    </div>
+                  {(() => {
+                    const buyback = calculateCardBuyback(previewCard);
+                    return (
+                      <div className="flex flex-col items-center gap-2.5 w-full pt-1 relative z-10">
+                        <div className="w-full bg-white/[0.03] border border-white/[0.1] px-4 py-2.5 rounded-xl text-xs font-code font-black text-white shadow-md space-y-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-slate-400 font-sans text-xs flex items-center gap-1.5">
+                              <Gem className="w-3.5 h-3.5 text-cyan-300" />
+                              變現估值:
+                            </span>
+                            <div className="flex items-center gap-1.5 tabular-nums">
+                              <span className="text-cyan-300 text-sm font-bold">
+                                {buyback.diamonds.toLocaleString()} 鑽石
+                              </span>
+                              {buyback.pPoints > 0 && (
+                                <span className="text-[#FDE68A] text-xs font-bold">
+                                  + {buyback.pPoints.toLocaleString()} P點
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between text-[10px] font-sans font-medium text-slate-400">
+                            <span>買回方案</span>
+                            <span className="text-amber-200/90">{buyback.rateLabel}</span>
+                          </div>
+                        </div>
 
-                    <p className="text-[10.5px] font-bold text-slate-400 flex items-center gap-1.5">
-                      <RotateCw className="w-3.5 h-3.5 text-cyan-400 animate-spin-slow" /> 
-                      點擊卡片即可 3D 翻轉觀看背卡
-                    </p>
-                  </div>
+                        <p className="text-[10.5px] font-bold text-slate-400 flex items-center gap-1.5">
+                          <RotateCw className="w-3.5 h-3.5 text-cyan-300 animate-spin-slow" /> 
+                          點擊卡片即可 3D 翻轉觀看背卡
+                        </p>
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
             </DialogContent>

@@ -303,7 +303,7 @@ export function RevolvingDoorLuckyBagCarousel({
                 <LuckyBagRedPacketCard
                   bag={bag}
                   isCenter={isCenter}
-                  priority={isCenter}
+                  priority={absOffset <= 1}
                   variant="carousel"
                 />
               </motion.div>

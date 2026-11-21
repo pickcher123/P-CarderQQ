@@ -3,9 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { getAppVersionFromSystem } from '@/lib/version';
-import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
-import type { SystemConfig } from '@/types/system';
+import { useSystemConfig } from '@/components/providers/system-config-provider';
 import { Button } from '@/components/ui/button';
 import {
   Mail,
@@ -21,9 +19,7 @@ export function Footer() {
   const [isCopiedLine, setIsCopiedLine] = useState(false);
   const [isCopiedEmail, setIsCopiedEmail] = useState(false);
   const { toast } = useToast();
-  const firestore = useFirestore();
-  const systemConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'systemConfig', 'main') : null, [firestore]);
-  const { data: systemConfig } = useDoc<SystemConfig>(systemConfigRef);
+  const { systemConfig } = useSystemConfig();
   const currentVersion = getAppVersionFromSystem(systemConfig);
 
   useEffect(() => {

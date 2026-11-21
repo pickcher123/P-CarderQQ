@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Package, Sparkles, Disc3, Info, Search, XCircle, ChevronRight, Filter } from 'lucide-react';
 import { PoolCard } from '@/components/pool-card';
+import { usePoolCardsMap } from '@/lib/pool-cards-cache';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -45,6 +46,9 @@ interface DrawCategory {
     order?: number;
 }
 
+// 模組級記憶體快取：切換回相同分類時 0ms 秒開卡池列表
+const cachedPoolsByCategory = new Map<string, CardPool[]>();
+
 export default function DrawCategoryPage() {
     const firestore = useFirestore();
     const router = useRouter();
@@ -73,17 +77,19 @@ export default function DrawCategoryPage() {
         );
     }, [firestore, categoryId]);
 
-    const { data: rawPools, isLoading: isLoadingPools } = useCollection<CardPool>(poolsQuery);
-    
-    // 獲取卡片模板數據供卡池預覽使用
-    const { data: allCards } = useCollection<{id: string, name: string, imageUrl: string, backImageUrl?: string}>(
-        useMemoFirebase(() => firestore ? collection(firestore, 'allCards') : null, [firestore])
-    );
+    const decodedCategoryId = categoryId ? decodeURIComponent(categoryId) : '';
+    const { data: livePools, isLoading: isLoadingPools } = useCollection<CardPool>(poolsQuery);
 
-    const allCardsMap = useMemo(() => {
-        if (!allCards) return new Map();
-        return new Map(allCards.map(c => [c.id, c as any]));
-    }, [allCards]);
+    const rawPools = useMemo(() => {
+        if (livePools) {
+            if (decodedCategoryId) cachedPoolsByCategory.set(decodedCategoryId, livePools);
+            return livePools;
+        }
+        return decodedCategoryId ? cachedPoolsByCategory.get(decodedCategoryId) ?? null : null;
+    }, [livePools, decodedCategoryId]);
+    
+    // 按需批次載入此分類卡池實際使用的卡片（與 /draw 共用記憶體快取），取代原本整座 allCards 下載
+    const allCardsMap = usePoolCardsMap(firestore, rawPools);
 
     // 過濾與排序邏輯
     const filteredPools = useMemo(() => {
@@ -103,7 +109,7 @@ export default function DrawCategoryPage() {
         return pools;
     }, [rawPools, searchTerm, sortOption]);
 
-    const isLoading = isLoadingPools || isLoadingCategory;
+    const isLoading = isLoadingPools && (!rawPools || rawPools.length === 0);
 
     return (
         <div className="container pt-6 sm:pt-10 md:pt-14 pb-36 sm:pb-40 md:pb-24 relative px-3 sm:px-4 md:px-8">

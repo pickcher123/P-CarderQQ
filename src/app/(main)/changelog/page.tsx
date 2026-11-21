@@ -8,9 +8,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { APP_VERSION, getAppVersionFromSystem } from '@/lib/version';
-import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
-import type { SystemConfig } from '@/types/system';
+import { useSystemConfig } from '@/components/providers/system-config-provider';
 
 interface ChangeLogItem {
   version: string;
@@ -166,9 +164,7 @@ const typeIcons = {
 };
 
 export default function ChangeLogPage() {
-  const firestore = useFirestore();
-  const systemConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'systemConfig', 'main') : null, [firestore]);
-  const { data: systemConfig } = useDoc<SystemConfig>(systemConfigRef);
+  const { systemConfig } = useSystemConfig();
   const currentVersion = getAppVersionFromSystem(systemConfig);
 
   return (

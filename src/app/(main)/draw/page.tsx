@@ -5,8 +5,9 @@ import Link from 'next/link';
 import { SafeImage } from '@/components/safe-image';
 import { Button } from '@/components/ui/button';
 import { Layers, Gem, Package, Disc3, Info, Sparkles, ChevronRight, Star, Trophy, Clock, Settings, Dices, Target, Search, X, HelpCircle } from 'lucide-react';
-import { useCollection, useRequest, useFirestore, useMemoFirebase, useDoc, useUser } from "@/firebase";
+import { useCollection, useFirestore, useMemoFirebase, useDoc, useUser } from "@/firebase";
 import { collection, query, orderBy, doc } from "firebase/firestore";
+import { usePoolCardsMap } from "@/lib/pool-cards-cache";
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Dialog,
@@ -17,7 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from '@/lib/utils';
 import { PoolCard } from '@/components/pool-card';
-import type { SystemConfig } from '@/types/system';
+import { useSystemConfig } from '@/components/providers/system-config-provider';
 import { HallOfFameMarquee } from '@/components/hall-of-fame-marquee';
 import { RevolvingDoorThemeCarousel } from '@/components/revolving-door-theme-carousel';
 import { BeginnerGuideDialog } from '@/components/beginner-guide-dialog';
@@ -56,18 +57,19 @@ interface CardPool {
 }
 
 interface CategoryWithCount extends DrawCategory {
-    poolCount: number;
+    poolCount?: number;
 }
+
+// 模組級記憶體快取：切換分頁回到抽卡頁時 0ms 秒開主題卡池與全部卡池，不再閃爍或等待
+let cachedDrawCategories: CategoryWithCount[] = [];
+let cachedCardPools: CardPool[] = [];
 
 export default function DrawPage() {
   const firestore = useFirestore();
   const { user } = useUser();
   const { data: userProfile } = useDoc<any>(useMemoFirebase(() => (user?.uid ? doc(firestore, 'users', user.uid) : null), [user?.uid, firestore]));
-  const [categoriesWithCounts, setCategoriesWithCounts] = useState<CategoryWithCount[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
 
-  const systemConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'systemConfig', 'main') : null, [firestore]);
-  const { data: systemConfig } = useDoc<SystemConfig>(systemConfigRef);
+  const { systemConfig } = useSystemConfig();
 
   const categoriesQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -75,26 +77,27 @@ export default function DrawPage() {
   }, [firestore]);
 
   const { data: categories, isLoading: isLoadingCategories } = useCollection<DrawCategory>(categoriesQuery);
-  const { data: cardPools, isLoading: isLoadingPools } = useCollection<CardPool>(useMemoFirebase(() => firestore ? collection(firestore, 'cardPools') : null, [firestore]));
-  
-  const { data: allCards } = useRequest<{id: string, name: string, imageUrl: string, isSold?: boolean}[]>(useMemoFirebase(() => firestore ? collection(firestore, 'allCards') : null, [firestore]));
+  const { data: liveCardPools, isLoading: isLoadingPools } = useCollection<CardPool>(useMemoFirebase(() => firestore ? collection(firestore, 'cardPools') : null, [firestore]));
 
-  const allCardsMap = useMemo(() => {
-    if (!allCards) return new Map();
-    return new Map(allCards.map(c => [c.id, c as any]));
-  }, [allCards]);
+  const cardPools = useMemo(() => {
+    if (liveCardPools && liveCardPools.length > 0) {
+      cachedCardPools = liveCardPools;
+      return liveCardPools;
+    }
+    return liveCardPools ?? (cachedCardPools.length > 0 ? cachedCardPools : null);
+  }, [liveCardPools]);
 
-  useEffect(() => {
-      if (categories && cardPools) {
-          const sortedCategories = [...categories].filter(c => c.isActive !== false).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-          
-          const counts = sortedCategories.map(category => {
-              const count = cardPools.filter(pool => pool.categoryId === category.id).length;
-              return { ...category, poolCount: count };
-          });
-          setCategoriesWithCounts(counts);
-          setIsLoading(false);
+  const categoriesWithCounts = useMemo<CategoryWithCount[]>(() => {
+      if (!categories) return cachedDrawCategories;
+      const sortedCategories = [...categories].filter(c => c.isActive !== false).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+      const counts = sortedCategories.map(category => ({
+          ...category,
+          poolCount: cardPools ? cardPools.filter(pool => pool.categoryId === category.id).length : undefined,
+      }));
+      if (counts.length > 0) {
+          cachedDrawCategories = counts;
       }
+      return counts;
   }, [categories, cardPools]);
 
   const [sortOption, setSortOption] = useState<'price-high' | 'price-low' | 'latest'>('latest');
@@ -118,6 +121,9 @@ export default function DrawPage() {
     });
   }, [cardPools, sortOption]);
 
+  // 只按需載入目前開放卡池中實際用到的卡片（跨頁共享快取），取代原本整座 allCards 下載
+  const allCardsMap = usePoolCardsMap(firestore, allPools);
+
   const displayPools = useMemo(() => {
     let list = allPools;
     if (selectedCategoryTab === 'featured') {
@@ -132,7 +138,8 @@ export default function DrawPage() {
     return list;
   }, [allPools, selectedCategoryTab, searchKeyword]);
 
-  const finalIsLoading = isLoadingCategories || isLoadingPools || isLoading;
+  const finalIsLoading = isLoadingPools && allPools.length === 0;
+  const isCarouselLoading = isLoadingCategories && categoriesWithCounts.length === 0;
 
   if (!finalIsLoading && systemConfig?.featureFlags?.isDrawEnabled === false) {
     return (
@@ -166,7 +173,7 @@ export default function DrawPage() {
         <div className="mb-8 sm:mb-12">
             <RevolvingDoorThemeCarousel
                 categories={categoriesWithCounts}
-                isLoading={finalIsLoading}
+                isLoading={isCarouselLoading}
                 baseHref="/draw"
                 headerAction={(
                 <Dialog>

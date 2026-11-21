@@ -18,7 +18,7 @@ import { useMemo, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import type { SystemConfig } from '@/types/system';
+import { useSystemConfig } from '@/components/providers/system-config-provider';
 
 interface GroupBreak {
   id: string;
@@ -148,8 +148,7 @@ export default function GroupBreakPage() {
   const [showAllCompleted, setShowAllCompleted] = useState(false);
   const [filterMode, setFilterMode] = useState<'all' | 'available' | 'sold' | 'team' | 'spot'>('all');
 
-  const systemConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'systemConfig', 'main') : null, [firestore]);
-  const { data: systemConfig } = useDoc<SystemConfig>(systemConfigRef);
+  const { systemConfig } = useSystemConfig();
   
   const groupBreaksQuery = useMemoFirebase(() => {
     if (!firestore) return null;

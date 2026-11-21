@@ -17,7 +17,7 @@ import { Loader2, ArrowRight, ShieldCheck, Check, Sparkles, Wallet } from 'lucid
 import { DiamondIcon, PPlusIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import type { UserProfile } from '@/types/user-profile';
-import type { SystemConfig } from '@/types/system';
+import { useSystemConfig } from '@/components/providers/system-config-provider';
 import { RefinedPoints } from '@/components/ui/refined-points';
 import { getBonusMultiplier, isBonusEventActive } from '@/lib/bonus-event';
 
@@ -63,11 +63,7 @@ export function PurchasePointsDialog({ children }: { children: React.ReactNode }
   );
   const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
 
-  const systemConfigRef = useMemoFirebase(
-    () => (firestore ? doc(firestore, 'systemConfig', 'main') : null),
-    [firestore]
-  );
-  const { data: systemConfig } = useDoc<SystemConfig>(systemConfigRef);
+  const { systemConfig } = useSystemConfig();
 
   const bonusMultiplier = getBonusMultiplier(systemConfig?.bonusEvent, 'purchase');
   const isBonusActive = isBonusEventActive(systemConfig?.bonusEvent) && bonusMultiplier > 1;

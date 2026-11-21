@@ -618,7 +618,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
             )}
             
             <div className={cn(
-                "relative w-full flex flex-col justify-between transition-all duration-300 group hover:-translate-y-1 select-none",
+                "relative w-full flex flex-col justify-between transition-[transform,border-color,box-shadow] duration-300 group hover:-translate-y-1 select-none",
                 "shadow-[0_18px_45px_rgba(0,0,0,0.85),0_0_25px_rgba(245,158,11,0.2)] hover:shadow-[0_24px_55px_rgba(0,0,0,0.95),0_0_35px_rgba(245,158,11,0.35)] rounded-2xl sm:rounded-3xl border border-amber-400/40 hover:border-amber-400/75"
             )}>
                 {/* ================= 1. 卡包頂部熱壓封口 (TOP SOFT CRIMPED FOIL SEAL) ================= */}
@@ -686,7 +686,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
 
                 {/* ================= 2. 卡包袋身主體 (BOOSTER PACK MAIN BODY) ================= */}
                 <div className={cn(
-                    "relative w-full bg-[#0a0c10]/95 backdrop-blur-2xl border-x border-amber-400/25 p-3 sm:p-5 flex flex-col justify-between transition-all duration-300 overflow-hidden shadow-xl",
+                    "relative w-full bg-[#0a0c10]/95 backdrop-blur-2xl border-x border-amber-400/25 p-3 sm:p-5 flex flex-col justify-between transition-[border-color,box-shadow] duration-300 overflow-hidden shadow-xl",
                     isLastChance 
                         ? "border-amber-500/70 shadow-[0_0_35px_rgba(245,158,11,0.3)]" 
                         : "hover:border-amber-400/50"
@@ -714,7 +714,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                         {/* 3. 卡包中央大獎卡專屬展台聚光光錐 (Center Spotlight Flare) */}
                         <div 
                             className={cn(
-                                "absolute top-[18%] left-1/2 -translate-x-1/2 w-[280px] sm:w-[320px] h-[280px] rounded-full blur-2xl pointer-events-none transition-all duration-700",
+                                "absolute top-[18%] left-1/2 -translate-x-1/2 w-[280px] sm:w-[320px] h-[280px] rounded-full blur-2xl pointer-events-none transition-opacity duration-700",
                                 isLastChance 
                                     ? "bg-[radial-gradient(circle,rgba(244,63,94,0.3)_0%,rgba(245,158,11,0.25)_40%,transparent_70%)] animate-pulse" 
                                     : "bg-[radial-gradient(circle,rgba(245,158,11,0.22)_0%,rgba(251,191,36,0.12)_35%,rgba(6,182,212,0.06)_55%,transparent_72%)]"
@@ -722,7 +722,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                         />
 
                         {/* 3.5. 🌟 背景 P+Carder 典藏卡包立體文字 LOGO 浮水印 (使用者指定紅圈位置：中下段橫跨卡片腰部，精緻縮小) */}
-                        <div className="absolute top-[45%] -translate-y-1/2 inset-x-0 flex flex-col items-center justify-center pointer-events-none select-none z-[1] opacity-[0.20] group-hover:opacity-[0.30] transition-all duration-700">
+                        <div className="absolute top-[45%] -translate-y-1/2 inset-x-0 flex flex-col items-center justify-center pointer-events-none select-none z-[1] opacity-[0.20] group-hover:opacity-[0.30] transition-opacity duration-700">
                             <span className="font-headline font-black text-xl xs:text-2xl sm:text-[28px] tracking-[0.2em] text-transparent bg-clip-text bg-gradient-to-b from-amber-100 via-amber-300 to-amber-600 drop-shadow-[0_2px_10px_rgba(245,158,11,0.5)] italic">
                                 P+CARDER
                             </span>
@@ -771,7 +771,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
 
                     {/* 頂部微光裝飾線 (衝刺時轉為燃燒金紅流光) */}
                     <div className={cn(
-                        "absolute top-0 left-0 w-full h-[2px] z-10 transition-all duration-500",
+                        "absolute top-0 left-0 w-full h-[2px] z-10 transition-opacity duration-500",
                         isLastChance 
                             ? "bg-gradient-to-r from-amber-500 via-rose-500 to-amber-500 animate-pulse" 
                             : "bg-gradient-to-r from-transparent via-amber-400/70 to-transparent"
@@ -1028,7 +1028,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                                 e.stopPropagation();
                                                 setSelectedPrizeIndex((prev) => (prev - 1 + topPrizesPreview.length) % topPrizesPreview.length);
                                             }}
-                                            className="absolute left-2 top-1/2 -translate-y-1/2 z-40 w-8 h-8 rounded-full bg-[#0a0f1c]/85 hover:bg-amber-400/20 border border-amber-300/35 hover:border-amber-300/75 text-[#FDE68A] flex items-center justify-center backdrop-blur-md shadow-lg transition-all cursor-pointer active:scale-95"
+                                            className="absolute left-2 top-1/2 -translate-y-1/2 z-40 w-8 h-8 rounded-full bg-[#0a0f1c]/85 hover:bg-amber-400/20 border border-amber-300/35 hover:border-amber-300/75 text-[#FDE68A] flex items-center justify-center backdrop-blur-md shadow-lg transition-[transform,background-color,border-color] cursor-pointer active:scale-95"
                                         >
                                             <ChevronLeft className="w-4 h-4" />
                                         </button>
@@ -1039,7 +1039,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                                 e.stopPropagation();
                                                 setSelectedPrizeIndex((prev) => (prev + 1) % topPrizesPreview.length);
                                             }}
-                                            className="absolute right-2 top-1/2 -translate-y-1/2 z-40 w-8 h-8 rounded-full bg-[#0a0f1c]/85 hover:bg-amber-400/20 border border-amber-300/35 hover:border-amber-300/75 text-[#FDE68A] flex items-center justify-center backdrop-blur-md shadow-lg transition-all cursor-pointer active:scale-95"
+                                            className="absolute right-2 top-1/2 -translate-y-1/2 z-40 w-8 h-8 rounded-full bg-[#0a0f1c]/85 hover:bg-amber-400/20 border border-amber-300/35 hover:border-amber-300/75 text-[#FDE68A] flex items-center justify-center backdrop-blur-md shadow-lg transition-[transform,background-color,border-color] cursor-pointer active:scale-95"
                                         >
                                             <ChevronRight className="w-4 h-4" />
                                         </button>
@@ -1189,7 +1189,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                             }}
                                             title={`點擊查看${rarityStyles[r].label}剩餘卡牌`}
                                             className={cn(
-                                                "flex items-center justify-center gap-1.5 py-1.5 px-1 rounded-lg border text-xs transition-all duration-150 cursor-pointer group/rarity active:scale-[0.97] select-none relative overflow-hidden",
+                                                "flex items-center justify-center gap-1.5 py-1.5 px-1 rounded-lg border text-xs transition-[transform,border-color,background-color,opacity] duration-150 cursor-pointer group/rarity active:scale-[0.97] select-none relative overflow-hidden",
                                                 isSoldOut
                                                     ? "bg-black/35 border-white/[0.05] text-slate-500 opacity-65 hover:opacity-100 hover:border-white/15"
                                                     : r === 'legendary' 
@@ -1386,7 +1386,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                     key={drawCount}
                                     disabled={!canDraw || isDrawing}
                                     className={cn(
-                                        "relative h-auto min-h-[52px] sm:min-h-[56px] py-2 px-1.5 flex flex-col items-center justify-center rounded-xl transition-all duration-150 active:scale-[0.97] overflow-hidden border group cursor-pointer select-none",
+                                        "relative h-auto min-h-[52px] sm:min-h-[56px] py-2 px-1.5 flex flex-col items-center justify-center rounded-xl transition-[transform,border-color,background-color,opacity] duration-150 active:scale-[0.97] overflow-hidden border group cursor-pointer select-none",
                                         isHighlighted
                                             ? opt.isAllIn
                                                 ? "bg-gradient-to-br from-[#FDE68A] via-amber-400 to-rose-400 text-[#120d02] border-amber-200/80 shadow-[0_6px_22px_rgba(244,63,94,0.28)] hover:brightness-105"
@@ -1768,7 +1768,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                             {/* 最後賞 特殊區塊 (在全部或傳說賞時展示) */}
                             {lastPrizeCard && (inventoryFilterRarity === 'all' || inventoryFilterRarity === 'legendary') && (
                                 <div 
-                                    className="relative overflow-hidden border-2 p-3 sm:p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-purple-500/10 to-slate-950 border-amber-400/60 shadow-[0_0_25px_rgba(245,158,11,0.2)] flex flex-col sm:flex-row items-center gap-3 sm:gap-5 cursor-pointer hover:scale-[1.01] transition-all group/last"
+                                    className="relative overflow-hidden border-2 p-3 sm:p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-purple-500/10 to-slate-950 border-amber-400/60 shadow-[0_0_25px_rgba(245,158,11,0.2)] flex flex-col sm:flex-row items-center gap-3 sm:gap-5 cursor-pointer hover:scale-[1.01] transition-[transform,border-color,box-shadow] group/last"
                                     onClick={() => setPreviewCard({ ...lastPrizeCard, rarity: 'legendary' })}
                                 >
                                     <div className="relative z-10 w-20 sm:w-24 aspect-[2.5/3.5] rounded-xl overflow-hidden border-2 border-amber-400/60 p-0.5 bg-gradient-to-b from-slate-700/80 via-slate-800/80 to-slate-900/90 shadow-[inset_0_1px_2px_rgba(255,255,255,0.2)] shrink-0 shadow-lg group-hover/last:border-amber-300 mt-1 sm:mt-0">
@@ -1840,7 +1840,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                                     return (
                                                         <div
                                                             key={c.id}
-                                                            className="group/item relative flex flex-col items-center p-2 rounded-xl border transition-all duration-300 cursor-pointer bg-slate-900/80 hover:bg-slate-900 border-slate-800 hover:border-amber-300/50 hover:-translate-y-0.5"
+                                                            className="group/item relative flex flex-col items-center p-2 rounded-xl border transition-[transform,border-color,background-color] duration-300 cursor-pointer bg-slate-900/80 hover:bg-slate-900 border-slate-800 hover:border-amber-300/50 hover:-translate-y-0.5"
                                                             onClick={() => setPreviewCard(c)}
                                                         >
                                                             <div className="relative w-full aspect-[2.5/3.5] mb-1.5 rounded-lg overflow-hidden border border-white/15 bg-slate-900 flex flex-col items-center justify-center">
@@ -1928,7 +1928,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                                 <div 
                                                     key={c.id} 
                                                     className={cn(
-                                                        "group/item relative flex flex-col items-center p-2 rounded-xl border transition-all duration-300 cursor-pointer",
+                                                        "group/item relative flex flex-col items-center p-2 rounded-xl border transition-[transform,border-color,opacity,background-color] duration-300 cursor-pointer",
                                                         "bg-slate-900/80 hover:bg-slate-900 border-slate-800 hover:border-amber-300/50 hover:-translate-y-0.5",
                                                         showSoldOut && "opacity-50 grayscale hover:grayscale-0 hover:opacity-100"
                                                     )}

@@ -4,6 +4,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { cn } from "@/lib/utils";
 import { FirebaseClientProvider } from '@/firebase/client-provider';
+import { SystemConfigProvider } from '@/components/providers/system-config-provider';
 import Script from 'next/script';
 
 export const dynamic = 'force-dynamic';
@@ -100,6 +101,11 @@ export default function RootLayout({
   return (
     <html lang="zh-Hant" suppressHydrationWarning className="bg-[#070b14] text-foreground min-h-screen min-h-[100dvh] w-full overflow-x-hidden m-0 p-0">
       <head>
+        <link rel="preload" as="image" href="/images/themes/basketball.jpg" />
+        <link rel="preload" as="image" href="/images/themes/baseball.jpg" />
+        <link rel="preload" as="image" href="/images/themes/soccer.jpg" />
+        <link rel="preload" as="image" href="/images/themes/pokemon.jpg" />
+        <link rel="preload" as="image" href="/images/themes/other.jpg" />
         <link rel="preconnect" href="https://firebasestorage.googleapis.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://firebasestorage.googleapis.com" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -110,7 +116,9 @@ export default function RootLayout({
       </head>
       <body className={cn("min-h-screen min-h-[100dvh] bg-[#070b14] text-foreground font-body antialiased overflow-x-hidden max-w-full w-full m-0 p-0")} suppressHydrationWarning>
         <FirebaseClientProvider>
-          {children}
+          <SystemConfigProvider>
+            {children}
+          </SystemConfigProvider>
         </FirebaseClientProvider>
         <Toaster />
         <Script

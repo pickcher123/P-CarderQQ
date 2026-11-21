@@ -4,7 +4,6 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, useReducedMotion } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { SafeImage } from '@/components/safe-image';
 import { cn } from '@/lib/utils';
 
 export interface ThemeCategoryItem {
@@ -361,19 +360,25 @@ export function RevolvingDoorThemeCarousel({
                       : "border border-amber-500/30 hover:border-amber-400/60 shadow-xl"
                   )}
                 >
-                  {/* 背景封面運動員圖 (High Impact Sports Background) */}
-                  <SafeImage
+                  {/* 背景封面運動員圖：本地輕量靜態圖直接原圖秒開，不經 SafeImage 骨架屏閃爍 */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
                     src={artworkUrl}
                     alt={category.name}
-                    fill
-                    unoptimized
                     loading="eager"
+                    decoding="sync"
+                    fetchPriority={absOffset <= 1 ? 'high' : 'auto'}
+                    draggable={false}
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      if (!target.src.endsWith('/images/themes/other.jpg')) {
+                        target.src = '/images/themes/other.jpg';
+                      }
+                    }}
                     className={cn(
-                      "object-cover transition-[transform,opacity] duration-250 ease-[cubic-bezier(0.23,1,0.32,1)] pointer-events-none",
+                      "absolute inset-0 w-full h-full object-cover transition-[transform,opacity] duration-250 ease-[cubic-bezier(0.23,1,0.32,1)] pointer-events-none",
                       isCenter ? "scale-105 opacity-85 [@media(hover:hover)_and_(pointer:fine)]:group-hover:scale-110" : "scale-100 opacity-60"
                     )}
-                    sizes="(max-width: 768px) 250px, 350px"
-                    priority={absOffset <= 1}
                   />
 
                   {/* 賽博暗黑漸層遮罩 */}

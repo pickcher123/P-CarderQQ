@@ -3,8 +3,9 @@
 import { useState, useEffect, useMemo, Suspense } from 'react';
 import Image from 'next/image';
 import { SafeImage } from '@/components/safe-image';
-import { useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, doc } from 'firebase/firestore';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy } from 'firebase/firestore';
+import { useSystemConfig } from '@/components/providers/system-config-provider';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
@@ -59,11 +60,7 @@ function NewsPageContent() {
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [searchTerm, setSearchTerm] = useState<string>('');
 
-  const systemConfigRef = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return doc(firestore, 'systemConfig', 'main');
-  }, [firestore]);
-  const { data: systemConfig } = useDoc<SystemConfig>(systemConfigRef);
+  const { systemConfig } = useSystemConfig();
 
   const newsQuery = useMemoFirebase(() => {
     if (!firestore) return null;

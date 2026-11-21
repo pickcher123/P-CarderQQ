@@ -36,7 +36,7 @@ import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@
 import { doc, collection, query, where, orderBy, limit, runTransaction, increment } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { DailyMission, UserMissionProgress } from '@/types/missions';
-import { SystemConfig } from '@/types/system';
+import { useSystemConfig } from '@/components/providers/system-config-provider';
 import { UserProfile } from '@/types/user-profile';
 import { claimCommunityFreeDraw, redeemPromoDrawCode, syncLocalPromoClaimsToFirestore } from '@/lib/promo-draw-service';
 import { getBonusMultiplier, isBonusEventActive } from '@/lib/bonus-event';
@@ -113,8 +113,7 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
     const { user } = useUser();
     const firestore = useFirestore();
 
-    const systemConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'systemConfig', 'main') : null, [firestore]);
-    const { data: systemConfig } = useDoc<SystemConfig>(systemConfigRef);
+    const { systemConfig } = useSystemConfig();
     const showPromoCodeHints = Boolean(systemConfig?.showPromoCodeHints || systemConfig?.featureFlags?.showPromoHints);
 
     const userDocRef = useMemoFirebase(() => (firestore && user) ? doc(firestore, 'users', user.uid) : null, [firestore, user]);

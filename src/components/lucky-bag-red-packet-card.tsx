@@ -124,6 +124,7 @@ export function LuckyBagRedPacketCard({
                 src={mattedImageUrl || bag.prizeCards.first.imageUrl}
                 alt={bag.prizeCards.first.name}
                 fill
+                showSkeleton={false}
                 className="object-contain p-0.5 transition-transform duration-500 group-hover:scale-105"
                 priority={priority}
                 sizes="(max-width: 640px) 180px, 240px"
@@ -263,7 +264,7 @@ export function LuckyBagRedPacketCard({
     <div
       onClick={onClick}
       className={cn(
-        "relative w-full h-full rounded-[1.75rem] sm:rounded-[2rem] overflow-hidden flex flex-col justify-between select-none transition-all duration-300 cursor-pointer shadow-2xl",
+        "relative w-full h-full rounded-[1.75rem] sm:rounded-[2rem] overflow-hidden flex flex-col justify-between select-none transition-[transform,border-color,box-shadow,opacity] duration-300 cursor-pointer shadow-2xl",
         "bg-gradient-to-b from-[#991b1b] via-[#831843] to-[#2a040b]",
         isCenter
           ? "border-[2.5px] border-amber-300 shadow-[0_0_35px_rgba(245,158,11,0.6),inset_0_0_20px_rgba(250,204,21,0.2)]"
@@ -409,6 +410,7 @@ export function LuckyBagRedPacketCard({
                 src={mattedImageUrl || bag.prizeCards.first.imageUrl}
                 alt=""
                 fill
+                showSkeleton={false}
                 className="object-contain drop-shadow-[0_14px_30px_rgba(0,0,0,0.85)] filter transition-transform duration-300 group-hover/preview:scale-105"
                 sizes="(max-width: 640px) 280px, 340px"
                 priority={priority}

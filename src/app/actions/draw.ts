@@ -121,6 +121,8 @@ export async function performDrawAction(userId: string, poolId: string, count: n
               points: Number((prize as any).points || 50),
               source: 'draw',
               poolId,
+              isHybridBlindSpMode: Boolean(poolData.isHybridBlindSpMode),
+              ...( (prize as any).tierCode ? { tierCode: (prize as any).tierCode } : {} ),
               serialNumber,
               createdAt: admin.firestore.FieldValue.serverTimestamp(),
             }
@@ -138,6 +140,7 @@ export async function performDrawAction(userId: string, poolId: string, count: n
               source: 'draw',
               poolId,
               poolName: poolData.name || '',
+              isHybridBlindSpMode: Boolean(poolData.isHybridBlindSpMode),
               serialNumber,
               ...( (prize as any).tierCode ? { tierCode: (prize as any).tierCode } : {} ),
               ...( (prize as any).buybackPoints ? { buybackPoints: (prize as any).buybackPoints } : {} ),

@@ -10,6 +10,7 @@ import { collection, query, orderBy, doc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CrossedCardsIcon, DiamondIcon, PPlusIcon, WheelPrizeIcon } from '@/components/icons';
 import { useIsAdmin } from '@/hooks/use-is-admin';
+import { useSystemConfig } from '@/components/providers/system-config-provider';
 import { 
     Sparkles, ShoppingBag,
     Settings, Target, ShieldCheck, 
@@ -66,9 +67,12 @@ interface CardData {
 }
 
 interface CategoryWithCount extends BettingCategory {
-    itemCount: number;
+    itemCount?: number;
     totalCount: number;
 }
+
+// 模組級記憶體快取：切換分頁回到拼卡頁時 0ms 秒開主題卡池，不再閃爍骨架屏
+let cachedBetCategories: CategoryWithCount[] = [];
 
 export default function BetLandingPage() {
     const firestore = useFirestore();
@@ -98,8 +102,7 @@ export default function BetLandingPage() {
     const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
     const isUserAdmin = Boolean(isAdmin || isSuperAdmin || userProfile?.role?.toLowerCase() === 'admin' || userProfile?.isAdmin === true);
 
-    const systemConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'systemConfig', 'main') : null, [firestore]);
-    const { data: systemConfig } = useDoc<SystemConfig>(systemConfigRef);
+    const { systemConfig } = useSystemConfig();
 
     const categoriesQuery = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -164,12 +167,22 @@ export default function BetLandingPage() {
         return set;
     }, [allBettingItems, allCards]);
 
-    // 即時計算各分類的未售出卡片數量
+    // 即時計算各分類的未售出卡片數量（若已有分類或快取則立刻渲染主題卡池，不等待全部卡片下載完畢）
     const categoriesWithCounts: CategoryWithCount[] = useMemo(() => {
-        if (!categories) return [];
+        if (!categories) return cachedBetCategories;
         const sortedCategories = [...categories].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+        const hasCountsReady = Boolean(allCards && allBettingItems);
         
-        return sortedCategories.map(category => {
+        const result = sortedCategories.map(category => {
+            if (!hasCountsReady) {
+                const cached = cachedBetCategories.find(c => c.id === category.id);
+                return {
+                    ...category,
+                    itemCount: cached?.itemCount,
+                    totalCount: cached?.totalCount ?? 0,
+                } as CategoryWithCount;
+            }
+
             const item = allBettingItems?.find(bi => 
                 bi.id === category.id || 
                 decodeURIComponent(bi.id) === category.id || 
@@ -192,7 +205,12 @@ export default function BetLandingPage() {
                 totalCount: allIds.length,
             };
         });
-    }, [categories, allBettingItems, cardMap, soldCardIds]);
+
+        if (result.length > 0) {
+            cachedBetCategories = result;
+        }
+        return result;
+    }, [categories, allBettingItems, allCards, cardMap, soldCardIds]);
 
     // Cards in betting pool
     const cardsInBetting = useMemo(() => {
@@ -352,7 +370,7 @@ export default function BetLandingPage() {
                         <div className="relative mt-1 sm:mt-2">
                             <RevolvingDoorThemeCarousel
                                 categories={categoriesWithCounts}
-                                isLoading={finalIsLoading}
+                                isLoading={isLoadingCategories && categoriesWithCounts.length === 0}
                                 baseHref="/bet"
                                 headerAction={
                                     <Dialog>

@@ -8,9 +8,9 @@ import { Button } from '@/components/ui/button';
 import { MarqueeContainer } from '@/components/ui/marquee-container';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import { useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, collection, query, where, limit } from 'firebase/firestore';
-import type { SystemConfig } from '@/types/system';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, where, limit } from 'firebase/firestore';
+import { useSystemConfig } from '@/components/providers/system-config-provider';
 import type { DailyMission } from '@/types/missions';
 import { DEFAULT_BONUS_EVENT, isBonusEventActive, getBonusMultiplier, type BonusEventConfig } from '@/lib/bonus-event';
 
@@ -42,8 +42,7 @@ export function BonusDoubleBanner({
   className
 }: BonusDoubleBannerProps) {
   const firestore = useFirestore();
-  const systemConfigRef = useMemoFirebase(() => (firestore ? doc(firestore, 'systemConfig', 'main') : null), [firestore]);
-  const { data: systemConfig } = useDoc<SystemConfig>(systemConfigRef);
+  const { systemConfig } = useSystemConfig();
 
   const missionsQuery = useMemoFirebase(() => (firestore ? query(collection(firestore, 'dailyMissions'), where('type', '==', 'login'), limit(1)) : null), [firestore]);
   const { data: missions } = useCollection<DailyMission>(missionsQuery);
@@ -306,9 +305,7 @@ export function BonusDoubleBanner({
  * 🌟 首頁 Hero 專用「首屏第一眼可見」紅利 2X 加倍徽章橫條
  */
 export function BonusDoubleHeroPill({ onOpenDetail }: { onOpenDetail?: () => void }) {
-  const firestore = useFirestore();
-  const systemConfigRef = useMemoFirebase(() => (firestore ? doc(firestore, 'systemConfig', 'main') : null), [firestore]);
-  const { data: systemConfig } = useDoc<SystemConfig>(systemConfigRef);
+  const { systemConfig } = useSystemConfig();
 
   const eventConfig: BonusEventConfig = useMemo(() => {
     return {
@@ -363,8 +360,7 @@ export function BonusDoubleHeroPill({ onOpenDetail }: { onOpenDetail?: () => voi
  */
 export function BonusDoubleTicker({ onOpenDetail }: { onOpenDetail?: () => void }) {
   const firestore = useFirestore();
-  const systemConfigRef = useMemoFirebase(() => (firestore ? doc(firestore, 'systemConfig', 'main') : null), [firestore]);
-  const { data: systemConfig } = useDoc<SystemConfig>(systemConfigRef);
+  const { systemConfig } = useSystemConfig();
 
   const missionsQuery = useMemoFirebase(() => (firestore ? query(collection(firestore, 'dailyMissions'), where('type', '==', 'login'), limit(1)) : null), [firestore]);
   const { data: missions } = useCollection<DailyMission>(missionsQuery);

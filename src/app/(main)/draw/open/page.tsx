@@ -27,7 +27,7 @@ import { collection, query, where, getDoc, doc, serverTimestamp, increment, runT
 import { getAuth } from 'firebase/auth';
 import { getApp } from 'firebase/app';
 import type { UserProfile } from '@/types/user-profile';
-import type { SystemConfig } from '@/types/system';
+import { useSystemConfig } from '@/components/providers/system-config-provider';
 import type { Card, CardPool, DrawnPrize, PointPrize, Rarity, Step } from '@/types/draw';
 import { Logo, PPlusIcon, CrossedCardsIcon } from '@/components/icons';
 import { DrawButtons } from '@/components/draw-buttons';
@@ -224,8 +224,7 @@ export default function OpenPackPage() {
         }
     }, [isTrialParam]);
     
-    const systemConfigRef = useMemoFirebase(() => firestore ? doc(firestore, 'systemConfig', 'main') : null, [firestore]);
-    const { data: systemConfig } = useDoc<SystemConfig>(systemConfigRef);
+    const { systemConfig } = useSystemConfig();
     const userProfileRef = useMemoFirebase(() => (firestore && user) ? doc(firestore, "users", user.uid) : null, [firestore, user]);
     const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
     
