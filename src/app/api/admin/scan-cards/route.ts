@@ -1,45 +1,294 @@
-import { GoogleGenAI, Type } from '@google/genai';
+import { GoogleGenAI, ThinkingLevel, Type } from '@google/genai';
 import { NextRequest, NextResponse } from 'next/server';
 
-function safeParseJson<T>(raw: string | undefined, fallback: T): T {
-  if (!raw) return fallback;
+const GEMINI_VISION_MODEL = 'gemini-4-hydrogen';
+
+interface NormalizedBox {
+  ymin: number;
+  xmin: number;
+  ymax: number;
+  xmax: number;
+  label?: string;
+}
+
+function getAiClient(): GoogleGenAI {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw Object.assign(new Error('伺服器未配置 GEMINI_API_KEY，請至 Settings > Secrets 確認金鑰設定'), {
+      statusCode: 500,
+    });
+  }
+  return new GoogleGenAI({
+    apiKey,
+    httpOptions: {
+      headers: {
+        'User-Agent': 'aistudio-build',
+      },
+    },
+  });
+}
+
+function safeParseJson<T>(rawText: string | undefined, fallback: T): T {
+  if (!rawText) return fallback;
+  const trimmed = rawText.trim();
   try {
-    const cleaned = raw
-      .trim()
-      .replace(/^```(?:json)?\s*/i, '')
-      .replace(/```$/i, '')
-      .trim();
-    return JSON.parse(cleaned) as T;
+    return JSON.parse(trimmed) as T;
   } catch {
+    // 清除可能夾帶的 Markdown 程式碼區塊標記
+    const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    if (fenced?.[1]) {
+      try {
+        return JSON.parse(fenced[1].trim()) as T;
+      } catch {
+        // continue
+      }
+    }
+    // 嘗試擷取最外層 JSON 物件或陣列
+    const startObj = trimmed.indexOf('{');
+    const endObj = trimmed.lastIndexOf('}');
+    if (startObj !== -1 && endObj > startObj) {
+      try {
+        return JSON.parse(trimmed.slice(startObj, endObj + 1)) as T;
+      } catch {
+        // continue
+      }
+    }
     return fallback;
   }
 }
 
-async function withRetry<T>(fn: () => Promise<T>, maxRetries = 2): Promise<T> {
-  let lastError: unknown;
+async function callWithRetry<T>(fn: () => Promise<T>, maxRetries: number = 1): Promise<T> {
+  let lastErr: unknown;
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       return await fn();
     } catch (err: any) {
-      lastError = err;
-      const msg = String(err?.message || err || '');
-      const status = err?.status || err?.code;
+      lastErr = err;
+      const status = err?.status || err?.statusCode || 0;
+      const msg = String(err?.message || '');
       const isRetryable =
         status === 429 ||
-        status === 503 ||
-        /429|503|RESOURCE_EXHAUSTED|UNAVAILABLE|fetch failed|ETIMEDOUT|ECONNRESET/i.test(msg);
-      if (!isRetryable || attempt === maxRetries) {
-        throw err;
+        status >= 500 ||
+        /timeout|network|fetch failed|UNAVAILABLE|INTERNAL/i.test(msg);
+      if (attempt < maxRetries && isRetryable) {
+        await new Promise((r) => setTimeout(r, 800 * (attempt + 1)));
+        continue;
       }
-      await new Promise((resolve) => setTimeout(resolve, 600 * Math.pow(2, attempt)));
+      throw err;
     }
   }
-  throw lastError;
+  throw lastErr;
+}
+
+function formatGeminiError(error: any): { message: string; status: number } {
+  const rawStatus = Number(error?.status || error?.statusCode || 0);
+  const rawMessage = String(error?.message || 'AI 處理失敗，請稍後再試');
+
+  if (rawStatus === 403 || /PERMISSION_DENIED/i.test(rawMessage)) {
+    return {
+      status: 403,
+      message: 'Gemini API 金鑰權限不足，請至 Settings > Secrets 確認 API Key 設定。',
+    };
+  }
+  if (rawStatus === 400 && /API_KEY_INVALID/i.test(rawMessage)) {
+    return {
+      status: 400,
+      message: 'Gemini API 金鑰無效，請至 Settings > Secrets 重新設定。',
+    };
+  }
+  if (rawStatus === 429 || /RESOURCE_EXHAUSTED|quota/i.test(rawMessage)) {
+    return {
+      status: 429,
+      message: 'AI 呼叫頻率已達上限，請稍候幾秒後再重試。',
+    };
+  }
+  if (rawStatus === 404 || /NOT_FOUND/i.test(rawMessage)) {
+    return {
+      status: 502,
+      message: `AI 模型暫時無法存取 (${GEMINI_VISION_MODEL})：${rawMessage}`,
+    };
+  }
+  return {
+    status: rawStatus >= 400 && rawStatus < 600 ? rawStatus : 500,
+    message: rawMessage,
+  };
+}
+
+/**
+ * 清理、合併誤拆標籤、去重並依行/列排序偵測到的邊界框 (座標系: 0~1000)
+ */
+function postProcessDetectedBoxes(rawItems: any[]): NormalizedBox[] {
+  if (!Array.isArray(rawItems) || rawItems.length === 0) return [];
+
+  // 1. 解析 box_2d: [ymin, xmin, ymax, xmax] 或獨立欄位
+  const parsed: NormalizedBox[] = [];
+  for (const item of rawItems) {
+    let ymin: number;
+    let xmin: number;
+    let ymax: number;
+    let xmax: number;
+
+    if (Array.isArray(item?.box_2d) && item.box_2d.length === 4) {
+      [ymin, xmin, ymax, xmax] = item.box_2d.map(Number);
+    } else {
+      ymin = Number(item?.ymin);
+      xmin = Number(item?.xmin);
+      ymax = Number(item?.ymax);
+      xmax = Number(item?.xmax);
+    }
+
+    if (
+      !Number.isFinite(ymin) ||
+      !Number.isFinite(xmin) ||
+      !Number.isFinite(ymax) ||
+      !Number.isFinite(xmax)
+    ) {
+      continue;
+    }
+
+    // 修正可能顛倒的座標
+    if (ymin > ymax) [ymin, ymax] = [ymax, ymin];
+    if (xmin > xmax) [xmin, xmax] = [xmax, xmin];
+
+    const clampedXmin = Math.max(0, Math.min(995, Math.round(xmin)));
+    const clampedYmin = Math.max(0, Math.min(995, Math.round(ymin)));
+    const clampedXmax = Math.max(clampedXmin + 5, Math.min(1000, Math.round(xmax)));
+    const clampedYmax = Math.max(clampedYmin + 5, Math.min(1000, Math.round(ymax)));
+
+    const w = clampedXmax - clampedXmin;
+    const h = clampedYmax - clampedYmin;
+
+    // 過濾極小雜點（寬度 < 4% 或高度 < 4%）
+    if (w < 40 || h < 40) continue;
+
+    parsed.push({
+      ymin: clampedYmin,
+      xmin: clampedXmin,
+      ymax: clampedYmax,
+      xmax: clampedXmax,
+      label: typeof item?.label === 'string' ? item.label : undefined,
+    });
+  }
+
+  if (parsed.length === 0) return [];
+
+  // 2. 若是多卡圖，濾除覆蓋幾乎整張畫面的外層容器框（保留單卡近拍大框）
+  const withoutCanvasFrame =
+    parsed.length > 1
+      ? parsed.filter((b) => {
+          const w = b.xmax - b.xmin;
+          const h = b.ymax - b.ymin;
+          return !(w > 920 && h > 920);
+        })
+      : parsed;
+
+  const working = withoutCanvasFrame.length > 0 ? withoutCanvasFrame : parsed;
+
+  // 3. 若 AI 意外將鑑定卡上方的矮標籤條與下方卡面拆成兩塊，自動安全合併
+  const consumed = new Set<number>();
+  for (let i = 0; i < working.length; i++) {
+    const top = working[i];
+    const topH = top.ymax - top.ymin;
+    const topW = top.xmax - top.xmin;
+    // 只有很扁的橫條（寬明顯大於高，且高度小於整圖 14%）才視為疑似被拆開的鑑定標籤
+    if (topH > 140 || topW / Math.max(1, topH) < 1.6) continue;
+
+    for (let j = 0; j < working.length; j++) {
+      if (i === j || consumed.has(j)) continue;
+      const body = working[j];
+      const bodyH = body.ymax - body.ymin;
+      if (bodyH < topH * 1.4) continue;
+
+      const overlapLeft = Math.max(top.xmin, body.xmin);
+      const overlapRight = Math.min(top.xmax, body.xmax);
+      const overlapW = Math.max(0, overlapRight - overlapLeft);
+      const minW = Math.min(topW, body.xmax - body.xmin);
+      const verticalGap = body.ymin - top.ymax;
+
+      if (overlapW / Math.max(1, minW) > 0.65 && verticalGap >= -25 && verticalGap <= 45) {
+        body.xmin = Math.min(top.xmin, body.xmin);
+        body.ymin = Math.min(top.ymin, body.ymin);
+        body.xmax = Math.max(top.xmax, body.xmax);
+        body.ymax = Math.max(top.ymax, body.ymax);
+        consumed.add(i);
+        break;
+      }
+    }
+  }
+
+  const merged = working.filter((_, idx) => !consumed.has(idx));
+
+  // 4. 去除重複框與被完整包覆的內部子框（例如同時框到外殼與內部球員頭像）
+  //    由大到小排序，確保優先保留外層完整卡框，並正確處理面積相等的重複框
+  const sortedByArea = [...merged].sort((a, b) => {
+    const areaA = (a.xmax - a.xmin) * (a.ymax - a.ymin);
+    const areaB = (b.xmax - b.xmin) * (b.ymax - b.ymin);
+    return areaB - areaA;
+  });
+
+  const kept: NormalizedBox[] = [];
+  for (const box of sortedByArea) {
+    const area = (box.xmax - box.xmin) * (box.ymax - box.ymin);
+    const isDuplicateOrNested = kept.some((existing) => {
+      const existingArea = (existing.xmax - existing.xmin) * (existing.ymax - existing.ymin);
+      const ix1 = Math.max(box.xmin, existing.xmin);
+      const iy1 = Math.max(box.ymin, existing.ymin);
+      const ix2 = Math.min(box.xmax, existing.xmax);
+      const iy2 = Math.min(box.ymax, existing.ymax);
+      if (ix2 <= ix1 || iy2 <= iy1) return false;
+      const interArea = (ix2 - ix1) * (iy2 - iy1);
+      const containment = interArea / Math.max(1, area);
+      const iou = interArea / Math.max(1, area + existingArea - interArea);
+      return containment > 0.68 || iou > 0.58;
+    });
+    if (!isDuplicateOrNested) {
+      kept.push(box);
+    }
+  }
+
+  // 5. 依視覺排組排序：動態判斷同一排（中心 Y 差距小於較小框高度的 45%），由上而下、由左而右
+  const rows: NormalizedBox[][] = [];
+  const byCenterY = [...kept].sort(
+    (a, b) => (a.ymin + a.ymax) / 2 - (b.ymin + b.ymax) / 2
+  );
+
+  for (const box of byCenterY) {
+    const centerY = (box.ymin + box.ymax) / 2;
+    const h = box.ymax - box.ymin;
+    let placed = false;
+    for (const row of rows) {
+      const rowAvgY =
+        row.reduce((sum, r) => sum + (r.ymin + r.ymax) / 2, 0) / row.length;
+      const rowMinH = Math.min(...row.map((r) => r.ymax - r.ymin));
+      if (Math.abs(centerY - rowAvgY) < Math.min(h, rowMinH) * 0.48) {
+        row.push(box);
+        placed = true;
+        break;
+      }
+    }
+    if (!placed) {
+      rows.push([box]);
+    }
+  }
+
+  rows.sort((rowA, rowB) => {
+    const avgA = rowA.reduce((s, b) => s + b.ymin, 0) / rowA.length;
+    const avgB = rowB.reduce((s, b) => s + b.ymin, 0) / rowB.length;
+    return avgA - avgB;
+  });
+
+  const finalBoxes: NormalizedBox[] = [];
+  for (const row of rows) {
+    row.sort((a, b) => a.xmin - b.xmin);
+    finalBoxes.push(...row);
+  }
+
+  return finalBoxes;
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const { 
+    const {
       image, // base64 data string (with or without data:image/...;base64, prefix)
       mode = 'recognize', // 'recognize' | 'detect' | 'ocr_slab' | 'price_estimate'
       cardList = [],
@@ -49,17 +298,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '未提供圖片資料' }, { status: 400 });
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json({ error: '伺服器未配置 GEMINI_API_KEY' }, { status: 500 });
-    }
-
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = getAiClient();
 
     // 提取乾淨的 base64 與 mimeType
     let base64Data = image || '';
     let mimeType = 'image/jpeg';
-    if (image && image.startsWith('data:')) {
+    if (image && typeof image === 'string' && image.startsWith('data:')) {
       const matches = image.match(/^data:([^;]+);base64,(.+)$/);
       if (matches) {
         mimeType = matches[1];
@@ -68,52 +312,55 @@ export async function POST(req: NextRequest) {
     }
 
     if (mode === 'detect') {
-      // 模式 1：使用 Gemini box_2d (0~1000) 空間定位偵測卡片與鑑定殼外框
-      const detectPrompt = `
-請精準偵測這張圖片中「每一張獨立的球員卡／收藏卡／卡夾／PSA、BGS、CGC、SGC 評級鑑定殼」的實際物理外框位置。
+      // 模式 1：自動偵測單卡／多卡精準物理邊界框 (使用 Gemini 原生 box_2d 座標系 0~1000)
+      const detectPrompt = `You are a precision trading card & graded slab bounding-box detector.
+Detect EVERY individual trading card, toploader, magnetic one-touch case, or graded slab (PSA / BGS / CGC / SGC / ARS) in this image.
 
-【嚴格空間定位規則】：
-1. 若為 PSA / BGS / CGC / SGC 評級鑑定殼，box_2d 必須「完整包含從頂部標籤到最底部透明外殼邊緣」的整個鑑定殼，絕對不可把上方標籤與下方卡面拆成兩個框，也不可漏掉頂部標籤。
-2. 若畫面只有「1 張」卡片（即使是滿版或近拍佔畫面 60%~98%），請回傳「1 個」緊貼該張卡片或鑑定殼最外緣的 box_2d。
-3. 若畫面中有「多張」卡片（例如 2 張、4 張、6 張、9 張排拍掃描），請逐一為每一張卡片分別建立獨立 box_2d；絕對不可把相鄰卡片合併成一個框，也不可進行上下文腦補合併或重複框選。
-4. 嚴禁框選空白桌面、掃描儀背景黑框或僅框選卡面內的人物頭像。
-5. 使用 box_2d: [ymin, xmin, ymax, xmax]（0 到 1000 的整數座標），並依由上到下、同排由左到右順序輸出。
-請僅回傳標準 JSON。
-`;
+STRICT DETECTION RULES:
+1. GRADED SLABS (PSA / BGS / CGC / SGC / ARS): Each box_2d MUST tightly wrap the ENTIRE outer clear plastic slab from the very top edge above the grade label down to the very bottom edge of the slab, and from the outer left edge to the outer right edge. NEVER split the top label from the card artwork, and NEVER crop only the inner card while cutting off the label.
+2. RAW CARDS / TOPLOADERS / SLEEVES / MAGNETIC CASES: Tightly hug the exact 4 physical outer edges of the card or holder, excluding surrounding desk, table, scanner glass, fingers, or background shadows.
+3. MULTI-CARD SCANS OR PHOTOS (2, 3, 4, 6, 8, 9+ cards): Output ONE separate box_2d for EACH individual card. NEVER merge adjacent cards into one box, and NEVER output an outer bounding box covering multiple cards or the whole scanner bed.
+4. SINGLE CARD PHOTOS: Even if a single card fills 70%-99% of the image, output 1 tight box_2d matching its exact physical outer edges.
+5. COORDINATE SYSTEM: Return box_2d as [ymin, xmin, ymax, xmax] with integers normalized to 0..1000 (0 = top/left edge of image, 1000 = bottom/right edge of image).
+6. Double-check that every card in the image is accounted for without missing any card or creating duplicate overlapping boxes.
+7. Order cards row-by-row from top to bottom, and left to right within each row.`;
 
-      const response = await withRetry(() =>
+      const response = await callWithRetry(() =>
         ai.models.generateContent({
-          model: 'gemini-2.5-flash',
-          contents: [
-            {
-              role: 'user',
-              parts: [
-                { text: detectPrompt },
-                {
-                  inlineData: {
-                    data: base64Data,
-                    mimeType,
-                  },
+          model: GEMINI_VISION_MODEL,
+          contents: {
+            parts: [
+              {
+                inlineData: {
+                  data: base64Data,
+                  mimeType,
                 },
-              ],
-            },
-          ],
+              },
+              { text: detectPrompt },
+            ],
+          },
           config: {
-            temperature: 0.1,
+            thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
             responseMimeType: 'application/json',
             responseSchema: {
               type: Type.OBJECT,
               properties: {
                 boxes: {
                   type: Type.ARRAY,
+                  description: 'Detected individual trading cards or graded slabs.',
                   items: {
                     type: Type.OBJECT,
                     properties: {
                       box_2d: {
                         type: Type.ARRAY,
+                        description:
+                          'Tight bounding box [ymin, xmin, ymax, xmax] normalized to 0..1000 integers.',
                         items: { type: Type.INTEGER },
                       },
-                      label: { type: Type.STRING },
+                      label: {
+                        type: Type.STRING,
+                        description: 'Short type label, e.g. PSA Slab, BGS Slab, Magnetic Case, Card.',
+                      },
                     },
                     required: ['box_2d'],
                   },
@@ -127,47 +374,13 @@ export async function POST(req: NextRequest) {
 
       const parsed = safeParseJson<{ boxes?: any[] }>(response.text, { boxes: [] });
       const rawBoxes = Array.isArray(parsed.boxes) ? parsed.boxes : [];
+      const filteredBoxes = postProcessDetectedBoxes(rawBoxes);
 
-      // 兼容 box_2d: [ymin, xmin, ymax, xmax] 與舊版 ymin/xmin/ymax/xmax
-      const normalizedBoxes = rawBoxes
-        .map((b: any) => {
-          const coords = Array.isArray(b.box_2d) && b.box_2d.length === 4
-            ? { ymin: b.box_2d[0], xmin: b.box_2d[1], ymax: b.box_2d[2], xmax: b.box_2d[3] }
-            : { ymin: b.ymin, xmin: b.xmin, ymax: b.ymax, xmax: b.xmax };
-          const xmin = Math.max(0, Math.min(995, Number(coords.xmin)));
-          const ymin = Math.max(0, Math.min(995, Number(coords.ymin)));
-          const xmax = Math.max(5, Math.min(1000, Number(coords.xmax)));
-          const ymax = Math.max(5, Math.min(1000, Number(coords.ymax)));
-          return { ...b, xmin, ymin, xmax, ymax };
-        })
-        .filter((b: any) => {
-          const w = b.xmax - b.xmin;
-          const h = b.ymax - b.ymin;
-          if (!Number.isFinite(w) || !Number.isFinite(h)) return false;
-          if (w < 50 || h < 65) return false;
-          // 僅在多卡情境下過濾誤抓整張畫面的外框；單張滿版近拍予以保留
-          if (rawBoxes.length > 1 && w > 880 && h > 880) return false;
-          return true;
-        });
-
-      // 移除嵌套子框與高度重疊框
-      const filteredBoxes = normalizedBoxes.filter((box: any, idx: number) => {
-        const area = (box.xmax - box.xmin) * (box.ymax - box.ymin);
-        return !normalizedBoxes.some((other: any, oIdx: number) => {
-          if (idx === oIdx) return false;
-          const otherArea = (other.xmax - other.xmin) * (other.ymax - other.ymin);
-          if (otherArea <= area) return false;
-          const ix1 = Math.max(box.xmin, other.xmin);
-          const iy1 = Math.max(box.ymin, other.ymin);
-          const ix2 = Math.min(box.xmax, other.xmax);
-          const iy2 = Math.min(box.ymax, other.ymax);
-          if (ix2 <= ix1 || iy2 <= iy1) return false;
-          const interArea = (ix2 - ix1) * (iy2 - iy1);
-          return interArea / area > 0.65;
-        });
+      return NextResponse.json({
+        boxes: filteredBoxes,
+        source: 'gemini',
+        model: GEMINI_VISION_MODEL,
       });
-
-      return NextResponse.json({ boxes: filteredBoxes, source: 'gemini' });
     }
 
     if (mode === 'price_estimate') {
@@ -188,11 +401,12 @@ ${JSON.stringify(cardList, null, 2)}
 請以結構化 JSON 回傳每張卡片的建議售價 (suggestedPrice，整數) 與行情區間 (priceRange，例如 "NT$ 15,000 ~ 20,000") 與簡短依據 (rationale)。
 `;
 
-      const response = await withRetry(() =>
+      const response = await callWithRetry(() =>
         ai.models.generateContent({
-          model: 'gemini-2.5-flash',
-          contents: [{ role: 'user', parts: [{ text: pricePrompt }] }],
+          model: GEMINI_VISION_MODEL,
+          contents: pricePrompt,
           config: {
+            thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
             responseMimeType: 'application/json',
             responseSchema: {
               type: Type.OBJECT,
@@ -226,6 +440,7 @@ ${JSON.stringify(cardList, null, 2)}
 
     const recognizePrompt = `
 你是一位世界頂級的球員卡與收藏卡專家（Trading Card Specialist / Grader / OCR 識別大師）。
+${isSlabOcrOnly ? '【本次重點：請將最高注意力放在卡片最上方的 PSA / BGS / CGC / SGC / ARS 評級標籤文字、條碼旁證號與子分數 OCR 精準抄錄，一字不漏。】' : ''}
 請仔細辨別圖片中的這張卡片（可能是裸卡 Raw Card，或是 PSA / BGS / CGC / SGC / ARS 評級鑑定殼）：
 
 【重要任務：精準抓取 PSA / BGS 評級標籤文字】
@@ -251,39 +466,39 @@ ${JSON.stringify(cardList, null, 2)}
 請以結構化 JSON 輸出。
 `;
 
-    const response = await withRetry(() =>
+    const response = await callWithRetry(() =>
       ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: [
-          {
-            role: 'user',
-            parts: [
-              { text: recognizePrompt },
-              {
-                inlineData: {
-                  data: base64Data,
-                  mimeType,
-                },
+        model: GEMINI_VISION_MODEL,
+        contents: {
+          parts: [
+            {
+              inlineData: {
+                data: base64Data,
+                mimeType,
               },
-            ],
-          },
-        ],
+            },
+            { text: recognizePrompt },
+          ],
+        },
         config: {
-          temperature: isSlabOcrOnly ? 0.1 : 0.2,
+          thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
           responseMimeType: 'application/json',
           responseSchema: {
             type: Type.OBJECT,
             properties: {
               name: { type: Type.STRING, description: '球員或卡片完整名稱' },
-              category: { 
-                type: Type.STRING, 
-                description: '籃球 | 棒球 | 足球 | 女孩卡 | 女優 | TCG | 其他' 
+              category: {
+                type: Type.STRING,
+                description: '籃球 | 棒球 | 足球 | 女孩卡 | 女優 | TCG | 其他',
               },
               year: { type: Type.INTEGER, description: '發行年份' },
               series: { type: Type.STRING, description: '卡片系列品牌' },
               cardNumber: { type: Type.STRING, description: '卡號' },
               grade: { type: Type.STRING, description: '評級機構與分數，如 PSA 10 或 RAW' },
-              slabLabelText: { type: Type.STRING, description: 'PSA/BGS 評級標籤上完整的文字 (包含年份系列球員品名等級與證號)' },
+              slabLabelText: {
+                type: Type.STRING,
+                description: 'PSA/BGS 評級標籤上完整的文字 (包含年份系列球員品名等級與證號)',
+              },
               certNumber: { type: Type.STRING, description: '鑑定證號 (Serial Number / Cert#)' },
               subgrades: { type: Type.STRING, description: 'BGS/CGC 小分或簽名分' },
               formattedTitle: { type: Type.STRING, description: '建議的標準卡牌拍賣品名' },
@@ -303,12 +518,9 @@ ${JSON.stringify(cardList, null, 2)}
 
     const parsed = safeParseJson(response.text, {});
     return NextResponse.json(parsed);
-
   } catch (error: any) {
     console.error('Scan cards error:', error);
-    return NextResponse.json(
-      { error: error?.message || '辨識失敗，請稍後再試' },
-      { status: 500 }
-    );
+    const { message, status } = formatGeminiError(error);
+    return NextResponse.json({ error: message }, { status });
   }
 }

@@ -58,6 +58,7 @@ export interface ScannedCardItem {
 
 /**
  * 依據原始圖片的高解析度尺寸，對指定的 CropBox 進行無損旋轉與裁切
+ * 旋轉時直接對原圖繞裁切中心採樣，避免預先裁切造成四角黑邊／裁角
  */
 export async function cropImageFromSource(
   imageElement: HTMLImageElement,
@@ -67,14 +68,24 @@ export async function cropImageFromSource(
 ): Promise<{ blob: Blob; dataUrl: string; optimizedDataUrl: string }> {
   return new Promise((resolve, reject) => {
     try {
-      const naturalWidth = imageElement.naturalWidth;
-      const naturalHeight = imageElement.naturalHeight;
+      const naturalWidth = imageElement.naturalWidth || imageElement.width;
+      const naturalHeight = imageElement.naturalHeight || imageElement.height;
+      if (!naturalWidth || !naturalHeight) {
+        reject(new Error('圖片尚未載入完成'));
+        return;
+      }
+
+      // 安全限制座標範圍於 0 ~ 100%
+      const clampedX = Math.max(0, Math.min(99, cropBox.x));
+      const clampedY = Math.max(0, Math.min(99, cropBox.y));
+      const clampedW = Math.max(1, Math.min(100 - clampedX, cropBox.width));
+      const clampedH = Math.max(1, Math.min(100 - clampedY, cropBox.height));
 
       // 計算在原始大圖上的像素位置與尺寸
-      const pixelX = (cropBox.x / 100) * naturalWidth;
-      const pixelY = (cropBox.y / 100) * naturalHeight;
-      const pixelWidth = (cropBox.width / 100) * naturalWidth;
-      const pixelHeight = (cropBox.height / 100) * naturalHeight;
+      const pixelX = (clampedX / 100) * naturalWidth;
+      const pixelY = (clampedY / 100) * naturalHeight;
+      const pixelWidth = Math.max(1, (clampedW / 100) * naturalWidth);
+      const pixelHeight = Math.max(1, (clampedH / 100) * naturalHeight);
 
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
@@ -83,26 +94,42 @@ export async function cropImageFromSource(
         return;
       }
 
-      // 如果有旋轉角度
+      const normalizedRot = ((cropBox.rotation % 360) + 360) % 360;
       const rotationRad = (cropBox.rotation * Math.PI) / 180;
-      const is90or270 = Math.abs(cropBox.rotation % 180) === 90;
+      const is90or270 = normalizedRot === 90 || normalizedRot === 270;
 
       if (is90or270) {
-        canvas.width = Math.round(pixelHeight);
-        canvas.height = Math.round(pixelWidth);
+        canvas.width = Math.max(1, Math.round(pixelHeight));
+        canvas.height = Math.max(1, Math.round(pixelWidth));
       } else {
-        canvas.width = Math.round(pixelWidth);
-        canvas.height = Math.round(pixelHeight);
+        canvas.width = Math.max(1, Math.round(pixelWidth));
+        canvas.height = Math.max(1, Math.round(pixelHeight));
       }
 
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+
       ctx.save();
-      // 直接以原圖裁切中心為軸旋轉採樣，避免「先裁再轉」造成四角出現空白或被裁角
-      const centerX = pixelX + pixelWidth / 2;
-      const centerY = pixelY + pixelHeight / 2;
-      ctx.translate(canvas.width / 2, canvas.height / 2);
-      ctx.rotate(rotationRad);
-      ctx.translate(-centerX, -centerY);
-      ctx.drawImage(imageElement, 0, 0, naturalWidth, naturalHeight);
+      if (normalizedRot === 0) {
+        ctx.drawImage(
+          imageElement,
+          pixelX,
+          pixelY,
+          pixelWidth,
+          pixelHeight,
+          0,
+          0,
+          canvas.width,
+          canvas.height
+        );
+      } else {
+        // 繞原圖上該裁切框中心點旋轉並繪製完整來源圖，杜絕微調角度時的四角裁切與空白三角
+        const centerX = pixelX + pixelWidth / 2;
+        const centerY = pixelY + pixelHeight / 2;
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.rotate(rotationRad);
+        ctx.drawImage(imageElement, -centerX, -centerY, naturalWidth, naturalHeight);
+      }
       ctx.restore();
 
       // 另行生成輕量化、極高清晰度儲存專用 Data URL（最大寬度 720px）
@@ -112,7 +139,7 @@ export async function cropImageFromSource(
         let optW = canvas.width;
         let optH = canvas.height;
         if (optW > optMaxW) {
-          optH = Math.round((optH * optMaxW) / optW);
+          optH = Math.max(1, Math.round((optH * optMaxW) / optW));
           optW = optMaxW;
         }
         const optCanvas = document.createElement('canvas');
@@ -120,9 +147,11 @@ export async function cropImageFromSource(
         optCanvas.height = optH;
         const optCtx = optCanvas.getContext('2d');
         if (optCtx) {
+          optCtx.imageSmoothingEnabled = true;
+          optCtx.imageSmoothingQuality = 'high';
           optCtx.drawImage(canvas, 0, 0, optW, optH);
-          // 使用 webp 或 png 保留 Alpha 透明度通道，避免產生醜陋黑邊或黑角
-          optimizedDataUrl = optCanvas.toDataURL('image/webp', 0.9) || optCanvas.toDataURL('image/png');
+          optimizedDataUrl =
+            optCanvas.toDataURL('image/webp', 0.9) || optCanvas.toDataURL('image/jpeg', 0.88);
         }
       } catch (optErr) {
         console.warn('Optimized dataUrl generation fallback:', optErr);
@@ -147,58 +176,90 @@ export async function cropImageFromSource(
 }
 
 /**
- * 專供單卡 AI 辨識與 PSA 標籤 OCR 使用：裁切並壓縮為 1280px 高清 JPEG，避免 5~12MB 原圖造成 Payload Too Large
+ * 專供 AI 辨識 / PSA 標籤 OCR 使用的輕量高清裁切（JPEG、最大邊 1280px，約 100~220KB）
+ * 徹底避免傳送原圖無壓縮 PNG（動輒 5~12MB）導致 API 413 Payload Too Large 或超時失敗
  */
 export async function cropImageForAi(
   imageElement: HTMLImageElement,
   cropBox: CropBox,
   maxDimension: number = 1280
 ): Promise<string> {
-  const { dataUrl } = await cropImageFromSource(imageElement, cropBox, 'image/jpeg', 0.88);
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      let width = img.naturalWidth || img.width;
-      let height = img.naturalHeight || img.height;
-      if (width > maxDimension || height > maxDimension) {
-        if (width > height) {
-          height = Math.round((height * maxDimension) / width);
-          width = maxDimension;
-        } else {
-          width = Math.round((width * maxDimension) / height);
-          height = maxDimension;
-        }
-      }
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        resolve(dataUrl);
-        return;
-      }
-      ctx.drawImage(img, 0, 0, width, height);
-      resolve(canvas.toDataURL('image/jpeg', 0.86));
-    };
-    img.onerror = () => reject(new Error('AI 壓縮圖片載入失敗'));
-    img.src = dataUrl;
-  });
+  const naturalWidth = imageElement.naturalWidth || imageElement.width;
+  const naturalHeight = imageElement.naturalHeight || imageElement.height;
+  if (!naturalWidth || !naturalHeight) {
+    throw new Error('圖片尚未載入完成');
+  }
+
+  const clampedX = Math.max(0, Math.min(99, cropBox.x));
+  const clampedY = Math.max(0, Math.min(99, cropBox.y));
+  const clampedW = Math.max(1, Math.min(100 - clampedX, cropBox.width));
+  const clampedH = Math.max(1, Math.min(100 - clampedY, cropBox.height));
+
+  const pixelX = (clampedX / 100) * naturalWidth;
+  const pixelY = (clampedY / 100) * naturalHeight;
+  const pixelWidth = Math.max(1, (clampedW / 100) * naturalWidth);
+  const pixelHeight = Math.max(1, (clampedH / 100) * naturalHeight);
+
+  const normalizedRot = ((cropBox.rotation % 360) + 360) % 360;
+  const rotationRad = (cropBox.rotation * Math.PI) / 180;
+  const is90or270 = normalizedRot === 90 || normalizedRot === 270;
+
+  let outW = is90or270 ? pixelHeight : pixelWidth;
+  let outH = is90or270 ? pixelWidth : pixelHeight;
+  let scale = 1;
+  if (outW > maxDimension || outH > maxDimension) {
+    scale = maxDimension / Math.max(outW, outH);
+    outW = Math.max(1, Math.round(outW * scale));
+    outH = Math.max(1, Math.round(outH * scale));
+  } else {
+    outW = Math.max(1, Math.round(outW));
+    outH = Math.max(1, Math.round(outH));
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = outW;
+  canvas.height = outH;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Canvas context not available');
+
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, outW, outH);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+
+  ctx.save();
+  if (normalizedRot === 0) {
+    ctx.drawImage(imageElement, pixelX, pixelY, pixelWidth, pixelHeight, 0, 0, outW, outH);
+  } else {
+    const centerX = pixelX + pixelWidth / 2;
+    const centerY = pixelY + pixelHeight / 2;
+    ctx.translate(outW / 2, outH / 2);
+    ctx.rotate(rotationRad);
+    ctx.scale(scale, scale);
+    ctx.drawImage(imageElement, -centerX, -centerY, naturalWidth, naturalHeight);
+  }
+  ctx.restore();
+
+  return canvas.toDataURL('image/jpeg', 0.86);
 }
 
 /**
- * 將圖片縮放至適合 AI 邊界偵測的高清解析度 (1536px，兼具小卡文字辨識力與 HTTP 傳輸穩定度)
+ * 將圖片縮放至適合 AI 偵測邊界的清晰解析度（預設 1536px JPEG，兼顧多卡邊緣銳利度與傳輸速度）
  */
-export function compressImageForDetection(imageElement: HTMLImageElement, maxDimension: number = 1536): string {
+export function compressImageForDetection(
+  imageElement: HTMLImageElement,
+  maxDimension: number = 1536
+): string {
   const canvas = document.createElement('canvas');
-  let width = imageElement.naturalWidth;
-  let height = imageElement.naturalHeight;
+  let width = imageElement.naturalWidth || imageElement.width;
+  let height = imageElement.naturalHeight || imageElement.height;
 
   if (width > maxDimension || height > maxDimension) {
     if (width > height) {
-      height = Math.round((height * maxDimension) / width);
+      height = Math.max(1, Math.round((height * maxDimension) / width));
       width = maxDimension;
     } else {
-      width = Math.round((width * maxDimension) / height);
+      width = Math.max(1, Math.round((width * maxDimension) / height));
       height = maxDimension;
     }
   }
@@ -206,8 +267,55 @@ export function compressImageForDetection(imageElement: HTMLImageElement, maxDim
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext('2d');
-  ctx?.drawImage(imageElement, 0, 0, width, height);
-  return canvas.toDataURL('image/jpeg', 0.75);
+  if (ctx) {
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(imageElement, 0, 0, width, height);
+  }
+  return canvas.toDataURL('image/jpeg', 0.85);
+}
+
+/**
+ * 動態行分群排序（由上至下、同一排由左至右）
+ */
+export function sortCropBoxes(boxes: CropBox[]): CropBox[] {
+  if (boxes.length <= 1) return [...boxes];
+
+  const byCenterY = [...boxes].sort(
+    (a, b) => a.y + a.height / 2 - (b.y + b.height / 2)
+  );
+  const rows: CropBox[][] = [];
+
+  for (const box of byCenterY) {
+    const centerY = box.y + box.height / 2;
+    let placed = false;
+    for (const row of rows) {
+      const rowAvgY =
+        row.reduce((sum, r) => sum + (r.y + r.height / 2), 0) / row.length;
+      const rowMinH = Math.min(...row.map((r) => r.height));
+      if (Math.abs(centerY - rowAvgY) < Math.min(box.height, rowMinH) * 0.48) {
+        row.push(box);
+        placed = true;
+        break;
+      }
+    }
+    if (!placed) {
+      rows.push([box]);
+    }
+  }
+
+  rows.sort((rowA, rowB) => {
+    const avgA = rowA.reduce((s, b) => s + b.y, 0) / rowA.length;
+    const avgB = rowB.reduce((s, b) => s + b.y, 0) / rowB.length;
+    return avgA - avgB;
+  });
+
+  const sorted: CropBox[] = [];
+  for (const row of rows) {
+    row.sort((a, b) => a.x - b.x);
+    sorted.push(...row);
+  }
+  return sorted;
 }
 
 /**
@@ -237,8 +345,8 @@ export function generateGridBoxes(rows: number, cols: number, padding: number = 
 }
 
 /**
- * 純前端多卡獨立邊界偵測（Integral-Image 局部自適應背景 + 彩度 + 邊緣梯度 + BFS 連通區域）
- * 可抵抗掃描儀玻璃色偏與漸層陰影，精準找出每張卡片/卡夾的獨立緊貼外框
+ * 純前端多卡獨立邊界偵測（僅作為雲端 AI 無法連線時的離線備援）
+ * 結合四周背景中位數色差 + 彩度 + 邊緣梯度 + 連通區域分析
  */
 export function detectCardBoundariesLocally(imageElement: HTMLImageElement): CropBox[] {
   try {
@@ -257,13 +365,37 @@ export function detectCardBoundariesLocally(imageElement: HTMLImageElement): Cro
     const imgData = ctx.getImageData(0, 0, sampleWidth, sampleHeight);
     const data = imgData.data;
     const totalPixels = sampleWidth * sampleHeight;
-    const gray = new Float32Array(totalPixels);
-    for (let i = 0; i < totalPixels; i++) {
-      const idx = i * 4;
-      gray[i] = 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
-    }
 
-    // 1. 建立對掃描陰影完全免疫的前景遮罩：僅依據「局部邊緣梯度 + 彩度」（不使用全域亮度差，避免掃描儀陰影將多卡連成一片）
+    // 0. 採樣四邊極外圍像素估算背景代表色（中位數）
+    const borderR: number[] = [];
+    const borderG: number[] = [];
+    const borderB: number[] = [];
+    for (let x = 0; x < sampleWidth; x += 4) {
+      for (const y of [1, 2, sampleHeight - 2, sampleHeight - 3]) {
+        const idx = (y * sampleWidth + x) * 4;
+        borderR.push(data[idx]);
+        borderG.push(data[idx + 1]);
+        borderB.push(data[idx + 2]);
+      }
+    }
+    for (let y = 0; y < sampleHeight; y += 4) {
+      for (const x of [1, 2, sampleWidth - 2, sampleWidth - 3]) {
+        const idx = (y * sampleWidth + x) * 4;
+        borderR.push(data[idx]);
+        borderG.push(data[idx + 1]);
+        borderB.push(data[idx + 2]);
+      }
+    }
+    const median = (arr: number[]) => {
+      if (arr.length === 0) return 240;
+      const s = [...arr].sort((a, b) => a - b);
+      return s[Math.floor(s.length / 2)];
+    };
+    const bgR = median(borderR);
+    const bgG = median(borderG);
+    const bgB = median(borderB);
+
+    // 1. 建立前景遮罩：背景色差 + 彩度 + 局部邊緣梯度
     const padBorderX = Math.max(3, Math.round(sampleWidth * 0.015));
     const padBorderY = Math.max(3, Math.round(sampleHeight * 0.015));
     const mask = new Uint8Array(totalPixels);
@@ -275,6 +407,7 @@ export function detectCardBoundariesLocally(imageElement: HTMLImageElement): Cro
         const g = data[idx + 1];
         const b = data[idx + 2];
 
+        const bgDist = Math.abs(r - bgR) + Math.abs(g - bgG) + Math.abs(b - bgB);
         const sat = Math.max(r, g, b) - Math.min(r, g, b);
 
         const idxR = (y * sampleWidth + (x + 1)) * 4;
@@ -287,21 +420,20 @@ export function detectCardBoundariesLocally(imageElement: HTMLImageElement): Cro
           Math.abs(g - data[idxD + 1]) +
           Math.abs(b - data[idxD + 2]);
 
-        if (sat > 20 || edgeGrad > 34) {
+        if (bgDist > 55 || sat > 28 || edgeGrad > 42) {
           mask[p] = 1;
         }
       }
     }
 
-    // 2. 分離式閉運算（水平 ±2px 膨脹、垂直 ±4px 膨脹，再 ±2px 侵蝕）
-    //    既可填補卡片白邊與 PSA 標籤縫隙，又不會把左右／上下相鄰的卡片黏在一起
+    // 2. 分離式閉運算（膨脹後侵蝕，填補卡片內部白邊與標籤縫隙）
     const temp = new Uint8Array(totalPixels);
     const closed = new Uint8Array(totalPixels);
     for (let y = padBorderY; y < sampleHeight - padBorderY; y++) {
       for (let x = padBorderX; x < sampleWidth - padBorderX; x++) {
         const p = y * sampleWidth + x;
         let hit = false;
-        for (let dy = -4; dy <= 4 && !hit; dy++) {
+        for (let dy = -3; dy <= 3 && !hit; dy++) {
           const ny = y + dy;
           if (ny < padBorderY || ny >= sampleHeight - padBorderY) continue;
           const rowOff = ny * sampleWidth;
@@ -331,7 +463,7 @@ export function detectCardBoundariesLocally(imageElement: HTMLImageElement): Cro
       }
     }
 
-    // 4. BFS 連通區域標記
+    // 3. BFS 連通區域標記
     const visited = new Uint8Array(totalPixels);
     const candidateBoxes: Array<CropBox & { areaPct: number }> = [];
     const queue = new Int32Array(totalPixels);
@@ -373,14 +505,13 @@ export function detectCardBoundariesLocally(imageElement: HTMLImageElement): Cro
         const hPct = ((maxY - minY + 1) / sampleHeight) * 100;
         const areaPct = (area / totalPixels) * 100;
 
-        // 暫時保留較矮的標籤候選區（hPct >= 4），待下一步與下方卡面合併
-        if (wPct < 7 || hPct < 4 || areaPct < 0.5) continue;
+        if (wPct < 7 || hPct < 4 || areaPct < 0.6) continue;
         if (wPct > 95 && hPct > 95) continue;
 
         const padX = 0.5;
         const padY = 0.5;
-        const normX = Math.max(0.5, Math.round((minX / sampleWidth) * 100 * 10 - padX * 10) / 10);
-        const normY = Math.max(0.5, Math.round((minY / sampleHeight) * 100 * 10 - padY * 10) / 10);
+        const normX = Math.max(0.5, Math.round(((minX / sampleWidth) * 100 - padX) * 10) / 10);
+        const normY = Math.max(0.5, Math.round(((minY / sampleHeight) * 100 - padY) * 10) / 10);
         const normW = Math.min(99 - normX, Math.round((wPct + padX * 2) * 10) / 10);
         const normH = Math.min(99 - normY, Math.round((hPct + padY * 2) * 10) / 10);
 
@@ -396,11 +527,11 @@ export function detectCardBoundariesLocally(imageElement: HTMLImageElement): Cro
       }
     }
 
-    // 4.5. 自動合併垂直對齊的「鑑定標籤 + 卡面」（解決 PSA / BGS 鑑定殼上下分離問題）
+    // 4. 自動合併垂直對齊的「鑑定標籤 + 卡面」
     const consumedLabelIndices = new Set<number>();
     for (let i = 0; i < candidateBoxes.length; i++) {
       const topBox = candidateBoxes[i];
-      if (topBox.height >= 15) continue; // 只合併矮的標籤條
+      if (topBox.height >= 15) continue;
       for (let j = 0; j < candidateBoxes.length; j++) {
         if (i === j || consumedLabelIndices.has(j)) continue;
         const cardBox = candidateBoxes[j];
@@ -411,7 +542,7 @@ export function detectCardBoundariesLocally(imageElement: HTMLImageElement): Cro
         const minW = Math.min(topBox.width, cardBox.width);
         const verticalGap = cardBox.y - (topBox.y + topBox.height);
 
-        if (overlapW / minW > 0.55 && verticalGap >= -2 && verticalGap < 6) {
+        if (overlapW / Math.max(0.1, minW) > 0.55 && verticalGap >= -2 && verticalGap < 6) {
           const mergedX = Math.min(topBox.x, cardBox.x);
           const mergedY = Math.min(topBox.y, cardBox.y);
           const mergedRight = Math.max(topBox.x + topBox.width, cardBox.x + cardBox.width);
@@ -428,28 +559,28 @@ export function detectCardBoundariesLocally(imageElement: HTMLImageElement): Cro
     }
 
     const rawBoxes: CropBox[] = candidateBoxes
-      .filter((b, idx) => !consumedLabelIndices.has(idx) && b.height >= 10 && b.areaPct >= 1.2)
+      .filter((b, idx) => !consumedLabelIndices.has(idx) && b.height >= 10 && b.areaPct >= 1.5)
       .map(({ areaPct: _areaPct, ...rest }) => rest);
 
-    // 5. 移除被外框包覆的內部子框（例如卡夾外框已框住整張卡，移除裡面的頭像子框）
+    // 5. 移除被外框包覆的內部子框
     const boxes = rawBoxes.filter((box, idx) => {
       const boxArea = box.width * box.height;
       return !rawBoxes.some((other, oIdx) => {
         if (idx === oIdx) return false;
         const otherArea = other.width * other.height;
-        if (otherArea <= boxArea) return false;
+        if (otherArea < boxArea || (otherArea === boxArea && oIdx > idx)) return false;
         const ix1 = Math.max(box.x, other.x);
         const iy1 = Math.max(box.y, other.y);
         const ix2 = Math.min(box.x + box.width, other.x + other.width);
         const iy2 = Math.min(box.y + box.height, other.y + other.height);
         if (ix2 <= ix1 || iy2 <= iy1) return false;
         const interArea = (ix2 - ix1) * (iy2 - iy1);
-        return interArea / boxArea > 0.6;
+        return interArea / Math.max(0.1, boxArea) > 0.6;
       });
     });
 
     if (boxes.length > 0) {
-      return boxes;
+      return sortCropBoxes(boxes);
     }
   } catch (e) {
     console.warn('Local boundary detection fallback error:', e);
