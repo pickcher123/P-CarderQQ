@@ -345,9 +345,9 @@ export default function BetLandingPage() {
                         </button>
                     </div>
 
-                    {/* 右側即時可用資產 */}
+                    {/* 右側即時可用資產（手機版與 APP 頂部 Header 已顯示餘額，僅在桌面版顯示） */}
                     {user && userProfile && (
-                        <div className="flex items-center justify-between sm:justify-end gap-3 px-2.5 py-1 text-xs">
+                        <div className="hidden sm:flex items-center justify-end gap-3 px-2.5 py-1 text-xs">
                             <span className="text-slate-400 text-[11px] font-medium">可用資產</span>
                             <div className="flex items-center gap-2.5 font-mono font-semibold tabular-nums">
                                 <span className="flex items-center gap-1.5 text-amber-300">

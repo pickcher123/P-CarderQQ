@@ -60,6 +60,11 @@ export const metadata: Metadata = {
     shortcut: '/favicon.ico',
   },
   manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'P+CARDER',
+  },
 };
 
 export default function RootLayout({
