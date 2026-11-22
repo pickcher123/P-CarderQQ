@@ -7,7 +7,7 @@ import { doc } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Trophy, Clock, Zap, Star, Diamond, Layers, X, Package, Sparkles, Eye, ChevronLeft, ChevronRight, Gift, Ticket, Target, Lock, Unlock, Flame, AlertCircle, ShieldAlert } from 'lucide-react';
+import { Trophy, Clock, Zap, Star, Diamond, Layers, X, Package, Sparkles, Eye, ChevronLeft, ChevronRight, Gift, Ticket, Target, Lock, Unlock, Flame, AlertCircle, ShieldAlert, Heart } from 'lucide-react';
 import { PPlusIcon, DiamondIcon } from '@/components/icons';
 import { SafeImage } from '@/components/safe-image';
 import { format } from 'date-fns';
@@ -23,6 +23,9 @@ import { HYBRID_TIER_META } from '@/lib/hybrid-pool-preset';
 import type { HybridTierCode } from '@/types/draw';
 import { useAutoMatteImage } from '@/hooks/use-auto-matte-image';
 import { BeginnerGuideDialog } from '@/components/beginner-guide-dialog';
+import { PurchasePointsDialog } from '@/components/purchase-points-dialog';
+import { useToast } from '@/hooks/use-toast';
+import { useFavoritePools } from '@/hooks/use-favorite-pools';
 
 // (Re-adding interfaces and constants as in the file)
 const RARITIES = ['legendary', 'rare', 'common'] as const;
@@ -86,6 +89,10 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
     const router = useRouter();
+    const { toast } = useToast();
+    const [isPurchaseDialogOpen, setIsPurchaseDialogOpen] = useState(false);
+    const { isFavorite, toggleFavorite } = useFavoritePools(userProfile?.favoritePoolIds);
+    const isPoolTracked = isFavorite(pool.id);
     const [currentTime, setCurrentTime] = useState(new Date());
     const [previewCard, setPreviewCard] = useState<any | null>(null);
     const [isDrawing, setIsDrawing] = useState(false);
@@ -506,6 +513,29 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
             setIsFreeTicketConfirmOpen(true);
             return;
         }
+        // 鑽石餘額不足時直接開啟儲值彈窗，保持流暢體驗不斷流
+        const isPPoint = pool.currency === 'p-point';
+        const baseCost = (pool.price || 0) * draws;
+        const requiredPrice = draws === 1
+            ? (pool.price || 0)
+            : draws === 3
+                ? (pool.price3Draws || baseCost)
+                : draws === 10
+                    ? (pool.price10Draws || baseCost)
+                    : baseCost;
+
+        if (user && !isPPoint && requiredPrice > 0) {
+            const currentDiamonds = userProfile?.points ?? 0;
+            if (currentDiamonds < requiredPrice) {
+                const shortfall = requiredPrice - currentDiamonds;
+                toast({
+                    title: '鑽石餘額不足',
+                    description: `本次 ${draws} 抽需要 ${requiredPrice.toLocaleString()} 💎，尚缺 ${shortfall.toLocaleString()} 💎，已為您開啟快速儲值！`,
+                });
+                setIsPurchaseDialogOpen(true);
+                return;
+            }
+        }
         executeDraw(draws, false);
     };
 
@@ -519,6 +549,10 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
 
     return (
         <div className="relative font-sans text-slate-100">
+            <PurchasePointsDialog
+                open={isPurchaseDialogOpen}
+                onOpenChange={setIsPurchaseDialogOpen}
+            />
             <PromoRedeemModal 
                 open={isPromoModalOpen} 
                 onOpenChange={setIsPromoModalOpen} 
@@ -978,31 +1012,41 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                                 />
                                             </div>
                                         </div>
-
-                                        {/* 晶亮展台檯面之微鏡面倒影 (懸空倒影，去背透明無黑框) */}
-                                        <div className="absolute -bottom-8 w-full h-6 overflow-hidden pointer-events-none opacity-20 blur-[1px] select-none [mask-image:linear-gradient(to_bottom,rgba(0,0,0,0.7),transparent)]">
-                                            <div className="relative w-full h-full scale-y-[-1] flex items-start justify-center">
-                                                <SafeImage 
-                                                    src={mattedFeaturedPrizeImage || featuredPrize.imageUrl} 
-                                                    alt="" 
-                                                    sizes="240px" 
-                                                    fill 
-                                                    className="object-contain object-top" 
-                                                />
-                                            </div>
-                                        </div>
                                     </div>
                                 </div>
                                 
-                                {/* 卡片角標 (僅最後賞顯示) */}
-                                {featuredPrize.isLastPrize && (
-                                    <div className="absolute top-2 left-2 z-40 flex items-center gap-1.5">
+                                {/* 左上角：追蹤卡池（我的最愛）＋ 最後賞角標 */}
+                                <div className="absolute top-2 left-2 z-40 flex items-center gap-1.5">
+                                    <button
+                                        type="button"
+                                        aria-label={isPoolTracked ? '取消追蹤此卡池' : '追蹤此卡池'}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            const added = toggleFavorite(pool.id);
+                                            toast({
+                                                title: added ? '❤️ 已加入我的追蹤' : '已取消追蹤',
+                                                description: added
+                                                    ? `「${pool.name}」進入尾盤時將於列表頂部提醒您！`
+                                                    : `已從我的追蹤移除「${pool.name}」`,
+                                            });
+                                        }}
+                                        className={cn(
+                                            "flex items-center gap-1 px-2 py-1 rounded-full backdrop-blur-md border text-[10px] font-bold transition-[background-color,border-color,color,transform] duration-150 active:scale-95 cursor-pointer",
+                                            isPoolTracked
+                                                ? "bg-rose-500/25 border-rose-400/60 text-rose-200 shadow-[0_0_12px_rgba(244,63,94,0.35)]"
+                                                : "bg-black/70 hover:bg-rose-500/15 border-white/15 hover:border-rose-400/45 text-slate-200 hover:text-rose-200"
+                                        )}
+                                    >
+                                        <Heart className={cn("w-3 h-3", isPoolTracked ? "fill-rose-400 text-rose-400" : "text-slate-300")} />
+                                        <span>{isPoolTracked ? '已追蹤' : '追蹤'}</span>
+                                    </button>
+                                    {featuredPrize.isLastPrize && (
                                         <span className="bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] font-black text-[9px] px-2 py-0.5 rounded-full shadow-md uppercase tracking-wider flex items-center gap-0.5">
                                             <Star className="w-2.5 h-2.5 fill-[#120d02]" />
                                             <span>最後賞</span>
                                         </span>
-                                    </div>
-                                )}
+                                    )}
+                                </div>
 
                                 {/* 右上角：查看卡池明細按鈕 */}
                                 <button
@@ -1120,24 +1164,30 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                 </div>
                                 <div className="grid grid-cols-5 gap-1 text-center font-mono text-[10px]">
                                     {(['A', 'SP', 'B', 'C', 'D'] as const).map((t) => (
-                                        <div
+                                        <button
                                             key={t}
+                                            type="button"
+                                            onClick={() => {
+                                                setInventoryFilterTier(t);
+                                                setIsInventoryOpen(true);
+                                            }}
+                                            title={`點擊查看 ${HYBRID_TIER_META[t].label} 卡表`}
                                             className={cn(
-                                                'rounded-lg py-1 px-0.5 border',
+                                                'rounded-lg py-1 px-0.5 border cursor-pointer transition-[transform,border-color,background-color] duration-150 active:scale-[0.96]',
                                                 t === 'A'
-                                                    ? 'bg-amber-400/15 border-amber-300/45 text-[#FDE68A]'
+                                                    ? 'bg-amber-400/15 hover:bg-amber-400/25 border-amber-300/45 hover:border-amber-300/80 text-[#FDE68A]'
                                                     : t === 'SP'
-                                                      ? 'bg-black/60 border-amber-300/60 text-[#FDE68A]'
+                                                      ? 'bg-black/60 hover:bg-black/80 border-amber-300/60 hover:border-amber-300 text-[#FDE68A]'
                                                       : t === 'B'
-                                                        ? 'bg-slate-200/10 border-slate-300/35 text-slate-100'
+                                                        ? 'bg-slate-200/10 hover:bg-slate-200/20 border-slate-300/35 hover:border-slate-200/70 text-slate-100'
                                                         : t === 'C'
-                                                          ? 'bg-amber-800/25 border-amber-600/40 text-amber-200'
-                                                          : 'bg-white/[0.04] border-white/15 text-slate-300'
+                                                          ? 'bg-amber-800/25 hover:bg-amber-800/40 border-amber-600/40 hover:border-amber-500/75 text-amber-200'
+                                                          : 'bg-white/[0.04] hover:bg-white/[0.1] border-white/15 hover:border-white/35 text-slate-300'
                                             )}
                                         >
                                             <div className="font-black leading-none">{HYBRID_TIER_META[t].boxName}</div>
                                             <div className="font-black text-xs tabular-nums mt-0.5">{hybridStats.counts[t]}</div>
-                                        </div>
+                                        </button>
                                     ))}
                                 </div>
                                 <div className="flex justify-between items-center text-[10px] font-mono pt-1 border-t border-white/[0.06]">

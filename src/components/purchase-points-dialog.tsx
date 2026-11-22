@@ -49,8 +49,18 @@ function postToPayUni(url: string, params: Record<string, string>) {
   form.submit();
 }
 
-export function PurchasePointsDialog({ children }: { children: React.ReactNode }) {
-  const [isOpen, setIsOpen] = useState(false);
+export function PurchasePointsDialog({
+  children,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
+}: {
+  children?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isOpen = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setIsOpen = controlledOnOpenChange ?? setInternalOpen;
   const [selectedPackage, setSelectedPackage] = useState<(typeof pointPackages)[0]>(pointPackages[0]);
   const [isProcessing, setIsProcessing] = useState(false);
   const { user } = useUser();
@@ -118,7 +128,7 @@ export function PurchasePointsDialog({ children }: { children: React.ReactNode }
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+      {children ? <DialogTrigger asChild>{children}</DialogTrigger> : null}
       <DialogContent className="max-w-[min(94vw,440px)] p-0 overflow-hidden rounded-2xl bg-[#0a0f1c]/95 backdrop-blur-2xl border border-amber-300/20 shadow-[0_24px_64px_rgba(0,0,0,0.88)] text-white">
         
         {/* Top Ambient Rim & Glow */}

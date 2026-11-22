@@ -39,6 +39,7 @@ import { DailyMission, UserMissionProgress } from '@/types/missions';
 import { useSystemConfig } from '@/components/providers/system-config-provider';
 import { UserProfile } from '@/types/user-profile';
 import { claimCommunityFreeDraw, redeemPromoDrawCode, syncLocalPromoClaimsToFirestore } from '@/lib/promo-draw-service';
+import { generateReferralCodeClient, applyReferralCodeClient } from '@/lib/referral-service';
 import { getBonusMultiplier, isBonusEventActive } from '@/lib/bonus-event';
 
 // 預設可兌換的活動代碼庫
@@ -191,16 +192,8 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
         }
         setIsGeneratingReferralCode(true);
         try {
-            const res = await fetch('/api/referral/generate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    userId: user.uid,
-                    customCode: customCodeToSet || undefined,
-                }),
-            });
-            const data = await res.json();
-            if (data.success) {
+            const data = await generateReferralCodeClient(firestore, user.uid, customCodeToSet);
+            if (data.success && data.inviteCode) {
                 confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
                 toast({
                     title: '🎉 專屬推薦碼已啟用！',
@@ -256,22 +249,15 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
             toast({ title: '請先登入會員', description: '登入會員後即可綁定推薦碼並領取迎新加碼禮！', variant: 'destructive' });
             return false;
         }
-        if (userProfile?.referredBy) {
-            toast({ title: '已綁定過推薦人', description: `您已綁定過推薦碼：${userProfile.referredBy}` });
+        const existingReferred = userProfile?.invitedBy || userProfile?.referredBy;
+        if (existingReferred) {
+            toast({ title: '已綁定過推薦人', description: `您已綁定過推薦碼：${existingReferred}` });
             return false;
         }
 
         setIsApplyingReferral(true);
         try {
-            const res = await fetch('/api/referral/apply', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    userId: user.uid,
-                    referralCode: code,
-                }),
-            });
-            const data = await res.json();
+            const data = await applyReferralCodeClient(firestore, user.uid, code);
             if (data.success) {
                 confetti({ particleCount: 70, spread: 80, origin: { y: 0.6 } });
                 toast({

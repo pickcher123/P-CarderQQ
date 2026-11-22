@@ -9,6 +9,11 @@ import { SafeImage } from '@/components/safe-image';
 
 import type { HybridTierCode } from '@/types/draw';
 
+export interface PackBreakdownItem {
+  tier?: HybridTierCode;
+  rarity: string;
+}
+
 export interface CloveSummoningAnimationProps {
   highestRarity: 'common' | 'rare' | 'legendary' | string;
   drawCount: number;
@@ -17,7 +22,101 @@ export interface CloveSummoningAnimationProps {
   onAnimationComplete: () => void;
   selectedNumbers?: number[];
   hybridTier?: HybridTierCode;
+  packBreakdown?: PackBreakdownItem[];
 }
+
+const WING_HYBRID_STYLES: Record<
+  HybridTierCode,
+  { bodyBg: string; border: string; accent: string; dot: string; label: string; pillClass: string; order: number }
+> = {
+  LAST: {
+    bodyBg: 'from-[#22140c] via-[#130c10] to-[#08070c]',
+    border: 'border-amber-300/80',
+    accent: 'text-[#FDE68A]',
+    dot: 'bg-gradient-to-r from-[#FDE68A] to-rose-400',
+    label: '最後賞',
+    pillClass: 'bg-amber-400/15 text-[#FDE68A] border-amber-300/50',
+    order: 6,
+  },
+  SP: {
+    bodyBg: 'from-[#131424] via-[#090a14] to-[#04050a]',
+    border: 'border-purple-400/70',
+    accent: 'text-[#FDE68A]',
+    dot: 'bg-purple-400',
+    label: 'SP黑包',
+    pillClass: 'bg-purple-500/15 text-[#FDE68A] border-purple-400/50',
+    order: 5,
+  },
+  A: {
+    bodyBg: 'from-[#221a0b] via-[#120e07] to-[#08090f]',
+    border: 'border-[#FDE68A]/75',
+    accent: 'text-[#FDE68A]',
+    dot: 'bg-[#FDE68A]',
+    label: 'A金包',
+    pillClass: 'bg-amber-400/15 text-[#FDE68A] border-amber-300/45',
+    order: 4,
+  },
+  B: {
+    bodyBg: 'from-[#1c2538] via-[#111826] to-[#090d16]',
+    border: 'border-slate-300/70',
+    accent: 'text-slate-100',
+    dot: 'bg-slate-200',
+    label: 'B銀包',
+    pillClass: 'bg-slate-300/10 text-slate-100 border-slate-300/35',
+    order: 3,
+  },
+  C: {
+    bodyBg: 'from-[#23170e] via-[#140e09] to-[#090705]',
+    border: 'border-amber-600/75',
+    accent: 'text-amber-200',
+    dot: 'bg-amber-500',
+    label: 'C銅包',
+    pillClass: 'bg-amber-700/20 text-amber-200 border-amber-600/45',
+    order: 2,
+  },
+  D: {
+    bodyBg: 'from-[#1b2231] via-[#111622] to-[#090d14]',
+    border: 'border-white/65',
+    accent: 'text-white',
+    dot: 'bg-white',
+    label: 'D白包',
+    pillClass: 'bg-white/[0.08] text-white border-white/30',
+    order: 1,
+  },
+};
+
+const WING_RARITY_STYLES: Record<
+  'legendary' | 'rare' | 'common',
+  { bodyBg: string; border: string; accent: string; dot: string; label: string; pillClass: string; order: number }
+> = {
+  legendary: {
+    bodyBg: 'from-[#221a0b] via-[#120e07] to-[#08090f]',
+    border: 'border-[#FDE68A]/75',
+    accent: 'text-[#FDE68A]',
+    dot: 'bg-[#FDE68A]',
+    label: '傳奇金包',
+    pillClass: 'bg-amber-400/15 text-[#FDE68A] border-amber-300/45',
+    order: 3,
+  },
+  rare: {
+    bodyBg: 'from-[#182235] via-[#0e1624] to-[#080c15]',
+    border: 'border-cyan-300/55',
+    accent: 'text-cyan-200',
+    dot: 'bg-cyan-300',
+    label: '稀有銀包',
+    pillClass: 'bg-cyan-400/10 text-cyan-200 border-cyan-300/35',
+    order: 2,
+  },
+  common: {
+    bodyBg: 'from-[#141a28] via-[#0c111c] to-[#070a12]',
+    border: 'border-white/25',
+    accent: 'text-slate-300',
+    dot: 'bg-slate-400',
+    label: '普通卡包',
+    pillClass: 'bg-white/[0.05] text-slate-300 border-white/15',
+    order: 1,
+  },
+};
 
 type Stage = 'idle' | 'tearing' | 'burst';
 
@@ -28,6 +127,7 @@ export function CloveSummoningAnimation({
   onAnimationComplete,
   selectedNumbers,
   hybridTier,
+  packBreakdown,
 }: CloveSummoningAnimationProps) {
   const shouldReduceMotion = useReducedMotion();
   const [stage, setStage] = useState<Stage>('idle');
@@ -276,6 +376,71 @@ export function CloveSummoningAnimation({
   const effectiveTear = stage === 'idle' ? tearProgress : 100;
   const ripRatio = effectiveTear / 100;
 
+  // 方案 A：計算多抽時的「扇形立體卡包堆」兩翼卡包與「色階預告膠囊」
+  const { wingPacks, tierSummaryPills } = useMemo(() => {
+    if (drawCount <= 1) {
+      return { wingPacks: [] as Array<{ bodyBg: string; border: string; accent: string; code: string; slotIndex: number }>, tierSummaryPills: [] as Array<{ key: string; label: string; count: number; dot: string; pillClass: string }> };
+    }
+
+    const isHybrid = Boolean(hybridTier);
+    const items: PackBreakdownItem[] =
+      packBreakdown && packBreakdown.length > 0
+        ? packBreakdown
+        : Array.from({ length: drawCount }, () => ({ tier: hybridTier, rarity: highestRarity }));
+
+    // 1. 色階預告膠囊統計（高階排前面）
+    const countMap = new Map<string, { key: string; label: string; count: number; dot: string; pillClass: string; order: number }>();
+    const resolvedStyles = items.map((it) => {
+      if (isHybrid) {
+        const t: HybridTierCode = it.tier || (it.rarity === 'legendary' ? 'A' : it.rarity === 'rare' ? 'B' : 'D');
+        const st = WING_HYBRID_STYLES[t] || WING_HYBRID_STYLES.D;
+        return { key: t, code: t, ...st };
+      }
+      const r: 'legendary' | 'rare' | 'common' =
+        it.rarity === 'legendary' ? 'legendary' : it.rarity === 'rare' ? 'rare' : 'common';
+      const st = WING_RARITY_STYLES[r];
+      return { key: r, code: r === 'legendary' ? 'SSR' : r === 'rare' ? 'SR' : 'N', ...st };
+    });
+
+    resolvedStyles.forEach((st) => {
+      const existing = countMap.get(st.key);
+      if (existing) {
+        existing.count += 1;
+      } else {
+        countMap.set(st.key, {
+          key: st.key,
+          label: st.label,
+          count: 1,
+          dot: st.dot,
+          pillClass: st.pillClass,
+          order: st.order,
+        });
+      }
+    });
+
+    const summary = Array.from(countMap.values())
+      .sort((a, b) => b.order - a.order)
+      .map(({ order: _o, ...rest }) => rest);
+
+    // 2. 兩翼扇形卡包（最多顯示 4 包在主卡包兩側：3 抽顯示左右各 1 包，4 抽以上顯示左右各 2 包）
+    // 排除最頂級那 1 包（已放在正中央代表），其餘高階優先靠近內側
+    const sortedDesc = [...resolvedStyles].sort((a, b) => b.order - a.order);
+    const remaining = sortedDesc.slice(1);
+    const maxWings = drawCount >= 5 ? 4 : Math.min(2, remaining.length);
+    const picked = remaining.slice(0, maxWings);
+
+    // slotIndex: 0=左內, 1=右內, 2=左外, 3=右外
+    const wings = picked.map((st, idx) => ({
+      bodyBg: st.bodyBg,
+      border: st.border,
+      accent: st.accent,
+      code: st.code,
+      slotIndex: idx,
+    }));
+
+    return { wingPacks: wings, tierSummaryPills: summary };
+  }, [drawCount, hybridTier, highestRarity, packBreakdown]);
+
   return (
     <div
       onPointerDown={handlePointerDown}
@@ -437,6 +602,73 @@ export function CloveSummoningAnimation({
             </div>
           </motion.div>
 
+          {/* 方案 A：多抽時的「扇形立體卡包堆」兩翼卡包（依實際抽中色階著色） */}
+          {wingPacks.length > 0 && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[14]">
+              {wingPacks.map((wing) => {
+                // slotIndex: 0=左內, 1=右內, 2=左外, 3=右外
+                const isLeft = wing.slotIndex % 2 === 0;
+                const isOuter = wing.slotIndex >= 2;
+                const baseX = (isLeft ? -1 : 1) * (isOuter ? 62 : 34);
+                const baseRotate = (isLeft ? -1 : 1) * (isOuter ? 14 : 7.5);
+                const baseY = isOuter ? 16 : 7;
+                const baseScale = isOuter ? 0.84 : 0.91;
+
+                return (
+                  <motion.div
+                    key={`wing-${wing.slotIndex}`}
+                    initial={shouldReduceMotion ? { opacity: 0.7 } : { x: 0, y: 20, rotate: 0, scale: 0.75, opacity: 0 }}
+                    animate={
+                      stage === 'idle'
+                        ? {
+                            x: baseX + (isLeft ? -ripRatio * 10 : ripRatio * 10),
+                            y: baseY,
+                            rotate: baseRotate + (isLeft ? -ripRatio * 3 : ripRatio * 3),
+                            scale: baseScale,
+                            opacity: isOuter ? 0.72 : 0.88,
+                          }
+                        : stage === 'tearing'
+                        ? {
+                            x: baseX * 1.45,
+                            y: baseY + 14,
+                            rotate: baseRotate * 1.35,
+                            scale: baseScale * 0.96,
+                            opacity: 0.65,
+                          }
+                        : {
+                            x: baseX * 2.1,
+                            y: baseY + 75,
+                            rotate: baseRotate * 1.8,
+                            scale: baseScale * 0.85,
+                            opacity: 0,
+                          }
+                    }
+                    transition={{ type: 'spring', stiffness: 260, damping: 24, delay: stage === 'idle' ? 0.06 * wing.slotIndex : 0 }}
+                    style={{ zIndex: isOuter ? 11 : 14 }}
+                    className={cn(
+                      'absolute w-[220px] h-[350px] sm:w-[250px] sm:h-[395px] rounded-2xl bg-gradient-to-b border shadow-[0_18px_40px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col justify-between p-3.5 will-change-transform transform-gpu',
+                      wing.bodyBg,
+                      wing.border
+                    )}
+                  >
+                    <div className="flex items-center justify-between border-b border-white/[0.1] pb-2">
+                      <span className="text-[8px] font-mono font-bold tracking-widest text-white/50">P+ PACK</span>
+                      <span className={cn('text-[9px] font-mono font-black tracking-wider', wing.accent)}>
+                        {wing.code}
+                      </span>
+                    </div>
+                    <div className="my-auto flex flex-col items-center opacity-50">
+                      <span className={cn('font-headline text-sm font-black tracking-widest', wing.accent)}>
+                        P+ CARDER
+                      </span>
+                    </div>
+                    <div className="h-px w-full bg-gradient-to-r from-transparent via-amber-300/30 to-transparent" />
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
+
           {/* 實體鋁箔卡包主體（頂部撕口封條 + 下半部卡包袋身） */}
           <motion.div
             ref={packRef}
@@ -545,7 +777,7 @@ export function CloveSummoningAnimation({
                   OFFICIAL PACK
                 </span>
                 <span className={cn('text-[9px] sm:text-[10px] px-2.5 py-0.5 rounded-full shadow-sm tabular-nums', tierConfig.badgeBg)}>
-                  {drawCount} PACK
+                  {drawCount > 1 ? `×${drawCount} PACKS` : '1 PACK'}
                 </span>
               </div>
 
@@ -577,16 +809,40 @@ export function CloveSummoningAnimation({
           </motion.div>
         </div>
 
-        {/* 底部互動指引 */}
+        {/* 底部互動指引與多抽色階預告列 */}
         <motion.div
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.12 }}
-          className="mt-3 text-center space-y-2 w-full max-w-sm"
+          className="mt-2.5 text-center space-y-2 w-full max-w-md"
         >
           <div className={cn('text-sm sm:text-base font-headline font-black tracking-widest drop-shadow-md', tierConfig.color)}>
             ✦ {tierConfig.title} ✦
           </div>
+
+          {/* 方案 A：本輪多抽卡包色階預告膠囊列 */}
+          {drawCount > 1 && tierSummaryPills.length > 0 && (
+            <div className="flex flex-col items-center gap-1.5">
+              <div className="flex flex-wrap items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#0a0f1c]/85 border border-white/[0.08] backdrop-blur-md shadow-lg">
+                {tierSummaryPills.map((pill) => (
+                  <span
+                    key={pill.key}
+                    className={cn(
+                      'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border text-[11px] font-bold tabular-nums',
+                      pill.pillClass
+                    )}
+                  >
+                    <span className={cn('w-2 h-2 rounded-full shrink-0', pill.dot)} />
+                    <span>{pill.label}</span>
+                    <span className="font-mono font-black">×{pill.count}</span>
+                  </span>
+                ))}
+              </div>
+              <p className="text-[10px] text-amber-200/80 font-bold tracking-wide tabular-nums">
+                共 {drawCount} 包 · 已為您安排大獎壓軸揭曉
+              </p>
+            </div>
+          )}
 
           <div className="relative overflow-hidden w-full px-4 py-3 rounded-2xl bg-[#0a0f1c]/90 border border-white/[0.1] backdrop-blur-md shadow-xl flex items-center justify-between text-slate-200 text-xs font-bold">
             <div

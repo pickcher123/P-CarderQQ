@@ -22,6 +22,7 @@ import { Loader2, Sparkles, ShieldCheck, LogIn, CheckCircle2, Terminal, Mail, Lo
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { isSuperAdminEmail } from '@/hooks/use-is-admin';
+import { checkReferralCodeClient, applyReferralCodeClient } from '@/lib/referral-service';
 
 // Simple Google Icon SVG
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -76,8 +77,7 @@ function LoginContent() {
     }
     setIsVerifyingCode(true);
     try {
-      const res = await fetch(`/api/referral/check?code=${encodeURIComponent(codeToVerify.trim())}`);
-      const data = await res.json();
+      const data = await checkReferralCodeClient(firestore, codeToVerify);
       if (data.success && data.valid) {
         setCodeVerifiedStatus({
           valid: true,
@@ -299,14 +299,7 @@ function LoginContent() {
             // 若有填寫推薦碼或網址帶有推薦碼，進行綁定發獎
             if (referralCode.trim()) {
               try {
-                await fetch('/api/referral/apply', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    newUserId: user.uid,
-                    referralCode: referralCode.trim()
-                  })
-                });
+                await applyReferralCodeClient(firestore, user.uid, referralCode.trim());
               } catch (err) {
                 console.error('Google signup referral apply error:', err);
               }
@@ -399,16 +392,8 @@ function LoginContent() {
         // 套用推薦碼 (若有填寫)
         if (referralCode.trim()) {
           try {
-            const refRes = await fetch('/api/referral/apply', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                newUserId: user.uid,
-                referralCode: referralCode.trim()
-              })
-            });
-            const refData = await refRes.json();
-            if (refData.success) {
+            const refData = await applyReferralCodeClient(firestore, user.uid, referralCode.trim());
+            if (refData.success && refData.rewards) {
               toast({
                 title: "推薦獎勵已發放！",
                 description: `成功綁定推薦人【${refData.rewards.referrerName}】，獲得 ${refData.rewards.bonusPoints} 紅利 P+ 與抽卡券！`,

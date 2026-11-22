@@ -25,11 +25,12 @@ export function InstallPWAButton() {
   const [showIOSModal, setShowIOSModal] = useState(false);
 
   useEffect(() => {
-    // Check if dismissed in this session
+    // 7 天內關閉過提示就不再打擾使用者
     try {
-      const dismissed = sessionStorage.getItem('pwa-prompt-dismissed');
-      if (dismissed === 'true') {
+      const dismissedUntil = Number(localStorage.getItem('pwa-prompt-dismissed-until') || '0');
+      if (dismissedUntil > Date.now()) {
         setIsVisible(false);
+        return;
       }
     } catch {
       // ignore storage errors
@@ -94,7 +95,7 @@ export function InstallPWAButton() {
   const handleDismiss = () => {
     setIsVisible(false);
     try {
-      sessionStorage.setItem('pwa-prompt-dismissed', 'true');
+      localStorage.setItem('pwa-prompt-dismissed-until', String(Date.now() + 7 * 24 * 60 * 60 * 1000));
     } catch {
       // ignore
     }
@@ -118,42 +119,46 @@ export function InstallPWAButton() {
               "max-w-[calc(100vw-1.5rem)] sm:max-w-[360px]"
             )}
           >
-            {/* Outer Luxury Card */}
-            <div className="relative group flex items-center gap-3 p-2.5 sm:p-3 rounded-2xl bg-slate-950/92 backdrop-blur-xl border border-amber-500/35 shadow-[0_10px_35px_rgba(0,0,0,0.8),0_0_20px_rgba(245,158,11,0.15)] hover:border-amber-500/50 transition-all duration-300">
-              {/* Golden Top Shimmer Edge */}
-              <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-amber-400/60 to-transparent pointer-events-none rounded-t-2xl" />
+            {/* Outer Luxury Card - 暗黑曜石 × 香檳金 */}
+            <div className="relative group flex items-center gap-3 p-2.5 sm:p-3 rounded-2xl bg-[#0a0f1c]/95 backdrop-blur-2xl border border-white/[0.1] border-t-amber-300/65 shadow-[0_20px_50px_rgba(0,0,0,0.88)] hover:border-amber-300/45 transition-[border-color,box-shadow] duration-200 overflow-hidden">
+              {/* 頂部香檳金微光細線 */}
+              <div className="absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-amber-300/75 to-transparent pointer-events-none" />
+              <div className="absolute -top-10 left-6 w-28 h-16 bg-amber-400/10 blur-2xl pointer-events-none" />
 
-              {/* App Icon Emblem */}
-              <div className="relative flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 text-slate-950 font-black shadow-md shadow-amber-500/30 border border-amber-300/40 shrink-0">
-                <span className="text-xs sm:text-sm font-black tracking-tighter">P+</span>
-                <span className="absolute -top-1 -right-1 flex h-2 w-2">
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-400"></span>
-                </span>
+              {/* 品牌實體 APP 圖示 */}
+              <div className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-xl overflow-hidden border border-amber-300/40 bg-black/60 shadow-[0_4px_14px_rgba(0,0,0,0.6)] shrink-0">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/icon-192.png"
+                  alt="P+CARDER APP"
+                  className="w-full h-full object-cover"
+                />
               </div>
 
               {/* Text Info */}
-              <div className="min-w-0 flex-1 pr-1">
+              <div className="min-w-0 flex-1 pr-0.5">
                 <div className="flex items-center gap-1.5">
-                  <h4 className="text-xs sm:text-sm font-black text-slate-100 tracking-tight leading-tight truncate">
-                    安裝 P+CARDER
+                  <h4 className="text-xs sm:text-sm font-black text-white tracking-tight leading-tight truncate">
+                    P+CARDER
                   </h4>
-                  <span className="text-[9px] font-bold text-amber-400/90 bg-amber-400/10 border border-amber-400/25 px-1 py-0.2 rounded-sm shrink-0 uppercase tracking-widest">
+                  <span className="text-[9px] font-black text-[#FDE68A] bg-amber-400/[0.12] border border-amber-300/35 px-1.5 py-0.5 rounded-full shrink-0 uppercase tracking-wider leading-none">
                     APP
                   </span>
                 </div>
-                <p className="text-[10px] sm:text-[11px] text-slate-400 font-medium truncate mt-0.5">
-                  桌面即點即開 · 暢享極速玩卡
+                <p className="text-[10.5px] sm:text-[11px] text-slate-400 font-medium truncate mt-0.5">
+                  全螢幕極速開包 · 桌面即點即玩
                 </p>
               </div>
 
               {/* Install Action Button */}
               <button
+                type="button"
                 onClick={handleInstallClick}
                 className={cn(
-                  "relative flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black shrink-0",
-                  "bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-300 hover:to-amber-500",
-                  "text-slate-950 shadow-md shadow-amber-500/25 hover:shadow-amber-500/45",
-                  "active:scale-95 hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+                  "relative flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-black shrink-0",
+                  "bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 hover:brightness-105",
+                  "text-[#120d02] shadow-[0_4px_16px_rgba(245,158,11,0.3)]",
+                  "active:scale-[0.96] transition-[transform,filter] duration-150 cursor-pointer"
                 )}
               >
                 <Download className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -162,10 +167,11 @@ export function InstallPWAButton() {
 
               {/* Close Button */}
               <button
+                type="button"
                 onClick={handleDismiss}
-                className="text-slate-400 hover:text-white p-1 rounded-full hover:bg-white/10 active:scale-90 transition-colors ml-0.5 shrink-0 cursor-pointer"
+                className="text-slate-400 hover:text-white p-1.5 rounded-full hover:bg-white/[0.08] active:scale-90 transition-colors shrink-0 cursor-pointer"
                 aria-label="關閉提示"
-                title="關閉提示"
+                title="7 天內不再提示"
               >
                 <X className="w-3.5 h-3.5 stroke-[2.2]" />
               </button>
@@ -174,63 +180,65 @@ export function InstallPWAButton() {
         )}
       </AnimatePresence>
 
-      {/* iOS Installation Instructions Modal */}
+      {/* iOS Installation Instructions Modal - 統一暗黑曜石 × 香檳金 */}
       <Dialog open={showIOSModal} onOpenChange={setShowIOSModal}>
-        <DialogContent className="light bg-white text-slate-900 border-none shadow-2xl rounded-3xl sm:max-w-md p-6">
+        <DialogContent className="w-[calc(100vw-1.5rem)] max-w-md bg-[#0a0f1c]/95 backdrop-blur-2xl text-white border border-white/[0.1] border-t-amber-300/65 shadow-[0_24px_64px_rgba(0,0,0,0.88)] rounded-2xl p-5 sm:p-6">
           <DialogHeader>
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 text-amber-700 mb-2">
-              <Smartphone className="h-6 w-6" />
+            <div className="mx-auto w-14 h-14 rounded-2xl overflow-hidden border border-amber-300/45 shadow-[0_8px_24px_rgba(0,0,0,0.65)] mb-2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/icon-192.png" alt="P+CARDER" className="w-full h-full object-cover" />
             </div>
-            <DialogTitle className="text-center text-lg font-black tracking-tight text-slate-900">
+            <DialogTitle className="text-center text-lg font-black tracking-wide text-white">
               將 P+CARDER 加入主畫面
             </DialogTitle>
-            <DialogDescription className="text-center text-xs text-slate-500 pt-1">
-              只需 3 步驟即可將平台安裝至手機桌面，享受全螢幕原生 APP 級體驗！
+            <DialogDescription className="text-center text-xs text-slate-400 pt-1">
+              只需 3 步驟即可安裝至手機桌面，享受全螢幕原生 APP 級開包體驗！
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-3 py-3 text-xs text-slate-700">
-            <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
-              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-500 text-slate-950 font-black text-xs">
+          <div className="space-y-2.5 py-2 text-xs text-slate-200">
+            <div className="flex items-start gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.08]">
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-[#FDE68A] to-amber-400 text-[#120d02] font-black text-xs tabular-nums">
                 1
               </div>
-              <div className="flex-1">
-                <p className="font-bold text-slate-900">點擊 Safari 底部的「分享」按鈕</p>
-                <p className="text-slate-500 text-[11px] mt-0.5 flex items-center gap-1">
-                  即瀏覽器底部工具列的圖示 <Share2 className="h-3.5 w-3.5 text-blue-600 inline" />
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-white">點擊 Safari 底部的「分享」按鈕</p>
+                <p className="text-slate-400 text-[11px] mt-0.5 flex items-center gap-1">
+                  即瀏覽器底部工具列的圖示 <Share2 className="h-3.5 w-3.5 text-[#FDE68A] inline" />
                 </p>
               </div>
             </div>
 
-            <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
-              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-500 text-slate-950 font-black text-xs">
+            <div className="flex items-start gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.08]">
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-[#FDE68A] to-amber-400 text-[#120d02] font-black text-xs tabular-nums">
                 2
               </div>
-              <div className="flex-1">
-                <p className="font-bold text-slate-900">往下滑動並選擇「加入主畫面」</p>
-                <p className="text-slate-500 text-[11px] mt-0.5 flex items-center gap-1">
-                  點選 <PlusSquare className="h-3.5 w-3.5 text-slate-700 inline" />「加入主畫面」選項
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-white">往下滑動並選擇「加入主畫面」</p>
+                <p className="text-slate-400 text-[11px] mt-0.5 flex items-center gap-1">
+                  點選 <PlusSquare className="h-3.5 w-3.5 text-[#FDE68A] inline" />「加入主畫面」選項
                 </p>
               </div>
             </div>
 
-            <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
-              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-500 text-slate-950 font-black text-xs">
+            <div className="flex items-start gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.08]">
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-[#FDE68A] to-amber-400 text-[#120d02] font-black text-xs tabular-nums">
                 3
               </div>
-              <div className="flex-1">
-                <p className="font-bold text-slate-900">點擊右上角的「新增」</p>
-                <p className="text-slate-500 text-[11px] mt-0.5">
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-white">點擊右上角的「新增」</p>
+                <p className="text-slate-400 text-[11px] mt-0.5">
                   完成後即可在手機桌面找到 P+CARDER 圖示並即點即玩！
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="pt-2">
+          <div className="pt-1">
             <button
+              type="button"
               onClick={() => setShowIOSModal(false)}
-              className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs transition-colors cursor-pointer"
+              className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 hover:brightness-105 text-[#120d02] font-black text-xs active:scale-[0.98] transition-[transform,filter] cursor-pointer"
             >
               我知道了
             </button>

@@ -13,14 +13,77 @@ export interface NewsItem {
 
 export const OFFICIAL_NEWS_LIST: NewsItem[] = [
   {
-    id: "official-v6-release",
-    title: "🔥【重磅更新】P+Carder 公測版 6.0 震撼上線！100% 現貨在庫承諾 · 密碼學機率驗證 · 3D 沉浸紅包福袋舞台",
+    id: "official-v75-release",
+    title: "🔥【重磅更新】P+Carder 公測版 7.5 上線！3D 扇形多抽開包 · 追蹤卡池尾盤提醒 · 極速秒開全面進化",
     category: "版本更新",
     type: "image",
-    imageUrl: "/version_6_release.jpg",
+    imageUrl: "/version_7_5_release.jpg",
     isPinned: true,
     isMarquee: true,
     createdAt: { seconds: Math.floor(Date.now() / 1000) },
+    content: `<div class="space-y-5 text-slate-200">
+  <div class="p-4 sm:p-5 rounded-2xl bg-[#0a0f1c] border border-amber-300/40 text-amber-100 shadow-lg">
+    <div class="flex items-center gap-2 mb-2">
+      <span class="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] text-xs font-black uppercase tracking-wider">VERSION 7.5</span>
+      <span class="text-xs text-[#FDE68A] font-mono font-bold">MAJOR UPDATE</span>
+    </div>
+    <h3 class="text-lg sm:text-xl font-black text-white mb-2">🎉 P+Carder 公測版 7.5 全面進化上線！</h3>
+    <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+      本次更新聚焦於<strong>「開包爽感」</strong>、<strong>「尾盤盯盤效率」</strong>與<strong>「全站極速載入」</strong>三大核心體驗！無論是手機 APP 還是電腦版，皆已全面升級為暗黑曜石 × 香檳金視覺，讓每一抽都更順暢、更透明、更有儀式感。
+    </p>
+  </div>
+
+  <div class="space-y-3">
+    <h4 class="text-base font-black text-[#FDE68A]">本次 7.5 版本五大核心亮點</h4>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs sm:text-sm">
+      <div class="p-3.5 rounded-xl bg-white/[0.03] border border-amber-300/30 space-y-1.5">
+        <div class="text-xs font-black text-[#FDE68A]">1. 3D 扇形立體卡包堆 ＋ 大獎壓軸開獎</div>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          3 抽、10 抽以上不再只有單包！開包舞台將自動展開多包扇形立體牌堆並依真實色階著色，同步顯示本輪各色包數預告，系統更會自動把金包、SP 黑包與最後賞留到最後壓軸登場。
+        </p>
+      </div>
+
+      <div class="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.1] space-y-1.5">
+        <div class="text-xs font-black text-[#FDE68A]">2. 我的追蹤卡池 ＋ 尾盤狙擊提醒</div>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          每個卡池皆可一鍵加入「我的追蹤」，當追蹤機台進入尾盤（剩餘 ≤ 20% 或 ≤ 15 抽）時，列表頂部將自動跳出尾盤狙擊提醒；同步新增分類膠囊、剩餘最少排序與五色方塊直看卡表。
+        </p>
+      </div>
+
+      <div class="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.1] space-y-1.5">
+        <div class="text-xs font-black text-[#FDE68A]">3. 全站極速秒開引擎 ＋ 全新主題插畫</div>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          重構抽卡、拼卡、福袋、收藏庫與會員中心的資料快取架構，頁面切換幾乎 0 等待！同時全面換上 5 款全新高動態香檳金主題卡池插畫，視覺更活潑立體。
+        </p>
+      </div>
+
+      <div class="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.1] space-y-1.5">
+        <div class="text-xs font-black text-[#FDE68A]">4. 買回估值全面同步 ＋ 會員階級 P 幣回饋</div>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          收藏庫直接顯示實際買回鑽石估值，一鍵即時入帳！GodPack 一番賞 C/D 賞與拼卡專區享 9 折買回、其他模式 8 折買回（GodPack 另加贈最高 10% 會員階級 P 幣回饋），普／特卡固定 40 鑽秒換。
+        </p>
+      </div>
+
+      <div class="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.1] space-y-1.5 md:col-span-2">
+        <div class="text-xs font-black text-[#FDE68A]">5. 會員推薦碼完整啟用 ＋ 會員中心與新手指南升級</div>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          開啟個人專屬推薦碼邀請好友註冊，雙方皆享紅利 P+ 與免費抽卡券！會員中心亦新增出貨物流單號一鍵複製與快捷儲值入口，並推出全新圖文版「新手玩法指南」與暗黑香檳金 APP 安裝提示。
+        </p>
+      </div>
+    </div>
+  </div>
+</div>`
+  },
+  {
+    id: "official-v6-release",
+    title: "🔥【歷史里程碑】P+Carder 公測版 6.0！100% 現貨在庫承諾 · 密碼學機率驗證 · 3D 沉浸紅包福袋舞台",
+    category: "版本更新",
+    type: "image",
+    imageUrl: "/version_6_release.jpg",
+    isPinned: false,
+    isMarquee: false,
+    createdAt: { seconds: Math.floor(Date.now() / 1000) - 86400 * 14 },
     content: `<div class="space-y-5 text-slate-200">
   <div class="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-500/15 via-rose-500/10 to-cyan-500/10 border border-amber-500/30 text-amber-200 shadow-lg">
     <div class="flex items-center gap-2 mb-2">

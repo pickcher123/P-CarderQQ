@@ -4,10 +4,11 @@ import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { SafeImage } from '@/components/safe-image';
 import { Button } from '@/components/ui/button';
-import { Layers, Gem, Package, Disc3, Info, Sparkles, ChevronRight, Star, Trophy, Clock, Settings, Dices, Target, Search, X, HelpCircle } from 'lucide-react';
+import { Layers, Gem, Package, Disc3, Info, Sparkles, ChevronRight, Star, Trophy, Clock, Settings, Dices, Target, Search, X, HelpCircle, Heart, BellRing } from 'lucide-react';
 import { useCollection, useFirestore, useMemoFirebase, useDoc, useUser } from "@/firebase";
 import { collection, query, orderBy, doc } from "firebase/firestore";
 import { usePoolCardsMap } from "@/lib/pool-cards-cache";
+import { useFavoritePools } from "@/hooks/use-favorite-pools";
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Dialog,
@@ -100,7 +101,7 @@ export default function DrawPage() {
       return counts;
   }, [categories, cardPools]);
 
-  const [sortOption, setSortOption] = useState<'price-high' | 'price-low' | 'latest'>('latest');
+  const [sortOption, setSortOption] = useState<'latest' | 'remaining-asc' | 'price-high' | 'price-low'>('latest');
   const [selectedCategoryTab, setSelectedCategoryTab] = useState<string>('all');
   const [searchKeyword, setSearchKeyword] = useState<string>('');
 
@@ -115,6 +116,7 @@ export default function DrawPage() {
     );
     
     return pools.sort((a, b) => {
+        if (sortOption === 'remaining-asc') return (a.remainingPacks ?? 99999) - (b.remainingPacks ?? 99999);
         if (sortOption === 'price-high') return (b.price ?? 0) - (a.price ?? 0);
         if (sortOption === 'price-low') return (a.price ?? 0) - (b.price ?? 0);
         return 0;
@@ -123,10 +125,29 @@ export default function DrawPage() {
 
   // 只按需載入目前開放卡池中實際用到的卡片（跨頁共享快取），取代原本整座 allCards 下載
   const allCardsMap = usePoolCardsMap(firestore, allPools);
+  const { favoriteIds } = useFavoritePools(userProfile?.favoritePoolIds);
+
+  // 已追蹤卡池與「尾盤提醒」（剩餘 <= 20% 或 <= 15 抽）
+  const trackedActivePools = useMemo(
+    () => allPools.filter((p) => favoriteIds.includes(p.id)),
+    [allPools, favoriteIds]
+  );
+
+  const snipeAlertPools = useMemo(
+    () =>
+      trackedActivePools.filter((p) => {
+        const rem = p.remainingPacks ?? 0;
+        const tot = Math.max(1, p.totalPacks ?? 1);
+        return rem > 0 && (rem / tot <= 0.2 || rem <= 15);
+      }),
+    [trackedActivePools]
+  );
 
   const displayPools = useMemo(() => {
     let list = allPools;
-    if (selectedCategoryTab === 'featured') {
+    if (selectedCategoryTab === 'favorites') {
+      list = list.filter(p => favoriteIds.includes(p.id));
+    } else if (selectedCategoryTab === 'featured') {
       list = list.filter(p => p.isFeatured);
     } else if (selectedCategoryTab !== 'all') {
       list = list.filter(p => p.categoryId === selectedCategoryTab);
@@ -136,7 +157,7 @@ export default function DrawPage() {
       list = list.filter(p => p.name?.toLowerCase().includes(q) || p.description?.toLowerCase().includes(q));
     }
     return list;
-  }, [allPools, selectedCategoryTab, searchKeyword]);
+  }, [allPools, selectedCategoryTab, searchKeyword, favoriteIds]);
 
   const finalIsLoading = isLoadingPools && allPools.length === 0;
   const isCarouselLoading = isLoadingCategories && categoriesWithCounts.length === 0;
@@ -278,6 +299,7 @@ export default function DrawPage() {
                                     onChange={(e) => setSortOption(e.target.value as any)}
                                 >
                                     <option value="latest">最新上架</option>
+                                    <option value="remaining-asc">剩餘最少（搶尾盤）</option>
                                     <option value="price-high">點數高至低</option>
                                     <option value="price-low">點數低至高</option>
                                 </select>
@@ -286,6 +308,60 @@ export default function DrawPage() {
                                 </div>
                             </div>
                         </div>
+                    </div>
+
+                    {/* 追蹤卡池尾盤即時提醒條 */}
+                    {snipeAlertPools.length > 0 && (
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-amber-400/[0.12] via-rose-500/[0.1] to-amber-400/[0.08] border border-amber-300/45">
+                            <div className="flex items-center gap-2 min-w-0">
+                                <BellRing className="w-4 h-4 text-[#FDE68A] shrink-0 animate-pulse" />
+                                <p className="text-xs font-bold text-amber-100 truncate">
+                                    尾盤提醒：您追蹤的「{snipeAlertPools[0].name}」僅剩{' '}
+                                    <span className="font-mono font-black text-[#FDE68A] tabular-nums">
+                                        {snipeAlertPools[0].remainingPacks}
+                                    </span>{' '}
+                                    抽
+                                    {snipeAlertPools.length > 1 ? `（共 ${snipeAlertPools.length} 台進入尾盤）` : ''}
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setSelectedCategoryTab('favorites')}
+                                className="self-start sm:self-auto px-3 py-1 rounded-full bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] text-[11px] font-black shrink-0 cursor-pointer hover:brightness-105 transition-[filter]"
+                            >
+                                立即狙擊
+                            </button>
+                        </div>
+                    )}
+
+                    {/* 分類快速篩選膠囊列 */}
+                    <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-2 border-t border-white/[0.06]">
+                        {[
+                            { id: 'all', label: '全部卡池' },
+                            { id: 'favorites', label: `我的追蹤${trackedActivePools.length > 0 ? ` (${trackedActivePools.length})` : ''}`, isFav: true },
+                            { id: 'featured', label: '精選推薦' },
+                            ...categoriesWithCounts.map((c) => ({ id: c.id, label: c.name })),
+                        ].map((tab) => {
+                            const isActive = selectedCategoryTab === tab.id;
+                            return (
+                                <button
+                                    key={tab.id}
+                                    type="button"
+                                    onClick={() => setSelectedCategoryTab(tab.id)}
+                                    className={cn(
+                                        "px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap transition-colors border cursor-pointer shrink-0 inline-flex items-center gap-1 tabular-nums",
+                                        isActive
+                                            ? "bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] border-amber-300 shadow-sm"
+                                            : "bg-white/[0.03] text-slate-300 border-white/[0.08] hover:bg-white/[0.07] hover:text-white"
+                                    )}
+                                >
+                                    {'isFav' in tab && tab.isFav && (
+                                        <Heart className={cn("w-3 h-3", isActive ? "fill-[#120d02] text-[#120d02]" : "text-rose-400 fill-rose-400/80")} />
+                                    )}
+                                    <span>{tab.label}</span>
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
 

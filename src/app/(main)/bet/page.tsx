@@ -335,7 +335,7 @@ export default function BetLandingPage() {
                             )}
                         >
                             <WheelPrizeIcon className={cn("w-4 h-4 shrink-0", activeSection === 'prizes' ? "text-amber-300" : "text-slate-400")} />
-                            <span>兌換獎品 · 命運轉盤</span>
+                            <span>獎品兌換</span>
                             <span className={cn(
                                 "text-[11px] font-mono px-1.5 py-0.2 rounded",
                                 activeSection === 'prizes' ? "bg-amber-500/20 text-amber-200" : "bg-white/[0.06] text-slate-400"

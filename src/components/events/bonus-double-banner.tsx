@@ -51,6 +51,7 @@ export function BonusDoubleBanner({
     return {
       ...DEFAULT_BONUS_EVENT,
       ...(systemConfig?.bonusEvent || {}),
+      isActive: systemConfig?.bonusEvent?.isActive === true,
     };
   }, [systemConfig]);
 
@@ -311,6 +312,7 @@ export function BonusDoubleHeroPill({ onOpenDetail }: { onOpenDetail?: () => voi
     return {
       ...DEFAULT_BONUS_EVENT,
       ...(systemConfig?.bonusEvent || {}),
+      isActive: systemConfig?.bonusEvent?.isActive === true,
     };
   }, [systemConfig]);
 
@@ -369,6 +371,7 @@ export function BonusDoubleTicker({ onOpenDetail }: { onOpenDetail?: () => void 
     return {
       ...DEFAULT_BONUS_EVENT,
       ...(systemConfig?.bonusEvent || {}),
+      isActive: systemConfig?.bonusEvent?.isActive === true,
     };
   }, [systemConfig]);
 

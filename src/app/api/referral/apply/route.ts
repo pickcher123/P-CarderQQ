@@ -7,7 +7,8 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { newUserId, referralCode } = body;
+    const newUserId = body.newUserId || body.userId;
+    const { referralCode } = body;
 
     if (!newUserId || !referralCode) {
       return NextResponse.json({ success: false, error: '缺少會員 ID 或推薦碼' }, { status: 400 });
@@ -28,7 +29,7 @@ export async function POST(req: Request) {
 
     const newUserData = newUserSnap.data()!;
     // 若該會員已經綁定過推薦人，不可重複套用
-    if (newUserData.invitedBy) {
+    if (newUserData.invitedBy || newUserData.referredBy) {
       return NextResponse.json({ success: false, error: '該帳號已綁定過推薦碼' }, { status: 400 });
     }
 
@@ -106,6 +107,7 @@ export async function POST(req: Request) {
     // 4. 更新新人 (被推薦人)
     const newUserUpdates: Record<string, any> = {
       invitedBy: cleanCode,
+      referredBy: cleanCode,
       invitedAt: FieldValue.serverTimestamp(),
     };
 

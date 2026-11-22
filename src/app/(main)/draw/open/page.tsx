@@ -47,6 +47,30 @@ import {
   getCornerPeelGeometry,
 } from '@/lib/corner-peel';
 
+// 方案 A 壓軸排序：多抽時自動將小獎（D白包/C銅包/普通卡）排在前面，將金包(A)/黑包(SP)/傳奇卡/最後賞留作最終壓軸
+function sortPrizesForSuspense<T extends DrawnPrize>(prizes: T[]): T[] {
+  if (!prizes || prizes.length <= 1) return prizes;
+  const getRank = (p: any): number => {
+    if (p?.type === 'last-prize' || p?.tierCode === 'LAST') return 100;
+    if (p?.tierCode === 'SP') return 60;
+    if (p?.tierCode === 'A') return 50;
+    if (p?.rarity === 'legendary') return 45;
+    if (p?.tierCode === 'B') return 30;
+    if (p?.rarity === 'rare') return 25;
+    if (p?.tierCode === 'C') return 20;
+    if (p?.tierCode === 'D') return 10;
+    return 0;
+  };
+  const getVal = (p: any): number =>
+    Number(p?.sellPrice ?? p?.points ?? p?.value ?? 0) || 0;
+
+  return [...prizes].sort((a, b) => {
+    const rankDiff = getRank(a) - getRank(b);
+    if (rankDiff !== 0) return rankDiff;
+    return getVal(a) - getVal(b);
+  });
+}
+
 enum OperationType {
   CREATE = 'create',
   UPDATE = 'update',
@@ -351,8 +375,9 @@ export default function OpenPackPage() {
             toast({ variant: 'destructive', title: '告示', description: '卡池目前已無獎項可供試手氣。' });
             return;
         }
-        setDrawnPrizes(drawn);
-        setSessionPrizes(prev => [...prev, ...drawn]);
+        const orderedTrialDrawn = sortPrizesForSuspense(drawn);
+        setDrawnPrizes(orderedTrialDrawn);
+        setSessionPrizes(prev => [...prev, ...orderedTrialDrawn]);
         setRevealedIndex(0);
         setRevealPercent(0);
         setIsSqueezing(false);
@@ -816,9 +841,10 @@ export default function OpenPackPage() {
             });
 
             if (result && result.drawn) {
-                // 非同步更新頁面狀態
-                setDrawnPrizes(result.drawn);
-                setSessionPrizes(prev => [...prev, ...result.drawn]);
+                // 多抽自動以「由小獎到大獎」壓軸排序，將金包 / SP 黑包 / 最後賞留作最終壓軸
+                const orderedDrawn = sortPrizesForSuspense(result.drawn);
+                setDrawnPrizes(orderedDrawn);
+                setSessionPrizes(prev => [...prev, ...orderedDrawn]);
                 setRevealedIndex(0);
                 setRevealPercent(0);
                 setIsSqueezing(false);
@@ -1109,6 +1135,12 @@ export default function OpenPackPage() {
                   return !best || (tierOrder[t] || 0) > (tierOrder[best] || 0) ? t : best;
               }, undefined)
             : undefined;
+        const packBreakdown = drawnPrizes.map((p: any) => ({
+            tier: cardPool?.isHybridBlindSpMode
+                ? (p?.tierCode || (p?.type === 'last-prize' ? 'LAST' : p?.rarity === 'legendary' ? 'A' : p?.rarity === 'rare' ? 'B' : 'D'))
+                : undefined,
+            rarity: p?.rarity || 'common',
+        }));
         return (
             <CloveSummoningAnimation
                 highestRarity={topRarityCelebration}
@@ -1117,6 +1149,7 @@ export default function OpenPackPage() {
                 backgroundUrl={activeBackgroundUrl}
                 selectedNumbers={selectedNumbers.length > 0 ? selectedNumbers : undefined}
                 hybridTier={topHybridTier}
+                packBreakdown={packBreakdown}
                 onAnimationComplete={() => {
                     setStep('ready-to-reveal');
                 }}

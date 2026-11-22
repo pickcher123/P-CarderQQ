@@ -17,9 +17,9 @@ export interface BonusEventConfig {
   };
 }
 
-// 預設活動配置 (開箱即可享受限時 2 倍盛典)
+// 預設活動配置（安全預設為關閉，必須由後台 systemConfig/main 明確開啟才生效，避免重整時誤閃 2X 活動條）
 export const DEFAULT_BONUS_EVENT: BonusEventConfig = {
-  isActive: true,
+  isActive: false,
   multiplier: 2,
   title: '🔥 全站紅利 2X 狂歡狂飆週',
   subtitle: '活動期間：每日簽到紅利 2 倍、儲值回饋 2 倍、卡片回收熔煉享雙倍 P+ 點數！',
@@ -66,9 +66,8 @@ export function isBonusEventExpired(config?: Partial<BonusEventConfig> | null): 
  * 檢查紅利加倍活動目前是否在生傚期間內
  */
 export function isBonusEventActive(config?: Partial<BonusEventConfig> | null): boolean {
-  // 若未傳入或 isActive 未特別設為 false，則預設為啟用並檢查起訖日期
-  if (!config) return isBonusEventActive(DEFAULT_BONUS_EVENT);
-  if (config.isActive === false) return false;
+  // 尚未載入後台設定或未明確啟用時一律視為未開啟，避免重新整理頁面誤顯示 2X 加倍資訊給玩家
+  if (!config || config.isActive !== true) return false;
 
   try {
     const todayStr = getLocalDateString();

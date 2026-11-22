@@ -370,35 +370,6 @@ export default function CollectionPage() {
     });
   }, [mergedCards, activeTab, filterCategory, filterRarity, searchQuery]);
 
-  // Sort Logic
-  const sortedMergedCards = useMemo(() => {
-    const list = [...filteredMergedCards];
-    if (sortOption === 'price_desc') {
-      list.sort((a, b) => (b.sellPrice || 0) - (a.sellPrice || 0));
-    } else if (sortOption === 'price_asc') {
-      list.sort((a, b) => (a.sellPrice || 0) - (b.sellPrice || 0));
-    } else if (sortOption === 'unsold') {
-      list.sort((a, b) => (a.isSold ? 1 : -1) - (b.isSold ? 1 : -1));
-    }
-    return list;
-  }, [filteredMergedCards, sortOption]);
-
-  const randomPlayerCards = useMemo(() => {
-    return mergedCards.filter(isRandomPlayerCard);
-  }, [mergedCards]);
-
-  // Keep randomSellQty and randomShipQty within bounds
-  useEffect(() => {
-    if (randomPlayerCards.length > 0) {
-      setRandomSellQty(prev => Math.min(Math.max(1, prev), randomPlayerCards.length));
-      setRandomShipQty(prev => Math.min(Math.max(1, prev), randomPlayerCards.length));
-    }
-  }, [randomPlayerCards.length]);
-
-  const standardCards = useMemo(() => sortedMergedCards.filter(c => c.source !== 'group-break'), [sortedMergedCards]);
-  const uniqueStandardCards = useMemo(() => sortedMergedCards.filter(c => c.source !== 'group-break' && !isRandomPlayerCard(c)), [sortedMergedCards]);
-  const groupBreakCards = useMemo(() => sortedMergedCards.filter(c => c.source === 'group-break'), [sortedMergedCards]);
-
   const memberLevelInfo = useMemo(() => {
     const levelName = userProfile?.userLevel || '新手收藏家';
     return userLevels.find(l => l.level === levelName) || userLevels[0];
@@ -409,10 +380,10 @@ export default function CollectionPage() {
     card: Pick<MergedCard, 'name' | 'sellPrice' | 'source' | 'tierCode' | 'isHybridBlindSpMode' | 'isPoints' | 'cardId'>
   ) => {
     if (card.source === 'group-break') {
-      return { diamonds: 0, pPoints: 0, rateLabel: '團拆限定' };
+      return { diamonds: 0, pPoints: 0, rebateRatePct: 0 };
     }
     if (isRandomPlayerCard(card as MergedCard) || card.name?.includes('隨機球員')) {
-      return { diamonds: 40, pPoints: 0, rateLabel: '普/特卡 40 鑽買回' };
+      return { diamonds: 40, pPoints: 0, rebateRatePct: 0 };
     }
 
     const basePrice = card.sellPrice || 10;
@@ -429,9 +400,7 @@ export default function CollectionPage() {
       return {
         diamonds,
         pPoints,
-        rateLabel: isTierCD
-          ? `GodPack ${card.tierCode}賞 9折${rebateRatePct > 0 ? ` + 回饋${rebateRatePct}%` : ''}`
-          : `GodPack 8折${rebateRatePct > 0 ? ` + 回饋${rebateRatePct}%` : ''}`,
+        rebateRatePct,
       };
     }
 
@@ -439,16 +408,45 @@ export default function CollectionPage() {
       return {
         diamonds: Math.round(basePrice * 0.9),
         pPoints: 0,
-        rateLabel: '拼卡專區 9折買回',
+        rebateRatePct: 0,
       };
     }
 
     return {
       diamonds: Math.round(basePrice * 0.8),
       pPoints: 0,
-      rateLabel: '8折買回',
+      rebateRatePct: 0,
     };
   };
+
+  // Sort Logic (依實際顯示之買回鑽石價值排序)
+  const sortedMergedCards = useMemo(() => {
+    const list = [...filteredMergedCards];
+    if (sortOption === 'price_desc') {
+      list.sort((a, b) => calculateCardBuyback(b).diamonds - calculateCardBuyback(a).diamonds);
+    } else if (sortOption === 'price_asc') {
+      list.sort((a, b) => calculateCardBuyback(a).diamonds - calculateCardBuyback(b).diamonds);
+    } else if (sortOption === 'unsold') {
+      list.sort((a, b) => (a.isSold ? 1 : -1) - (b.isSold ? 1 : -1));
+    }
+    return list;
+  }, [filteredMergedCards, sortOption, memberLevelInfo, bonusMultiplier]);
+
+  const randomPlayerCards = useMemo(() => {
+    return mergedCards.filter(isRandomPlayerCard);
+  }, [mergedCards]);
+
+  // Keep randomSellQty and randomShipQty within bounds
+  useEffect(() => {
+    if (randomPlayerCards.length > 0) {
+      setRandomSellQty(prev => Math.min(Math.max(1, prev), randomPlayerCards.length));
+      setRandomShipQty(prev => Math.min(Math.max(1, prev), randomPlayerCards.length));
+    }
+  }, [randomPlayerCards.length]);
+
+  const standardCards = useMemo(() => sortedMergedCards.filter(c => c.source !== 'group-break'), [sortedMergedCards]);
+  const uniqueStandardCards = useMemo(() => sortedMergedCards.filter(c => c.source !== 'group-break' && !isRandomPlayerCard(c)), [sortedMergedCards]);
+  const groupBreakCards = useMemo(() => sortedMergedCards.filter(c => c.source === 'group-break'), [sortedMergedCards]);
 
   // Total Portfolio Valuation (與實際買回規則完全同步)
   const portfolioStats = useMemo(() => {
@@ -1311,9 +1309,9 @@ export default function CollectionPage() {
                             <span className="text-slate-400 text-[9.5px] truncate max-w-[65px]">
                               {card.category || '一般'}
                             </span>
-                            <div className="flex items-center gap-1 font-code font-black text-cyan-400">
+                            <div className="flex items-center gap-1 font-code font-black text-cyan-400 tabular-nums">
                               <Gem className="w-2.5 h-2.5 text-cyan-400" />
-                              <span>{card.sellPrice || 10}</span>
+                              <span>{calculateCardBuyback(card).diamonds.toLocaleString()}</span>
                             </div>
                           </div>
                         </div>
@@ -2136,27 +2134,24 @@ export default function CollectionPage() {
                     const buyback = calculateCardBuyback(previewCard);
                     return (
                       <div className="flex flex-col items-center gap-2.5 w-full pt-1 relative z-10">
-                        <div className="w-full bg-white/[0.03] border border-white/[0.1] px-4 py-2.5 rounded-xl text-xs font-code font-black text-white shadow-md space-y-1">
+                        <div className="w-full bg-white/[0.03] border border-white/[0.1] px-4 py-2.5 rounded-xl text-xs font-code font-black text-white shadow-md space-y-1.5">
                           <div className="flex items-center justify-between gap-2">
                             <span className="text-slate-400 font-sans text-xs flex items-center gap-1.5">
                               <Gem className="w-3.5 h-3.5 text-cyan-300" />
                               變現估值:
                             </span>
-                            <div className="flex items-center gap-1.5 tabular-nums">
-                              <span className="text-cyan-300 text-sm font-bold">
-                                {buyback.diamonds.toLocaleString()} 鑽石
+                            <span className="text-cyan-300 text-sm font-bold tabular-nums">
+                              {buyback.diamonds.toLocaleString()} 鑽石
+                            </span>
+                          </div>
+                          {previewCard.source !== 'group-break' && (buyback.rebateRatePct > 0 || buyback.pPoints > 0) && (
+                            <div className="flex items-center justify-between text-[11px] font-sans font-bold text-slate-400 pt-1 border-t border-white/[0.06]">
+                              <span>會員回饋 ({buyback.rebateRatePct}%)</span>
+                              <span className="text-[#FDE68A] font-mono tabular-nums">
+                                +{buyback.pPoints.toLocaleString()} P幣
                               </span>
-                              {buyback.pPoints > 0 && (
-                                <span className="text-[#FDE68A] text-xs font-bold">
-                                  + {buyback.pPoints.toLocaleString()} P點
-                                </span>
-                              )}
                             </div>
-                          </div>
-                          <div className="flex items-center justify-between text-[10px] font-sans font-medium text-slate-400">
-                            <span>買回方案</span>
-                            <span className="text-amber-200/90">{buyback.rateLabel}</span>
-                          </div>
+                          )}
                         </div>
 
                         <p className="text-[10.5px] font-bold text-slate-400 flex items-center gap-1.5">
