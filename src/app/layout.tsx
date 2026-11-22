@@ -106,11 +106,11 @@ export default function RootLayout({
   return (
     <html lang="zh-Hant" suppressHydrationWarning className="bg-[#070b14] text-foreground min-h-screen min-h-[100dvh] w-full overflow-x-hidden m-0 p-0">
       <head>
-        <link rel="preload" as="image" href="/images/themes/basketball.jpg" />
-        <link rel="preload" as="image" href="/images/themes/baseball.jpg" />
-        <link rel="preload" as="image" href="/images/themes/soccer.jpg" />
-        <link rel="preload" as="image" href="/images/themes/pokemon.jpg" />
-        <link rel="preload" as="image" href="/images/themes/other.jpg" />
+        <link rel="preload" as="image" href="/images/themes/basketball.jpg?v=2" />
+        <link rel="preload" as="image" href="/images/themes/baseball.jpg?v=2" />
+        <link rel="preload" as="image" href="/images/themes/soccer.jpg?v=2" />
+        <link rel="preload" as="image" href="/images/themes/pokemon.jpg?v=2" />
+        <link rel="preload" as="image" href="/images/themes/other.jpg?v=2" />
         <link rel="preconnect" href="https://firebasestorage.googleapis.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://firebasestorage.googleapis.com" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />

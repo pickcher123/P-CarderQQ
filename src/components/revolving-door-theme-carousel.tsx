@@ -26,28 +26,28 @@ interface RevolvingDoorThemeCarouselProps {
   headerAction?: React.ReactNode;
 }
 
-// 優先使用本地壓縮最佳化後的主題封面圖（600x800px，約 40KB），確保秒開載入
+// 優先使用本地壓縮最佳化後的主題封面圖，加上 ?v=2 強制瀏覽器更新最新活潑插畫版
 function getCategoryArtwork(categoryName: string = '', originalUrl?: string): string {
   const name = categoryName.toLowerCase();
   if (name.includes('籃球') || name.includes('nba') || name.includes('basketball')) {
-    return '/images/themes/basketball.jpg';
+    return '/images/themes/basketball.jpg?v=2';
   }
   if (name.includes('棒球') || name.includes('mlb') || name.includes('baseball')) {
-    return '/images/themes/baseball.jpg';
+    return '/images/themes/baseball.jpg?v=2';
   }
   if (name.includes('足球') || name.includes('fifa') || name.includes('soccer') || name.includes('football')) {
-    return '/images/themes/soccer.jpg';
+    return '/images/themes/soccer.jpg?v=2';
   }
   if (name.includes('寶可夢') || name.includes('pokemon') || name.includes('tcg') || name.includes('動漫')) {
-    return '/images/themes/pokemon.jpg';
+    return '/images/themes/pokemon.jpg?v=2';
   }
   if (name.includes('其他') || name.includes('other') || name.includes('綜合')) {
-    return '/images/themes/other.jpg';
+    return '/images/themes/other.jpg?v=2';
   }
   if (originalUrl && originalUrl.trim().length > 0 && !originalUrl.includes('placeholder')) {
     return originalUrl;
   }
-  return '/images/themes/other.jpg';
+  return '/images/themes/other.jpg?v=2';
 }
 
 export function RevolvingDoorThemeCarousel({
@@ -236,20 +236,20 @@ export function RevolvingDoorThemeCarousel({
         <button
           type="button"
           onClick={handlePrev}
-          className="absolute left-2 sm:left-6 z-40 p-2 sm:p-3 text-amber-300 hover:text-yellow-200 transition-[transform,color] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] cursor-pointer [@media(hover:hover)_and_(pointer:fine)]:hover:scale-110 active:scale-[0.97] drop-shadow-[0_0_14px_rgba(245,158,11,0.9)]"
+          className="absolute left-2 sm:left-5 z-40 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#0a0f1c]/85 hover:bg-amber-400/15 border border-amber-300/35 hover:border-amber-300/75 text-[#FDE68A] flex items-center justify-center backdrop-blur-md shadow-[0_8px_24px_rgba(0,0,0,0.65)] transition-[transform,background-color,border-color] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] cursor-pointer [@media(hover:hover)_and_(pointer:fine)]:hover:scale-105 active:scale-[0.95]"
           aria-label="上一主題"
         >
-          <ChevronLeft className="w-7 h-7 sm:w-9 sm:h-9" />
+          <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
         </button>
 
         {/* 右側旋轉切換箭頭 */}
         <button
           type="button"
           onClick={handleNext}
-          className="absolute right-2 sm:right-6 z-40 p-2 sm:p-3 text-amber-300 hover:text-yellow-200 transition-[transform,color] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] cursor-pointer [@media(hover:hover)_and_(pointer:fine)]:hover:scale-110 active:scale-[0.97] drop-shadow-[0_0_14px_rgba(245,158,11,0.9)]"
+          className="absolute right-2 sm:right-5 z-40 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#0a0f1c]/85 hover:bg-amber-400/15 border border-amber-300/35 hover:border-amber-300/75 text-[#FDE68A] flex items-center justify-center backdrop-blur-md shadow-[0_8px_24px_rgba(0,0,0,0.65)] transition-[transform,background-color,border-color] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] cursor-pointer [@media(hover:hover)_and_(pointer:fine)]:hover:scale-105 active:scale-[0.95]"
           aria-label="下一主題"
         >
-          <ChevronRight className="w-7 h-7 sm:w-9 sm:h-9" />
+          <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
         </button>
 
         {/* 3D 旋轉門直立卡磚群 (Vertical 3D Cards) */}
@@ -354,13 +354,18 @@ export function RevolvingDoorThemeCarousel({
               >
                 <div
                   className={cn(
-                    "w-full h-full relative rounded-2xl sm:rounded-3xl overflow-hidden flex flex-col justify-between p-3.5 sm:p-5 transition-[border-color] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] group bg-slate-950",
+                    "w-full h-full relative rounded-2xl sm:rounded-3xl overflow-hidden flex flex-col justify-between p-3.5 sm:p-4 transition-[border-color,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] group bg-[#0a0f1c]",
                     isCenter
-                      ? "border-2 border-amber-400 shadow-[0_0_35px_rgba(245,158,11,0.65),inset_0_0_20px_rgba(245,158,11,0.25)]"
-                      : "border border-amber-500/30 hover:border-amber-400/60 shadow-xl"
+                      ? "border-2 border-amber-300/85 shadow-[0_20px_50px_rgba(0,0,0,0.85),0_0_32px_rgba(253,230,138,0.28)]"
+                      : "border border-white/[0.12] hover:border-amber-300/50 shadow-[0_14px_34px_rgba(0,0,0,0.75)]"
                   )}
                 >
-                  {/* 背景封面運動員圖：本地輕量靜態圖直接原圖秒開，不經 SafeImage 骨架屏閃爍 */}
+                  {/* 頂部香檳金微光細線 */}
+                  {isCenter && (
+                    <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-[#FDE68A] to-transparent z-20 pointer-events-none" />
+                  )}
+
+                  {/* 背景封面插畫：本地輕量靜態圖直接原圖秒開，不經 SafeImage 骨架屏閃爍 */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={artworkUrl}
@@ -371,42 +376,51 @@ export function RevolvingDoorThemeCarousel({
                     draggable={false}
                     onError={(e) => {
                       const target = e.currentTarget;
-                      if (!target.src.endsWith('/images/themes/other.jpg')) {
-                        target.src = '/images/themes/other.jpg';
+                      if (!target.src.includes('/images/themes/other.jpg')) {
+                        target.src = '/images/themes/other.jpg?v=2';
                       }
                     }}
                     className={cn(
-                      "absolute inset-0 w-full h-full object-cover transition-[transform,opacity] duration-250 ease-[cubic-bezier(0.23,1,0.32,1)] pointer-events-none",
-                      isCenter ? "scale-105 opacity-85 [@media(hover:hover)_and_(pointer:fine)]:group-hover:scale-110" : "scale-100 opacity-60"
+                      "absolute inset-0 w-full h-full object-cover transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] pointer-events-none",
+                      isCenter ? "scale-[1.03] opacity-95 [@media(hover:hover)_and_(pointer:fine)]:group-hover:scale-110" : "scale-100 opacity-65"
                     )}
                   />
 
-                  {/* 賽博暗黑漸層遮罩 */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/30 pointer-events-none" />
+                  {/* 底部暗黑曜石漸層托底（保持畫面中上段活潑明亮，底部文字高對比） */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#070b14]/95 via-[#070b14]/25 to-black/25 pointer-events-none" />
                   
-                  {/* 中心卡額外暖金氛圍聚光 */}
+                  {/* 中心卡滑過時的全息流光掃過 */}
                   {isCenter && (
-                    <div className="absolute inset-0 bg-gradient-to-tr from-amber-950/40 via-transparent to-amber-500/15 pointer-events-none" />
+                    <div className="absolute -inset-full bg-gradient-to-tr from-transparent via-[#FDE68A]/15 to-transparent rotate-12 pointer-events-none -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out z-10" />
                   )}
 
-                  {/* 右上角數量徽章 (黑底金邊玻璃 1款 / 2款) */}
-                  <div className="relative z-10 flex items-center justify-end w-full">
-                    <span className="text-[11px] sm:text-xs font-mono font-black text-amber-300 bg-black/75 backdrop-blur-md px-2.5 py-0.5 rounded-full border border-amber-400/50 shadow-md">
+                  {/* 頂部列：收藏館編號膠囊 + 開放數量徽章 */}
+                  <div className="relative z-10 flex items-center justify-between gap-1.5 w-full">
+                    <span className="text-[9px] sm:text-[10px] font-mono font-bold tracking-widest text-amber-200/80 bg-[#0a0f1c]/70 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/[0.12]">
+                      0{index + 1}
+                    </span>
+                    <span className={cn(
+                      "text-[10px] sm:text-xs font-mono font-bold tabular-nums px-2.5 py-0.5 rounded-full backdrop-blur-md border shadow-sm flex items-center gap-1",
+                      (count ?? 0) > 0
+                        ? "text-[#FDE68A] bg-[#0a0f1c]/80 border-amber-300/45"
+                        : "text-slate-300 bg-[#0a0f1c]/75 border-white/[0.12]"
+                    )}>
+                      {(count ?? 0) > 0 && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />}
                       {count !== undefined ? `${count} 款開放中` : '專區'}
                     </span>
                   </div>
 
-                  {/* 底部卡牌名稱與「進入專區 >」金色標籤按鈕 */}
-                  <div className="relative z-10 flex flex-col items-center justify-center text-center space-y-1.5">
-                    <h3 className="font-headline font-black text-xl sm:text-2xl md:text-3xl text-white tracking-widest drop-shadow-[0_2px_12px_rgba(0,0,0,0.95)]">
+                  {/* 底部卡牌名稱與「進入專區 >」香檳金主按鈕 */}
+                  <div className="relative z-10 flex flex-col items-center justify-center text-center space-y-2 pb-0.5">
+                    <h3 className="font-headline font-black text-xl sm:text-2xl md:text-[26px] text-white tracking-[0.14em] drop-shadow-[0_3px_14px_rgba(0,0,0,0.95)] leading-none">
                       {category.name}
                     </h3>
 
                     <div className={cn(
-                      "text-xs sm:text-sm font-black tracking-wide flex items-center justify-center gap-1.5 transition-[background-color,color] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] drop-shadow-md rounded-full px-3.5 py-1",
+                      "text-xs sm:text-[13px] font-black tracking-wide flex items-center justify-center gap-1 transition-[transform,filter,background-color] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] rounded-full px-4 py-1.5",
                       isCenter
-                        ? "bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-500 text-slate-950 shadow-[0_0_15px_rgba(245,158,11,0.5)] border border-yellow-200"
-                        : "bg-black/60 text-amber-300 border border-amber-500/40 group-hover:bg-amber-500/20"
+                        ? "bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] shadow-[0_6px_20px_rgba(245,158,11,0.4)] [@media(hover:hover)_and_(pointer:fine)]:group-hover:brightness-105"
+                        : "bg-[#0a0f1c]/75 text-amber-200 border border-amber-300/35 group-hover:bg-amber-400/15"
                     )}>
                       <span>進入專區</span>
                       <ChevronRight className="w-3.5 h-3.5 [@media(hover:hover)_and_(pointer:fine)]:group-hover:translate-x-0.5 transition-transform duration-150" />
@@ -418,6 +432,30 @@ export function RevolvingDoorThemeCarousel({
           })}
         </div>
       </div>
+
+      {/* 底部快速切換主題膠囊指示列 */}
+      {total > 1 && (
+        <div className="flex items-center justify-center gap-1.5 sm:gap-2 mt-1 flex-wrap px-2">
+          {categories.map((cat, idx) => {
+            const active = idx === currentIndex;
+            return (
+              <button
+                key={cat.id || cat.name}
+                type="button"
+                onClick={() => setCurrentIndex(idx)}
+                className={cn(
+                  "px-2.5 py-1 rounded-full text-[11px] font-bold transition-[background-color,border-color,color,transform] duration-150 cursor-pointer border",
+                  active
+                    ? "bg-amber-400/[0.15] text-[#FDE68A] border-amber-300/50 scale-105"
+                    : "bg-white/[0.03] text-slate-400 border-white/[0.08] hover:text-slate-200 hover:bg-white/[0.06]"
+                )}
+              >
+                {cat.name}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
     </div>
   );

@@ -1037,94 +1037,114 @@ export function ClaimWonPrizeDialog({
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>{children}</DialogTrigger>
-            <DialogContent className="max-w-md rounded-3xl bg-slate-950 border border-emerald-500/40 text-white p-6 space-y-4">
-                <DialogTitle className="text-lg font-black text-emerald-300 flex items-center gap-2">
-                    <Gift className="w-5 h-5 text-emerald-400" />
-                    兌換實體獎品（免運寄送）
-                </DialogTitle>
-                <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/10">
-                    <div className="relative w-14 h-14 rounded-xl overflow-hidden shrink-0 bg-slate-900">
-                        <SafeImage src={claim.itemImageUrl} alt={claim.itemName} fill className="object-cover" />
+            <DialogContent className="w-[calc(100vw-1.5rem)] max-w-md max-h-[90dvh] overflow-y-auto overflow-x-hidden rounded-2xl bg-[#0a0f1c]/95 backdrop-blur-2xl border border-white/[0.1] border-t-amber-300/65 text-white p-4 sm:p-6 shadow-[0_24px_64px_rgba(0,0,0,0.85)]">
+                <div className="w-full min-w-0 space-y-4">
+                    <div className="flex items-center gap-2.5 pr-8 min-w-0">
+                        <div className="w-[3px] h-6 rounded-full bg-gradient-to-b from-amber-200 via-amber-400 to-amber-700 shrink-0" />
+                        <DialogTitle className="text-base sm:text-lg font-black text-white flex items-center gap-2 min-w-0 leading-snug">
+                            <Gift className="w-5 h-5 text-[#FDE68A] shrink-0" />
+                            <span className="truncate">兌換實體獎品（免運寄送）</span>
+                        </DialogTitle>
                     </div>
-                    <div className="min-w-0">
-                        <p className="font-black text-sm text-white truncate">{claim.itemName}</p>
-                        <p className="text-xs text-emerald-400 font-bold mt-0.5 tabular-nums">
-                            命運轉盤 #{claim.winningSpot} 中獎 · 免運兌換
-                        </p>
-                    </div>
-                </div>
 
-                {/* 配送方式選擇 */}
-                <div className="grid grid-cols-3 gap-2">
-                    <button
-                        type="button"
-                        onClick={() => setShippingMethod('7-11')}
-                        className={cn(
-                            'p-2.5 rounded-xl border flex flex-col items-center justify-center text-center gap-1 transition-all cursor-pointer',
-                            shippingMethod === '7-11'
-                                ? 'bg-emerald-500/15 border-emerald-400 text-white'
-                                : 'bg-slate-900/80 border-white/10 text-slate-400 hover:text-white'
-                        )}
-                    >
-                        <Package className="w-4 h-4 text-emerald-400" />
-                        <span className="text-[11px] font-black whitespace-nowrap">7-11 超商</span>
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setShippingMethod('郵寄')}
-                        className={cn(
-                            'p-2.5 rounded-xl border flex flex-col items-center justify-center text-center gap-1 transition-all cursor-pointer',
-                            shippingMethod === '郵寄'
-                                ? 'bg-emerald-500/15 border-emerald-400 text-white'
-                                : 'bg-slate-900/80 border-white/10 text-slate-400 hover:text-white'
-                        )}
-                    >
-                        <Truck className="w-4 h-4 text-emerald-400" />
-                        <span className="text-[11px] font-black whitespace-nowrap">掛號郵寄</span>
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setShippingMethod('面交自取')}
-                        className={cn(
-                            'p-2.5 rounded-xl border flex flex-col items-center justify-center text-center gap-1 transition-all cursor-pointer',
-                            shippingMethod === '面交自取'
-                                ? 'bg-emerald-500/15 border-emerald-400 text-white'
-                                : 'bg-slate-900/80 border-white/10 text-slate-400 hover:text-white'
-                        )}
-                    >
-                        <MapPin className="w-4 h-4 text-emerald-400" />
-                        <span className="text-[11px] font-black whitespace-nowrap">門市自取</span>
-                    </button>
-                </div>
-
-                <div className="space-y-2.5">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                        <Input value={realName} onChange={e => setRealName(e.target.value)} placeholder="收件人真實姓名" className="bg-slate-900 border-white/15 h-10 text-xs" />
-                        <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="聯絡手機 (09xx...)" className="bg-slate-900 border-white/15 h-10 text-xs" />
-                    </div>
-                    {shippingMethod === '面交自取' ? (
-                        <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs text-emerald-200 space-y-1">
-                            <p className="font-bold flex items-center gap-1.5">
-                                <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                                <span>{PRIZE_PICKUP_ADDRESS}</span>
-                            </p>
-                            <p className="text-[11px] text-slate-400">
-                                提交後請聯繫官方 LINE 客服預約取件時段。
+                    <div className="w-full min-w-0 flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.08] overflow-hidden">
+                        <div className="relative w-14 h-14 rounded-xl overflow-hidden shrink-0 bg-black/50 border border-white/[0.08]">
+                            <SafeImage src={claim.itemImageUrl} alt={claim.itemName} fill className="object-cover" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <p className="font-bold text-sm text-white line-clamp-2 break-words leading-snug">{claim.itemName}</p>
+                            <p className="text-xs text-emerald-400 font-bold mt-1 tabular-nums">
+                                命運轉盤 #{claim.winningSpot} 中獎 · 免運兌換
                             </p>
                         </div>
-                    ) : (
-                        <Input
-                            value={address}
-                            onChange={e => setAddress(e.target.value)}
-                            placeholder={addressLabel}
-                            className="bg-slate-900 border-white/15 h-10 text-xs"
-                        />
-                    )}
-                </div>
+                    </div>
 
-                <Button onClick={handleClaim} disabled={isSubmitting} className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-400 to-teal-400 hover:brightness-110 text-slate-950 font-black cursor-pointer">
-                    {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : '確認送出免運兌換單'}
-                </Button>
+                    {/* 配送方式選擇 */}
+                    <div className="grid grid-cols-3 gap-2 w-full min-w-0">
+                        <button
+                            type="button"
+                            onClick={() => setShippingMethod('7-11')}
+                            className={cn(
+                                'min-w-0 px-1.5 py-2.5 rounded-xl border flex flex-col items-center justify-center text-center gap-1 transition-colors cursor-pointer',
+                                shippingMethod === '7-11'
+                                    ? 'bg-gradient-to-b from-amber-400/[0.14] to-amber-400/[0.04] border-amber-300/55 text-[#FDE68A]'
+                                    : 'bg-white/[0.03] border-white/[0.08] text-slate-400 hover:bg-white/[0.05] hover:text-white'
+                            )}
+                        >
+                            <Package className={cn('w-4 h-4 shrink-0', shippingMethod === '7-11' ? 'text-[#FDE68A]' : 'text-slate-400')} />
+                            <span className="text-[11px] font-bold truncate max-w-full">7-11 超商</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setShippingMethod('郵寄')}
+                            className={cn(
+                                'min-w-0 px-1.5 py-2.5 rounded-xl border flex flex-col items-center justify-center text-center gap-1 transition-colors cursor-pointer',
+                                shippingMethod === '郵寄'
+                                    ? 'bg-gradient-to-b from-amber-400/[0.14] to-amber-400/[0.04] border-amber-300/55 text-[#FDE68A]'
+                                    : 'bg-white/[0.03] border-white/[0.08] text-slate-400 hover:bg-white/[0.05] hover:text-white'
+                            )}
+                        >
+                            <Truck className={cn('w-4 h-4 shrink-0', shippingMethod === '郵寄' ? 'text-[#FDE68A]' : 'text-slate-400')} />
+                            <span className="text-[11px] font-bold truncate max-w-full">掛號郵寄</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setShippingMethod('面交自取')}
+                            className={cn(
+                                'min-w-0 px-1.5 py-2.5 rounded-xl border flex flex-col items-center justify-center text-center gap-1 transition-colors cursor-pointer',
+                                shippingMethod === '面交自取'
+                                    ? 'bg-gradient-to-b from-amber-400/[0.14] to-amber-400/[0.04] border-amber-300/55 text-[#FDE68A]'
+                                    : 'bg-white/[0.03] border-white/[0.08] text-slate-400 hover:bg-white/[0.05] hover:text-white'
+                            )}
+                        >
+                            <MapPin className={cn('w-4 h-4 shrink-0', shippingMethod === '面交自取' ? 'text-[#FDE68A]' : 'text-slate-400')} />
+                            <span className="text-[11px] font-bold truncate max-w-full">門市自取</span>
+                        </button>
+                    </div>
+
+                    <div className="space-y-2.5 w-full min-w-0">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full min-w-0">
+                            <Input
+                                value={realName}
+                                onChange={e => setRealName(e.target.value)}
+                                placeholder="收件人真實姓名"
+                                className="w-full min-w-0 bg-black/40 border-white/[0.1] focus:border-amber-300/60 rounded-xl h-11 text-[16px] sm:text-sm text-white"
+                            />
+                            <Input
+                                value={phone}
+                                onChange={e => setPhone(e.target.value)}
+                                placeholder="聯絡手機 (09xx...)"
+                                className="w-full min-w-0 bg-black/40 border-white/[0.1] focus:border-amber-300/60 rounded-xl h-11 text-[16px] sm:text-sm text-white"
+                            />
+                        </div>
+                        {shippingMethod === '面交自取' ? (
+                            <div className="w-full min-w-0 p-3 rounded-xl bg-amber-400/[0.08] border border-amber-300/30 text-xs text-amber-100 space-y-1">
+                                <p className="font-bold flex items-start gap-1.5 break-words">
+                                    <MapPin className="w-3.5 h-3.5 text-[#FDE68A] shrink-0 mt-0.5" />
+                                    <span className="min-w-0 break-words">{PRIZE_PICKUP_ADDRESS}</span>
+                                </p>
+                                <p className="text-[11px] text-slate-400">
+                                    提交後請聯繫官方 LINE 客服預約取件時段。
+                                </p>
+                            </div>
+                        ) : (
+                            <Input
+                                value={address}
+                                onChange={e => setAddress(e.target.value)}
+                                placeholder={addressLabel}
+                                className="w-full min-w-0 bg-black/40 border-white/[0.1] focus:border-amber-300/60 rounded-xl h-11 text-[16px] sm:text-sm text-white"
+                            />
+                        )}
+                    </div>
+
+                    <Button
+                        onClick={handleClaim}
+                        disabled={isSubmitting}
+                        className="w-full h-11 rounded-xl bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 hover:brightness-105 text-[#120d02] font-black active:scale-[0.98] transition-[transform,filter] cursor-pointer"
+                    >
+                        {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : '確認送出免運兌換單'}
+                    </Button>
+                </div>
             </DialogContent>
         </Dialog>
     );

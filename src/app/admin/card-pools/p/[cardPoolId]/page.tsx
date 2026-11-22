@@ -166,6 +166,9 @@ export default function CardPoolDetailPage() {
   const [poolDetails, setPoolDetails] = useState<Partial<CardPool>>({});
   const [addCardCategoryFilter, setAddCardCategoryFilter] = useState('全部');
   const [addCardSearchTerm, setAddCardSearchTerm] = useState('');
+  const [addCardSortOption, setAddCardSortOption] = useState<'newest' | 'price-desc' | 'price-asc'>('newest');
+  const [addCardMinPrice, setAddCardMinPrice] = useState('');
+  const [addCardMaxPrice, setAddCardMaxPrice] = useState('');
   const [timeValue, setTimeValue] = useState("00:00");
   const [startTimeValue, setStartTimeValue] = useState("00:00");
   
@@ -456,21 +459,48 @@ export default function CardPoolDetailPage() {
 
     let filtered = available;
     if (addCardCategoryFilter !== '全部') {
-      filtered = available.filter(card => card.category === addCardCategoryFilter);
+      filtered = filtered.filter(card => card.category === addCardCategoryFilter);
     }
     if (addCardSearchTerm.trim()) {
       filtered = filtered.filter(card => card.name.toLowerCase().includes(addCardSearchTerm.toLowerCase()));
     }
 
-    filtered.sort((a, b) => {
-      const da = a.createdAt ? new Date(typeof a.createdAt === 'string' ? a.createdAt : a.createdAt?.seconds ? a.createdAt.seconds * 1000 : a.createdAt).getTime() : 0;
-      const db = b.createdAt ? new Date(typeof b.createdAt === 'string' ? b.createdAt : b.createdAt?.seconds ? b.createdAt.seconds * 1000 : b.createdAt).getTime() : 0;
+    const minP = addCardMinPrice.trim() !== '' ? Number(addCardMinPrice) : null;
+    const maxP = addCardMaxPrice.trim() !== '' ? Number(addCardMaxPrice) : null;
+    if (minP !== null && !Number.isNaN(minP)) {
+      filtered = filtered.filter(card => (card.sellPrice ?? 0) >= minP);
+    }
+    if (maxP !== null && !Number.isNaN(maxP)) {
+      filtered = filtered.filter(card => (card.sellPrice ?? 0) <= maxP);
+    }
+
+    const getCreatedTime = (c: CardData) => {
+      if (!c.createdAt) return 0;
+      const raw = typeof c.createdAt === 'string'
+        ? c.createdAt
+        : c.createdAt?.seconds
+          ? c.createdAt.seconds * 1000
+          : c.createdAt;
+      const t = new Date(raw).getTime();
+      return Number.isNaN(t) ? 0 : t;
+    };
+
+    filtered = [...filtered].sort((a, b) => {
+      if (addCardSortOption === 'price-desc') {
+        const diff = (b.sellPrice ?? 0) - (a.sellPrice ?? 0);
+        if (diff !== 0) return diff;
+      } else if (addCardSortOption === 'price-asc') {
+        const diff = (a.sellPrice ?? 0) - (b.sellPrice ?? 0);
+        if (diff !== 0) return diff;
+      }
+      const da = getCreatedTime(a);
+      const db = getCreatedTime(b);
       if (da !== db) return db - da;
       return a.name.localeCompare(b.name);
     });
 
     return filtered;
-  }, [allCards, historicallyDrawnCardIds, globallyAssignedCardIds, cardsInPoolIds, poolDetails.lastPrizeCardId, addCardCategoryFilter, addCardSearchTerm]);
+  }, [allCards, historicallyDrawnCardIds, globallyAssignedCardIds, cardsInPoolIds, poolDetails.lastPrizeCardId, addCardCategoryFilter, addCardSearchTerm, addCardMinPrice, addCardMaxPrice, addCardSortOption]);
 
   // 機率計算
   const probabilities = useMemo(() => {
@@ -683,6 +713,10 @@ export default function CardPoolDetailPage() {
     setTargetPrizeType(type);
     setSelectedCardsToAdd([]);
     setAddCardCategoryFilter('全部');
+    setAddCardSearchTerm('');
+    setAddCardMinPrice('');
+    setAddCardMaxPrice('');
+    setAddCardSortOption('newest');
     setIsAddCardDialogOpen(true);
   };
 
@@ -2845,25 +2879,111 @@ export default function CardPoolDetailPage() {
             </div>
           )}
 
-          {/* 搜尋與篩選列 */}
-          <div className="mb-4 flex flex-wrap gap-3">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <Input 
-                placeholder="搜尋卡片名稱..." 
-                className="pl-10 h-10 border-slate-200 rounded-xl font-bold bg-white text-slate-900 text-xs" 
-                value={addCardSearchTerm}
-                onChange={(e) => setAddCardSearchTerm(e.target.value)}
-              />
+          {/* 搜尋、排序與金額區間篩選列 */}
+          <div className="mb-3 space-y-2.5">
+            <div className="flex flex-wrap gap-2.5">
+              <div className="relative flex-1 min-w-[180px]">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Input 
+                  placeholder="搜尋卡片名稱..." 
+                  className="pl-10 h-10 border-slate-200 rounded-xl font-bold bg-white text-slate-900 text-xs" 
+                  value={addCardSearchTerm}
+                  onChange={(e) => setAddCardSearchTerm(e.target.value)}
+                />
+              </div>
+              <Select value={addCardCategoryFilter} onValueChange={setAddCardCategoryFilter}>
+                <SelectTrigger className="w-32 sm:w-36 h-10 border-slate-200 rounded-xl font-bold bg-white text-slate-900 text-xs">
+                  <SelectValue placeholder="所有運動分類" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  {CATEGORIES.map(cat => <SelectItem key={cat} value={cat} className="font-bold text-xs">{cat}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Select value={addCardSortOption} onValueChange={(v) => setAddCardSortOption(v as 'newest' | 'price-desc' | 'price-asc')}>
+                <SelectTrigger className="w-36 sm:w-40 h-10 border-slate-200 rounded-xl font-bold bg-white text-slate-900 text-xs">
+                  <SelectValue placeholder="排序方式" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="newest" className="font-bold text-xs">上傳時間：新到舊</SelectItem>
+                  <SelectItem value="price-desc" className="font-bold text-xs">金額：高到低</SelectItem>
+                  <SelectItem value="price-asc" className="font-bold text-xs">金額：低到高</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <Select value={addCardCategoryFilter} onValueChange={setAddCardCategoryFilter}>
-              <SelectTrigger className="w-40 h-10 border-slate-200 rounded-xl font-bold bg-white text-slate-900 text-xs">
-                <SelectValue placeholder="所有運動分類" />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl">
-                {CATEGORIES.map(cat => <SelectItem key={cat} value={cat} className="font-bold text-xs">{cat}</SelectItem>)}
-              </SelectContent>
-            </Select>
+
+            {/* 金額區間篩選列（自訂輸入 + 快速區間） */}
+            <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200/80">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[11px] font-black text-slate-500 mr-1">金額區間</span>
+                <Input
+                  type="number"
+                  min={0}
+                  placeholder="最低"
+                  value={addCardMinPrice}
+                  onChange={(e) => setAddCardMinPrice(e.target.value)}
+                  className="w-24 h-8 rounded-lg border-slate-200 bg-white text-xs font-mono tabular-nums font-bold text-slate-900 px-2.5"
+                />
+                <span className="text-xs font-bold text-slate-400">~</span>
+                <Input
+                  type="number"
+                  min={0}
+                  placeholder="最高"
+                  value={addCardMaxPrice}
+                  onChange={(e) => setAddCardMaxPrice(e.target.value)}
+                  className="w-24 h-8 rounded-lg border-slate-200 bg-white text-xs font-mono tabular-nums font-bold text-slate-900 px-2.5"
+                />
+                <div className="flex flex-wrap items-center gap-1 ml-1">
+                  {[
+                    { label: '全部', min: '', max: '' },
+                    { label: '1,000 以下', min: '', max: '1000' },
+                    { label: '1,000~5,000', min: '1000', max: '5000' },
+                    { label: '5,000~15,000', min: '5000', max: '15000' },
+                    { label: '15,000 以上', min: '15000', max: '' },
+                  ].map((preset) => {
+                    const isActive = addCardMinPrice === preset.min && addCardMaxPrice === preset.max;
+                    return (
+                      <button
+                        key={preset.label}
+                        type="button"
+                        onClick={() => {
+                          setAddCardMinPrice(preset.min);
+                          setAddCardMaxPrice(preset.max);
+                        }}
+                        className={cn(
+                          'px-2.5 py-1 rounded-full text-[11px] font-bold border transition-colors cursor-pointer tabular-nums',
+                          isActive
+                            ? 'bg-slate-900 text-white border-slate-900'
+                            : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400 hover:text-slate-900'
+                        )}
+                      >
+                        {preset.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 ml-auto">
+                <span className="text-[11px] font-bold text-slate-500 tabular-nums">
+                  符合 <span className="text-slate-900 font-black">{availableCardsToAdd.length}</span> 張
+                </span>
+                {(addCardSearchTerm || addCardCategoryFilter !== '全部' || addCardMinPrice || addCardMaxPrice || addCardSortOption !== 'newest') && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAddCardSearchTerm('');
+                      setAddCardCategoryFilter('全部');
+                      setAddCardMinPrice('');
+                      setAddCardMaxPrice('');
+                      setAddCardSortOption('newest');
+                    }}
+                    className="text-[11px] font-bold text-rose-600 hover:text-rose-700 underline cursor-pointer"
+                  >
+                    重設
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* 卡片網格列表 */}
