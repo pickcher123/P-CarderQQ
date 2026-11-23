@@ -813,7 +813,7 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
                         </svg>
                     </div>
 
-                    {/* 頂部鋁箔熱壓密封板身 (圓潤柔和倒角與金曜漸層) */}
+                    {/* 頂部鋁箔熱壓密封板身（左上角運動／主題圖示圓章＋置中卡池模式印記） */}
                     <div className={cn(
                         "relative w-full px-3 sm:px-3.5 py-2 bg-gradient-to-b from-[#1a1c26] via-[#10131d] to-[#0a0c14] border-x border-t border-amber-400/40 grid grid-cols-[1fr_auto_1fr] items-center gap-2",
                         isLastChance && "border-amber-400/60 bg-gradient-to-b from-amber-950/70 via-[#10131d] to-[#0a0c14]"
@@ -821,47 +821,31 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
                         {/* 垂直細密柔和熱壓封口紋理 */}
                         <div className="absolute inset-0 bg-[repeating-linear-gradient(90deg,rgba(245,158,11,0.06)_0px,rgba(245,158,11,0.06)_1px,transparent_1px,transparent_5px)] pointer-events-none opacity-70" />
 
-                        {/* 左側：限定階級抽（無限定時顯示 PULL 撕口提示） */}
-                        <div className="relative z-10 flex items-center gap-1 justify-self-start min-w-0">
-                            {pool.minLevel && pool.minLevel !== '新手收藏家' ? (
-                                <span className="bg-white/[0.06] text-amber-200 border border-amber-300/35 font-bold text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full truncate max-w-full">
-                                    {pool.minLevel}限定
-                                </span>
-                            ) : (
-                                <div className="flex items-center gap-1 text-[8px] font-bold text-amber-300/80 tracking-wider">
-                                    <span className="w-1 h-1 rounded-full bg-amber-400/70" />
-                                    <span className="hidden sm:inline">PULL</span>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* 中央主題分類徽章（一目了然辨識籃球／棒球／足球／寶可夢／其他卡池） */}
-                        <div className="relative z-10 flex items-center justify-center justify-self-center">
+                        {/* 左上角：純圖示主題圓章（籃球／棒球／足球／寶可夢／其他，不留文字） */}
+                        <div className="relative z-10 justify-self-start flex items-center">
                             <div
                                 className={cn(
-                                    "px-2.5 sm:px-3 py-0.5 rounded-full bg-[#0a0f1c]/95 border flex items-center gap-1.5 whitespace-nowrap transition-colors",
+                                    "w-6 h-6 rounded-full bg-[#0a0f1c]/95 border flex items-center justify-center",
                                     poolCategoryBadge.badgeClass
                                 )}
                                 title={poolCategoryBadge.label}
+                                aria-label={poolCategoryBadge.label}
                             >
-                                <span className="text-[11px] sm:text-xs leading-none" aria-hidden="true">{poolCategoryBadge.icon}</span>
-                                <span className="text-[10px] sm:text-[11px] font-black tracking-wide leading-tight">{poolCategoryBadge.label}</span>
+                                <span className="text-xs leading-none" aria-hidden="true">{poolCategoryBadge.icon}</span>
                             </div>
                         </div>
 
-                        {/* 右側：每日限抽（無限抽時顯示 OPEN 撕口提示） */}
-                        <div className="relative z-10 flex items-center gap-1 justify-self-end min-w-0">
-                            {Number(pool.dailyLimit) > 0 ? (
-                                <span className="bg-white/[0.06] text-slate-200 border border-white/[0.15] font-mono font-bold text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full tabular-nums whitespace-nowrap">
-                                    每日限 {pool.dailyLimit} 抽
-                                </span>
-                            ) : (
-                                <div className="flex items-center gap-1 text-[8px] font-bold text-amber-300/80 tracking-wider">
-                                    <span className="hidden sm:inline">OPEN</span>
-                                    <span className="w-1 h-1 rounded-full bg-amber-400/70" />
-                                </div>
-                            )}
+                        <div className="relative z-10 justify-self-center text-center whitespace-nowrap">
+                            <span className="text-[9.5px] sm:text-[10px] font-black text-[#FDE68A] tracking-[0.22em] uppercase font-mono drop-shadow-[0_1px_2px_rgba(0,0,0,0.85)]">
+                                {pool.isHybridBlindSpMode
+                                    ? '✦ GODPACK 一番賞 ✦'
+                                    : pool.isBlindBoxMode
+                                    ? '✦ 神秘盲盒模式 ✦'
+                                    : '✦ P+ CARDER OFFICIAL PACK ✦'}
+                            </span>
                         </div>
+
+                        <div className="justify-self-end" />
 
                         {/* 頂部密封條下緣柔和微折線 */}
                         <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-amber-400/50 to-transparent" />
@@ -965,8 +949,8 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
                 <div className="relative z-10 flex flex-col justify-between flex-1 w-full">
                 {/* 📌 卡池標題與完整即時狀態 (讓客人第一時間清楚掌握卡池目前狀態) */}
                 <div className="mb-2.5 sm:mb-3 text-center">
-                    {/* 頂部即時狀態指示徽章群 */}
-                    <div className="flex items-center justify-center gap-2 mb-2 flex-wrap px-1">
+                    {/* 頂部關鍵狀態指示徽章（精簡瘦身：尾盤提示改整合至下方抽數列，避免重複擠壓） */}
+                    <div className="flex items-center justify-center gap-1.5 mb-1.5 empty:mb-0 flex-wrap px-1">
                         {/* 1. 核心營運與保護鎖定狀態 */}
                         {poolStatus.status === 'sold-out' ? (
                             <Badge className="bg-rose-950/90 text-rose-300 border border-rose-500/50 font-black text-[10px] sm:text-[11px] px-2.5 py-0.5 rounded-full shadow-sm flex items-center gap-1.5">
@@ -991,16 +975,6 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
                         ) : poolStatus.status === 'expired' ? (
                             <Badge className="bg-white/[0.04] text-slate-400 border border-white/[0.1] font-bold text-[10px] sm:text-[11px] px-2.5 py-0.5 rounded-full">
                                 <span>卡池已結束</span>
-                            </Badge>
-                        ) : hybridStats.isSnipeAlert ? (
-                            <Badge className="bg-gradient-to-r from-[#FDE68A] via-amber-300 to-rose-400 text-[#120d02] border-0 font-black text-[10px] sm:text-[11px] px-3 py-0.5 rounded-full shadow-sm flex items-center gap-1.5 tabular-nums">
-                                <Flame className="w-3 h-3 fill-[#120d02]" />
-                                <span>尾盤高勝率狙擊中 (剩 {remainingPacks} 抽)</span>
-                            </Badge>
-                        ) : isLastChance ? (
-                            <Badge className="bg-gradient-to-r from-[#FDE68A] via-amber-300 to-rose-400 text-[#120d02] border-0 font-black text-[10px] sm:text-[11px] px-3 py-0.5 rounded-full shadow-sm flex items-center gap-1.5 tabular-nums">
-                                <Flame className="w-3 h-3 fill-[#120d02]" />
-                                <span>搶包衝刺 (剩 {remainingPacks} 包)</span>
                             </Badge>
                         ) : null}
 
@@ -1123,60 +1097,18 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
                                     </div>
                                 )}
 
-                                {/* 🌟 次世代黑曜金屬展台 (沉穩接地，搭載反重力磁浮環與立體投影層) */}
-                                <div className="absolute bottom-0 sm:-bottom-0.5 left-1/2 -translate-x-1/2 w-56 sm:w-72 flex flex-col items-center pointer-events-none z-5">
-                                    {/* 檯面頂部橢圓拋光黑曜石鏡面 (承接光束與卡片倒影) */}
-                                    <div className="relative w-full h-7 sm:h-8 rounded-[100%] bg-gradient-to-b from-slate-900 via-[#0d1117] to-black border-2 border-amber-400/60 shadow-[0_0_20px_rgba(245,158,11,0.3),inset_0_1px_3px_rgba(255,255,255,0.3)] flex items-center justify-center">
-                                        {/* 檯面內圈金色微線路環 */}
-                                        <div className="w-[88%] h-[72%] rounded-[100%] border border-amber-400/40 bg-gradient-to-b from-black/85 to-slate-950/95 shadow-[inset_0_0_10px_rgba(245,158,11,0.25)] flex items-center justify-center">
-                                            {/* 科技反重力磁浮光環發射源 (藍金交織微光陣列) */}
-                                            <div className="w-[70%] h-[60%] rounded-[100%] border border-cyan-400/45 bg-cyan-950/30 shadow-[0_0_12px_rgba(6,182,212,0.4)] animate-energy-ring" />
-                                        </div>
-                                    </div>
-
-                                    {/* 展台斜切黑鈦金屬厚度底座 */}
-                                    <div className="w-[94%] h-4.5 sm:h-5 -mt-3 sm:-mt-3.5 bg-gradient-to-b from-slate-900 via-[#080a0e] to-black border-x border-b border-amber-500/45 rounded-b-2xl shadow-[0_12px_24px_rgba(0,0,0,0.95)] flex flex-col items-center justify-between p-0.5">
-                                        {/* 機台燙金銘線 */}
-                                        <div className="w-20 sm:w-32 h-[1.5px] bg-gradient-to-r from-transparent via-amber-400/90 to-transparent mt-0.5" />
-                                        {/* 機台科技散熱微隙孔 */}
-                                        <div className="flex items-center gap-1.5 mb-0.5 opacity-75">
-                                            <span className="w-1 h-1 rounded-full bg-cyan-400/70 shadow-[0_0_4px_#22d3ee]" />
-                                            <span className="w-1.5 h-1.5 rounded-full bg-amber-300 shadow-[0_0_6px_#fde047]" />
-                                            <span className="w-1 h-1 rounded-full bg-cyan-400/70 shadow-[0_0_4px_#22d3ee]" />
-                                        </div>
-                                    </div>
-
-                                    {/* 底座向下投射之立體黑曜陰影與金色漫射光 */}
-                                    <div className="relative -mt-1.5 w-56 sm:w-72 flex items-center justify-center">
-                                        <div className="w-full h-2.5 bg-black/95 rounded-[100%] blur-[3px]" />
-                                        <div className="absolute w-[85%] h-2 bg-amber-400/30 rounded-[100%] blur-[5px]" />
-                                    </div>
+                                {/* 柔和懸浮投影（微降卡位，讓實體鑑定卡更沉穩居中） */}
+                                <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-36 sm:w-44 pointer-events-none z-10 flex items-center justify-center">
+                                    <div className="w-28 sm:w-36 h-2.5 rounded-[100%] bg-black/75 blur-[5px] animate-card-shadow" />
+                                    <div className="absolute w-20 sm:w-28 h-2 rounded-[100%] bg-amber-300/15 blur-[6px] animate-card-shadow" />
                                 </div>
 
-                                {/* ⚡ 反重力磁浮光柱與動態呼吸投影區 (完美連接展台與懸浮卡牌) */}
-                                <div className="absolute bottom-2.5 sm:bottom-3 left-1/2 -translate-x-1/2 w-44 sm:w-52 pointer-events-none z-10 flex flex-col items-center">
-                                    {/* 垂直向上托舉的能量光錐束 */}
-                                    <div 
-                                        className="w-20 sm:w-24 h-8 -mb-1.5 bg-gradient-to-t from-cyan-400/30 via-amber-400/20 to-transparent animate-levitate-beam blur-[2px]"
-                                        style={{
-                                            clipPath: 'polygon(15% 100%, 85% 100%, 100% 0%, 0% 0%)'
-                                        }}
-                                    />
-
-                                    {/* 懸浮動態呼吸陰影 (隨卡片懸浮起伏呼吸，呈現真實高低落差深度感) */}
-                                    <div className="relative w-full flex items-center justify-center">
-                                        <div className="w-28 sm:w-36 h-2.5 rounded-[100%] bg-black/85 blur-[3px] animate-card-shadow" />
-                                        <div className="absolute w-18 sm:w-24 h-1.5 rounded-[100%] bg-black/95 blur-[1px] animate-card-shadow" />
-                                        <div className="absolute w-24 sm:w-30 h-1.5 rounded-[100%] bg-cyan-500/15 blur-[4px] animate-card-shadow" />
-                                    </div>
-                                </div>
-
-                                {/* 🎴 主卡牌本體 (反重力浮空懸浮，與底座保持自然空間間隙，自帶平滑呼吸起伏動態) */}
-                                <div className="absolute inset-x-0 top-1 bottom-5 sm:bottom-6 flex flex-col items-center justify-end z-20 pointer-events-none">
-                                    <div className="relative w-full h-full max-h-[170px] xs:max-h-[195px] sm:max-h-[225px] flex items-end justify-center animate-card-levitate transition-transform duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] [@media(hover:hover)_and_(pointer:fine)]:group-hover/card:scale-[1.04] [@media(hover:hover)_and_(pointer:fine)]:group-hover/card:-translate-y-1.5">
+                                {/* 🎴 主卡牌本體 (純淨懸浮展示，位置微往下沉穩平衡) */}
+                                <div className="absolute inset-x-0 top-6 bottom-1.5 sm:top-7 sm:bottom-2 flex flex-col items-center justify-end z-20 pointer-events-none">
+                                    <div className="relative w-full h-full max-h-[190px] xs:max-h-[215px] sm:max-h-[245px] flex items-end justify-center animate-card-levitate transition-transform duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] [@media(hover:hover)_and_(pointer:fine)]:group-hover/card:scale-[1.04] [@media(hover:hover)_and_(pointer:fine)]:group-hover/card:-translate-y-1.5">
                                         {/* 主實體卡片 */}
                                         <div className="relative w-full h-full flex items-end justify-center">
-                                            <div className="relative w-full h-full max-w-[158px] max-h-[216px] flex items-end justify-center overflow-visible">
+                                            <div className="relative w-full h-full max-w-[168px] max-h-[234px] flex items-end justify-center overflow-visible">
                                                 <SafeImage 
                                                     src={mattedFeaturedPrizeImage || featuredPrize.imageUrl} 
                                                     alt={featuredPrize.name} 
@@ -1189,10 +1121,11 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
                                     </div>
                                 </div>
                                 
-                                {/* 左上角：追蹤卡池（我的最愛）＋ 最後賞角標 */}
+                                {/* 左上角：極簡圓形追蹤按鈕（我的最愛）＋ 最後賞角標 */}
                                 <div className="absolute top-2 left-2 z-40 flex items-center gap-1.5">
                                     <button
                                         type="button"
+                                        title={isPoolTracked ? '已追蹤此卡池（點擊取消）' : '追蹤此卡池'}
                                         aria-label={isPoolTracked ? '取消追蹤此卡池' : '追蹤此卡池'}
                                         onClick={(e) => {
                                             e.stopPropagation();
@@ -1205,14 +1138,13 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
                                             });
                                         }}
                                         className={cn(
-                                            "flex items-center gap-1 px-2 py-1 rounded-full backdrop-blur-md border text-[10px] font-bold transition-[background-color,border-color,color,transform] duration-150 active:scale-95 cursor-pointer",
+                                            "w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-md border transition-[background-color,border-color,color,transform] duration-150 active:scale-95 cursor-pointer",
                                             isPoolTracked
-                                                ? "bg-rose-500/25 border-rose-400/60 text-rose-200 shadow-[0_0_12px_rgba(244,63,94,0.35)]"
-                                                : "bg-black/70 hover:bg-rose-500/15 border-white/15 hover:border-rose-400/45 text-slate-200 hover:text-rose-200"
+                                                ? "bg-rose-500/25 border-rose-400/60 text-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.35)]"
+                                                : "bg-black/65 hover:bg-rose-500/15 border-white/15 hover:border-rose-400/45 text-slate-300 hover:text-rose-200"
                                         )}
                                     >
-                                        <Heart className={cn("w-3 h-3", isPoolTracked ? "fill-rose-400 text-rose-400" : "text-slate-300")} />
-                                        <span>{isPoolTracked ? '已追蹤' : '追蹤'}</span>
+                                        <Heart className={cn("w-3.5 h-3.5", isPoolTracked ? "fill-rose-400 text-rose-400" : "text-slate-300")} />
                                     </button>
                                     {featuredPrize.isLastPrize && (
                                         <span className="bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] font-black text-[9px] px-2 py-0.5 rounded-full shadow-md uppercase tracking-wider flex items-center gap-0.5">
@@ -1222,19 +1154,21 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
                                     )}
                                 </div>
 
-                                {/* 右上角：查看卡池明細按鈕 */}
-                                <button
-                                    type="button"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setInventoryFilterRarity('all');
-                                        setIsInventoryOpen(true);
-                                    }}
-                                    className="absolute top-2 right-2 z-40 flex items-center gap-1 px-2 py-1 rounded-full bg-black/75 hover:bg-amber-400/20 border border-white/15 hover:border-amber-300/50 text-[10px] font-bold text-slate-200 hover:text-[#FDE68A] backdrop-blur-md transition-colors cursor-pointer"
-                                >
-                                    <Eye className="w-3 h-3 text-amber-300" />
-                                    <span>查看卡表</span>
-                                </button>
+                                {/* 右上角：查看卡表按鈕（GodPack 一番賞下方已有「看盤明細」＋五格可點，僅於非一番賞池顯示以減少重複） */}
+                                {!pool.isHybridBlindSpMode && (
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setInventoryFilterRarity('all');
+                                            setIsInventoryOpen(true);
+                                        }}
+                                        className="absolute top-2 right-2 z-40 flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/70 hover:bg-amber-400/20 border border-white/15 hover:border-amber-300/50 text-[10px] font-bold text-slate-200 hover:text-[#FDE68A] backdrop-blur-md transition-colors cursor-pointer"
+                                    >
+                                        <Eye className="w-3 h-3 text-amber-300" />
+                                        <span>查看卡表</span>
+                                    </button>
+                                )}
 
                                 {/* 左右切換大賞卡箭頭 (當有多張展示卡時顯示，z-40 確保不被完售遮罩擋住) */}
                                 {topPrizesPreview.length > 1 && (
@@ -1274,33 +1208,25 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
                                 )}
                             </div>
 
-                            {/* 展台下方：精選卡名 + 切換指示點 */}
-                            <div className="w-full mt-1.5 px-1 flex flex-col items-center gap-1.5">
-                                <div className="w-full flex items-center justify-center px-2.5 py-1.5 rounded-xl bg-white/[0.03] border border-white/[0.07]">
-                                    <span className="text-[11px] font-bold text-slate-200 truncate text-center">
-                                        {featuredPrize.name}
-                                    </span>
+                            {/* 展台下方：僅保留極簡切換指示點 */}
+                            {topPrizesPreview.length > 1 && (
+                                <div className="w-full mt-2 flex items-center justify-center gap-1.5">
+                                    {topPrizesPreview.slice(0, 6).map((_, idx) => (
+                                        <button
+                                            key={idx}
+                                            type="button"
+                                            aria-label={`檢視第 ${idx + 1} 張卡片`}
+                                            onClick={() => setSelectedPrizeIndex(idx)}
+                                            className={cn(
+                                                "h-1.5 rounded-full transition-all cursor-pointer",
+                                                selectedPrizeIndex === idx
+                                                    ? "w-4 bg-[#FDE68A]"
+                                                    : "w-1.5 bg-white/20 hover:bg-white/40"
+                                            )}
+                                        />
+                                    ))}
                                 </div>
-
-                                {topPrizesPreview.length > 1 && (
-                                    <div className="flex items-center justify-center gap-1.5">
-                                        {topPrizesPreview.slice(0, 6).map((_, idx) => (
-                                            <button
-                                                key={idx}
-                                                type="button"
-                                                aria-label={`檢視第 ${idx + 1} 張卡片`}
-                                                onClick={() => setSelectedPrizeIndex(idx)}
-                                                className={cn(
-                                                    "h-1.5 rounded-full transition-all cursor-pointer",
-                                                    selectedPrizeIndex === idx
-                                                        ? "w-4 bg-[#FDE68A]"
-                                                        : "w-1.5 bg-white/20 hover:bg-white/40"
-                                                )}
-                                            />
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
+                            )}
                         </div>
                     );
                 })()}
@@ -1309,8 +1235,8 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
                         {pool.isHybridBlindSpMode ? (
                             <div className="mb-2.5 bg-white/[0.03] backdrop-blur-xl rounded-xl border border-amber-300/35 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] space-y-2">
                                 <div className="flex items-center justify-between gap-2 text-[11px]">
-                                    <span className="font-black text-[#FDE68A] flex items-center gap-1">
-                                        <Sparkles className="w-3.5 h-3.5" />
+                                    <span className="font-black text-[#FDE68A] flex items-center gap-1.5">
+                                        <Trophy className="w-3.5 h-3.5 text-amber-300 shrink-0" />
                                         翻倍大獎率 <span className="font-mono tabular-nums">{hybridStats.doubleHitRatePct.toFixed(1)}%</span>
                                     </span>
                                     <button
@@ -1364,9 +1290,17 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
                                         </button>
                                     ))}
                                 </div>
-                                <div className="flex justify-between items-center text-[10px] font-mono pt-1 border-t border-white/[0.06]">
-                                    <span className="text-slate-400">剩餘總抽數</span>
-                                    <span className="font-black text-[#FDE68A] tabular-nums">
+                                <div className="flex justify-between items-center text-[10px] font-mono pt-1 border-t border-white/[0.06] gap-2">
+                                    <div className="flex items-center gap-1.5 min-w-0">
+                                        <span className="text-slate-400 shrink-0">剩餘總抽數</span>
+                                        {(hybridStats.isSnipeAlert || isLastChance) && (
+                                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full bg-gradient-to-r from-[#FDE68A] to-rose-400 text-[#120d02] font-sans font-black text-[9px] shrink-0">
+                                                <Flame className="w-2.5 h-2.5 fill-[#120d02]" />
+                                                {hybridStats.isSnipeAlert ? '尾盤狙擊' : '搶包衝刺'}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <span className="font-black text-[#FDE68A] tabular-nums shrink-0">
                                         {remainingPacks} / {totalPacks} 抽
                                     </span>
                                 </div>
@@ -1691,10 +1625,10 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
 
                 {/* ================= 3. 卡包底部熱壓封口 (BOTTOM SOFT CRIMPED FOIL SEAL) ================= */}
                 <div className="relative w-full shrink-0 z-20 pointer-events-none mt-auto rounded-b-2xl sm:rounded-b-3xl overflow-hidden">
-                    {/* 底部熱壓密封板身 (圓潤柔和倒角) */}
+                    {/* 底部熱壓密封板身（整合階級限定、每日限抽與下架日期資訊） */}
                     <div className={cn(
-                        "relative w-full px-3.5 py-1.5 bg-gradient-to-t from-slate-800/90 via-slate-850/95 to-slate-900 border-x border-b border-amber-400/30 grid grid-cols-[1fr_auto_1fr] items-center",
-                        isLastChance && "border-amber-400/50 bg-gradient-to-t from-amber-950/60 via-slate-850 to-slate-900"
+                        "relative w-full min-h-[30px] px-3 py-1.5 bg-gradient-to-t from-[#1a1c26] via-[#10131d] to-[#0a0c14] border-x border-b border-amber-400/35 flex flex-wrap items-center justify-center gap-1.5",
+                        isLastChance && "border-amber-400/55 bg-gradient-to-t from-amber-950/60 via-[#10131d] to-[#0a0c14]"
                     )}>
                         {/* 頂緣金屬熱壓摺線 */}
                         <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-amber-400/50 to-transparent" />
@@ -1702,32 +1636,41 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
                         {/* 垂直細密柔和熱壓封口紋理 */}
                         <div className="absolute inset-0 bg-[repeating-linear-gradient(90deg,rgba(255,255,255,0.04)_0px,rgba(255,255,255,0.04)_1px,transparent_1px,transparent_5px)] pointer-events-none opacity-50" />
 
-                        {/* 左側微型條碼 (Micro Barcode Lines) */}
-                        <div className="relative z-10 flex items-center gap-[1.5px] opacity-50 justify-self-start">
-                            <span className="w-[1px] h-2.5 bg-slate-300" />
-                            <span className="w-[2px] h-2.5 bg-slate-300" />
-                            <span className="w-[1px] h-2.5 bg-slate-300" />
-                            <span className="w-[2.5px] h-2.5 bg-slate-300" />
-                            <span className="w-[1px] h-2.5 bg-slate-300" />
-                            <span className="w-[1.5px] h-2.5 bg-slate-300" />
-                            <span className="w-[1px] h-2.5 bg-slate-300" />
-                        </div>
-
-                        {/* 中央卡包正版官方認證印記 / 功能池模式標示 */}
-                        <div className="relative z-10 text-center justify-self-center whitespace-nowrap">
-                            <span className="text-[8px] sm:text-[8.5px] font-bold text-[#FDE68A] tracking-[0.2em] uppercase font-mono drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
-                                {pool.isHybridBlindSpMode
-                                    ? '✦ GODPACK 一番賞 ✦'
-                                    : pool.isBlindBoxMode
-                                    ? '✦ 神秘盲盒模式 ✦'
-                                    : '✦ P+ CARDER OFFICIAL PACK ✦'}
+                        {/* 1. 限定階級 */}
+                        {pool.minLevel && pool.minLevel !== '新手收藏家' && (
+                            <span className="relative z-10 bg-white/[0.06] text-amber-200 border border-amber-300/35 font-bold text-[10px] px-2 py-0.5 rounded-full whitespace-nowrap">
+                                {pool.minLevel}限定
                             </span>
-                        </div>
+                        )}
 
-                        {/* 右側防偽標識 */}
-                        <div className="relative z-10 font-mono text-[7px] text-slate-400/80 font-bold tracking-wider justify-self-end">
-                            VERIFIED
-                        </div>
+                        {/* 3. 每日限抽 */}
+                        {Number(pool.dailyLimit) > 0 && (
+                            <span className="relative z-10 bg-white/[0.06] text-slate-200 border border-white/[0.15] font-mono font-bold text-[10px] px-2 py-0.5 rounded-full tabular-nums whitespace-nowrap">
+                                每日限 {pool.dailyLimit} 抽
+                            </span>
+                        )}
+
+                        {/* 4. 下架日期 */}
+                        {pool.expiresAt && (() => {
+                            try {
+                                const secs = typeof (pool.expiresAt as any).seconds === 'number'
+                                    ? (pool.expiresAt as any).seconds
+                                    : (typeof (pool.expiresAt as any).toMillis === 'function'
+                                        ? Math.floor((pool.expiresAt as any).toMillis() / 1000)
+                                        : null);
+                                if (!secs) return null;
+                                const expDate = new Date(secs * 1000);
+                                if (isNaN(expDate.getTime())) return null;
+                                return (
+                                    <span className="relative z-10 inline-flex items-center gap-1 bg-white/[0.05] text-slate-300 border border-white/[0.12] font-mono font-bold text-[10px] px-2 py-0.5 rounded-full tabular-nums whitespace-nowrap">
+                                        <Clock className="w-2.5 h-2.5 text-amber-300/80" />
+                                        {format(expDate, 'M/d')} 下架
+                                    </span>
+                                );
+                            } catch {
+                                return null;
+                            }
+                        })()}
                     </div>
 
                     {/* 底部柔和微波熱壓切邊 (Soft Scalloped Wavy Foil Edge) */}

@@ -214,24 +214,6 @@ export function RevolvingDoorThemeCarousel({
         onKeyDown={handleKeyDown}
         tabIndex={0}
       >
-        {/* 3D 旋轉門底座：同心金曜光圈舞台 (Turntable Glow Floor) */}
-        <div className="absolute bottom-4 sm:bottom-6 w-[280px] sm:w-[460px] md:w-[580px] h-[60px] sm:h-[85px] pointer-events-none flex items-center justify-center">
-          {/* 外圈高亮軌道光圈 */}
-          <div className="absolute inset-0 rounded-[100%] border border-amber-400/50 shadow-[0_0_35px_rgba(245,158,11,0.45)] transform rotate-x-[75deg]" />
-          
-          {/* 軌道星點亮點 */}
-          <div className="absolute inset-0 rounded-[100%] border border-yellow-300/30 transform rotate-x-[75deg] flex items-center justify-between px-3">
-            <span className="w-1.5 h-1.5 rounded-full bg-yellow-300 shadow-[0_0_8px_#fde047]" />
-            <span className="w-1.5 h-1.5 rounded-full bg-cyan-300 shadow-[0_0_8px_#22d3ee]" />
-          </div>
-
-          {/* 內圈旋轉光帶 */}
-          <div className="absolute w-[80%] h-[80%] rounded-[100%] border border-amber-400/30 border-dashed transform rotate-x-[75deg]" />
-
-          {/* 地面中心環境漫反射暈光 */}
-          <div className="absolute w-[55%] h-[55%] rounded-[100%] bg-gradient-to-r from-cyan-500/15 via-amber-500/25 to-cyan-500/15 blur-xl transform rotate-x-[75deg]" />
-        </div>
-
         {/* 左側旋轉切換箭頭 */}
         <button
           type="button"

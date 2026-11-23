@@ -537,29 +537,39 @@ export function UnifiedEventCalendar({
                         return (
                             <div 
                                 onClick={() => setActiveModalEvent(spotlightTaiwanExhibition)}
-                                className="group relative cursor-pointer overflow-hidden rounded-2xl bg-[#0a0f1c]/95 border border-white/[0.08] border-t-2 border-t-emerald-400/65 hover:border-white/[0.16] hover:border-t-emerald-400 p-5 sm:p-6 transition-colors duration-200 flex flex-col justify-between gap-5 select-none"
+                                className="group relative cursor-pointer overflow-hidden rounded-2xl bg-gradient-to-br from-[#142038] via-[#0f172a] to-[#0b1120] border border-emerald-400/30 border-t-2 border-t-emerald-400/80 hover:border-emerald-300/60 hover:-translate-y-0.5 p-5 sm:p-6 transition-[border-color,transform] duration-200 flex flex-col justify-between gap-5 select-none shadow-[0_14px_36px_rgba(0,0,0,0.45)]"
                             >
-                                <div className="space-y-3.5">
+                                <div className="absolute -top-12 -right-10 w-44 h-44 bg-emerald-400/12 rounded-full blur-3xl pointer-events-none" />
+                                <div className="relative z-10 space-y-3.5">
                                     <div className="flex items-center justify-between gap-2 flex-wrap">
                                         <div className="flex items-center gap-2">
-                                            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-300">
-                                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                                                台灣焦點展會
+                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-400/15 border border-emerald-400/35 text-xs font-bold text-emerald-200">
+                                                <span>🇹🇼</span>
+                                                <span>台灣焦點展會</span>
                                             </span>
-                                            <span className="text-slate-600">·</span>
-                                            <span className="text-xs text-slate-300 font-medium">
+                                            <span className="text-xs text-slate-200 font-semibold">
                                                 {extractCity(spotlightTaiwanExhibition.location)}
                                             </span>
                                         </div>
 
-                                        <span className={cn("text-[11px] font-medium px-2.5 py-0.5 rounded-md border shrink-0 font-code", countdown.badgeClass)}>
+                                        <span className={cn("text-[11px] font-bold px-2.5 py-0.5 rounded-full border shrink-0 font-code tabular-nums", countdown.badgeClass)}>
                                             {countdown.text}
                                         </span>
                                     </div>
 
-                                    <h3 className="text-lg sm:text-xl font-bold font-headline text-white group-hover:text-emerald-200 transition-colors line-clamp-2 leading-snug">
+                                    <div className="flex items-center gap-3.5">
+                                        <div className="w-14 h-14 rounded-xl bg-white/[0.05] border border-emerald-400/35 overflow-hidden flex flex-col items-center justify-center shrink-0">
+                                            <span className="w-full text-center text-[10px] font-black bg-emerald-400/25 text-emerald-200 py-0.5 leading-none">
+                                                {format(spotlightTaiwanExhibition.startDate, 'M月')}
+                                            </span>
+                                            <span className="text-xl font-black font-mono text-white tabular-nums leading-tight mt-0.5">
+                                                {format(spotlightTaiwanExhibition.startDate, 'dd')}
+                                            </span>
+                                        </div>
+                                        <h3 className="text-lg sm:text-xl font-black font-headline text-white group-hover:text-emerald-200 transition-colors line-clamp-2 leading-snug">
                                         {spotlightTaiwanExhibition.title}
-                                    </h3>
+                                        </h3>
+                                    </div>
 
                                     <div className="pt-3.5 border-t border-white/[0.08] space-y-2 text-xs text-slate-300">
                                         <div className="flex items-center justify-between gap-3">
@@ -603,31 +613,57 @@ export function UnifiedEventCalendar({
                             <div 
                                 onClick={() => setActiveModalEvent(spotlightInternationalExhibition)}
                                 className={cn(
-                                    "group relative cursor-pointer overflow-hidden rounded-2xl bg-[#0a0f1c]/95 border border-white/[0.08] border-t-2 hover:border-white/[0.16] p-5 sm:p-6 transition-colors duration-200 flex flex-col justify-between gap-5 select-none",
-                                    isUsa ? "border-t-amber-400/65 hover:border-t-amber-400" : "border-t-indigo-400/65 hover:border-t-indigo-400"
+                                    "group relative cursor-pointer overflow-hidden rounded-2xl bg-gradient-to-br from-[#191f36] via-[#101729] to-[#0b1120] border border-t-2 hover:-translate-y-0.5 p-5 sm:p-6 transition-[border-color,transform] duration-200 flex flex-col justify-between gap-5 select-none shadow-[0_14px_36px_rgba(0,0,0,0.45)]",
+                                    isUsa
+                                        ? "border-amber-300/30 border-t-amber-300/80 hover:border-amber-300/60"
+                                        : "border-cyan-300/30 border-t-cyan-300/80 hover:border-cyan-300/60"
                                 )}
                             >
-                                <div className="space-y-3.5">
+                                <div className={cn(
+                                    "absolute -top-12 -right-10 w-44 h-44 rounded-full blur-3xl pointer-events-none",
+                                    isUsa ? "bg-amber-400/14" : "bg-cyan-400/12"
+                                )} />
+                                <div className="relative z-10 space-y-3.5">
                                     <div className="flex items-center justify-between gap-2 flex-wrap">
                                         <div className="flex items-center gap-2">
-                                            <span className={cn("inline-flex items-center gap-1.5 text-xs font-semibold", isUsa ? "text-amber-300" : "text-indigo-300")}>
-                                                <span className={cn("w-1.5 h-1.5 rounded-full", reg.dotClass)} />
-                                                {reg.label}
+                                            <span className={cn(
+                                                "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border text-xs font-bold",
+                                                isUsa
+                                                    ? "bg-amber-400/15 border-amber-300/40 text-[#FDE68A]"
+                                                    : "bg-cyan-400/15 border-cyan-300/40 text-cyan-200"
+                                            )}>
+                                                <span>{reg.flag}</span>
+                                                <span>{reg.label}</span>
                                             </span>
-                                            <span className="text-slate-600">·</span>
-                                            <span className="text-xs text-slate-300 font-medium">
+                                            <span className="text-xs text-slate-200 font-semibold">
                                                 {extractCity(spotlightInternationalExhibition.location)}
                                             </span>
                                         </div>
 
-                                        <span className={cn("text-[11px] font-medium px-2.5 py-0.5 rounded-md border shrink-0 font-code", countdown.badgeClass)}>
+                                        <span className={cn("text-[11px] font-bold px-2.5 py-0.5 rounded-full border shrink-0 font-code tabular-nums", countdown.badgeClass)}>
                                             {countdown.text}
                                         </span>
                                     </div>
 
-                                    <h3 className={cn("text-lg sm:text-xl font-bold font-headline text-white transition-colors line-clamp-2 leading-snug", isUsa ? "group-hover:text-amber-200" : "group-hover:text-indigo-200")}>
-                                        {spotlightInternationalExhibition.title}
-                                    </h3>
+                                    <div className="flex items-center gap-3.5">
+                                        <div className={cn(
+                                            "w-14 h-14 rounded-xl bg-white/[0.05] border overflow-hidden flex flex-col items-center justify-center shrink-0",
+                                            isUsa ? "border-amber-300/40" : "border-cyan-300/40"
+                                        )}>
+                                            <span className={cn(
+                                                "w-full text-center text-[10px] font-black py-0.5 leading-none",
+                                                isUsa ? "bg-amber-400/25 text-[#FDE68A]" : "bg-cyan-400/25 text-cyan-200"
+                                            )}>
+                                                {format(spotlightInternationalExhibition.startDate, 'M月')}
+                                            </span>
+                                            <span className="text-xl font-black font-mono text-white tabular-nums leading-tight mt-0.5">
+                                                {format(spotlightInternationalExhibition.startDate, 'dd')}
+                                            </span>
+                                        </div>
+                                        <h3 className={cn("text-lg sm:text-xl font-black font-headline text-white transition-colors line-clamp-2 leading-snug", isUsa ? "group-hover:text-[#FDE68A]" : "group-hover:text-cyan-200")}>
+                                            {spotlightInternationalExhibition.title}
+                                        </h3>
+                                    </div>
 
                                     <div className="pt-3.5 border-t border-white/[0.08] space-y-2 text-xs text-slate-300">
                                         <div className="flex items-center justify-between gap-3">
@@ -667,8 +703,8 @@ export function UnifiedEventCalendar({
             {/* ========================================================================= */}
             {/* 核心控制列：區域篩選 × 搜尋 × 檢視模式切換                                */}
             {/* ========================================================================= */}
-            <div className="rounded-2xl bg-[#0a0f1c]/95 p-3.5 sm:p-4 border border-white/[0.08] space-y-3.5">
-                <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 border-b border-white/[0.06] pb-3.5">
+            <div className="rounded-2xl bg-gradient-to-br from-[#131b30]/95 via-[#0e1526]/95 to-[#0b1020]/95 p-3.5 sm:p-4 border border-amber-300/20 shadow-[0_12px_32px_rgba(0,0,0,0.35)] space-y-3.5">
+                <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 border-b border-white/[0.08] pb-3.5">
                     <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none flex-wrap">
                         {(['all', 'taiwan', 'asia', 'usa'] as CardExhibitionRegion[]).map((regId) => {
                             const cfg = REGION_CONFIGS[regId];
@@ -681,17 +717,17 @@ export function UnifiedEventCalendar({
                                     type="button"
                                     onClick={() => setActiveRegion(regId)}
                                     className={cn(
-                                        "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer border shrink-0",
+                                        "flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer border shrink-0",
                                         isSelected
-                                            ? "bg-white/[0.1] text-white border-white/[0.2]"
-                                            : "bg-transparent text-slate-400 hover:text-slate-200 border-transparent hover:bg-white/[0.04]"
+                                            ? "bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] border-amber-200 shadow-[0_4px_14px_rgba(253,230,138,0.28)]"
+                                            : "bg-white/[0.04] text-slate-200 hover:text-white border-white/[0.08] hover:border-amber-300/35 hover:bg-white/[0.08]"
                                     )}
                                 >
-                                    <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", cfg.dotClass)} />
+                                    <span className="text-sm leading-none" aria-hidden="true">{cfg.flag}</span>
                                     <span>{cfg.label}</span>
                                     <span className={cn(
-                                        "text-[11px] font-mono px-1.5 py-0.2 rounded",
-                                        isSelected ? "bg-white/[0.12] text-white" : "text-slate-500"
+                                        "text-[11px] font-mono font-black tabular-nums px-1.5 py-0.2 rounded-full",
+                                        isSelected ? "bg-[#120d02]/15 text-[#120d02]" : "bg-white/[0.06] text-slate-300"
                                     )}>
                                         {count}
                                     </span>
@@ -701,15 +737,15 @@ export function UnifiedEventCalendar({
                     </div>
 
                     {/* 右側：月曆模式 (grid) vs 時間軸清單 (agenda) */}
-                    <div className="flex items-center bg-black/40 p-1 rounded-lg border border-white/[0.08] shrink-0 self-start md:self-auto">
+                    <div className="flex items-center bg-black/40 p-1 rounded-xl border border-white/[0.1] shrink-0 self-start md:self-auto">
                         <button
                             type="button"
                             onClick={() => setViewMode('grid')}
                             className={cn(
-                                "flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer",
+                                "flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer",
                                 viewMode === 'grid'
-                                    ? "bg-white/[0.12] text-white"
-                                    : "text-slate-400 hover:text-slate-200"
+                                    ? "bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] shadow-sm"
+                                    : "text-slate-300 hover:text-white"
                             )}
                         >
                             <CalendarIcon className="w-3.5 h-3.5" />
@@ -719,10 +755,10 @@ export function UnifiedEventCalendar({
                             type="button"
                             onClick={() => setViewMode('agenda')}
                             className={cn(
-                                "flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer",
+                                "flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer",
                                 viewMode === 'agenda'
-                                    ? "bg-white/[0.12] text-white"
-                                    : "text-slate-400 hover:text-slate-200"
+                                    ? "bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] shadow-sm"
+                                    : "text-slate-300 hover:text-white"
                             )}
                         >
                             <Layers className="w-3.5 h-3.5" />
@@ -799,15 +835,18 @@ export function UnifiedEventCalendar({
             {viewMode === 'grid' && (
                 <div className="space-y-4">
                     {/* 整合式月曆抬頭 + 7 日月曆矩陣 */}
-                    <div className="rounded-2xl bg-[#0a0f1c]/95 border border-white/[0.08] p-3.5 sm:p-5 space-y-4">
+                    <div className="rounded-2xl bg-gradient-to-b from-[#131b30]/95 via-[#0e1526]/95 to-[#0b1020]/95 border border-amber-300/20 border-t-2 border-t-amber-300/60 p-3.5 sm:p-5 space-y-4 shadow-[0_14px_38px_rgba(0,0,0,0.4)]">
                         {/* 月曆導覽抬頭 */}
-                        <div className="flex items-center justify-between gap-3 pb-3.5 border-b border-white/[0.06]">
+                        <div className="flex items-center justify-between gap-3 pb-3.5 border-b border-white/[0.08]">
                             <div>
-                                <h2 className="text-lg sm:text-xl font-bold text-white font-headline tracking-tight">
-                                    {format(currentMonth, 'yyyy 年 MM 月')}
+                                <h2 className="text-lg sm:text-2xl font-black text-white font-headline tracking-tight flex items-center gap-2">
+                                    <span>{format(currentMonth, 'yyyy 年 MM 月')}</span>
+                                    <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-400/15 border border-amber-300/35 text-[#FDE68A] tabular-nums">
+                                        {filteredEvents.length} 場展訊
+                                    </span>
                                 </h2>
-                                <p className="text-xs text-slate-400 mt-0.5">
-                                    共收錄 {filteredEvents.length} 場卡展，點選日期檢視當日展訊
+                                <p className="text-xs text-slate-300 mt-0.5">
+                                    金色亮框日期代表當日有卡展，點擊即可查看詳細展訊
                                 </p>
                             </div>
 
@@ -861,27 +900,31 @@ export function UnifiedEventCalendar({
                                         key={day.toISOString()}
                                         onClick={() => setSelectedDate(day)}
                                         className={cn(
-                                            "min-h-[75px] sm:min-h-[100px] p-1.5 sm:p-2 rounded-xl border transition-colors duration-150 cursor-pointer flex flex-col justify-between group relative select-none",
-                                            isCurMonth ? "bg-white/[0.02]" : "bg-transparent opacity-35",
+                                            "min-h-[75px] sm:min-h-[104px] p-1.5 sm:p-2 rounded-xl border transition-all duration-150 cursor-pointer flex flex-col justify-between group relative select-none",
+                                            isCurMonth
+                                                ? (dayEvents.length > 0 ? "bg-amber-400/[0.07]" : "bg-white/[0.03]")
+                                                : "bg-transparent opacity-30",
                                             isSelected 
-                                                ? "border-amber-300/70 bg-amber-500/[0.07]" 
-                                                : "border-white/[0.06] hover:border-white/[0.15] hover:bg-white/[0.04]",
-                                            isCurrentDay && !isSelected && "border-white/25"
+                                                ? "border-amber-300/80 bg-amber-400/[0.15] shadow-[0_0_16px_rgba(253,230,138,0.16)]" 
+                                                : dayEvents.length > 0 && isCurMonth
+                                                ? "border-amber-300/35 hover:border-amber-300/65 hover:bg-amber-400/[0.12]"
+                                                : "border-white/[0.08] hover:border-white/[0.2] hover:bg-white/[0.06]",
+                                            isCurrentDay && !isSelected && "ring-1 ring-amber-300/50 border-amber-300/50"
                                         )}
                                     >
                                         {/* 日期數字與當日徽章 */}
                                         <div className="flex items-center justify-between w-full">
                                             <span className={cn(
-                                                "text-xs sm:text-sm font-mono font-semibold px-1.5 py-0.5 rounded",
+                                                "text-xs sm:text-sm font-mono font-bold px-1.5 py-0.5 rounded-md tabular-nums",
                                                 isCurrentDay 
-                                                    ? "bg-amber-400 text-slate-950 font-bold" 
-                                                    : (isSelected ? "text-amber-200" : "text-slate-300 group-hover:text-white")
+                                                    ? "bg-gradient-to-r from-[#FDE68A] to-amber-400 text-[#120d02] font-black shadow-sm" 
+                                                    : (isSelected ? "text-[#FDE68A]" : (dayEvents.length > 0 ? "text-white" : "text-slate-300 group-hover:text-white"))
                                             )}>
                                                 {format(day, 'd')}
                                             </span>
 
                                             {dayEvents.length > 0 && (
-                                                <span className="text-[10px] font-mono text-slate-300 bg-white/[0.08] px-1.5 rounded">
+                                                <span className="text-[10px] font-mono font-black tabular-nums text-[#FDE68A] bg-amber-400/20 border border-amber-300/35 px-1.5 rounded-full">
                                                     {dayEvents.length}
                                                 </span>
                                             )}
@@ -898,7 +941,14 @@ export function UnifiedEventCalendar({
                                                             e.stopPropagation();
                                                             setActiveModalEvent(ev);
                                                         }}
-                                                        className="px-1.5 py-0.5 rounded text-[10px] font-medium truncate bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 flex items-center gap-1.5 transition-colors"
+                                                        className={cn(
+                                                            "px-1.5 py-0.5 rounded-md text-[10px] font-bold truncate border flex items-center gap-1 transition-colors",
+                                                            ev.region === 'taiwan'
+                                                                ? "bg-emerald-400/15 border-emerald-400/35 text-emerald-100 hover:bg-emerald-400/25"
+                                                                : ev.region === 'usa'
+                                                                ? "bg-amber-400/15 border-amber-300/35 text-amber-100 hover:bg-amber-400/25"
+                                                                : "bg-cyan-400/15 border-cyan-400/35 text-cyan-100 hover:bg-cyan-400/25"
+                                                        )}
                                                         title={`${reg.label} · ${ev.title} (${ev.location})`}
                                                     >
                                                         <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", reg.dotClass)} />

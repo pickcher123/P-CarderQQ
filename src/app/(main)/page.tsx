@@ -304,24 +304,43 @@ export default function Home() {
         </section>
       )}
 
+      {/* 為什麼選擇 P+Carder */}
+      <WhyChooseBentoGrid 
+        onCommunityJoin={handleCommunityJoin}
+        isCommunityClaimed={isCommunityClaimed}
+        isClaimingCommunity={isClaimingCommunity}
+      />
+
       {/* 最新消息 */}
       <section className="relative py-10 sm:py-16 bg-[#060912]/80 border-y border-white/[0.06] overflow-hidden">
         <div className="container relative z-10 px-3 sm:px-4 max-w-6xl mx-auto">
             
-            {/* 區塊標題列 */}
-            <div className="flex items-end justify-between gap-4 pb-4 mb-6 sm:mb-8 border-b border-white/[0.08]">
-                <div className="min-w-0 space-y-1">
-                    <h2 className="text-xl sm:text-2xl font-bold font-headline tracking-tight text-white">
-                        最新消息
-                    </h2>
-                    <p className="text-xs sm:text-sm text-slate-400">
-                        活動公告 · 機台更新 · 限定企劃
-                    </p>
+            {/* 區塊標題列（暗黑曜石 × 香檳金視覺錨點） */}
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-5 mb-6 sm:mb-8 border-b border-white/[0.08]">
+                <div className="flex items-start gap-3 min-w-0">
+                    <div className="w-[3px] h-10 sm:h-11 rounded-full bg-gradient-to-b from-amber-200 via-amber-400 to-amber-700 shrink-0 mt-0.5" />
+                    <div className="min-w-0 space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <h2 className="text-xl sm:text-3xl font-black font-headline tracking-tight text-white leading-none">
+                                最新消息
+                            </h2>
+                            <span className="text-[10px] font-mono font-bold tracking-[0.2em] uppercase px-2 py-0.5 rounded-full bg-amber-400/10 border border-amber-300/30 text-[#FDE68A]">
+                                LATEST NEWS
+                            </span>
+                        </div>
+                        <p className="text-xs sm:text-sm text-slate-400">
+                            活動公告 · 機台更新 · 限定企劃
+                        </p>
+                    </div>
                 </div>
 
-                <Button variant="ghost" asChild className="hover:bg-white/[0.05] h-9 px-3 rounded-lg font-medium text-amber-300 hover:text-amber-200 text-xs sm:text-sm shrink-0">
+                <Button
+                    variant="ghost"
+                    asChild
+                    className="self-start sm:self-auto h-9 px-4 rounded-full bg-white/[0.04] hover:bg-amber-400/[0.12] border border-white/[0.1] hover:border-amber-300/45 font-bold text-[#FDE68A] hover:text-amber-200 text-xs sm:text-sm shrink-0 transition-colors"
+                >
                     <Link href="/news" className="flex items-center gap-1 whitespace-nowrap">
-                        <span>查看全部</span>
+                        <span>查看全部消息</span>
                         <ChevronRight className="h-4 w-4" />
                     </Link>
                 </Button>
@@ -495,13 +514,6 @@ export default function Home() {
             </Carousel>
         </div>
       </section>
-
-      {/* 為什麼選擇 P+Carder */}
-      <WhyChooseBentoGrid 
-        onCommunityJoin={handleCommunityJoin}
-        isCommunityClaimed={isCommunityClaimed}
-        isClaimingCommunity={isClaimingCommunity}
-      />
 
       {/* 合作夥伴 */}
       <section className="container pb-12 sm:pb-20 px-3 sm:px-4 max-w-7xl mx-auto text-white">
