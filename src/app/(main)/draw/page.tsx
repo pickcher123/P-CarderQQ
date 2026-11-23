@@ -378,7 +378,12 @@ export default function DrawPage() {
                                         </div>
                                     </div>
                                 )}
-                                <PoolCard pool={pool} allCardsMap={allCardsMap} userProfile={userProfile} />
+                                <PoolCard
+                                    pool={pool}
+                                    allCardsMap={allCardsMap}
+                                    userProfile={userProfile}
+                                    categoryName={categoriesWithCounts.find(c => c.id === pool.categoryId)?.name}
+                                />
                             </div>
                         ))}
                     </div>

@@ -92,6 +92,11 @@ export default function Home() {
     return query(collection(firestore, 'categories'), orderBy('order', 'asc'));
   }, [firestore]);
 
+  const drawCategoriesQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'drawCategories');
+  }, [firestore]);
+
   const { data: newsItems, isLoading: isLoadingNews } = useCollection<NewsItem>(newsQuery);
 
   const effectiveNews = useMemo(() => {
@@ -110,6 +115,7 @@ export default function Home() {
 
   const { data: featuredPools, isLoading: isLoadingPools } = useCollection<CardPool>(poolsQuery);
   const { data: categories } = useCollection<{ id: string; name: string; imageUrl?: string; linkUrl?: string; order?: number }>(categoriesQuery);
+  const { data: drawCategories } = useCollection<{ id: string; name: string }>(drawCategoriesQuery);
 
   const partnersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -286,7 +292,12 @@ export default function Home() {
                     </div>
                   </div>
                 )}
-                <PoolCard pool={pool as any} allCardsMap={allCardsMap} userProfile={userProfile} />
+                <PoolCard
+                  pool={pool as any}
+                  allCardsMap={allCardsMap}
+                  userProfile={userProfile}
+                  categoryName={drawCategories?.find(c => c.id === (pool as any).categoryId)?.name}
+                />
               </div>
             ))}
           </div>

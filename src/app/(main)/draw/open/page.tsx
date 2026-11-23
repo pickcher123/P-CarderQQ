@@ -160,7 +160,9 @@ export default function OpenPackPage() {
     const [error, setError] = useState<string | null>(null);
     const [cashbackPPoints, setCashbackPPoints] = useState(0);
     const [cardPool, setCardPool] = useState<CardPool | null>(null);
-    const [lockCountdown, setLockCountdown] = useState<number>(LOCK_DURATION);
+    const [lockCountdown, setLockCountdown] = useState<number>(0);
+    const [isReleasingLock, setIsReleasingLock] = useState<boolean>(false);
+    const lockExpiresAtMsRef = useRef<number | null>(null);
     const [showCelebration, setShowCelebration] = useState<'none' | 'rare' | 'legendary'>('none');
     const [revealPercent, setRevealPercent] = useState(0);
     const [isSqueezing, setIsSqueezing] = useState(false);
@@ -177,13 +179,6 @@ export default function OpenPackPage() {
         return hasLegendary ? 'legendary' : (hasRare ? 'rare' : 'none');
     }, [drawnPrizes]);
     
-    // Reset timer on draw
-    useEffect(() => {
-        if (step === 'ready-to-reveal' || step === 'revealing') {
-            setLockCountdown(LOCK_DURATION);
-        }
-    }, [step, revealedIndex]);
-
     const currentPrize = drawnPrizes[revealedIndex];
     const isLegendaryRevealed = (step === 'revealing' || revealPercent === 100) && currentPrize && (currentPrize.rarity === 'legendary' || currentPrize.type === 'last-prize');
 
@@ -209,6 +204,28 @@ export default function OpenPackPage() {
         corner: PeelCorner;
     }>({ x: 0, y: 0, time: 0, width: 230, height: 368, corner: 'tr' });
     const poolId = searchParams.get('poolId');
+
+    // 手動提前解除保護鎖定（讓其他玩家可立即進場抽卡）
+    const handleReleaseLock = useCallback(async () => {
+        if (!firestore || !poolId || !user || isReleasingLock) return;
+        setIsReleasingLock(true);
+        try {
+            await updateDoc(doc(firestore, 'cardPools', poolId), {
+                lockedBy: null,
+                lockedAt: null,
+            });
+            lockExpiresAtMsRef.current = null;
+            setLockCountdown(0);
+            toast({
+                title: '已解除開獎保護',
+                description: '卡池已立即開放給其他玩家抽卡。',
+            });
+        } catch (err) {
+            console.warn('Release lock failed:', err);
+        } finally {
+            setIsReleasingLock(false);
+        }
+    }, [firestore, poolId, user, isReleasingLock, toast]);
     const initialDrawCount = parseInt(searchParams.get('draws') || '1', 10);
     const isUsingTicket = searchParams.get('useTicket') === 'true';
     const isUsingEventTicket = searchParams.get('useEventTicket') === 'true';
@@ -279,10 +296,20 @@ export default function OpenPackPage() {
     }, [cardPool, todayDrawCount]);
 
     useEffect(() => {
-        if (!isMounted || step === 'done' || step === 'error' || step === 'waiting-to-start' || step === 'init-loading') return;
-        const timer = setInterval(() => {
-            setLockCountdown(prev => Math.max(0, prev - 1));
-        }, 1000);
+        if (!isMounted || step === 'error' || step === 'init-loading') return;
+        const tick = () => {
+            if (!lockExpiresAtMsRef.current) {
+                setLockCountdown(0);
+                return;
+            }
+            const remaining = Math.max(0, Math.ceil((lockExpiresAtMsRef.current - Date.now()) / 1000));
+            setLockCountdown(remaining);
+            if (remaining === 0) {
+                lockExpiresAtMsRef.current = null;
+            }
+        };
+        tick();
+        const timer = setInterval(tick, 1000);
         return () => clearInterval(timer);
     }, [isMounted, step]);
 
@@ -296,17 +323,41 @@ export default function OpenPackPage() {
             }
             const poolData = { id: snap.id, ...snap.data() } as CardPool;
             
-            // 檢查是否處於 120 秒開獎保護鎖定狀態 (僅對已登入且非鎖定者進行提示)
-            if (user && poolData.hasProtection !== false && poolData.lockedAt && poolData.lockedBy && poolData.lockedBy !== user.uid) {
-                const lockSecs = typeof (poolData.lockedAt as any).seconds === 'number'
-                    ? (poolData.lockedAt as any).seconds
-                    : Math.floor(new Date(poolData.lockedAt as any).getTime() / 1000);
-                const diff = Math.floor(Date.now() / 1000 - lockSecs);
-                if (diff < LOCK_DURATION) {
-                    setError(`此卡池正處於 120 秒開獎保護中（由其他玩家鎖定中，剩餘 ${LOCK_DURATION - diff} 秒），請稍後再試。`);
+            // 解析鎖定時間（同時相容 Firestore Timestamp 與 Date）
+            const getLockSecs = (val: any): number | null => {
+                if (!val) return null;
+                if (typeof val.seconds === 'number') return val.seconds;
+                if (typeof val.toMillis === 'function') return Math.floor(val.toMillis() / 1000);
+                const ms = new Date(val).getTime();
+                return Number.isFinite(ms) ? Math.floor(ms / 1000) : null;
+            };
+
+            const lockSecs = getLockSecs(poolData.lockedAt);
+            const hasActiveLock =
+                poolData.hasProtection !== false &&
+                Boolean(poolData.lockedBy) &&
+                lockSecs !== null &&
+                Math.floor(Date.now() / 1000 - lockSecs) < LOCK_DURATION;
+
+            if (hasActiveLock && lockSecs !== null) {
+                const rawDiff = Math.floor(Date.now() / 1000 - lockSecs);
+                const remaining = Math.min(LOCK_DURATION, Math.max(1, LOCK_DURATION - Math.max(0, rawDiff)));
+
+                // 檢查是否由其他玩家鎖定（非試抽模式一律阻擋）
+                if (!isTrialParam && (!user || poolData.lockedBy !== user.uid)) {
+                    setError(`此卡池正處於 120 秒開獎保護中（由其他玩家鎖定中，剩餘 ${remaining} 秒），請稍後再試。`);
                     setStep('error');
                     return;
                 }
+
+                // 若為本人鎖定，與真實 Firestore 鎖定時間精準同步倒數
+                if (user && poolData.lockedBy === user.uid) {
+                    lockExpiresAtMsRef.current = Date.now() + remaining * 1000;
+                    setLockCountdown(remaining);
+                }
+            } else if (!poolData.lockedBy || (user && poolData.lockedBy !== user.uid)) {
+                lockExpiresAtMsRef.current = null;
+                setLockCountdown(0);
             }
 
             setCardPool(poolData);
@@ -512,10 +563,13 @@ export default function OpenPackPage() {
                 if (poolData.hasProtection !== false && poolData.lockedAt && poolData.lockedBy && poolData.lockedBy !== user.uid) {
                     const lockSecs = typeof (poolData.lockedAt as any).seconds === 'number'
                         ? (poolData.lockedAt as any).seconds
-                        : Math.floor(new Date(poolData.lockedAt as any).getTime() / 1000);
-                    const diff = Math.floor(Date.now() / 1000 - lockSecs);
-                    if (diff < LOCK_DURATION) {
-                        throw new Error(`開獎保護中：其他玩家正在開獎，請稍等 ${LOCK_DURATION - diff} 秒。`);
+                        : (typeof (poolData.lockedAt as any).toMillis === 'function'
+                            ? Math.floor((poolData.lockedAt as any).toMillis() / 1000)
+                            : Math.floor(new Date(poolData.lockedAt as any).getTime() / 1000));
+                    const rawDiff = Math.floor(Date.now() / 1000 - lockSecs);
+                    if (rawDiff < LOCK_DURATION) {
+                        const remaining = Math.min(LOCK_DURATION, Math.max(1, LOCK_DURATION - Math.max(0, rawDiff)));
+                        throw new Error(`開獎保護中：其他玩家正在開獎，請稍等 ${remaining} 秒。`);
                     }
                 }
 
@@ -718,10 +772,22 @@ export default function OpenPackPage() {
                 transaction.update(userDocRef, cleanFirestoreData(updateFields));
 
                 // 5. 更新卡池資料 (全面清理 undefined 屬性，杜絕 Transaction.update 錯誤)
+                const nextRemainingPacks = Math.max(0, Number(poolData.remainingPacks ?? 0) - packsConsumed);
                 const poolUpdates: any = {
                     remainingPacks: increment(-packsConsumed),
                     cards: updatedCards
                 };
+                if (poolData.hasProtection !== false) {
+                    if (nextRemainingPacks > 0) {
+                        // 啟動／刷新 120 秒開獎保護鎖定，防止其他玩家同時搶抽
+                        poolUpdates.lockedBy = user.uid;
+                        poolUpdates.lockedAt = serverTimestamp();
+                    } else {
+                        // 卡池已抽完，立即解除保護鎖
+                        poolUpdates.lockedBy = null;
+                        poolUpdates.lockedAt = null;
+                    }
+                }
                 if (updatedPointPrizes && updatedPointPrizes.length > 0) {
                     poolUpdates.pointPrizes = updatedPointPrizes;
                 }
@@ -855,6 +921,14 @@ export default function OpenPackPage() {
                 setTargetPickCount(1);
 
                 // 立即更新本地 cardPool 狀態，確保已抽出的號碼立即在前端標記為 isDrawn: true，杜絕下一抽重複選取
+                const nextLocalRemaining = Math.max(0, (cardPool.remainingPacks || 0) - result.packsConsumed);
+                if (cardPool.hasProtection !== false && nextLocalRemaining > 0) {
+                    lockExpiresAtMsRef.current = Date.now() + LOCK_DURATION * 1000;
+                    setLockCountdown(LOCK_DURATION);
+                } else {
+                    lockExpiresAtMsRef.current = null;
+                    setLockCountdown(0);
+                }
                 setCardPool(prev => prev ? {
                     ...prev,
                     remainingPacks: Math.max(0, (prev.remainingPacks || 0) - result.packsConsumed),
@@ -1176,35 +1250,83 @@ export default function OpenPackPage() {
             <CelebrationVFX type={landingVFX !== 'none' ? landingVFX : showCelebration} />
             
             {/* Top Navigation Bar */}
-            <div className="w-full flex items-center justify-between z-[25] shrink-0 px-1 pt-1">
+            <div className="w-full max-w-3xl mx-auto grid grid-cols-[1fr_auto_1fr] items-center gap-2 z-[25] shrink-0 px-1 pt-1">
                 <Button 
                     variant="ghost" 
                     size="sm"
                     onClick={() => router.back()} 
-                    className="font-bold text-white/60 hover:text-white hover:bg-white/10 text-xs h-8 px-2 rounded-xl transition-all"
+                    className="justify-self-start font-bold text-white/65 hover:text-white hover:bg-white/10 text-xs h-8 px-2.5 rounded-xl transition-colors"
                 >
                     <ArrowLeft className="mr-1 h-3.5 w-3.5" /> 返回
                 </Button>
 
-                {step !== 'done' && (
-                    <div className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400 text-[10px] font-black uppercase shadow-lg backdrop-blur-md">
-                        <ShieldCheck className="h-3 w-3" /> 保護時間剩餘 {lockCountdown}s
-                    </div>
-                )}
+                <div className="justify-self-center flex items-center justify-center">
+                    {!isTrialMode && cardPool?.hasProtection !== false && (step !== 'done' || lockCountdown > 0) && (
+                        <div className={cn(
+                            "flex items-center gap-1.5 px-3 py-1 rounded-full backdrop-blur-md border shadow-[0_8px_24px_rgba(0,0,0,0.45)] transition-colors whitespace-nowrap",
+                            lockCountdown === 0
+                                ? "bg-[#0a0f1c]/90 border-white/[0.12] text-slate-400"
+                                : lockCountdown <= 30
+                                ? "bg-rose-950/75 border-rose-400/50 text-rose-200"
+                                : "bg-[#0a0f1c]/85 border-amber-300/35 text-amber-200"
+                        )}>
+                            <span className={cn(
+                                "w-1.5 h-1.5 rounded-full shrink-0",
+                                lockCountdown === 0
+                                    ? "bg-slate-500"
+                                    : lockCountdown <= 30
+                                    ? "bg-rose-400 animate-pulse"
+                                    : "bg-emerald-400 animate-pulse"
+                            )} />
+                            <ShieldCheck className={cn(
+                                "h-3.5 w-3.5 shrink-0",
+                                lockCountdown === 0
+                                    ? "text-slate-400"
+                                    : lockCountdown <= 30
+                                    ? "text-rose-300"
+                                    : "text-[#FDE68A]"
+                            )} />
+                            {lockCountdown > 0 ? (
+                                <>
+                                    <span className="text-[11px] font-bold tracking-wide flex items-center gap-1">
+                                        <span className="text-slate-300">保護時間</span>
+                                        <span className={cn(
+                                            "font-mono font-black tabular-nums",
+                                            lockCountdown <= 30 ? "text-rose-300" : "text-[#FDE68A]"
+                                        )}>
+                                            {lockCountdown}s
+                                        </span>
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={handleReleaseLock}
+                                        disabled={isReleasingLock}
+                                        className="ml-1 pl-1.5 border-l border-white/15 text-[10px] font-bold text-slate-300 hover:text-[#FDE68A] transition-colors disabled:opacity-50"
+                                        title="提前結束保護時間，開放其他玩家抽卡"
+                                    >
+                                        {isReleasingLock ? '解除中' : '解除'}
+                                    </button>
+                                </>
+                            ) : (
+                                <span className="text-[11px] font-bold tracking-wide">保護時間已結束</span>
+                            )}
+                        </div>
+                    )}
+                </div>
 
                 {/* Top-Right Quick Skip & Settlement Button */}
-                {step !== 'done' && drawnPrizes.length > 0 ? (
-                    <Button
-                        size="sm"
-                        onClick={skipAllToDone}
-                        className="h-8 px-3 rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-[10px] sm:text-xs shadow-[0_0_15px_rgba(245,158,11,0.4)] border border-amber-300/40 gap-1 active:scale-95 transition-all"
-                    >
-                        <Zap className="w-3 h-3 fill-slate-950" />
-                        <span>一鍵跳過結算</span>
-                    </Button>
-                ) : (
-                    <div className="w-12" />
-                )}
+                <div className="justify-self-end flex items-center justify-end">
+                    {step !== 'done' && drawnPrizes.length > 0 && (drawnPrizes.length > 1 || revealPercent < 100) && (
+                        <Button
+                            size="sm"
+                            onClick={skipAllToDone}
+                            className="h-8 px-3 rounded-full bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 hover:brightness-105 text-[#120d02] font-black text-[10px] sm:text-xs shadow-[0_0_14px_rgba(245,158,11,0.3)] border border-amber-200/50 gap-1 active:scale-95 transition-transform"
+                        >
+                            <Zap className="w-3 h-3 fill-[#120d02]" />
+                            <span>一鍵跳過結算</span>
+                        </Button>
+                    )}
+                </div>
             </div>
             
             {/* Status & Title Header */}
@@ -1247,7 +1369,7 @@ export default function OpenPackPage() {
                                     : currentPrize.tierCode === 'C'
                                     ? 'C 賞・銅包'
                                     : currentPrize.tierCode === 'D'
-                                    ? 'D 賞・白包'
+                                    ? 'D 賞・星光包'
                                     : currentPrize.tierCode === 'LAST'
                                     ? '最後賞'
                                     : (currentPrize.type === 'points' || currentPrize.isPoints || currentPrize.name?.includes('隨機球員'))

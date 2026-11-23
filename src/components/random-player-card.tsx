@@ -29,7 +29,7 @@ export function RandomPlayerCard({
     <div
       onClick={onClick}
       className={cn(
-        'relative w-full aspect-[2.5/4] rounded-xl overflow-hidden select-none cursor-pointer transition-transform duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] [@media(hover:hover)_and_(pointer:fine)]:hover:scale-[1.02] group shadow-2xl bg-[#0a0f1c]',
+        'relative w-full aspect-[3/5] rounded-xl overflow-hidden select-none cursor-pointer transition-transform duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] [@media(hover:hover)_and_(pointer:fine)]:hover:scale-[1.02] group shadow-2xl bg-[#0a0f1c]',
         className
       )}
     >

@@ -79,7 +79,7 @@ const WING_HYBRID_STYLES: Record<
     border: 'border-white/65',
     accent: 'text-white',
     dot: 'bg-white',
-    label: 'D白包',
+    label: 'D星光包',
     pillClass: 'bg-white/[0.08] text-white border-white/30',
     order: 1,
   },
@@ -214,7 +214,7 @@ export function CloveSummoningAnimation({
           subText: 'text-amber-300/65',
         },
         D: {
-          title: 'D 賞・白包 (WHITE PACK)',
+          title: 'D 賞・星光包 (STAR PACK)',
           color: 'text-white',
           badgeBg: 'bg-white text-slate-900 border border-slate-200 font-black',
           ambientGradient: 'radial-gradient(circle at 50% 45%, rgba(248, 250, 252, 0.18) 0%, rgba(148, 163, 184, 0.08) 44%, transparent 72%)',

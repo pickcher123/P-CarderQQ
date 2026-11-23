@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser, useFirestore, useMemoFirebase, useDoc } from "@/firebase";
-import { doc } from 'firebase/firestore';
+import { doc, updateDoc } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -81,11 +81,11 @@ const pointPrizeStyles: Record<Rarity, { text: string, bg: string, border: strin
   },
 };
 
-interface CardData { id: string; name: string; imageUrl: string; backImageUrl?: string; imageHint: string; isSold?: boolean; }
+interface CardData { id: string; name: string; imageUrl: string; backImageUrl?: string; imageHint: string; isSold?: boolean; category?: string; }
 interface CardPool { id: string; name: string; description: string; price?: number; price3Draws?: number; price10Draws?: number; totalPacks?: number; remainingPacks?: number; hasProtection?: boolean; isFeatured?: boolean; currency?: 'diamond' | 'p-point'; cardRarities?: { [cardId: string]: Rarity }; cards?: { cardId: string; quantity: number }[]; pointPrizes?: { prizeId: string; points: number; quantity: number; rarity: Rarity; name?: string; tierCode?: 'C' | 'D' }[]; lastPrizeCardId?: string; imageUrl?: string; startsAt?: { seconds: number; nanoseconds: number; }; expiresAt?: { seconds: number; nanoseconds: number; }; pointMultiplier?: number; pointMultiplierExpiresAt?: { seconds: number; nanoseconds: number; }; lockedBy?: string; lockedAt?: { seconds: number; nanoseconds: number; }; categoryId?: string; dailyLimit?: number; minLevel?: string; isAdult?: boolean; allowFreeDraw?: boolean; isEventPool?: boolean; exclusiveTicketOnly?: boolean; eventTicketName?: string; eventRules?: string; eventMaxDrawsPerUser?: number; isBlindBoxMode?: boolean; isHybridBlindSpMode?: boolean; spRevealed?: boolean; snipeAlertThreshold?: number; cardTiers?: Record<string, HybridTierCode>; cardCosts?: Record<string, number>; cardCertNumbers?: Record<string, string>; spBuybackPoints?: Record<string, number>; }
 const LOCK_DURATION = 120;
 
-export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, allCardsMap: Map<string, CardData>, userProfile: any }) {
+export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { pool: CardPool, allCardsMap: Map<string, CardData>, userProfile: any, categoryName?: string }) {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
     const router = useRouter();
@@ -93,6 +93,78 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
     const [isPurchaseDialogOpen, setIsPurchaseDialogOpen] = useState(false);
     const { isFavorite, toggleFavorite } = useFavoritePools(userProfile?.favoritePoolIds);
     const isPoolTracked = isFavorite(pool.id);
+
+    // 主題分類識別（籃球 / 棒球 / 足球 / 寶可夢 / 其他）
+    const poolCategoryBadge = useMemo(() => {
+        type CatKey = 'basketball' | 'baseball' | 'soccer' | 'pokemon' | 'other';
+        const matchKey = (raw?: string | null): CatKey | null => {
+            if (!raw) return null;
+            const s = raw.toLowerCase();
+            if (/籃球|nba|basketball|wnba|hoops/.test(s)) return 'basketball';
+            if (/棒球|mlb|baseball|bowman|topps|cpbl|npb/.test(s)) return 'baseball';
+            if (/足球|soccer|football|fifa|uefa|premier league|laliga|world cup/.test(s)) return 'soccer';
+            if (/寶可夢|pokemon|pokémon|ptcg|tcg|皮卡丘|遊戲王|航海王|one piece|yugioh/.test(s)) return 'pokemon';
+            if (/其他|綜合|精選|收藏|other|misc|娛樂|動漫/.test(s)) return 'other';
+            return null;
+        };
+
+        let key: CatKey | null = matchKey(categoryName) ?? matchKey(pool.categoryId) ?? matchKey(pool.name);
+
+        // 若分類名稱/ID/卡池名未命中，從卡池內卡片的 category 或卡名多數決自動推斷
+        if (!key && Array.isArray(pool.cards) && pool.cards.length > 0) {
+            const counts: Record<CatKey, number> = { basketball: 0, baseball: 0, soccer: 0, pokemon: 0, other: 0 };
+            for (const c of pool.cards) {
+                const card = allCardsMap.get(c.cardId);
+                if (!card) continue;
+                const k = matchKey(card.category) ?? matchKey(card.name);
+                if (k && k !== 'other') {
+                    counts[k] += Math.max(1, c.quantity || 1);
+                }
+            }
+            const best = (Object.entries(counts) as [CatKey, number][])
+                .filter(([k]) => k !== 'other')
+                .sort((a, b) => b[1] - a[1])[0];
+            if (best && best[1] > 0) {
+                key = best[0];
+            }
+        }
+
+        const resolvedKey: CatKey = key ?? 'other';
+        const customLabel = categoryName?.trim();
+
+        switch (resolvedKey) {
+            case 'basketball':
+                return {
+                    icon: '🏀',
+                    label: '籃球卡池',
+                    badgeClass: 'border-orange-400/45 text-orange-200 shadow-[0_0_10px_rgba(251,146,60,0.18)]',
+                };
+            case 'baseball':
+                return {
+                    icon: '⚾',
+                    label: '棒球卡池',
+                    badgeClass: 'border-rose-400/45 text-rose-200 shadow-[0_0_10px_rgba(251,113,133,0.18)]',
+                };
+            case 'soccer':
+                return {
+                    icon: '⚽',
+                    label: '足球卡池',
+                    badgeClass: 'border-emerald-400/45 text-emerald-200 shadow-[0_0_10px_rgba(52,211,153,0.18)]',
+                };
+            case 'pokemon':
+                return {
+                    icon: '⚡',
+                    label: '寶可夢',
+                    badgeClass: 'border-yellow-300/50 text-yellow-200 shadow-[0_0_10px_rgba(253,224,71,0.2)]',
+                };
+            default:
+                return {
+                    icon: '✨',
+                    label: customLabel && customLabel !== '其他' ? customLabel : '其他精選',
+                    badgeClass: 'border-amber-300/40 text-amber-200 shadow-[0_0_10px_rgba(253,230,138,0.16)]',
+                };
+        }
+    }, [categoryName, pool.categoryId, pool.name, pool.cards, allCardsMap]);
     const [currentTime, setCurrentTime] = useState(new Date());
     const [previewCard, setPreviewCard] = useState<any | null>(null);
     const [isDrawing, setIsDrawing] = useState(false);
@@ -154,12 +226,14 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
     const { data: poolStats, isLoading: isLoadingStats } = useDoc<any>(poolStatsRef);
 
     useEffect(() => {
-        // 僅當卡池有倒數過期或加倍過期時才啟動秒級更新，避免無謂的全域重繪
+        // 當卡池處於開獎保護鎖定中時，每秒即時刷新倒數並於期滿後自動解鎖；否則僅於有過期時間時每 5 秒刷新
+        const hasLock = Boolean(pool.hasProtection !== false && pool.lockedAt && pool.lockedBy);
         const hasExpiry = Boolean(pool.expiresAt || pool.pointMultiplierExpiresAt);
-        if (!hasExpiry) return;
-        const timer = setInterval(() => setCurrentTime(new Date()), 5000);
+        if (!hasLock && !hasExpiry) return;
+        setCurrentTime(new Date());
+        const timer = setInterval(() => setCurrentTime(new Date()), hasLock ? 1000 : 5000);
         return () => clearInterval(timer);
-    }, [pool.expiresAt, pool.pointMultiplierExpiresAt]);
+    }, [pool.hasProtection, pool.lockedAt, pool.lockedBy, pool.expiresAt, pool.pointMultiplierExpiresAt]);
 
     const todayDrawCount = useMemo(() => {
         if (!poolStats || poolStats.lastDrawDate !== todayStr) return 0;
@@ -216,11 +290,19 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
             }
         }
 
-        if (pool.hasProtection !== false && pool.lockedAt) {
-            const lockTime = parseSafeDate(pool.lockedAt) || new Date();
-            const diff = Math.floor((currentTime.getTime() - lockTime.getTime()) / 1000);
-            if (diff < LOCK_DURATION) {
-                return { status: pool.lockedBy === user?.uid ? 'locked-by-me' : 'locked', disabled: pool.lockedBy !== user?.uid, message: `${LOCK_DURATION - diff}秒` };
+        if (pool.hasProtection !== false && pool.lockedAt && pool.lockedBy) {
+            const lockTime = parseSafeDate(pool.lockedAt);
+            if (lockTime) {
+                const rawDiff = Math.floor((currentTime.getTime() - lockTime.getTime()) / 1000);
+                if (rawDiff < LOCK_DURATION) {
+                    const remaining = Math.min(LOCK_DURATION, Math.max(1, LOCK_DURATION - Math.max(0, rawDiff)));
+                    return {
+                        status: pool.lockedBy === user?.uid ? 'locked-by-me' : 'locked',
+                        disabled: pool.lockedBy !== user?.uid,
+                        message: `${remaining}秒`,
+                        remainingSeconds: remaining,
+                    };
+                }
             }
         }
         if (!isAuthReady || isLoadingStats) return { status: 'loading', disabled: true, message: '驗證中...' };
@@ -459,6 +541,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                 if (data) {
                     list.push({
                         id: c.cardId,
+                        type: 'card',
                         name: data.name,
                         imageUrl: data.imageUrl,
                         backImageUrl: data.backImageUrl,
@@ -474,6 +557,8 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
             pool.pointPrizes.forEach((p, idx) => {
                 list.push({
                     id: p.prizeId || `pp-${idx}`,
+                    type: 'points',
+                    tierCode: p.tierCode,
                     name: p.name || '隨機球員 普/特 卡',
                     imageUrl: '',
                     rarity: p.rarity || 'common',
@@ -508,7 +593,38 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
         }
     };
 
+    const [isReleasingLock, setIsReleasingLock] = useState(false);
+
+    const handleReleaseMyLock = async () => {
+        if (!firestore || !user || pool.lockedBy !== user.uid || isReleasingLock) return;
+        setIsReleasingLock(true);
+        try {
+            await updateDoc(doc(firestore, 'cardPools', pool.id), {
+                lockedBy: null,
+                lockedAt: null,
+            });
+            toast({
+                title: '已解除開獎保護',
+                description: '其他玩家現在可以立即抽取此卡池。',
+            });
+        } catch (err) {
+            console.warn('Release pool lock failed:', err);
+        } finally {
+            setIsReleasingLock(false);
+        }
+    };
+
     const handleDraw = (draws: number) => {
+        if (poolStatus.disabled) {
+            toast({
+                variant: 'destructive',
+                title: poolStatus.status === 'locked' ? '開獎保護中' : '目前無法抽卡',
+                description: poolStatus.status === 'locked'
+                    ? `其他玩家正在開獎保護中（剩餘 ${poolStatus.message}），請稍候再試。`
+                    : (poolStatus.message || '此卡池目前暫停抽取。'),
+            });
+            return;
+        }
         if (draws === 1 && pool.allowFreeDraw !== false && effectiveTickets > 0) {
             setIsFreeTicketConfirmOpen(true);
             return;
@@ -540,6 +656,16 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
     };
 
     const handleDrawWithTicket = () => {
+        if (poolStatus.disabled) {
+            toast({
+                variant: 'destructive',
+                title: poolStatus.status === 'locked' ? '開獎保護中' : '目前無法抽卡',
+                description: poolStatus.status === 'locked'
+                    ? `其他玩家正在開獎保護中（剩餘 ${poolStatus.message}），請稍候再試。`
+                    : (poolStatus.message || '此卡池目前暫停抽取。'),
+            });
+            return;
+        }
         if (effectiveTickets <= 0) {
             setIsPromoModalOpen(true);
             return;
@@ -692,10 +818,17 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                             )}
                         </div>
 
-                        {/* 中央柔和圓角歐規吊掛槽 (Soft Pill Slot) */}
+                        {/* 中央主題分類徽章（一目了然辨識籃球／棒球／足球／寶可夢／其他卡池） */}
                         <div className="relative z-10 flex items-center justify-center justify-self-center">
-                            <div className="w-12 sm:w-16 h-2.5 rounded-full bg-slate-950/90 border border-white/20 shadow-[inset_0_1px_2px_rgba(0,0,0,0.8),0_0_8px_rgba(245,158,11,0.15)] flex items-center justify-center">
-                                <div className="w-2.5 h-1 rounded-t-full border-t border-white/20 bg-black/50 -mt-0.5" />
+                            <div
+                                className={cn(
+                                    "px-2.5 sm:px-3 py-0.5 rounded-full bg-[#0a0f1c]/95 border flex items-center gap-1.5 whitespace-nowrap transition-colors",
+                                    poolCategoryBadge.badgeClass
+                                )}
+                                title={poolCategoryBadge.label}
+                            >
+                                <span className="text-[11px] sm:text-xs leading-none" aria-hidden="true">{poolCategoryBadge.icon}</span>
+                                <span className="text-[10px] sm:text-[11px] font-black tracking-wide leading-tight">{poolCategoryBadge.label}</span>
                             </div>
                         </div>
 
@@ -824,14 +957,14 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                 <span>已全數售罄</span>
                             </Badge>
                         ) : poolStatus.status === 'locked' ? (
-                            <Badge className="bg-amber-950/90 text-[#FDE68A] border border-amber-300/50 font-black text-[10px] sm:text-[11px] px-2.5 py-0.5 rounded-full shadow-sm flex items-center gap-1.5 animate-pulse tabular-nums">
-                                <Lock className="w-3 h-3 text-[#FDE68A]" />
-                                <span>挑號保護中 ({poolStatus.message})</span>
+                            <Badge className="bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] border-0 font-black text-[10px] sm:text-[11px] px-3 py-0.5 rounded-full shadow-[0_4px_14px_rgba(253,230,138,0.3)] flex items-center gap-1.5 tabular-nums">
+                                <Lock className="w-3 h-3 text-[#120d02]" />
+                                <span>有人抽卡中 · 剩餘 {poolStatus.message}</span>
                             </Badge>
                         ) : poolStatus.status === 'locked-by-me' ? (
                             <Badge className="bg-emerald-950/90 text-emerald-300 border border-emerald-400/50 font-black text-[10px] sm:text-[11px] px-2.5 py-0.5 rounded-full shadow-sm flex items-center gap-1.5 tabular-nums">
                                 <Unlock className="w-3 h-3 text-emerald-400" />
-                                <span>您保留中 ({poolStatus.message})</span>
+                                <span>您保護中 · 剩餘 {poolStatus.message}</span>
                             </Badge>
                         ) : poolStatus.status === 'not-started' ? (
                             <Badge className="bg-white/[0.06] text-slate-200 border border-white/[0.15] font-bold text-[10px] sm:text-[11px] px-2.5 py-0.5 rounded-full shadow-sm flex items-center gap-1.5 tabular-nums">
@@ -948,6 +1081,30 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                     <span className="absolute bottom-[20%] left-[26%] w-1.5 h-1.5 rounded-full bg-amber-400/60 blur-[0.6px] opacity-70" />
                                     <span className="absolute top-[62%] right-[24%] w-1 h-1 rounded-full bg-amber-300 blur-[0.5px] opacity-65" />
                                 </div>
+
+                                {/* 🔒 其他玩家抽卡中：高辨識度半透明遮罩＋靜態倒數進度條（不閃爍，且不影響點擊查看卡表） */}
+                                {poolStatus.status === 'locked' && (
+                                    <div className="absolute inset-0 z-[25] pointer-events-none bg-[#0a0f1c]/45 backdrop-blur-[1.5px] flex items-center justify-center px-4">
+                                        <div className="w-full max-w-[215px] rounded-2xl bg-[#0a0f1c]/95 border border-amber-300/55 shadow-[0_14px_36px_rgba(0,0,0,0.85)] px-3.5 py-2.5 text-center space-y-1.5">
+                                            <div className="flex items-center justify-center gap-1.5">
+                                                <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
+                                                <Lock className="w-3.5 h-3.5 text-[#FDE68A] shrink-0" />
+                                                <span className="text-xs font-black text-white tracking-wide">其他玩家抽卡中</span>
+                                            </div>
+                                            <p className="text-[11px] font-bold text-slate-300 tabular-nums">
+                                                保護倒數 <span className="text-[#FDE68A] font-mono font-black">{poolStatus.message}</span> 後開放
+                                            </p>
+                                            <div className="w-full h-1.5 rounded-full bg-white/[0.08] overflow-hidden">
+                                                <div
+                                                    className="h-full rounded-full bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 transition-[width] duration-700 ease-linear"
+                                                    style={{
+                                                        width: `${Math.max(2, Math.min(100, (((poolStatus as any).remainingSeconds || 0) / LOCK_DURATION) * 100))}%`,
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* 🌟 次世代黑曜金屬展台 (沉穩接地，搭載反重力磁浮環與立體投影層) */}
                                 <div className="absolute bottom-0 sm:-bottom-0.5 left-1/2 -translate-x-1/2 w-56 sm:w-72 flex flex-col items-center pointer-events-none z-5">
@@ -1315,14 +1472,14 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                     </div>
                 )}
 
-                {/* 📢 卡池即時狀態說明提示條 (當卡池處於保護、售罄、尚未開放等狀態時，清晰告知客人) */}
-                {poolStatus.disabled && poolStatus.message && (
+                {/* 📢 卡池即時狀態說明提示條 (當卡池處於保護、售罄、尚未開放等狀態時，清晰告知客人，文字穩定不閃爍) */}
+                {(poolStatus.disabled || poolStatus.status === 'locked-by-me') && poolStatus.message && (
                     <div className={cn(
-                        "mb-2 p-2 rounded-xl border text-xs font-bold text-center flex items-center justify-center gap-1.5 shadow-sm transition-[background-color,border-color,color] duration-200",
+                        "relative overflow-hidden mb-2 px-3 py-2 rounded-xl border text-xs font-bold text-center flex items-center justify-center gap-1.5 shadow-sm transition-[background-color,border-color,color] duration-200 tabular-nums",
                         poolStatus.status === 'sold-out' 
                             ? "bg-rose-950/70 border-rose-500/40 text-rose-300"
                             : poolStatus.status === 'locked'
-                            ? "bg-amber-950/70 border-amber-500/50 text-amber-300 animate-pulse"
+                            ? "bg-[#0a0f1c]/95 border-amber-300/45 text-amber-100"
                             : poolStatus.status === 'locked-by-me'
                             ? "bg-emerald-950/70 border-emerald-500/40 text-emerald-300"
                             : poolStatus.status === 'not-started'
@@ -1332,7 +1489,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                         {poolStatus.status === 'sold-out' ? (
                             <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
                         ) : poolStatus.status === 'locked' ? (
-                            <Lock className="w-4 h-4 text-amber-400 shrink-0" />
+                            <Lock className="w-3.5 h-3.5 text-[#FDE68A] shrink-0" />
                         ) : poolStatus.status === 'locked-by-me' ? (
                             <Unlock className="w-4 h-4 text-emerald-400 shrink-0" />
                         ) : poolStatus.status === 'not-started' ? (
@@ -1344,11 +1501,31 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                             {poolStatus.status === 'sold-out' 
                                 ? '本卡池已全數售罄，敬請期待下一輪補貨！' 
                                 : poolStatus.status === 'locked'
-                                ? `其他玩家正在挑號抽卡中（保護倒數 ${poolStatus.message}）`
+                                ? `其他玩家抽卡保護中 · 剩餘 ${poolStatus.message} 後開放`
                                 : poolStatus.status === 'locked-by-me'
-                                ? `您正在保留挑號中（倒數 ${poolStatus.message}）`
+                                ? `您正在開獎保護中（剩餘 ${poolStatus.message}）`
                                 : poolStatus.message}
                         </span>
+                        {poolStatus.status === 'locked-by-me' && (
+                            <button
+                                type="button"
+                                onClick={handleReleaseMyLock}
+                                disabled={isReleasingLock}
+                                className="ml-1 px-2 py-0.5 rounded-full bg-emerald-400/15 hover:bg-emerald-400/25 border border-emerald-400/40 text-[10px] font-black text-emerald-200 transition-colors disabled:opacity-50 shrink-0"
+                            >
+                                {isReleasingLock ? '解除中...' : '提前解除'}
+                            </button>
+                        )}
+                        {poolStatus.status === 'locked' && (
+                            <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-white/[0.06]">
+                                <div
+                                    className="h-full bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 transition-[width] duration-700 ease-linear"
+                                    style={{
+                                        width: `${Math.max(2, Math.min(100, (((poolStatus as any).remainingSeconds || 0) / LOCK_DURATION) * 100))}%`,
+                                    }}
+                                />
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -1840,7 +2017,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                             {pool.isHybridBlindSpMode ? (
                                 (inventoryFilterTier === 'all' ? (['A', 'SP', 'B', 'C', 'D'] as const) : ([inventoryFilterTier] as const)).map((tierCode) => {
                                     const prizes = allPrizesInPool.filter((x: any) => {
-                                        if (x.type === 'points') {
+                                        if (x.type === 'points' || x.isPoints) {
                                             const pTier = x.tierCode || (x.rarity === 'rare' ? 'C' : 'D');
                                             return pTier === tierCode;
                                         }
@@ -1900,7 +2077,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                                                         points={c.points}
                                                                         title={c.name}
                                                                         showBuybackHint={false}
-                                                                        className="w-full h-full aspect-[2.5/3.5] !rounded-lg"
+                                                                        className="!w-auto h-full aspect-[3/5] mx-auto !rounded-lg"
                                                                     />
                                                                 ) : (
                                                                     <SafeImage src={c.imageUrl} alt={c.name} sizes="160px" fill className="object-contain p-0.5" />
@@ -1995,7 +2172,7 @@ export function PoolCard({ pool, allCardsMap, userProfile }: { pool: CardPool, a
                                                                 points={c.points} 
                                                                 title={c.name}
                                                                 showBuybackHint={false}
-                                                                className="w-full h-full aspect-[2.5/3.5] rounded-md"
+                                                                className="!w-auto h-full aspect-[3/5] mx-auto rounded-md"
                                                             />
                                                         ) : (
                                                             <SafeImage src={c.imageUrl} alt={c.name} sizes="140px" fill className="object-contain rounded-md p-0.5 relative z-10 drop-shadow-[0_4px_10px_rgba(0,0,0,0.3)]" />

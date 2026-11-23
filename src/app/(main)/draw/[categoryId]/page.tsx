@@ -244,7 +244,12 @@ export default function DrawCategoryPage() {
                                     </div>
                                 </div>
                             )}
-                            <PoolCard pool={pool} allCardsMap={allCardsMap} userProfile={userProfile} />
+                            <PoolCard
+                                pool={pool}
+                                allCardsMap={allCardsMap}
+                                userProfile={userProfile}
+                                categoryName={categoryData?.name}
+                            />
                         </div>
                     ))
                 )}

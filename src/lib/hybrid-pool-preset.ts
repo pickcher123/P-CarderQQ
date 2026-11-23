@@ -95,9 +95,9 @@ export const HYBRID_68_PRESET = {
     },
     {
       code: 'D' as HybridTierCode,
-      name: 'D 賞（白包・保底卡包）',
+      name: 'D 賞（星光包・保底卡包）',
       shortLabel: 'D 賞',
-      boxName: '白包',
+      boxName: '星光包',
       mode: 'standard_blind_box' as HybridTierDisplayMode,
       is_pull: true,
       target_qty: 78,
@@ -170,8 +170,8 @@ export const HYBRID_TIER_META: Record<
   },
   D: {
     code: 'D',
-    label: 'D 賞・白包',
-    boxName: '白包',
+    label: 'D 賞・星光包',
+    boxName: '星光包',
     badgeClass: 'bg-white/10 text-slate-200 border-white/25',
     accentHex: '#E2E8F0',
   },

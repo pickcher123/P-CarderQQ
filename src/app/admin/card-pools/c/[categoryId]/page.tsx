@@ -110,7 +110,7 @@ const POOL_MODE_OPTIONS: Array<{
     id: 'hybrid_sp',
     label: 'GodPack 一番賞',
     badge: '68% 穩健版',
-    desc: '結合透明看盤與五色卡包（金/黑/銀/銅/白包），內建 68% 毛利即時估值與 SP 保底回收。',
+    desc: '結合透明看盤與五色卡包（金/黑/銀/銅/星光包），內建 68% 毛利即時估值與 SP 保底回收。',
     icon: Package,
   },
 ];

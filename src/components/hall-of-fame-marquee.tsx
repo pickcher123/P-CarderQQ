@@ -200,7 +200,7 @@ export function HallOfFameMarquee({ className }: HallOfFameMarqueeProps = {}) {
                     <div className="absolute inset-y-0 left-0 w-6 sm:w-10 bg-gradient-to-r from-[#0b101d] to-transparent z-10 pointer-events-none" />
                     <div className="absolute inset-y-0 right-0 w-6 sm:w-10 bg-gradient-to-l from-[#0b101d] to-transparent z-10 pointer-events-none" />
 
-                    <MarqueeContainer speed="normal">
+                    <MarqueeContainer speed="slow" durationSec={125}>
                         {displayList.map((item, index) => (
                             <MarqueeItem key={`${item.id}-${index}`} item={item} />
                         ))}

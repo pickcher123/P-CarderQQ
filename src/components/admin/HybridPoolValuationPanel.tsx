@@ -268,7 +268,7 @@ export function HybridPoolValuationPanel({
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-[11px] text-slate-400">D 賞白包單價</Label>
+              <Label className="text-[11px] text-slate-400">D 賞星光包單價</Label>
               <Input
                 type="number"
                 value={draftDCost}
@@ -313,7 +313,7 @@ export function HybridPoolValuationPanel({
           {/* Step 3 一鍵自動配平 */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1">
             <div className="text-xs text-slate-300 font-mono tabular-nums">
-              試算結果：C 賞銅包 <strong className="text-amber-300">{previewBalance.qtyC} 抽</strong> ＋ D 賞白包{' '}
+              試算結果：C 賞銅包 <strong className="text-amber-300">{previewBalance.qtyC} 抽</strong> ＋ D 賞星光包{' '}
               <strong className="text-white">{previewBalance.qtyD} 抽</strong> → 還元率{' '}
               <strong className="text-emerald-400">{previewBalance.actualPayoutPct}%</strong>（毛利 NT$
               {previewBalance.actualGrossProfit.toLocaleString()}）

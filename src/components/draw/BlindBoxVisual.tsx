@@ -69,7 +69,7 @@ const PACK_THEMES: Record<
   D: {
     code: 'D',
     label: 'D 賞',
-    sublabel: 'WHITE PACK',
+    sublabel: 'STAR PACK',
     bodyGrad: 'from-[#141926] via-[#0d111b] to-[#080b12]',
     border: 'border-white/75',
     sealGrad: 'from-white/75 via-slate-200/70 to-slate-400/60',

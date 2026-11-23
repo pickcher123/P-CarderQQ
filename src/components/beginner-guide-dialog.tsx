@@ -283,7 +283,7 @@ export function BeginnerGuideDialog({
                     { code: 'SP 賞', name: '黑包', desc: '神秘隱藏', cls: 'bg-black/60 border-purple-400/50 text-[#FDE68A]' },
                     { code: 'B 賞', name: '銀包', desc: '精選好卡', cls: 'bg-slate-200/10 border-slate-300/35 text-slate-100' },
                     { code: 'C 賞', name: '銅包', desc: '9折買回', cls: 'bg-amber-800/25 border-amber-600/45 text-amber-200' },
-                    { code: 'D 賞', name: '白包', desc: '9折買回', cls: 'bg-white/[0.06] border-white/25 text-white' },
+                    { code: 'D 賞', name: '星光包', desc: '9折買回', cls: 'bg-white/[0.06] border-white/25 text-white' },
                     { code: 'LAST', name: '最後賞', desc: '包尾加贈', cls: 'bg-gradient-to-b from-amber-400/20 to-rose-500/15 border-amber-300/55 text-[#FDE68A]' },
                   ].map((tier) => (
                     <div key={tier.code} className={cn('p-2 rounded-xl border', tier.cls)}>

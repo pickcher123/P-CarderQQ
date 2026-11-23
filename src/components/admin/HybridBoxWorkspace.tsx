@@ -394,7 +394,7 @@ export function HybridBoxWorkspace({
                               <SelectItem value="SP" className="text-xs font-bold">SP 賞（黑包）</SelectItem>
                               <SelectItem value="B" className="text-xs font-bold">B 賞（銀包）</SelectItem>
                               <SelectItem value="C" className="text-xs font-bold">C 賞（銅包）</SelectItem>
-                              <SelectItem value="D" className="text-xs font-bold">D 賞（白包）</SelectItem>
+                              <SelectItem value="D" className="text-xs font-bold">D 賞（星光包）</SelectItem>
                             </SelectContent>
                           </Select>
 
