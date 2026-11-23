@@ -7,7 +7,6 @@ import type { UserProfile } from '@/types/user-profile';
 
 export const SUPER_ADMIN_EMAILS = [
   'pickcher123@gmail.com',
-  'pickcher1234@gmail.com',
 ];
 
 export function isSuperAdminEmail(email?: string | null): boolean {

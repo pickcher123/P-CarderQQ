@@ -632,7 +632,7 @@ export default function AdminLayout({
 
           <div className="mt-5 pt-4 border-t border-slate-100 w-full text-center">
             <p className="text-[10px] text-slate-400">
-              系統超級管理員：<span className="font-mono text-slate-600 font-semibold">pickcher123@gmail.com / pickcher1234@gmail.com</span>
+              系統超級管理員：<span className="font-mono text-slate-600 font-semibold">pickcher123@gmail.com</span>
             </p>
           </div>
         </div>
