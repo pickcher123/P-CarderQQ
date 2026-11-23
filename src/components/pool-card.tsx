@@ -250,6 +250,23 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
         return currentTime < new Date(pool.pointMultiplierExpiresAt.seconds * 1000);
     }, [pool.pointMultiplier, pool.pointMultiplierExpiresAt, currentTime]);
 
+    // 安全數值解析：若資料庫曾被舊版序列化寫入異常物件（如 { operand }），自動由實際剩餘卡片與點數賞重算，永不崩潰
+    const safeRemainingPacks = useMemo(() => {
+        if (typeof pool.remainingPacks === 'number' && Number.isFinite(pool.remainingPacks)) {
+            return Math.max(0, pool.remainingPacks);
+        }
+        const cardsSum = (pool.cards || []).reduce((sum, c) => sum + Math.max(0, Number(c?.quantity || 0)), 0);
+        const pointsSum = (pool.pointPrizes || []).reduce((sum, p) => sum + Math.max(0, Number(p?.quantity || 0)), 0);
+        return cardsSum + pointsSum;
+    }, [pool.remainingPacks, pool.cards, pool.pointPrizes]);
+
+    const safeTotalPacks = useMemo(() => {
+        if (typeof pool.totalPacks === 'number' && Number.isFinite(pool.totalPacks) && pool.totalPacks > 0) {
+            return pool.totalPacks;
+        }
+        return Math.max(1, safeRemainingPacks);
+    }, [pool.totalPacks, safeRemainingPacks]);
+
     const poolStatus = useMemo(() => {
         const parseSafeDate = (val: any): Date | null => {
             if (!val) return null;
@@ -273,7 +290,7 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
             return null;
         };
 
-        const isSoldOut = (pool.remainingPacks ?? 0) <= 0;
+        const isSoldOut = safeRemainingPacks <= 0;
         if (isSoldOut) return { status: 'sold-out', disabled: true, message: '已全數售罄' };
 
         const expiresAtDate = parseSafeDate(pool.expiresAt);
@@ -347,8 +364,8 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
 
     // 🎯 頭獎雷達與即將售罄衝刺狀態計算
     const legendaryRemainingCount = rarityDetails.legendary.count;
-    const remainingPacks = pool.remainingPacks ?? 0;
-    const totalPacks = pool.totalPacks ?? 1;
+    const remainingPacks = safeRemainingPacks;
+    const totalPacks = safeTotalPacks;
     const remainingPercent = Math.max(0, Math.min(100, Math.round((remainingPacks / totalPacks) * 100)));
     const isLastChance = remainingPacks > 0 && remainingPercent <= 20;
 
@@ -1350,7 +1367,7 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
                                 <div className="flex justify-between items-center text-[10px] font-mono pt-1 border-t border-white/[0.06]">
                                     <span className="text-slate-400">剩餘總抽數</span>
                                     <span className="font-black text-[#FDE68A] tabular-nums">
-                                        {pool.remainingPacks} / {pool.totalPacks} 抽
+                                        {remainingPacks} / {totalPacks} 抽
                                     </span>
                                 </div>
                             </div>
@@ -1426,7 +1443,7 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
                             </span>
                             <div className="flex items-center gap-1 tabular-nums">
                                 <span className={cn("font-black", isLastChance ? "text-rose-300" : "text-[#FDE68A]")}>
-                                    {pool.remainingPacks}
+                                    {remainingPacks}
                                 </span>
                                 <span className="text-slate-500">/ {pool.totalPacks}</span>
                                 <span className={cn(

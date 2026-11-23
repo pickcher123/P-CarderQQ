@@ -283,6 +283,16 @@ export default function CardPoolDetailPage() {
   // 同步卡池資料至 state
   useEffect(() => {
     if (cardPool) {
+      const safeRemaining = typeof cardPool.remainingPacks === 'number' && Number.isFinite(cardPool.remainingPacks)
+        ? cardPool.remainingPacks
+        : (cardPool.cards || []).reduce((s: number, c: any) => s + Math.max(0, Number(c?.quantity || 0)), 0) +
+          (cardPool.pointPrizes || []).reduce((s: number, p: any) => s + Math.max(0, Number(p?.quantity || 0)), 0);
+
+      // 若資料庫曾因舊版序列化寫入異常物件（如 { operand }），開啟後台卡池頁時自動修復寫回正確數值
+      if (cardPoolRef && typeof cardPool.remainingPacks !== 'number') {
+        updateDoc(cardPoolRef, { remainingPacks: safeRemaining }).catch(() => {});
+      }
+
       const details: Partial<CardPool> = {
         name: cardPool.name || '',
         description: cardPool.description || '',
@@ -292,8 +302,8 @@ export default function CardPoolDetailPage() {
         price: cardPool.price || 0,
         price3Draws: cardPool.price3Draws || 0,
         price10Draws: cardPool.price10Draws || 0,
-        totalPacks: cardPool.totalPacks || 0,
-        remainingPacks: cardPool.remainingPacks || 0,
+        totalPacks: typeof cardPool.totalPacks === 'number' && Number.isFinite(cardPool.totalPacks) ? cardPool.totalPacks : safeRemaining,
+        remainingPacks: safeRemaining,
         hasProtection: cardPool.hasProtection !== false,
         isActive: cardPool.isActive !== false,
         isFeatured: cardPool.isFeatured || false,
@@ -324,7 +334,7 @@ export default function CardPoolDetailPage() {
         cardCertNumbers: cardPool.cardCertNumbers || {},
         spBuybackPoints: cardPool.spBuybackPoints || {},
         lastPrizeCost: cardPool.lastPrizeCost ?? 9000,
-        totalTicketsCount: cardPool.totalTicketsCount || cardPool.remainingPacks || 80,
+        totalTicketsCount: cardPool.totalTicketsCount || safeRemaining || 80,
         kujiTickets: cardPool.kujiTickets || [],
         isAdult: cardPool.isAdult || false,
       };
@@ -1381,7 +1391,7 @@ export default function CardPoolDetailPage() {
               <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10">
                 <p className="text-[10px] font-black uppercase text-amber-400 tracking-wider">庫存進度</p>
                 <p className="text-lg font-black font-code text-white mt-0.5">
-                  {poolDetails.remainingPacks ?? 0} <span className="text-xs text-slate-400 font-normal">/ {poolDetails.totalPacks ?? 0} 包</span>
+                  {typeof poolDetails.remainingPacks === 'number' ? poolDetails.remainingPacks : 0} <span className="text-xs text-slate-400 font-normal">/ {typeof poolDetails.totalPacks === 'number' ? poolDetails.totalPacks : 0} 包</span>
                 </p>
                 <div className="mt-1.5 w-full bg-white/20 h-1.5 rounded-full overflow-hidden">
                   <div 

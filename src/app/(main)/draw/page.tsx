@@ -108,15 +108,21 @@ export default function DrawPage() {
   const allPools = useMemo(() => {
     if (!cardPools || cardPools.length === 0) return [];
     const now = Math.floor(Date.now() / 1000);
+    const getSafeRemaining = (p: any): number => {
+        if (typeof p.remainingPacks === 'number' && Number.isFinite(p.remainingPacks)) return p.remainingPacks;
+        const cSum = (p.cards || []).reduce((s: number, c: any) => s + Math.max(0, Number(c?.quantity || 0)), 0);
+        const ptSum = (p.pointPrizes || []).reduce((s: number, pt: any) => s + Math.max(0, Number(pt?.quantity || 0)), 0);
+        return cSum + ptSum;
+    };
     const pools = cardPools.filter(p => 
-        (p.remainingPacks ?? 0) > 0 && 
+        getSafeRemaining(p) > 0 && 
         (!p.expiresAt || p.expiresAt.seconds > now) &&
         (!p.startsAt || p.startsAt.seconds < now) &&
         (p.isActive !== false)
     );
     
     return pools.sort((a, b) => {
-        if (sortOption === 'remaining-asc') return (a.remainingPacks ?? 99999) - (b.remainingPacks ?? 99999);
+        if (sortOption === 'remaining-asc') return getSafeRemaining(a) - getSafeRemaining(b);
         if (sortOption === 'price-high') return (b.price ?? 0) - (a.price ?? 0);
         if (sortOption === 'price-low') return (a.price ?? 0) - (b.price ?? 0);
         return 0;
@@ -318,7 +324,7 @@ export default function DrawPage() {
                                 <p className="text-xs font-bold text-amber-100 truncate">
                                     尾盤提醒：您追蹤的「{snipeAlertPools[0].name}」僅剩{' '}
                                     <span className="font-mono font-black text-[#FDE68A] tabular-nums">
-                                        {snipeAlertPools[0].remainingPacks}
+                                        {typeof snipeAlertPools[0].remainingPacks === 'number' ? snipeAlertPools[0].remainingPacks : 0}
                                     </span>{' '}
                                     抽
                                     {snipeAlertPools.length > 1 ? `（共 ${snipeAlertPools.length} 台進入尾盤）` : ''}

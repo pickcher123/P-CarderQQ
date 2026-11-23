@@ -382,7 +382,7 @@ export default function CardPoolsAdminPage() {
                 </TableCell>
                 <TableCell>
                     <Badge variant={pool.remainingPacks === 0 ? "destructive" : "secondary"} className={cn("font-code text-xs px-2", pool.remainingPacks! > 0 && "bg-green-500/10 text-green-500 border-green-500/20")}>
-                        {pool.remainingPacks} / {pool.totalPacks} PACKS
+                        {typeof pool.remainingPacks === 'number' ? pool.remainingPacks : 0} / {typeof pool.totalPacks === 'number' ? pool.totalPacks : 0} PACKS
                     </Badge>
                 </TableCell>
                 <TableCell>

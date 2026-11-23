@@ -11,8 +11,18 @@ export function cn(...inputs: ClassValue[]) {
 function isFirestoreSentinel(val: any): boolean {
   if (!val || typeof val !== 'object') return false;
   if ('_methodName' in val || '_delegate' in val) return true;
+  if (typeof val.isEqual === 'function') return true;
+  const proto = Object.getPrototypeOf(val);
+  if (proto !== null && proto !== Object.prototype && !Array.isArray(val)) {
+    return true;
+  }
   const cName = val.constructor?.name || '';
-  if (cName.includes('FieldValue') || cName.includes('TransformOperation') || cName.includes('FieldPath')) {
+  if (
+    cName.includes('FieldValue') ||
+    cName.includes('Transform') ||
+    cName.includes('Timestamp') ||
+    cName.includes('FieldPath')
+  ) {
     return true;
   }
   if (typeof val.id === 'string' && typeof val.path === 'string' && val.firestore) {

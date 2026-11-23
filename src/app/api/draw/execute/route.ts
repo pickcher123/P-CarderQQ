@@ -362,23 +362,29 @@ export async function POST(req: Request) {
                 });
             });
 
-            // 扣除使用者資產
+            // 扣除使用者資產（已在原子交易內讀取最新餘額，直接寫入精確數值避免任何 FieldValue 序列化風險）
             const updateFields: any = {};
             if (useEventTicketMode) {
                 updateFields[`eventPoolTickets.${poolId}`] = Math.max(0, currentEventTickets - actualDrawCount);
             } else if (effectiveUseTicket) {
                 updateFields.freeDrawTickets = Math.max(0, tickets - 1);
             } else if (poolData.currency === 'p-point') {
-                updateFields.bonusPoints = FieldValue.increment(-cost);
+                updateFields.bonusPoints = Math.max(0, balance - cost);
             } else {
-                updateFields.points = FieldValue.increment(-cost);
+                updateFields.points = Math.max(0, balance - cost);
             }
             transaction.update(userDocRef, cleanFirestoreData(updateFields));
 
-            // 更新卡池庫存與 120 秒保護鎖
-            const nextRemainingPacks = Math.max(0, Number(poolData.remainingPacks ?? 0) - packsConsumed);
+            // 更新卡池庫存與 120 秒保護鎖（從更新後的實際庫存重算，同步自動修復異常欄位）
+            const computedRemainingFromItems =
+                (updatedCards || []).reduce((sum: number, c: any) => sum + Math.max(0, Number(c?.quantity || 0)), 0) +
+                (updatedPointPrizes || []).reduce((sum: number, p: any) => sum + Math.max(0, Number(p?.quantity || 0)), 0);
+            const rawPrevRemaining = typeof poolData.remainingPacks === 'number' && Number.isFinite(poolData.remainingPacks)
+                ? poolData.remainingPacks
+                : computedRemainingFromItems + packsConsumed;
+            const nextRemainingPacks = Math.max(0, rawPrevRemaining - packsConsumed);
             const poolUpdates: any = {
-                remainingPacks: FieldValue.increment(-packsConsumed),
+                remainingPacks: nextRemainingPacks,
                 cards: updatedCards,
             };
             if (poolData.hasProtection !== false) {
