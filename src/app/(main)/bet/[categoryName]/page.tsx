@@ -6,6 +6,7 @@ import { useCollection, useFirestore, useMemoFirebase, useDoc, useUser } from '@
 import { collection, doc, serverTimestamp, increment, runTransaction, arrayUnion } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { useCardTemplatesByIdsWithState } from '@/lib/pool-cards-cache';
 import { 
     ArrowLeft, Search, Loader2, Info, Sparkles, XCircle, 
     X, ShieldCheck, Eye, ShoppingCart, Target, Flame, Dices, 
@@ -262,16 +263,16 @@ export default function BettingCategoryPage() {
     const bettingItemsRef = useMemoFirebase(() => (firestore && categoryName) ? doc(firestore, 'betting-items', decodedCategory) : null, [firestore, categoryName, decodedCategory]);
     const { data: bettingItems } = useDoc<BettingItems>(bettingItemsRef);
     
-    const allCardsCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, 'allCards') : null, [firestore]);
-    const { data: allCards, isLoading: isLoadingCards } = useCollection<CardData>(allCardsCollectionRef);
-    
-    const cardIdSet = useMemo(() => new Set(bettingItems?.allCardIds || []), [bettingItems]);
+    // 僅按需批次載入此分類實際包含的卡片（取代全表監聽 allCards，與 /bet 大廳共用記憶體快取）
+    const { cardsMap, isLoading: isLoadingCards } = useCardTemplatesByIdsWithState(firestore, bettingItems?.allCardIds);
 
     // 真正屬於該卡池的卡片
     const poolCards = useMemo(() => {
-        if (!allCards || !bettingItems?.allCardIds) return [];
-        return allCards.filter(c => cardIdSet.has(c.id));
-    }, [allCards, cardIdSet, bettingItems]);
+        if (!bettingItems?.allCardIds) return [];
+        return bettingItems.allCardIds
+            .map(id => cardsMap.get(id) as CardData | undefined)
+            .filter((c): c is CardData => Boolean(c));
+    }, [cardsMap, bettingItems]);
 
     // Sold Card Set：結合 betting-items 的 soldCardIds，以及 allCards 裡真實的 isSold 與 status
     const soldCardIds = useMemo(() => {

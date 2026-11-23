@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CrossedCardsIcon, DiamondIcon, PPlusIcon, WheelPrizeIcon } from '@/components/icons';
 import { useIsAdmin } from '@/hooks/use-is-admin';
 import { useSystemConfig } from '@/components/providers/system-config-provider';
+import { useCardTemplatesByIdsWithState } from '@/lib/pool-cards-cache';
 import { 
     Sparkles, ShoppingBag,
     Settings, Target, ShieldCheck, 
@@ -113,8 +114,25 @@ export default function BetLandingPage() {
     const bettingItemsCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, 'betting-items') : null, [firestore]);
     const { data: allBettingItems, isLoading: isLoadingBettingItems } = useCollection<BettingItems>(bettingItemsCollectionRef);
 
-    const allCardsCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, 'allCards') : null, [firestore]);
-    const { data: allCards, isLoading: isLoadingCards } = useCollection<CardData>(allCardsCollectionRef);
+    // 僅按需批次載入拚卡專區實際使用的卡片（取代全表監聽 allCards，並與全站共用記憶體快取）
+    const bettingReferencedCardIds = useMemo(() => {
+        if (!allBettingItems) return [];
+        const ids = new Set<string>();
+        allBettingItems.forEach(item => {
+            item.allCardIds?.forEach(id => {
+                if (id) ids.add(id);
+            });
+        });
+        return Array.from(ids);
+    }, [allBettingItems]);
+
+    const { cardsMap: rawBetCardsMap, isLoading: isLoadingCards } = useCardTemplatesByIdsWithState(firestore, bettingReferencedCardIds);
+    const allCards = useMemo<CardData[] | null>(() => {
+        if (!allBettingItems) return null;
+        return bettingReferencedCardIds
+            .map(id => rawBetCardsMap.get(id) as CardData | undefined)
+            .filter((c): c is CardData => Boolean(c));
+    }, [allBettingItems, bettingReferencedCardIds, rawBetCardsMap]);
 
     // 讀取兌換獎品 (同時支援 P+ 直購兌換 & 命運轉盤)
     const redemptionsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'redemptionItems') : null, [firestore]);

@@ -8,6 +8,7 @@ import { AnimatedBackground } from "@/components/animated-background";
 import { useSystemConfig } from "@/components/providers/system-config-provider";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { NewsMarquee } from "@/components/news-marquee";
+import { SiteAnnouncementProvider, SiteAnnouncementBanner } from "@/components/site-announcements";
 import { usePathname } from "next/navigation";
 import { useFeatureFlags } from "@/hooks/use-feature-flags";
 import { getEffectiveParticleEffect, ParticleMode } from "@/lib/daily-style";
@@ -132,21 +133,24 @@ export default function MainLayout({
             </Link>
           </div>
         )}
-        <Header systemConfig={systemConfig} />
-        {isMarqueeVisible && <NewsMarquee isDrawing={isDrawing} />}
-        <motion.main 
-          key={pathname}
-          initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
-          className="flex-1 pb-36 sm:pb-40 md:pb-16 overflow-x-hidden max-w-full w-full"
-        >
-          {children}
-        </motion.main>
-        <InstallPWAButton />
-        <FloatingLineButton systemConfig={systemConfig} />
-        {pathname === '/' && <Footer />}
-        <MobileBottomNav systemConfig={systemConfig} />
+        <SiteAnnouncementProvider>
+          <Header systemConfig={systemConfig} />
+          <SiteAnnouncementBanner />
+          {isMarqueeVisible && <NewsMarquee isDrawing={isDrawing} />}
+          <motion.main 
+            key={pathname}
+            initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
+            className="flex-1 pb-36 sm:pb-40 md:pb-16 overflow-x-hidden max-w-full w-full"
+          >
+            {children}
+          </motion.main>
+          <InstallPWAButton />
+          <FloatingLineButton systemConfig={systemConfig} />
+          {pathname === '/' && <Footer />}
+          <MobileBottomNav systemConfig={systemConfig} />
+        </SiteAnnouncementProvider>
       </div>
     </div>
   );

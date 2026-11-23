@@ -1,5 +1,35 @@
 import { DrawnPrize, CardPool, Rarity, KujiTicketItem, HybridTierCode } from '@/types/draw';
 
+/**
+ * 密碼學級安全亂數（相容 Node.js 與現代瀏覽器，回傳 [0, 1) 均勻浮點數）
+ */
+function secureRandomFloat(): number {
+  if (typeof globalThis !== 'undefined' && globalThis.crypto?.getRandomValues) {
+    const buf = new Uint32Array(1);
+    globalThis.crypto.getRandomValues(buf);
+    return buf[0] / 0x100000000;
+  }
+  return Math.random();
+}
+
+/**
+ * 密碼學級無偏差安全整數（回傳 [0, maxExclusive - 1]）
+ */
+function secureRandomInt(maxExclusive: number): number {
+  if (maxExclusive <= 1) return 0;
+  if (typeof globalThis !== 'undefined' && globalThis.crypto?.getRandomValues) {
+    const buf = new Uint32Array(1);
+    const limit = Math.floor(0x100000000 / maxExclusive) * maxExclusive;
+    let value = 0;
+    do {
+      globalThis.crypto.getRandomValues(buf);
+      value = buf[0];
+    } while (value >= limit);
+    return value % maxExclusive;
+  }
+  return Math.floor(Math.random() * maxExclusive);
+}
+
 export interface CardMapItem {
   id: string;
   name: string;
@@ -57,9 +87,9 @@ export function generateKujiTickets(
     }
   }
 
-  // Fisher-Yates 洗牌
+  // Fisher-Yates 洗牌（採用密碼學安全亂數）
   for (let i = items.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = secureRandomInt(i + 1);
     const temp = items[i];
     items[i] = items[j];
     items[j] = temp;
@@ -143,7 +173,7 @@ export function drawKujiTickets(
     // 未指定號碼，從未開出 (isDrawn === false) 的號碼中隨機挑選 count 個
     const availableNumbers = currentTickets.filter(t => !t.isDrawn).map(t => t.number);
     for (let i = availableNumbers.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
+      const j = secureRandomInt(i + 1);
       [availableNumbers[i], availableNumbers[j]] = [availableNumbers[j], availableNumbers[i]];
     }
     targetNumbers = availableNumbers.slice(0, count);
@@ -345,7 +375,7 @@ export function drawFromPool(
 
     if (totalWeight <= 0) break;
 
-    let rand = Math.random() * totalWeight;
+    let rand = secureRandomFloat() * totalWeight;
     let drawnFound = false;
 
     // Check cards first

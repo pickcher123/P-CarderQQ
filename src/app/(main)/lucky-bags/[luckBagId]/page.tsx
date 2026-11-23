@@ -1,14 +1,15 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useDoc, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
-import { doc, collection, getDocs, query, where, getCountFromServer } from 'firebase/firestore';
+import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc, collection, query, getCountFromServer } from 'firebase/firestore';
 import { LuckBagDetailView } from '@/components/luck-bag-detail-view';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
 import type { LuckBag, LuckBagWithCount, CardData } from '@/app/(main)/lucky-bags/page';
+import { useCardTemplatesByIdsWithState } from '@/lib/pool-cards-cache';
 
 export default function LuckyBagPage() {
     const params = useParams();
@@ -25,11 +26,25 @@ export default function LuckyBagPage() {
     }, [firestore, luckBagId]);
 
     const { data: rawLuckBag, isLoading: isLoadingBag } = useDoc<LuckBag>(luckBagRef);
-    const { data: allCards, isLoading: isLoadingCards } = useCollection<CardData>(useMemoFirebase(() => firestore ? collection(firestore, 'allCards') : null, [firestore]));
+
+    // 按需批次載入此福袋實際使用的獎品卡片（取代全表讀取 allCards）
+    const bagCardIds = useMemo(() => {
+        if (!rawLuckBag) return [];
+        const ids = new Set<string>();
+        if (rawLuckBag.prizes?.first) ids.add(rawLuckBag.prizes.first);
+        if (rawLuckBag.prizes?.second) ids.add(rawLuckBag.prizes.second);
+        if (rawLuckBag.prizes?.third) ids.add(rawLuckBag.prizes.third);
+        (rawLuckBag.otherPrizes || []).forEach(p => {
+            if (p.type !== 'points' && p.cardId) ids.add(p.cardId);
+        });
+        return Array.from(ids);
+    }, [rawLuckBag]);
+
+    const { cardsMap, isLoading: isLoadingCards } = useCardTemplatesByIdsWithState(firestore, bagCardIds);
 
     useEffect(() => {
         const fetchExtraData = async () => {
-            if (!rawLuckBag || !firestore || !allCards) return;
+            if (!rawLuckBag || !firestore) return;
 
             setIsLoading(true);
             try {
@@ -37,18 +52,16 @@ export default function LuckyBagPage() {
                 const countSnapshot = await getCountFromServer(query(purchasesColRef));
                 const participantCount = countSnapshot.data().count;
 
-                const cardMap = new Map(allCards.map(c => [c.id, c]));
-
                 const prizeCards = {
-                    first: rawLuckBag.prizes?.first ? cardMap.get(rawLuckBag.prizes.first) : undefined,
-                    second: rawLuckBag.prizes?.second ? cardMap.get(rawLuckBag.prizes.second) : undefined,
-                    third: rawLuckBag.prizes?.third ? cardMap.get(rawLuckBag.prizes.third) : undefined,
+                    first: rawLuckBag.prizes?.first ? (cardsMap.get(rawLuckBag.prizes.first) as CardData | undefined) : undefined,
+                    second: rawLuckBag.prizes?.second ? (cardsMap.get(rawLuckBag.prizes.second) as CardData | undefined) : undefined,
+                    third: rawLuckBag.prizes?.third ? (cardsMap.get(rawLuckBag.prizes.third) as CardData | undefined) : undefined,
                 };
                 
                 const otherPrizesList = (rawLuckBag.otherPrizes || [])
                     .filter(p => p.type !== 'points')
                     .map(p => {
-                        const card = cardMap.get(p.cardId);
+                        const card = cardsMap.get(p.cardId) as CardData | undefined;
                         return card ? { ...card, prizeId: p.prizeId } : null;
                     })
                     .filter((c): c is CardData & { prizeId: string } => !!c);
@@ -74,7 +87,7 @@ export default function LuckyBagPage() {
         if (!isLoadingBag && !isLoadingCards && rawLuckBag) {
             fetchExtraData();
         }
-    }, [rawLuckBag, allCards, firestore, isLoadingBag, isLoadingCards]);
+    }, [rawLuckBag, cardsMap, firestore, isLoadingBag, isLoadingCards]);
 
     const finalLoading = isLoadingBag || isLoadingCards || isLoading;
 

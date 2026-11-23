@@ -20,8 +20,9 @@ export interface PoolCardTemplate {
   [key: string]: any;
 }
 
-// 跨頁面共享的模組級卡片快取：在 /draw 與 /draw/[categoryId] 間切換時直接命中記憶體，不重複抓整座 allCards
+// 跨頁面共享的模組級卡片快取：在 /draw、/draw/open、/bet、/lucky-bags 間切換時直接命中記憶體，不重複抓整座 allCards
 const sharedCardsCache = new Map<string, PoolCardTemplate>();
+const fetchedCardIds = new Set<string>();
 const inFlightCardIds = new Set<string>();
 
 /**
@@ -39,6 +40,11 @@ function collectPoolCardIds(pools: any[] | null | undefined): string[] {
         if (c?.cardId) ids.add(c.cardId);
       }
     }
+    if (Array.isArray(pool.kujiTickets)) {
+      for (const t of pool.kujiTickets) {
+        if (t?.cardId) ids.add(t.cardId);
+      }
+    }
     if (pool.cardRarities && typeof pool.cardRarities === 'object') {
       for (const id of Object.keys(pool.cardRarities)) {
         if (id) ids.add(id);
@@ -50,14 +56,15 @@ function collectPoolCardIds(pools: any[] | null | undefined): string[] {
 }
 
 /**
- * 按需批次載入指定 cardIds 的卡片模板（每次最多 30 筆 documentId IN 查詢），
+ * 按需批次載入指定 cardIds 的卡片模板（附帶載入狀態），
  * 取代原本下載整座 allCards 資料庫集合，並跨頁面快取。
  */
-export function useCardTemplatesByIds(
+export function useCardTemplatesByIdsWithState(
   firestore: Firestore | null,
   cardIds: string[] | null | undefined
-): Map<string, PoolCardTemplate> {
+): { cardsMap: Map<string, PoolCardTemplate>; isLoading: boolean } {
   const [version, setVersion] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
 
   const cardIdsKey = useMemo(() => {
     if (!cardIds || cardIds.length === 0) return '';
@@ -67,14 +74,21 @@ export function useCardTemplatesByIds(
   }, [cardIds]);
 
   useEffect(() => {
-    if (!firestore || !cardIdsKey) return;
+    if (!firestore || !cardIdsKey) {
+      setIsLoading(false);
+      return;
+    }
     const allIds = cardIdsKey.split(',').filter(Boolean);
     const missingIds = allIds.filter(
-      (id) => !sharedCardsCache.has(id) && !inFlightCardIds.has(id)
+      (id) => !fetchedCardIds.has(id) && !inFlightCardIds.has(id)
     );
-    if (missingIds.length === 0) return;
+    if (missingIds.length === 0) {
+      setIsLoading(allIds.some((id) => inFlightCardIds.has(id)));
+      return;
+    }
 
     let cancelled = false;
+    setIsLoading(true);
     missingIds.forEach((id) => inFlightCardIds.add(id));
 
     const chunks: string[][] = [];
@@ -98,6 +112,7 @@ export function useCardTemplatesByIds(
               imageHint: data.imageHint ?? '',
             });
           });
+          chunk.forEach((id) => fetchedCardIds.add(id));
         } catch {
           // 單批失敗不影響其他批次
         }
@@ -107,6 +122,7 @@ export function useCardTemplatesByIds(
         missingIds.forEach((id) => inFlightCardIds.delete(id));
         if (!cancelled) {
           setVersion((v) => v + 1);
+          setIsLoading(false);
         }
       });
 
@@ -115,10 +131,23 @@ export function useCardTemplatesByIds(
     };
   }, [firestore, cardIdsKey]);
 
-  return useMemo(() => {
+  const cardsMap = useMemo(() => {
     void version;
     return new Map(sharedCardsCache);
   }, [version, cardIdsKey]);
+
+  return { cardsMap, isLoading };
+}
+
+/**
+ * 按需批次載入指定 cardIds 的卡片模板（每次最多 30 筆 documentId IN 查詢），
+ * 取代原本下載整座 allCards 資料庫集合，並跨頁面快取。
+ */
+export function useCardTemplatesByIds(
+  firestore: Firestore | null,
+  cardIds: string[] | null | undefined
+): Map<string, PoolCardTemplate> {
+  return useCardTemplatesByIdsWithState(firestore, cardIds).cardsMap;
 }
 
 /**

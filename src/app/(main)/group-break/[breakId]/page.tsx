@@ -132,24 +132,10 @@ export default function GroupBreakDetailPage() {
 
   const { data: groupBreak, isLoading: isLoadingBreak, forceRefetch } = useDoc<GroupBreak>(groupBreakRef);
 
-  const usersQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return query(collection(firestore, 'users'));
-  }, [firestore]);
-  const { data: allUsers } = useCollection<UserProfile>(usersQuery);
-
-  const userMap = useMemo(() => {
-    const map = new Map<string, string>();
-    allUsers?.forEach(u => {
-      if (u.id) map.set(u.id, u.username || u.displayName || '藏友');
-    });
-    return map;
-  }, [allUsers]);
-
+  // 移除全表讀取 users（避免高 Reads 與個資規則阻擋），改用已存於席位上的 username 與當前登入者名稱
   const getBuyerName = (userId?: string, savedName?: string) => {
     if (!userId) return '';
     if (savedName) return savedName;
-    if (userMap.has(userId)) return userMap.get(userId)!;
     if (user?.uid === userId) return userProfile?.username || userProfile?.displayName || '我';
     return `藏友 ${userId.slice(0, 5)}`;
   };

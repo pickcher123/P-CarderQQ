@@ -35,8 +35,8 @@ import { Badge } from '@/components/ui/badge';
 import { userLevels } from '@/components/member-level-crown';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { performDrawAction, redeemSpBuybackAction } from '@/app/actions/draw';
 import { getEffectiveTicketCount, syncLocalPromoClaimsToFirestore, getLocalAvailableTicketsCount } from '@/lib/promo-draw-service';
+import { usePoolCardsMap } from '@/lib/pool-cards-cache';
 import {
   type PeelCorner,
   PEEL_CORNER_LABELS,
@@ -371,13 +371,9 @@ export default function OpenPackPage() {
         return () => unsub();
     }, [firestore, poolId, user]);
 
-    const cardsRef = useMemoFirebase(() => (firestore ? collection(firestore, 'allCards') : null), [firestore]);
-    const { data: allCards, isLoading: isLoadingCards } = useCollection<Card>(cardsRef);
-    const allCardsMap = useMemo(() => {
-        const map = new Map<string, Card>();
-        allCards?.forEach(c => map.set(c.id, c));
-        return map;
-    }, [allCards]);
+    // 按需批次載入此卡池實際使用的卡片（與首頁／抽卡大廳共用記憶體快取，從大廳進來 0 Reads！）
+    const currentPoolList = useMemo(() => (cardPool ? [cardPool] : null), [cardPool]);
+    const allCardsMap = usePoolCardsMap(firestore, currentPoolList) as unknown as Map<string, Card>;
 
     // Dynamically enrich drawn prizes if allCardsMap loads or updates
     useEffect(() => {
@@ -499,7 +495,49 @@ export default function OpenPackPage() {
         setStep('loading');
         
         try {
-            const result = await runTransaction(firestore, async (transaction) => {
+            let usedServerApi = false;
+            let result: any = null;
+
+            // 1. 優先透過後端防作弊 API (/api/draw/execute) 進行伺服器端身分驗證、扣款與抽卡運算
+            try {
+                const idToken = await user.getIdToken();
+                const apiRes = await fetch('/api/draw/execute', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${idToken}`,
+                    },
+                    body: JSON.stringify({
+                        poolId,
+                        count,
+                        useTicketMode,
+                        useEventTicketMode,
+                        numbersToDraw,
+                    }),
+                });
+                const apiData = await apiRes.json().catch(() => null);
+
+                if (apiRes.ok && apiData?.success) {
+                    usedServerApi = true;
+                    result = apiData;
+                } else if (apiData?.code === 'ADMIN_UNAVAILABLE' && apiData?.allowDevFallback) {
+                    // 僅於本機開發環境且未設定 Firebase Admin 憑證時自動降級，正式環境絕不允許降級
+                    console.info('[Dev] Firebase Admin 尚未配置本地憑證，暫時使用本地開發模式抽卡；部署至正式環境後將自動啟用 100% 後端防作弊運算。');
+                } else {
+                    throw new Error(apiData?.error || '抽卡驗證失敗，請稍後再試。');
+                }
+            } catch (apiErr: any) {
+                // 若為伺服器端明確回傳的業務錯誤（如點數不足、保護鎖定、售罄、限抽），直接拋出不降級
+                if (apiErr?.message && !String(apiErr.message).includes('Failed to fetch')) {
+                    throw apiErr;
+                }
+                if (process.env.NODE_ENV === 'production') {
+                    throw new Error('伺服器連線異常，請稍後再試。');
+                }
+            }
+
+            if (!result) {
+                result = await runTransaction(firestore, async (transaction) => {
                 const userDocRef = doc(firestore, 'users', user.uid);
                 const poolDocRef = doc(firestore, 'cardPools', poolId);
                 const poolStatsRef = doc(firestore, 'users', user.uid, 'poolStats', poolId);                
@@ -905,6 +943,7 @@ export default function OpenPackPage() {
                     winnerName: (userData as any)?.username || user.displayName || '神秘藏家'
                 };
             });
+            }
 
             if (result && result.drawn) {
                 // 多抽自動以「由小獎到大獎」壓軸排序，將金包 / SP 黑包 / 最後賞留作最終壓軸
@@ -938,8 +977,8 @@ export default function OpenPackPage() {
                     ...(result.claimLastPrize ? { lastPrizeClaimed: true } : {}),
                 } as CardPool : prev);
 
-                // 若抽中稀有賞或傳奇賞大獎，非同步發布中獎榮譽榜公告（盲盒模式不對外播報，維持保密感）
-                const bigHits = !cardPool.isBlindBoxMode
+                // 若抽中稀有賞或傳奇賞大獎，非同步發布中獎榮譽榜公告（後端模式已於伺服器發布，不重複寫入）
+                const bigHits = (!usedServerApi && !cardPool.isBlindBoxMode)
                     ? result.drawn.filter(
                         (p: any) => (p.type === 'card' || p.type === 'last-prize') && (p.rarity === 'legendary' || p.rarity === 'rare')
                     )

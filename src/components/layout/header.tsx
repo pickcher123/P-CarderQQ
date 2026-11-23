@@ -18,6 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Badge } from '@/components/ui/badge';
 import { PurchasePointsDialog } from '@/components/purchase-points-dialog';
 import { PromoRedeemModal } from '@/components/events/PromoRedeemModal';
+import { SiteAnnouncementBellButton } from '@/components/site-announcements';
 import { syncLocalPromoClaimsToFirestore } from '@/lib/promo-draw-service';
 import { useToast } from '@/hooks/use-toast';
 import { useFeatureFlags } from '@/hooks/use-feature-flags';
@@ -292,6 +293,9 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                 </div>
               </div>
             )}
+
+          {/* 站內公告中心鈴鐺按鈕（與首頁最新消息獨立） */}
+          <SiteAnnouncementBellButton />
 
           {/* 頭像區塊 (立體尊爵版) */}
           <div className="flex items-center">

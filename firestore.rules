@@ -52,9 +52,11 @@ service cloud.firestore {
       allow update: if (isOwner(userId) && 
                        incoming().get('role', 'user') == existing().get('role', 'user') && 
                        incoming().get('id', userId) == existing().get('id', userId) &&
-                       // 🚨 資產防禦鐵壁：前端用戶絕對不可自行增加鑽石或紅利點數（只能抽卡扣除，增加必須由管理員/金流後端執行）
+                       // 🚨 資產與權限防禦鐵壁：前端用戶絕對不可自行增加鑽石、紅利點數、免費券、活動券或篡改等級／管理員權限
+                       !incoming().diff(existing()).affectedKeys().hasAny(['isAdmin', 'is_admin', 'eventPoolTickets', 'totalSpent', 'userLevel', 'referralCount']) &&
                        (!incoming().diff(existing()).affectedKeys().hasAny(['points']) || incoming().get('points', 0) <= existing().get('points', 0)) &&
                        (!incoming().diff(existing()).affectedKeys().hasAny(['bonusPoints']) || incoming().get('bonusPoints', 0) <= existing().get('bonusPoints', 0)) &&
+                       (!incoming().diff(existing()).affectedKeys().hasAny(['freeDrawTickets']) || incoming().get('freeDrawTickets', 0) <= existing().get('freeDrawTickets', 0)) &&
                        // 更名限制：若使用者名稱改變，才檢查限制
                        (incoming().get('username', '') == existing().get('username', '') || (
                          !existing().get('hasChangedUsername', false) && 
@@ -82,14 +84,16 @@ service cloud.firestore {
       allow write: if isVerifiedAdmin();
     }
 
-    // --- 卡池管理 (核心抽卡邏輯防禦) ---
+    // --- 卡池管理 (核心防作弊：抽卡扣包與鎖池一律由後端 /api/draw/execute Admin SDK 執行，前端僅允許鎖定者提前解除自己的保護鎖) ---
     match /cardPools/{poolId} {
       allow read: if true; // 所有人可看卡池
-      allow update: if (
-        isSignedIn() && 
-        // 動作鎖定：玩家只能更新特定庫存與籤位欄位
-        incoming().diff(existing()).affectedKeys().hasOnly(['cards', 'pointPrizes', 'kujiTickets', 'remainingPacks', 'lockedBy', 'lockedAt', 'lastPrizeClaimed'])
-      ) || isVerifiedAdmin();
+      allow update: if isVerifiedAdmin() || (
+        isSignedIn() &&
+        existing().get('lockedBy', '') == request.auth.uid &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['lockedBy', 'lockedAt']) &&
+        incoming().get('lockedBy', null) == null &&
+        incoming().get('lockedAt', null) == null
+      );
     }
 
     // --- 系統設定集合 (SMTP 郵件伺服器與後台配置) ---

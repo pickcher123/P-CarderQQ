@@ -4,8 +4,23 @@ function getFirebaseAdminApp() {
   if (typeof window !== 'undefined') return null;
   if (!admin.apps.length) {
     try {
+      const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'studio-8439816843-ca6d5';
+      const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+      const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+
+      if (clientEmail && privateKey) {
+        return admin.initializeApp({
+          credential: admin.credential.cert({
+            projectId,
+            clientEmail,
+            privateKey,
+          }),
+          projectId,
+        });
+      }
+
       return admin.initializeApp({
-        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'studio-8439816843-ca6d5',
+        projectId,
       });
     } catch (error) {
       if (process.env.NODE_ENV !== 'production') {
