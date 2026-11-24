@@ -171,6 +171,18 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
     const [isInventoryOpen, setIsInventoryOpen] = useState(false);
     const [inventoryFilterRarity, setInventoryFilterRarity] = useState<Rarity | 'all'>('all');
     const [inventoryFilterTier, setInventoryFilterTier] = useState<'all' | 'A' | 'SP' | 'B' | 'C' | 'D'>('all');
+
+    // 點擊卡池上的特定賞別（金包／黑包／銀包／銅包／星光包）開啟清冊時，保留全部獎項展示並平滑捲動至該賞位置
+    useEffect(() => {
+        if (!isInventoryOpen || !pool.isHybridBlindSpMode || inventoryFilterTier === 'all') return;
+        const timer = setTimeout(() => {
+            const targetEl = document.getElementById(`pool-${pool.id}-tier-${inventoryFilterTier}`);
+            if (targetEl) {
+                targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }, 80);
+        return () => clearTimeout(timer);
+    }, [isInventoryOpen, pool.isHybridBlindSpMode, pool.id, inventoryFilterTier]);
     const [isHybridBoardOpen, setIsHybridBoardOpen] = useState(false);
     const [hybridBoardLogs, setHybridBoardLogs] = useState<any[]>([]);
     const [isLoadingBoardLogs, setIsLoadingBoardLogs] = useState(false);
@@ -845,7 +857,31 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
                             </span>
                         </div>
 
-                        <div className="justify-self-end" />
+                        <div className="relative z-10 justify-self-end flex items-center pointer-events-auto">
+                            <button
+                                type="button"
+                                title={isPoolTracked ? '已追蹤此卡池（點擊取消）' : '追蹤此卡池'}
+                                aria-label={isPoolTracked ? '取消追蹤此卡池' : '追蹤此卡池'}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    const added = toggleFavorite(pool.id);
+                                    toast({
+                                        title: added ? '❤️ 已加入我的追蹤' : '已取消追蹤',
+                                        description: added
+                                            ? `「${pool.name}」進入尾盤時將於列表頂部提醒您！`
+                                            : `已從我的追蹤移除「${pool.name}」`,
+                                    });
+                                }}
+                                className={cn(
+                                    "w-6 h-6 rounded-full flex items-center justify-center border transition-[background-color,border-color,color,transform] duration-150 active:scale-95 cursor-pointer",
+                                    isPoolTracked
+                                        ? "bg-rose-500/25 border-rose-400/60 text-rose-300 shadow-[0_0_10px_rgba(244,63,94,0.35)]"
+                                        : "bg-[#0a0f1c]/95 hover:bg-rose-500/15 border-white/15 hover:border-rose-400/45 text-slate-300 hover:text-rose-200"
+                                )}
+                            >
+                                <Heart className={cn("w-3 h-3", isPoolTracked ? "fill-rose-400 text-rose-400" : "text-slate-300")} />
+                            </button>
+                        </div>
 
                         {/* 頂部密封條下緣柔和微折線 */}
                         <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-amber-400/50 to-transparent" />
@@ -1121,38 +1157,15 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
                                     </div>
                                 </div>
                                 
-                                {/* 左上角：極簡圓形追蹤按鈕（我的最愛）＋ 最後賞角標 */}
-                                <div className="absolute top-2 left-2 z-40 flex items-center gap-1.5">
-                                    <button
-                                        type="button"
-                                        title={isPoolTracked ? '已追蹤此卡池（點擊取消）' : '追蹤此卡池'}
-                                        aria-label={isPoolTracked ? '取消追蹤此卡池' : '追蹤此卡池'}
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            const added = toggleFavorite(pool.id);
-                                            toast({
-                                                title: added ? '❤️ 已加入我的追蹤' : '已取消追蹤',
-                                                description: added
-                                                    ? `「${pool.name}」進入尾盤時將於列表頂部提醒您！`
-                                                    : `已從我的追蹤移除「${pool.name}」`,
-                                            });
-                                        }}
-                                        className={cn(
-                                            "w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-md border transition-[background-color,border-color,color,transform] duration-150 active:scale-95 cursor-pointer",
-                                            isPoolTracked
-                                                ? "bg-rose-500/25 border-rose-400/60 text-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.35)]"
-                                                : "bg-black/65 hover:bg-rose-500/15 border-white/15 hover:border-rose-400/45 text-slate-300 hover:text-rose-200"
-                                        )}
-                                    >
-                                        <Heart className={cn("w-3.5 h-3.5", isPoolTracked ? "fill-rose-400 text-rose-400" : "text-slate-300")} />
-                                    </button>
-                                    {featuredPrize.isLastPrize && (
+                                {/* 左上角：僅在展示最後賞時顯示最後賞角標（愛心追蹤已移至頂部封口右上角） */}
+                                {featuredPrize.isLastPrize && (
+                                    <div className="absolute top-2 left-2 z-40 flex items-center">
                                         <span className="bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] font-black text-[9px] px-2 py-0.5 rounded-full shadow-md uppercase tracking-wider flex items-center gap-0.5">
                                             <Star className="w-2.5 h-2.5 fill-[#120d02]" />
                                             <span>最後賞</span>
                                         </span>
-                                    )}
-                                </div>
+                                    </div>
+                                )}
 
                                 {/* 右上角：查看卡表按鈕（GodPack 一番賞下方已有「看盤明細」＋五格可點，僅於非一番賞池顯示以減少重複） */}
                                 {!pool.isHybridBlindSpMode && (
@@ -1866,44 +1879,15 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
                             </Button>
                         </div>
 
-                        {/* 賞別快速切換標籤列（GodPack 一番賞改顯示五色卡包切換） */}
+                        {/* 賞別快速切換標籤列（GodPack 一番賞直接完整展示全部卡包，點選卡池上的各賞自動捲動定位） */}
                         {pool.isHybridBlindSpMode ? (
-                            <div className="flex items-center gap-1.5 overflow-x-auto pb-2 mb-3 no-scrollbar">
-                                <button
-                                    type="button"
-                                    onClick={() => setInventoryFilterTier('all')}
-                                    className={cn(
-                                        "px-3 py-1 rounded-full text-xs font-black transition-all cursor-pointer whitespace-nowrap border",
-                                        inventoryFilterTier === 'all'
-                                            ? "bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] border-amber-300 shadow-md"
-                                            : "bg-slate-900/80 text-slate-400 hover:text-white border-slate-800"
-                                    )}
-                                >
-                                    全部卡包
-                                </button>
-                                {(['A', 'SP', 'B', 'C', 'D'] as const).map((t) => {
-                                    const meta = HYBRID_TIER_META[t];
-                                    const isSelected = inventoryFilterTier === t;
-                                    const count = hybridStats.counts[t];
-                                    return (
-                                        <button
-                                            key={t}
-                                            type="button"
-                                            onClick={() => setInventoryFilterTier(t)}
-                                            className={cn(
-                                                "px-3 py-1 rounded-full text-xs font-black transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 border",
-                                                isSelected
-                                                    ? cn(meta.badgeClass, "shadow-md ring-1 ring-white/25")
-                                                    : "bg-slate-900/80 text-slate-400 hover:text-white border-slate-800"
-                                            )}
-                                        >
-                                            <span>{meta.label}</span>
-                                            <span className={cn("text-[10px] px-1.5 py-0.2 rounded-full font-mono", isSelected ? "bg-black/35 text-white" : "bg-slate-950 text-slate-400")}>
-                                                {count}
-                                            </span>
-                                        </button>
-                                    );
-                                })}
+                            <div className="flex items-center justify-between gap-2 pb-2 mb-3">
+                                <span className="px-3 py-1 rounded-full text-xs font-black bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] border border-amber-300 shadow-sm">
+                                    全部卡包完整一覽
+                                </span>
+                                <span className="text-[11px] font-mono text-slate-400 tabular-nums">
+                                    共 {allPrizesInPool.length} 款品項 · 剩餘 <span className="text-[#FDE68A] font-bold">{remainingPacks}</span> 包
+                                </span>
                             </div>
                         ) : (
                         <div className="flex items-center gap-1.5 overflow-x-auto pb-2 mb-3 no-scrollbar">
@@ -1973,9 +1957,9 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
                                 </div>
                             )}
 
-                            {/* 各稀有度群組（GodPack 一番賞改依五色卡包 A / SP / B / C / D 分組） */}
+                            {/* 各稀有度群組（GodPack 一番賞永遠完整展示全部五色卡包，點選各賞自動平滑捲動至對應區塊） */}
                             {pool.isHybridBlindSpMode ? (
-                                (inventoryFilterTier === 'all' ? (['A', 'SP', 'B', 'C', 'D'] as const) : ([inventoryFilterTier] as const)).map((tierCode) => {
+                                (['A', 'SP', 'B', 'C', 'D'] as const).map((tierCode) => {
                                     const prizes = allPrizesInPool.filter((x: any) => {
                                         if (x.type === 'points' || x.isPoints) {
                                             const pTier = x.tierCode || (x.rarity === 'rare' ? 'C' : 'D');
@@ -1987,9 +1971,17 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
                                     if (prizes.length === 0) return null;
                                     const meta = HYBRID_TIER_META[tierCode];
                                     const totalQtyInTier = prizes.reduce((sum, p) => sum + (p.quantity || 0), 0);
+                                    const isFocusedTier = inventoryFilterTier === tierCode;
 
                                     return (
-                                        <div key={tierCode} className="space-y-2">
+                                        <div
+                                            key={tierCode}
+                                            id={`pool-${pool.id}-tier-${tierCode}`}
+                                            className={cn(
+                                                "space-y-2 scroll-mt-3 rounded-2xl transition-colors",
+                                                isFocusedTier && "p-2.5 -mx-2.5 bg-amber-400/[0.05] ring-1 ring-amber-300/35"
+                                            )}
+                                        >
                                             <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
                                                 <div className="flex items-center gap-2">
                                                     <BlindBoxVisual tier={tierCode} size="xs" />

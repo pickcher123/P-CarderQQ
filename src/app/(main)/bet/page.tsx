@@ -380,66 +380,39 @@ export default function BetLandingPage() {
                     />
                 </div>
 
-                {/* 雙專區切換列：球員卡拼卡 vs 獎品兌換（置於主題卡池下方、目標球員卡上方） */}
-                <div className="flex items-center justify-center sm:justify-start pt-1">
-                    <div className="grid grid-cols-2 sm:inline-flex items-center w-full sm:w-auto bg-[#0a0f1c]/95 p-1.5 rounded-2xl border border-white/[0.1] shadow-[0_8px_24px_rgba(0,0,0,0.45)] gap-1.5">
-                        <button
-                            type="button"
-                            onClick={() => setActiveSection('cards')}
-                            className={cn(
-                                "h-9 sm:h-10 px-4 sm:px-5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all duration-150 cursor-pointer border whitespace-nowrap",
-                                activeSection === 'cards'
-                                    ? "bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] border-amber-200 shadow-sm"
-                                    : "bg-transparent hover:bg-white/[0.05] text-slate-300 hover:text-white border-transparent"
-                            )}
-                        >
-                            <CrossedCardsIcon className={cn("w-4 h-4 shrink-0", activeSection === 'cards' ? "text-[#120d02]" : "text-slate-400")} />
-                            <span>球員卡拼卡</span>
-                            <span className={cn(
-                                "text-[11px] font-mono font-black tabular-nums px-1.5 py-0.2 rounded-full",
-                                activeSection === 'cards' ? "bg-[#120d02]/15 text-[#120d02]" : "bg-white/[0.08] text-slate-300"
-                            )}>
-                                {finalIsLoading ? '--' : stats.availableItems}
-                            </span>
-                        </button>
-
-                        <button
-                            type="button"
-                            onClick={() => setActiveSection('prizes')}
-                            className={cn(
-                                "h-9 sm:h-10 px-4 sm:px-5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all duration-150 cursor-pointer border whitespace-nowrap",
-                                activeSection === 'prizes'
-                                    ? "bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] border-amber-200 shadow-sm"
-                                    : "bg-transparent hover:bg-white/[0.05] text-slate-300 hover:text-white border-transparent"
-                            )}
-                        >
-                            <WheelPrizeIcon className={cn("w-4 h-4 shrink-0", activeSection === 'prizes' ? "text-[#120d02]" : "text-slate-400")} />
-                            <span>獎品兌換</span>
-                            <span className={cn(
-                                "text-[11px] font-mono font-black tabular-nums px-1.5 py-0.2 rounded-full",
-                                activeSection === 'prizes' ? "bg-[#120d02]/15 text-[#120d02]" : "bg-white/[0.08] text-slate-300"
-                            )}>
-                                {isLoadingPrizes ? '--' : totalActivePrizeCount}
-                            </span>
-                        </button>
-                    </div>
-                </div>
-
                 {activeSection === 'cards' ? (
                     <>
-                        {/* === 全部拼卡卡片區 === */}
-                        <div className="space-y-6 pt-2">
-                            <div className="relative rounded-2xl sm:rounded-3xl p-4 sm:p-6 bg-gradient-to-b from-[#180d1e]/95 via-[#0e0c16]/95 to-[#08070d] border border-rose-500/35 shadow-[0_20px_50px_rgba(0,0,0,0.85)] backdrop-blur-2xl overflow-hidden">
-                                <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-rose-500 to-transparent shadow-[0_0_12px_#f43f5e]" />
+                        {/* === 全部拼卡卡片區（整合雙專區切換＋篩選搜尋於單一控制列） === */}
+                        <div className="space-y-6 pt-1">
+                            <div className="relative rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 bg-[#0a0f1c]/95 border border-amber-300/25 shadow-[0_20px_50px_rgba(0,0,0,0.8)] backdrop-blur-2xl overflow-hidden">
+                                <div className="absolute top-0 inset-x-0 h-[1.5px] bg-gradient-to-r from-transparent via-amber-300/70 to-transparent" />
                                 
-                                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                    <div className="flex items-baseline gap-2.5">
-                                        <h2 className="text-lg sm:text-2xl font-bold font-headline tracking-tight text-white">
-                                            自選目標球員卡
-                                        </h2>
-                                        <span className="text-xs font-code text-rose-300/90 font-medium">
-                                            {finalIsLoading ? '--' : `${stats.availableItems} 款可挑戰`}
-                                        </span>
+                                <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-3.5">
+                                    {/* 左側：球員卡拼卡 / 獎品兌換 整合切換器 */}
+                                    <div className="grid grid-cols-2 sm:inline-flex items-center bg-black/45 p-1 rounded-xl border border-white/[0.08] gap-1 shrink-0">
+                                        <button
+                                            type="button"
+                                            onClick={() => setActiveSection('cards')}
+                                            className="h-9 px-3.5 sm:px-4 rounded-lg font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all duration-150 cursor-pointer border whitespace-nowrap bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] border-amber-200 shadow-sm"
+                                        >
+                                            <CrossedCardsIcon className="w-4 h-4 shrink-0 text-[#120d02]" />
+                                            <span>球員卡拼卡</span>
+                                            <span className="text-[11px] font-mono font-black tabular-nums px-1.5 py-0.2 rounded-full bg-[#120d02]/15 text-[#120d02]">
+                                                {finalIsLoading ? '--' : stats.availableItems}
+                                            </span>
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => setActiveSection('prizes')}
+                                            className="h-9 px-3.5 sm:px-4 rounded-lg font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all duration-150 cursor-pointer border whitespace-nowrap bg-transparent hover:bg-white/[0.05] text-slate-300 hover:text-white border-transparent"
+                                        >
+                                            <WheelPrizeIcon className="w-4 h-4 shrink-0 text-slate-400" />
+                                            <span>獎品兌換</span>
+                                            <span className="text-[11px] font-mono font-black tabular-nums px-1.5 py-0.2 rounded-full bg-white/[0.08] text-slate-300">
+                                                {isLoadingPrizes ? '--' : totalActivePrizeCount}
+                                            </span>
+                                        </button>
                                     </div>
 
                                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
@@ -638,25 +611,38 @@ export default function BetLandingPage() {
                         </div>
                     </>
                 ) : (
-                    /* === 🎁 獎品兌換 & 命運轉盤專區 === */
-                    <div className="space-y-5 animate-in fade-in duration-300">
-                        {/* 獎品區控制標題橫幅 */}
-                        <div className="relative rounded-2xl sm:rounded-3xl p-4 sm:p-6 bg-gradient-to-b from-[#1e150c]/95 via-[#130e17]/95 to-[#09070d] border border-amber-500/35 shadow-[0_20px_50px_rgba(0,0,0,0.8)] overflow-hidden">
-                            <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_12px_#f59e0b]" />
+                    /* === 🎁 獎品兌換專區（與上方共用同一套整合控制列） === */
+                    <div className="space-y-5 pt-1 animate-in fade-in duration-300">
+                        {/* 獎品區整合控制列 */}
+                        <div className="relative rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 bg-[#0a0f1c]/95 border border-amber-300/25 shadow-[0_20px_50px_rgba(0,0,0,0.8)] backdrop-blur-2xl overflow-hidden">
+                            <div className="absolute top-0 inset-x-0 h-[1.5px] bg-gradient-to-r from-transparent via-amber-300/70 to-transparent" />
 
-                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                <div className="space-y-1">
-                                    <div className="flex items-baseline gap-2.5 flex-wrap">
-                                        <h2 className="text-lg sm:text-2xl font-bold font-headline tracking-tight text-white">
-                                            實體獎品 · 命運轉盤與紅利兌換
-                                        </h2>
-                                        <span className="text-xs font-code text-amber-300/90 font-medium">
-                                            {isLoadingPrizes ? '--' : `共 ${totalActivePrizeCount} 項`}
+                            <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-3.5">
+                                {/* 左側：球員卡拼卡 / 獎品兌換 整合切換器 */}
+                                <div className="grid grid-cols-2 sm:inline-flex items-center bg-black/45 p-1 rounded-xl border border-white/[0.08] gap-1 shrink-0">
+                                    <button
+                                        type="button"
+                                        onClick={() => setActiveSection('cards')}
+                                        className="h-9 px-3.5 sm:px-4 rounded-lg font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all duration-150 cursor-pointer border whitespace-nowrap bg-transparent hover:bg-white/[0.05] text-slate-300 hover:text-white border-transparent"
+                                    >
+                                        <CrossedCardsIcon className="w-4 h-4 shrink-0 text-slate-400" />
+                                        <span>球員卡拼卡</span>
+                                        <span className="text-[11px] font-mono font-black tabular-nums px-1.5 py-0.2 rounded-full bg-white/[0.08] text-slate-300">
+                                            {finalIsLoading ? '--' : stats.availableItems}
                                         </span>
-                                    </div>
-                                    <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-                                        支援 <span className="text-rose-300 font-semibold">1/10 點數命運轉盤挑戰</span>，或使用 <span className="text-amber-300 font-semibold">P+ 點數直接兌換</span>，免運寄送到府
-                                    </p>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => setActiveSection('prizes')}
+                                        className="h-9 px-3.5 sm:px-4 rounded-lg font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all duration-150 cursor-pointer border whitespace-nowrap bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] border-amber-200 shadow-sm"
+                                    >
+                                        <WheelPrizeIcon className="w-4 h-4 shrink-0 text-[#120d02]" />
+                                        <span>獎品兌換</span>
+                                        <span className="text-[11px] font-mono font-black tabular-nums px-1.5 py-0.2 rounded-full bg-[#120d02]/15 text-[#120d02]">
+                                            {isLoadingPrizes ? '--' : totalActivePrizeCount}
+                                        </span>
+                                    </button>
                                 </div>
 
                                 <div className="flex items-center gap-2.5">

@@ -122,10 +122,24 @@ const CORE_MODULES = [
 
 function BetaWipeDialog() {
   const firestore = useFirestore();
+  const { user } = useUser();
   const { toast } = useToast();
   const [password, setPassword] = useState('');
   const [isWiping, setIsWiping] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+
+  // 僅限唯一最高管理員帳號可見與執行
+  if (!isSuperAdminEmail(user?.email)) return null;
+
+  const commitDeletesInChunks = async (refs: any[]) => {
+    if (!firestore || refs.length === 0) return;
+    const CHUNK_SIZE = 400; // 嚴格低於 Firestore 單一 writeBatch 500 筆上限
+    for (let i = 0; i < refs.length; i += CHUNK_SIZE) {
+      const batch = writeBatch(firestore);
+      refs.slice(i, i + CHUNK_SIZE).forEach((ref) => batch.delete(ref));
+      await batch.commit();
+    }
+  };
 
   const handleWipe = async () => {
     if (!firestore) return;
@@ -136,33 +150,44 @@ function BetaWipeDialog() {
 
     setIsWiping(true);
     try {
-      const collectionsToClear = ['transactions', 'shippingOrders', 'wishes', 'announcements'];
+      const collectionsToClear = ['transactions', 'shippingOrders', 'wishes'];
       for (const colName of collectionsToClear) {
         const snap = await getDocs(collection(firestore, colName));
-        const batch = writeBatch(firestore);
-        snap.docs.forEach(d => batch.delete(d.ref));
-        await batch.commit();
+        await commitDeletesInChunks(snap.docs.map(d => d.ref));
       }
+
+      // announcements 僅清除「中獎榮譽榜跑馬燈」(含 timestamp)，完整保留站內公告 (含 title + createdAt)
+      const annSnap = await getDocs(collection(firestore, 'announcements'));
+      const hallOfFameRefs = annSnap.docs
+        .filter(d => {
+          const data = d.data() as any;
+          return Boolean(data?.timestamp) && !data?.title;
+        })
+        .map(d => d.ref);
+      await commitDeletesInChunks(hallOfFameRefs);
 
       const usersSnap = await getDocs(collection(firestore, 'users'));
       for (const userDoc of usersSnap.docs) {
-        const batch = writeBatch(firestore);
-        batch.update(userDoc.ref, {
+        const subCollections = ['userCards', 'missionProgress', 'poolStats', 'newsPreferences'];
+        const subRefs: any[] = [];
+        for (const sub of subCollections) {
+          const subSnap = await getDocs(collection(firestore, 'users', userDoc.id, sub));
+          subSnap.docs.forEach(sd => subRefs.push(sd.ref));
+        }
+        await commitDeletesInChunks(subRefs);
+
+        const userBatch = writeBatch(firestore);
+        userBatch.update(userDoc.ref, {
           points: 0,
           bonusPoints: 0,
           totalSpent: 0,
           userLevel: '新手收藏家',
           hasChangedUsername: false
         });
-        const subCollections = ['userCards', 'missionProgress', 'poolStats', 'newsPreferences'];
-        for (const sub of subCollections) {
-          const subSnap = await getDocs(collection(firestore, 'users', userDoc.id, sub));
-          subSnap.docs.forEach(sd => batch.delete(sd.ref));
-        }
-        await batch.commit();
+        await userBatch.commit();
       }
 
-      toast({ title: '數據清除成功', description: '所有測試數據已重置歸零。' });
+      toast({ title: '數據清除成功', description: '所有測試交易與抽卡紀錄已分批安全歸零（站內公告已自動保留）。' });
       setIsOpen(false);
       setPassword('');
     } catch (error) {
@@ -245,14 +270,14 @@ export default function AdminDashboardPage() {
   const { data: systemConfig, forceRefetch } = useDoc<SystemConfig>(systemConfigRef);
   // 🚀 全站版本切換（公測版 / 正式版）
   const [versionStage, setVersionStage] = useState<'beta' | 'production' | 'rc'>('beta');
-  const [versionNumber, setVersionNumber] = useState('6.0');
+  const [versionNumber, setVersionNumber] = useState('7.5');
   const [versionCustomDisplay, setVersionCustomDisplay] = useState('');
   const [isSavingVersion, setIsSavingVersion] = useState(false);
 
   useEffect(() => {
     if (systemConfig?.appVersionConfig) {
       setVersionStage(systemConfig.appVersionConfig.stage || 'beta');
-      setVersionNumber(systemConfig.appVersionConfig.versionNumber || '6.0');
+      setVersionNumber(systemConfig.appVersionConfig.versionNumber || '7.5');
       setVersionCustomDisplay(systemConfig.appVersionConfig.customDisplay || '');
     }
   }, [systemConfig?.appVersionConfig]);

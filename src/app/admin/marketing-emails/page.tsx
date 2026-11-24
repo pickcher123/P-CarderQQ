@@ -287,6 +287,202 @@ function MarketingEmailsContent() {
   const { data: rawLogs, isLoading: isLoadingLogs } = useCollection<any>(logsQuery);
   const emailLogs = useMemo(() => (Array.isArray(rawLogs) ? rawLogs : []), [rawLogs]);
 
+  // 🎯 卡池進度智慧行銷：讀取上架中卡池並自動計算開抽／過半／尾盤／即將下架進度
+  type PoolMilestoneStage = 'launch' | 'halfway' | 'snipe' | 'expiring';
+  const poolsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'cardPools');
+  }, [firestore]);
+  const { data: rawPools } = useCollection<any>(poolsQuery);
+
+  const enrichedPools = useMemo(() => {
+    if (!Array.isArray(rawPools)) return [];
+    const nowMs = Date.now();
+    return rawPools
+      .filter((p) => p && p.isActive !== false)
+      .map((p) => {
+        const remaining = typeof p.remainingPacks === 'number' && Number.isFinite(p.remainingPacks)
+          ? Math.max(0, p.remainingPacks)
+          : (Array.isArray(p.cards) ? p.cards.reduce((s: number, c: any) => s + Math.max(0, Number(c?.quantity || 0)), 0) : 0) +
+            (Array.isArray(p.pointPrizes) ? p.pointPrizes.reduce((s: number, pt: any) => s + Math.max(0, Number(pt?.quantity || 0)), 0) : 0);
+        const total = typeof p.totalPacks === 'number' && p.totalPacks > 0 ? p.totalPacks : Math.max(1, remaining);
+        const drawnCount = Math.max(0, total - remaining);
+        const drawnPct = Math.min(100, Math.max(0, Math.round((drawnCount / total) * 100)));
+
+        let expiresDate: Date | null = null;
+        let daysUntilExpire: number | null = null;
+        if (p.expiresAt) {
+          const secs = typeof p.expiresAt.seconds === 'number'
+            ? p.expiresAt.seconds
+            : (typeof p.expiresAt.toMillis === 'function' ? Math.floor(p.expiresAt.toMillis() / 1000) : null);
+          if (secs) {
+            expiresDate = new Date(secs * 1000);
+            daysUntilExpire = Math.ceil((expiresDate.getTime() - nowMs) / (1000 * 60 * 60 * 24));
+          }
+        }
+
+        const followers = allUsers.filter(
+          (u: any) => u?.email && u.email.includes('@') && Array.isArray(u.favoritePoolIds) && u.favoritePoolIds.includes(p.id)
+        );
+
+        let recommendedStage: PoolMilestoneStage = 'launch';
+        if (daysUntilExpire !== null && daysUntilExpire >= 0 && daysUntilExpire <= 3) {
+          recommendedStage = 'expiring';
+        } else if (remaining > 0 && (drawnPct >= 80 || remaining <= 15)) {
+          recommendedStage = 'snipe';
+        } else if (drawnPct >= 45) {
+          recommendedStage = 'halfway';
+        }
+
+        return {
+          ...p,
+          safeRemaining: remaining,
+          safeTotal: total,
+          drawnCount,
+          drawnPct,
+          expiresDate,
+          daysUntilExpire,
+          followers,
+          recommendedStage,
+        };
+      })
+      .filter((p) => p.safeRemaining > 0)
+      .sort((a, b) => b.drawnPct - a.drawnPct);
+  }, [rawPools, allUsers]);
+
+  const [selectedPromoPoolId, setSelectedPromoPoolId] = useState<string>('');
+  const [selectedPoolStage, setSelectedPoolStage] = useState<PoolMilestoneStage>('launch');
+
+  const selectedPromoPool = useMemo(() => {
+    if (enrichedPools.length === 0) return null;
+    return enrichedPools.find((p) => p.id === selectedPromoPoolId) || enrichedPools[0];
+  }, [enrichedPools, selectedPromoPoolId]);
+
+  useEffect(() => {
+    if (selectedPromoPool && !selectedPromoPoolId) {
+      setSelectedPromoPoolId(selectedPromoPool.id);
+      setSelectedPoolStage(selectedPromoPool.recommendedStage);
+    }
+  }, [selectedPromoPool, selectedPromoPoolId]);
+
+  const applyPoolMilestoneEmail = (
+    pool: any,
+    stage: PoolMilestoneStage,
+    targetFollowersOnly = false
+  ) => {
+    if (!pool) return;
+    const poolName = pool.name || '精選卡池';
+    const currencyLabel = pool.currency === 'p-point' ? 'P+ 點' : '鑽石 💎';
+    const priceStr = `${Number(pool.price || 0).toLocaleString()} ${currencyLabel}`;
+    const expireStr = pool.expiresDate ? format(pool.expiresDate, 'yyyy/MM/dd HH:mm') : '售完為止';
+    const siteOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://pcarder.com';
+    const poolUrl = `${siteOrigin}/draw`;
+
+    const stageConfigs: Record<PoolMilestoneStage, {
+      label: string;
+      subject: string;
+      preheader: string;
+      heading: string;
+      contentHtml: string;
+      buttonText: string;
+    }> = {
+      launch: {
+        label: '新卡池開抽',
+        subject: `🆕【全新開抽】「${poolName}」正式上線！全盤 ${pool.safeTotal} 抽熱血開搶`,
+        preheader: `親愛的 {{username}}，全新卡池「${poolName}」剛剛上架，搶先開抽帶走頭獎！`,
+        heading: `全新卡池「${poolName}」震撼開抽`,
+        contentHtml: `<p>親愛的 <strong>{{username}}</strong> 藏家您好：</p>
+<p>萬眾期待的全新卡池<strong>【${poolName}】</strong>已正式開放抽取！</p>
+<ul>
+  <li>🃏 <strong>卡池總數</strong>：共 <strong>${pool.safeTotal}</strong> 抽（目前剩餘 <strong>${pool.safeRemaining}</strong> 抽）</li>
+  <li>💎 <strong>單抽價格</strong>：每抽 <strong>${priceStr}</strong></li>
+  <li>⏰ <strong>預計下架</strong>：${expireStr}</li>
+  <li>🛡️ <strong>安心機制</strong>：100% 實體在庫、開獎 120 秒專屬保護鎖、抽中卡片自由選擇寄送或高比例買回！</li>
+</ul>
+<p>頭獎與隱藏賞全員在席，趁現在全盤最新鮮，搶先試試您的神手氣！</p>`,
+        buttonText: '立即搶先開抽',
+      },
+      halfway: {
+        label: '卡池進度過半',
+        subject: `🔥【進度已過半 ${pool.drawnPct}%】「${poolName}」僅剩 ${pool.safeRemaining} / ${pool.safeTotal} 抽！`,
+        preheader: `親愛的 {{username}}，「${poolName}」已被抽走超過一半，大獎機率持續飆升中！`,
+        heading: `「${poolName}」熱抽過半・大獎機率飆升`,
+        contentHtml: `<p>親愛的 <strong>{{username}}</strong> 藏家您好：</p>
+<p>人氣卡池<strong>【${poolName}】</strong>目前抽卡進度已突破 <strong>${pool.drawnPct}%</strong>，全盤正在火熱推進中！</p>
+<ul>
+  <li>📊 <strong>即時盤面進度</strong>：已抽出 ${pool.drawnCount} 抽，目前僅剩 <strong>${pool.safeRemaining} / ${pool.safeTotal} 抽</strong></li>
+  <li>💎 <strong>單抽價格</strong>：每抽 <strong>${priceStr}</strong></li>
+  <li>🎯 <strong>看盤狙擊</strong>：盤面越抽越薄、大獎命中率越來越高，現在正是進場好時機！</li>
+</ul>
+<p>立即登入查看即時盤面剩餘賞項，把握黃金進場點！</p>`,
+        buttonText: '立即看盤開抽',
+      },
+      snipe: {
+        label: '尾盤最後衝刺',
+        subject: `⚡【尾盤狙擊警報】「${poolName}」最後 ${pool.safeRemaining} 抽！進度已達 ${pool.drawnPct}%`,
+        preheader: `最後 ${pool.safeRemaining} 抽倒數！大獎與壓軸最後賞隨時開出，手慢就沒了！`,
+        heading: `「${poolName}」進入尾盤最後 ${pool.safeRemaining} 抽`,
+        contentHtml: `<p>親愛的 <strong>{{username}}</strong> 藏家您好：</p>
+<p>緊急戰報！您關注的<strong>【${poolName}】</strong>已進入<strong>高勝率尾盤衝刺階段</strong>（進度 <strong>${pool.drawnPct}%</strong>）：</p>
+<ul>
+  <li>🔥 <strong>剩餘總抽數</strong>：最後 <strong>${pool.safeRemaining} / ${pool.safeTotal} 抽</strong></li>
+  <li>🏆 <strong>最後賞倒數</strong>：抽完最後一包還可抱走壓軸最後賞！</li>
+  <li>💎 <strong>單抽價格</strong>：每抽 <strong>${priceStr}</strong></li>
+</ul>
+<p>尾盤隨時可能被一鍵全包帶走，現在立刻進場搶佔先機！</p>`,
+        buttonText: '立即前往尾盤狙擊',
+      },
+      expiring: {
+        label: '卡池即將下架',
+        subject: `⏳【最後倒數】「${poolName}」將於 ${pool.expiresDate ? format(pool.expiresDate, 'M/d') : '近期'} 下架！剩餘 ${pool.safeRemaining} 抽`,
+        preheader: `最後機會！「${poolName}」即將結束下架，把握最後時間把目標神卡帶回家！`,
+        heading: `「${poolName}」即將下架・最後把握`,
+        contentHtml: `<p>親愛的 <strong>{{username}}</strong> 藏家您好：</p>
+<p>提醒您，<strong>【${poolName}】</strong>即將迎來下架倒數，錯過將不再補貨：</p>
+<ul>
+  <li>⏳ <strong>預計下架時間</strong>：<strong>${expireStr}</strong>${pool.daysUntilExpire !== null && pool.daysUntilExpire >= 0 ? `（倒數 ${pool.daysUntilExpire} 天）` : ''}</li>
+  <li>📦 <strong>目前剩餘</strong>：<strong>${pool.safeRemaining} / ${pool.safeTotal} 抽</strong>（進度 ${pool.drawnPct}%）</li>
+  <li>💎 <strong>單抽價格</strong>：每抽 <strong>${priceStr}</strong></li>
+</ul>
+<p>把握下架前最後黃金時刻，把還沒帶回家的神卡一次收齊！</p>`,
+        buttonText: '把握下架前最後開抽',
+      },
+    };
+
+    const cfg = stageConfigs[stage];
+    setCurrentTemplateId(`pool_${stage}`);
+    setSubject(cfg.subject);
+    setPreheader(cfg.preheader);
+    setHeading(cfg.heading);
+    if (pool.imageUrl) {
+      setBannerImageUrl(pool.imageUrl);
+    }
+    setContentHtml(cfg.contentHtml);
+    setButtonText(cfg.buttonText);
+    setButtonUrl(poolUrl);
+    setIsCtaButtonEnabled(true);
+    setIsPromoCodeEnabled(false);
+    setCustomFooterNote(`※ 「${poolName}」即時剩餘包數與賞項狀態以網站線上盤面為準。`);
+
+    if (targetFollowersOnly) {
+      const followerIds = (pool.followers || []).map((u: any) => u.id).filter(Boolean);
+      if (followerIds.length > 0) {
+        setTargetType('specific_users');
+        setSelectedUserIds(followerIds);
+        toast({
+          title: `🎯 已套用「${cfg.label}」並鎖定 ${followerIds.length} 位追蹤會員`,
+          description: `已將「${poolName}」即時進度填入信件，收件對象已切換為追蹤此卡池的會員。`,
+        });
+        return;
+      }
+    }
+
+    toast({
+      title: `🎯 已套用卡池進度範本：${cfg.label}`,
+      description: `已自動帶入「${poolName}」即時進度（剩 ${pool.safeRemaining}/${pool.safeTotal} 抽・${pool.drawnPct}%），您可直接預覽或微調後寄出！`,
+    });
+  };
+
   // Filtered email logs based on search query
   const filteredEmailLogs = useMemo(() => {
     if (!Array.isArray(emailLogs)) return [];
@@ -898,6 +1094,139 @@ function MarketingEmailsContent() {
 
         {/* Tab 1: Compose & Send */}
         <TabsContent value="compose" className="space-y-6">
+          {/* 🎯 卡池進度智慧推播專區（新卡池開抽 / 卡池過半 / 尾盤衝刺 / 即將下架） */}
+          <Card className="bg-gradient-to-br from-slate-900 via-[#121629] to-slate-950 border-amber-400/35 shadow-xl overflow-hidden">
+            <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-amber-300/80 to-transparent" />
+            <CardHeader className="pb-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <CardTitle className="text-base font-black text-white flex items-center gap-2">
+                    <Flame className="w-4 h-4 text-amber-400" />
+                    卡池進度智慧推播（自動帶入真實庫存與進度）
+                  </CardTitle>
+                  <CardDescription className="text-xs text-slate-400 mt-0.5">
+                    選擇上架中卡池與推播時機（開抽／過半／尾盤／即將下架），一鍵生成精準進度行銷信，還可直接鎖定「追蹤該卡池的會員」發送！
+                  </CardDescription>
+                </div>
+                <Badge className="bg-amber-400/15 text-amber-200 border border-amber-300/40 font-mono text-[11px] self-start sm:self-auto">
+                  開放中卡池：{enrichedPools.length} 台
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {enrichedPools.length > 0 && selectedPromoPool ? (
+                <>
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-end">
+                    {/* 選擇卡池 */}
+                    <div className="lg:col-span-5 space-y-1.5">
+                      <Label className="text-xs font-bold text-slate-300">1. 選擇目標卡池</Label>
+                      <select
+                        value={selectedPromoPool.id}
+                        onChange={(e) => {
+                          const nextId = e.target.value;
+                          setSelectedPromoPoolId(nextId);
+                          const found = enrichedPools.find((p) => p.id === nextId);
+                          if (found) setSelectedPoolStage(found.recommendedStage);
+                        }}
+                        className="w-full h-10 px-3 rounded-xl bg-slate-950 border border-slate-700 text-xs sm:text-sm font-bold text-white focus:outline-none focus:border-amber-400"
+                      >
+                        {enrichedPools.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name}（已抽 {p.drawnPct}%・剩 {p.safeRemaining}/{p.safeTotal} 抽{p.daysUntilExpire !== null && p.daysUntilExpire <= 3 && p.daysUntilExpire >= 0 ? `・${p.daysUntilExpire}天後下架` : ''}）
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* 選擇進度階段 */}
+                    <div className="lg:col-span-7 space-y-1.5">
+                      <Label className="text-xs font-bold text-slate-300">2. 選擇進度推播時機（系統自動推薦目前最適合階段）</Label>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                        {([
+                          { id: 'launch' as const, label: '🆕 新卡池開抽' },
+                          { id: 'halfway' as const, label: '🔥 卡池過半' },
+                          { id: 'snipe' as const, label: '⚡ 尾盤衝刺' },
+                          { id: 'expiring' as const, label: '⏳ 即將下架' },
+                        ]).map((st) => {
+                          const isActive = selectedPoolStage === st.id;
+                          const isRecommended = selectedPromoPool.recommendedStage === st.id;
+                          return (
+                            <button
+                              key={st.id}
+                              type="button"
+                              onClick={() => setSelectedPoolStage(st.id)}
+                              className={cn(
+                                "relative h-10 px-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-center gap-1 whitespace-nowrap",
+                                isActive
+                                  ? "bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] border-amber-200 shadow-sm"
+                                  : "bg-slate-950/80 text-slate-300 border-slate-800 hover:border-amber-300/40 hover:text-white"
+                              )}
+                            >
+                              <span>{st.label}</span>
+                              {isRecommended && !isActive && (
+                                <span className="absolute -top-1.5 -right-1 px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[9px] font-black">
+                                  推薦
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 即時進度條與一鍵套用按鈕 */}
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-3 rounded-xl bg-slate-950/75 border border-white/[0.08]">
+                    <div className="space-y-1.5 flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap text-xs">
+                        <span className="font-black text-white truncate">{selectedPromoPool.name}</span>
+                        <span className="font-mono text-amber-300 font-bold tabular-nums">
+                          進度 {selectedPromoPool.drawnPct}%（剩 {selectedPromoPool.safeRemaining} / {selectedPromoPool.safeTotal} 抽）
+                        </span>
+                        {selectedPromoPool.expiresDate && (
+                          <span className="text-[11px] font-mono text-slate-400 tabular-nums">
+                            · {format(selectedPromoPool.expiresDate, 'MM/dd')} 下架
+                          </span>
+                        )}
+                      </div>
+                      <div className="w-full h-1.5 rounded-full bg-white/[0.08] overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-[#FDE68A] via-amber-300 to-rose-400 transition-all"
+                          style={{ width: `${Math.max(3, selectedPromoPool.drawnPct)}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 shrink-0">
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => applyPoolMilestoneEmail(selectedPromoPool, selectedPoolStage, false)}
+                        className="h-9 px-4 rounded-xl bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 hover:brightness-105 text-[#120d02] font-black text-xs cursor-pointer"
+                      >
+                        <Wand2 className="w-3.5 h-3.5 mr-1.5" />
+                        一鍵填入進度郵件
+                      </Button>
+
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={!selectedPromoPool.followers || selectedPromoPool.followers.length === 0}
+                        onClick={() => applyPoolMilestoneEmail(selectedPromoPool, selectedPoolStage, true)}
+                        className="h-9 px-3.5 rounded-xl border-rose-400/45 bg-rose-500/10 hover:bg-rose-500/20 text-rose-200 font-bold text-xs cursor-pointer disabled:opacity-45"
+                      >
+                        ❤️ 只發給追蹤此池會員 ({selectedPromoPool.followers?.length || 0}人)
+                      </Button>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <p className="text-xs text-slate-400 py-2">目前暫無開放中的卡池可供帶入進度。</p>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Preset Template Selectors */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {PRESET_TEMPLATES.map((tpl) => {

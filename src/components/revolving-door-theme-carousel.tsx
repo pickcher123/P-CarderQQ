@@ -376,11 +376,8 @@ export function RevolvingDoorThemeCarousel({
                     <div className="absolute -inset-full bg-gradient-to-tr from-transparent via-[#FDE68A]/15 to-transparent rotate-12 pointer-events-none -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out z-10" />
                   )}
 
-                  {/* 頂部列：收藏館編號膠囊 + 開放數量徽章 */}
-                  <div className="relative z-10 flex items-center justify-between gap-1.5 w-full">
-                    <span className="text-[9px] sm:text-[10px] font-mono font-bold tracking-widest text-amber-200/80 bg-[#0a0f1c]/70 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/[0.12]">
-                      0{index + 1}
-                    </span>
+                  {/* 頂部列：僅保留右側開放數量徽章 */}
+                  <div className="relative z-10 flex items-center justify-end gap-1.5 w-full">
                     <span className={cn(
                       "text-[10px] sm:text-xs font-mono font-bold tabular-nums px-2.5 py-0.5 rounded-full backdrop-blur-md border shadow-sm flex items-center gap-1",
                       (count ?? 0) > 0

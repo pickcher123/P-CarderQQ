@@ -1,6 +1,6 @@
 'use client';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
+import { collection, query, where, orderBy, limit, Timestamp } from 'firebase/firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
@@ -87,10 +87,20 @@ export default function OrdersAdminPage() {
   const [searchTerm, setSearchTerm] = useState('');
 
 
+  // 僅查詢所選年月的交易紀錄（搭配單欄位 transactionDate 索引與上限 500 筆，大幅節省 Firestore Reads）
   const transactionsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'transactions'));
-  }, [firestore]);
+    const selectedDate = new Date(parseInt(currentYear, 10), parseInt(currentMonth, 10));
+    const monthStart = startOfMonth(selectedDate);
+    const monthEnd = endOfMonth(selectedDate);
+    return query(
+      collection(firestore, 'transactions'),
+      where('transactionDate', '>=', Timestamp.fromDate(monthStart)),
+      where('transactionDate', '<=', Timestamp.fromDate(monthEnd)),
+      orderBy('transactionDate', 'desc'),
+      limit(500)
+    );
+  }, [firestore, currentYear, currentMonth]);
 
   const { data: transactions, isLoading } = useCollection<Transaction>(transactionsQuery);
 

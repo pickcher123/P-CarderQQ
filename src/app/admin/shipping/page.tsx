@@ -23,6 +23,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import { useCardTemplatesByIds } from '@/lib/pool-cards-cache';
 import { SafeImage } from '@/components/safe-image';
 import { Card } from '@/components/ui/card';
 
@@ -129,14 +130,20 @@ export default function ShippingAdminPage() {
 
   const ordersQuery = useMemoFirebase(() => firestore ? collection(firestore, 'shippingOrders') : null, [firestore]);
   const { data: allOrders, isLoading, forceRefetch } = useCollection<ShippingOrder>(ordersQuery);
-  const cardsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'allCards') : null, [firestore]);
-  const { data: allCards } = useCollection<CardData>(cardsQuery);
 
-  const cardMap = useMemo(() => {
-      const map = new Map<string, CardData>();
-      allCards?.forEach(c => map.set(c.id, c));
-      return map;
-  }, [allCards]);
+  // 僅按需批次載入出貨單實際用到的卡片（取代整庫監聽 allCards，節省大量 Firestore Reads）
+  const shippingCardIds = useMemo(() => {
+    if (!allOrders) return [];
+    const ids = new Set<string>();
+    allOrders.forEach(order => {
+      order.cardIds?.forEach(c => {
+        if (c?.cardId) ids.add(c.cardId);
+      });
+    });
+    return Array.from(ids);
+  }, [allOrders]);
+
+  const cardMap = useCardTemplatesByIds(firestore, shippingCardIds) as unknown as Map<string, CardData>;
 
   const filteredOrders = useMemo(() => {
     if (!allOrders) return [];
