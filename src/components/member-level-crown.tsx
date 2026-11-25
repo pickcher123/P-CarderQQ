@@ -95,14 +95,15 @@ export const userLevels = [
 ];
 
 interface MemberLevelCrownProps {
-    level: string;
+    level?: string | null;
     showLabel?: boolean;
     className?: string;
     size?: 'sm' | 'md' | 'lg';
 }
 
 export function MemberLevelCrown({ level, showLabel = false, className, size = 'md' }: MemberLevelCrownProps) {
-    const levelInfo = userLevels.find(l => l.level === level) || userLevels[0];
+    const safeLevel = (typeof level === 'string' && level.trim()) ? level.trim() : userLevels[0].level;
+    const levelInfo = userLevels.find(l => l.level === safeLevel) || userLevels[0];
     const IconComponent = levelInfo.icon;
     
     const sizeClasses = {
@@ -117,7 +118,7 @@ export function MemberLevelCrown({ level, showLabel = false, className, size = '
         lg: 'w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16'
     };
 
-    const isHighLevel = level === '傳奇收藏家' || level === 'P+卡神' || level === '卡牌大師' || level === '殿堂級玩家';
+    const isHighLevel = safeLevel === '傳奇收藏家' || safeLevel === 'P+卡神' || safeLevel === '卡牌大師' || safeLevel === '殿堂級玩家';
 
     return (
         <div className={cn("flex flex-col items-center gap-3", className)}>
@@ -151,7 +152,7 @@ export function MemberLevelCrown({ level, showLabel = false, className, size = '
                     "text-white", // 將 levelInfo.color 強制強制固定為白色
                     isHighLevel && "animate-shimmer bg-gradient-to-r from-transparent via-white/10 to-transparent bg-[length:200%_100%]"
                 )}>
-                    {level.toUpperCase()}
+                    {safeLevel.toUpperCase()}
                 </div>
             )}
         </div>

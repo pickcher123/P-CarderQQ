@@ -38,7 +38,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Edit, Trash2, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Image as ImageIcon, Loader2, ExternalLink, Link2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SafeImage } from '@/components/safe-image';
 
@@ -46,8 +46,16 @@ interface Partner {
     id?: string;
     name: string;
     logoUrl: string;
+    websiteUrl?: string;
     order: number;
     createdAt?: { seconds: number };
+}
+
+function normalizeWebsiteUrl(raw?: string): string {
+    const trimmed = (raw || '').trim();
+    if (!trimmed) return '';
+    if (/^https?:\/\//i.test(trimmed)) return trimmed;
+    return `https://${trimmed}`;
 }
 
 export default function PartnersAdminPage() {
@@ -58,6 +66,7 @@ export default function PartnersAdminPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentItem, setCurrentItem] = useState<Partial<Partner>>({ 
     name: '', 
+    websiteUrl: '',
     order: 0 
   });
   const [isEditMode, setIsEditMode] = useState(false);
@@ -85,6 +94,7 @@ export default function PartnersAdminPage() {
         const data = { 
             ...currentItem, 
             logoUrl,
+            websiteUrl: normalizeWebsiteUrl(currentItem.websiteUrl),
             order: Number(currentItem.order) || 0,
             createdAt: currentItem.createdAt || serverTimestamp() 
         };
@@ -104,9 +114,9 @@ export default function PartnersAdminPage() {
        <div className="flex justify-between items-center">
             <div>
                 <h1 className="text-3xl font-black tracking-tight">合作夥伴管理</h1>
-                <p className="text-sm text-slate-500 font-bold mt-1">管理首頁顯示的合作夥伴 LOGO。</p>
+                <p className="text-sm text-slate-500 font-bold mt-1">管理首頁顯示的合作夥伴 LOGO 與點擊跳轉網站連結。</p>
             </div>
-            <Button onClick={() => { setIsEditMode(false); setCurrentItem({name: '', order: 0}); setPreviewUrl(null); setIsDialogOpen(true); }} className="bg-slate-900 text-white rounded-xl font-bold h-12 px-6 shadow-xl"><PlusCircle className="mr-2 h-4 w-4" /> 新增夥伴</Button>
+            <Button onClick={() => { setIsEditMode(false); setCurrentItem({ name: '', websiteUrl: '', order: 0 }); setPreviewUrl(null); setIsDialogOpen(true); }} className="bg-slate-900 text-white rounded-xl font-bold h-12 px-6 shadow-xl"><PlusCircle className="mr-2 h-4 w-4" /> 新增夥伴</Button>
         </div>
 
         <Card className="border-slate-200 shadow-sm rounded-2xl overflow-hidden bg-white">
@@ -115,12 +125,13 @@ export default function PartnersAdminPage() {
                 <TableRow>
                     <TableHead className="w-24 text-center text-[10px] font-black uppercase py-5">LOGO</TableHead>
                     <TableHead className="text-[10px] font-black uppercase">名稱</TableHead>
+                    <TableHead className="text-[10px] font-black uppercase">官網連結</TableHead>
                     <TableHead className="text-[10px] font-black uppercase text-center">排序</TableHead>
                     <TableHead className="text-right pr-8 text-[10px] font-black uppercase">操作</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
-                {isLoading ? Array.from({length: 3}).map((_, i) => <TableRow key={i}><TableCell colSpan={4} className="p-6"><Skeleton className="h-10 w-full rounded-xl" /></TableCell></TableRow>) : 
+                {isLoading ? Array.from({length: 3}).map((_, i) => <TableRow key={i}><TableCell colSpan={5} className="p-6"><Skeleton className="h-10 w-full rounded-xl" /></TableCell></TableRow>) : 
                 partners?.map((item) => (
                 <TableRow key={item.id} className="hover:bg-slate-50 border-slate-100 group">
                     <TableCell className="py-4">
@@ -131,7 +142,24 @@ export default function PartnersAdminPage() {
                     <TableCell>
                         <p className="font-bold text-slate-900">{item.name}</p>
                     </TableCell>
-                    <TableCell className="text-center font-bold text-slate-500">{item.order}</TableCell>
+                    <TableCell className="max-w-[260px]">
+                        {item.websiteUrl ? (
+                            <a
+                                href={normalizeWebsiteUrl(item.websiteUrl)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline truncate max-w-full"
+                                title={item.websiteUrl}
+                            >
+                                <Link2 className="h-3.5 w-3.5 shrink-0" />
+                                <span className="truncate">{item.websiteUrl}</span>
+                                <ExternalLink className="h-3 w-3 shrink-0" />
+                            </a>
+                        ) : (
+                            <span className="text-xs text-slate-400 font-medium">未設定連結</span>
+                        )}
+                    </TableCell>
+                    <TableCell className="text-center font-bold text-slate-500 tabular-nums">{item.order}</TableCell>
                     <TableCell className="text-right pr-8 space-x-1">
                         <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl hover:bg-slate-100" onClick={() => { setCurrentItem(item); setPreviewUrl(item.logoUrl || null); setIsEditMode(true); setIsDialogOpen(true); }}><Edit className="h-4 w-4" /></Button>
                         <AlertDialog>
@@ -168,7 +196,19 @@ export default function PartnersAdminPage() {
                 <div className="grid gap-6 py-6 overflow-y-auto max-h-[70vh] pr-2">
                     <div className="space-y-2">
                         <Label className="text-xs font-bold text-slate-500 uppercase tracking-widest">夥伴名稱</Label>
-                        <Input value={currentItem.name} onChange={e => setCurrentItem({...currentItem, name: e.target.value})} className="h-14 border-slate-200 rounded-2xl font-bold text-lg bg-white text-slate-900" placeholder="輸入夥伴名稱" />
+                        <Input value={currentItem.name || ''} onChange={e => setCurrentItem({...currentItem, name: e.target.value})} className="h-14 border-slate-200 rounded-2xl font-bold text-lg bg-white text-slate-900" placeholder="輸入夥伴名稱" />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className="text-xs font-bold text-slate-500 uppercase tracking-widest">合作夥伴網站連結（選填）</Label>
+                        <Input
+                            type="url"
+                            value={currentItem.websiteUrl || ''}
+                            onChange={e => setCurrentItem({...currentItem, websiteUrl: e.target.value})}
+                            className="h-12 border-slate-200 rounded-2xl font-medium text-sm bg-white text-slate-900"
+                            placeholder="例如：https://www.example.com"
+                        />
+                        <p className="text-[11px] text-slate-400 font-medium">填寫後，首頁點擊該合作夥伴 LOGO 將自動另開新分頁前往其網站。</p>
                     </div>
                     
                     <div className="space-y-2">

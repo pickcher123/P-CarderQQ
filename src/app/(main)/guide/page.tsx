@@ -165,21 +165,79 @@ export default function BeginnerGuidePage() {
         </div>
 
         {/* ================= 視覺化新手四步圖解指南 ================= */}
-        <section className="rounded-2xl overflow-hidden border border-white/[0.08] border-t-2 border-t-amber-300/65 bg-[#0a0f1c] shadow-[0_24px_64px_rgba(0,0,0,0.85)] relative group">
-          <div className="relative w-full aspect-[16/9] max-h-[460px] bg-[#070b14]">
-            <Image 
-              src="/assets/images/beginner-tutorial-guide.jpg"
-              alt="P+Carder 新手全景玩法圖解指南"
-              fill
-              sizes="(max-width: 1200px) 100vw, 1200px"
-              className="object-contain object-center"
-              priority
-              referrerPolicy="no-referrer"
-            />
+        <section className="rounded-2xl overflow-hidden border border-white/[0.08] border-t-2 border-t-amber-300/65 bg-[#0a0f1c] shadow-[0_24px_64px_rgba(0,0,0,0.85)] relative">
+          {/* 頂部克制暖金微光 */}
+          <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-[32rem] h-28 bg-amber-400/10 blur-3xl pointer-events-none" />
+
+          <div className="p-4 sm:p-6 lg:p-7 relative z-10">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
+              {[
+                {
+                  num: '01',
+                  title: '挑選開盒',
+                  desc: '挑選五色一番賞或主題卡池，即時線上撕包開獎',
+                  image: '/images/guide/step-1-open.jpg',
+                },
+                {
+                  num: '02',
+                  title: '數位存庫',
+                  desc: '抽中卡牌自動入庫，隨時盤點珍稀藏品與市值',
+                  image: '/images/guide/step-2-vault.jpg',
+                },
+                {
+                  num: '03',
+                  title: '現貨保護',
+                  desc: '實體現貨 24H 恆溫防潮金庫保存，附防刮保護殼',
+                  image: '/images/guide/step-3-protect.jpg',
+                },
+                {
+                  num: '04',
+                  title: '安心寄送／轉點',
+                  desc: '支援 7-11／郵寄出貨，或一鍵轉換鑽石繼續抽',
+                  image: '/images/guide/step-4-deliver.jpg',
+                },
+              ].map((item, idx) => (
+                <div
+                  key={item.num}
+                  className="group relative rounded-xl bg-white/[0.03] hover:bg-white/[0.05] border border-white/[0.08] hover:border-amber-300/45 transition-all duration-300 overflow-hidden flex flex-col"
+                >
+                  {/* 步驟編號角標 */}
+                  <div className="flex items-center justify-between px-3.5 pt-3 pb-2 border-b border-white/[0.06] bg-black/30">
+                    <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] font-mono tabular-nums text-[10px] sm:text-[11px] font-black tracking-wider">
+                      STEP {item.num}
+                    </span>
+                    <span className="text-xs sm:text-sm font-bold text-white tracking-tight">
+                      {item.title}
+                    </span>
+                  </div>
+
+                  {/* 3D 質感主視覺 */}
+                  <div className="relative aspect-square w-full bg-[#070b14] overflow-hidden">
+                    <Image
+                      src={item.image}
+                      alt={`${item.num} ${item.title}`}
+                      fill
+                      sizes="(max-width: 1024px) 50vw, 25vw"
+                      className="object-cover object-center group-hover:scale-105 transition-transform duration-500"
+                      priority={idx < 2}
+                    />
+                    <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-[#0a0f1c] to-transparent pointer-events-none" />
+                  </div>
+
+                  {/* 精簡說明 */}
+                  <div className="px-3.5 py-3 flex-1 flex items-center">
+                    <p className="text-[11px] sm:text-xs text-slate-400 leading-relaxed">
+                      {item.desc}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="p-4 sm:p-5 bg-[#0a0f1c]/95 border-t border-white/[0.08] flex items-center justify-between gap-3 flex-wrap">
+
+          <div className="px-4 sm:px-6 py-3.5 bg-black/40 border-t border-white/[0.08] flex items-center justify-between gap-3 flex-wrap">
             <span className="text-xs sm:text-sm font-bold text-[#FDE68A]">
-              核心流程：1. 挑選五色一番賞 / 卡池 · 2. 存入數位收藏庫 · 3. 24H 恆溫防潮保護 · 4. 專業宅配或一鍵轉點
+              核心流程：1. 挑選五色一番賞 / 卡池 · 2. 存入數位收藏庫 · 3. 24H 恆溫防潮保護 · 4. 7-11 / 宅配出貨或一鍵轉點
             </span>
             <span className="text-xs text-slate-400 hidden sm:inline">實體現貨在庫 · 恆溫防潮保存</span>
           </div>

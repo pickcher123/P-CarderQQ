@@ -35,17 +35,12 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { SafeImage } from '@/components/safe-image';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { useSystemConfig } from '@/components/providers/system-config-provider';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
 export default function AboutPage() {
   const { toast } = useToast();
-  const { systemConfig } = useSystemConfig();
-
-  const fallbackOriginImage = PlaceHolderImages.find(img => img.id === 'about-origin');
-  const originImageUrl = systemConfig?.aboutOriginImageUrl || fallbackOriginImage?.imageUrl || '';
+  const originImageUrl = '/images/brand-story-origin.png';
 
   const [activeTab, setActiveTab] = useState(0);
   const [isCopiedLine, setIsCopiedLine] = useState(false);

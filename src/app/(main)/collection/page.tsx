@@ -41,7 +41,7 @@ import {
   Users, Users2, MapPin, SearchCode, X, Sparkles, ChevronRight, Package, 
   Library, Hash, Info, AlertTriangle, RotateCcw, Filter, ArrowUpDown, 
   RotateCw, ArrowLeft, Search, Check, Flame, SlidersHorizontal, Layers, Eye,
-  Coins, Truck, ShieldCheck, HelpCircle, Crown, Award, Grid3X3, Grid2X2, CheckCheck, Gift
+  Coins, Truck, ShieldCheck, HelpCircle, Crown, Award, Grid3X3, Grid2X2, CheckCheck, Gift, ExternalLink, Store
 } from 'lucide-react';
 import { useCollection, useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { getBonusMultiplier, isBonusEventActive } from '@/lib/bonus-event';
@@ -138,6 +138,11 @@ export default function CollectionPage() {
   const [shippingName, setShippingName] = useState('');
   const [shippingPhone, setShippingPhone] = useState('');
   const [shippingAddress, setShippingAddress] = useState('');
+  const [shippingStoreId, setShippingStoreId] = useState('');
+  const [shippingStoreName, setShippingStoreName] = useState('');
+  const [storeSuggestions, setStoreSuggestions] = useState<Array<{ storeId: string; storeName: string; rawName: string; address: string }>>([]);
+  const [isSearchingStore, setIsSearchingStore] = useState(false);
+  const [verifiedStoreAddress, setVerifiedStoreAddress] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'all' | 'standard' | 'prizes' | 'break' | 'random'>('all');
@@ -161,7 +166,21 @@ export default function CollectionPage() {
     if (userProfile) {
       setShippingName(userProfile.realName || userProfile.username || '');
       setShippingPhone(userProfile.phone || '');
-      setShippingAddress(userProfile.address || '');
+      const savedAddr = userProfile.address || '';
+      setShippingAddress(savedAddr);
+      // 若個人檔案曾留存 7-11 店號或門市資訊，自動帶入對應欄位
+      const storeIdMatch = savedAddr.match(/\b(\d{6})\b/);
+      if (storeIdMatch) {
+        setShippingStoreId(storeIdMatch[1]);
+        const cleanedName = savedAddr
+          .replace(/7-?11/gi, '')
+          .replace(/\(?\s*店號[:：\s]*\d{6}\s*\)?/g, '')
+          .replace(storeIdMatch[1], '')
+          .trim();
+        if (cleanedName) setShippingStoreName(cleanedName);
+      } else if (/7-?11|門市/.test(savedAddr)) {
+        setShippingStoreName(savedAddr.replace(/7-?11/gi, '').trim());
+      }
     }
   }, [userProfile]);
 
@@ -696,10 +715,94 @@ export default function CollectionPage() {
     } finally { setIsProcessing(false); }
   };
 
-  const handleShipping = async () => {
-    const finalAddress = shippingMethod === '面交自取' ? `${PICKUP_ADDRESS} (自取)` : shippingAddress;
+  const handleLookup711Store = async (rawQuery?: string, silent = false) => {
+    const q = (rawQuery ?? (shippingStoreName.trim() || shippingStoreId.trim())).trim();
+    if (!q || q.length < 2) {
+      if (!silent) {
+        toast({ variant: 'destructive', title: '請先輸入門市名稱或 6 碼店號', description: '例如輸入「長津」或「960096」再點查詢。' });
+      }
+      return null;
+    }
 
-    if (selectedCardIds.size === 0 || !user || !firestore || !finalAddress || !shippingName || !shippingPhone) {
+    setIsSearchingStore(true);
+    try {
+      const res = await fetch(`/api/logistics/711-store?q=${encodeURIComponent(q)}`);
+      if (!res.ok) throw new Error('lookup failed');
+      const data = await res.json();
+      const stores: Array<{ storeId: string; storeName: string; rawName: string; address: string }> = data.stores || [];
+
+      if (stores.length === 0) {
+        setStoreSuggestions([]);
+        setVerifiedStoreAddress(null);
+        if (!silent) {
+          toast({ variant: 'destructive', title: '查無此 7-11 門市', description: '請確認門市名稱是否正確，或點右上角開啟官方地圖查詢。' });
+        }
+        return null;
+      }
+
+      const cleanedTarget = q.replace(/7-?11|門市$|店$/gi, '').trim();
+      const exactMatch = stores.find(s => s.rawName === cleanedTarget || s.storeId === cleanedTarget);
+
+      if (stores.length === 1 || exactMatch) {
+        const picked = exactMatch || stores[0];
+        setShippingStoreId(picked.storeId);
+        setShippingStoreName(picked.storeName);
+        setVerifiedStoreAddress(picked.address);
+        setStoreSuggestions([]);
+        if (!silent) {
+          toast({ title: '已自動帶入 7-11 門市店號', description: `${picked.storeName}（店號 ${picked.storeId}）` });
+        }
+        return picked;
+      }
+
+      setStoreSuggestions(stores);
+      setVerifiedStoreAddress(null);
+      return null;
+    } catch {
+      if (!silent) {
+        toast({ variant: 'destructive', title: '自動查詢失敗', description: '暫時無法連線至 7-11 門市資料庫，請改用官方地圖查詢。' });
+      }
+      return null;
+    } finally {
+      setIsSearchingStore(false);
+    }
+  };
+
+  const handleShipping = async () => {
+    let cleanStoreId = shippingStoreId.replace(/\D/g, '').trim();
+    let cleanStoreName = shippingStoreName.trim();
+
+    if (shippingMethod === '7-11') {
+      if (!cleanStoreId && !cleanStoreName) {
+        toast({ variant: 'destructive', title: '請填寫 7-11 門市資訊', description: '請輸入門市名稱或 6 碼門市店號。' });
+        return;
+      }
+      if (cleanStoreId && cleanStoreId.length !== 6) {
+        toast({ variant: 'destructive', title: '門市店號格式錯誤', description: '7-11 門市店號應為 6 碼數字（例如：960096）。' });
+        return;
+      }
+      // 若客人只輸入門市名稱忘了填店號（或只輸入店號未填名稱），送出前自動向 7-11 官方資料庫補抓一次
+      if ((!cleanStoreId && cleanStoreName) || (cleanStoreId && !cleanStoreName)) {
+        const autoMatched = await handleLookup711Store(cleanStoreId || cleanStoreName, true);
+        if (autoMatched) {
+          cleanStoreId = autoMatched.storeId;
+          cleanStoreName = autoMatched.storeName;
+        }
+      }
+    }
+
+    const finalAddress =
+      shippingMethod === '面交自取'
+        ? `${PICKUP_ADDRESS} (自取)`
+        : shippingMethod === '7-11'
+          ? cleanStoreId && cleanStoreName
+            ? `7-11 ${cleanStoreName} (店號 ${cleanStoreId})`
+            : cleanStoreId
+              ? `7-11 店號 ${cleanStoreId}`
+              : `7-11 ${cleanStoreName}`
+          : shippingAddress.trim();
+
+    if (selectedCardIds.size === 0 || !user || !firestore || !finalAddress || !shippingName.trim() || !shippingPhone.trim()) {
         toast({ variant: 'destructive', title: '錯誤', description: '所有收件資訊皆為必填。'});
         return;
     }
@@ -718,11 +821,13 @@ export default function CollectionPage() {
         const shippingOrderRef = doc(collection(firestore, 'shippingOrders'));
         batch.set(shippingOrderRef, {
             userId: user.uid,
-            name: shippingName,
-            phone: shippingPhone,
+            name: shippingName.trim(),
+            phone: shippingPhone.trim(),
+            email: user.email || userProfile?.email || '',
             cardIds: cardsToShip.map(c => ({ cardId: c.cardId, rarity: c.rarity, category: c.category, isFoil: c.isFoil })),
             cardCount: selectedCardIds.size,
             address: finalAddress,
+            ...(shippingMethod === '7-11' ? { storeId: cleanStoreId || null, storeName: cleanStoreName || null } : {}),
             shippingMethod,
             status: 'pending',
             createdAt: serverTimestamp(),
@@ -2024,25 +2129,135 @@ export default function CollectionPage() {
                             </div>
                           </div>
 
-                          <div className="space-y-1 w-full">
-                            <Label className="text-xs font-bold text-slate-300">{addressLabel} *</Label>
-                            {shippingMethod === '面交自取' ? (
-                              <div className="p-3 bg-cyan-500/10 rounded-xl border border-cyan-500/30 text-xs text-cyan-300 space-y-1">
-                                <p className="font-bold flex items-center gap-1.5">
-                                  <MapPin className="w-4 h-4 text-cyan-400 shrink-0" />
-                                  <span>{PICKUP_ADDRESS}</span>
+                          <div className="space-y-2 w-full">
+                            {shippingMethod === '7-11' ? (
+                              <>
+                                <div className="flex items-center justify-between gap-2">
+                                  <Label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                                    <Store className="w-3.5 h-3.5 text-[#FDE68A]" />
+                                    <span>7-11 取貨門市資訊 *</span>
+                                  </Label>
+                                  <a
+                                    href="https://emap.pcsc.com.tw/emap.aspx"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-300/10 hover:bg-amber-300/20 border border-amber-300/35 text-[11px] font-bold text-[#FDE68A] transition-colors"
+                                  >
+                                    <span>查詢門市店號</span>
+                                    <ExternalLink className="w-3 h-3" />
+                                  </a>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                  <div className="space-y-1">
+                                    <Label className="text-[11px] font-semibold text-slate-400">門市名稱（輸入後自動查店號）</Label>
+                                    <div className="flex gap-1.5">
+                                      <Input
+                                        value={shippingStoreName}
+                                        onChange={(e) => {
+                                          setShippingStoreName(e.target.value);
+                                          setVerifiedStoreAddress(null);
+                                        }}
+                                        onBlur={() => {
+                                          if (shippingStoreName.trim().length >= 2 && !shippingStoreId.trim()) {
+                                            handleLookup711Store(shippingStoreName.trim(), true);
+                                          }
+                                        }}
+                                        placeholder="例如：長津門市"
+                                        className="h-9 sm:h-10 bg-slate-900 border-white/10 focus:border-amber-300/50 rounded-xl text-xs text-white"
+                                      />
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => handleLookup711Store(shippingStoreName.trim() || shippingStoreId.trim(), false)}
+                                        disabled={isSearchingStore}
+                                        className="h-9 sm:h-10 px-3 rounded-xl bg-amber-300/10 hover:bg-amber-300/20 border-amber-300/35 text-[#FDE68A] text-[11px] font-bold shrink-0 gap-1"
+                                        title="自動查詢 7-11 官方店號"
+                                      >
+                                        {isSearchingStore ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
+                                        <span>查店號</span>
+                                      </Button>
+                                    </div>
+                                  </div>
+                                  <div className="space-y-1">
+                                    <Label className="text-[11px] font-semibold text-slate-400">6 碼門市店號（自動帶入或手填）</Label>
+                                    <Input
+                                      value={shippingStoreId}
+                                      onChange={(e) => {
+                                        const digits = e.target.value.replace(/\D/g, '').slice(0, 6);
+                                        setShippingStoreId(digits);
+                                        if (digits.length === 6 && !shippingStoreName.trim()) {
+                                          handleLookup711Store(digits, true);
+                                        }
+                                      }}
+                                      inputMode="numeric"
+                                      maxLength={6}
+                                      placeholder="例如：960096"
+                                      className="h-9 sm:h-10 bg-slate-900 border-white/10 focus:border-amber-300/50 rounded-xl text-xs text-white font-mono tabular-nums"
+                                    />
+                                  </div>
+                                </div>
+                                {verifiedStoreAddress && (
+                                  <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-400/30 text-[11px] text-emerald-300">
+                                    <Check className="w-3.5 h-3.5 shrink-0" />
+                                    <span className="truncate">已自動驗證官方門市：{shippingStoreName}（店號 {shippingStoreId}）· {verifiedStoreAddress}</span>
+                                  </div>
+                                )}
+                                {storeSuggestions.length > 0 && (
+                                  <div className="rounded-xl bg-[#0a0f1c] border border-amber-300/35 p-2 space-y-1 max-h-40 overflow-y-auto">
+                                    <p className="text-[10px] font-bold text-[#FDE68A] px-1">找到 {storeSuggestions.length} 間相符門市，請點選：</p>
+                                    {storeSuggestions.map((s) => (
+                                      <button
+                                        key={s.storeId}
+                                        type="button"
+                                        onClick={() => {
+                                          setShippingStoreId(s.storeId);
+                                          setShippingStoreName(s.storeName);
+                                          setVerifiedStoreAddress(s.address);
+                                          setStoreSuggestions([]);
+                                        }}
+                                        className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-white/[0.06] transition-colors flex items-center justify-between gap-2"
+                                      >
+                                        <div className="min-w-0">
+                                          <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                                            <span>{s.storeName}</span>
+                                            <span className="font-mono tabular-nums text-[10px] text-[#FDE68A] bg-amber-300/10 px-1.5 py-0.5 rounded">
+                                              {s.storeId}
+                                            </span>
+                                          </div>
+                                          <p className="text-[10px] text-slate-400 truncate">{s.address}</p>
+                                        </div>
+                                        <ChevronRight className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                                <p className="text-[10.5px] text-slate-400 leading-relaxed">
+                                  ※ 輸入門市名稱後將自動向 7-11 官方資料庫抓出 6 碼店號；也可點擊「查詢門市店號」開啟官方地圖確認。
                                 </p>
-                                <p className="text-[11px] text-slate-400">
-                                  ※ 面交自取請於下單後聯繫官方 LINE 客服預約取件時段。
-                                </p>
-                              </div>
+                              </>
+                            ) : shippingMethod === '面交自取' ? (
+                              <>
+                                <Label className="text-xs font-bold text-slate-300">{addressLabel} *</Label>
+                                <div className="p-3 bg-cyan-500/10 rounded-xl border border-cyan-500/30 text-xs text-cyan-300 space-y-1">
+                                  <p className="font-bold flex items-center gap-1.5">
+                                    <MapPin className="w-4 h-4 text-cyan-400 shrink-0" />
+                                    <span>{PICKUP_ADDRESS}</span>
+                                  </p>
+                                  <p className="text-[11px] text-slate-400">
+                                    ※ 面交自取請於下單後聯繫官方 LINE 客服預約取件時段。
+                                  </p>
+                                </div>
+                              </>
                             ) : (
-                              <Input 
-                                value={shippingAddress} 
-                                onChange={(e) => setShippingAddress(e.target.value)} 
-                                placeholder={shippingMethod === '7-11' ? "例如：長津門市 或 店號123456" : "例如：台北市信義區信義路五段7號"}
-                                className="h-9 sm:h-10 bg-slate-900 border-white/10 rounded-xl text-xs text-white"
-                              />
+                              <>
+                                <Label className="text-xs font-bold text-slate-300">{addressLabel} *</Label>
+                                <Input 
+                                  value={shippingAddress} 
+                                  onChange={(e) => setShippingAddress(e.target.value)} 
+                                  placeholder="例如：台北市信義區信義路五段7號"
+                                  className="h-9 sm:h-10 bg-slate-900 border-white/10 rounded-xl text-xs text-white"
+                                />
+                              </>
                             )}
                           </div>
 

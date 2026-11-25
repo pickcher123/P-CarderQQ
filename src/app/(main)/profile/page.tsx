@@ -39,7 +39,8 @@ import {
     ShieldCheck,
     Copy,
     Check,
-    Plus
+    Plus,
+    ExternalLink
 } from 'lucide-react';
 import { PPlusIcon, DiamondIcon } from "@/components/icons";
 import { PurchasePointsDialog } from "@/components/purchase-points-dialog";
@@ -302,6 +303,14 @@ function ShippingOrdersTab({ userId }: { userId: string }) {
         setTimeout(() => setCopiedTrackingId(null), 2000);
     };
 
+    const handleTrack711 = (orderId: string, tracking: string) => {
+        navigator.clipboard?.writeText(tracking).catch(() => {});
+        setCopiedTrackingId(orderId);
+        toast({ title: '已複製單號並開啟 7-11 貨態查詢', description: `請於 7-11 查詢頁面貼上單號：${tracking}` });
+        setTimeout(() => setCopiedTrackingId(null), 2000);
+        window.open('https://eservice.7-11.com.tw/e-tracking/search.aspx', '_blank', 'noopener,noreferrer');
+    };
+
     const handleCancelOrder = async (order: ShippingOrder) => {
         if (!firestore || !userId || order.status !== 'pending') return;
         setIsCancelling(order.id);
@@ -364,18 +373,30 @@ function ShippingOrdersTab({ userId }: { userId: string }) {
 
                                 {order.trackingNumber && (
                                     <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-black/40 border border-white/[0.08]">
-                                        <div className="text-[11px] text-slate-300 font-mono truncate">
+                                        <div className="text-[11px] text-slate-300 font-mono tabular-nums truncate">
                                             <span className="text-slate-500 mr-1.5">物流單號</span>
                                             <span className="text-[#FDE68A]">{order.trackingNumber}</span>
                                         </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleCopyTracking(order.id, order.trackingNumber!)}
-                                            className="text-[11px] text-amber-200 hover:text-amber-100 flex items-center gap-1 shrink-0 cursor-pointer"
-                                        >
-                                            {copiedTrackingId === order.id ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                                            <span>{copiedTrackingId === order.id ? '已複製' : '複製'}</span>
-                                        </button>
+                                        <div className="flex items-center gap-2 shrink-0">
+                                            <button
+                                                type="button"
+                                                onClick={() => handleCopyTracking(order.id, order.trackingNumber!)}
+                                                className="text-[11px] text-amber-200 hover:text-amber-100 flex items-center gap-1 cursor-pointer"
+                                            >
+                                                {copiedTrackingId === order.id ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                                                <span>{copiedTrackingId === order.id ? '已複製' : '複製'}</span>
+                                            </button>
+                                            {order.shippingMethod === '7-11' && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleTrack711(order.id, order.trackingNumber!)}
+                                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-300/15 hover:bg-amber-300/25 border border-amber-300/40 text-[10px] font-bold text-[#FDE68A] cursor-pointer transition-colors"
+                                                >
+                                                    <span>查貨態</span>
+                                                    <ExternalLink className="w-2.5 h-2.5" />
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
                                 )}
 
@@ -423,15 +444,28 @@ function ShippingOrdersTab({ userId }: { userId: string }) {
                                                 {order.shippingMethod || '標準寄送'}
                                             </span>
                                             {order.trackingNumber ? (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleCopyTracking(order.id, order.trackingNumber!)}
-                                                    className="inline-flex items-center gap-1 font-mono text-[11px] text-[#FDE68A] hover:underline cursor-pointer"
-                                                    title="點擊複製物流單號"
-                                                >
-                                                    <span>{order.trackingNumber}</span>
-                                                    {copiedTrackingId === order.id ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 opacity-75" />}
-                                                </button>
+                                                <div className="inline-flex items-center gap-2 flex-wrap">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleCopyTracking(order.id, order.trackingNumber!)}
+                                                        className="inline-flex items-center gap-1 font-mono tabular-nums text-[11px] text-[#FDE68A] hover:underline cursor-pointer"
+                                                        title="點擊複製物流單號"
+                                                    >
+                                                        <span>{order.trackingNumber}</span>
+                                                        {copiedTrackingId === order.id ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 opacity-75" />}
+                                                    </button>
+                                                    {order.shippingMethod === '7-11' && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleTrack711(order.id, order.trackingNumber!)}
+                                                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-300/15 hover:bg-amber-300/25 border border-amber-300/40 text-[10px] font-bold text-[#FDE68A] cursor-pointer transition-colors"
+                                                            title="複製單號並開啟 7-11 官方貨態查詢頁"
+                                                        >
+                                                            <span>查 7-11 貨態</span>
+                                                            <ExternalLink className="w-2.5 h-2.5" />
+                                                        </button>
+                                                    )}
+                                                </div>
                                             ) : (
                                                 <span className="text-[11px] text-slate-500">尚未產生單號</span>
                                             )}

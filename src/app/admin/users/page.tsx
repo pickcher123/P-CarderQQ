@@ -31,12 +31,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
-import { Loader2, User as UserIcon, Gem, MapPin, Search, UserCheck, Briefcase, Mail, Ticket, Send, Sparkles, Clock, LogIn, ShieldCheck, FileText } from 'lucide-react';
+import { Loader2, User as UserIcon, Gem, MapPin, Search, UserCheck, Briefcase, Mail, Ticket, Send, Sparkles, Clock, LogIn, ShieldCheck, FileText, ArrowUpDown, ArrowUp, ArrowDown, Filter, RotateCcw } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { MemberLevelCrown } from '@/components/member-level-crown';
+import { MemberLevelCrown, userLevels } from '@/components/member-level-crown';
 import { cn, toSafeDate } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -1470,11 +1470,113 @@ export default function UsersAdminPage() {
     }));
   }, [allPools]);
   
+  type SortKey = 'memberNo' | 'name' | 'level' | 'points' | 'bonusPoints' | 'tickets' | 'role';
+  const [sortKey, setSortKey] = useState<SortKey>('memberNo');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const [roleFilter, setRoleFilter] = useState<'all' | 'user' | 'admin' | 'hasAgent'>('all');
+  const [levelFilter, setLevelFilter] = useState<string>('all');
+
+  const handleHeaderSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir(prev => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortDir(key === 'name' ? 'asc' : 'desc');
+    }
+  };
+
+  // 依註冊日期由舊到新計算穩定的會員編號 (#0001, #0002...)
+  const memberNumberMap = useMemo(() => {
+    const map = new Map<string, number>();
+    if (!users) return map;
+    const sortedByJoin = [...users].sort((a, b) => {
+      const timeA = toSafeDate(a.createdAt)?.getTime() ?? Number.MAX_SAFE_INTEGER;
+      const timeB = toSafeDate(b.createdAt)?.getTime() ?? Number.MAX_SAFE_INTEGER;
+      if (timeA !== timeB) return timeA - timeB;
+      return a.id.localeCompare(b.id);
+    });
+    sortedByJoin.forEach((u, idx) => {
+      map.set(u.id, idx + 1);
+    });
+    return map;
+  }, [users]);
+
+  const getLevelRank = (level?: string) => {
+    const idx = userLevels.findIndex(l => l.level === (level || '新手收藏家'));
+    return idx >= 0 ? idx : 0;
+  };
+
   const filteredUsers = useMemo(() => {
     if (!users) return [];
-    let result = users.filter(u => !searchTerm.trim() || u.username?.toLowerCase().includes(searchTerm.toLowerCase()) || u.email?.toLowerCase().includes(searchTerm.toLowerCase()) || u.id.includes(searchTerm));
-    return result.sort((a, b) => ((b.createdAt as any)?.seconds || 0) - ((a.createdAt as any)?.seconds || 0));
-  }, [users, searchTerm]);
+    const q = searchTerm.trim().toLowerCase();
+    const numericQ = q.replace(/^#/, '');
+
+    const result = users.filter(u => {
+      if (roleFilter === 'admin' && u.role !== 'admin') return false;
+      if (roleFilter === 'user' && u.role === 'admin') return false;
+      if (roleFilter === 'hasAgent' && !u.agentName) return false;
+      if (levelFilter !== 'all' && (u.userLevel || '新手收藏家') !== levelFilter) return false;
+
+      if (!q) return true;
+      const memberNo = memberNumberMap.get(u.id);
+      const formattedNo = memberNo ? `#${String(memberNo).padStart(4, '0')}` : '';
+      return (
+        u.username?.toLowerCase().includes(q) ||
+        u.email?.toLowerCase().includes(q) ||
+        u.id.toLowerCase().includes(q) ||
+        (u.agentName && u.agentName.toLowerCase().includes(q)) ||
+        formattedNo.includes(q) ||
+        (memberNo !== undefined && String(memberNo) === numericQ)
+      );
+    });
+
+    const dir = sortDir === 'asc' ? 1 : -1;
+    return result.sort((a, b) => {
+      switch (sortKey) {
+        case 'memberNo': {
+          const numA = memberNumberMap.get(a.id) ?? 0;
+          const numB = memberNumberMap.get(b.id) ?? 0;
+          return (numA - numB) * dir;
+        }
+        case 'name': {
+          const nameA = (a.username || a.email || '').toLowerCase();
+          const nameB = (b.username || b.email || '').toLowerCase();
+          return nameA.localeCompare(nameB, 'zh-Hant') * dir;
+        }
+        case 'level': {
+          const rankDiff = getLevelRank(a.userLevel) - getLevelRank(b.userLevel);
+          if (rankDiff !== 0) return rankDiff * dir;
+          return ((a.points || 0) - (b.points || 0)) * dir;
+        }
+        case 'points':
+          return ((a.points || 0) - (b.points || 0)) * dir;
+        case 'bonusPoints':
+          return ((a.bonusPoints || 0) - (b.bonusPoints || 0)) * dir;
+        case 'tickets': {
+          const tA = (a.freeDrawTickets || 0) + Object.values(a.eventPoolTickets || {}).reduce((s, v) => s + v, 0);
+          const tB = (b.freeDrawTickets || 0) + Object.values(b.eventPoolTickets || {}).reduce((s, v) => s + v, 0);
+          return (tA - tB) * dir;
+        }
+        case 'role': {
+          const roleScore = (u: UserProfile) => (u.role === 'admin' ? 2 : u.agentName ? 1 : 0);
+          const diff = roleScore(a) - roleScore(b);
+          if (diff !== 0) return diff * dir;
+          return (a.agentName || '').localeCompare(b.agentName || '', 'zh-Hant') * dir;
+        }
+        default:
+          return 0;
+      }
+    });
+  }, [users, searchTerm, roleFilter, levelFilter, sortKey, sortDir, memberNumberMap]);
+
+  const renderSortIcon = (key: SortKey) => {
+    if (sortKey !== key) return <ArrowUpDown className="w-3 h-3 text-slate-400 opacity-70" />;
+    return sortDir === 'asc'
+      ? <ArrowUp className="w-3 h-3 text-amber-600" />
+      : <ArrowDown className="w-3 h-3 text-amber-600" />;
+  };
+
+  const hasActiveFilters = roleFilter !== 'all' || levelFilter !== 'all' || sortKey !== 'memberNo' || sortDir !== 'desc' || Boolean(searchTerm.trim());
 
   return (
     <div className="space-y-6">
@@ -1496,7 +1598,7 @@ export default function UsersAdminPage() {
         <div className="relative w-full sm:w-80 lg:w-96 shrink-0">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <Input 
-            placeholder="搜尋名稱、Email 或 UID..." 
+            placeholder="搜尋編號(#0001)、名稱、Email、業務或 UID..." 
             className="pl-12 h-11 sm:h-12 bg-white border-slate-200 rounded-2xl shadow-xs font-bold text-slate-900 placeholder:text-slate-400" 
             value={searchTerm} 
             onChange={(e) => setSearchTerm(e.target.value)} 
@@ -1542,24 +1644,167 @@ export default function UsersAdminPage() {
         <BatchGrantFreeTicketsDialog onComplete={() => forceRefetch?.()} />
       </div>
 
+      {/* 篩選與排序列 */}
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 bg-white border border-slate-200 rounded-2xl shadow-xs">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex items-center gap-1.5 text-xs font-black text-slate-500">
+            <Filter className="w-3.5 h-3.5" />
+            <span>篩選與排序</span>
+          </div>
+          <Select value={roleFilter} onValueChange={(v) => setRoleFilter(v as any)}>
+            <SelectTrigger className="h-9 w-[125px] rounded-xl bg-slate-50 border-slate-200 text-xs font-bold text-slate-800">
+              <SelectValue placeholder="角色篩選" />
+            </SelectTrigger>
+            <SelectContent className="light rounded-xl">
+              <SelectItem value="all" className="text-xs font-bold">全部角色</SelectItem>
+              <SelectItem value="user" className="text-xs font-bold">一般會員</SelectItem>
+              <SelectItem value="admin" className="text-xs font-bold">系統管理員</SelectItem>
+              <SelectItem value="hasAgent" className="text-xs font-bold">已綁定業務</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={levelFilter} onValueChange={setLevelFilter}>
+            <SelectTrigger className="h-9 w-[135px] rounded-xl bg-slate-50 border-slate-200 text-xs font-bold text-slate-800">
+              <SelectValue placeholder="等級篩選" />
+            </SelectTrigger>
+            <SelectContent className="light rounded-xl">
+              <SelectItem value="all" className="text-xs font-bold">全部等級</SelectItem>
+              {userLevels.map(l => (
+                <SelectItem key={l.level} value={l.level} className="text-xs font-bold">
+                  {l.level}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={`${sortKey}:${sortDir}`}
+            onValueChange={(v) => {
+              const [k, d] = v.split(':') as [SortKey, 'asc' | 'desc'];
+              setSortKey(k);
+              setSortDir(d);
+            }}
+          >
+            <SelectTrigger className="h-9 w-[175px] rounded-xl bg-slate-50 border-slate-200 text-xs font-bold text-slate-800">
+              <SelectValue placeholder="排序方式" />
+            </SelectTrigger>
+            <SelectContent className="light rounded-xl">
+              <SelectItem value="memberNo:desc" className="text-xs font-bold">最新註冊（編號由大到小）</SelectItem>
+              <SelectItem value="memberNo:asc" className="text-xs font-bold">最早註冊（#0001 起）</SelectItem>
+              <SelectItem value="points:desc" className="text-xs font-bold">鑽石餘額：由高到低</SelectItem>
+              <SelectItem value="points:asc" className="text-xs font-bold">鑽石餘額：由低到高</SelectItem>
+              <SelectItem value="bonusPoints:desc" className="text-xs font-bold">P 點餘額：由高到低</SelectItem>
+              <SelectItem value="tickets:desc" className="text-xs font-bold">抽卡券數：由多到少</SelectItem>
+              <SelectItem value="level:desc" className="text-xs font-bold">等級稱號：由高到低</SelectItem>
+              <SelectItem value="level:asc" className="text-xs font-bold">等級稱號：由低到高</SelectItem>
+              <SelectItem value="role:desc" className="text-xs font-bold">系統角色：管理員優先</SelectItem>
+              <SelectItem value="name:asc" className="text-xs font-bold">會員名稱：A → Z</SelectItem>
+            </SelectContent>
+          </Select>
+          {hasActiveFilters && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSearchTerm('');
+                setRoleFilter('all');
+                setLevelFilter('all');
+                setSortKey('memberNo');
+                setSortDir('desc');
+              }}
+              className="h-9 px-2.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-900 gap-1"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>重設</span>
+            </Button>
+          )}
+        </div>
+        <div className="text-xs font-bold text-slate-500 tabular-nums">
+          顯示 <span className="text-slate-900 font-black">{filteredUsers.length}</span> / {users?.length || 0} 位會員
+        </div>
+      </div>
+
       <Card className="border-slate-200 shadow-lg overflow-hidden rounded-3xl bg-white">
         <div className="overflow-x-auto custom-scrollbar">
-            <Table className="min-w-[1050px]">
+            <Table className="min-w-[1160px]">
             <TableHeader className="bg-slate-50">
                 <TableRow className="border-b-slate-200">
-                    <TableHead className="pl-8 text-[10px] font-black uppercase text-slate-900 tracking-widest py-5 min-w-[220px]">會員資訊</TableHead>
-                    <TableHead className="text-[10px] font-black uppercase text-slate-900 tracking-widest whitespace-nowrap min-w-[130px]">等級稱號</TableHead>
-                    <TableHead className="text-[10px] font-black uppercase text-slate-900 tracking-widest whitespace-nowrap min-w-[130px]">帳戶資產</TableHead>
-                    <TableHead className="text-[10px] font-black uppercase text-slate-900 tracking-widest whitespace-nowrap min-w-[90px]">系統角色</TableHead>
+                    <TableHead className="pl-6 text-[10px] font-black uppercase text-slate-900 tracking-widest py-5 whitespace-nowrap min-w-[115px]">
+                        <button
+                          type="button"
+                          onClick={() => handleHeaderSort('memberNo')}
+                          className="inline-flex items-center gap-1 hover:text-amber-700 transition-colors cursor-pointer select-none"
+                          title="按會員編號／註冊日期排序"
+                        >
+                          <span>會員編號</span>
+                          {renderSortIcon('memberNo')}
+                        </button>
+                    </TableHead>
+                    <TableHead className="text-[10px] font-black uppercase text-slate-900 tracking-widest py-5 min-w-[210px]">
+                        <button
+                          type="button"
+                          onClick={() => handleHeaderSort('name')}
+                          className="inline-flex items-center gap-1 hover:text-amber-700 transition-colors cursor-pointer select-none"
+                          title="按會員名稱排序"
+                        >
+                          <span>會員資訊</span>
+                          {renderSortIcon('name')}
+                        </button>
+                    </TableHead>
+                    <TableHead className="text-[10px] font-black uppercase text-slate-900 tracking-widest whitespace-nowrap min-w-[130px]">
+                        <button
+                          type="button"
+                          onClick={() => handleHeaderSort('level')}
+                          className="inline-flex items-center gap-1 hover:text-amber-700 transition-colors cursor-pointer select-none"
+                          title="按會員等級高低排序"
+                        >
+                          <span>等級稱號</span>
+                          {renderSortIcon('level')}
+                        </button>
+                    </TableHead>
+                    <TableHead className="text-[10px] font-black uppercase text-slate-900 tracking-widest whitespace-nowrap min-w-[140px]">
+                        <button
+                          type="button"
+                          onClick={() => handleHeaderSort('points')}
+                          className="inline-flex items-center gap-1 hover:text-amber-700 transition-colors cursor-pointer select-none"
+                          title="按鑽石餘額排序"
+                        >
+                          <span>帳戶資產</span>
+                          {renderSortIcon('points')}
+                        </button>
+                    </TableHead>
+                    <TableHead className="text-[10px] font-black uppercase text-slate-900 tracking-widest whitespace-nowrap min-w-[100px]">
+                        <button
+                          type="button"
+                          onClick={() => handleHeaderSort('role')}
+                          className="inline-flex items-center gap-1 hover:text-amber-700 transition-colors cursor-pointer select-none"
+                          title="按系統角色排序"
+                        >
+                          <span>系統角色</span>
+                          {renderSortIcon('role')}
+                        </button>
+                    </TableHead>
                     <TableHead className="text-right pr-8 text-[10px] font-black uppercase text-slate-900 tracking-widest whitespace-nowrap min-w-[340px]">管理操作</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
                 {isLoading ? Array.from({ length: 5 }).map((_, i) => (
-                    <TableRow key={i}><TableCell colSpan={5} className="p-6"><Skeleton className="h-12 w-full rounded-2xl" /></TableCell></TableRow>
-                )) : filteredUsers.length > 0 ? filteredUsers.map((user) => (
+                    <TableRow key={i}><TableCell colSpan={6} className="p-6"><Skeleton className="h-12 w-full rounded-2xl" /></TableCell></TableRow>
+                )) : filteredUsers.length > 0 ? filteredUsers.map((user) => {
+                    const memberNo = memberNumberMap.get(user.id);
+                    const joinedDate = toSafeDate(user.createdAt);
+                    return (
                     <TableRow key={user.id} className={cn("hover:bg-slate-50/80 transition-colors border-b-slate-100", isSuperAdminEmail(user.email) && "bg-blue-50/40")}>
-                    <TableCell className="pl-8 py-5 min-w-[220px]"><UserDetailsDialog user={user} /></TableCell>
+                    <TableCell className="pl-6 py-5 whitespace-nowrap">
+                        <div className="flex flex-col gap-0.5">
+                            <span className="inline-flex items-center justify-center w-fit px-2 py-0.5 rounded-lg bg-slate-100 border border-slate-200 font-mono tabular-nums text-xs font-black text-slate-800">
+                                #{String(memberNo ?? 0).padStart(4, '0')}
+                            </span>
+                            <span className="text-[10px] font-mono tabular-nums text-slate-400">
+                                {joinedDate ? format(joinedDate, 'yyyy/MM/dd') : '-'}
+                            </span>
+                        </div>
+                    </TableCell>
+                    <TableCell className="py-5 min-w-[210px]"><UserDetailsDialog user={user} /></TableCell>
                     <TableCell className="whitespace-nowrap min-w-[130px]">
                       <Badge variant="outline" className="font-black text-[10px] border-slate-300 text-slate-700 uppercase h-6 px-3 bg-white shadow-xs whitespace-nowrap inline-flex items-center justify-center shrink-0">
                         {user.userLevel || '新手收藏家'}
@@ -1623,9 +1868,10 @@ export default function UsersAdminPage() {
                         <ModifyPointsDialog user={user} onUpdate={() => forceRefetch?.()} />
                     </div></TableCell>
                     </TableRow>
-                )) : (
+                    );
+                }) : (
                     <TableRow>
-                        <TableCell colSpan={5} className="py-20 text-center text-slate-400 font-black tracking-widest uppercase">
+                        <TableCell colSpan={6} className="py-20 text-center text-slate-400 font-black tracking-widest uppercase">
                             查無符合條件的會員
                         </TableCell>
                     </TableRow>

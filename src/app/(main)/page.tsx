@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Trophy, Sparkles, Newspaper, Calendar, ShieldCheck, Zap, Target, Megaphone, Users2, Disc3, ArrowRight, Flame, Gift, Image as ImageIcon, FileText, Radio } from 'lucide-react';
+import { ChevronRight, Trophy, Sparkles, Newspaper, Calendar, ShieldCheck, Zap, Target, Megaphone, Users2, Disc3, ArrowRight, Flame, Gift, Image as ImageIcon, FileText, Radio, ExternalLink } from 'lucide-react';
 import { LuckyBagIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { useUser, useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
@@ -51,6 +51,7 @@ interface Partner {
     id: string;
     name: string;
     logoUrl: string;
+    websiteUrl?: string;
     order: number;
 }
 
@@ -531,22 +532,51 @@ export default function Home() {
                 <Skeleton key={i} className="h-24 w-56 rounded-2xl bg-slate-900/80 border border-slate-800" />
               ))
             ) : partners && partners.length > 0 ? (
-              partners.map((partner) => (
-                <div 
-                  key={partner.id} 
-                  className="w-48 sm:w-64 h-24 sm:h-28 flex flex-col items-center justify-center p-4 rounded-2xl bg-slate-900/70 border border-slate-800/80 hover:border-amber-400/50 shadow-xl transition-all duration-200 group relative overflow-hidden backdrop-blur-md"
-                >
-                  <div className="w-full h-full relative flex items-center justify-center z-10">
-                    <SafeImage 
-                      src={partner.logoUrl} 
-                      alt={partner.name} 
-                      className="object-contain max-h-full max-w-full drop-shadow-md group-hover:scale-105 transition-transform duration-300" 
-                      width={200} 
-                      height={90} 
-                    />
+              partners.map((partner) => {
+                const rawUrl = (partner.websiteUrl || '').trim();
+                const safeHref = rawUrl
+                  ? (/^https?:\/\//i.test(rawUrl) ? rawUrl : `https://${rawUrl}`)
+                  : '';
+                const cardClassName = cn(
+                  "w-48 sm:w-64 h-24 sm:h-28 flex flex-col items-center justify-center p-4 rounded-2xl bg-slate-900/70 border border-slate-800/80 hover:border-amber-300/55 shadow-xl transition-all duration-200 group relative overflow-hidden backdrop-blur-md",
+                  safeHref && "cursor-pointer hover:-translate-y-0.5 hover:bg-white/[0.05]"
+                );
+                const inner = (
+                  <>
+                    <div className="w-full h-full relative flex items-center justify-center z-10">
+                      <SafeImage
+                        src={partner.logoUrl}
+                        alt={partner.name}
+                        className="object-contain max-h-full max-w-full drop-shadow-md group-hover:scale-105 transition-transform duration-300"
+                        width={200}
+                        height={90}
+                      />
+                    </div>
+                    {safeHref && (
+                      <span className="absolute top-2.5 right-2.5 z-20 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full bg-amber-300/15 border border-amber-300/40 text-[#FDE68A]">
+                        <ExternalLink className="w-3 h-3" />
+                      </span>
+                    )}
+                  </>
+                );
+
+                return safeHref ? (
+                  <a
+                    key={partner.id}
+                    href={safeHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={`前往 ${partner.name} 官方網站`}
+                    className={cardClassName}
+                  >
+                    {inner}
+                  </a>
+                ) : (
+                  <div key={partner.id} className={cardClassName}>
+                    {inner}
                   </div>
-                </div>
-              ))
+                );
+              })
             ) : (
               <div className="py-6 text-center text-xs text-slate-500">
                 合作夥伴品牌陸續加入中
