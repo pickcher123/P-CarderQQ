@@ -9,7 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { Megaphone, Bell, X, ChevronLeft, ChevronRight, ExternalLink, Clock, CheckCircle2, Sparkles, AlertTriangle, Pin } from 'lucide-react';
+import { useSystemConfig } from '@/components/providers/system-config-provider';
+import { Megaphone, Bell, X, ChevronLeft, ChevronRight, ExternalLink, Clock, CheckCircle2, Sparkles, AlertTriangle, Pin, MessageCircle, Users2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 export interface SiteAnnouncement {
@@ -108,6 +109,9 @@ export function useSiteAnnouncements() {
 export function SiteAnnouncementProvider({ children }: { children: React.ReactNode }) {
     const firestore = useFirestore();
     const pathname = usePathname();
+    const { systemConfig } = useSystemConfig();
+    const supportLineUrl = systemConfig?.supportLineUrl?.trim() || 'https://line.me/R/ti/p/@288qqsyq';
+    const communityLineUrl = systemConfig?.communityUrl?.trim() || 'https://line.me/ti/g2/';
     const isOpenPackPage = pathname?.startsWith('/draw/open');
 
     // 僅查詢含有 createdAt 欄位的站內公告（與含有 timestamp 的中獎榮譽榜自然隔離，不互相干擾）
@@ -492,6 +496,58 @@ export function SiteAnnouncementProvider({ children }: { children: React.ReactNo
                             <p className="text-xs text-slate-500">有重大維護或活動推播時會第一時間顯示在這裡</p>
                         </div>
                     )}
+
+                    {/* 官方客服 & LINE 社群快捷入口 */}
+                    <div className="px-5 py-3.5 bg-black/40 border-t border-white/[0.08] space-y-2">
+                        <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+                            官方聯繫與社群
+                        </p>
+                        <div className="grid grid-cols-2 gap-2.5">
+                            <a
+                                href={supportLineUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] hover:border-amber-300/40 transition-all group"
+                            >
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                    <div className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center shrink-0">
+                                        <MessageCircle className="w-3.5 h-3.5 text-emerald-400" />
+                                    </div>
+                                    <div className="min-w-0 text-left leading-tight">
+                                        <span className="block text-xs font-bold text-white group-hover:text-[#FDE68A] transition-colors truncate">
+                                            官方客服
+                                        </span>
+                                        <span className="block text-[10px] text-slate-400 truncate">
+                                            LINE 一對一服務
+                                        </span>
+                                    </div>
+                                </div>
+                                <ExternalLink className="w-3 h-3 text-slate-500 group-hover:text-[#FDE68A] shrink-0 transition-colors" />
+                            </a>
+
+                            <a
+                                href={communityLineUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] hover:border-amber-300/40 transition-all group"
+                            >
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                    <div className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center shrink-0">
+                                        <Users2 className="w-3.5 h-3.5 text-[#FDE68A]" />
+                                    </div>
+                                    <div className="min-w-0 text-left leading-tight">
+                                        <span className="block text-xs font-bold text-white group-hover:text-[#FDE68A] transition-colors truncate">
+                                            LINE 社群
+                                        </span>
+                                        <span className="block text-[10px] text-slate-400 truncate">
+                                            卡友交流・最新通知
+                                        </span>
+                                    </div>
+                                </div>
+                                <ExternalLink className="w-3 h-3 text-slate-500 group-hover:text-[#FDE68A] shrink-0 transition-colors" />
+                            </a>
+                        </div>
+                    </div>
                 </DialogContent>
             </Dialog>
         </SiteAnnouncementContext.Provider>
