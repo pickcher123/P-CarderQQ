@@ -33,7 +33,7 @@ import { useToast } from '@/hooks/use-toast';
 import { 
   Edit, Trash2, ArrowLeft, Search, Loader2, 
   UploadCloud, Files, X, Archive, Ban, Calendar, CalendarDays, 
-  Clock, ArrowUpDown, Sparkles, LayoutList, LayoutGrid, RotateCcw, Filter,
+  Clock, ArrowUpDown, ArrowUp, ArrowDown, Sparkles, LayoutList, LayoutGrid, RotateCcw, Filter,
   AlertTriangle, CheckSquare, UserCheck
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -275,6 +275,7 @@ export default function CardAreaManagementPage() {
   const [backUploadProgress, setBackUploadProgress] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [sportFilter, setSportFilter] = useState('全部');
+  const [assignmentFilter, setAssignmentFilter] = useState<'all' | 'assigned' | 'idle'>('all');
   const [dateFilter, setDateFilter] = useState('all');
   const [creatorFilter, setCreatorFilter] = useState('all');
   const [sortBy, setSortBy] = useState('date-desc');
@@ -572,6 +573,13 @@ export default function CardAreaManagementPage() {
     // Category filter
     if (sportFilter !== '全部') cards = cards.filter(c => c.category === sportFilter);
 
+    // Assignment filter (已分配至卡池/福袋 vs 閒置中)
+    if (assignmentFilter === 'assigned') {
+        cards = cards.filter(c => cardAssignmentMap.has(c.id!));
+    } else if (assignmentFilter === 'idle') {
+        cards = cards.filter(c => !cardAssignmentMap.has(c.id!));
+    }
+
     // Creator filter
     if (creatorFilter === 'unrecorded') {
         cards = cards.filter(c => !resolveCardCreator(c));
@@ -627,7 +635,38 @@ export default function CardAreaManagementPage() {
             return a.name.localeCompare(b.name);
         }
         if (sortBy === 'name-asc') {
-            return a.name.localeCompare(b.name);
+            return a.name.localeCompare(b.name, 'zh-Hant');
+        }
+        if (sortBy === 'name-desc') {
+            return b.name.localeCompare(a.name, 'zh-Hant');
+        }
+        if (sortBy === 'category-asc') {
+            const catDiff = (a.category || '').localeCompare(b.category || '', 'zh-Hant');
+            return catDiff !== 0 ? catDiff : (b.sellPrice || 0) - (a.sellPrice || 0);
+        }
+        if (sortBy === 'category-desc') {
+            const catDiff = (b.category || '').localeCompare(a.category || '', 'zh-Hant');
+            return catDiff !== 0 ? catDiff : (b.sellPrice || 0) - (a.sellPrice || 0);
+        }
+        if (sortBy === 'assigned-desc') {
+            const aName = cardAssignmentMap.get(a.id!)?.name || '';
+            const bName = cardAssignmentMap.get(b.id!)?.name || '';
+            if (Boolean(aName) !== Boolean(bName)) return aName ? -1 : 1;
+            return aName.localeCompare(bName, 'zh-Hant');
+        }
+        if (sortBy === 'assigned-asc') {
+            const aName = cardAssignmentMap.get(a.id!)?.name || '';
+            const bName = cardAssignmentMap.get(b.id!)?.name || '';
+            if (Boolean(aName) !== Boolean(bName)) return aName ? 1 : -1;
+            return aName.localeCompare(bName, 'zh-Hant');
+        }
+        if (sortBy === 'status-asc') {
+            const rank = (c: CardData) => (c.isRecycled ? 2 : c.isSold ? 1 : 0);
+            return rank(a) - rank(b);
+        }
+        if (sortBy === 'status-desc') {
+            const rank = (c: CardData) => (c.isRecycled ? 2 : c.isSold ? 1 : 0);
+            return rank(b) - rank(a);
         }
         if (sortBy === 'price-desc') {
             return (b.sellPrice || 0) - (a.sellPrice || 0);
@@ -637,7 +676,30 @@ export default function CardAreaManagementPage() {
         }
         return 0;
     });
-  }, [areaRawCards, resolveCardCreator, searchTerm, sportFilter, creatorFilter, dateFilter, sortBy, activeTab]);
+  }, [areaRawCards, resolveCardCreator, searchTerm, sportFilter, assignmentFilter, creatorFilter, dateFilter, sortBy, activeTab, cardAssignmentMap]);
+
+  // 統計各運動分類的卡片數量（供分類快捷膠囊顯示）
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = { 全部: areaRawCards.length };
+    SPORT_CATEGORIES.forEach(cat => { if (cat !== '全部') counts[cat] = 0; });
+    areaRawCards.forEach(c => {
+      const cat = c.category || '其他';
+      counts[cat] = (counts[cat] || 0) + 1;
+    });
+    return counts;
+  }, [areaRawCards]);
+
+  const toggleColumnSort = (ascKey: string, descKey: string, defaultToDesc = true) => {
+    if (sortBy === descKey) setSortBy(ascKey);
+    else if (sortBy === ascKey) setSortBy(descKey);
+    else setSortBy(defaultToDesc ? descKey : ascKey);
+  };
+
+  const renderHeaderSortIcon = (ascKey: string, descKey: string) => {
+    if (sortBy === ascKey) return <ArrowUp className="w-3 h-3 text-amber-600 shrink-0" />;
+    if (sortBy === descKey) return <ArrowDown className="w-3 h-3 text-amber-600 shrink-0" />;
+    return <ArrowUpDown className="w-3 h-3 text-slate-400 opacity-65 shrink-0" />;
+  };
 
   // Grouped cards when date grouping mode is enabled
   const groupedCards = useMemo(() => {
@@ -1056,18 +1118,39 @@ export default function CardAreaManagementPage() {
                         </SelectContent>
                     </Select>
 
+                    {/* Assignment filter dropdown */}
+                    <Select value={assignmentFilter} onValueChange={(v) => setAssignmentFilter(v as any)}>
+                        <SelectTrigger className={cn(
+                            "w-[140px] h-10 border rounded-xl font-bold text-xs flex items-center gap-1.5 transition-colors",
+                            assignmentFilter !== 'all'
+                                ? "bg-amber-50 border-amber-300 text-amber-800 shadow-sm"
+                                : "bg-slate-50 border-slate-200 text-slate-700"
+                        )}>
+                            <SelectValue placeholder="分配狀態" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl">
+                            <SelectItem value="all" className="font-bold text-xs">全部位置</SelectItem>
+                            <SelectItem value="idle" className="font-bold text-xs">📦 閒置未分配</SelectItem>
+                            <SelectItem value="assigned" className="font-bold text-xs">🎯 已分配至卡池／福袋</SelectItem>
+                        </SelectContent>
+                    </Select>
+
                     {/* Sorting selector */}
                     <Select value={sortBy} onValueChange={setSortBy}>
-                        <SelectTrigger className="w-[160px] h-10 bg-slate-50 border-slate-200 rounded-xl font-bold text-slate-700 text-xs flex items-center gap-1.5">
+                        <SelectTrigger className="w-[175px] h-10 bg-slate-50 border-slate-200 rounded-xl font-bold text-slate-700 text-xs flex items-center gap-1.5">
                             <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
                             <SelectValue placeholder="排序方式" />
                         </SelectTrigger>
                         <SelectContent className="rounded-xl">
                             <SelectItem value="date-desc" className="font-bold text-xs">⚡ 最新上傳優先</SelectItem>
                             <SelectItem value="date-asc" className="font-bold text-xs">⏱️ 最早上傳優先</SelectItem>
-                            <SelectItem value="name-asc" className="font-bold text-xs">🔤 卡片名稱 (A-Z)</SelectItem>
                             <SelectItem value="price-desc" className="font-bold text-xs">💎 價值：高至低</SelectItem>
                             <SelectItem value="price-asc" className="font-bold text-xs">💎 價值：低至高</SelectItem>
+                            <SelectItem value="category-asc" className="font-bold text-xs">🏷️ 運動分類排序</SelectItem>
+                            <SelectItem value="assigned-desc" className="font-bold text-xs">🎯 已分配優先</SelectItem>
+                            <SelectItem value="assigned-asc" className="font-bold text-xs">📦 閒置中優先</SelectItem>
+                            <SelectItem value="name-asc" className="font-bold text-xs">🔤 卡片名稱 (A → Z)</SelectItem>
+                            <SelectItem value="name-desc" className="font-bold text-xs">🔤 卡片名稱 (Z → A)</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -1091,10 +1174,32 @@ export default function CardAreaManagementPage() {
                 </div>
             </div>
 
+            {/* 運動分類快捷膠囊列 */}
+            <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-100 text-xs">
+                <span className="text-[11px] font-black uppercase text-slate-400 mr-1">
+                    分類篩選：
+                </span>
+                {SPORT_CATEGORIES.map((cat) => (
+                    <button
+                        key={cat}
+                        type="button"
+                        onClick={() => setSportFilter(cat)}
+                        className={cn(
+                            "px-2.5 py-1 rounded-lg font-bold transition-all text-xs tabular-nums",
+                            sportFilter === cat
+                                ? "bg-slate-900 text-white shadow-sm"
+                                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        )}
+                    >
+                        {cat} ({categoryCounts[cat] || 0})
+                    </button>
+                ))}
+            </div>
+
             {/* Quick date filter chips */}
             <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100 text-xs">
                 <span className="text-[11px] font-black uppercase text-slate-400 mr-1 flex items-center gap-1">
-                    <Filter className="w-3 h-3" /> 快捷篩選：
+                    <Filter className="w-3 h-3" /> 日期快捷：
                 </span>
                 <button 
                     onClick={() => setDateFilter('all')}
@@ -1141,9 +1246,9 @@ export default function CardAreaManagementPage() {
                     最近7天 ({dateStats.last7Days})
                 </button>
 
-                {(dateFilter !== 'all' || creatorFilter !== 'all' || sportFilter !== '全部' || Boolean(searchTerm.trim())) && (
+                {(dateFilter !== 'all' || creatorFilter !== 'all' || sportFilter !== '全部' || assignmentFilter !== 'all' || Boolean(searchTerm.trim())) && (
                     <button 
-                        onClick={() => { setDateFilter('all'); setCreatorFilter('all'); setSearchTerm(''); setSportFilter('全部'); }}
+                        onClick={() => { setDateFilter('all'); setCreatorFilter('all'); setSearchTerm(''); setSportFilter('全部'); setAssignmentFilter('all'); }}
                         className="ml-auto text-[11px] font-bold text-slate-400 hover:text-slate-700 flex items-center gap-1 underline"
                     >
                         <RotateCcw className="w-3 h-3" /> 重設所有篩選
@@ -1355,13 +1460,43 @@ export default function CardAreaManagementPage() {
                                             className="bg-white border-slate-300 data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900"
                                         />
                                     </TableHead>
-                                    <TableHead className="text-slate-900 font-black uppercase text-[10px] tracking-widest py-5">名稱資訊</TableHead>
-                                    <TableHead className="text-slate-900 font-black uppercase text-[10px] tracking-widest text-center">分配位置</TableHead>
-                                    <TableHead className="text-slate-900 font-black uppercase text-[10px] tracking-widest">運動分類</TableHead>
+                                    <TableHead className="text-slate-900 font-black uppercase text-[10px] tracking-widest py-5">
+                                        <button type="button" onClick={() => toggleColumnSort('name-asc', 'name-desc', false)} className="inline-flex items-center gap-1 hover:text-amber-700 cursor-pointer select-none">
+                                            <span>名稱資訊</span>
+                                            {renderHeaderSortIcon('name-asc', 'name-desc')}
+                                        </button>
+                                    </TableHead>
+                                    <TableHead className="text-slate-900 font-black uppercase text-[10px] tracking-widest text-center">
+                                        <button type="button" onClick={() => toggleColumnSort('assigned-asc', 'assigned-desc', true)} className="inline-flex items-center gap-1 hover:text-amber-700 cursor-pointer select-none">
+                                            <span>分配位置</span>
+                                            {renderHeaderSortIcon('assigned-asc', 'assigned-desc')}
+                                        </button>
+                                    </TableHead>
+                                    <TableHead className="text-slate-900 font-black uppercase text-[10px] tracking-widest">
+                                        <button type="button" onClick={() => toggleColumnSort('category-asc', 'category-desc', false)} className="inline-flex items-center gap-1 hover:text-amber-700 cursor-pointer select-none">
+                                            <span>運動分類</span>
+                                            {renderHeaderSortIcon('category-asc', 'category-desc')}
+                                        </button>
+                                    </TableHead>
                                     <TableHead className="text-slate-900 font-black uppercase text-[10px] tracking-widest text-center">視覺預覽</TableHead>
-                                    <TableHead className="text-slate-900 font-black uppercase text-[10px] tracking-widest">上傳日期 / 新增人員</TableHead>
-                                    <TableHead className="text-slate-900 font-black uppercase text-[10px] tracking-widest">庫存狀態</TableHead>
-                                    <TableHead className="text-slate-900 font-black uppercase text-[10px] tracking-widest">卡片價值</TableHead>
+                                    <TableHead className="text-slate-900 font-black uppercase text-[10px] tracking-widest">
+                                        <button type="button" onClick={() => toggleColumnSort('date-asc', 'date-desc', true)} className="inline-flex items-center gap-1 hover:text-amber-700 cursor-pointer select-none">
+                                            <span>上傳日期 / 新增人員</span>
+                                            {renderHeaderSortIcon('date-asc', 'date-desc')}
+                                        </button>
+                                    </TableHead>
+                                    <TableHead className="text-slate-900 font-black uppercase text-[10px] tracking-widest">
+                                        <button type="button" onClick={() => toggleColumnSort('status-asc', 'status-desc', false)} className="inline-flex items-center gap-1 hover:text-amber-700 cursor-pointer select-none">
+                                            <span>庫存狀態</span>
+                                            {renderHeaderSortIcon('status-asc', 'status-desc')}
+                                        </button>
+                                    </TableHead>
+                                    <TableHead className="text-slate-900 font-black uppercase text-[10px] tracking-widest">
+                                        <button type="button" onClick={() => toggleColumnSort('price-asc', 'price-desc', true)} className="inline-flex items-center gap-1 hover:text-amber-700 cursor-pointer select-none">
+                                            <span>卡片價值</span>
+                                            {renderHeaderSortIcon('price-asc', 'price-desc')}
+                                        </button>
+                                    </TableHead>
                                     <TableHead className="text-right pr-8 text-slate-900 font-black uppercase text-[10px] tracking-widest">操作</TableHead>
                                 </TableRow>
                             </TableHeader>

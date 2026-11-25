@@ -163,7 +163,7 @@ export async function POST(req: Request) {
   }
 
   const regionGuide = REGION_PROMPT_GUIDE[requestedRegion];
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENAI_API_KEY;
 
   // 若未設定 API Key，回傳結構化的精選備援卡展資料並標記提示
   if (!apiKey || apiKey.trim() === '' || apiKey.includes('your_') || apiKey === 'YOUR_API_KEY') {
@@ -172,9 +172,30 @@ export async function POST(req: Request) {
       exhibitions: getFallbackExhibitions(requestedRegion),
       region: requestedRegion,
       source: 'fallback',
-      warning: `尚未配置有效 GEMINI_API_KEY，已為您載入【${regionGuide.label}精選卡展資料庫】。如需啟用即時聯網 AI 搜尋，請至設定填入 Gemini API 金鑰。`,
+      warning: `尚未配置有效 GEMINI_API_KEY，已為您載入【${regionGuide.label}精選卡展資料庫】。如需啟用即時聯網 AI 搜尋，請至環境變數填入 Gemini API 金鑰。`,
     });
   }
+
+  const extractJsonPayload = (raw: string): any => {
+    const trimmed = raw.trim();
+    const fenceMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    const candidate = fenceMatch ? fenceMatch[1].trim() : trimmed;
+    try {
+      return JSON.parse(candidate);
+    } catch {
+      const start = candidate.indexOf('{');
+      const end = candidate.lastIndexOf('}');
+      if (start !== -1 && end > start) {
+        return JSON.parse(candidate.slice(start, end + 1));
+      }
+      const arrStart = candidate.indexOf('[');
+      const arrEnd = candidate.lastIndexOf(']');
+      if (arrStart !== -1 && arrEnd > arrStart) {
+        return { exhibitions: JSON.parse(candidate.slice(arrStart, arrEnd + 1)) };
+      }
+      throw new Error('無法解析 AI 回傳的 JSON 格式');
+    }
+  };
 
   try {
     const ai = new GoogleGenAI({ apiKey });
@@ -187,56 +208,85 @@ export async function POST(req: Request) {
 
 若近期無特定精確日期，請搜尋該地區最經典且持續舉辦的代表性卡展或最新公開之場次，並提供合理規範的日期格式 (YYYY-MM-DD)。
 
-請確保輸出為標準 JSON 格式的卡展陣列，每個物件欄位包含：
-- title: 展覽名稱 (string, 可附註英文原名)
-- region: 展覽所屬區域代碼 (必須為 "taiwan" | "asia" | "usa" 其一)
-- startDate: 開始日期 (string, 格式 YYYY-MM-DD)
-- endDate: 結束日期 (string, 格式 YYYY-MM-DD，若為單日則與 startDate 相同)
-- time: 展出時間 (string, 例如: 10:00 - 18:00)
-- location: 展出地點 (string, 包含場館名稱與城市/國家)
-- description: 展覽特色與簡介 (string, 100-200字，以繁體中文撰寫，提及亮點如 PSA/BGS 現場鑑定收件、拆卡秀、卡友交換區等)
-- imageUrl: 展覽宣傳圖 (string, 若無確切圖片可保留為空字串)
-`;
+請「只輸出」一個純 JSON 物件（不要任何開場白或結語），格式如下：
+{
+  "exhibitions": [
+    {
+      "title": "展覽名稱 (可附註英文原名)",
+      "region": "taiwan 或 asia 或 usa",
+      "startDate": "YYYY-MM-DD",
+      "endDate": "YYYY-MM-DD",
+      "time": "10:00 - 18:00",
+      "location": "場館名稱與城市/國家",
+      "description": "100-200字繁體中文簡介，提及 PSA/BGS 送件、拆卡秀、交換區等亮點",
+      "imageUrl": ""
+    }
+  ]
+}`;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-      config: {
-        tools: [{ googleSearch: {} }],
-        responseMimeType: 'application/json',
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            exhibitions: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  title: { type: Type.STRING },
-                  region: { type: Type.STRING, enum: ['taiwan', 'asia', 'usa'] },
-                  startDate: { type: Type.STRING },
-                  endDate: { type: Type.STRING },
-                  time: { type: Type.STRING },
-                  location: { type: Type.STRING },
-                  description: { type: Type.STRING },
-                  imageUrl: { type: Type.STRING },
-                },
-                required: ['title', 'region', 'startDate', 'location'],
-              },
-            },
-          },
-          required: ['exhibitions'],
+    let resultText: string | undefined;
+
+    // 第一階段：使用 Google Search 聯網檢索（不與 responseMimeType/responseSchema 混用，避免 Gemini API 400 衝突）
+    try {
+      const searchResponse = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: {
+          tools: [{ googleSearch: {} }],
         },
-      },
-    });
-
-    const resultText = response.text;
-    if (!resultText) {
-      throw new Error('未收到 Gemini API 回傳內容');
+      });
+      resultText = searchResponse.text;
+    } catch (searchErr) {
+      console.warn('[fetch-exhibitions] Google Search grounding pass failed, retrying structured JSON mode:', searchErr);
     }
 
-    const data = JSON.parse(resultText);
-    const exhibitions = (data.exhibitions || []).map((item: any) => ({
+    // 第二階段：若聯網檢索失敗或無法解析，自動以結構化 JSON 模式重試一次
+    let data: any = null;
+    if (resultText) {
+      try {
+        data = extractJsonPayload(resultText);
+      } catch (parseErr) {
+        console.warn('[fetch-exhibitions] Search JSON parse failed, retrying structured JSON mode:', parseErr);
+      }
+    }
+
+    if (!data || !Array.isArray(data.exhibitions) || data.exhibitions.length === 0) {
+      const structuredResponse = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              exhibitions: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    title: { type: Type.STRING },
+                    region: { type: Type.STRING, enum: ['taiwan', 'asia', 'usa'] },
+                    startDate: { type: Type.STRING },
+                    endDate: { type: Type.STRING },
+                    time: { type: Type.STRING },
+                    location: { type: Type.STRING },
+                    description: { type: Type.STRING },
+                    imageUrl: { type: Type.STRING },
+                  },
+                  required: ['title', 'region', 'startDate', 'location'],
+                },
+              },
+            },
+            required: ['exhibitions'],
+          },
+        },
+      });
+      if (structuredResponse.text) {
+        data = extractJsonPayload(structuredResponse.text);
+      }
+    }
+
+    const exhibitions = (data?.exhibitions || []).map((item: any) => ({
       ...item,
       region: item.region === 'taiwan' || item.region === 'asia' || item.region === 'usa'
         ? item.region

@@ -284,49 +284,84 @@ export async function scrapeCardExhibitions(): Promise<ScrapedExhibition[]> {
 搜尋關鍵字包括但不限於：台灣球員卡展, 大台北卡展, Taipei Card Show, 收藏卡交流會, 松菸卡展, 新竹卡展, 台中卡展, 高雄卡展, CARDNEX, 卡淘, 卡牌市集等。
 
 請提取 3 到 6 場在台灣舉辦的真實或近期/即將舉行的球員卡展資訊。
-請確保輸出為標準 JSON 格式的卡展陣列：
-- title: 展覽名稱
-- startDate: 開始日期 (YYYY-MM-DD)
-- endDate: 結束日期 (YYYY-MM-DD)
-- time: 展出時間 (例如: 10:00 - 18:00)
-- location: 展出地點
-- description: 展覽亮點與簡介
-- imageUrl: 展覽宣傳圖
-`;
+請「只輸出」一個純 JSON 物件（不要任何開場白或結語）：
+{
+  "exhibitions": [
+    {
+      "title": "展覽名稱",
+      "startDate": "YYYY-MM-DD",
+      "endDate": "YYYY-MM-DD",
+      "time": "10:00 - 18:00",
+      "location": "展出地點",
+      "description": "展覽亮點與簡介",
+      "imageUrl": ""
+    }
+  ]
+}`;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
-      contents: prompt,
-      config: {
-        tools: [{ googleSearch: {} }],
-        responseMimeType: 'application/json',
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            exhibitions: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  title: { type: Type.STRING },
-                  startDate: { type: Type.STRING },
-                  endDate: { type: Type.STRING },
-                  time: { type: Type.STRING },
-                  location: { type: Type.STRING },
-                  description: { type: Type.STRING },
-                  imageUrl: { type: Type.STRING },
+    const parseExhibitionsJson = (raw?: string) => {
+      if (!raw) return null;
+      const trimmed = raw.trim();
+      const fence = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
+      const candidate = fence ? fence[1].trim() : trimmed;
+      try {
+        return JSON.parse(candidate);
+      } catch {
+        const s = candidate.indexOf('{');
+        const e = candidate.lastIndexOf('}');
+        if (s !== -1 && e > s) return JSON.parse(candidate.slice(s, e + 1));
+        return null;
+      }
+    };
+
+    let parsed: any = null;
+    try {
+      const searchRes = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: {
+          tools: [{ googleSearch: {} }],
+        },
+      });
+      parsed = parseExhibitionsJson(searchRes.text);
+    } catch (searchErr) {
+      console.warn('[ScrapeCardExhibitions] Google Search 檢索失敗，改以結構化模式重試:', searchErr);
+    }
+
+    if (!parsed?.exhibitions || !Array.isArray(parsed.exhibitions) || parsed.exhibitions.length === 0) {
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              exhibitions: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    title: { type: Type.STRING },
+                    startDate: { type: Type.STRING },
+                    endDate: { type: Type.STRING },
+                    time: { type: Type.STRING },
+                    location: { type: Type.STRING },
+                    description: { type: Type.STRING },
+                    imageUrl: { type: Type.STRING },
+                  },
+                  required: ['title', 'startDate', 'location'],
                 },
-                required: ['title', 'startDate', 'location'],
               },
             },
+            required: ['exhibitions'],
           },
-          required: ['exhibitions'],
         },
-      },
-    });
+      });
+      parsed = parseExhibitionsJson(response.text);
+    }
 
-    const parsed = JSON.parse(response.text || '{}');
-    if (parsed.exhibitions && Array.isArray(parsed.exhibitions) && parsed.exhibitions.length > 0) {
+    if (parsed?.exhibitions && Array.isArray(parsed.exhibitions) && parsed.exhibitions.length > 0) {
       return parsed.exhibitions;
     }
   } catch (error) {

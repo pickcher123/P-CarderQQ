@@ -290,6 +290,7 @@ export async function POST(req: NextRequest) {
   try {
     const {
       image, // base64 data string (with or without data:image/...;base64, prefix)
+      backImage, // optional back-side base64 data string for dual-side recognition
       mode = 'recognize', // 'recognize' | 'detect' | 'ocr_slab' | 'price_estimate'
       cardList = [],
     } = await req.json();
@@ -308,6 +309,20 @@ export async function POST(req: NextRequest) {
       if (matches) {
         mimeType = matches[1];
         base64Data = matches[2];
+      }
+    }
+
+    let backBase64Data = '';
+    let backMimeType = 'image/jpeg';
+    if (backImage && typeof backImage === 'string') {
+      if (backImage.startsWith('data:')) {
+        const backMatches = backImage.match(/^data:([^;]+);base64,(.+)$/);
+        if (backMatches) {
+          backMimeType = backMatches[1];
+          backBase64Data = backMatches[2];
+        }
+      } else {
+        backBase64Data = backImage;
       }
     }
 
@@ -473,12 +488,14 @@ ${JSON.stringify(cardList, null, 2)}
       });
     }
 
-    // 模式 2：PRO 智慧辨識 與 PSA/BGS 評級標籤文字精準抓取 (OCR)
+    // 模式 2：PRO 智慧辨識 與 PSA/BGS 評級標籤文字精準抓取 (OCR) — 支援正反面雙圖聯判
     const isSlabOcrOnly = mode === 'ocr_slab';
+    const hasBackImage = Boolean(backBase64Data);
 
     const recognizePrompt = `
 你是一位世界頂級的球員卡與收藏卡專家（Trading Card Specialist / Grader / OCR 識別大師）。
 ${isSlabOcrOnly ? '【本次重點：請將最高注意力放在卡片最上方的 PSA / BGS / CGC / SGC / ARS 評級標籤文字、條碼旁證號與子分數 OCR 精準抄錄，一字不漏。】' : ''}
+${hasBackImage ? '【本次提供正反面雙圖：第 1 張為卡片正面、第 2 張為卡片背面！請務必仔細判讀背面的卡號（例如 #216）、限量編號（例如 15/99、/25、1/1）、版權發行年份、品牌系列全稱與親簽／球衣真品保證文字，並與正面球星及評級標籤交叉整合，產出最精準的完整品名與估價。】' : ''}
 請仔細辨別圖片中的這張卡片（可能是裸卡 Raw Card，或是 PSA / BGS / CGC / SGC / ARS 評級鑑定殼）：
 
 【重要任務：精準抓取 PSA / BGS 評級標籤文字】
@@ -504,19 +521,29 @@ ${isSlabOcrOnly ? '【本次重點：請將最高注意力放在卡片最上方�
 請以結構化 JSON 輸出。
 `;
 
+    const recognizeParts: any[] = [
+      {
+        inlineData: {
+          data: base64Data,
+          mimeType,
+        },
+      },
+    ];
+    if (hasBackImage) {
+      recognizeParts.push({
+        inlineData: {
+          data: backBase64Data,
+          mimeType: backMimeType,
+        },
+      });
+    }
+    recognizeParts.push({ text: recognizePrompt });
+
     const response = await callWithRetry(() =>
       ai.models.generateContent({
         model: GEMINI_VISION_MODEL,
         contents: {
-          parts: [
-            {
-              inlineData: {
-                data: base64Data,
-                mimeType,
-              },
-            },
-            { text: recognizePrompt },
-          ],
+          parts: recognizeParts,
         },
         config: {
           thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },

@@ -219,12 +219,12 @@ export default function CardScannerProPage() {
       setSelectedBackBoxId(cloned[0]?.id || null);
     }
 
-    // 上傳背面後，前進至步驟 5 (查詢卡價)
-    setCurrentSopStep(5);
+    // 上傳背面後，前進至步驟 4 (正反面 PRO 智慧辨識)
+    setCurrentSopStep(4);
 
     toast({
       title: '已載入背面掃描圖',
-      description: '步驟 4 完成！背面已自動對齊正面卡片。',
+      description: '步驟 3 完成！正反面已對齊，接下來可執行「正反面 AI 雙面辨識」抓取更完整卡號與限量資訊！',
     });
   };
 
@@ -557,14 +557,14 @@ export default function CardScannerProPage() {
         // 立即生成每張卡片的真實高清裁切預覽
         await recropFrontPreviews(detectedBoxes, true);
 
-        // SOP 流程前進至步驟 3 (PRO 智慧辨識全部)
+        // SOP 流程前進至步驟 3 (上傳背面並對齊，先備齊正反面再做雙面 AI 辨識)
         setCurrentSopStep(3);
       } else {
         setBackBoxes(detectedBoxes);
         setSelectedBackBoxId(detectedBoxes[0]?.id || null);
         await recropBackPreviews(detectedBoxes);
-        // 上傳並辨識背面完成後前進至步驟 5 (查詢卡價)
-        setCurrentSopStep(5);
+        // 上傳並偵測背面完成後前進至步驟 4 (正反面 PRO 智慧辨識)
+        setCurrentSopStep(4);
       }
 
     } catch (e: any) {
@@ -575,7 +575,7 @@ export default function CardScannerProPage() {
     }
   };
 
-  // 單張卡片 PRO 智慧辨識
+  // 單張卡片 PRO 智慧辨識（若有背面圖會自動連同背面一起送給 AI 雙面聯判，精準抓出卡號與限量編號）
   const runSingleAiRecognize = async (index: number) => {
     const card = cards[index];
     if (!card || !frontImgRef.current) return;
@@ -585,11 +585,24 @@ export default function CardScannerProPage() {
     try {
       // 使用輕量高清 JPEG（<= 1280px）送給 AI，杜絕原始大尺寸 PNG 導致 413 傳輸失敗
       const aiDataUrl = await cropImageForAi(frontImgRef.current, card.frontCropBox, 1280);
+      let backAiDataUrl: string | undefined;
+      const targetBackBox = card.backCropBox || backBoxes[index];
+      if (backImgRef.current && targetBackBox) {
+        try {
+          backAiDataUrl = await cropImageForAi(backImgRef.current, targetBackBox, 1280);
+        } catch (backCropErr) {
+          console.warn('Back crop for AI failed, continuing with front only:', backCropErr);
+        }
+      }
 
       const res = await fetch('/api/admin/scan-cards', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: aiDataUrl, mode: 'recognize' }),
+        body: JSON.stringify({
+          image: aiDataUrl,
+          ...(backAiDataUrl ? { backImage: backAiDataUrl } : {}),
+          mode: 'recognize',
+        }),
       });
 
       const data = await res.json().catch(() => ({}));
@@ -617,8 +630,8 @@ export default function CardScannerProPage() {
       }));
 
       toast({ 
-        title: `卡片 #${index + 1} PRO 智慧辨識完成！`, 
-        description: `${data.name} · ${data.grade}${data.slabLabelText ? ` · 已抓取標籤` : ''}` 
+        title: `卡片 #${index + 1} ${backAiDataUrl ? '正反面雙圖' : '正面'}智慧辨識完成！`, 
+        description: `${data.name} · ${data.grade}${data.cardNumber ? ` · ${data.cardNumber}` : ''}${data.slabLabelText ? ` · 已抓取標籤` : ''}` 
       });
     } catch (e: any) {
       setCards(prev => prev.map((c, i) => i === index ? { ...c, isAiRecognizing: false } : c));
@@ -991,9 +1004,9 @@ export default function CardScannerProPage() {
         await runSingleAiRecognize(i);
       }
 
-      toast({ title: '🎉 全部卡片 PRO 智慧辨識完畢！' });
-      // 步驟 3 完成後，引導至步驟 4 (上傳背面照片)
-      setCurrentSopStep(4);
+      toast({ title: '🎉 全部卡片 PRO 智慧辨識完畢！', description: '已結合正反面資訊完成辨識，接下來可直接查詢市場卡價。' });
+      // 步驟 4 完成後，引導至步驟 5 (查詢卡價)
+      setCurrentSopStep(5);
     } finally {
       setIsBatchAiRunning(false);
     }
@@ -1325,9 +1338,9 @@ export default function CardScannerProPage() {
             {[
               { num: 1, title: '1.上傳正面', shortDesc: '載入合拍照', isDone: Boolean(frontImageSrc) },
               { num: 2, title: '2.AI邊框', shortDesc: '自動精準分割', isDone: frontBoxes.length > 0 && Boolean(frontImageSrc) },
-              { num: 3, title: '3.智慧辨識', shortDesc: 'PRO 全卡OCR', isDone: cards.some(c => c.name && !c.name.startsWith('卡片 #')) },
-              { num: 4, title: '4.上傳背面', shortDesc: '正反面鏡像對齊', isDone: Boolean(backImageSrc) || currentSopStep > 4 },
-              { num: 5, title: '5.查詢卡價', shortDesc: '即時聯網估價', isDone: cards.some(c => Boolean(c.priceRange)) || currentSopStep > 5 },
+              { num: 3, title: '3.上傳背面', shortDesc: '正反面先對齊', isDone: Boolean(backImageSrc) || currentSopStep > 3 },
+              { num: 4, title: '4.雙面辨識', shortDesc: '正反面 AI 聯判', isDone: cards.some(c => c.name && !c.name.startsWith('卡片 #')) },
+              { num: 5, title: '5.查詢卡價', shortDesc: '完整資訊估價', isDone: cards.some(c => Boolean(c.priceRange)) || currentSopStep > 5 },
               { num: 6, title: '6.檢查QC', shortDesc: '入庫前品管核對', isDone: currentSopStep > 6 },
               { num: 7, title: '7.一鍵入庫', shortDesc: '寫入卡片資料庫', isDone: isSavingToDb },
             ].map((item) => {
@@ -1383,9 +1396,9 @@ export default function CardScannerProPage() {
                   <span>
                     {currentSopStep === 1 && '上傳正面掃描圖（支援單卡近拍或多卡合拍）'}
                     {currentSopStep === 2 && '執行 AI 邊框偵測，自動切分所有獨立卡片'}
-                    {currentSopStep === 3 && 'PRO 智慧辨識全部，自動抓取完整品名與 PSA/BGS 標籤'}
-                    {currentSopStep === 4 && '上傳背面照片（自動鏡像對齊；單面卡可直接跳過）'}
-                    {currentSopStep === 5 && '查詢市場參考卡價（即時聯網比對 eBay / 130point 行情）'}
+                    {currentSopStep === 3 && '先上傳背面照片並對齊（讓後續 AI 辨識與查價資訊更完整；單面卡可跳過）'}
+                    {currentSopStep === 4 && '正反面 PRO 智慧辨識，同時讀取正面球星與背面卡號／限量編號'}
+                    {currentSopStep === 5 && '查詢市場參考卡價（帶著正反面完整卡號與評級聯網比對行情）'}
                     {currentSopStep === 6 && '入庫前品管核對（確認品名、售價、評級與外觀）'}
                     {currentSopStep === 7 && '確認無誤，一鍵匯入卡片資產庫！'}
                   </span>
@@ -1393,8 +1406,8 @@ export default function CardScannerProPage() {
                 <p className="text-[11px] text-slate-500 mt-0.5">
                   {currentSopStep === 1 && (frontImageSrc ? '正面圖已就緒，可更換圖片或直接前往下一步。' : '請直接點擊或拖曳檔案至下方工作台，即可開始自動分割。')}
                   {currentSopStep === 2 && '偵測完成後支援直接拖曳框體、8 點縮放與增刪裁切框。'}
-                  {currentSopStep === 3 && '自動填入完整系列品名、評級證號、小分與建議定價。'}
-                  {currentSopStep === 4 && '背面自動套用正面裁切框與順序，無需重複填寫屬性。'}
+                  {currentSopStep === 3 && '背面會自動套用正面裁切框，若正反面左右顛倒可按「鏡像左右翻轉」。'}
+                  {currentSopStep === 4 && 'AI 會同時判讀正面與背面圖片，自動補齊卡號、限量編號、年份、品牌與 PSA/BGS 標籤。'}
                   {currentSopStep === 5 && 'AI 聯網搜尋近期成交紀錄，自動帶入建議售價與行情依據。'}
                   {currentSopStep === 6 && '核對全部卡片資料無誤後即可一鍵批次入庫。'}
                   {currentSopStep === 7 && '自動將高清正面與背面卡片寫入庫存資料庫。'}
@@ -1492,49 +1505,13 @@ export default function CardScannerProPage() {
                     onClick={() => setCurrentSopStep(3)}
                     className="h-9 px-3 rounded-xl border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold gap-1 shadow-xs"
                   >
-                    <span>進入步驟 3：PRO 辨識</span>
+                    <span>進入步驟 3：上傳背面</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </Button>
                 </>
               )}
 
               {currentSopStep === 3 && (
-                <>
-                  <Button
-                    size="sm"
-                    onClick={runBatchAiRecognize}
-                    disabled={isBatchAiRunning || cards.length === 0}
-                    className="h-9 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 font-black text-xs shadow-md gap-1.5"
-                  >
-                    {isBatchAiRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                    <span>PRO 智慧辨識全部</span>
-                  </Button>
-
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={runBatchSlabOcr}
-                    disabled={isBatchSlabOcrRunning || cards.length === 0}
-                    className="h-9 px-3 rounded-xl border-indigo-200 bg-indigo-50/80 hover:bg-indigo-100 text-indigo-900 text-xs font-bold gap-1.5 shadow-2xs"
-                    title="單獨針對 PSA/BGS 卡殼頂部標籤文字與證號執行 OCR"
-                  >
-                    {isBatchSlabOcrRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-600" /> : <FileText className="w-3.5 h-3.5 text-indigo-600" />}
-                    <span>抓取 PSA/BGS 標籤</span>
-                  </Button>
-
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setCurrentSopStep(4)}
-                    className="h-9 px-3 rounded-xl border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold gap-1 shadow-xs"
-                  >
-                    <span>進入步驟 4：上傳背面</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </Button>
-                </>
-              )}
-
-              {currentSopStep === 4 && (
                 <>
                   <label className="cursor-pointer">
                     <Input type="file" accept="image/*" onChange={handleBackImageUpload} className="hidden" />
@@ -1571,10 +1548,46 @@ export default function CardScannerProPage() {
                   <Button
                     size="sm"
                     variant="outline"
+                    onClick={() => setCurrentSopStep(4)}
+                    className="h-9 px-3 rounded-xl border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold gap-1 shadow-xs"
+                  >
+                    <span>{backImageSrc ? '進入步驟 4：正反面辨識' : '單面卡（略過背面，直接辨識）'}</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Button>
+                </>
+              )}
+
+              {currentSopStep === 4 && (
+                <>
+                  <Button
+                    size="sm"
+                    onClick={runBatchAiRecognize}
+                    disabled={isBatchAiRunning || cards.length === 0}
+                    className="h-9 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 font-black text-xs shadow-md gap-1.5"
+                  >
+                    {isBatchAiRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                    <span>{backImageSrc ? '正反面 PRO 智慧辨識全部' : 'PRO 智慧辨識全部'}</span>
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={runBatchSlabOcr}
+                    disabled={isBatchSlabOcrRunning || cards.length === 0}
+                    className="h-9 px-3 rounded-xl border-indigo-200 bg-indigo-50/80 hover:bg-indigo-100 text-indigo-900 text-xs font-bold gap-1.5 shadow-2xs"
+                    title="單獨針對 PSA/BGS 卡殼頂部標籤文字與證號執行 OCR"
+                  >
+                    {isBatchSlabOcrRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-600" /> : <FileText className="w-3.5 h-3.5 text-indigo-600" />}
+                    <span>抓取 PSA/BGS 標籤</span>
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    variant="outline"
                     onClick={() => setCurrentSopStep(5)}
                     className="h-9 px-3 rounded-xl border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold gap-1 shadow-xs"
                   >
-                    <span>{backImageSrc ? '進入步驟 5：查詢卡價' : '單面卡 (跳過背面，直接查價)'}</span>
+                    <span>進入步驟 5：查詢卡價</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </Button>
                 </>

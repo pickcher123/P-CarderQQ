@@ -586,79 +586,84 @@ export default function Home() {
         </div>
       </section>
 
-      {/* News Details Dialog */}
+      {/* News Details Dialog (電腦版：左圖右文，手機版：上圖下文) */}
       <Dialog open={!!selectedNews} onOpenChange={(open) => !open && setSelectedNews(null)}>
         <DialogContent className={cn(
-            "bg-slate-950/98 backdrop-blur-2xl border border-slate-800 p-0 overflow-hidden shadow-2xl rounded-2xl sm:rounded-3xl w-[94vw] sm:w-[90vw] md:w-full max-h-[88vh] flex flex-col",
-            selectedNews?.type === 'image' ? "sm:max-w-4xl" : "sm:max-w-3xl"
+            "bg-[#0a0f1c] backdrop-blur-2xl border border-white/[0.1] border-t-2 border-t-amber-300/65 p-0 overflow-hidden shadow-[0_24px_64px_rgba(0,0,0,0.88)] rounded-2xl sm:rounded-3xl w-[94vw] sm:w-[92vw] max-h-[88vh] flex flex-col",
+            selectedNews?.type === 'image' && selectedNews?.imageUrl ? "md:max-w-5xl" : "sm:max-w-3xl"
         )}>
           <DialogHeader className="sr-only">
             <DialogTitle>{selectedNews?.title || '消息詳情'}</DialogTitle>
             <DialogDescription>{selectedNews?.category || '最新消息'}</DialogDescription>
           </DialogHeader>
 
-          {/* 圖片橫幅 (若為圖片模式) */}
-          {selectedNews?.type === 'image' && selectedNews?.imageUrl && (
-            <div className="relative w-full bg-black/95 flex items-center justify-center overflow-hidden shrink-0 max-h-[220px] sm:max-h-[320px] border-b border-slate-800/80">
-              <SafeImage 
-                src={selectedNews.imageUrl} 
-                alt={selectedNews.title} 
-                width={1200}
-                height={675}
-                className="object-cover sm:object-contain w-full h-full max-h-[220px] sm:max-h-[320px]"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent pointer-events-none" />
-            </div>
-          )}
-
-          {/* 滾動內容區域 */}
-          <div className="flex-1 overflow-y-auto min-h-0 p-5 sm:p-8 space-y-4 sm:space-y-6 text-white custom-scrollbar">
-            {/* 標籤與時間 */}
-            <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800/80">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge className="bg-amber-500 text-slate-950 font-black px-2.5 sm:px-3 py-0.5 sm:py-1 text-xs border-none shadow-sm">
-                  {selectedNews?.category || '官方公告'}
-                </Badge>
-                {selectedNews?.isPinned && (
-                  <Badge className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-bold flex items-center gap-1">
-                    <Megaphone className="h-3 w-3" /> 置頂快訊
-                  </Badge>
-                )}
+          {/* 主體區：有圖片時電腦版採「左圖右文」雙欄佈局 */}
+          <div className={cn(
+            "flex-1 min-h-0 flex flex-col overflow-hidden",
+            selectedNews?.type === 'image' && selectedNews?.imageUrl && "md:flex-row"
+          )}>
+            {/* 左側圖片區 (電腦版固定寬度完整展示，手機版在上方) */}
+            {selectedNews?.type === 'image' && selectedNews?.imageUrl && (
+              <div className="relative w-full md:w-[46%] lg:w-[48%] bg-[#060912] flex items-center justify-center overflow-hidden shrink-0 max-h-[220px] sm:max-h-[280px] md:max-h-none md:min-h-[420px] border-b md:border-b-0 md:border-r border-white/[0.08] p-3 sm:p-5">
+                <SafeImage
+                  src={selectedNews.imageUrl}
+                  alt={selectedNews.title}
+                  width={1200}
+                  height={675}
+                  className="object-contain w-full h-full max-h-[200px] sm:max-h-[250px] md:max-h-[62vh] rounded-xl"
+                />
               </div>
-              <div className="flex items-center gap-1.5 text-slate-400 text-xs font-mono">
-                <Calendar className="h-3.5 w-3.5 text-amber-400" />
-                <span>{selectedNews?.createdAt ? format(new Date(selectedNews.createdAt.seconds * 1000), 'yyyy-MM-dd HH:mm') : '---'}</span>
-              </div>
-            </div>
-
-            {/* 完整標題 (絕不 truncate) */}
-            <div>
-              <h2 className="text-lg sm:text-2xl md:text-3xl font-black font-headline leading-snug tracking-tight text-left text-white break-words">
-                {selectedNews?.title}
-              </h2>
-            </div>
-
-            <Separator className="bg-slate-800" />
-
-            {/* 內文區域 */}
-            {selectedNews?.content && (
-              <div 
-                className="prose prose-invert max-w-none text-slate-300 leading-relaxed text-xs sm:text-sm md:text-base font-medium break-words space-y-3"
-                dangerouslySetInnerHTML={{ __html: selectedNews.content }}
-              />
             )}
+
+            {/* 右側可滾動文字區 */}
+            <div className="flex-1 overflow-y-auto min-h-0 p-5 sm:p-7 space-y-4 sm:space-y-5 text-white custom-scrollbar">
+              {/* 標籤與時間 */}
+              <div className="flex flex-wrap items-center justify-between gap-2.5 pb-3 border-b border-white/[0.08] pr-7">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge className="bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] font-black px-2.5 sm:px-3 py-0.5 sm:py-1 text-xs border-none shadow-sm">
+                    {selectedNews?.category || '官方公告'}
+                  </Badge>
+                  {selectedNews?.isPinned && (
+                    <Badge className="bg-amber-400/15 text-[#FDE68A] border border-amber-300/35 text-xs font-bold flex items-center gap-1">
+                      <Megaphone className="h-3 w-3" /> 置頂快訊
+                    </Badge>
+                  )}
+                </div>
+                <div className="flex items-center gap-1.5 text-slate-400 text-xs font-mono tabular-nums">
+                  <Calendar className="h-3.5 w-3.5 text-[#FDE68A]" />
+                  <span>{selectedNews?.createdAt ? format(new Date(selectedNews.createdAt.seconds * 1000), 'yyyy-MM-dd HH:mm') : '---'}</span>
+                </div>
+              </div>
+
+              {/* 完整標題 */}
+              <div>
+                <h2 className="text-lg sm:text-xl md:text-2xl font-black font-headline leading-snug tracking-tight text-left text-white break-words">
+                  {selectedNews?.title}
+                </h2>
+              </div>
+
+              <Separator className="bg-white/[0.08]" />
+
+              {/* 內文區域 */}
+              {selectedNews?.content && (
+                <div
+                  className="prose prose-invert max-w-none text-slate-300 leading-relaxed text-xs sm:text-sm md:text-[15px] font-medium break-words space-y-3"
+                  dangerouslySetInnerHTML={{ __html: selectedNews.content }}
+                />
+              )}
+            </div>
           </div>
 
           {/* 底部固定操作列 */}
-          <div className="shrink-0 p-4 sm:p-5 bg-slate-900/90 border-t border-slate-800/90 backdrop-blur-md flex flex-wrap items-center justify-between gap-3">
-            <Button asChild variant="outline" size="sm" className="rounded-xl border-amber-500/40 text-amber-300 hover:text-white hover:bg-amber-500/20 text-xs font-bold">
+          <div className="shrink-0 p-4 sm:px-6 sm:py-4 bg-black/40 border-t border-white/[0.08] backdrop-blur-md flex flex-wrap items-center justify-between gap-3">
+            <Button asChild variant="outline" size="sm" className="rounded-xl border-amber-300/35 bg-white/[0.03] text-[#FDE68A] hover:text-[#120d02] hover:bg-amber-300 text-xs font-bold transition-colors">
               <Link href="/changelog">
                 查看完整歷史更新日誌 (Changelog) &rarr;
               </Link>
             </Button>
-            <Button 
+            <Button
               onClick={() => setSelectedNews(null)}
-              className="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-bold h-9 px-5 rounded-xl border border-slate-700 ml-auto"
+              className="bg-white/[0.06] hover:bg-white/[0.12] text-slate-100 text-xs sm:text-sm font-bold h-9 px-5 rounded-xl border border-white/[0.1] ml-auto"
             >
               關閉
             </Button>
