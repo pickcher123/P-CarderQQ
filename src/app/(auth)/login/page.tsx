@@ -398,16 +398,22 @@ function LoginContent() {
         return;
     }
     
-    // 檢查名稱是否重複
-    const q = query(collection(firestore, 'users'), where('username', '==', registerUsername));
-    const snapshot = await getDocs(q);
-    if (!snapshot.empty) {
-        toast({
+    // 透過後端 API 檢查名稱是否重複（避免未登入時直讀 users 集合觸發 Firestore permission-denied）
+    if (registerUsername.trim()) {
+      try {
+        const checkRes = await fetch(`/api/auth/check-username?username=${encodeURIComponent(registerUsername.trim())}`);
+        const checkData = await checkRes.json().catch(() => ({ available: true }));
+        if (checkData && checkData.available === false) {
+          toast({
             variant: "destructive",
             title: "註冊失敗",
             description: "此會員名稱已被使用。",
-        });
-        return;
+          });
+          return;
+        }
+      } catch {
+        // 檢查服務暫時異常時不阻斷註冊流程
+      }
     }
 
     if (registerPassword !== registerConfirmPassword) {
@@ -535,11 +541,12 @@ function LoginContent() {
             </Button>
 
             {/* Divider */}
-            <div className="relative flex items-center justify-center py-0.5">
-              <div className="w-full border-t border-white/10" />
-              <span className="bg-slate-900 px-3 text-[10px] uppercase font-mono tracking-widest text-slate-500 shrink-0">
+            <div className="relative flex items-center justify-center gap-3 py-0.5">
+              <div className="flex-1 border-t border-white/10" />
+              <span className="text-[10px] uppercase font-mono tracking-widest text-slate-500 shrink-0">
                 或使用帳號密碼
               </span>
+              <div className="flex-1 border-t border-white/10" />
             </div>
 
             {isRegistering ? (

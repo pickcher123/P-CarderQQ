@@ -178,15 +178,30 @@ function StatCard({ label, value, icon: Icon, color }: { label: string, value: n
 }
 
 function LeaderboardDialog({ children }: { children: React.ReactNode }) {
-    const firestore = useFirestore();
     const [open, setOpen] = useState(false);
+    const [topUsers, setTopUsers] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
 
-    // 僅在打開排行榜彈窗時才查詢 Firestore，且合併為單一查詢避免重複讀取
-    const topUsersQuery = useMemoFirebase(() => {
-        if (!firestore || !open) return null;
-        return query(collection(firestore, 'users'), orderBy('totalSpent', 'desc'), limit(10));
-    }, [firestore, open]);
-    const { data: topUsers, isLoading } = useCollection<any>(topUsersQuery);
+    // 打開排行榜時透過安全公開 API 讀取 Top 10（不直接查詢受保護的 users 集合，一般會員也能正常顯示）
+    useEffect(() => {
+        if (!open) return;
+        let cancelled = false;
+        setIsLoading(true);
+        fetch('/api/leaderboard')
+            .then((r) => r.json())
+            .then((data) => {
+                if (!cancelled && Array.isArray(data?.users)) {
+                    setTopUsers(data.users);
+                }
+            })
+            .catch(() => {})
+            .finally(() => {
+                if (!cancelled) setIsLoading(false);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [open]);
 
     const rankColors = ["text-[#FDE68A]", "text-slate-300", "text-amber-600"];
 
@@ -1004,12 +1019,12 @@ export default function UnifiedMemberCenterPage() {
                     return;
                 }
                 
-                // 檢查名稱是否重複
-                const q = query(collection(firestore, 'users'), where('username', '==', trimmedUsername));
-                const snapshot = await getDocs(q);
-                const isDuplicate = snapshot.docs.some(doc => doc.id !== user.uid);
-                
-                if (isDuplicate) {
+                // 透過後端 API 檢查名稱是否重複（避免一般會員直讀 users 集合觸發 permission-denied）
+                const checkRes = await fetch(
+                    `/api/auth/check-username?username=${encodeURIComponent(trimmedUsername)}&excludeUid=${encodeURIComponent(user.uid)}`
+                );
+                const checkData = await checkRes.json().catch(() => ({ available: true }));
+                if (checkData && checkData.available === false) {
                     toast({ variant: "destructive", title: "修改失敗", description: "此會員名稱已被使用。" });
                     return;
                 }

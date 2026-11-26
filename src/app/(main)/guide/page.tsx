@@ -202,11 +202,11 @@ export default function BeginnerGuidePage() {
                   className="group relative rounded-xl bg-white/[0.03] hover:bg-white/[0.05] border border-white/[0.08] hover:border-amber-300/45 transition-all duration-300 overflow-hidden flex flex-col"
                 >
                   {/* 步驟編號角標 */}
-                  <div className="flex items-center justify-between px-3.5 pt-3 pb-2 border-b border-white/[0.06] bg-black/30">
-                    <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] font-mono tabular-nums text-[10px] sm:text-[11px] font-black tracking-wider">
+                  <div className="flex items-center justify-between gap-1.5 px-3 pt-3 pb-2 border-b border-white/[0.06] bg-black/30">
+                    <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] font-mono tabular-nums text-[10px] sm:text-[11px] font-black tracking-wider whitespace-nowrap shrink-0">
                       STEP {item.num}
                     </span>
-                    <span className="text-xs sm:text-sm font-bold text-white tracking-tight">
+                    <span className="text-[11px] sm:text-sm font-bold text-white tracking-tight truncate">
                       {item.title}
                     </span>
                   </div>

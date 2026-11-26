@@ -26,7 +26,6 @@ import { useSystemConfig } from '@/components/providers/system-config-provider';
 import { usePoolCardsMap } from '@/lib/pool-cards-cache';
 import confetti from 'canvas-confetti';
 import { OFFICIAL_NEWS_LIST } from '@/lib/default-news';
-import { BeginnerGuideDialog } from '@/components/beginner-guide-dialog';
 
 const NewsPopup = dynamic(() => import('@/components/news-popup').then(m => m.NewsPopup), { ssr: false });
 const FloatingCardsBackground = dynamic(() => import('@/components/floating-cards-background').then(m => m.FloatingCardsBackground), { ssr: false });
@@ -242,13 +241,20 @@ export default function Home() {
             </div>
             
             <p className="text-sm sm:text-base md:text-lg text-slate-300 max-w-xl mx-auto font-medium tracking-wide leading-relaxed px-2">
-              線上抽卡 <span className="text-slate-600 mx-1">·</span> 自選拼卡 <span className="text-slate-600 mx-1">·</span> 限量福袋 <span className="text-slate-600 mx-1">·</span> 實體入庫直寄
+              線上抽卡 <span className="text-slate-600 mx-1">·</span> 自選拼卡 <span className="text-slate-600 mx-1">·</span> 限量福袋
             </p>
           </div>
           
           {/* 快捷操作按鈕組 */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 animate-fade-in-up pt-3 sm:pt-5 max-w-xl mx-auto">
-            <BeginnerGuideDialog triggerVariant="hero" buttonText="新手玩法指南" />
+            <Link
+              href="/draw"
+              className="group h-12 sm:h-14 px-7 sm:px-9 rounded-xl font-black text-sm sm:text-base tracking-wide bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] shadow-[inset_0_1px_0_rgba(255,255,255,0.65),0_8px_28px_rgba(245,158,11,0.32)] hover:brightness-105 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2.5 cursor-pointer"
+            >
+              <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 fill-[#120d02] stroke-[#120d02] shrink-0" />
+              <span>Get God Pack</span>
+              <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5" />
+            </Link>
           </div>
           {/* 按鈕下方展台投影光暈 */}
           <div className="w-48 sm:w-80 h-3 mx-auto mt-2 bg-amber-400/25 blur-md rounded-full pointer-events-none" />

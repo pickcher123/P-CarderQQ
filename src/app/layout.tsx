@@ -103,7 +103,7 @@ export default function RootLayout({
   };
 
   return (
-    <html lang="zh-Hant" suppressHydrationWarning className="bg-[#070b14] text-foreground min-h-[100dvh] w-full overflow-x-clip m-0 p-0">
+    <html lang="zh-Hant" suppressHydrationWarning className="bg-[#070b14] text-foreground min-h-[100dvh] w-full m-0 p-0">
       <head>
         <link rel="preload" as="image" href="/images/themes/basketball.jpg?v=2" />
         <link rel="preload" as="image" href="/images/themes/baseball.jpg?v=2" />
@@ -118,7 +118,7 @@ export default function RootLayout({
         {/* eslint-disable-next-line @next/next/no-page-custom-font */}
         <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Rajdhani:wght@500;600;700&family=Outfit:wght@400;500;600;700;800;900&family=Chakra+Petch:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet" />
       </head>
-      <body className={cn("min-h-screen min-h-[100dvh] bg-[#070b14] text-foreground font-body antialiased overflow-x-hidden max-w-full w-full m-0 p-0")} suppressHydrationWarning>
+      <body className={cn("min-h-screen min-h-[100dvh] bg-[#070b14] text-foreground font-body antialiased overflow-x-clip max-w-full w-full m-0 p-0")} suppressHydrationWarning>
         <FirebaseClientProvider>
           <SystemConfigProvider>
             {children}

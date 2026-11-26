@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { useUser, useFirestore, useMemoFirebase, useDoc } from "@/firebase";
 import { doc, updateDoc } from 'firebase/firestore';
@@ -189,6 +190,17 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
     const [isLoadingBoardLogs, setIsLoadingBoardLogs] = useState(false);
     const [isAgeVerifiedModalOpen, setIsAgeVerifiedModalOpen] = useState(false);
     const [isFreeTicketConfirmOpen, setIsFreeTicketConfirmOpen] = useState(false);
+
+    // 任一卡池彈窗開啟時鎖定底層捲動，確保手機版彈窗始終精準置中於當前可視螢幕
+    const hasPortalModalOpen = isFreeTicketConfirmOpen || isGodPackRulesOpen || isHybridBoardOpen || isInventoryOpen || Boolean(previewCard);
+    useEffect(() => {
+        if (!hasPortalModalOpen || typeof document === 'undefined') return;
+        const prevOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = prevOverflow;
+        };
+    }, [hasPortalModalOpen]);
     const [pendingDraws, setPendingDraws] = useState<number>(0);
     const [isUsingTicketForPending, setIsUsingTicketForPending] = useState(false);
     const [isPromoModalOpen, setIsPromoModalOpen] = useState(false);
@@ -724,10 +736,10 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
                 }}
             />
 
-            {/* 🎟️ 免費抽卡券使用確認視窗 (先詢問客戶是否要使用免費券，並顯示持有的免費券張數) */}
-            {isFreeTicketConfirmOpen && (
+            {/* 🎟️ 免費抽卡券使用確認視窗 (透過 Portal 掛載至 body，確保手機版永遠置中於當前螢幕) */}
+            {isFreeTicketConfirmOpen && typeof document !== 'undefined' && createPortal(
                 <div 
-                    className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/80 backdrop-blur-md animate-in fade-in-0 duration-200"
+                    className="fixed inset-0 h-[100dvh] w-screen z-[100] flex items-center justify-center p-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-black/80 backdrop-blur-md animate-in fade-in-0 duration-200"
                     onClick={() => setIsFreeTicketConfirmOpen(false)}
                 >
                     <div 
@@ -804,7 +816,8 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
                             </Button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
             
             <div className={cn(
@@ -1696,12 +1709,15 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
             </div>
             
             {/* ❓ God Pack 一番賞 玩法說明彈窗 */}
-            {isGodPackRulesOpen && (
+            {isGodPackRulesOpen && typeof document !== 'undefined' && createPortal(
                 <div
-                    className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150"
+                    className="fixed inset-0 h-[100dvh] w-screen z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] animate-in fade-in duration-150"
                     onClick={() => setIsGodPackRulesOpen(false)}
                 >
                     <div
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label="God Pack 一番賞 玩法說明"
                         className="relative w-full max-w-lg rounded-2xl bg-[#0a0f1c] border border-amber-300/40 shadow-[0_24px_64px_rgba(0,0,0,0.9)] overflow-hidden text-slate-100"
                         onClick={(e) => e.stopPropagation()}
                     >
@@ -1774,17 +1790,18 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
                             </Button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
             {/* 📊 GodPack 一番賞：即時看盤數據分析與抽卡機率彈窗 */}
-            {isHybridBoardOpen && (
+            {isHybridBoardOpen && typeof document !== 'undefined' && createPortal(
                 <div
-                    className="fixed inset-0 z-[105] bg-black/90 backdrop-blur-md flex items-center justify-center p-2.5 sm:p-4 animate-fade-in"
+                    className="fixed inset-0 h-[100dvh] w-screen z-[105] bg-black/90 backdrop-blur-md flex items-center justify-center p-2.5 sm:p-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] animate-fade-in"
                     onClick={() => setIsHybridBoardOpen(false)}
                 >
                     <div
-                        className="relative max-w-3xl w-full bg-[#0a0f1c] border border-white/[0.1] border-t-2 border-t-amber-300/65 rounded-2xl p-4 sm:p-6 max-h-[88vh] overflow-y-auto shadow-[0_24px_64px_rgba(0,0,0,0.9)] text-slate-100 space-y-5"
+                        className="relative max-w-3xl w-full bg-[#0a0f1c] border border-white/[0.1] border-t-2 border-t-amber-300/65 rounded-2xl p-4 sm:p-6 max-h-[85dvh] overflow-y-auto shadow-[0_24px_64px_rgba(0,0,0,0.9)] text-slate-100 space-y-5"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
@@ -1921,13 +1938,14 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
                             </div>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
-            {isInventoryOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-2 sm:p-4 animate-in fade-in-0 duration-200" onClick={() => setIsInventoryOpen(false)}>
+            {isInventoryOpen && typeof document !== 'undefined' && createPortal(
+                <div className="fixed inset-0 h-[100dvh] w-screen z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-2 sm:p-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] animate-in fade-in-0 duration-200" onClick={() => setIsInventoryOpen(false)}>
                     <div 
-                        className="relative max-w-4xl w-full bg-[#080d1a]/95 backdrop-blur-2xl border border-cyan-500/40 rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 max-h-[85vh] sm:max-h-[90vh] overflow-y-auto shadow-[0_0_80px_rgba(6,182,212,0.35)] group/modal" 
+                        className="relative max-w-4xl w-full bg-[#080d1a]/95 backdrop-blur-2xl border border-cyan-500/40 rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 max-h-[85dvh] sm:max-h-[88dvh] overflow-y-auto shadow-[0_0_80px_rgba(6,182,212,0.35)] group/modal" 
                         onClick={e => e.stopPropagation()}
                     >
                         {/* 頂部動態流光邊框 */}
@@ -2241,13 +2259,14 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
                             )}
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
-            {/* 卡片大圖預覽對話框 (典藏級高透壓克力微光展台) */}
-            {!!previewCard && (
+            {/* 卡片大圖預覽對話框 (典藏級高透壓克力微光展台，Portal 置中於當前螢幕最上層) */}
+            {!!previewCard && typeof document !== 'undefined' && createPortal(
                 <div 
-                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xl animate-in fade-in-0 duration-200 select-none" 
+                    className="fixed inset-0 h-[100dvh] w-screen z-[110] flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] bg-black/85 backdrop-blur-xl animate-in fade-in-0 duration-200 select-none" 
                     onClick={() => setPreviewCard(null)}
                 >
                     <div 
@@ -2318,7 +2337,8 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
                             </div>
                         )}
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
             {/* 一番賞自選號碼挑籤彈窗 (挑完號碼後再進入抽卡) */}
