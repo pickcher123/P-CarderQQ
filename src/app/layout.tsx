@@ -12,7 +12,6 @@ export const dynamic = 'force-dynamic';
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
   viewportFit: 'cover',
   themeColor: '#070b14',
 };
@@ -104,7 +103,7 @@ export default function RootLayout({
   };
 
   return (
-    <html lang="zh-Hant" suppressHydrationWarning className="bg-[#070b14] text-foreground min-h-screen min-h-[100dvh] w-full overflow-x-hidden m-0 p-0">
+    <html lang="zh-Hant" suppressHydrationWarning className="bg-[#070b14] text-foreground min-h-[100dvh] w-full overflow-x-clip m-0 p-0">
       <head>
         <link rel="preload" as="image" href="/images/themes/basketball.jpg?v=2" />
         <link rel="preload" as="image" href="/images/themes/baseball.jpg?v=2" />

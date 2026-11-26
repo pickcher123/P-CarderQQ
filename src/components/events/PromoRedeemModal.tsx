@@ -23,7 +23,8 @@ import {
     Check,
     Trophy,
     HeartHandshake,
-    UserPlus
+    UserPlus,
+    ShieldCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -997,31 +998,6 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
                                                 </Button>
                                             </div>
                                         )}
-                                        {/* 會員推薦好友加碼卡片 */}
-                                        <div className="p-3 sm:p-3.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.05] border border-white/[0.08] hover:border-amber-300/30 transition-colors flex items-center justify-between gap-2.5">
-                                            <div className="space-y-1 min-w-0 flex-1">
-                                                <div className="flex items-center gap-1.5 flex-wrap">
-                                                    <span className="text-xs font-semibold text-white flex items-center gap-1.5 whitespace-nowrap">
-                                                        <Share2 className="w-3.5 h-3.5 text-amber-300 shrink-0" />
-                                                        <span>會員好友推薦禮</span>
-                                                    </span>
-                                                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-400/12 text-amber-200 border border-amber-300/25 whitespace-nowrap">
-                                                        雙向加碼
-                                                    </span>
-                                                </div>
-                                                <p className="text-[11px] text-slate-400 leading-tight">
-                                                    分享專屬推薦碼，好友註冊得免費首抽券，您得 +{bonusForReferrer} P+
-                                                </p>
-                                            </div>
-                                            <Button
-                                                size="sm"
-                                                onClick={() => setSelectedTab('referral')}
-                                                className="h-8 px-2.5 sm:px-3 rounded-lg text-xs font-semibold shrink-0 transition-colors flex items-center gap-1 whitespace-nowrap bg-white/[0.07] hover:bg-white/[0.12] text-slate-100 border border-white/[0.12] cursor-pointer active:scale-95"
-                                            >
-                                                <span>推薦專區</span>
-                                                <ChevronRight className="w-3 h-3 shrink-0 text-amber-300" />
-                                            </Button>
-                                        </div>
                                     </div>
                                 )}
 
@@ -1097,8 +1073,61 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
                         )}
 
                         {/* 2. 會員推薦碼專區 */}
-                        {selectedTab === 'referral' && (
+                        {selectedTab === 'referral' && (() => {
+                            const hasValidRealName = Boolean(userProfile?.realName && userProfile.realName.trim().length >= 2);
+                            const hasValidPhone = Boolean(userProfile?.phone && userProfile.phone.replace(/\D/g, '').length >= 8);
+                            const isProfileVerifiedForReferral = hasValidRealName && hasValidPhone;
+
+                            return (
                             <div className="space-y-4">
+                                {/* 防刷帳號提醒橫幅（未填寫姓名與電話時顯示） */}
+                                {user && !isProfileVerifiedForReferral && (
+                                    <div className="p-3.5 sm:p-4 rounded-xl bg-amber-400/[0.08] border border-amber-300/45 space-y-2.5">
+                                        <div className="flex items-start justify-between gap-2.5">
+                                            <div className="space-y-1 min-w-0">
+                                                <div className="flex items-center gap-1.5 text-xs font-bold text-[#FDE68A]">
+                                                    <ShieldCheck className="w-4 h-4 shrink-0 text-[#FDE68A]" />
+                                                    <span>完成基本資料即可啟用與領取推薦獎勵</span>
+                                                </div>
+                                                <p className="text-[11px] text-slate-300 leading-relaxed">
+                                                    為防範重複刷帳號，須先至「會員中心」填寫<strong className="text-white">真實姓名</strong>與<strong className="text-white">聯絡電話</strong>，完成後方可生成專屬推薦碼或綁定好友推薦碼領獎。
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                                            <div className="flex items-center gap-2 text-[11px]">
+                                                <span className={cn(
+                                                    "inline-flex items-center gap-1 px-2 py-0.5 rounded-full border font-semibold",
+                                                    hasValidRealName
+                                                        ? "bg-emerald-500/15 border-emerald-400/35 text-emerald-300"
+                                                        : "bg-rose-500/10 border-rose-400/30 text-rose-300"
+                                                )}>
+                                                    {hasValidRealName ? '✓ 真實姓名已填' : '✕ 真實姓名未填'}
+                                                </span>
+                                                <span className={cn(
+                                                    "inline-flex items-center gap-1 px-2 py-0.5 rounded-full border font-semibold",
+                                                    hasValidPhone
+                                                        ? "bg-emerald-500/15 border-emerald-400/35 text-emerald-300"
+                                                        : "bg-rose-500/10 border-rose-400/30 text-rose-300"
+                                                )}>
+                                                    {hasValidPhone ? '✓ 聯絡電話已填' : '✕ 聯絡電話未填'}
+                                                </span>
+                                            </div>
+                                            <Button
+                                                size="sm"
+                                                asChild
+                                                onClick={() => onOpenChange(false)}
+                                                className="h-8 px-3.5 rounded-lg text-xs font-bold bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 hover:brightness-105 text-[#120d02]"
+                                            >
+                                                <Link href="/profile" className="inline-flex items-center gap-1">
+                                                    <span>前往填寫個人資料</span>
+                                                    <ChevronRight className="w-3.5 h-3.5" />
+                                                </Link>
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* 頂部推薦計畫說明橫幅 (香檳金焦點卡) */}
                                 <div className="relative overflow-hidden p-4 sm:p-5 rounded-xl bg-gradient-to-br from-[#1b1408] via-[#0e1320] to-[#0a0f1c] border border-amber-300/35">
                                     <div className="space-y-1.5">
@@ -1110,7 +1139,7 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
                                             邀請好友加入，雙方皆享專屬贈禮
                                         </h4>
                                         <p className="text-xs text-slate-300 leading-relaxed">
-                                            好友註冊即可獲得 <span className="text-amber-300 font-semibold">+{bonusForReferee} 紅利 P+</span> 及 <span className="text-amber-200 font-semibold">{ticketsForReferee} 張免費抽卡券</span>；每成功推薦一位好友，您亦立得 <span className="text-amber-300 font-semibold">+{bonusForReferrer} 紅利 P+</span>。
+                                            好友完成註冊並填寫<strong className="text-white">姓名與電話</strong>後綁定推薦碼，即可獲得 <span className="text-amber-300 font-semibold tabular-nums">+{bonusForReferee} 紅利 P+</span>{ticketsForReferee > 0 ? <> 及 <span className="text-amber-200 font-semibold tabular-nums">{ticketsForReferee} 張免費抽卡券</span></> : null}；每成功推薦一位好友，您亦立得 <span className="text-amber-300 font-semibold tabular-nums">+{bonusForReferrer} 紅利 P+</span>。
                                         </p>
                                     </div>
 
@@ -1245,16 +1274,31 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
                                         </div>
                                     ) : (
                                         <div className="text-center py-4 space-y-2.5 bg-black/35 rounded-xl border border-white/[0.06]">
-                                            <p className="text-xs text-slate-300">您尚未啟用專屬會員推薦碼</p>
-                                            <Button
-                                                size="sm"
-                                                onClick={() => handleGenerateReferralCode()}
-                                                disabled={isGeneratingReferralCode}
-                                                className="h-9 px-5 rounded-lg font-bold text-xs bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 hover:brightness-105 text-slate-950 cursor-pointer active:scale-95 transition-all"
-                                            >
-                                                {isGeneratingReferralCode ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Sparkles className="w-3.5 h-3.5 mr-1.5" />}
-                                                立即免費啟用推薦碼
-                                            </Button>
+                                            <p className="text-xs text-slate-300">
+                                                {isProfileVerifiedForReferral
+                                                    ? '您尚未啟用專屬會員推薦碼'
+                                                    : '請先填寫真實姓名與聯絡電話，即可免費啟用專屬推薦碼'}
+                                            </p>
+                                            {isProfileVerifiedForReferral ? (
+                                                <Button
+                                                    size="sm"
+                                                    onClick={() => handleGenerateReferralCode()}
+                                                    disabled={isGeneratingReferralCode}
+                                                    className="h-9 px-5 rounded-lg font-bold text-xs bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 hover:brightness-105 text-slate-950 cursor-pointer active:scale-95 transition-all"
+                                                >
+                                                    {isGeneratingReferralCode ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Sparkles className="w-3.5 h-3.5 mr-1.5" />}
+                                                    立即免費啟用推薦碼
+                                                </Button>
+                                            ) : (
+                                                <Button
+                                                    size="sm"
+                                                    asChild
+                                                    onClick={() => onOpenChange(false)}
+                                                    className="h-9 px-5 rounded-lg font-bold text-xs bg-white/[0.08] hover:bg-white/[0.14] text-[#FDE68A] border border-amber-300/35"
+                                                >
+                                                    <Link href="/profile">前往會員中心填寫資料 &rarr;</Link>
+                                                </Button>
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -1288,17 +1332,18 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
                                             </p>
                                             <div className="flex gap-2">
                                                 <Input
-                                                    placeholder="輸入好友推薦碼 (4-12 碼)"
+                                                    placeholder={isProfileVerifiedForReferral ? '輸入好友推薦碼 (4-12 碼)' : '請先至會員中心補齊姓名與電話'}
                                                     value={friendReferralInput}
+                                                    disabled={!user || !isProfileVerifiedForReferral}
                                                     onChange={e => setFriendReferralInput(e.target.value.toUpperCase())}
-                                                    onKeyDown={e => e.key === 'Enter' && handleApplyFriendReferral()}
-                                                    className="h-9 bg-black/40 border-white/[0.1] text-white font-mono uppercase text-xs rounded-lg focus-visible:border-amber-300/50"
+                                                    onKeyDown={e => e.key === 'Enter' && isProfileVerifiedForReferral && handleApplyFriendReferral()}
+                                                    className="h-9 bg-black/40 border-white/[0.1] text-white font-mono uppercase text-xs rounded-lg focus-visible:border-amber-300/50 disabled:opacity-50"
                                                 />
                                                 <Button
                                                     size="sm"
-                                                    disabled={isApplyingReferral || !friendReferralInput.trim()}
+                                                    disabled={isApplyingReferral || !friendReferralInput.trim() || !user || !isProfileVerifiedForReferral}
                                                     onClick={() => handleApplyFriendReferral()}
-                                                    className="h-9 px-4 rounded-lg text-xs font-bold bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 hover:brightness-105 text-slate-950 shrink-0 cursor-pointer active:scale-95"
+                                                    className="h-9 px-4 rounded-lg text-xs font-bold bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 hover:brightness-105 text-slate-950 shrink-0 cursor-pointer active:scale-95 disabled:opacity-50"
                                                 >
                                                     {isApplyingReferral ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : '確認綁定'}
                                                 </Button>
@@ -1353,8 +1398,35 @@ export function PromoRedeemModal({ open, onOpenChange, onApplyReward, initialTab
                                         )}
                                     </div>
                                 )}
+
+                                {/* 邀請好友活動規則與注意事項 */}
+                                <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.08] space-y-2.5">
+                                    <div className="flex items-center gap-1.5 text-xs font-bold text-[#FDE68A]">
+                                        <ShieldCheck className="w-4 h-4 shrink-0 text-[#FDE68A]" />
+                                        <span>邀請好友活動規則與注意事項</span>
+                                    </div>
+                                    <ol className="space-y-1.5 text-[11px] text-slate-300 leading-relaxed list-decimal pl-4 marker:text-amber-300/80 marker:font-mono">
+                                        <li>
+                                            <strong className="text-white">完成基本資料門檻：</strong>
+                                            推薦人與受邀好友皆須先至「會員中心」填寫<strong className="text-amber-200">真實姓名</strong>與<strong className="text-amber-200">聯絡電話</strong>，方可啟用專屬推薦碼或綁定領取獎勵。
+                                        </li>
+                                        <li>
+                                            <strong className="text-white">雙方獎勵即時發放：</strong>
+                                            好友輸入並成功綁定您的推薦碼後，好友立得 <span className="text-[#FDE68A] font-semibold tabular-nums">+{bonusForReferee} 紅利 P+</span>{ticketsForReferee > 0 ? <> 與 <span className="text-[#FDE68A] font-semibold tabular-nums">{ticketsForReferee} 張免費抽卡券</span></> : null}，您同步獲得 <span className="text-[#FDE68A] font-semibold tabular-nums">+{bonusForReferrer} 紅利 P+</span>，邀請人數無上限。
+                                        </li>
+                                        <li>
+                                            <strong className="text-white">限領乙次與防刷規範：</strong>
+                                            每位會員僅限綁定乙組推薦碼，<strong className="text-white">每組手機號碼僅限領取乙次迎新獎勵</strong>，且不可填寫本人推薦碼。
+                                        </li>
+                                        <li>
+                                            <strong className="text-white">公平稽核聲明：</strong>
+                                            若經系統偵測以不實資料或異常多帳號重複套利，平台保留取消獎勵與停權之權利。
+                                        </li>
+                                    </ol>
+                                </div>
                             </div>
-                        )}
+                            );
+                        })()}
 
                         {/* 3. 領取紀錄 */}
                         {selectedTab === 'history' && (

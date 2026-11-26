@@ -284,12 +284,12 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-5 sm:gap-7 max-w-md sm:max-w-none mx-auto">
             {featuredPools.map((pool) => (
-              <div key={pool.id} className="relative w-full pt-4 sm:pt-5">
+              <div key={pool.id} className="relative w-full pt-3.5 sm:pt-4">
                 {(pool as any).isFeatured && (
-                  <div className="absolute top-0 left-2.5 sm:left-3 z-30 pointer-events-none">
-                    <div className="bg-gradient-to-r from-amber-400 to-yellow-400 text-slate-950 font-bold text-[11px] px-3 py-0.5 rounded-md shadow-md border border-amber-100 flex items-center gap-1">
-                      <Sparkles className="w-3 h-3 fill-slate-950" />
-                      <span>精選推薦</span>
+                  <div className="absolute top-0.5 sm:top-1 left-4 sm:left-5 z-30 pointer-events-none">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] font-black text-[10.5px] tracking-wider ring-2 ring-[#0a0f1c] shadow-[inset_0_1px_0_rgba(255,255,255,0.65),0_6px_16px_rgba(245,158,11,0.35)]">
+                      <Sparkles className="w-3 h-3 fill-[#120d02] stroke-[#120d02]" />
+                      <span>精選卡池</span>
                     </div>
                   </div>
                 )}

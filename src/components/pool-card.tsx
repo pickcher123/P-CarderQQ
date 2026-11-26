@@ -7,7 +7,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Trophy, Clock, Zap, Star, Diamond, Layers, X, Package, Sparkles, Eye, ChevronLeft, ChevronRight, Gift, Ticket, Target, Lock, Unlock, Flame, AlertCircle, ShieldAlert, Heart } from 'lucide-react';
+import { Trophy, Clock, Zap, Star, Diamond, Layers, X, Package, Sparkles, Eye, ChevronLeft, ChevronRight, Gift, Ticket, Target, Lock, Unlock, Flame, AlertCircle, ShieldAlert, Heart, HelpCircle } from 'lucide-react';
 import { PPlusIcon, DiamondIcon } from '@/components/icons';
 import { SafeImage } from '@/components/safe-image';
 import { format } from 'date-fns';
@@ -184,6 +184,7 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
         return () => clearTimeout(timer);
     }, [isInventoryOpen, pool.isHybridBlindSpMode, pool.id, inventoryFilterTier]);
     const [isHybridBoardOpen, setIsHybridBoardOpen] = useState(false);
+    const [isGodPackRulesOpen, setIsGodPackRulesOpen] = useState(false);
     const [hybridBoardLogs, setHybridBoardLogs] = useState<any[]>([]);
     const [isLoadingBoardLogs, setIsLoadingBoardLogs] = useState(false);
     const [isAgeVerifiedModalOpen, setIsAgeVerifiedModalOpen] = useState(false);
@@ -807,32 +808,19 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
             )}
             
             <div className={cn(
-                "relative w-full flex flex-col justify-between transition-[transform,border-color,box-shadow] duration-300 group hover:-translate-y-1 select-none",
-                "shadow-[0_18px_45px_rgba(0,0,0,0.85),0_0_25px_rgba(245,158,11,0.2)] hover:shadow-[0_24px_55px_rgba(0,0,0,0.95),0_0_35px_rgba(245,158,11,0.35)] rounded-2xl sm:rounded-3xl border border-amber-400/40 hover:border-amber-400/75"
+                "relative w-full flex flex-col justify-between transition-[transform,border-color,box-shadow] duration-300 group hover:-translate-y-1 select-none overflow-hidden bg-[#0a0f1c]",
+                "shadow-[0_20px_52px_rgba(0,0,0,0.85),0_0_24px_rgba(253,230,138,0.12)] hover:shadow-[0_26px_60px_rgba(0,0,0,0.92),0_0_32px_rgba(253,230,138,0.22)] rounded-2xl sm:rounded-3xl border border-amber-300/35 hover:border-amber-300/70"
             )}>
-                {/* ================= 1. 卡包頂部熱壓封口 (TOP SOFT CRIMPED FOIL SEAL) ================= */}
-                <div className="relative w-full shrink-0 z-20 pointer-events-none rounded-t-2xl sm:rounded-t-3xl overflow-hidden">
-                    {/* 頂部柔和微波熱壓切邊 (Soft Scalloped / Wavy Foil Crimp) */}
-                    <div className="w-full h-2 overflow-hidden flex items-center justify-between opacity-80 pointer-events-none bg-slate-950">
-                        <svg className="w-full h-2 block text-slate-900" viewBox="0 0 400 6" preserveAspectRatio="none">
-                            <path 
-                                d="M0,6 Q5,1 10,6 Q15,1 20,6 Q25,1 30,6 Q35,1 40,6 Q45,1 50,6 Q55,1 60,6 Q65,1 70,6 Q75,1 80,6 Q85,1 90,6 Q95,1 100,6 Q105,1 110,6 Q115,1 120,6 Q125,1 130,6 Q135,1 140,6 Q145,1 150,6 Q155,1 160,6 Q165,1 170,6 Q175,1 180,6 Q185,1 190,6 Q195,1 200,6 Q205,1 210,6 Q215,1 220,6 Q225,1 230,6 Q235,1 240,6 Q245,1 250,6 Q255,1 260,6 Q265,1 270,6 Q275,1 280,6 Q285,1 290,6 Q295,1 300,6 Q305,1 310,6 Q315,1 320,6 Q325,1 330,6 Q335,1 340,6 Q345,1 350,6 Q355,1 360,6 Q365,1 370,6 Q375,1 380,6 Q385,1 390,6 Q395,1 400,6 Z" 
-                                fill="currentColor" 
-                                stroke="#f59e0b" 
-                                strokeWidth="0.8" 
-                                strokeOpacity="0.6"
-                            />
-                        </svg>
-                    </div>
+                {/* ================= 1. 頂部精品光線邊條與標題列 ================= */}
+                <div className="relative w-full shrink-0 z-20 pointer-events-none">
+                    {/* 頂部香檳金光線邊條 */}
+                    <div className="w-full h-[2px] bg-gradient-to-r from-transparent via-amber-300/80 to-transparent" />
 
-                    {/* 頂部鋁箔熱壓密封板身（左上角運動／主題圖示圓章＋置中卡池模式印記） */}
+                    {/* 頂部曜石玻璃列（左上角運動／主題圖示圓章＋置中卡池模式印記＋右上角追蹤愛心） */}
                     <div className={cn(
-                        "relative w-full px-3 sm:px-3.5 py-2 bg-gradient-to-b from-[#1a1c26] via-[#10131d] to-[#0a0c14] border-x border-t border-amber-400/40 grid grid-cols-[1fr_auto_1fr] items-center gap-2",
-                        isLastChance && "border-amber-400/60 bg-gradient-to-b from-amber-950/70 via-[#10131d] to-[#0a0c14]"
+                        "relative w-full px-3.5 sm:px-4 py-2.5 bg-gradient-to-b from-white/[0.05] via-[#0d1322]/90 to-[#0a0f1c] grid grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-white/[0.08]",
+                        isLastChance && "from-amber-400/[0.14] via-[#131726]/95 to-[#0a0f1c] border-amber-300/25"
                     )}>
-                        {/* 垂直細密柔和熱壓封口紋理 */}
-                        <div className="absolute inset-0 bg-[repeating-linear-gradient(90deg,rgba(245,158,11,0.06)_0px,rgba(245,158,11,0.06)_1px,transparent_1px,transparent_5px)] pointer-events-none opacity-70" />
-
                         {/* 左上角：純圖示主題圓章（籃球／棒球／足球／寶可夢／其他，不留文字） */}
                         <div className="relative z-10 justify-self-start flex items-center">
                             <div
@@ -857,7 +845,21 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
                             </span>
                         </div>
 
-                        <div className="relative z-10 justify-self-end flex items-center pointer-events-auto">
+                        <div className="relative z-10 justify-self-end flex items-center gap-1.5 pointer-events-auto">
+                            {pool.isHybridBlindSpMode && (
+                                <button
+                                    type="button"
+                                    title="God Pack 一番賞 玩法說明"
+                                    aria-label="God Pack 一番賞 玩法說明"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsGodPackRulesOpen(true);
+                                    }}
+                                    className="w-6 h-6 rounded-full flex items-center justify-center border bg-[#0a0f1c]/95 hover:bg-amber-400/15 border-amber-300/30 hover:border-amber-300/70 text-[#FDE68A]/85 hover:text-[#FDE68A] transition-[background-color,border-color,color,transform] duration-150 active:scale-95 cursor-pointer"
+                                >
+                                    <HelpCircle className="w-3.5 h-3.5" />
+                                </button>
+                            )}
                             <button
                                 type="button"
                                 title={isPoolTracked ? '已追蹤此卡池（點擊取消）' : '追蹤此卡池'}
@@ -890,10 +892,8 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
 
                 {/* ================= 2. 卡包袋身主體 (BOOSTER PACK MAIN BODY) ================= */}
                 <div className={cn(
-                    "relative w-full bg-[#0a0c10]/95 backdrop-blur-2xl border-x border-amber-400/25 p-3 sm:p-5 flex flex-col justify-between transition-[border-color,box-shadow] duration-300 overflow-hidden shadow-xl",
-                    isLastChance 
-                        ? "border-amber-500/70 shadow-[0_0_35px_rgba(245,158,11,0.3)]" 
-                        : "hover:border-amber-400/50"
+                    "relative w-full bg-[#0a0f1c] p-3 sm:p-5 flex flex-col justify-between transition-[border-color,box-shadow] duration-300 overflow-hidden",
+                    isLastChance && "shadow-[inset_0_0_28px_rgba(245,158,11,0.12)]"
                 )}>
                     {/* 卡包左右兩側溫潤柔和高光 (Soft Metallic Cushion Highlights) */}
                     <div className="absolute inset-y-0 left-0 w-1.5 bg-gradient-to-r from-white/10 via-amber-300/15 to-transparent pointer-events-none z-10" />
@@ -1167,8 +1167,17 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
                                     </div>
                                 )}
 
-                                {/* 右上角：查看卡表按鈕（GodPack 一番賞下方已有「看盤明細」＋五格可點，僅於非一番賞池顯示以減少重複） */}
-                                {!pool.isHybridBlindSpMode && (
+                                {/* 右上角：GodPack 一番賞進入尾盤時顯示「尾盤狙擊／搶包衝刺」徽章；非一番賞池顯示「查看卡表」按鈕 */}
+                                {pool.isHybridBlindSpMode ? (
+                                    (hybridStats.isSnipeAlert || isLastChance) && (
+                                        <div className="absolute top-2.5 right-2.5 z-40 pointer-events-none">
+                                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gradient-to-r from-[#FDE68A] via-amber-300 to-rose-400 text-[#120d02] font-black text-[10px] tracking-wide shadow-[0_4px_14px_rgba(244,63,94,0.35)] ring-1 ring-white/25">
+                                                <Flame className="w-3 h-3 fill-[#120d02]" />
+                                                <span>{hybridStats.isSnipeAlert ? '尾盤狙擊' : '搶包衝刺'}</span>
+                                            </span>
+                                        </div>
+                                    )
+                                ) : (
                                     <button
                                         type="button"
                                         onClick={(e) => {
@@ -1303,19 +1312,24 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
                                         </button>
                                     ))}
                                 </div>
-                                <div className="flex justify-between items-center text-[10px] font-mono pt-1 border-t border-white/[0.06] gap-2">
-                                    <div className="flex items-center gap-1.5 min-w-0">
-                                        <span className="text-slate-400 shrink-0">剩餘總抽數</span>
-                                        {(hybridStats.isSnipeAlert || isLastChance) && (
-                                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full bg-gradient-to-r from-[#FDE68A] to-rose-400 text-[#120d02] font-sans font-black text-[9px] shrink-0">
-                                                <Flame className="w-2.5 h-2.5 fill-[#120d02]" />
-                                                {hybridStats.isSnipeAlert ? '尾盤狙擊' : '搶包衝刺'}
-                                            </span>
-                                        )}
+                                <div className="pt-2 border-t border-white/[0.06] space-y-1.5">
+                                    <div className="flex justify-between items-center text-[10px] font-mono gap-2">
+                                        <span className="text-slate-400 font-semibold">剩餘總抽數</span>
+                                        <span className="font-black text-[#FDE68A] tabular-nums shrink-0">
+                                            {remainingPacks} <span className="text-slate-500 font-semibold">/ {totalPacks} 抽</span>
+                                        </span>
                                     </div>
-                                    <span className="font-black text-[#FDE68A] tabular-nums shrink-0">
-                                        {remainingPacks} / {totalPacks} 抽
-                                    </span>
+                                    <div className="relative h-1.5 w-full rounded-full overflow-hidden bg-black/60 border border-white/[0.08]">
+                                        <div
+                                            className={cn(
+                                                "h-full rounded-full transition-[width] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]",
+                                                (hybridStats.isSnipeAlert || isLastChance)
+                                                    ? "bg-gradient-to-r from-amber-400 via-orange-400 to-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.45)]"
+                                                    : "bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-500 shadow-[0_0_8px_rgba(253,230,138,0.4)]"
+                                            )}
+                                            style={{ width: `${Math.max(remainingPacks > 0 ? 4 : 0, Math.min(100, remainingPercent))}%` }}
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         ) : pool.isBlindBoxMode ? (
@@ -1636,29 +1650,22 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
                 </div>
                 </div>
 
-                {/* ================= 3. 卡包底部熱壓封口 (BOTTOM SOFT CRIMPED FOIL SEAL) ================= */}
-                <div className="relative w-full shrink-0 z-20 pointer-events-none mt-auto rounded-b-2xl sm:rounded-b-3xl overflow-hidden">
-                    {/* 底部熱壓密封板身（整合階級限定、每日限抽與下架日期資訊） */}
+                {/* ================= 3. 底部資訊列（無鋸齒平順收邊） ================= */}
+                <div className="relative w-full shrink-0 z-20 pointer-events-none mt-auto">
                     <div className={cn(
-                        "relative w-full min-h-[30px] px-3 py-1.5 bg-gradient-to-t from-[#1a1c26] via-[#10131d] to-[#0a0c14] border-x border-b border-amber-400/35 flex flex-wrap items-center justify-center gap-1.5",
-                        isLastChance && "border-amber-400/55 bg-gradient-to-t from-amber-950/60 via-[#10131d] to-[#0a0c14]"
+                        "relative w-full min-h-[34px] px-3.5 py-2 bg-black/45 border-t border-white/[0.08] flex flex-wrap items-center justify-center gap-1.5",
+                        isLastChance && "border-amber-300/25 bg-amber-950/25"
                     )}>
-                        {/* 頂緣金屬熱壓摺線 */}
-                        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-amber-400/50 to-transparent" />
-
-                        {/* 垂直細密柔和熱壓封口紋理 */}
-                        <div className="absolute inset-0 bg-[repeating-linear-gradient(90deg,rgba(255,255,255,0.04)_0px,rgba(255,255,255,0.04)_1px,transparent_1px,transparent_5px)] pointer-events-none opacity-50" />
-
                         {/* 1. 限定階級 */}
                         {pool.minLevel && pool.minLevel !== '新手收藏家' && (
-                            <span className="relative z-10 bg-white/[0.06] text-amber-200 border border-amber-300/35 font-bold text-[10px] px-2 py-0.5 rounded-full whitespace-nowrap">
+                            <span className="relative z-10 bg-white/[0.05] text-[#FDE68A] border border-amber-300/35 font-bold text-[10px] px-2.5 py-0.5 rounded-full whitespace-nowrap">
                                 {pool.minLevel}限定
                             </span>
                         )}
 
                         {/* 3. 每日限抽 */}
                         {Number(pool.dailyLimit) > 0 && (
-                            <span className="relative z-10 bg-white/[0.06] text-slate-200 border border-white/[0.15] font-mono font-bold text-[10px] px-2 py-0.5 rounded-full tabular-nums whitespace-nowrap">
+                            <span className="relative z-10 bg-white/[0.05] text-slate-200 border border-white/[0.12] font-mono font-bold text-[10px] px-2.5 py-0.5 rounded-full tabular-nums whitespace-nowrap">
                                 每日限 {pool.dailyLimit} 抽
                             </span>
                         )}
@@ -1675,8 +1682,8 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
                                 const expDate = new Date(secs * 1000);
                                 if (isNaN(expDate.getTime())) return null;
                                 return (
-                                    <span className="relative z-10 inline-flex items-center gap-1 bg-white/[0.05] text-slate-300 border border-white/[0.12] font-mono font-bold text-[10px] px-2 py-0.5 rounded-full tabular-nums whitespace-nowrap">
-                                        <Clock className="w-2.5 h-2.5 text-amber-300/80" />
+                                    <span className="relative z-10 inline-flex items-center gap-1 bg-white/[0.04] text-slate-300 border border-white/[0.1] font-mono font-bold text-[10px] px-2.5 py-0.5 rounded-full tabular-nums whitespace-nowrap">
+                                        <Clock className="w-2.5 h-2.5 text-[#FDE68A]" />
                                         {format(expDate, 'M/d')} 下架
                                     </span>
                                 );
@@ -1685,22 +1692,91 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
                             }
                         })()}
                     </div>
-
-                    {/* 底部柔和微波熱壓切邊 (Soft Scalloped Wavy Foil Edge) */}
-                    <div className="w-full h-2 overflow-hidden flex items-center justify-between opacity-60 pointer-events-none bg-slate-950/80 -mt-px">
-                        <svg className="w-full h-2 block text-slate-800" viewBox="0 0 400 6" preserveAspectRatio="none">
-                            <path 
-                                d="M0,0 Q5,5 10,0 Q15,5 20,0 Q25,5 30,0 Q35,5 40,0 Q45,5 50,0 Q55,5 60,0 Q65,5 70,0 Q75,5 80,0 Q85,5 90,0 Q95,5 100,0 Q105,5 110,0 Q115,5 120,0 Q125,5 130,0 Q135,5 140,0 Q145,5 150,0 Q155,5 160,0 Q165,5 170,0 Q175,5 180,0 Q185,5 190,0 Q195,5 200,0 Q205,5 210,0 Q215,5 220,0 Q225,5 230,0 Q235,5 240,0 Q245,5 250,0 Q255,5 260,0 Q265,5 270,0 Q275,5 280,0 Q285,5 290,0 Q295,5 300,0 Q305,5 310,0 Q315,5 320,0 Q325,5 330,0 Q335,5 340,0 Q345,5 350,0 Q355,5 360,0 Q365,5 370,0 Q375,5 380,0 Q385,5 390,0 Q395,5 400,0 Z" 
-                                fill="currentColor" 
-                                stroke="#f59e0b" 
-                                strokeWidth="0.6" 
-                                strokeOpacity="0.4"
-                            />
-                        </svg>
-                    </div>
                 </div>
             </div>
             
+            {/* ❓ God Pack 一番賞 玩法說明彈窗 */}
+            {isGodPackRulesOpen && (
+                <div
+                    className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150"
+                    onClick={() => setIsGodPackRulesOpen(false)}
+                >
+                    <div
+                        className="relative w-full max-w-lg rounded-2xl bg-[#0a0f1c] border border-amber-300/40 shadow-[0_24px_64px_rgba(0,0,0,0.9)] overflow-hidden text-slate-100"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-amber-300/80 to-transparent" />
+                        <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.08]">
+                            <div className="flex items-center gap-2.5">
+                                <span className="w-[3px] h-7 rounded-full bg-gradient-to-b from-amber-200 via-amber-400 to-amber-700" />
+                                <div>
+                                    <h3 className="text-base font-black text-white flex items-center gap-1.5">
+                                        <HelpCircle className="w-4 h-4 text-[#FDE68A]" />
+                                        <span>God Pack 一番賞 玩法說明</span>
+                                    </h3>
+                                    <p className="text-[11px] text-slate-400">五色卡包公開看盤 · 即時機率 · 專屬防搶保護</p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setIsGodPackRulesOpen(false)}
+                                className="w-8 h-8 rounded-xl bg-white/[0.04] hover:bg-white/[0.1] border border-white/[0.08] text-slate-300 hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+                                aria-label="關閉玩法說明"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+
+                        <div className="p-5 space-y-3.5 max-h-[72dvh] overflow-y-auto text-xs text-slate-300 leading-relaxed">
+                            <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.08] space-y-2">
+                                <p className="font-bold text-[#FDE68A] text-xs">1. 五色卡包賞別制度</p>
+                                <div className="grid grid-cols-5 gap-1.5 text-center text-[10px]">
+                                    <div className="py-1.5 px-1 rounded-lg bg-amber-400/15 border border-amber-300/45 text-[#FDE68A] font-black">金包<span className="block text-[9px] font-medium opacity-80">A賞頭獎</span></div>
+                                    <div className="py-1.5 px-1 rounded-lg bg-black/60 border border-amber-300/60 text-[#FDE68A] font-black">黑包<span className="block text-[9px] font-medium opacity-80">SP驚喜</span></div>
+                                    <div className="py-1.5 px-1 rounded-lg bg-slate-200/10 border border-slate-300/35 text-slate-100 font-black">銀包<span className="block text-[9px] font-medium opacity-80">B賞大獎</span></div>
+                                    <div className="py-1.5 px-1 rounded-lg bg-amber-800/25 border border-amber-600/40 text-amber-200 font-black">銅包<span className="block text-[9px] font-medium opacity-80">C賞精選</span></div>
+                                    <div className="py-1.5 px-1 rounded-lg bg-white/[0.04] border border-white/15 text-slate-300 font-black">星光包<span className="block text-[9px] font-medium opacity-80">D賞常駐</span></div>
+                                </div>
+                                <p className="text-[11px] text-slate-400">
+                                    每包對應真實實體卡片或保底點數，開包瞬間依外袋色澤揭曉驚喜層級。
+                                </p>
+                            </div>
+
+                            <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.08] space-y-1">
+                                <p className="font-bold text-white">2. 即時公開看盤與「翻倍大獎率」</p>
+                                <p className="text-[11px] text-slate-400">
+                                    盤面即時同步剩餘各色卡包數與總抽數，點擊五色格子或「看盤明細」可瀏覽全部卡包清冊；大獎留在盤中越久，後續每一抽的「翻倍大獎率」就越高！
+                                </p>
+                            </div>
+
+                            <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.08] space-y-1">
+                                <p className="font-bold text-white">3. 120 秒專屬鎖池保護</p>
+                                <p className="text-[11px] text-slate-400">
+                                    開抽後系統自動啟動 120 秒專屬保護倒數，避免尾盤時遭他人插隊搶走剩餘大獎；若提早抽完也可一鍵提前解除鎖定。
+                                </p>
+                            </div>
+
+                            <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.08] space-y-1">
+                                <p className="font-bold text-white">4. 尾盤全包・實體入庫或一鍵轉點</p>
+                                <p className="text-[11px] text-slate-400">
+                                    剩餘包數少時可使用「全包」一次帶走所有剩餘獎項與最後賞。抽中卡片皆存入數位收藏庫，隨時可申請 7-11／郵寄出貨，或一鍵轉為鑽石與紅利 P+ 繼續抽！
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="px-5 py-3.5 bg-black/40 border-t border-white/[0.08] flex justify-end">
+                            <Button
+                                type="button"
+                                onClick={() => setIsGodPackRulesOpen(false)}
+                                className="h-9 px-6 rounded-xl font-black text-xs bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] hover:brightness-105"
+                            >
+                                我了解了
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* 📊 GodPack 一番賞：即時看盤數據分析與抽卡機率彈窗 */}
             {isHybridBoardOpen && (
                 <div

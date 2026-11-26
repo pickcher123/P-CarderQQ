@@ -33,6 +33,38 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: '該帳號已綁定過推薦碼' }, { status: 400 });
     }
 
+    // 防刷帳號驗證：必須先至會員中心填寫真實姓名與聯絡電話，才能使用推薦碼領取獎勵
+    const realName = String(newUserData.realName || '').trim();
+    const rawPhone = String(newUserData.phone || '').trim();
+    const normalizedPhone = rawPhone.replace(/\D/g, '');
+    if (realName.length < 2 || normalizedPhone.length < 8) {
+      return NextResponse.json(
+        {
+          success: false,
+          code: 'PROFILE_INCOMPLETE',
+          error: '請先至「會員中心」填寫真實姓名與聯絡電話，完成基本資料後才能使用推薦碼領取獎勵！',
+        },
+        { status: 400 }
+      );
+    }
+
+    // 同手機號碼防多帳號重複領取推薦獎勵
+    const dupPhoneLog = await db
+      .collection('referralLogs')
+      .where('newUserPhone', '==', normalizedPhone)
+      .limit(1)
+      .get();
+    if (!dupPhoneLog.empty) {
+      return NextResponse.json(
+        {
+          success: false,
+          code: 'DUPLICATE_PHONE',
+          error: '此聯絡電話已領取過推薦碼獎勵，每組手機號碼僅限領取乙次。',
+        },
+        { status: 400 }
+      );
+    }
+
     // 2. 讀取系統推薦碼配置 (systemConfig/referral 或 systemConfig/main)
     const systemConfigSnap = await db.collection('systemConfig').doc('referral').get();
     let referralSettings = {
@@ -167,6 +199,8 @@ export async function POST(req: Request) {
       referrerName: referrerUserDoc ? (referrerUserDoc.data().username || '推薦好友') : (officialCampaignName || '官方專案'),
       newUserId: newUserId,
       newUserName: newUserData.username || '新會員',
+      newUserRealName: realName,
+      newUserPhone: normalizedPhone,
       newUserEmail: newUserData.email || '',
       referrerBonusGiven: referrerUserDoc ? referralSettings.referrerBonusPoints : 0,
       refereeBonusGiven: referralSettings.refereeBonusPoints,

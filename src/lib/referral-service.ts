@@ -24,6 +24,16 @@ function shouldFallbackToClient(status: number, errorMsg?: string): boolean {
   return false;
 }
 
+function validateReferralProfile(userData: any): { ok: boolean; realName: string; normalizedPhone: string } {
+  const realName = String(userData?.realName || '').trim();
+  const normalizedPhone = String(userData?.phone || '').replace(/\D/g, '');
+  return {
+    ok: realName.length >= 2 && normalizedPhone.length >= 8,
+    realName,
+    normalizedPhone,
+  };
+}
+
 export async function generateReferralCodeClient(
   firestore: Firestore | null,
   userId: string,
@@ -55,6 +65,14 @@ export async function generateReferralCodeClient(
     const userRef = doc(firestore, 'users', userId);
     const userSnap = await getDoc(userRef);
     const userData = userSnap.exists() ? userSnap.data() : {};
+
+    const profileCheck = validateReferralProfile(userData);
+    if (!profileCheck.ok) {
+      return {
+        success: false,
+        error: '請先至「會員中心」填寫真實姓名與聯絡電話，完成基本資料後即可啟用專屬推薦碼！',
+      };
+    }
 
     if (userData?.inviteCode && !customCode) {
       return { success: true, inviteCode: userData.inviteCode };
@@ -217,6 +235,24 @@ export async function applyReferralCodeClient(
       return { success: false, error: '該帳號已綁定過推薦碼' };
     }
 
+    const profileCheck = validateReferralProfile(newUserData);
+    if (!profileCheck.ok) {
+      return {
+        success: false,
+        error: '請先至「會員中心」填寫真實姓名與聯絡電話，完成基本資料後才能使用推薦碼領取獎勵！',
+      };
+    }
+
+    const dupPhoneSnap = await getDocs(
+      query(collection(firestore, 'referralLogs'), where('newUserPhone', '==', profileCheck.normalizedPhone), limit(1))
+    );
+    if (!dupPhoneSnap.empty) {
+      return {
+        success: false,
+        error: '此聯絡電話已領取過推薦碼獎勵，每組手機號碼僅限領取乙次。',
+      };
+    }
+
     // 讀取推薦碼獎勵設定
     let settings = {
       isEnabled: true,
@@ -331,11 +367,16 @@ export async function applyReferralCodeClient(
 
     const logRef = doc(collection(firestore, 'referralLogs'));
     batch.set(logRef, {
+      code: cleanCode,
       referralCode: cleanCode,
       referrerId: referrerDoc?.id || 'OFFICIAL',
       referrerName,
+      newUserId: newUserId,
       refereeId: newUserId,
+      newUserName: newUserData.username || '新會員',
       refereeName: newUserData.username || '新會員',
+      newUserRealName: profileCheck.realName,
+      newUserPhone: profileCheck.normalizedPhone,
       referrerReward: referrerDoc ? settings.referrerBonusPoints : 0,
       refereeReward: settings.refereeBonusPoints,
       freeDrawTickets: settings.freeDrawTickets,

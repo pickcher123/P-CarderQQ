@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -23,6 +23,7 @@ import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { isSuperAdminEmail } from '@/hooks/use-is-admin';
 import { checkReferralCodeClient, applyReferralCodeClient } from '@/lib/referral-service';
+import { TurnstileWidget, isTurnstileEnabled } from '@/components/auth/turnstile-widget';
 
 // Simple Google Icon SVG
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -51,6 +52,10 @@ function LoginContent() {
   const [isVerifyingCode, setIsVerifyingCode] = useState(false);
   const [codeVerifiedStatus, setCodeVerifiedStatus] = useState<{ valid: boolean; referrerName?: string; message?: string } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState('');
+  const [turnstileResetKey, setTurnstileResetKey] = useState(0);
+  const [honeypot, setHoneypot] = useState('');
+  const formMountedAtRef = useRef<number>(Date.now());
 
   // Forgot password states
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
@@ -185,9 +190,57 @@ function LoginContent() {
     }
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const verifyHumanBeforeAuth = async (action: 'login' | 'register'): Promise<boolean> => {
+    if (isTurnstileEnabled() && !turnstileToken) {
+      toast({
+        variant: 'destructive',
+        title: '無感安全驗證進行中',
+        description: '請稍候 1 秒待安全驗證完成後再點擊送出。',
+      });
+      return false;
+    }
+
+    try {
+      const res = await fetch('/api/auth/verify-human', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token: turnstileToken,
+          honeypot,
+          elapsedMs: Date.now() - formMountedAtRef.current,
+          action,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.success) {
+        toast({
+          variant: 'destructive',
+          title: '安全性驗證未通過',
+          description: data?.error || '請重新嘗試。',
+        });
+        setTurnstileToken('');
+        setTurnstileResetKey((k) => k + 1);
+        return false;
+      }
+      return true;
+    } catch {
+      toast({
+        variant: 'destructive',
+        title: '驗證連線異常',
+        description: '無法連線至安全驗證伺服器，請稍後再試。',
+      });
+      return false;
+    }
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    const humanOk = await verifyHumanBeforeAuth('login');
+    if (!humanOk) {
+      setIsLoading(false);
+      return;
+    }
     initiateEmailSignIn(auth, loginEmail, loginPassword)
       .then(async (cred) => {
         if (cred?.user) {
@@ -367,6 +420,11 @@ function LoginContent() {
     }
 
     setIsLoading(true);
+    const humanOk = await verifyHumanBeforeAuth('register');
+    if (!humanOk) {
+      setIsLoading(false);
+      return;
+    }
     try {
         const result = await initiateEmailSignUp(auth, registerEmail, registerPassword);
         const user = result.user;
@@ -423,6 +481,11 @@ function LoginContent() {
   };
 
   const [isRegistering, setIsRegistering] = useState(false);
+
+  // 切換登入／註冊分頁時清空舊的 Turnstile 憑證，由新分頁重新取得無感驗證
+  useEffect(() => {
+    setTurnstileToken('');
+  }, [isRegistering]);
 
   return (
     <div className="min-h-[100dvh] w-full flex flex-col justify-start items-center pt-8 sm:pt-14 p-4 sm:p-6 relative overflow-hidden bg-[#060913] text-white">
@@ -571,6 +634,27 @@ function LoginContent() {
                   )}
                 </div>
 
+                {/* 隱藏蜜罐防機器人欄位（真人不可見） */}
+                <input
+                  type="text"
+                  name="website_url"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  aria-hidden="true"
+                  value={honeypot}
+                  onChange={(e) => setHoneypot(e.target.value)}
+                  className="absolute -left-[9999px] w-0 h-0 opacity-0 pointer-events-none"
+                />
+
+                {/* Cloudflare Turnstile 無感人機驗證 */}
+                <TurnstileWidget
+                  action="register"
+                  resetKey={turnstileResetKey}
+                  onVerify={(token) => setTurnstileToken(token)}
+                  onExpire={() => setTurnstileToken('')}
+                  onError={() => setTurnstileToken('')}
+                />
+
                 <Button 
                   className="w-full h-10 rounded-xl font-black text-xs sm:text-sm bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 shadow-[0_0_20px_rgba(6,182,212,0.3)] transition-all active:scale-[0.98] cursor-pointer mt-1" 
                   type="submit" 
@@ -633,6 +717,27 @@ function LoginContent() {
                     註冊新帳號
                   </button>
                 </div>
+
+                {/* 隱藏蜜罐防機器人欄位（真人不可見） */}
+                <input
+                  type="text"
+                  name="company_website"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  aria-hidden="true"
+                  value={honeypot}
+                  onChange={(e) => setHoneypot(e.target.value)}
+                  className="absolute -left-[9999px] w-0 h-0 opacity-0 pointer-events-none"
+                />
+
+                {/* Cloudflare Turnstile 無感人機驗證 */}
+                <TurnstileWidget
+                  action="login"
+                  resetKey={turnstileResetKey}
+                  onVerify={(token) => setTurnstileToken(token)}
+                  onExpire={() => setTurnstileToken('')}
+                  onError={() => setTurnstileToken('')}
+                />
 
                 <Button 
                   className="w-full h-10 rounded-xl font-black text-xs sm:text-sm bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 shadow-[0_0_20px_rgba(6,182,212,0.3)] transition-all active:scale-[0.98] cursor-pointer mt-1" 

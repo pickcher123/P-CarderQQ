@@ -24,6 +24,21 @@ export async function POST(req: Request) {
     }
 
     const userData = userSnap.data()!;
+
+    // 防刷帳號驗證：需先完成個人資料填寫（真實姓名與聯絡電話）才能啟用或自訂專屬推薦碼
+    const realName = String(userData.realName || '').trim();
+    const normalizedPhone = String(userData.phone || '').replace(/\D/g, '');
+    if (realName.length < 2 || normalizedPhone.length < 8) {
+      return NextResponse.json(
+        {
+          success: false,
+          code: 'PROFILE_INCOMPLETE',
+          error: '請先至「會員中心」填寫真實姓名與聯絡電話，完成基本資料後即可啟用專屬推薦碼！',
+        },
+        { status: 400 }
+      );
+    }
+
     // 如果已經有邀請碼且未指定變更
     if (userData.inviteCode && !customCode) {
       return NextResponse.json({ success: true, inviteCode: userData.inviteCode });

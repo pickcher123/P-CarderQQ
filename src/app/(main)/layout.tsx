@@ -90,7 +90,7 @@ export default function MainLayout({
   
   if (isOpenPackPage) {
     return (
-      <div className="relative min-h-[100dvh] w-full overflow-hidden bg-slate-950">
+      <div className="relative min-h-[100dvh] w-full overflow-hidden bg-slate-950 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
         {isMaintenanceActive && isAdmin && (
           <div className="sticky top-0 z-50 bg-amber-500 text-slate-950 px-3 py-1 text-xs font-bold flex items-center justify-between">
             <span className="flex items-center gap-1.5">
@@ -113,16 +113,16 @@ export default function MainLayout({
   }
   
   return (
-    <div className="relative flex min-h-screen flex-col overflow-x-hidden max-w-full w-full">
+    <div className="relative flex min-h-[100dvh] flex-col overflow-x-clip max-w-full w-full">
       <AnimatedBackground
         backgroundUrl={systemConfig?.backgroundUrl}
         backgroundOpacity={systemConfig?.backgroundOpacity}
         particleEffect={activeParticleEffect}
       />
-      <div className="relative z-10 flex min-h-screen flex-col w-full flex-1">
+      <div className="relative z-10 flex min-h-[100dvh] flex-col w-full flex-1">
         <RouteProgressBar />
         {isMaintenanceActive && isAdmin && (
-          <div className="sticky top-0 z-50 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 px-3.5 py-1.5 text-xs font-black flex items-center justify-between shadow-lg border-b border-amber-600">
+          <div className="sticky top-0 z-50 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 px-3.5 pt-[calc(0.375rem+env(safe-area-inset-top))] pb-1.5 text-xs font-black flex items-center justify-between shadow-lg border-b border-amber-600">
             <div className="flex items-center gap-2">
               <ShieldAlert className="w-4 h-4 fill-slate-950 text-amber-500 shrink-0" />
               <span>【管理員預覽】全站目前處於維護中狀態，一般訪客無法進入瀏覽網頁，僅管理員可訪問。</span>
@@ -142,7 +142,7 @@ export default function MainLayout({
             initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
-            className="flex-1 pb-36 sm:pb-40 md:pb-16 overflow-x-hidden max-w-full w-full"
+            className="flex-1 pb-[calc(8.5rem+env(safe-area-inset-bottom))] sm:pb-40 md:pb-16 overflow-x-clip max-w-full w-full"
           >
             {children}
           </motion.main>

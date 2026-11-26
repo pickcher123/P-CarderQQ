@@ -104,12 +104,12 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
   ));
 
   return (
-    <div className="sticky top-0 z-40 w-full border-b border-white/[0.08] bg-[#070b14]/85 backdrop-blur-2xl relative">
+    <header className="sticky top-0 z-40 w-full border-b border-white/[0.08] bg-[#070b14]/90 backdrop-blur-2xl pt-[env(safe-area-inset-top)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
       {/* 頂部極光微光氛圍 */}
       <div className="absolute top-0 left-10 sm:left-1/4 w-48 sm:w-80 h-10 bg-cyan-500/10 blur-2xl pointer-events-none -z-10" />
       <div className="absolute top-0 right-10 sm:right-1/4 w-36 sm:w-64 h-10 bg-amber-500/10 blur-2xl pointer-events-none -z-10" />
       {/* 底部高科技細微霓虹線 */}
-      <div className="absolute bottom-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/40 to-transparent pointer-events-none" />
+      <div className="absolute bottom-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-amber-300/40 to-transparent pointer-events-none" />
 
       <div className="container flex h-14 sm:h-16 items-center justify-between px-3 sm:px-6 md:px-8 gap-2 sm:gap-4">
         <div className="flex items-center shrink-0">
@@ -462,6 +462,6 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
           });
         }}
       />
-    </div>
+    </header>
   );
 }
