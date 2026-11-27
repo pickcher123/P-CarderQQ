@@ -1,78 +1,38 @@
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
+import { verifyUserRequest } from '@/lib/server-auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
+    // 1. 嚴格驗證 Firebase ID Token（禁止冒用他人 UID 綁定推薦碼）
+    const auth = await verifyUserRequest(req);
+    if (!auth.ok) return auth.response;
+
+    const newUserId = auth.user.uid;
     const body = await req.json();
-    const newUserId = body.newUserId || body.userId;
     const { referralCode } = body;
 
-    if (!newUserId || !referralCode) {
-      return NextResponse.json({ success: false, error: '缺少會員 ID 或推薦碼' }, { status: 400 });
+    if (!referralCode || typeof referralCode !== 'string') {
+      return NextResponse.json({ success: false, error: '缺少推薦碼' }, { status: 400 });
     }
 
-    const cleanCode = String(referralCode).trim().toUpperCase();
+    const cleanCode = referralCode.trim().toUpperCase();
     const db = getAdminDb();
     if (!db) {
       return NextResponse.json({ success: false, error: '資料庫尚未就緒' }, { status: 500 });
     }
 
-    // 1. 取得新註冊會員資料
-    const newUserRef = db.collection('users').doc(newUserId);
-    const newUserSnap = await newUserRef.get();
-    if (!newUserSnap.exists) {
-      return NextResponse.json({ success: false, error: '找不到該會員' }, { status: 404 });
-    }
-
-    const newUserData = newUserSnap.data()!;
-    // 若該會員已經綁定過推薦人，不可重複套用
-    if (newUserData.invitedBy || newUserData.referredBy) {
-      return NextResponse.json({ success: false, error: '該帳號已綁定過推薦碼' }, { status: 400 });
-    }
-
-    // 防刷帳號驗證：必須先至會員中心填寫真實姓名與聯絡電話，才能使用推薦碼領取獎勵
-    const realName = String(newUserData.realName || '').trim();
-    const rawPhone = String(newUserData.phone || '').trim();
-    const normalizedPhone = rawPhone.replace(/\D/g, '');
-    if (realName.length < 2 || normalizedPhone.length < 8) {
-      return NextResponse.json(
-        {
-          success: false,
-          code: 'PROFILE_INCOMPLETE',
-          error: '請先至「會員中心」填寫真實姓名與聯絡電話，完成基本資料後才能使用推薦碼領取獎勵！',
-        },
-        { status: 400 }
-      );
-    }
-
-    // 同手機號碼防多帳號重複領取推薦獎勵
-    const dupPhoneLog = await db
-      .collection('referralLogs')
-      .where('newUserPhone', '==', normalizedPhone)
-      .limit(1)
-      .get();
-    if (!dupPhoneLog.empty) {
-      return NextResponse.json(
-        {
-          success: false,
-          code: 'DUPLICATE_PHONE',
-          error: '此聯絡電話已領取過推薦碼獎勵，每組手機號碼僅限領取乙次。',
-        },
-        { status: 400 }
-      );
-    }
-
-    // 2. 讀取系統推薦碼配置 (systemConfig/referral 或 systemConfig/main)
+    // 2. 讀取系統推薦碼配置與搜尋推薦人（唯讀查詢）
     const systemConfigSnap = await db.collection('systemConfig').doc('referral').get();
     let referralSettings = {
       isEnabled: true,
-      referrerBonusPoints: 100, // 推薦人獲得紅利 P+
-      refereeBonusPoints: 50,   // 新人獲得紅利 P+
-      refereeDiamonds: 0,       // 新人獲得鑽石
-      freeDrawTickets: 1,       // 新人額外免費抽卡券
+      referrerBonusPoints: 100,
+      refereeBonusPoints: 50,
+      refereeDiamonds: 0,
+      freeDrawTickets: 1,
     };
 
     if (systemConfigSnap.exists) {
@@ -90,16 +50,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: '推薦碼活動目前已暫停' }, { status: 400 });
     }
 
-    // 3. 搜尋持有此推薦碼之推薦人
-    // 先查專屬自訂推薦碼 / inviteCode，或使用者 ID 前 8 碼 / UID
     let referrerSnap = await db.collection('users').where('inviteCode', '==', cleanCode).limit(1).get();
-    
-    // 若無符合，檢查是否為官方特定通用推薦活動代碼 (例如 VIP888、FRIEND2025 等)
     let isOfficialCode = false;
     let officialCampaignName = '';
 
     if (referrerSnap.empty) {
-      // 檢查自訂推薦碼集合 referralCodes
       const customCodeDoc = await db.collection('referralCodes').doc(cleanCode).get();
       if (customCodeDoc.exists && customCodeDoc.data()?.isActive !== false) {
         const customData = customCodeDoc.data()!;
@@ -115,7 +70,6 @@ export async function POST(req: Request) {
           referralSettings.freeDrawTickets = customData.freeDrawTickets;
         }
       } else {
-        // 亦可相容比對使用 UID 精確匹配
         const directUser = await db.collection('users').doc(cleanCode.toLowerCase()).get();
         if (directUser.exists) {
           referrerSnap = { empty: false, docs: [directUser] } as any;
@@ -123,101 +77,157 @@ export async function POST(req: Request) {
       }
     }
 
-    let referrerUserDoc: any = null;
+    let referrerUserId: string | null = null;
+    let referrerDisplayName = officialCampaignName || '官方專案';
     if (!referrerSnap.empty) {
-      referrerUserDoc = referrerSnap.docs[0];
-      // 不可推薦自己
-      if (referrerUserDoc.id === newUserId) {
+      const doc = referrerSnap.docs[0];
+      if (doc.id === newUserId) {
         return NextResponse.json({ success: false, error: '不能填寫自己的推薦碼' }, { status: 400 });
       }
+      referrerUserId = doc.id;
+      referrerDisplayName = doc.data()?.username || '推薦好友';
     } else if (!isOfficialCode) {
       return NextResponse.json({ success: false, error: '無效或不存在的推薦碼' }, { status: 404 });
     }
 
-    const batch = db.batch();
+    // 3. 在單一 Firestore 原子交易內完成防重複綁定、手機唯一鎖與派獎（徹底防範併發 Race Condition）
+    const txOutcome = await db.runTransaction(async (tx) => {
+      const newUserRef = db.collection('users').doc(newUserId);
+      const newUserSnap = await tx.get(newUserRef);
 
-    // 4. 更新新人 (被推薦人)
-    const newUserUpdates: Record<string, any> = {
-      invitedBy: cleanCode,
-      referredBy: cleanCode,
-      invitedAt: FieldValue.serverTimestamp(),
-    };
+      if (!newUserSnap.exists) {
+        return { ok: false as const, status: 404, error: '找不到該會員' };
+      }
 
-    if (referralSettings.refereeBonusPoints > 0) {
-      newUserUpdates.bonusPoints = FieldValue.increment(referralSettings.refereeBonusPoints);
-    }
-    if (referralSettings.refereeDiamonds > 0) {
-      newUserUpdates.points = FieldValue.increment(referralSettings.refereeDiamonds);
-    }
-    if (referralSettings.freeDrawTickets > 0) {
-      newUserUpdates.freeDrawTickets = FieldValue.increment(referralSettings.freeDrawTickets);
-    }
+      const newUserData = newUserSnap.data()!;
+      if (newUserData.invitedBy || newUserData.referredBy) {
+        return { ok: false as const, status: 400, error: '該帳號已綁定過推薦碼' };
+      }
 
-    batch.update(newUserRef, newUserUpdates);
+      const realName = String(newUserData.realName || '').trim();
+      const rawPhone = String(newUserData.phone || '').trim();
+      const normalizedPhone = rawPhone.replace(/\D/g, '');
+      if (realName.length < 2 || normalizedPhone.length < 8) {
+        return {
+          ok: false as const,
+          status: 400,
+          code: 'PROFILE_INCOMPLETE',
+          error: '請先至「會員中心」填寫真實姓名與聯絡電話，完成基本資料後才能使用推薦碼領取獎勵！',
+        };
+      }
 
-    // 新人交易紀錄
-    const newTxRef = db.collection('transactions').doc();
-    batch.set(newTxRef, {
-      userId: newUserId,
-      amount: referralSettings.refereeBonusPoints,
-      currency: 'p-point',
-      transactionType: 'Issuance',
-      section: 'admin',
-      details: `使用推薦碼【${cleanCode}】註冊獎勵：獲得 ${referralSettings.refereeBonusPoints} 紅利 P+` + 
-        (referralSettings.freeDrawTickets > 0 ? ` 與 ${referralSettings.freeDrawTickets} 張免費抽卡券` : ''),
-      transactionDate: FieldValue.serverTimestamp(),
-    });
+      // 原子手機唯一鎖文件（防止同一手機號併發註冊多帳號重複領獎）
+      const phoneClaimRef = db.collection('referralPhoneClaims').doc(normalizedPhone);
+      const phoneClaimSnap = await tx.get(phoneClaimRef);
+      if (phoneClaimSnap.exists) {
+        return {
+          ok: false as const,
+          status: 400,
+          code: 'DUPLICATE_PHONE',
+          error: '此聯絡電話已領取過推薦碼獎勵，每組手機號碼僅限領取乙次。',
+        };
+      }
 
-    // 5. 若有具體推薦人 (一般會員)，發放推薦人回饋
-    if (referrerUserDoc) {
-      const referrerRef = referrerUserDoc.ref;
-      const referrerData = referrerUserDoc.data();
+      // 兼容歷史舊紀錄（尚未有 phoneClaim 文件前建立的 referralLogs）
+      const legacyDupSnap = await tx.get(
+        db.collection('referralLogs').where('newUserPhone', '==', normalizedPhone).limit(1)
+      );
+      if (!legacyDupSnap.empty) {
+        return {
+          ok: false as const,
+          status: 400,
+          code: 'DUPLICATE_PHONE',
+          error: '此聯絡電話已領取過推薦碼獎勵，每組手機號碼僅限領取乙次。',
+        };
+      }
 
-      batch.update(referrerRef, {
-        inviteCount: FieldValue.increment(1),
-        bonusPoints: FieldValue.increment(referralSettings.referrerBonusPoints),
+      // 寫入原子手機鎖
+      tx.set(phoneClaimRef, {
+        userId: newUserId,
+        code: cleanCode,
+        claimedAt: FieldValue.serverTimestamp(),
       });
 
-      // 推薦人交易紀錄
-      const refTxRef = db.collection('transactions').doc();
-      batch.set(refTxRef, {
-        userId: referrerUserDoc.id,
-        amount: referralSettings.referrerBonusPoints,
+      // 更新新人資料與獎勵
+      const newUserUpdates: Record<string, any> = {
+        invitedBy: cleanCode,
+        referredBy: cleanCode,
+        invitedAt: FieldValue.serverTimestamp(),
+      };
+      if (referralSettings.refereeBonusPoints > 0) {
+        newUserUpdates.bonusPoints = FieldValue.increment(referralSettings.refereeBonusPoints);
+      }
+      if (referralSettings.refereeDiamonds > 0) {
+        newUserUpdates.points = FieldValue.increment(referralSettings.refereeDiamonds);
+      }
+      if (referralSettings.freeDrawTickets > 0) {
+        newUserUpdates.freeDrawTickets = FieldValue.increment(referralSettings.freeDrawTickets);
+      }
+      tx.update(newUserRef, newUserUpdates);
+
+      // 新人交易紀錄
+      tx.set(db.collection('transactions').doc(), {
+        userId: newUserId,
+        amount: referralSettings.refereeBonusPoints,
         currency: 'p-point',
         transactionType: 'Issuance',
         section: 'admin',
-        details: `好友【${newUserData.username || '新會員'}】使用您的推薦碼【${cleanCode}】註冊：獲得 ${referralSettings.referrerBonusPoints} 紅利 P+`,
+        details:
+          `使用推薦碼【${cleanCode}】註冊獎勵：獲得 ${referralSettings.refereeBonusPoints} 紅利 P+` +
+          (referralSettings.freeDrawTickets > 0 ? ` 與 ${referralSettings.freeDrawTickets} 張免費抽卡券` : ''),
         transactionDate: FieldValue.serverTimestamp(),
       });
-    }
 
-    // 6. 記錄全站推薦紀錄集合 referralLogs
-    const logRef = db.collection('referralLogs').doc();
-    batch.set(logRef, {
-      code: cleanCode,
-      referrerId: referrerUserDoc ? referrerUserDoc.id : 'OFFICIAL',
-      referrerName: referrerUserDoc ? (referrerUserDoc.data().username || '推薦好友') : (officialCampaignName || '官方專案'),
-      newUserId: newUserId,
-      newUserName: newUserData.username || '新會員',
-      newUserRealName: realName,
-      newUserPhone: normalizedPhone,
-      newUserEmail: newUserData.email || '',
-      referrerBonusGiven: referrerUserDoc ? referralSettings.referrerBonusPoints : 0,
-      refereeBonusGiven: referralSettings.refereeBonusPoints,
-      refereeTicketsGiven: referralSettings.freeDrawTickets,
-      createdAt: FieldValue.serverTimestamp(),
+      // 發放推薦人回饋
+      if (referrerUserId) {
+        const referrerRef = db.collection('users').doc(referrerUserId);
+        tx.update(referrerRef, {
+          inviteCount: FieldValue.increment(1),
+          bonusPoints: FieldValue.increment(referralSettings.referrerBonusPoints),
+        });
+        tx.set(db.collection('transactions').doc(), {
+          userId: referrerUserId,
+          amount: referralSettings.referrerBonusPoints,
+          currency: 'p-point',
+          transactionType: 'Issuance',
+          section: 'admin',
+          details: `好友【${newUserData.username || '新會員'}】使用您的推薦碼【${cleanCode}】註冊：獲得 ${referralSettings.referrerBonusPoints} 紅利 P+`,
+          transactionDate: FieldValue.serverTimestamp(),
+        });
+      }
+
+      // 寫入推薦紀錄
+      tx.set(db.collection('referralLogs').doc(), {
+        code: cleanCode,
+        referrerId: referrerUserId || 'OFFICIAL',
+        referrerName: referrerDisplayName,
+        newUserId,
+        newUserName: newUserData.username || '新會員',
+        newUserRealName: realName,
+        newUserPhone: normalizedPhone,
+        newUserEmail: newUserData.email || '',
+        referrerBonusGiven: referrerUserId ? referralSettings.referrerBonusPoints : 0,
+        refereeBonusGiven: referralSettings.refereeBonusPoints,
+        refereeTicketsGiven: referralSettings.freeDrawTickets,
+        createdAt: FieldValue.serverTimestamp(),
+      });
+
+      if (isOfficialCode) {
+        tx.update(db.collection('referralCodes').doc(cleanCode), {
+          usageCount: FieldValue.increment(1),
+          lastUsedAt: FieldValue.serverTimestamp(),
+        });
+      }
+
+      return { ok: true as const };
     });
 
-    // 若為官方代碼，更新使用次數
-    if (isOfficialCode) {
-      const customCodeRef = db.collection('referralCodes').doc(cleanCode);
-      batch.update(customCodeRef, {
-        usageCount: FieldValue.increment(1),
-        lastUsedAt: FieldValue.serverTimestamp(),
-      });
+    if (!txOutcome.ok) {
+      return NextResponse.json(
+        { success: false, ...(txOutcome.code ? { code: txOutcome.code } : {}), error: txOutcome.error },
+        { status: txOutcome.status }
+      );
     }
-
-    await batch.commit();
 
     return NextResponse.json({
       success: true,
@@ -226,8 +236,8 @@ export async function POST(req: Request) {
         bonusPoints: referralSettings.refereeBonusPoints,
         diamonds: referralSettings.refereeDiamonds,
         freeDrawTickets: referralSettings.freeDrawTickets,
-        referrerName: referrerUserDoc ? (referrerUserDoc.data().username || '好友') : (officialCampaignName || '官方專案'),
-      }
+        referrerName: referrerDisplayName,
+      },
     });
   } catch (error: any) {
     console.error('Apply referral error:', error);

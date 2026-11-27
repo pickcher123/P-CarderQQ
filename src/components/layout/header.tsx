@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { User, LogIn, LogOut, Loader2, Package, Library, Plus, Users2, ChevronDown, Crown, Info, Sparkles, Wallet, Award, Trophy, Calendar, Gift, Ticket, HelpCircle } from 'lucide-react';
+import { User, LogIn, LogOut, Loader2, Package, Library, Plus, Users2, ChevronDown, Crown, Info, Sparkles, Wallet, Award, Trophy, Calendar, Gift, Ticket, HelpCircle, Bell } from 'lucide-react';
 import { Logo, CrossedCardsIcon, LuckyBagIcon, PPlusIcon, NavDrawIcon, NavCollectionIcon, DiamondIcon, AdminConsoleIcon, CheckInTicketIcon } from '@/components/icons';
 import { useUser, useAuth, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
@@ -18,7 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Badge } from '@/components/ui/badge';
 import { PurchasePointsDialog } from '@/components/purchase-points-dialog';
 import { PromoRedeemModal } from '@/components/events/PromoRedeemModal';
-import { SiteAnnouncementBellButton } from '@/components/site-announcements';
+import { SiteAnnouncementBellButton, useSiteAnnouncements } from '@/components/site-announcements';
 import { syncLocalPromoClaimsToFirestore } from '@/lib/promo-draw-service';
 import { useToast } from '@/hooks/use-toast';
 import { useFeatureFlags } from '@/hooks/use-feature-flags';
@@ -45,6 +45,7 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
   const { toast } = useToast();
   const [isPromoModalOpen, setIsPromoModalOpen] = useState(false);
   const { isFeatureEnabled } = useFeatureFlags(systemConfig);
+  const { unreadCount: unreadAnnouncementCount, openCenterModal: openAnnouncementCenter } = useSiteAnnouncements();
 
   const handleLogout = async () => {
     if (auth) {
@@ -111,7 +112,7 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
       {/* 底部高科技細微霓虹線 */}
       <div className="absolute bottom-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-amber-300/40 to-transparent pointer-events-none" />
 
-      <div className="container flex h-14 sm:h-16 items-center justify-between px-3 sm:px-6 md:px-8 gap-2 sm:gap-4">
+      <div className="container flex h-14 sm:h-16 items-center justify-between px-2.5 sm:px-6 md:px-8 gap-1.5 sm:gap-4">
         <div className="flex items-center shrink-0">
           <Logo className="text-primary shrink-0" />
           <nav className="ml-4 lg:ml-6 hidden items-center space-x-2.5 lg:space-x-3.5 xl:space-x-4 text-xs lg:text-sm font-medium lg:flex">
@@ -172,7 +173,7 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
               type="button"
               id="header-free-ticket-btn"
               onClick={() => setIsPromoModalOpen(true)}
-              className="relative flex items-center justify-center gap-1.5 h-8 sm:h-9 px-2.5 sm:px-3.5 rounded-lg bg-white/[0.05] hover:bg-white/[0.09] border border-white/[0.12] hover:border-amber-300/40 shadow-[0_1px_2px_rgba(0,0,0,0.4)] text-slate-100 hover:text-white transition-[background-color,border-color,color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] group cursor-pointer shrink-0"
+              className="relative flex items-center justify-center gap-1.5 h-8 sm:h-9 px-2 sm:px-3.5 rounded-lg bg-white/[0.05] hover:bg-white/[0.09] border border-white/[0.12] hover:border-amber-300/40 shadow-[0_1px_2px_rgba(0,0,0,0.4)] text-slate-100 hover:text-white transition-[background-color,border-color,color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] group cursor-pointer shrink-0"
               title="簽到/領券"
             >
               <div className="relative flex items-center justify-center">
@@ -184,13 +185,13 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
 
             {/* 點數區塊 (電競晶鑽膠囊) */}
             {user && (
-              <div className="flex items-center">
+              <div className="flex items-center min-w-0">
                 <div className="flex items-center h-8 sm:h-9 bg-gradient-to-b from-slate-900/95 via-[#0b1324]/95 to-slate-950/95 rounded-full border border-cyan-500/40 shadow-[0_0_18px_rgba(6,182,212,0.22)] ring-1 ring-cyan-500/20 backdrop-blur-xl overflow-hidden group/capsule hover:border-cyan-400 hover:shadow-[0_0_22px_rgba(6,182,212,0.4)] transition-[border-color] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]">
                   <Popover>
                     <PopoverTrigger asChild>
                       <button 
                         id="header-points-trigger"
-                        className="flex items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 h-full hover:bg-cyan-500/10 active:bg-cyan-500/20 active:scale-[0.97] transition-[background-color,transform] duration-150 group outline-none"
+                        className="flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-3 h-full hover:bg-cyan-500/10 active:bg-cyan-500/20 active:scale-[0.97] transition-[background-color,transform] duration-150 group outline-none"
                       >
                         <div className="relative flex items-center justify-center shrink-0">
                           <DiamondIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 drop-shadow-[0_0_10px_rgba(34,211,238,0.9)] [@media(hover:hover)_and_(pointer:fine)]:group-hover:scale-110 transition-transform duration-150" />
@@ -284,7 +285,7 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                       <button 
                         id="header-add-points-btn"
                         title="立即加值"
-                        className="h-full px-2.5 sm:px-3 flex items-center justify-center bg-gradient-to-r from-cyan-500/20 to-blue-600/25 hover:from-cyan-500/40 hover:to-blue-600/45 active:bg-cyan-500/50 active:scale-[0.97] text-cyan-300 hover:text-white transition-[background-color,color,transform] duration-150 group outline-none"
+                        className="h-full px-2 sm:px-3 flex items-center justify-center bg-gradient-to-r from-cyan-500/20 to-blue-600/25 hover:from-cyan-500/40 hover:to-blue-600/45 active:bg-cyan-500/50 active:scale-[0.97] text-cyan-300 hover:text-white transition-[background-color,color,transform] duration-150 group outline-none"
                       >
                         <Plus className="h-3.5 w-3.5 [@media(hover:hover)_and_(pointer:fine)]:group-hover:scale-110 transition-transform duration-150 stroke-[2.5]" />
                       </button>
@@ -294,8 +295,8 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
               </div>
             )}
 
-          {/* 站內公告中心鈴鐺按鈕（與首頁最新消息獨立） */}
-          <SiteAnnouncementBellButton />
+          {/* 站內公告中心鈴鐺按鈕（桌機顯示於頂部列，手機移至右下浮動鈕與頭像選單，避免擠壓頭像跑版） */}
+          <SiteAnnouncementBellButton className="hidden sm:flex" />
 
           {/* 頭像區塊 (立體尊爵版) */}
           <div className="flex items-center">
@@ -411,6 +412,20 @@ export function Header({ systemConfig }: { systemConfig: SystemConfig | null }) 
                                 <User className="mr-2.5 h-4 w-4 text-cyan-400" />
                                 <span>會員中心</span>
                               </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => openAnnouncementCenter()}
+                            className="sm:hidden rounded-xl cursor-pointer text-slate-200 hover:text-white focus:bg-white/10 font-semibold text-xs flex items-center justify-between py-2 px-2"
+                          >
+                            <span className="flex items-center">
+                              <Bell className="mr-2.5 h-4 w-4 text-[#FDE68A]" />
+                              <span>站內公告</span>
+                            </span>
+                            {unreadAnnouncementCount > 0 && (
+                              <span className="min-w-[18px] h-4.5 px-1.5 rounded-full bg-gradient-to-r from-amber-400 to-rose-500 text-[#120d02] text-[10px] font-black flex items-center justify-center tabular-nums">
+                                {unreadAnnouncementCount > 9 ? '9+' : unreadAnnouncementCount}
+                              </span>
+                            )}
                           </DropdownMenuItem>
                           <DropdownMenuItem asChild className="rounded-xl cursor-pointer text-slate-200 hover:text-white focus:bg-white/10">
                               <Link href="/guide" className="font-semibold text-xs flex items-center py-2 px-1 text-slate-100 hover:text-cyan-300 transition-colors">

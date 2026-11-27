@@ -10,6 +10,7 @@ import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { claimCommunityFreeDraw } from '@/lib/promo-draw-service';
 import confetti from 'canvas-confetti';
+import { SiteAnnouncementBellButton } from '@/components/site-announcements';
 
 export function FloatingLineButton({ systemConfig }: { systemConfig: SystemConfig | null }) {
   const [isLiveVisible, setIsLiveVisible] = useState(true);
@@ -83,13 +84,14 @@ export function FloatingLineButton({ systemConfig }: { systemConfig: SystemConfi
     }
   };
 
-  if (!isLiveVisible && !isSupportVisible && !isCommunityVisible) return null;
-
   return (
     <div className={cn(
       "fixed right-[calc(0.625rem+env(safe-area-inset-right))] sm:right-4 md:right-7 bottom-[calc(6.5rem+env(safe-area-inset-bottom))] sm:bottom-[calc(7.5rem+env(safe-area-inset-bottom))] md:bottom-8 z-40",
       "flex flex-col gap-2.5 items-end pointer-events-auto transition-all duration-300 select-none"
     )}>
+      {/* 手機版站內公告小鈴鐺（移出頂部導覽列避免擠壓右上頭像） */}
+      <SiteAnnouncementBellButton variant="floating" className="sm:hidden" />
+
       {/* Live 直播跳球 */}
       {systemConfig?.isLiveEnabled && systemConfig.liveYoutubeUrl && isLiveVisible && (
         <div className="relative group/live">

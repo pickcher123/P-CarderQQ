@@ -1,5 +1,6 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import { NextResponse } from 'next/server';
+import { verifyAdminRequest } from '@/lib/server-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -152,6 +153,9 @@ const REGION_PROMPT_GUIDE: Record<SearchRegion, { label: string; scope: string; 
 };
 
 export async function POST(req: Request) {
+  const auth = await verifyAdminRequest(req);
+  if (!auth.ok) return auth.response;
+
   let requestedRegion: SearchRegion = 'all';
   try {
     const body = await req.json().catch(() => ({}));

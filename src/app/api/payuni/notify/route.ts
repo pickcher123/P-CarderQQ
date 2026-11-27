@@ -28,14 +28,31 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
     const status = formData.get('Status');
     const encryptInfo = formData.get('EncryptInfo') as string;
+    const hashInfo = String(formData.get('HashInfo') || '').trim().toUpperCase();
 
-    if (status !== 'SUCCESS') return NextResponse.json({ status: 'success' });
+    if (status !== 'SUCCESS' || !encryptInfo) return NextResponse.json({ status: 'success' });
 
     const hashKey = process.env.PAYUNI_HASH_KEY;
     const hashIV = process.env.PAYUNI_HASH_IV;
 
     if (!hashKey || !hashIV || !adminDb) {
         return NextResponse.json({ status: 'success' });
+    }
+
+    // 驗證 PAYUNi SHA256 HashInfo 簽章（防偽造通知）
+    const expectedHash = crypto
+      .createHash('sha256')
+      .update(`${hashKey}${encryptInfo}${hashIV}`)
+      .digest('hex')
+      .toUpperCase();
+
+    if (
+      !hashInfo ||
+      hashInfo.length !== expectedHash.length ||
+      !crypto.timingSafeEqual(Buffer.from(hashInfo, 'utf8'), Buffer.from(expectedHash, 'utf8'))
+    ) {
+      console.error('PAYUNi Notify: Invalid HashInfo signature');
+      return NextResponse.json({ status: 'error', message: 'Invalid signature' }, { status: 403 });
     }
 
     const ivBuffer = Buffer.from(hashIV, 'utf8');
@@ -47,7 +64,9 @@ export async function POST(req: NextRequest) {
     const ourTradeId = MerTradeNo as string;
     const payuniTradeId = TradeNo as string;
     
-    if (result.TradeStatus !== '1') return NextResponse.json({ status: 'success' });
+    if (result.TradeStatus !== '1' || !Number.isFinite(amount) || amount <= 0 || !ourTradeId) {
+      return NextResponse.json({ status: 'success' });
+    }
 
     await adminDb.runTransaction(async (t: any) => {
         const transactionRef = adminDb.collection('transactions').doc(ourTradeId);
@@ -55,7 +74,15 @@ export async function POST(req: NextRequest) {
 
         if (!transactionDoc.exists || transactionDoc.data()?.status === 'completed') return;
 
+        // 嚴格核對通知金額與原訂單金額一致
+        const expectedAmount = Number(transactionDoc.data()?.amount || 0);
+        if (expectedAmount > 0 && expectedAmount !== amount) {
+          console.error(`PAYUNi Notify: Amount mismatch for ${ourTradeId}: expected ${expectedAmount}, got ${amount}`);
+          return;
+        }
+
         const userId = transactionDoc.data()?.userId;
+        if (!userId) return;
         const userRef = adminDb.collection('users').doc(userId);
         
         let multiplier = 1;
@@ -64,7 +91,7 @@ export async function POST(req: NextRequest) {
           const bonusEvent = sysDoc.data()?.bonusEvent;
           multiplier = getBonusMultiplier(bonusEvent, 'purchase');
         } catch (e) {
-          multiplier = 2; // 活動預設 2X
+          multiplier = 1; // 讀取失敗時保守降級為 1X，避免誤發加倍點數
         }
 
         let bonus = 0;

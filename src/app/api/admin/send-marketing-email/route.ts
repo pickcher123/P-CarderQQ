@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminDb } from '@/firebase/admin';
 import { getEffectiveSmtpConfig, createTransporter } from '@/lib/nodemailer-server';
 import { generateMarketingEmailHtml, EmailTemplateOptions } from '@/lib/email-templates';
+import { verifyAdminRequest } from '@/lib/server-auth';
 
 interface SendMarketingEmailRequest {
   targetType: 'all' | 'specific_users' | 'user_levels' | 'user_tags' | 'custom_emails';
@@ -37,6 +38,9 @@ interface Recipient {
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await verifyAdminRequest(req);
+    if (!auth.ok) return auth.response;
+
     const body = (await req.json()) as SendMarketingEmailRequest;
     const {
       targetType,

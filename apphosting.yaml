@@ -8,3 +8,7 @@ runConfig:
 env:
   - variable: NPM_CONFIG_LEGACY_PEER_DEPS
     value: "true"
+  - variable: CRON_SECRET
+    secret: CRON_SECRET
+    availability:
+      - RUNTIME

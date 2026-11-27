@@ -1,8 +1,12 @@
 import { GoogleGenAI } from '@google/genai';
 import { NextRequest, NextResponse } from 'next/server';
+import { verifyAdminRequest } from '@/lib/server-auth';
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await verifyAdminRequest(req);
+    if (!auth.ok) return auth.response;
+
     const { 
       prompt, 
       title = '', 

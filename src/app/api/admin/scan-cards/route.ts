@@ -1,5 +1,6 @@
 import { GoogleGenAI, ThinkingLevel, Type } from '@google/genai';
 import { NextRequest, NextResponse } from 'next/server';
+import { verifyAdminRequest } from '@/lib/server-auth';
 
 const GEMINI_VISION_MODEL = 'gemini-4-hydrogen';
 
@@ -288,6 +289,9 @@ function postProcessDetectedBoxes(rawItems: any[]): NormalizedBox[] {
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await verifyAdminRequest(req);
+    if (!auth.ok) return auth.response;
+
     const {
       image, // base64 data string (with or without data:image/...;base64, prefix)
       backImage, // optional back-side base64 data string for dual-side recognition
@@ -404,19 +408,20 @@ STRICT DETECTION RULES:
       const pricePrompt = `
 你是一位精通全球球員卡拍賣市場（eBay Sold、130point、PWCC、Goldin、CardLadder 與台灣各大卡店行情）的資深估價師。
 今天是 ${today}，美金匯率約 1 USD = 32.5 TWD。
-請逐一查詢並評估以下卡片的近期真實成交行情（優先搜尋 eBay Sold / 130point 近期同卡號、同平行版、同評級的成交價），再換算為新台幣 TWD 建議售價：
+請逐一查詢並評估以下卡片的近期真實成交行情（優先搜尋 eBay Sold / 130point 近期同卡號、同平行版、同限量編號與同評級的成交價），再換算為新台幣 TWD 建議售價：
 
-卡片清單：
+卡片清單（已整合正面與背面辨識資訊，含卡號、限量編號、鑑定證號與標準品名）：
 ${JSON.stringify(cardList, null, 2)}
 
 【嚴格估價原則】：
-1. 優先比對完全相同的年份、系列、平行版（Refractor / Silver / Gold / Numbered / Auto / Kaboom / Stained Glass 等）與評級等級（PSA 10、PSA 9、PSA 8.5、BGS 9.5、RAW）。
-2. 評級價差必須合理：PSA 10 通常高於 PSA 9 約 1.8~3.5 倍；PSA 8.5 / PSA 8 接近或略高於 RAW 裸卡；親筆簽名（AUTO）與 RC 新秀標誌具有顯著溢價。
+1. 優先運用 formattedTitle、slabLabelText、cardNumber、certNumber、subgrades、features 與 description（背面卡號／限量編號／簽名保證文字），精準比對完全相同的年份、系列、平行版（Refractor / Silver / Gold / Numbered / Auto / Kaboom / Stained Glass 等）與評級等級（PSA 10、PSA 9、PSA 8.5、BGS 9.5、RAW）。
+2. 評級價差必須合理：PSA 10 通常高於 PSA 9 約 1.8~3.5 倍；PSA 8.5 / PSA 8 接近或略高於 RAW 裸卡；親筆簽名（AUTO）、低限量編號（如 /10、/25、/99、1/1）與 RC 新秀標誌具有顯著溢價。
 3. suggestedPrice 請給出「單一新台幣整數建議售價」（例如 4500、12800，尾數取整至十位或百位，最低不低於 50）。
 4. priceRange 請同時標註台幣與美金參考區間，格式例如："NT$ 4,200 ~ 5,500 (US$ 130 ~ 170)"。
-5. rationale 請用繁體中文精簡說明（35~80 字），指出參考的市場成交區間、評級／簽名溢價與球員近期行情。
+5. rationale 請用繁體中文精簡說明（35~80 字），指出參考的市場成交區間、卡號／限量／評級／簽名溢價與球員近期行情。
 
-請僅輸出標準 JSON 物件，格式為 { "estimates": [{ "id": "...", "suggestedPrice": 4500, "priceRange": "...", "rationale": "..." }] }。
+請僅輸出純 JSON 物件（不要加上多餘說明或 Markdown），格式為：
+{ "estimates": [{ "id": "...", "suggestedPrice": 4500, "priceRange": "NT$ 4,200 ~ 5,500 (US$ 130 ~ 170)", "rationale": "..." }] }
 `;
 
       const priceResponseSchema = {
@@ -443,6 +448,7 @@ ${JSON.stringify(cardList, null, 2)}
       let responseText: string | undefined;
 
       try {
+        // 注意：Gemini 啟用 googleSearch 工具時不可同時設定 responseMimeType / responseSchema，否則會觸發 400 錯誤
         const searchResp = await callWithRetry(() =>
           ai.models.generateContent({
             model: GEMINI_VISION_MODEL,
@@ -450,13 +456,17 @@ ${JSON.stringify(cardList, null, 2)}
             config: {
               tools: [{ googleSearch: {} }],
               thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
-              responseMimeType: 'application/json',
-              responseSchema: priceResponseSchema,
             },
           })
         );
-        responseText = searchResp.text;
-        usedLiveSearch = true;
+        const candidateText = searchResp.text;
+        const testParsed = safeParseJson<{ estimates?: any[] }>(candidateText, { estimates: [] });
+        if (Array.isArray(testParsed.estimates) && testParsed.estimates.length > 0) {
+          responseText = candidateText;
+          usedLiveSearch = true;
+        } else {
+          throw new Error('Live search returned empty estimates, falling back to structured schema');
+        }
       } catch (searchErr) {
         console.warn('[scan-cards] Google Search price grounding fallback:', searchErr);
         const fallbackResp = await callWithRetry(() =>

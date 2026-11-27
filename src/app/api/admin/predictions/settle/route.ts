@@ -5,11 +5,15 @@ import {
   autoSettlePendingPredictions,
 } from '@/lib/prediction-settlement-service';
 import { getAdminDb } from '@/lib/firebase-admin';
+import { verifyAdminRequest } from '@/lib/server-auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
+    const auth = await verifyAdminRequest(req);
+    if (!auth.ok) return auth.response;
+
     const body = await req.json();
     const { action, eventId, winningOptions, actualScore, explanation } = body;
 

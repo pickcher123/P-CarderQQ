@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import crypto from 'crypto';
 import { adminDb } from '@/firebase/admin';
 import admin from 'firebase-admin';
+import { verifyUserRequest } from '@/lib/server-auth';
 
 /**
  * Manually builds a URL-encoded query string from an object,
@@ -46,14 +47,20 @@ export async function POST(req: NextRequest) {
         throw new Error('Missing required PAYUNi environment variables.');
     }
 
-    const { userId, orderDetails } = await req.json();
+    const auth = await verifyUserRequest(req);
+    if (!auth.ok) return auth.response;
 
-    if (!userId || !orderDetails || !orderDetails.amt || !orderDetails.prodDesc || !orderDetails.email) {
-      return NextResponse.json({ error: 'Missing required order details or userId' }, { status: 400 });
+    const { orderDetails } = await req.json();
+    const userId = auth.user.uid;
+
+    const amt = Number(orderDetails?.amt);
+    if (!orderDetails || !Number.isInteger(amt) || amt < 100 || amt > 500000 || !orderDetails.prodDesc || !orderDetails.email) {
+      return NextResponse.json({ error: 'Invalid or missing order details' }, { status: 400 });
     }
     
     const timestamp = String(Math.floor(Date.now() / 1000));
-    const merTradeNo = `pcarder_${timestamp}`;
+    const randomSuffix = crypto.randomBytes(4).toString('hex');
+    const merTradeNo = `pcarder_${timestamp}_${randomSuffix}`;
 
     // Create a pending transaction record
     if (adminDb) {
@@ -62,7 +69,7 @@ export async function POST(req: NextRequest) {
           userId: userId,
           transactionType: 'Deposit',
           section: 'deposit',
-          amount: orderDetails.amt,
+          amount: amt,
           status: 'pending',
           details: `PAYUNi deposit initiated - ${orderDetails.prodDesc}`,
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -73,7 +80,7 @@ export async function POST(req: NextRequest) {
     const tradeInfoPayload: Record<string, any> = {
         MerID: merchantId,
         MerTradeNo: merTradeNo,
-        TradeAmt: orderDetails.amt,
+        TradeAmt: amt,
         Timestamp: timestamp,
         ReturnURL: process.env.PAYUNI_RETURN_URL || `${appUrl}/payment/result`,
         NotifyURL: process.env.PAYUNI_NOTIFY_URL || `${appUrl}/api/payuni/notify`,

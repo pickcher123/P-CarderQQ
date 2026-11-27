@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { syncPredictionsToFirestore, syncExhibitionsToFirestore } from '@/lib/auto-sync-service';
 import { autoSettlePendingPredictions } from '@/lib/prediction-settlement-service';
+import { verifyCronOrAdminRequest } from '@/lib/server-auth';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // 允許最長 60 秒供 AI 搜尋與寫入
@@ -18,21 +19,9 @@ async function handleSync(req: Request) {
     });
   }
 
-  // 可選安全金鑰驗證 (若環境變數配置了 CRON_SECRET)
-  const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret && cronSecret.trim() !== '') {
-    const url = new URL(req.url);
-    const keyParam = url.searchParams.get('key') || url.searchParams.get('secret');
-    const authHeader = req.headers.get('authorization');
-    const bearer = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
-
-    if (keyParam !== cronSecret && bearer !== cronSecret) {
-      return NextResponse.json(
-        { success: false, error: '未授權的排程呼叫：CRON_SECRET 驗證不符' },
-        { status: 401 }
-      );
-    }
-  }
+  // 強制驗證排程金鑰 (CRON_SECRET) 或管理員憑證
+  const denied = await verifyCronOrAdminRequest(req);
+  if (denied) return denied;
 
   lastRunTime = now;
 

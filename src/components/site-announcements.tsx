@@ -597,8 +597,41 @@ export function SiteAnnouncementBanner() {
     );
 }
 
-export function SiteAnnouncementBellButton() {
+export function SiteAnnouncementBellButton({
+    className,
+    variant = 'header',
+}: {
+    className?: string;
+    variant?: 'header' | 'floating';
+} = {}) {
     const { activeAnnouncements, unreadCount, openCenterModal } = useSiteAnnouncements();
+
+    if (variant === 'floating') {
+        return (
+            <button
+                type="button"
+                onClick={() => openCenterModal()}
+                title={unreadCount > 0 ? `站內公告（${unreadCount} 則未讀）` : '站內公告'}
+                aria-label="開啟站內公告中心"
+                className={cn(
+                    'relative flex items-center justify-center w-11 h-11 rounded-full bg-[#0a0f1c]/95 backdrop-blur-xl border shadow-[0_6px_20px_rgba(0,0,0,0.65)] active:scale-95 transition-all outline-none',
+                    unreadCount > 0
+                        ? 'border-amber-300/65 text-[#FDE68A] ring-2 ring-amber-400/20'
+                        : 'border-white/[0.16] text-amber-200/90 hover:border-amber-300/45',
+                    className
+                )}
+            >
+                <Bell className="w-[18px] h-[18px]" />
+                {unreadCount > 0 ? (
+                    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-gradient-to-r from-amber-400 to-rose-500 text-[#120d02] text-[10px] font-black flex items-center justify-center tabular-nums shadow-md ring-2 ring-[#0a0f1c]">
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                ) : activeAnnouncements.length > 0 ? (
+                    <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-amber-300 ring-2 ring-[#0a0f1c]" />
+                ) : null}
+            </button>
+        );
+    }
 
     return (
         <button
@@ -607,10 +640,11 @@ export function SiteAnnouncementBellButton() {
             title={unreadCount > 0 ? `站內公告（${unreadCount} 則未讀）` : '站內公告'}
             aria-label="開啟站內公告中心"
             className={cn(
-                'relative flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-xl border transition-colors outline-none',
+                'relative flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-xl border transition-colors outline-none shrink-0',
                 unreadCount > 0
                     ? 'bg-amber-400/[0.12] border-amber-300/45 text-[#FDE68A] hover:bg-amber-400/20'
-                    : 'bg-white/[0.04] border-white/[0.1] text-slate-300 hover:bg-white/[0.08] hover:text-white'
+                    : 'bg-white/[0.04] border-white/[0.1] text-slate-300 hover:bg-white/[0.08] hover:text-white',
+                className
             )}
         >
             <Bell className="w-4 h-4" />

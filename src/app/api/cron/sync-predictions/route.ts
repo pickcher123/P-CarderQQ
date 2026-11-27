@@ -1,19 +1,14 @@
 import { NextResponse } from 'next/server';
 import { syncPredictionsToFirestore } from '@/lib/auto-sync-service';
+import { verifyCronOrAdminRequest } from '@/lib/server-auth';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 export async function GET(req: Request) {
   try {
-    const cronSecret = process.env.CRON_SECRET;
-    if (cronSecret && cronSecret.trim() !== '') {
-      const url = new URL(req.url);
-      const keyParam = url.searchParams.get('key') || url.searchParams.get('secret');
-      if (keyParam !== cronSecret) {
-        return NextResponse.json({ success: false, error: '未授權' }, { status: 401 });
-      }
-    }
+    const denied = await verifyCronOrAdminRequest(req);
+    if (denied) return denied;
 
     const result = await syncPredictionsToFirestore();
     return NextResponse.json({

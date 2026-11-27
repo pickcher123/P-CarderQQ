@@ -504,8 +504,24 @@ export default function AdminLayout({
 
     const boundOriginalFetch = rawFetch.bind(window);
     const wrappedFetch: typeof window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
-      const response = await boundOriginalFetch(input, init);
-      logAdminApiCall(input, init, response, firestore);
+      let finalInit = init;
+      try {
+        const urlStr = typeof input === 'string' ? input : input instanceof URL ? input.pathname : input.url;
+        if (urlStr.includes('/api/admin/') || urlStr.includes('/api/cron/')) {
+          const headers = new Headers(init?.headers || {});
+          if (!headers.has('Authorization')) {
+            const token = await user.getIdToken();
+            if (token) {
+              headers.set('Authorization', `Bearer ${token}`);
+              finalInit = { ...init, headers };
+            }
+          }
+        }
+      } catch {
+        // ignore token attach error
+      }
+      const response = await boundOriginalFetch(input, finalInit);
+      logAdminApiCall(input, finalInit, response, firestore);
       return response;
     };
 

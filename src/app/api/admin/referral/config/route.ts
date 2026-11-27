@@ -1,11 +1,15 @@
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
+import { verifyAdminRequest } from '@/lib/server-auth';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const auth = await verifyAdminRequest(req);
+    if (!auth.ok) return auth.response;
+
     const db = getAdminDb();
     if (!db) {
       return NextResponse.json({ success: false, error: '資料庫尚未就緒' }, { status: 500 });
@@ -33,6 +37,9 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    const auth = await verifyAdminRequest(req);
+    if (!auth.ok) return auth.response;
+
     const body = await req.json();
     const { isEnabled, referrerBonusPoints, refereeBonusPoints, refereeDiamonds, freeDrawTickets } = body;
 

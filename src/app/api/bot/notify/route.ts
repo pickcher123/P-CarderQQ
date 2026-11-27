@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase-admin';
 import { pushLineMessage } from '@/lib/line';
+import { verifyCronOrAdminRequest } from '@/lib/server-auth';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(req: Request) {
+  const denied = await verifyCronOrAdminRequest(req);
+  if (denied) return denied;
+
   const ownerId = process.env.LINE_OWNER_ID;
   if (!ownerId) {
     return NextResponse.json({ error: 'Owner ID not set' }, { status: 500 });

@@ -1,6 +1,7 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import { NextResponse } from 'next/server';
 import { resolveMatchTeamsAndLogos, resolveTeamLogo } from '@/lib/sports-team-logos';
+import { verifyAdminRequest } from '@/lib/server-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -120,6 +121,9 @@ function getFallbackSportsOdds(queryText: string): SportsMatchOdd[] {
 }
 
 export async function POST(req: Request) {
+  const auth = await verifyAdminRequest(req);
+  if (!auth.ok) return auth.response;
+
   const apiKey = process.env.GEMINI_API_KEY;
   let body: { query?: string; league?: string; team?: string } = {};
 

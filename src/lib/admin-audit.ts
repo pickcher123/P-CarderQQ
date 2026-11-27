@@ -2047,7 +2047,20 @@ export function logAdminApiCall(
 }
 
 export async function adminFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
-  const response = await fetch(input, init);
-  logAdminApiCall(input, init, response);
+  const headers = new Headers(init?.headers || {});
+  if (!headers.has('Authorization')) {
+    try {
+      const currentUser = getAuth().currentUser;
+      if (currentUser) {
+        const token = await currentUser.getIdToken();
+        if (token) headers.set('Authorization', `Bearer ${token}`);
+      }
+    } catch {
+      // ignore if firebase auth not initialized
+    }
+  }
+  const finalInit: RequestInit = { ...init, headers };
+  const response = await fetch(input, finalInit);
+  logAdminApiCall(input, finalInit, response);
   return response;
 }

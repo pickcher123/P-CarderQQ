@@ -24,9 +24,17 @@ service cloud.firestore {
     function existing() { return resource.data; }
     function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
 
-    // --- 管理員白名單集合 ---
+    // --- 管理員白名單集合（僅允許本人查詢自己是否為管理員，禁止一般用戶列舉全部管理員名單） ---
     match /admins/{adminId} {
-      allow read: if isSignedIn();
+      allow read: if isVerifiedAdmin() || (
+        isSignedIn() && (
+          adminId == request.auth.uid ||
+          (request.auth.token.email != null && (
+            adminId == request.auth.token.email.lower() ||
+            adminId == request.auth.token.email
+          ))
+        )
+      );
       allow write: if isVerifiedAdmin();
     }
 
@@ -40,10 +48,13 @@ service cloud.firestore {
       allow read: if isOwner(userId) || isVerifiedAdmin();
       allow create: if isOwner(userId) && 
                       incoming().role == "user" && 
+                      incoming().get('isAdmin', false) == false &&
+                      incoming().get('is_admin', false) == false &&
                       incoming().keys().hasAll(['id', 'points']) &&
-                      incoming().get('points', 0) <= 1000 &&
-                      incoming().get('bonusPoints', 0) <= 0 &&
-                      incoming().get('freeDrawTickets', 0) <= 5;
+                      incoming().get('points', 0) == 0 &&
+                      incoming().get('bonusPoints', 0) == 0 &&
+                      incoming().get('freeDrawTickets', 0) == 0 &&
+                      incoming().get('eventPoolTickets', 0) == 0;
                       
       allow update: if (isOwner(userId) && 
                        incoming().get('role', 'user') == existing().get('role', 'user') && 
@@ -63,8 +74,21 @@ service cloud.firestore {
                        ))
                       ) || isVerifiedAdmin();
       
-      // 使用者子集合 (如 poolStats, userCards)
-      match /{allSubcollections=**} {
+      // 收藏庫卡片子集合：禁止玩家竄改既有卡片之價格、稀有度、品名或卡號
+      match /userCards/{userCardId} {
+        allow read: if isOwner(userId) || isVerifiedAdmin();
+        allow create: if isOwner(userId) || isVerifiedAdmin();
+        allow update: if isVerifiedAdmin() || (
+          isOwner(userId) &&
+          !incoming().diff(existing()).affectedKeys().hasAny([
+            'price', 'sellPrice', 'buybackPoints', 'value', 'rarity', 'cardId', 'name', 'grade', 'poolId'
+          ])
+        );
+        allow delete: if isOwner(userId) || isVerifiedAdmin();
+      }
+
+      // 其他使用者子集合 (如 poolStats)
+      match /{subcollection}/{docId} {
         allow read, write: if isOwner(userId) || isVerifiedAdmin();
       }
     }
@@ -73,6 +97,10 @@ service cloud.firestore {
     match /referralCodes/{codeId} {
       allow read: if true;
       allow write: if isVerifiedAdmin();
+    }
+
+    match /referralPhoneClaims/{phone} {
+      allow read, write: if isVerifiedAdmin();
     }
 
     match /referralLogs/{logId} {
@@ -109,12 +137,13 @@ service cloud.firestore {
       allow read, write: if isVerifiedAdmin();
     }
 
-    // --- 卡片主檔集合 (大獎抽出後原子鎖定為已售出，嚴禁竄改名稱/價格/圖片) ---
+    // --- 卡片主檔集合 (大獎抽出後原子鎖定為已售出，嚴禁竄改名稱/價格/圖片或惡意覆寫他人已售出卡片) ---
     match /allCards/{cardId} {
       allow read: if true;
       allow create, delete: if isVerifiedAdmin();
       allow update: if isVerifiedAdmin() || (
         isSignedIn() &&
+        existing().get('isSold', false) == false &&
         incoming().diff(existing()).affectedKeys().hasOnly([
           'isSold',
           'isRecycled',
@@ -126,7 +155,8 @@ service cloud.firestore {
           'lockedBy',
           'lockedAt'
         ]) &&
-        incoming().get('isSold', false) is bool
+        incoming().get('isSold', false) is bool &&
+        (!incoming().diff(existing()).affectedKeys().hasAny(['soldBy']) || incoming().get('soldBy', '') == request.auth.uid)
       );
     }
 
@@ -181,7 +211,9 @@ service cloud.firestore {
     }
 
     match /group_break_orders/{orderId} {
-      allow read, write: if isSignedIn();
+      allow read: if isVerifiedAdmin() || (isSignedIn() && (resource == null || resource.data.userId == request.auth.uid));
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update, delete: if isVerifiedAdmin();
     }
 
     // --- 福袋集合 ---
@@ -196,12 +228,13 @@ service cloud.firestore {
       }
     }
 
-    // --- 出貨訂單集合 ---
+    // --- 出貨訂單集合（使用者僅可建立與查詢本人訂單，狀態與物流單號僅限管理員更新） ---
     match /shippingOrders/{orderId} {
       allow read: if isVerifiedAdmin() || (isSignedIn() && (resource == null || resource.data.userId == request.auth.uid));
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update: if isVerifiedAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
-      allow delete: if isVerifiedAdmin();
+      allow create: if isSignedIn() &&
+                      request.resource.data.userId == request.auth.uid &&
+                      request.resource.data.get('status', 'pending') == 'pending';
+      allow update, delete: if isVerifiedAdmin();
     }
 
     // --- 其他互動集合 ---
