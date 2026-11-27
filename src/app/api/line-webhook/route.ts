@@ -4,10 +4,13 @@ import { validateSignature } from '@line/bot-sdk';
 const channelSecret = process.env.LINE_CHANNEL_SECRET || '';
 
 export async function POST(req: NextRequest) {
+  if (!channelSecret) {
+    return new NextResponse('Webhook secret not configured', { status: 503 });
+  }
   const body = await req.text();
   const signature = req.headers.get('x-line-signature') || '';
 
-  if (!validateSignature(body, channelSecret, signature)) {
+  if (!signature || !validateSignature(body, channelSecret, signature)) {
     return new NextResponse('Invalid signature', { status: 401 });
   }
 

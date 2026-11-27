@@ -138,48 +138,24 @@ export async function scrapeSportsMatches(): Promise<ScrapedMatch[]> {
 - reward: 預測成功獎勵 (數字, 建議 100 ~ 200)
 - bettingEndTime: 格式必須為 "YYYY-MM-DDTHH:mm" (例如: "${tDate}T09:55")
 - analysis: 簡短賽前分析與盤口亮點 (50-100字)
+
+請僅輸出純 JSON 物件（不要加多餘說明），格式：{ "matches": [ ... ] }
 `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
+      model: 'gemini-2.5-flash',
       contents: prompt,
       config: {
         tools: [{ googleSearch: {} }],
-        responseMimeType: 'application/json',
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            matches: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  matchName: { type: Type.STRING },
-                  homeTeam: { type: Type.STRING },
-                  awayTeam: { type: Type.STRING },
-                  homeTeamLogo: { type: Type.STRING },
-                  awayTeamLogo: { type: Type.STRING },
-                  sportCategory: { type: Type.STRING },
-                  league: { type: Type.STRING },
-                  question: { type: Type.STRING },
-                  options: {
-                    type: Type.ARRAY,
-                    items: { type: Type.STRING },
-                  },
-                  reward: { type: Type.NUMBER },
-                  bettingEndTime: { type: Type.STRING },
-                  analysis: { type: Type.STRING },
-                },
-                required: ['matchName', 'question', 'options', 'bettingEndTime'],
-              },
-            },
-          },
-          required: ['matches'],
-        },
       },
     });
 
-    const parsed = JSON.parse(response.text || '{}');
+    const rawText = response.text || '{}';
+    const fence = rawText.trim().match(/```(?:json)?\s*([\s\S]*?)```/i);
+    const cand = fence ? fence[1].trim() : rawText.trim();
+    const sIdx = cand.indexOf('{');
+    const eIdx = cand.lastIndexOf('}');
+    const parsed = JSON.parse(sIdx !== -1 && eIdx > sIdx ? cand.slice(sIdx, eIdx + 1) : cand);
     if (parsed.matches && Array.isArray(parsed.matches) && parsed.matches.length > 0) {
       return parsed.matches.map((m: any) => {
         const cat = ['basketball', 'baseball', 'football', 'esports', 'other'].includes(m.sportCategory)

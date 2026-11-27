@@ -193,123 +193,30 @@ export function BettingGameDialog({
         setFinalResult(null);
 
         try {
-            const transactionResult = await runTransaction(firestore, async (transaction) => {
-                const cardRef = doc(firestore, 'allCards', card.id);
-                const cardSnap = await transaction.get(cardRef);
-                const cardData = cardSnap.data();
-
-                if (!cardSnap.exists() || cardData?.isSold) {
-                    throw new Error('此卡片已被其他玩家抽出或已下架！');
-                }
-
-                if (cardData?.lockedBy && cardData.lockedBy !== user.uid && cardData.lockedAt) {
-                    const lockedTime = typeof cardData.lockedAt.toMillis === 'function' ? cardData.lockedAt.toMillis() : 0;
-                    if (Date.now() - lockedTime < 25000) {
-                        throw new Error('此卡片正在被其他玩家挑戰中，請稍候 30 秒再試。');
-                    }
-                }
-
-                const userRef = doc(firestore, 'users', user.uid);
-                const sysConfigRef = doc(firestore, 'systemConfig', 'main');
-                const [uSnap, sysSnap] = await Promise.all([
-                    transaction.get(userRef),
-                    transaction.get(sysConfigRef),
-                ]);
-                if (!uSnap.exists()) throw new Error('找不到使用者資料');
-
-                const userData = uSnap.data() as UserProfile;
-                const storeProtection = sysSnap.exists() ? (sysSnap.data() as any)?.storeProtection : undefined;
-                const walletBalance = paymentCurrency === 'diamond' ? (userData.points || 0) : (userData.bonusPoints || 0);
-                if (walletBalance < totalPrice) throw new Error('錢包餘額不足，請先儲值或調整格數。');
-
-                const prevSpinCount = Number((cardSnap.data() as any)?.bettingSpinCount || 0);
-                const nextSpinCount = prevSpinCount + 1;
-                const minSpinRequired = Number(storeProtection?.bettingMinSpin ?? 3);
-
-                let winningSpot = Math.floor(Math.random() * 10) + 1;
-                if (storeProtection?.enabled && nextSpinCount < minSpinRequired) {
-                    const nonWinningSpots = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].filter((n) => !selectedNumbers.includes(n));
-                    if (nonWinningSpots.length > 0) {
-                        winningSpot = nonWinningSpots[Math.floor(Math.random() * nonWinningSpots.length)];
-                    }
-                }
-                const didWin = selectedNumbers.includes(winningSpot);
-
-                const walletField = paymentCurrency === 'diamond' ? 'points' : 'bonusPoints';
-                const updateObj: any = { [walletField]: increment(-totalPrice) };
-                if (paymentCurrency === 'diamond') {
-                    updateObj.totalSpent = increment(totalPrice);
-                    updateObj.userLevel = calculateLevel((userData.totalSpent || 0) + totalPrice);
-                }
-                transaction.update(userRef, updateObj);
-
-                const pfData = await createProvablyFairRound({
-                    clientSeed: `${user.uid.substring(0, 8)}_${Date.now()}`,
-                    outcomeType: 'bet',
-                    poolSize: 10,
-                });
-                const fullFairness: ProvablyFairData = sanitizeFirestorePayload({
-                    ...pfData,
-                    poolSize: 10,
-                    winningSpot,
-                    isWin: didWin,
-                    luckyNumber: (winningSpot - 1) * 1000 + 500,
-                    luckyPercent: Number((((winningSpot - 1) * 10) + 5).toFixed(2)),
-                });
-
-                const winText = didWin ? '中獎' : '未中獎';
-                const detailString = `【拼卡】${card.name || '卡牌'} (${paymentCurrency === 'diamond' ? '鑽石' : 'P+'}) 下注:[${selectedNumbers.join(',')}] 開出:[${winningSpot}] 結果:${winText}`;
-
-                transaction.set(doc(collection(firestore, 'transactions')), sanitizeFirestorePayload({
-                    userId: user.uid,
-                    targetId: card.id || null,
-                    transactionType: 'Purchase',
-                    section: 'betting',
-                    currency: paymentCurrency,
-                    amount: -totalPrice,
-                    details: detailString,
-                    provablyFair: fullFairness,
-                    transactionDate: serverTimestamp(),
-                }));
-
-                const cardUpdates: any = {
-                    lockedBy: null,
-                    lockedAt: null,
-                    bettingSpinCount: nextSpinCount,
-                };
-
-                if (didWin) {
-                    transaction.set(doc(collection(firestore, 'users', user.uid, 'userCards')), sanitizeFirestorePayload({
-                        userId: user.uid,
-                        cardId: card.id,
-                        isFoil: true,
-                        rarity: card.rarity || 'unknown',
-                        category: card.category || 'betting',
-                        source: 'betting',
-                        acquiredAt: serverTimestamp(),
-                    }));
-
-                    cardUpdates.isSold = true;
-                    cardUpdates.status = 'sold';
-                    cardUpdates.soldVia = 'betting';
-                    cardUpdates.soldBy = user.uid;
-                    cardUpdates.soldAt = serverTimestamp();
-
-                    const targetCategory = card.category || decodeURIComponent(categoryName);
-                    if (targetCategory && targetCategory !== 'all') {
-                        const bettingCatRef = doc(firestore, 'betting-items', targetCategory);
-                        transaction.update(bettingCatRef, { soldCardIds: arrayUnion(card.id) });
-                    }
-                }
-
-                transaction.update(cardRef, cardUpdates);
-
-                return {
-                    won: didWin,
-                    spot: winningSpot,
-                    fairness: fullFairness,
-                };
+            const idToken = await user.getIdToken();
+            const res = await fetch('/api/bet/execute', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`,
+                },
+                body: JSON.stringify({
+                    mode: 'spin',
+                    cardId: card.id,
+                    categoryName,
+                    paymentCurrency,
+                    selectedNumbers,
+                }),
             });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok || !data.success) {
+                throw new Error(data.error || '拼卡挑戰失敗，請稍後再試。');
+            }
+            const transactionResult = {
+                won: Boolean(data.won),
+                spot: Number(data.spot),
+                fairness: data.fairness as ProvablyFairData,
+            };
 
             const sliceCenterDeg = (transactionResult.spot - 1) * 36;
             const targetMod = (360 - sliceCenterDeg) % 360;

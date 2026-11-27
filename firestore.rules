@@ -74,16 +74,10 @@ service cloud.firestore {
                        ))
                       ) || isVerifiedAdmin();
       
-      // 收藏庫卡片子集合：禁止玩家竄改既有卡片之價格、稀有度、品名或卡號
+      // 收藏庫卡片子集合：徹底鎖死前端新增與修改（抽卡、拼卡、直購與退單均由後端 Admin SDK 原子寫入），杜絕偽造神卡
       match /userCards/{userCardId} {
         allow read: if isOwner(userId) || isVerifiedAdmin();
-        allow create: if isOwner(userId) || isVerifiedAdmin();
-        allow update: if isVerifiedAdmin() || (
-          isOwner(userId) &&
-          !incoming().diff(existing()).affectedKeys().hasAny([
-            'price', 'sellPrice', 'buybackPoints', 'value', 'rarity', 'cardId', 'name', 'grade', 'poolId'
-          ])
-        );
+        allow create, update: if isVerifiedAdmin();
         allow delete: if isOwner(userId) || isVerifiedAdmin();
       }
 

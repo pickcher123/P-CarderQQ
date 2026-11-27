@@ -60,7 +60,7 @@ Focus on:
 Output ONLY the prompt text in English, no introductory or concluding remarks.`;
 
         const enhancementRes = await ai.models.generateContent({
-          model: 'gemini-3.7-flash',
+          model: 'gemini-2.5-flash',
           contents: enhancerPrompt,
         });
 

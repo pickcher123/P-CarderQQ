@@ -157,7 +157,7 @@ export default function CardExhibitionsAdmin() {
     const handleTriggerCronSync = async () => {
         setIsCronSyncing(true);
         try {
-            const res = await fetch('/api/cron/sync-exhibitions', { method: 'POST' });
+            const res = await adminFetch('/api/cron/sync-exhibitions', { method: 'POST' });
             const data = await res.json();
             if (data.success) {
                 toast({

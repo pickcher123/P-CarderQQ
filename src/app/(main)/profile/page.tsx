@@ -327,22 +327,30 @@ function ShippingOrdersTab({ userId }: { userId: string }) {
     };
 
     const handleCancelOrder = async (order: ShippingOrder) => {
-        if (!firestore || !userId || order.status !== 'pending') return;
+        if (!userId || order.status !== 'pending') return;
         setIsCancelling(order.id);
         try {
-            const batch = writeBatch(firestore);
-            batch.update(doc(firestore, 'shippingOrders', order.id), { status: 'cancelled' });
-            if ((order.fee || 0) > 0) {
-              batch.update(doc(firestore, 'users', userId), { points: increment(order.fee) });
-              batch.set(doc(collection(firestore, 'transactions')), { userId, transactionType: 'Refund', section: 'shipping', currency: 'diamond', amount: order.fee, details: `取消運單 ${order.id} 退款`, transactionDate: serverTimestamp() });
+            const { getAuth } = await import('firebase/auth');
+            const idToken = await getAuth().currentUser?.getIdToken();
+            if (!idToken) throw new Error('請重新登入後再試。');
+
+            const res = await fetch('/api/shipping/cancel', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`,
+                },
+                body: JSON.stringify({ orderId: order.id }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok || !data.success) {
+                throw new Error(data.error || '取消訂單失敗');
             }
-            for (const cardInfo of order.cardIds) {
-                batch.set(doc(collection(firestore, 'users', userId, 'userCards')), { cardId: (cardInfo as any).cardId, userId, isFoil: (cardInfo as any).isFoil, rarity: (cardInfo as any).rarity, category: (cardInfo as any).category });
-            }
-            await batch.commit();
             toast({ title: '成功', description: '訂單已取消，鑽石與卡片已退回。' });
             if (forceRefetch) forceRefetch();
-        } catch (e) { toast({ variant: 'destructive', title: '錯誤' }); } finally { setIsCancelling(null); }
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: '錯誤', description: e?.message || '取消訂單失敗' });
+        } finally { setIsCancelling(null); }
     };
 
     return (

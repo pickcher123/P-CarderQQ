@@ -109,7 +109,7 @@ function DirectPurchaseDialog({ card, children, categoryName }: { card: CardData
     const pPointPrice = diamondPrice * 10;
 
     const handlePurchase = async () => {
-        if (!user || !card.sellPrice || !firestore || !userProfile) return;
+        if (!user || !card.sellPrice || !userProfile) return;
         const levelNames = userLevels.map(l => l.level);
         if (levelNames.indexOf(userProfile.userLevel) < (card.minLevel ? levelNames.indexOf(card.minLevel) : 0)) {
             toast({ variant: 'destructive', title: '權限不足', description: `僅限「${card.minLevel}」以上購買。` });
@@ -117,55 +117,24 @@ function DirectPurchaseDialog({ card, children, categoryName }: { card: CardData
         }
         setIsProcessing(true);
         try {
-            await runTransaction(firestore, async (transaction) => {
-                const cardRef = doc(firestore, 'allCards', card.id);
-                const cardSnap = await transaction.get(cardRef);
-                const cardData = cardSnap.data();
-                if (cardData?.isSold) throw new Error("此卡片已被購買，請重新整理後再試。");
-                
-                if (cardData?.lockedBy && cardData.lockedBy !== user.uid && cardData.lockedAt && (Date.now() - cardData.lockedAt.toMillis() < 30000)) {
-                    throw new Error("此卡片正在被其他人挑戰中，請稍候再試。");
-                }
-
-                const userRef = doc(firestore, 'users', user.uid);
-                const uSnap = await transaction.get(userRef);
-                const userData = uSnap.data() as UserProfile;
-                const finalPrice = paymentCurrency === 'diamond' ? diamondPrice : pPointPrice;
-                const walletBalance = paymentCurrency === 'diamond' ? (userData.points || 0) : (userData.bonusPoints || 0);
-                if (walletBalance < finalPrice) throw new Error("點數餘額不足");
-
-                const walletField = paymentCurrency === 'diamond' ? 'points' : 'bonusPoints';
-                const updates: any = { [walletField]: increment(-finalPrice) };
-                if (paymentCurrency === 'diamond') { 
-                    updates.totalSpent = increment(finalPrice); 
-                    updates.userLevel = calculateLevel((userData.totalSpent || 0) + finalPrice); 
-                }
-                transaction.update(userRef, updates);
-                transaction.set(doc(collection(firestore, 'users', user.uid, 'userCards')), { 
-                    userId: user.uid, 
-                    cardId: card.id, 
-                    isFoil: false, 
-                    rarity: card.rarity || 'unknown', 
-                    category: card.category || 'betting', 
-                    source: 'direct-buy',
-                    acquiredAt: serverTimestamp()
-                });
-                transaction.update(doc(firestore, 'allCards', card.id), { isSold: true });
-                if (decodeURIComponent(categoryName) !== 'all') {
-                    const catDocRef = doc(firestore, 'betting-items', decodeURIComponent(categoryName));
-                    transaction.update(catDocRef, { soldCardIds: arrayUnion(card.id) });
-                }
-                transaction.set(doc(collection(firestore, 'transactions')), { 
-                    userId: user.uid, 
-                    targetId: card.id, 
-                    transactionType: 'Purchase', 
-                    section: 'betting-direct', 
-                    currency: paymentCurrency, 
-                    amount: -finalPrice, 
-                    details: `【直接購買】${card.name}`, 
-                    transactionDate: serverTimestamp() 
-                });
+            const idToken = await user.getIdToken();
+            const res = await fetch('/api/bet/execute', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`,
+                },
+                body: JSON.stringify({
+                    mode: 'direct_buy',
+                    cardId: card.id,
+                    categoryName,
+                    paymentCurrency,
+                }),
             });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok || !data.success) {
+                throw new Error(data.error || '購買失敗，請稍後再試。');
+            }
             toast({ title: '🎉 購買成功！', description: `《${card.name}》已成功存入您的數位收藏庫。` });
         } catch (e: any) {
             console.error(e);

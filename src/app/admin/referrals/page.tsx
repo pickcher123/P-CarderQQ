@@ -70,7 +70,7 @@ export default function AdminReferralPage() {
 
     const fetchConfig = async () => {
         try {
-            const res = await fetch('/api/admin/referral/config');
+            const res = await adminFetch('/api/admin/referral/config');
             const data = await res.json();
             if (data.success && data.config) {
                 setConfig({
@@ -90,7 +90,7 @@ export default function AdminReferralPage() {
         setIsLoadingData(true);
         try {
             await fetchConfig();
-            const res = await fetch('/api/admin/referral');
+            const res = await adminFetch('/api/admin/referral');
             const data = await res.json();
             if (data.success) {
                 setCodes(data.codes || []);

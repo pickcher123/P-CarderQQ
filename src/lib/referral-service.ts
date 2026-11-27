@@ -39,11 +39,19 @@ export async function generateReferralCodeClient(
   userId: string,
   customCode?: string
 ): Promise<{ success: boolean; inviteCode?: string; error?: string }> {
-  // 1. 優先呼叫伺服器 API
+  // 1. 優先呼叫伺服器 API（攜帶 Firebase ID Token）
   try {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    try {
+      const { getAuth } = await import('firebase/auth');
+      const token = await getAuth().currentUser?.getIdToken();
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+    } catch {
+      // ignore if auth not ready
+    }
     const res = await fetch('/api/referral/generate', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({
         userId,
         customCode: customCode || undefined,

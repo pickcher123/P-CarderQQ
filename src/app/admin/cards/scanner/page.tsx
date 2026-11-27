@@ -89,6 +89,7 @@ import {
 } from '@/lib/card-scanner-utils';
 import { InteractiveCropOverlay } from '@/components/admin/InteractiveCropOverlay';
 import { BASKETBALL_PRESET_GROUPS, type PresetCardEntry } from '@/data/basketball-preset-cards';
+import { adminFetch } from '@/lib/admin-audit';
 
 const CATEGORIES = ["籃球", "棒球", "足球", "女孩卡", "女優", "TCG", "其他"];
 const AREAS = [
@@ -610,7 +611,7 @@ export default function CardScannerProPage() {
       let cloudErrorMsg = '';
 
       try {
-        const res = await fetch('/api/admin/scan-cards', {
+        const res = await adminFetch('/api/admin/scan-cards', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ image: base64, mode: 'detect' }),
@@ -728,7 +729,7 @@ export default function CardScannerProPage() {
         }
       }
 
-      const res = await fetch('/api/admin/scan-cards', {
+      const res = await adminFetch('/api/admin/scan-cards', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -782,7 +783,7 @@ export default function CardScannerProPage() {
     try {
       const aiDataUrl = await cropImageForAi(frontImgRef.current, card.frontCropBox, 1280);
 
-      const res = await fetch('/api/admin/scan-cards', {
+      const res = await adminFetch('/api/admin/scan-cards', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ image: aiDataUrl, mode: 'ocr_slab' }),
@@ -1173,7 +1174,7 @@ export default function CardScannerProPage() {
         currentPrice: c.sellPrice,
       }));
 
-      const res = await fetch('/api/admin/scan-cards', {
+      const res = await adminFetch('/api/admin/scan-cards', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mode: 'price_estimate', cardList: payloadCards }),
@@ -1221,7 +1222,7 @@ export default function CardScannerProPage() {
     if (!card) return;
     setCards(prev => prev.map((c, i) => i === index ? { ...c, isPriceChecking: true } : c));
     try {
-      const res = await fetch('/api/admin/scan-cards', {
+      const res = await adminFetch('/api/admin/scan-cards', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

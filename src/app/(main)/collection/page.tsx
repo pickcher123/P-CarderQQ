@@ -507,48 +507,38 @@ export default function CollectionPage() {
   };
 
   const handleQuickSellRandomCount = async (count: number) => {
-    if (count <= 0 || !user || !firestore || randomPlayerCards.length === 0) return;
+    if (count <= 0 || !user || randomPlayerCards.length === 0) return;
     const actualCount = Math.min(count, randomPlayerCards.length);
-    const cardsToSell = randomPlayerCards.slice(0, actualCount);
     setIsProcessing(true);
     try {
-      const batch = writeBatch(firestore);
-      const diamondsGained = actualCount * 40;
-      const soldCardNames = `隨機球員 普/特 卡 x ${actualCount}`;
-
-      for (const card of cardsToSell) {
-        batch.delete(doc(firestore, 'users', user.uid, 'userCards', card.id));
+      const idToken = await user.getIdToken();
+      const res = await fetch('/api/collection/recycle', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({ mode: 'random_count', count: actualCount }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || '處理請求時發生錯誤。');
       }
 
-      batch.set(doc(collection(firestore, 'transactions')), {
-        userId: user.uid,
-        transactionType: 'QuickSell',
-        currency: 'diamond',
-        amount: diamondsGained,
-        details: `普特卡批量轉點 ${actualCount} 張 (獲得鑽石)。卡片內容: [${soldCardNames}]`,
-        transactionDate: serverTimestamp(),
-        section: 'admin'
-      });
-
-      batch.update(doc(firestore, 'users', user.uid), { 
-        points: increment(diamondsGained),
-      });
-
-      await batch.commit();
-      toast({ 
-        title: "普特卡轉點成功！", 
-        description: `已成功將 ${actualCount} 張普特卡買回，獲得 +${diamondsGained.toLocaleString()} 鑽石！` 
+      toast({
+        title: "普特卡轉點成功！",
+        description: `已成功將 ${data.count} 張普特卡買回，獲得 +${Number(data.diamonds || 0).toLocaleString()} 鑽石！`,
       });
       setIsRandomSellDialogOpen(false);
       setSelectedCardIds(prev => {
         const next = new Set(prev);
-        cardsToSell.forEach(c => next.delete(c.id));
+        (data.soldUserCardIds || []).forEach((id: string) => next.delete(id));
         return next;
       });
       if (forceRefetch) forceRefetch();
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      toast({ variant: "destructive", title: "轉點失敗", description: "處理請求時發生錯誤。" });
+      toast({ variant: "destructive", title: "轉點失敗", description: e?.message || "處理請求時發生錯誤。" });
     } finally {
       setIsProcessing(false);
     }
@@ -626,7 +616,7 @@ export default function CollectionPage() {
   }, [mergedCards, selectedCardIds, bonusMultiplier, isBonusActive, memberLevelInfo]);
 
   const handleQuickSell = async () => {
-    if (selectedCardIds.size === 0 || !user || !firestore) return;
+    if (selectedCardIds.size === 0 || !user) return;
     const cardsToSell = mergedCards.filter(c => selectedCardIds.has(c.id) && c.source !== 'group-break');
     if (cardsToSell.length === 0) {
         toast({ variant: "destructive", title: "轉點失敗", description: "所選項目均為團拆限定，無法進行轉點。" });
@@ -634,84 +624,29 @@ export default function CollectionPage() {
     }
     setIsProcessing(true);
     try {
-      const batch = writeBatch(firestore);
-      const { diamonds, pPoints } = conversionValues;
-      const soldCardNames = cardsToSell.map(c => c.name).join(', ');
-
-      const existingAllCardIds = new Set(cardMap.keys());
-      const autoRelistBetting = systemConfig?.bettingAutoRelistOnBuyBack !== false;
-
-      let bettingItemDocs: any[] = [];
-      if (autoRelistBetting) {
-        try {
-          const bettingSnap = await getDocs(collection(firestore, 'betting-items'));
-          bettingItemDocs = bettingSnap.docs;
-        } catch (err) {
-          console.error("Fetch betting items error:", err);
-        }
-      }
-
-      for (const card of cardsToSell) {
-        batch.delete(doc(firestore, 'users', user.uid, 'userCards', card.id));
-        if (card.cardId && existingAllCardIds.has(card.cardId)) {
-          const isBettingCard = card.source === 'betting' || card.source === 'direct-buy' || bettingItemDocs.some(d => d.data().allCardIds?.includes(card.cardId));
-
-          if (isBettingCard && autoRelistBetting) {
-            batch.update(doc(firestore, 'allCards', card.cardId), { 
-                isSold: false,
-                isRecycled: false 
-            });
-            for (const itemDoc of bettingItemDocs) {
-              const itemData = itemDoc.data();
-              if (itemData.soldCardIds?.includes(card.cardId)) {
-                batch.update(itemDoc.ref, {
-                  soldCardIds: arrayRemove(card.cardId)
-                });
-              }
-            }
-          } else {
-            batch.update(doc(firestore, 'allCards', card.cardId), { 
-                isSold: true,
-                isRecycled: true 
-            });
-          }
-        }
-      }
-
-      batch.set(doc(collection(firestore, 'transactions')), {
-        userId: user.uid,
-        transactionType: 'QuickSell',
-        currency: 'diamond',
-        amount: diamonds,
-        details: `快速轉點 ${cardsToSell.length} 張卡片 (獲得鑽石)。卡片內容: [${soldCardNames}]`,
-        transactionDate: serverTimestamp(),
-        section: 'admin'
+      const idToken = await user.getIdToken();
+      const res = await fetch('/api/collection/recycle', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          mode: 'selected',
+          userCardIds: cardsToSell.map(c => c.id),
+        }),
       });
-
-      if (pPoints > 0) {
-          batch.set(doc(collection(firestore, 'transactions')), {
-            userId: user.uid,
-            transactionType: 'QuickSell',
-            currency: 'p-point',
-            amount: pPoints,
-            details: `快速轉點 ${cardsToSell.length} 張卡片 (獲得紅利P點)。卡片內容: [${soldCardNames}]`,
-            transactionDate: serverTimestamp(),
-            section: 'admin'
-          });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || '處理請求時發生錯誤。');
       }
 
-      batch.update(doc(firestore, 'users', user.uid), { 
-          points: increment(diamonds),
-          bonusPoints: increment(pPoints)
-      });
-
-      await batch.commit();
-      toast({ title: "快速轉點成功！", description: `已將卡片資產轉換為 ${diamonds} 💎 與 ${pPoints} P點。` });
+      toast({ title: "快速轉點成功！", description: `已將卡片資產轉換為 ${Number(data.diamonds || 0).toLocaleString()} 💎 與 ${Number(data.pPoints || 0).toLocaleString()} P點。` });
       setSelectedCardIds(new Set());
-      if(forceRefetch) forceRefetch();
-    } catch (e) {
+      if (forceRefetch) forceRefetch();
+    } catch (e: any) {
       console.error(e);
-      toast({ variant: "destructive", title: "轉點失敗", description: "處理請求時發生錯誤。" });
+      toast({ variant: "destructive", title: "轉點失敗", description: e?.message || "處理請求時發生錯誤。" });
     } finally { setIsProcessing(false); }
   };
 

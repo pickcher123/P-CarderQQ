@@ -168,49 +168,15 @@ ${targetDesc}
 4. 賽事簡短戰力與焦點分析 (50-100字)
 5. 針對該場比賽自動產生一組精準的「建議預測題目」以及「建議預測選項 (例如讓分選項或獨贏選項)」
 
-請提取 2 到 5 場符合條件的賽事資訊，輸出為嚴格的 JSON 格式。
+請提取 2 到 5 場符合條件的賽事資訊，並**僅輸出純 JSON 物件**（不要加 Markdown 說明），格式如下：
+{ "matches": [{ "id": "m1", "league": "NBA", "matchName": "客隊 @ 主隊", "homeTeam": "主隊", "awayTeam": "客隊", "matchTime": "YYYY-MM-DD HH:mm", "bettingEndTime": "YYYY-MM-DDTHH:mm", "spread": "主隊 -3.5 / 客隊 +3.5", "moneyline": "主 1.70 / 客 2.10", "totalPoints": "225.5", "suggestedQuestion": "...", "suggestedOptions": ["主隊 (-3.5)", "客隊 (+3.5)"], "analysis": "..." }] }
 `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.7-flash',
+      model: 'gemini-2.5-flash',
       contents: prompt,
       config: {
         tools: [{ googleSearch: {} }],
-        responseMimeType: 'application/json',
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            matches: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  id: { type: Type.STRING },
-                  league: { type: Type.STRING, description: '聯賽名稱，如 NBA, MLB, CPBL, 英超' },
-                  matchName: { type: Type.STRING, description: '賽事名稱，例如 主隊 vs 客隊' },
-                  homeTeam: { type: Type.STRING, description: '主場球隊名稱' },
-                  awayTeam: { type: Type.STRING, description: '客場球隊名稱' },
-                  homeTeamLogo: { type: Type.STRING, description: '主隊官方 LOGO 圖片網址' },
-                  awayTeamLogo: { type: Type.STRING, description: '客隊官方 LOGO 圖片網址' },
-                  matchTime: { type: Type.STRING, description: '比賽時間 (台灣時間 YYYY-MM-DD HH:mm)' },
-                  bettingEndTime: { type: Type.STRING, description: '建議封盤截止時間 (格式 YYYY-MM-DDTHH:mm)' },
-                  spread: { type: Type.STRING, description: '讓分盤口，例如 主隊 -3.5 / 客隊 +3.5' },
-                  moneyline: { type: Type.STRING, description: '獨贏賠率資訊' },
-                  totalPoints: { type: Type.STRING, description: '大小分盤口資訊' },
-                  suggestedQuestion: { type: Type.STRING, description: '建議預測問題題目' },
-                  suggestedOptions: {
-                    type: Type.ARRAY,
-                    items: { type: Type.STRING },
-                    description: '建議預測選項列表，例如 [主隊 (-3.5), 客隊 (+3.5)]',
-                  },
-                  analysis: { type: Type.STRING, description: '賽前簡評與焦點' },
-                },
-                required: ['league', 'matchName', 'homeTeam', 'awayTeam', 'matchTime', 'spread', 'suggestedQuestion', 'suggestedOptions'],
-              },
-            },
-          },
-          required: ['matches'],
-        },
       },
     });
 
@@ -219,7 +185,12 @@ ${targetDesc}
       throw new Error('未收到 Gemini API 回傳內容');
     }
 
-    const data = JSON.parse(resultText);
+    const fenceMatch = resultText.trim().match(/```(?:json)?\s*([\s\S]*?)```/i);
+    const candidate = fenceMatch ? fenceMatch[1].trim() : resultText.trim();
+    const startIdx = candidate.indexOf('{');
+    const endIdx = candidate.lastIndexOf('}');
+    const jsonSlice = startIdx !== -1 && endIdx > startIdx ? candidate.slice(startIdx, endIdx + 1) : candidate;
+    const data = JSON.parse(jsonSlice);
     const matches = data.matches || [];
 
     if (matches.length === 0) {

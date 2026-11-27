@@ -1,16 +1,17 @@
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase-admin';
+import { verifyUserRequest } from '@/lib/server-auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { userId, customCode } = body;
+    const auth = await verifyUserRequest(req);
+    if (!auth.ok) return auth.response;
 
-    if (!userId) {
-      return NextResponse.json({ success: false, error: '缺少會員 ID' }, { status: 400 });
-    }
+    const userId = auth.user.uid;
+    const body = await req.json();
+    const { customCode } = body;
 
     const db = getAdminDb();
     if (!db) {
