@@ -24,7 +24,10 @@ export interface ScannedCardItem {
   backPreview?: string;
   backBlob?: Blob;
 
-  // 卡片資訊 (僅由正面/AI 產生)
+  // 卡片資訊 (僅由正面/AI 或預查卡表產生)
+  inventoryCode?: string; // 庫存代碼 (例如 10-1BK)
+  presetPosition?: string; // 預查表位置 (例如 上排右（1）)
+  presetNote?: string; // 預查表附註 (例如 【成交過舊】、【查無成交】)
   name: string;
   category: string;
   sellPrice: number;

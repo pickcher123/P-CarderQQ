@@ -346,7 +346,6 @@ export default function DrawPage() {
                             { id: 'all', label: '全部卡池' },
                             { id: 'favorites', label: `我的追蹤${trackedActivePools.length > 0 ? ` (${trackedActivePools.length})` : ''}`, isFav: true },
                             { id: 'featured', label: '精選推薦' },
-                            ...categoriesWithCounts.map((c) => ({ id: c.id, label: c.name })),
                         ].map((tab) => {
                             const isActive = selectedCategoryTab === tab.id;
                             return (

@@ -522,13 +522,13 @@ export function UnifiedEventCalendar({
     };
 
     return (
-        <div className="w-full space-y-4 sm:space-y-6">
+        <div className="w-full space-y-3 sm:space-y-6">
 
             {/* ========================================================================= */}
             {/* 頂部卡展焦點專區 (台灣巡迴焦點 × 國際大展)                                */}
             {/* ========================================================================= */}
             {showSpotlight && (spotlightTaiwanExhibition || spotlightInternationalExhibition) && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-2.5 sm:gap-5">
                     
                     {/* 卡片 1: 台灣焦點卡展 */}
                     {spotlightTaiwanExhibition && (() => {
@@ -537,52 +537,52 @@ export function UnifiedEventCalendar({
                         return (
                             <div 
                                 onClick={() => setActiveModalEvent(spotlightTaiwanExhibition)}
-                                className="group relative cursor-pointer overflow-hidden rounded-2xl bg-gradient-to-br from-[#142038] via-[#0f172a] to-[#0b1120] border border-emerald-400/30 border-t-2 border-t-emerald-400/80 hover:border-emerald-300/60 hover:-translate-y-0.5 p-5 sm:p-6 transition-[border-color,transform] duration-200 flex flex-col justify-between gap-5 select-none shadow-[0_14px_36px_rgba(0,0,0,0.45)]"
+                                className="group relative cursor-pointer overflow-hidden rounded-2xl bg-gradient-to-br from-[#142038] via-[#0f172a] to-[#0b1120] border border-emerald-400/30 border-t-2 border-t-emerald-400/80 hover:border-emerald-300/60 hover:-translate-y-0.5 p-3.5 sm:p-6 transition-[border-color,transform] duration-200 flex flex-col justify-between gap-2.5 sm:gap-5 select-none shadow-[0_14px_36px_rgba(0,0,0,0.45)]"
                             >
                                 <div className="absolute -top-12 -right-10 w-44 h-44 bg-emerald-400/12 rounded-full blur-3xl pointer-events-none" />
-                                <div className="relative z-10 space-y-3.5">
+                                <div className="relative z-10 space-y-2.5 sm:space-y-3.5">
                                     <div className="flex items-center justify-between gap-2 flex-wrap">
-                                        <div className="flex items-center gap-2">
-                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-400/15 border border-emerald-400/35 text-xs font-bold text-emerald-200">
+                                        <div className="flex items-center gap-1.5 sm:gap-2">
+                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 sm:px-2.5 rounded-full bg-emerald-400/15 border border-emerald-400/35 text-[10.5px] sm:text-xs font-bold text-emerald-200">
                                                 <span>🇹🇼</span>
                                                 <span>台灣焦點展會</span>
                                             </span>
-                                            <span className="text-xs text-slate-200 font-semibold">
+                                            <span className="text-[11px] sm:text-xs text-slate-200 font-semibold">
                                                 {extractCity(spotlightTaiwanExhibition.location)}
                                             </span>
                                         </div>
 
-                                        <span className={cn("text-[11px] font-bold px-2.5 py-0.5 rounded-full border shrink-0 font-code tabular-nums", countdown.badgeClass)}>
+                                        <span className={cn("text-[10px] sm:text-[11px] font-bold px-2 py-0.5 sm:px-2.5 rounded-full border shrink-0 font-code tabular-nums", countdown.badgeClass)}>
                                             {countdown.text}
                                         </span>
                                     </div>
 
-                                    <div className="flex items-center gap-3.5">
-                                        <div className="w-14 h-14 rounded-xl bg-white/[0.05] border border-emerald-400/35 overflow-hidden flex flex-col items-center justify-center shrink-0">
-                                            <span className="w-full text-center text-[10px] font-black bg-emerald-400/25 text-emerald-200 py-0.5 leading-none">
+                                    <div className="flex items-center gap-2.5 sm:gap-3.5">
+                                        <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-xl bg-white/[0.05] border border-emerald-400/35 overflow-hidden flex flex-col items-center justify-center shrink-0">
+                                            <span className="w-full text-center text-[9px] sm:text-[10px] font-black bg-emerald-400/25 text-emerald-200 py-0.5 leading-none">
                                                 {format(spotlightTaiwanExhibition.startDate, 'M月')}
                                             </span>
-                                            <span className="text-xl font-black font-mono text-white tabular-nums leading-tight mt-0.5">
+                                            <span className="text-base sm:text-xl font-black font-mono text-white tabular-nums leading-tight mt-0.5">
                                                 {format(spotlightTaiwanExhibition.startDate, 'dd')}
                                             </span>
                                         </div>
-                                        <h3 className="text-lg sm:text-xl font-black font-headline text-white group-hover:text-emerald-200 transition-colors line-clamp-2 leading-snug">
+                                        <h3 className="text-sm sm:text-xl font-black font-headline text-white group-hover:text-emerald-200 transition-colors line-clamp-2 leading-snug">
                                         {spotlightTaiwanExhibition.title}
                                         </h3>
                                     </div>
 
-                                    <div className="pt-3.5 border-t border-white/[0.08] space-y-2 text-xs text-slate-300">
-                                        <div className="flex items-center justify-between gap-3">
+                                    <div className="pt-2 sm:pt-3.5 border-t border-white/[0.08] space-y-1 sm:space-y-2 text-[11px] sm:text-xs text-slate-300">
+                                        <div className="flex items-center justify-between gap-2 sm:gap-3">
                                             <span className="text-slate-400 flex items-center gap-1.5 shrink-0">
-                                                <CalendarIcon className="w-3.5 h-3.5 text-emerald-400/80" />
+                                                <CalendarIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-400/80" />
                                                 展期時間
                                             </span>
-                                            <span className="font-code text-slate-100 font-semibold">{spotlightTaiwanExhibition.timeStr}</span>
+                                            <span className="font-code text-slate-100 font-semibold tabular-nums">{spotlightTaiwanExhibition.timeStr}</span>
                                         </div>
 
-                                        <div className="flex items-center justify-between gap-3">
+                                        <div className="flex items-center justify-between gap-2 sm:gap-3">
                                             <span className="text-slate-400 flex items-center gap-1.5 shrink-0">
-                                                <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                                                <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-400" />
                                                 展覽地點
                                             </span>
                                             <span className="text-slate-200 truncate text-right">{spotlightTaiwanExhibition.location}</span>
@@ -590,13 +590,13 @@ export function UnifiedEventCalendar({
                                     </div>
                                 </div>
 
-                                <div className="flex items-center justify-between gap-2 pt-3 border-t border-white/[0.06]">
-                                    <span className="text-xs text-slate-500">
+                                <div className="flex items-center justify-between gap-2 pt-2 sm:pt-3 border-t border-white/[0.06]">
+                                    <span className="text-[10.5px] sm:text-xs text-slate-500">
                                         點擊查看場館與地圖資訊
                                     </span>
-                                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-300 group-hover:text-emerald-200 group-hover:translate-x-0.5 transition-transform">
+                                    <span className="inline-flex items-center gap-1 text-[11px] sm:text-xs font-semibold text-emerald-300 group-hover:text-emerald-200 group-hover:translate-x-0.5 transition-transform">
                                         <span>查看展訊</span>
-                                        <ArrowRight className="w-3.5 h-3.5" />
+                                        <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                                     </span>
                                 </div>
                             </div>
@@ -613,7 +613,7 @@ export function UnifiedEventCalendar({
                             <div 
                                 onClick={() => setActiveModalEvent(spotlightInternationalExhibition)}
                                 className={cn(
-                                    "group relative cursor-pointer overflow-hidden rounded-2xl bg-gradient-to-br from-[#191f36] via-[#101729] to-[#0b1120] border border-t-2 hover:-translate-y-0.5 p-5 sm:p-6 transition-[border-color,transform] duration-200 flex flex-col justify-between gap-5 select-none shadow-[0_14px_36px_rgba(0,0,0,0.45)]",
+                                    "group relative cursor-pointer overflow-hidden rounded-2xl bg-gradient-to-br from-[#191f36] via-[#101729] to-[#0b1120] border border-t-2 hover:-translate-y-0.5 p-3.5 sm:p-6 transition-[border-color,transform] duration-200 flex flex-col justify-between gap-2.5 sm:gap-5 select-none shadow-[0_14px_36px_rgba(0,0,0,0.45)]",
                                     isUsa
                                         ? "border-amber-300/30 border-t-amber-300/80 hover:border-amber-300/60"
                                         : "border-cyan-300/30 border-t-cyan-300/80 hover:border-cyan-300/60"
@@ -623,11 +623,11 @@ export function UnifiedEventCalendar({
                                     "absolute -top-12 -right-10 w-44 h-44 rounded-full blur-3xl pointer-events-none",
                                     isUsa ? "bg-amber-400/14" : "bg-cyan-400/12"
                                 )} />
-                                <div className="relative z-10 space-y-3.5">
+                                <div className="relative z-10 space-y-2.5 sm:space-y-3.5">
                                     <div className="flex items-center justify-between gap-2 flex-wrap">
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-1.5 sm:gap-2">
                                             <span className={cn(
-                                                "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border text-xs font-bold",
+                                                "inline-flex items-center gap-1 px-2 py-0.5 sm:px-2.5 rounded-full border text-[10.5px] sm:text-xs font-bold",
                                                 isUsa
                                                     ? "bg-amber-400/15 border-amber-300/40 text-[#FDE68A]"
                                                     : "bg-cyan-400/15 border-cyan-300/40 text-cyan-200"
@@ -635,48 +635,48 @@ export function UnifiedEventCalendar({
                                                 <span>{reg.flag}</span>
                                                 <span>{reg.label}</span>
                                             </span>
-                                            <span className="text-xs text-slate-200 font-semibold">
+                                            <span className="text-[11px] sm:text-xs text-slate-200 font-semibold">
                                                 {extractCity(spotlightInternationalExhibition.location)}
                                             </span>
                                         </div>
 
-                                        <span className={cn("text-[11px] font-bold px-2.5 py-0.5 rounded-full border shrink-0 font-code tabular-nums", countdown.badgeClass)}>
+                                        <span className={cn("text-[10px] sm:text-[11px] font-bold px-2 py-0.5 sm:px-2.5 rounded-full border shrink-0 font-code tabular-nums", countdown.badgeClass)}>
                                             {countdown.text}
                                         </span>
                                     </div>
 
-                                    <div className="flex items-center gap-3.5">
+                                    <div className="flex items-center gap-2.5 sm:gap-3.5">
                                         <div className={cn(
-                                            "w-14 h-14 rounded-xl bg-white/[0.05] border overflow-hidden flex flex-col items-center justify-center shrink-0",
+                                            "w-11 h-11 sm:w-14 sm:h-14 rounded-xl bg-white/[0.05] border overflow-hidden flex flex-col items-center justify-center shrink-0",
                                             isUsa ? "border-amber-300/40" : "border-cyan-300/40"
                                         )}>
                                             <span className={cn(
-                                                "w-full text-center text-[10px] font-black py-0.5 leading-none",
+                                                "w-full text-center text-[9px] sm:text-[10px] font-black py-0.5 leading-none",
                                                 isUsa ? "bg-amber-400/25 text-[#FDE68A]" : "bg-cyan-400/25 text-cyan-200"
                                             )}>
                                                 {format(spotlightInternationalExhibition.startDate, 'M月')}
                                             </span>
-                                            <span className="text-xl font-black font-mono text-white tabular-nums leading-tight mt-0.5">
+                                            <span className="text-base sm:text-xl font-black font-mono text-white tabular-nums leading-tight mt-0.5">
                                                 {format(spotlightInternationalExhibition.startDate, 'dd')}
                                             </span>
                                         </div>
-                                        <h3 className={cn("text-lg sm:text-xl font-black font-headline text-white transition-colors line-clamp-2 leading-snug", isUsa ? "group-hover:text-[#FDE68A]" : "group-hover:text-cyan-200")}>
+                                        <h3 className={cn("text-sm sm:text-xl font-black font-headline text-white transition-colors line-clamp-2 leading-snug", isUsa ? "group-hover:text-[#FDE68A]" : "group-hover:text-cyan-200")}>
                                             {spotlightInternationalExhibition.title}
                                         </h3>
                                     </div>
 
-                                    <div className="pt-3.5 border-t border-white/[0.08] space-y-2 text-xs text-slate-300">
-                                        <div className="flex items-center justify-between gap-3">
+                                    <div className="pt-2 sm:pt-3.5 border-t border-white/[0.08] space-y-1 sm:space-y-2 text-[11px] sm:text-xs text-slate-300">
+                                        <div className="flex items-center justify-between gap-2 sm:gap-3">
                                             <span className="text-slate-400 flex items-center gap-1.5 shrink-0">
-                                                <CalendarIcon className={cn("w-3.5 h-3.5", isUsa ? "text-amber-400/80" : "text-indigo-400/80")} />
+                                                <CalendarIcon className={cn("w-3 h-3 sm:w-3.5 sm:h-3.5", isUsa ? "text-amber-400/80" : "text-indigo-400/80")} />
                                                 展期時間
                                             </span>
-                                            <span className="font-code text-slate-100 font-semibold">{spotlightInternationalExhibition.timeStr}</span>
+                                            <span className="font-code text-slate-100 font-semibold tabular-nums">{spotlightInternationalExhibition.timeStr}</span>
                                         </div>
 
-                                        <div className="flex items-center justify-between gap-3">
+                                        <div className="flex items-center justify-between gap-2 sm:gap-3">
                                             <span className="text-slate-400 flex items-center gap-1.5 shrink-0">
-                                                <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                                                <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-400" />
                                                 展覽地點
                                             </span>
                                             <span className="text-slate-200 truncate text-right">{spotlightInternationalExhibition.location}</span>
@@ -684,13 +684,13 @@ export function UnifiedEventCalendar({
                                     </div>
                                 </div>
 
-                                <div className="flex items-center justify-between gap-2 pt-3 border-t border-white/[0.06]">
-                                    <span className="text-xs text-slate-500">
+                                <div className="flex items-center justify-between gap-2 pt-2 sm:pt-3 border-t border-white/[0.06]">
+                                    <span className="text-[10.5px] sm:text-xs text-slate-500">
                                         點擊查看完整展訊與官網
                                     </span>
-                                    <span className={cn("inline-flex items-center gap-1 text-xs font-semibold group-hover:translate-x-0.5 transition-transform", isUsa ? "text-amber-300 group-hover:text-amber-200" : "text-indigo-300 group-hover:text-indigo-200")}>
+                                    <span className={cn("inline-flex items-center gap-1 text-[11px] sm:text-xs font-semibold group-hover:translate-x-0.5 transition-transform", isUsa ? "text-amber-300 group-hover:text-amber-200" : "text-indigo-300 group-hover:text-indigo-200")}>
                                         <span>查看展訊</span>
-                                        <ArrowRight className="w-3.5 h-3.5" />
+                                        <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                                     </span>
                                 </div>
                             </div>

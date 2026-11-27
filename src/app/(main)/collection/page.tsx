@@ -952,94 +952,10 @@ export default function CollectionPage() {
 
           {/* === INTERACTIVE FILTER & TOOLBAR === */}
           <div className="space-y-3">
-            {/* Top Row: Main Tabs, Search, Sort & View Mode Switcher */}
+            {/* Top Row: Search, Sort & View Mode Switcher */}
             <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
-              
-              {/* Main Category Tabs */}
-              <div className="flex items-center gap-1 p-1 bg-[#0a0f1c]/95 border border-white/[0.08] rounded-xl overflow-x-auto no-scrollbar shrink-0">
-                <button
-                  onClick={() => { setActiveTab('all'); setFilterCategory(null); }}
-                  className={cn(
-                    "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 whitespace-nowrap cursor-pointer border",
-                    activeTab === 'all' && !filterCategory
-                      ? "bg-white/[0.1] text-white border-white/[0.15]" 
-                      : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] border-transparent"
-                  )}
-                >
-                  <Layers className="w-3.5 h-3.5 text-cyan-300" />
-                  <span>全部藏品</span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded font-code bg-white/[0.08] text-slate-300">
-                    {portfolioStats.totalCards}
-                  </span>
-                </button>
-
-                <button
-                  onClick={() => { setActiveTab('standard'); setFilterCategory(null); }}
-                  className={cn(
-                    "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 whitespace-nowrap cursor-pointer border",
-                    activeTab === 'standard' 
-                      ? "bg-white/[0.1] text-white border-white/[0.15]" 
-                      : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] border-transparent"
-                  )}
-                >
-                  <Library className="w-3.5 h-3.5 text-sky-300" />
-                  <span>個人藏品</span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded font-code bg-white/[0.08] text-slate-300">
-                    {portfolioStats.uniqueCount}
-                  </span>
-                </button>
-
-                <button
-                  onClick={() => { setActiveTab('prizes'); setFilterCategory(null); }}
-                  className={cn(
-                    "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 whitespace-nowrap cursor-pointer border",
-                    activeTab === 'prizes' 
-                      ? "bg-white/[0.1] text-white border-emerald-400/35" 
-                      : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] border-transparent"
-                  )}
-                >
-                  <Gift className="w-3.5 h-3.5 text-emerald-300" />
-                  <span>實體兌換卡</span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded font-code bg-white/[0.08] text-slate-300">
-                    {portfolioStats.prizeCount}
-                  </span>
-                </button>
-
-                <button
-                  onClick={() => { setActiveTab('break'); setFilterCategory(null); }}
-                  className={cn(
-                    "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 whitespace-nowrap cursor-pointer border",
-                    activeTab === 'break' 
-                      ? "bg-white/[0.1] text-white border-amber-400/35" 
-                      : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] border-transparent"
-                  )}
-                >
-                  <Users2 className="w-3.5 h-3.5 text-amber-300" />
-                  <span>團拆藏品</span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded font-code bg-white/[0.08] text-slate-300">
-                    {portfolioStats.breakCount}
-                  </span>
-                </button>
-
-                <button
-                  onClick={() => { setActiveTab('random'); setFilterCategory(null); }}
-                  className={cn(
-                    "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 whitespace-nowrap cursor-pointer border",
-                    activeTab === 'random' 
-                      ? "bg-white/[0.1] text-white border-purple-400/35" 
-                      : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] border-transparent"
-                  )}
-                >
-                  <Package className="w-3.5 h-3.5 text-purple-300" />
-                  <span>累積小卡</span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded font-code bg-white/[0.08] text-slate-300">
-                    {portfolioStats.randomCount}
-                  </span>
-                </button>
-              </div>
-
               {/* Search, Sort & Display Density Controls */}
-              <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+              <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap w-full">
                 {/* Search Bar */}
                 <div className="relative flex-1 sm:w-56">
                   <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />

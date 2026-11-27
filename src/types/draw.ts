@@ -14,6 +14,7 @@ export interface Card {
     isPoints?: boolean;
     points?: number;
     certNumber?: string;
+    inventoryCode?: string;
 }
 
 export type CardItem = Card;

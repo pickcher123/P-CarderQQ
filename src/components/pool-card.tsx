@@ -8,7 +8,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Trophy, Clock, Zap, Star, Diamond, Layers, X, Package, Sparkles, Eye, ChevronLeft, ChevronRight, Gift, Ticket, Target, Lock, Unlock, Flame, AlertCircle, ShieldAlert, Heart, HelpCircle } from 'lucide-react';
+import { Trophy, Clock, Zap, Star, Diamond, Layers, X, Package, Sparkles, Eye, ChevronLeft, ChevronRight, Gift, Ticket, Target, Lock, Unlock, Flame, AlertCircle, ShieldAlert, Heart, HelpCircle, ShieldCheck, TrendingUp, RefreshCw, Truck, ArrowRight } from 'lucide-react';
 import { PPlusIcon, DiamondIcon } from '@/components/icons';
 import { SafeImage } from '@/components/safe-image';
 import { format } from 'date-fns';
@@ -1708,7 +1708,7 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
                 </div>
             </div>
             
-            {/* ❓ God Pack 一番賞 玩法說明彈窗 */}
+            {/* ❓ God Pack 一番賞 玩法說明彈窗（圖像化升級版） */}
             {isGodPackRulesOpen && typeof document !== 'undefined' && createPortal(
                 <div
                     className="fixed inset-0 h-[100dvh] w-screen z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] animate-in fade-in duration-150"
@@ -1718,16 +1718,20 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
                         role="dialog"
                         aria-modal="true"
                         aria-label="God Pack 一番賞 玩法說明"
-                        className="relative w-full max-w-lg rounded-2xl bg-[#0a0f1c] border border-amber-300/40 shadow-[0_24px_64px_rgba(0,0,0,0.9)] overflow-hidden text-slate-100"
+                        className="relative w-full max-w-xl rounded-2xl bg-[#0a0f1c] border border-amber-300/40 shadow-[0_24px_64px_rgba(0,0,0,0.92)] overflow-hidden text-slate-100"
                         onClick={(e) => e.stopPropagation()}
                     >
+                        {/* 頂部香檳金光條與微光 */}
                         <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-amber-300/80 to-transparent" />
-                        <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.08]">
+                        <div className="pointer-events-none absolute -top-12 left-1/2 -translate-x-1/2 w-64 h-24 rounded-full bg-amber-400/10 blur-2xl" />
+
+                        {/* Header */}
+                        <div className="relative flex items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4 border-b border-white/[0.08]">
                             <div className="flex items-center gap-2.5">
-                                <span className="w-[3px] h-7 rounded-full bg-gradient-to-b from-amber-200 via-amber-400 to-amber-700" />
+                                <span className="w-[3px] h-8 rounded-full bg-gradient-to-b from-amber-200 via-amber-400 to-amber-700 shrink-0" />
                                 <div>
-                                    <h3 className="text-base font-black text-white flex items-center gap-1.5">
-                                        <HelpCircle className="w-4 h-4 text-[#FDE68A]" />
+                                    <h3 className="text-sm sm:text-base font-black text-white flex items-center gap-1.5">
+                                        <Sparkles className="w-4 h-4 text-[#FDE68A]" />
                                         <span>God Pack 一番賞 玩法說明</span>
                                     </h3>
                                     <p className="text-[11px] text-slate-400">五色卡包公開看盤 · 即時機率 · 專屬防搶保護</p>
@@ -1736,57 +1740,228 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
                             <button
                                 type="button"
                                 onClick={() => setIsGodPackRulesOpen(false)}
-                                className="w-8 h-8 rounded-xl bg-white/[0.04] hover:bg-white/[0.1] border border-white/[0.08] text-slate-300 hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+                                className="w-8 h-8 rounded-xl bg-white/[0.04] hover:bg-white/[0.1] border border-white/[0.08] text-slate-300 hover:text-white flex items-center justify-center cursor-pointer transition-colors shrink-0"
                                 aria-label="關閉玩法說明"
                             >
                                 <X className="w-4 h-4" />
                             </button>
                         </div>
 
-                        <div className="p-5 space-y-3.5 max-h-[72dvh] overflow-y-auto text-xs text-slate-300 leading-relaxed">
-                            <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.08] space-y-2">
-                                <p className="font-bold text-[#FDE68A] text-xs">1. 五色卡包賞別制度</p>
-                                <div className="grid grid-cols-5 gap-1.5 text-center text-[10px]">
-                                    <div className="py-1.5 px-1 rounded-lg bg-amber-400/15 border border-amber-300/45 text-[#FDE68A] font-black">金包<span className="block text-[9px] font-medium opacity-80">A賞頭獎</span></div>
-                                    <div className="py-1.5 px-1 rounded-lg bg-black/60 border border-amber-300/60 text-[#FDE68A] font-black">黑包<span className="block text-[9px] font-medium opacity-80">SP驚喜</span></div>
-                                    <div className="py-1.5 px-1 rounded-lg bg-slate-200/10 border border-slate-300/35 text-slate-100 font-black">銀包<span className="block text-[9px] font-medium opacity-80">B賞大獎</span></div>
-                                    <div className="py-1.5 px-1 rounded-lg bg-amber-800/25 border border-amber-600/40 text-amber-200 font-black">銅包<span className="block text-[9px] font-medium opacity-80">C賞精選</span></div>
-                                    <div className="py-1.5 px-1 rounded-lg bg-white/[0.04] border border-white/15 text-slate-300 font-black">星光包<span className="block text-[9px] font-medium opacity-80">D賞常駐</span></div>
+                        {/* Body */}
+                        <div className="p-4 sm:p-5 space-y-3.5 max-h-[74dvh] overflow-y-auto text-xs text-slate-300 leading-relaxed">
+                            {/* 快速流程視覺條 */}
+                            <div className="grid grid-cols-[1fr_auto_1fr_auto_1fr] items-center gap-1 sm:gap-2 p-2.5 rounded-xl bg-black/40 border border-white/[0.08]">
+                                <div className="flex flex-col items-center text-center gap-1">
+                                    <div className="w-8 h-8 rounded-lg bg-amber-400/10 border border-amber-300/30 flex items-center justify-center text-[#FDE68A]">
+                                        <Eye className="w-4 h-4" />
+                                    </div>
+                                    <span className="text-[10px] sm:text-[11px] font-black text-white">1. 公開看盤</span>
+                                    <span className="text-[9px] text-slate-400">剩餘大獎透明</span>
                                 </div>
-                                <p className="text-[11px] text-slate-400">
-                                    每包對應真實實體卡片或保底點數，開包瞬間依外袋色澤揭曉驚喜層級。
-                                </p>
+                                <ArrowRight className="w-3.5 h-3.5 text-amber-300/50 shrink-0" />
+                                <div className="flex flex-col items-center text-center gap-1">
+                                    <div className="w-8 h-8 rounded-lg bg-amber-400/10 border border-amber-300/30 flex items-center justify-center text-[#FDE68A]">
+                                        <Lock className="w-4 h-4" />
+                                    </div>
+                                    <span className="text-[10px] sm:text-[11px] font-black text-white">2. 鎖池開包</span>
+                                    <span className="text-[9px] text-slate-400 tabular-nums">120s 防插隊</span>
+                                </div>
+                                <ArrowRight className="w-3.5 h-3.5 text-amber-300/50 shrink-0" />
+                                <div className="flex flex-col items-center text-center gap-1">
+                                    <div className="w-8 h-8 rounded-lg bg-amber-400/10 border border-amber-300/30 flex items-center justify-center text-[#FDE68A]">
+                                        <Gift className="w-4 h-4" />
+                                    </div>
+                                    <span className="text-[10px] sm:text-[11px] font-black text-white">3. 出貨 / 轉點</span>
+                                    <span className="text-[9px] text-slate-400">入庫自由切換</span>
+                                </div>
                             </div>
 
-                            <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.08] space-y-1">
-                                <p className="font-bold text-white">2. 即時公開看盤與「翻倍大獎率」</p>
-                                <p className="text-[11px] text-slate-400">
-                                    盤面即時同步剩餘各色卡包數與總抽數，點擊五色格子或「看盤明細」可瀏覽全部卡包清冊；大獎留在盤中越久，後續每一抽的「翻倍大獎率」就越高！
-                                </p>
+                            {/* 1. 五色卡包賞別圖鑑（迷你卡包外袋視覺化） */}
+                            <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.08] space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <p className="font-black text-[#FDE68A] text-xs flex items-center gap-1.5">
+                                        <Package className="w-3.5 h-3.5" />
+                                        <span>五色卡包賞別圖鑑</span>
+                                    </p>
+                                    <span className="text-[10px] text-slate-400">依外袋色澤揭曉驚喜層級</span>
+                                </div>
+
+                                <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
+                                    {[
+                                        {
+                                            name: '金包',
+                                            tier: 'A賞頭獎',
+                                            packClass: 'bg-gradient-to-b from-[#FDE68A]/30 via-amber-400/18 to-amber-900/35 border-amber-300/65 text-[#FDE68A] shadow-[0_6px_16px_rgba(245,158,11,0.18)]',
+                                            notchClass: 'bg-amber-300/50',
+                                            Icon: Trophy,
+                                        },
+                                        {
+                                            name: '黑包',
+                                            tier: 'SP驚喜',
+                                            packClass: 'bg-gradient-to-b from-slate-800/90 via-black to-slate-950 border-amber-300/65 text-[#FDE68A] shadow-[0_6px_16px_rgba(0,0,0,0.65)]',
+                                            notchClass: 'bg-amber-300/60',
+                                            Icon: Sparkles,
+                                        },
+                                        {
+                                            name: '銀包',
+                                            tier: 'B賞大獎',
+                                            packClass: 'bg-gradient-to-b from-slate-200/20 via-slate-400/12 to-slate-800/40 border-slate-300/45 text-slate-100',
+                                            notchClass: 'bg-slate-300/45',
+                                            Icon: Star,
+                                        },
+                                        {
+                                            name: '銅包',
+                                            tier: 'C賞精選',
+                                            packClass: 'bg-gradient-to-b from-amber-700/35 via-amber-900/25 to-stone-950/60 border-amber-600/50 text-amber-200',
+                                            notchClass: 'bg-amber-500/45',
+                                            Icon: Layers,
+                                        },
+                                        {
+                                            name: '星光包',
+                                            tier: 'D賞常駐',
+                                            packClass: 'bg-gradient-to-b from-white/[0.08] via-white/[0.03] to-black/50 border-white/15 text-slate-300',
+                                            notchClass: 'bg-white/25',
+                                            Icon: Zap,
+                                        },
+                                    ].map((pack) => {
+                                        const PackIcon = pack.Icon;
+                                        return (
+                                            <div
+                                                key={pack.name}
+                                                className={cn(
+                                                    'relative rounded-xl border pt-2 pb-2 px-1 flex flex-col items-center text-center overflow-hidden',
+                                                    pack.packClass
+                                                )}
+                                            >
+                                                {/* 模擬卡包頂部封口線 */}
+                                                <div className={cn('w-7 h-[2px] rounded-full mb-2 opacity-80', pack.notchClass)} />
+                                                <div className="w-7 h-7 rounded-lg bg-black/35 border border-white/10 flex items-center justify-center mb-1.5">
+                                                    <PackIcon className="w-3.5 h-3.5" />
+                                                </div>
+                                                <span className="text-[11px] font-black leading-tight">{pack.name}</span>
+                                                <span className="text-[9px] font-medium opacity-80 mt-0.5 leading-tight">{pack.tier}</span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
                             </div>
 
-                            <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.08] space-y-1">
-                                <p className="font-bold text-white">3. 120 秒專屬鎖池保護</p>
-                                <p className="text-[11px] text-slate-400">
-                                    開抽後系統自動啟動 120 秒專屬保護倒數，避免尾盤時遭他人插隊搶走剩餘大獎；若提早抽完也可一鍵提前解除鎖定。
-                                </p>
+                            {/* 2 & 3. 雙欄視覺資訊卡：翻倍大獎率 ＋ 120秒鎖池 */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                {/* 卡片 2：即時看盤與翻倍大獎率 */}
+                                <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.08] flex flex-col justify-between gap-2.5">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <p className="font-black text-white flex items-center gap-1.5">
+                                            <TrendingUp className="w-3.5 h-3.5 text-[#FDE68A]" />
+                                            <span>翻倍大獎率機制</span>
+                                        </p>
+                                        <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-amber-400/15 border border-amber-300/35 text-[#FDE68A]">
+                                            尾盤更甜
+                                        </span>
+                                    </div>
+
+                                    {/* 迷你機率上升階梯圖 */}
+                                    <div className="p-2.5 rounded-lg bg-black/40 border border-white/[0.06] flex items-end justify-between gap-2 h-[74px]">
+                                        <div className="flex-1 flex flex-col items-center gap-1">
+                                            <span className="text-[9px] text-slate-400 tabular-nums">100抽</span>
+                                            <div className="w-full h-3 rounded-t bg-white/15" />
+                                        </div>
+                                        <div className="flex-1 flex flex-col items-center gap-1">
+                                            <span className="text-[9px] text-amber-200/80 tabular-nums">50抽</span>
+                                            <div className="w-full h-6 rounded-t bg-amber-300/40" />
+                                        </div>
+                                        <div className="flex-1 flex flex-col items-center gap-1">
+                                            <span className="text-[9px] font-black text-[#FDE68A] tabular-nums">20抽 ↑</span>
+                                            <div className="w-full h-10 rounded-t bg-gradient-to-t from-amber-500/70 to-[#FDE68A] shadow-[0_0_12px_rgba(245,158,11,0.35)]" />
+                                        </div>
+                                    </div>
+
+                                    <p className="text-[11px] text-slate-400 leading-snug">
+                                        點擊「看盤明細」即時掌握剩餘獎項；大獎留在盤中越久，後續每一抽機率越高！
+                                    </p>
+                                </div>
+
+                                {/* 卡片 3：120 秒專屬鎖池保護 */}
+                                <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.08] flex flex-col justify-between gap-2.5">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <p className="font-black text-white flex items-center gap-1.5">
+                                            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                                            <span>120 秒專屬鎖池</span>
+                                        </p>
+                                        <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-500/15 border border-emerald-400/35 text-emerald-300">
+                                            自動防護
+                                        </span>
+                                    </div>
+
+                                    {/* 迷你倒數保護條視覺 */}
+                                    <div className="p-2.5 rounded-lg bg-black/40 border border-white/[0.06] flex flex-col justify-center gap-2 h-[74px]">
+                                        <div className="flex items-center justify-between text-[10px]">
+                                            <span className="inline-flex items-center gap-1 text-[#FDE68A] font-bold">
+                                                <Lock className="w-3 h-3" />
+                                                專屬保護中
+                                            </span>
+                                            <span className="font-mono font-black text-white tabular-nums">120s</span>
+                                        </div>
+                                        <div className="w-full h-2 rounded-full bg-white/[0.08] overflow-hidden">
+                                            <div className="h-full w-4/5 rounded-full bg-gradient-to-r from-[#FDE68A] via-amber-300 to-emerald-400" />
+                                        </div>
+                                        <div className="flex items-center justify-between text-[9px] text-slate-400">
+                                            <span>✓ 杜絕尾盤插隊</span>
+                                            <span>✓ 可提前一鍵解鎖</span>
+                                        </div>
+                                    </div>
+
+                                    <p className="text-[11px] text-slate-400 leading-snug">
+                                        開抽即啟動專屬倒數，安心連抽或思考是否全包，提早抽完也能手動解鎖。
+                                    </p>
+                                </div>
                             </div>
 
-                            <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.08] space-y-1">
-                                <p className="font-bold text-white">4. 尾盤全包・實體入庫或一鍵轉點</p>
-                                <p className="text-[11px] text-slate-400">
-                                    剩餘包數少時可使用「全包」一次帶走所有剩餘獎項與最後賞。抽中卡片皆存入數位收藏庫，隨時可申請 7-11／郵寄出貨，或一鍵轉為鑽石與紅利 P+ 繼續抽！
-                                </p>
+                            {/* 4. 尾盤全包 ＋ 雙軌自由處理（圖像化分流） */}
+                            <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.08] space-y-2.5">
+                                <div className="flex items-center justify-between gap-2 flex-wrap">
+                                    <p className="font-black text-white flex items-center gap-1.5">
+                                        <Flame className="w-3.5 h-3.5 text-rose-400" />
+                                        <span>尾盤「全包」與入庫雙選擇</span>
+                                    </p>
+                                    <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-gradient-to-r from-amber-400/20 to-rose-500/20 border border-amber-300/35 text-[#FDE68A]">
+                                        一次帶走剩餘獎項＋最後賞
+                                    </span>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-black/40 border border-white/[0.08]">
+                                        <div className="w-9 h-9 rounded-lg bg-amber-400/10 border border-amber-300/30 flex items-center justify-center text-[#FDE68A] shrink-0">
+                                            <Truck className="w-4 h-4" />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="text-[11px] font-black text-white">申請實體出貨</p>
+                                            <p className="text-[10px] text-slate-400 leading-snug">存入收藏庫，隨時寄送 7-11／郵寄到府</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-black/40 border border-white/[0.08]">
+                                        <div className="w-9 h-9 rounded-lg bg-cyan-400/10 border border-cyan-300/30 flex items-center justify-center text-cyan-300 shrink-0">
+                                            <RefreshCw className="w-4 h-4" />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="text-[11px] font-black text-white">一鍵轉點續抽</p>
+                                            <p className="text-[10px] text-slate-400 leading-snug">即時換算鑽石與紅利 P+，無縫開下一包</p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <div className="px-5 py-3.5 bg-black/40 border-t border-white/[0.08] flex justify-end">
+                        {/* Footer */}
+                        <div className="px-4 sm:px-5 py-3.5 bg-black/40 border-t border-white/[0.08] flex items-center justify-between gap-3">
+                            <span className="text-[10px] text-slate-400 hidden sm:inline">所有實體卡皆為現貨入庫 · 開包結果公開可驗證</span>
                             <Button
                                 type="button"
                                 onClick={() => setIsGodPackRulesOpen(false)}
-                                className="h-9 px-6 rounded-xl font-black text-xs bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] hover:brightness-105"
+                                className="h-9 px-6 rounded-xl font-black text-xs bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] hover:brightness-105 ml-auto"
                             >
-                                我了解了
+                                我了解了，開始抽卡
                             </Button>
                         </div>
                     </div>

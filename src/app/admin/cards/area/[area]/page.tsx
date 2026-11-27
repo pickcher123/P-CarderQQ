@@ -47,6 +47,7 @@ import { userLevels } from '@/components/member-level-crown';
 
 interface CardData {
     id?: string;
+    inventoryCode?: string;
     name: string;
     imageUrl: string;
     backImageUrl?: string;
@@ -557,11 +558,12 @@ export default function CardAreaManagementPage() {
     }
     // activeTab === 'all' 則保留全部卡片！
 
-    // Search keyword（支援搜尋卡片名稱、新增人員姓名或信箱）
+    // Search keyword（支援搜尋卡片名稱、庫存代碼、新增人員姓名或信箱）
     if (searchTerm.trim()) {
         const kw = searchTerm.trim().toLowerCase();
         cards = cards.filter(c => {
             if (c.name.toLowerCase().includes(kw)) return true;
+            if (c.inventoryCode && c.inventoryCode.toLowerCase().includes(kw)) return true;
             const creator = resolveCardCreator(c);
             if (creator && (creator.name.toLowerCase().includes(kw) || creator.email.toLowerCase().includes(kw))) {
                 return true;
@@ -792,6 +794,7 @@ export default function CardAreaManagementPage() {
         
         const nowIso = new Date().toISOString();
         const cardData: any = { 
+            inventoryCode: currentCard.inventoryCode?.trim() || null,
             name: currentCard.name, 
             category: currentCard.category, 
             sellPrice: currentCard.sellPrice || 0, 
@@ -1377,6 +1380,11 @@ export default function CardAreaManagementPage() {
                                                         </div>
                                                     </div>
                                                     <div>
+                                                        {card.inventoryCode && (
+                                                            <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-indigo-50 border border-indigo-200 text-indigo-800 font-mono text-[10px] font-black mb-1">
+                                                                {card.inventoryCode}
+                                                            </span>
+                                                        )}
                                                         <p className="font-black text-xs text-slate-900 truncate" title={card.name}>{card.name}</p>
                                                         <div className="flex items-center justify-between mt-1 text-[11px]">
                                                             <span className="font-code font-bold text-slate-700">{card.sellPrice?.toLocaleString()} 💎</span>
@@ -1526,8 +1534,13 @@ export default function CardAreaManagementPage() {
                                                     className="bg-white border-slate-300 data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900"
                                                 />
                                             </TableCell>
-                                            <TableCell className="font-black text-slate-900 py-4 max-w-[200px] truncate" title={card.name}>
-                                                {card.name}
+                                            <TableCell className="font-black text-slate-900 py-4 max-w-[240px]" title={card.name}>
+                                                {card.inventoryCode && (
+                                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-indigo-50 border border-indigo-200 text-indigo-800 font-mono text-[10px] font-black mb-1">
+                                                        {card.inventoryCode}
+                                                    </span>
+                                                )}
+                                                <div className="truncate">{card.name}</div>
                                             </TableCell>
                                             <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
                                                 {cardAssignmentMap.has(card.id!) ? (
@@ -1666,9 +1679,15 @@ export default function CardAreaManagementPage() {
                 </DialogHeader>
                 <ScrollArea className="max-h-[70vh] pr-4">
                     <div className="grid gap-8 py-4">
-                        <div className="space-y-2">
-                            <Label className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">卡片名稱</Label>
-                            <Input value={currentCard.name} onChange={e => setCurrentCard({...currentCard, name: e.target.value})} className="h-14 border-slate-200 rounded-2xl font-bold text-lg bg-white" placeholder="輸入完整卡片名稱" />
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div className="space-y-2 sm:col-span-2">
+                                <Label className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">卡片名稱</Label>
+                                <Input value={currentCard.name} onChange={e => setCurrentCard({...currentCard, name: e.target.value})} className="h-14 border-slate-200 rounded-2xl font-bold text-lg bg-white" placeholder="輸入完整卡片名稱" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-[10px] font-black uppercase text-indigo-600 tracking-[0.2em]">庫存代碼 (ID)</Label>
+                                <Input value={currentCard.inventoryCode || ''} onChange={e => setCurrentCard({...currentCard, inventoryCode: e.target.value.toUpperCase()})} className="h-14 border-indigo-200 rounded-2xl font-mono font-black text-base text-indigo-900 bg-indigo-50/40" placeholder="例如 10-1BK" />
+                            </div>
                         </div>
                         <div className="grid grid-cols-2 gap-6">
                             <div className="space-y-2">

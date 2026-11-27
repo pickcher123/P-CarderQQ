@@ -88,6 +88,7 @@ import {
   safeLoadImage
 } from '@/lib/card-scanner-utils';
 import { InteractiveCropOverlay } from '@/components/admin/InteractiveCropOverlay';
+import { BASKETBALL_PRESET_GROUPS, type PresetCardEntry } from '@/data/basketball-preset-cards';
 
 const CATEGORIES = ["籃球", "棒球", "足球", "女孩卡", "女優", "TCG", "其他"];
 const AREAS = [
@@ -128,6 +129,100 @@ export default function CardScannerProPage() {
 
   // 統合卡片列表 (正面資訊 + 背面對應)
   const [cards, setCards] = useState<ScannedCardItem[]>([]);
+
+  // 📋 預查卡表組別快速帶入狀態（籃球 47 組預先查好卡價與庫存代碼）
+  const [selectedPresetGroupId, setSelectedPresetGroupId] = useState<string>('');
+  const selectedPresetGroup = BASKETBALL_PRESET_GROUPS.find((g) => g.id === selectedPresetGroupId) || null;
+
+  const buildCardPatchFromPreset = (entry: PresetCardEntry, category: string): Partial<ScannedCardItem> => {
+    const cardNumMatch = entry.name.match(/#[A-Za-z0-9-]+/);
+    const autoFeatures: string[] = [];
+    if (/\bRC\b/i.test(entry.name)) autoFeatures.push('RC');
+    if (/\b(Auto|Autographs?|Signatures?|Signings?|Ink)\b/i.test(entry.name)) autoFeatures.push('AUTO');
+    if (/\b(Patch|Jersey|Relics?|Memorabilia|Swatches?|Materials?)\b/i.test(entry.name)) autoFeatures.push('PATCH');
+    if (/\/\d+/.test(entry.name)) autoFeatures.push('Numbered');
+
+    const priceRangeText =
+      entry.twdPrice !== null && entry.clValueUsd !== null
+        ? `NT$ ${entry.twdPrice.toLocaleString()} (CL $${entry.clValueUsd.toFixed(2)})`
+        : entry.note?.includes('查無成交')
+        ? '查無成交（請手動估價）'
+        : '';
+
+    return {
+      inventoryCode: entry.inventoryCode,
+      presetPosition: entry.position,
+      presetNote: entry.note || '',
+      name: entry.name,
+      formattedTitle: entry.name,
+      category: category || '籃球',
+      ...(entry.twdPrice !== null && entry.twdPrice > 0 ? { sellPrice: entry.twdPrice } : {}),
+      cardNumber: cardNumMatch ? cardNumMatch[0] : '',
+      features: autoFeatures,
+      priceRange: priceRangeText,
+      priceRationale: entry.note || (entry.clValueUsd !== null ? `CardLadder 參考錨定價 (CL $${entry.clValueUsd.toFixed(2)} × 1.3 × 33)` : ''),
+    };
+  };
+
+  // 單張卡片對應預查卡表項目
+  const handleSelectPresetEntryForCard = (cardIdx: number, inventoryCode: string) => {
+    if (!selectedPresetGroup) return;
+    if (!inventoryCode) {
+      setCards((prev) =>
+        prev.map((c, i) =>
+          i === cardIdx ? { ...c, inventoryCode: '', presetPosition: '', presetNote: '' } : c
+        )
+      );
+      return;
+    }
+    const entry = selectedPresetGroup.cards.find((e) => e.inventoryCode === inventoryCode);
+    if (!entry) return;
+    const patch = buildCardPatchFromPreset(entry, selectedPresetGroup.category);
+    setCards((prev) => prev.map((c, i) => (i === cardIdx ? { ...c, ...patch } : c)));
+  };
+
+  // 整組一鍵帶入（支援「依掃描位置對齊」或「依序 #1~#6」）
+  const handleApplyPresetGroup = (mode: 'position' | 'sequential') => {
+    if (!selectedPresetGroup) return;
+    if (cards.length === 0) {
+      toast({ variant: 'destructive', title: '尚未有裁切卡片', description: '請先上傳掃描圖並切出卡片框，再套用預查組別。' });
+      return;
+    }
+
+    const groupCards = selectedPresetGroup.cards;
+    // 預查表順序為 上排右(1)、上排中(2)、上排左(3)、下排右(4)、下排中(5)、下排左(6)
+    // 掃描自動排序為由左而右：上排左(0)、上排中(1)、上排右(2)、下排左(3)、下排中(4)、下排右(5)
+    let orderedEntries: PresetCardEntry[] = [...groupCards];
+    if (mode === 'position') {
+      const topRow = groupCards.slice(0, 3).reverse(); // 左→中→右
+      const bottomRow = groupCards.slice(3).reverse(); // 左→中→右（若是 5 張則為 中→右）
+      orderedEntries = [...topRow, ...bottomRow];
+    }
+
+    let appliedCount = 0;
+    let missingPriceCount = 0;
+    setCards((prev) =>
+      prev.map((card, idx) => {
+        const entry = orderedEntries[idx];
+        if (!entry) return card;
+        appliedCount++;
+        if (entry.twdPrice === null || entry.twdPrice <= 0) missingPriceCount++;
+        return {
+          ...card,
+          ...buildCardPatchFromPreset(entry, selectedPresetGroup.category),
+        };
+      })
+    );
+
+    setCurrentSopStep(5);
+    toast({
+      title: `✅ 已套用「${selectedPresetGroup.label}」共 ${appliedCount} 張卡片！`,
+      description:
+        missingPriceCount > 0
+          ? `其中 ${missingPriceCount} 張標記查無成交／價格異常，請核對後手動調整售價（每張也可單獨下拉重選對應）。`
+          : '已自動帶入庫存代碼、完整卡名與新台幣參考價，可直接核對或進入品管入庫！',
+    });
+  };
 
   // 處理進度
   const [isAiDetectingFront, setIsAiDetectingFront] = useState(false);
@@ -286,6 +381,9 @@ export default function CardScannerProPage() {
           backCropBox: existing?.backCropBox,
           backPreview: existing?.backPreview,
           backBlob: existing?.backBlob,
+          inventoryCode: existing?.inventoryCode || '',
+          presetPosition: existing?.presetPosition || '',
+          presetNote: existing?.presetNote || '',
           name: existing?.name || `卡片 #${idx + 1}`,
           category: existing?.category || '籃球',
           sellPrice: existing?.sellPrice || 100,
@@ -391,6 +489,9 @@ export default function CardScannerProPage() {
           backCropBox: backBox,
           backPreview: existing?.backPreview,
           backBlob: existing?.backBlob,
+          inventoryCode: existing?.inventoryCode || '',
+          presetPosition: existing?.presetPosition || '',
+          presetNote: existing?.presetNote || '',
           name: existing?.name || `卡片 #${idx + 1}`,
           category: existing?.category || '籃球',
           sellPrice: existing?.sellPrice || 100,
@@ -1279,6 +1380,7 @@ export default function CardScannerProPage() {
 
         // 3. 寫入 Firestore `allCards`
         await addDoc(collection(firestore, 'allCards'), {
+          inventoryCode: card.inventoryCode?.trim() || null,
           name: card.name,
           category: card.category,
           sellPrice: Number(card.sellPrice) || 100,
@@ -1974,6 +2076,70 @@ export default function CardScannerProPage() {
 
               {/* 正面資訊編輯清單 (5 欄) */}
               <div className="lg:col-span-5 space-y-3">
+                {/* 📋 預查卡表組別快速帶入面板（47 組籃球卡價表，免呼叫 AI 即可對齊帶入） */}
+                <div className="p-3 rounded-2xl bg-gradient-to-br from-amber-50/90 via-white to-indigo-50/60 border border-amber-300/80 shadow-xs space-y-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-black text-slate-900 flex items-center gap-1.5">
+                      <FileSpreadsheet className="w-3.5 h-3.5 text-amber-600" />
+                      <span>預查卡表組別帶入（免 AI 查價）</span>
+                    </span>
+                    <Badge variant="outline" className="text-[10px] font-mono font-bold border-amber-300 bg-amber-100/70 text-amber-900 tabular-nums">
+                      共 {BASKETBALL_PRESET_GROUPS.length} 組
+                    </Badge>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                    <Select
+                      value={selectedPresetGroupId || '__none__'}
+                      onValueChange={(val) => setSelectedPresetGroupId(val === '__none__' ? '' : val)}
+                    >
+                      <SelectTrigger className="h-8 text-xs font-bold bg-white border-slate-300 rounded-xl flex-1">
+                        <SelectValue placeholder="選擇組別（例如：籃球正反10、籃球正反13...）" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-72">
+                        <SelectItem value="__none__" className="text-xs text-slate-500">
+                          — 不使用預查組別（手動或 AI 辨識）—
+                        </SelectItem>
+                        {BASKETBALL_PRESET_GROUPS.map((g) => (
+                          <SelectItem key={g.id} value={g.id} className="text-xs font-medium">
+                            {g.label}（{g.cards.length} 張 · {g.cards[0]?.inventoryCode} ~ {g.cards[g.cards.length - 1]?.inventoryCode}）
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {selectedPresetGroup && (
+                    <div className="space-y-2 pt-1 border-t border-amber-200/70">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => handleApplyPresetGroup('position')}
+                          className="h-7 px-2.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-[11px] gap-1 shadow-2xs"
+                          title="自動依掃描位置對齊（上排右1→右邊框、上排左3→左邊框）"
+                        >
+                          <Zap className="w-3 h-3" />
+                          <span>依掃描位置一鍵帶入</span>
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleApplyPresetGroup('sequential')}
+                          className="h-7 px-2.5 rounded-lg bg-white hover:bg-slate-100 border-slate-300 text-slate-700 font-bold text-[11px]"
+                          title="照組別內 1→6 順序依序帶入卡片 #1~#6"
+                        >
+                          依序帶入 #1~#{selectedPresetGroup.cards.length}
+                        </Button>
+                      </div>
+                      <p className="text-[10px] text-slate-600 leading-snug">
+                        已選 <strong className="text-slate-900">{selectedPresetGroup.label}</strong>：可直接一鍵套用，或在下方每張卡片用下拉選單一張一張手動對上去。
+                      </p>
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-black text-slate-700">已辨識卡片列表 ({cards.length} 張)</span>
                   <Button
@@ -2027,10 +2193,29 @@ export default function CardScannerProPage() {
 
                         {/* 卡片屬性輸入 */}
                         <div className="flex-1 space-y-2.5 min-w-0">
-                          <div className="flex items-center justify-between gap-1.5">
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-900 text-[#FDE68A] text-[10px] font-black font-mono tabular-nums">
-                              #{card.index}
-                            </span>
+                          <div className="flex items-center justify-between gap-1.5 flex-wrap">
+                            <div className="flex items-center gap-1.5">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-900 text-[#FDE68A] text-[10px] font-black font-mono tabular-nums">
+                                #{card.index}
+                              </span>
+                              {/* 庫存代碼輸入框（方便現場實體卡對應，如 10-1BK） */}
+                              <div
+                                className="flex items-center gap-1 bg-slate-100 border border-slate-300 rounded-lg px-1.5 py-0.5"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <span className="text-[9px] font-black text-slate-500 shrink-0">庫存碼</span>
+                                <input
+                                  type="text"
+                                  value={card.inventoryCode || ''}
+                                  onChange={(e) => {
+                                    const val = e.target.value.toUpperCase();
+                                    setCards(prev => prev.map((c, i) => i === idx ? { ...c, inventoryCode: val } : c));
+                                  }}
+                                  placeholder="如 10-1BK"
+                                  className="w-20 bg-transparent text-[10px] font-mono font-black text-indigo-800 placeholder:text-slate-400 focus:outline-none"
+                                />
+                              </div>
+                            </div>
                             {/* 🌟 僅在「步驟 3：PRO 智慧辨識」時突顯單卡辨識按鈕 */}
                             {currentSopStep === 3 && (
                               <Button
@@ -2048,6 +2233,46 @@ export default function CardScannerProPage() {
                               </Button>
                             )}
                           </div>
+
+                          {/* 若已選擇預查組別，提供單張獨立下拉對應選單 */}
+                          {selectedPresetGroup && (
+                            <div onClick={(e) => e.stopPropagation()}>
+                              <select
+                                value={
+                                  selectedPresetGroup.cards.some((e) => e.inventoryCode === card.inventoryCode)
+                                    ? card.inventoryCode
+                                    : ''
+                                }
+                                onChange={(e) => handleSelectPresetEntryForCard(idx, e.target.value)}
+                                className="w-full h-7 px-2 rounded-lg border border-amber-300 bg-amber-50/70 text-[11px] font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400/50 cursor-pointer"
+                              >
+                                <option value="">📋 從「{selectedPresetGroup.label}」選一張對應...</option>
+                                {selectedPresetGroup.cards.map((entry) => {
+                                  const usedByOther = cards.some(
+                                    (c, otherIdx) => otherIdx !== idx && c.inventoryCode === entry.inventoryCode
+                                  );
+                                  const priceLabel =
+                                    entry.twdPrice !== null && entry.twdPrice > 0
+                                      ? `NT$${entry.twdPrice.toLocaleString()}`
+                                      : '待估價';
+                                  return (
+                                    <option key={entry.inventoryCode} value={entry.inventoryCode}>
+                                      {usedByOther ? '✓(已用) ' : ''}
+                                      {entry.inventoryCode}｜{entry.position}｜{priceLabel}｜{entry.name.slice(0, 38)}
+                                    </option>
+                                  );
+                                })}
+                              </select>
+                            </div>
+                          )}
+
+                          {/* 若預查表有特殊提醒附註（如查無成交／超低限量／價格異常），直接高亮提示 */}
+                          {card.presetNote && (
+                            <div className="px-2.5 py-1.5 rounded-lg bg-amber-50 border border-amber-300/80 text-[10px] font-bold text-amber-900 flex items-start gap-1.5">
+                              <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
+                              <span className="leading-snug">{card.presetNote}</span>
+                            </div>
+                          )}
 
                           {/* 雙行完整品名輸入框，避免長系列名稱被截斷 */}
                           <textarea
@@ -2848,6 +3073,11 @@ export default function CardScannerProPage() {
                       </div>
                     </td>
                     <td className="py-2 px-3 max-w-[240px]">
+                      {card.inventoryCode && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-indigo-50 border border-indigo-200 text-indigo-800 font-mono text-[10px] font-black mb-0.5">
+                          {card.inventoryCode}
+                        </span>
+                      )}
                       <span className="font-black text-slate-900 block text-xs truncate" title={card.name}>
                         {card.name}
                       </span>
