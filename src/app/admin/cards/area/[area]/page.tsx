@@ -1755,31 +1755,31 @@ export default function CardAreaManagementPage() {
 
         {/* 批量移除確認彈窗 (Batch Delete Dialog) */}
         <Dialog open={isBatchDeleteDialogOpen} onOpenChange={(val) => !isBatchDeleting && setIsBatchDeleteDialogOpen(val)}>
-            <DialogContent className="light sm:max-w-xl bg-white text-slate-900 border-none shadow-2xl rounded-3xl p-6 sm:p-8">
-                <DialogHeader className="space-y-2">
+            <DialogContent className="light w-[calc(100vw-2rem)] sm:max-w-xl bg-white text-slate-900 border-none shadow-2xl rounded-3xl p-5 sm:p-8 overflow-hidden">
+                <DialogHeader className="space-y-2 min-w-0">
                     <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mb-1">
                         <Trash2 className="w-6 h-6" />
                     </div>
                     <DialogTitle className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                         確認批量移除卡片資產？
                     </DialogTitle>
-                    <DialogDescription className="text-xs text-slate-500 font-medium">
+                    <DialogDescription className="text-xs text-slate-500 font-medium leading-relaxed">
                         此操作將同時從管理後台、<strong className="text-rose-600 font-bold">Firebase Firestore 資料庫</strong> 以及 <strong className="text-rose-600 font-bold">Firebase Storage 雲端儲存空間</strong> 徹底永久移除，資料刪除後無法復原。
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="space-y-4 py-2">
+                <div className="space-y-4 py-2 min-w-0 w-full">
                     {/* 數據統計摘要 */}
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+                    <div className="grid grid-cols-2 gap-3 w-full">
+                        <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 min-w-0">
                             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">已選取總數</span>
-                            <div className="text-2xl font-black text-slate-900 font-code mt-0.5">
+                            <div className="text-2xl font-black text-slate-900 font-code tabular-nums mt-0.5">
                                 {selectedCardIds.length} <span className="text-xs text-slate-500 font-normal">張</span>
                             </div>
                         </div>
-                        <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200">
+                        <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 min-w-0">
                             <span className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">可安全移除</span>
-                            <div className="text-2xl font-black text-emerald-800 font-code mt-0.5">
+                            <div className="text-2xl font-black text-emerald-800 font-code tabular-nums mt-0.5">
                                 {deletableSelectedCards.length} <span className="text-xs text-emerald-600 font-normal">張</span>
                             </div>
                         </div>
@@ -1787,7 +1787,7 @@ export default function CardAreaManagementPage() {
 
                     {/* 安全保護警告 (若選取的卡片中已有被卡池引用的) */}
                     {assignedSelectedCards.length > 0 && (
-                        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-2">
+                        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-2 min-w-0">
                             <div className="flex items-center gap-2 text-amber-800 font-black text-xs">
                                 <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
                                 <span>安全防護機制：已自動排除 {assignedSelectedCards.length} 張正在使用中的卡片</span>
@@ -1795,44 +1795,47 @@ export default function CardAreaManagementPage() {
                             <p className="text-[11px] text-amber-700 leading-relaxed font-medium">
                                 以下卡片目前已配置於線上營運中的卡池或活動，為避免玩家抽卡發生錯誤，系統已保護並自動略過：
                             </p>
-                            <ScrollArea className="max-h-24 rounded-xl bg-white/80 p-2 border border-amber-200/60 text-xs">
-                                <div className="space-y-1">
-                                    {assignedSelectedCards.map(c => (
-                                        <div key={c.id} className="flex items-center justify-between text-[11px] py-0.5">
-                                            <span className="font-bold text-slate-800 truncate max-w-[240px]">{c.name}</span>
-                                            <Badge variant="outline" className="text-[9px] border-amber-300 text-amber-800 bg-amber-100">
-                                                {cardAssignmentMap.get(c.id!)?.name}
-                                            </Badge>
-                                        </div>
-                                    ))}
-                                </div>
-                            </ScrollArea>
+                            <div className="max-h-24 overflow-y-auto overflow-x-hidden rounded-xl bg-white/80 p-2 border border-amber-200/60 text-xs space-y-1">
+                                {assignedSelectedCards.map(c => (
+                                    <div key={c.id} className="flex items-center justify-between gap-2 text-[11px] py-0.5 min-w-0">
+                                        <span className="font-bold text-slate-800 truncate flex-1 min-w-0">{c.name}</span>
+                                        <Badge variant="outline" className="text-[9px] border-amber-300 text-amber-800 bg-amber-100 shrink-0">
+                                            {cardAssignmentMap.get(c.id!)?.name}
+                                        </Badge>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     )}
 
                     {/* 即將刪除清單預覽 */}
                     {deletableSelectedCards.length > 0 ? (
-                        <div className="space-y-1.5">
+                        <div className="space-y-1.5 min-w-0">
                             <div className="text-[11px] font-black uppercase text-slate-400 tracking-wider">
                                 即將自 Firebase 永久移除之卡片清單 ({deletableSelectedCards.length} 張)：
                             </div>
-                            <ScrollArea className="max-h-40 rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                                <div className="space-y-1.5">
-                                    {deletableSelectedCards.map(c => (
-                                        <div key={c.id} className="flex items-center justify-between p-2 rounded-xl bg-white border border-slate-100 text-xs shadow-2xs">
-                                            <div className="flex items-center gap-2.5 min-w-0">
-                                                <div className="relative w-7 h-9 rounded border border-slate-200 bg-slate-100 overflow-hidden shrink-0">
-                                                    <SafeImage src={c.imageUrl} alt={c.name} fill className="object-contain p-0.5" />
-                                                </div>
-                                                <span className="font-bold text-slate-800 truncate">{c.name}</span>
+                            <div className="max-h-48 overflow-y-auto overflow-x-hidden rounded-2xl border border-slate-200 bg-slate-50 p-2.5 space-y-1.5">
+                                {deletableSelectedCards.map(c => (
+                                    <div key={c.id} className="flex items-center justify-between gap-2 p-2 rounded-xl bg-white border border-slate-100 text-xs shadow-2xs min-w-0">
+                                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                            <div className="relative w-7 h-9 rounded border border-slate-200 bg-slate-100 overflow-hidden shrink-0">
+                                                <SafeImage src={c.imageUrl} alt={c.name} fill className="object-contain p-0.5" />
                                             </div>
-                                            <Badge variant="secondary" className="text-[10px] font-code shrink-0">
-                                                {c.category}
-                                            </Badge>
+                                            <div className="min-w-0 flex-1">
+                                                {c.inventoryCode && (
+                                                    <span className="inline-block px-1.5 py-0.2 rounded bg-indigo-50 border border-indigo-200 text-indigo-800 font-mono text-[9.5px] font-black mr-1.5">
+                                                        {c.inventoryCode}
+                                                    </span>
+                                                )}
+                                                <span className="font-bold text-slate-800 block truncate" title={c.name}>{c.name}</span>
+                                            </div>
                                         </div>
-                                    ))}
-                                </div>
-                            </ScrollArea>
+                                        <Badge variant="secondary" className="text-[10px] font-code shrink-0">
+                                            {c.category}
+                                        </Badge>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     ) : (
                         <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-center text-xs text-slate-500 font-bold">

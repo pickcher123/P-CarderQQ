@@ -1402,7 +1402,7 @@ export default function OpenPackPage() {
                                 {currentPrize.tierCode === 'A'
                                     ? 'A 賞・金包'
                                     : currentPrize.tierCode === 'SP'
-                                    ? 'SP 賞・黑包'
+                                    ? 'SP 賞・黑金包'
                                     : currentPrize.tierCode === 'B'
                                     ? 'B 賞・銀包'
                                     : currentPrize.tierCode === 'C'

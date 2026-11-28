@@ -43,7 +43,7 @@ const WING_HYBRID_STYLES: Record<
     border: 'border-purple-400/70',
     accent: 'text-[#FDE68A]',
     dot: 'bg-purple-400',
-    label: 'SP黑包',
+    label: 'SP黑金包',
     pillClass: 'bg-purple-500/15 text-[#FDE68A] border-purple-400/50',
     order: 5,
   },
@@ -178,7 +178,7 @@ export function CloveSummoningAnimation({
           subText: 'text-amber-200/70',
         },
         SP: {
-          title: 'SP 賞・黑包 (GOD PACK)',
+          title: 'SP 賞・黑金包 (GOD PACK)',
           color: 'text-[#FDE68A]',
           badgeBg: 'bg-[#0a0f1c] text-[#FDE68A] border border-amber-300/75 font-black',
           ambientGradient: 'radial-gradient(circle at 50% 45%, rgba(168, 85, 247, 0.22) 0%, rgba(253, 230, 138, 0.14) 44%, transparent 74%)',

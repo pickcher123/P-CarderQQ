@@ -13,14 +13,84 @@ export interface NewsItem {
 
 export const OFFICIAL_NEWS_LIST: NewsItem[] = [
   {
-    id: "official-v75-release",
-    title: "🔥【重磅更新】P+Carder 公測版 7.5 上線！3D 扇形多抽開包 · 追蹤卡池尾盤提醒 · 極速秒開全面進化",
+    id: "official-v80-release",
+    title: "🛡️【重磅更新】P+Carder 公測版 8.0 上線！銀行級防作弊架構 · 7-11 交貨便智慧物流 · 圖像化玩法全面升級",
     category: "版本更新",
     type: "image",
-    imageUrl: "/version_7_5_release.jpg",
+    imageUrl: "/version_8_0_release.jpg",
     isPinned: true,
     isMarquee: true,
     createdAt: { seconds: Math.floor(Date.now() / 1000) },
+    content: `<div class="space-y-5 text-slate-200">
+  <div class="p-4 sm:p-5 rounded-2xl bg-[#0a0f1c] border border-amber-300/45 text-amber-100 shadow-lg">
+    <div class="flex items-center gap-2 mb-2">
+      <span class="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] text-xs font-black uppercase tracking-wider">VERSION 8.0</span>
+      <span class="text-xs text-[#FDE68A] font-mono font-bold">MAJOR UPDATE</span>
+    </div>
+    <h3 class="text-lg sm:text-xl font-black text-white mb-2">🎉 P+Carder 公測版 8.0 旗艦升級正式上線！</h3>
+    <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+      本次 8.0 里程碑全面強化<strong>「銀行級防作弊安全架構」</strong>、<strong>「7-11 交貨便智慧物流」</strong>與<strong>「暗黑曜石 × 香檳金圖像化介面」</strong>三大體驗，從抽卡、回收、出貨到行動端瀏覽全面革新，打造最安心、最順手的頂級收藏平台。
+    </p>
+  </div>
+
+  <div class="space-y-3">
+    <h4 class="text-base font-black text-[#FDE68A]">本次 8.0 版本五大核心亮點</h4>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs sm:text-sm">
+      <div class="p-3.5 rounded-xl bg-white/[0.03] border border-amber-300/35 space-y-1.5">
+        <div class="text-xs font-black text-[#FDE68A]">1. 銀行級防作弊架構 ＋ 後端原子交易</div>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          收藏庫轉點、拼卡轉盤、直購、出貨退單與 VIP 兌換碼全面改由後端原子交易執行；搭配 Cloudflare Turnstile 無感人機驗證與金流 SHA-256 簽章核對，徹底守護每一筆點數與卡片資產。
+        </p>
+      </div>
+
+      <div class="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.1] space-y-1.5">
+        <div class="text-xs font-black text-[#FDE68A]">2. 7-11 交貨便智慧物流 ＋ 一鍵查貨態</div>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          出貨申請支援 7-11 官方門市與 6 碼店號即時自動查詢，會員中心同步新增「一鍵查貨態」捷徑，實體珍藏卡片寄送進度隨時掌握。
+        </p>
+      </div>
+
+      <div class="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.1] space-y-1.5">
+        <div class="text-xs font-black text-[#FDE68A]">3. 圖像化 God Pack 玩法說明 ＋ 首頁全新視覺</div>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          全新設計暗黑曜石 × 香檳金圖解版「God Pack 一番賞 玩法說明」與 3D 質感 4 步驟新手指南；首頁升級「Get God Pack」主按鈕，卡池卡片全面優化無鋸齒外觀與剩餘抽數進度線。
+        </p>
+      </div>
+
+      <div class="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.1] space-y-1.5">
+        <div class="text-xs font-black text-[#FDE68A]">4. 行動端體驗與站內公告全面精修</div>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          修復手機版頂部頭像擠壓問題，將站內公告小鈴鐺移至右下浮動鈕與頭像選單；精簡「全部卡池」與「收藏庫」分類列，並優化「卡展行事曆」手機單頁可視比例。
+        </p>
+      </div>
+
+      <div class="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.1] space-y-1.5 md:col-span-2">
+        <div class="text-xs font-black text-[#FDE68A]">5. 實體卡片庫存代碼對應 ＋ 雙面精準建檔</div>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          導入專屬「庫存代碼」管理與正反面 AI 獨立邊框偵測建檔流程，確保每一張上架實體卡片與線下恆溫保險庫 100% 精準對應、出貨零誤差。
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="p-3.5 rounded-xl bg-white/[0.03] border border-amber-300/30 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+    <span class="text-slate-300">想查看完整的版本演進紀錄與細項更新？</span>
+    <a href="/changelog" class="inline-flex items-center gap-1 text-[#FDE68A] hover:text-amber-200 font-bold underline shrink-0">
+      前往更新日誌 &rarr;
+    </a>
+  </div>
+</div>`
+  },
+  {
+    id: "official-v75-release",
+    title: "🔥【歷史更新】P+Carder 公測版 7.5 上線！3D 扇形多抽開包 · 追蹤卡池尾盤提醒 · 極速秒開全面進化",
+    category: "版本更新",
+    type: "image",
+    imageUrl: "/version_7_5_release.jpg",
+    isPinned: false,
+    isMarquee: false,
+    createdAt: { seconds: Math.floor(Date.now() / 1000) - 86400 * 7 },
     content: `<div class="space-y-5 text-slate-200">
   <div class="p-4 sm:p-5 rounded-2xl bg-[#0a0f1c] border border-amber-300/40 text-amber-100 shadow-lg">
     <div class="flex items-center gap-2 mb-2">

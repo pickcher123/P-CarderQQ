@@ -1269,61 +1269,40 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
                         {/* 📊 賞別微統計與剩餘進度條（支援 Blez 盲盒 / 明池盲開＋隱藏 SP 透明儀表板 / 一般模式） */}
                         {pool.isHybridBlindSpMode ? (
                             <div className="mb-2.5 bg-white/[0.03] backdrop-blur-xl rounded-xl border border-amber-300/35 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] space-y-2">
-                                <div className="flex items-center justify-between gap-2 text-[11px]">
-                                    <span className="font-black text-[#FDE68A] flex items-center gap-1.5">
-                                        <Trophy className="w-3.5 h-3.5 text-amber-300 shrink-0" />
-                                        翻倍大獎率 <span className="font-mono tabular-nums">{hybridStats.doubleHitRatePct.toFixed(1)}%</span>
-                                    </span>
-                                    <button
-                                        type="button"
-                                        onClick={async () => {
-                                            setIsHybridBoardOpen(true);
-                                            setIsLoadingBoardLogs(true);
-                                            try {
-                                                const res = await fetch(`/api/pools/${pool.id}`);
-                                                if (res.ok) {
-                                                    const json = await res.json();
-                                                    setHybridBoardLogs(Array.isArray(json.drawLogs) ? json.drawLogs : []);
-                                                }
-                                            } catch {
-                                                // ignore
-                                            } finally {
-                                                setIsLoadingBoardLogs(false);
-                                            }
-                                        }}
-                                        className="text-[10px] font-bold text-[#FDE68A] hover:text-amber-200 flex items-center gap-1 cursor-pointer"
-                                    >
-                                        <Eye className="w-3 h-3 text-amber-300" />
-                                        看盤明細
-                                    </button>
-                                </div>
                                 <div className="grid grid-cols-5 gap-1 text-center font-mono text-[10px]">
-                                    {(['A', 'SP', 'B', 'C', 'D'] as const).map((t) => (
-                                        <button
-                                            key={t}
-                                            type="button"
-                                            onClick={() => {
-                                                setInventoryFilterTier(t);
-                                                setIsInventoryOpen(true);
-                                            }}
-                                            title={`點擊查看 ${HYBRID_TIER_META[t].label} 卡表`}
-                                            className={cn(
-                                                'rounded-lg py-1 px-0.5 border cursor-pointer transition-[transform,border-color,background-color] duration-150 active:scale-[0.96]',
-                                                t === 'A'
-                                                    ? 'bg-amber-400/15 hover:bg-amber-400/25 border-amber-300/45 hover:border-amber-300/80 text-[#FDE68A]'
-                                                    : t === 'SP'
-                                                      ? 'bg-black/60 hover:bg-black/80 border-amber-300/60 hover:border-amber-300 text-[#FDE68A]'
-                                                      : t === 'B'
-                                                        ? 'bg-slate-200/10 hover:bg-slate-200/20 border-slate-300/35 hover:border-slate-200/70 text-slate-100'
-                                                        : t === 'C'
-                                                          ? 'bg-amber-800/25 hover:bg-amber-800/40 border-amber-600/40 hover:border-amber-500/75 text-amber-200'
-                                                          : 'bg-white/[0.04] hover:bg-white/[0.1] border-white/15 hover:border-white/35 text-slate-300'
-                                            )}
-                                        >
-                                            <div className="font-black leading-none">{HYBRID_TIER_META[t].boxName}</div>
-                                            <div className="font-black text-xs tabular-nums mt-0.5">{hybridStats.counts[t]}</div>
-                                        </button>
-                                    ))}
+                                    {(['SP', 'A', 'B', 'C', 'D'] as const).map((t) => {
+                                        const count = hybridStats.counts[t];
+                                        const denom = (hybridStats.counts.A + hybridStats.counts.SP + hybridStats.counts.B + hybridStats.counts.C + hybridStats.counts.D) || remainingPacks;
+                                        const pct = denom > 0 ? (count / denom) * 100 : 0;
+                                        const pctLabel = pct <= 0 ? '0%' : pct >= 100 ? '100%' : `${Number(pct.toFixed(1))}%`;
+                                        return (
+                                            <button
+                                                key={t}
+                                                type="button"
+                                                onClick={() => {
+                                                    setInventoryFilterTier(t);
+                                                    setIsInventoryOpen(true);
+                                                }}
+                                                title={`點擊查看 ${HYBRID_TIER_META[t].label} 卡表`}
+                                                className={cn(
+                                                    'rounded-lg py-1.5 px-0.5 border cursor-pointer transition-[transform,border-color,background-color] duration-150 active:scale-[0.96]',
+                                                    t === 'A'
+                                                        ? 'bg-amber-400/15 hover:bg-amber-400/25 border-amber-300/45 hover:border-amber-300/80 text-[#FDE68A]'
+                                                        : t === 'SP'
+                                                          ? 'bg-black/60 hover:bg-black/80 border-amber-300/60 hover:border-amber-300 text-[#FDE68A]'
+                                                          : t === 'B'
+                                                            ? 'bg-slate-200/10 hover:bg-slate-200/20 border-slate-300/35 hover:border-slate-200/70 text-slate-100'
+                                                            : t === 'C'
+                                                              ? 'bg-amber-800/25 hover:bg-amber-800/40 border-amber-600/40 hover:border-amber-500/75 text-amber-200'
+                                                              : 'bg-white/[0.04] hover:bg-white/[0.1] border-white/15 hover:border-white/35 text-slate-300'
+                                                )}
+                                            >
+                                                <div className="font-black leading-none">{HYBRID_TIER_META[t].boxName}</div>
+                                                <div className="font-black text-xs tabular-nums mt-0.5 leading-tight">{count}</div>
+                                                <div className="text-[9px] font-semibold opacity-75 tabular-nums leading-none mt-0.5">{pctLabel}</div>
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                                 <div className="pt-2 border-t border-white/[0.06] space-y-1.5">
                                     <div className="flex justify-between items-center text-[10px] font-mono gap-2">
@@ -1734,7 +1713,7 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
                                         <Sparkles className="w-4 h-4 text-[#FDE68A]" />
                                         <span>God Pack 一番賞 玩法說明</span>
                                     </h3>
-                                    <p className="text-[11px] text-slate-400">五色卡包公開看盤 · 即時機率 · 專屬防搶保護</p>
+                                    <p className="text-[11px] text-slate-400">盲盒的未知刺激感 × 一番賞公開即時機率</p>
                                 </div>
                             </div>
                             <button
@@ -1755,16 +1734,16 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
                                     <div className="w-8 h-8 rounded-lg bg-amber-400/10 border border-amber-300/30 flex items-center justify-center text-[#FDE68A]">
                                         <Eye className="w-4 h-4" />
                                     </div>
-                                    <span className="text-[10px] sm:text-[11px] font-black text-white">1. 公開看盤</span>
-                                    <span className="text-[9px] text-slate-400">剩餘大獎透明</span>
+                                    <span className="text-[10px] sm:text-[11px] font-black text-white">1. 看色包機率</span>
+                                    <span className="text-[9px] text-slate-400">五色剩餘數全透明</span>
                                 </div>
                                 <ArrowRight className="w-3.5 h-3.5 text-amber-300/50 shrink-0" />
                                 <div className="flex flex-col items-center text-center gap-1">
                                     <div className="w-8 h-8 rounded-lg bg-amber-400/10 border border-amber-300/30 flex items-center justify-center text-[#FDE68A]">
                                         <Lock className="w-4 h-4" />
                                     </div>
-                                    <span className="text-[10px] sm:text-[11px] font-black text-white">2. 鎖池開包</span>
-                                    <span className="text-[9px] text-slate-400 tabular-nums">120s 防插隊</span>
+                                    <span className="text-[10px] sm:text-[11px] font-black text-white">2. 鎖池撕盲包</span>
+                                    <span className="text-[9px] text-slate-400 tabular-nums">120s 專屬防插隊</span>
                                 </div>
                                 <ArrowRight className="w-3.5 h-3.5 text-amber-300/50 shrink-0" />
                                 <div className="flex flex-col items-center text-center gap-1">
@@ -1778,47 +1757,47 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
 
                             {/* 1. 五色卡包賞別圖鑑（迷你卡包外袋視覺化） */}
                             <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.08] space-y-3">
-                                <div className="flex items-center justify-between">
+                                <div className="flex items-center justify-between gap-2 flex-wrap">
                                     <p className="font-black text-[#FDE68A] text-xs flex items-center gap-1.5">
                                         <Package className="w-3.5 h-3.5" />
                                         <span>五色卡包賞別圖鑑</span>
                                     </p>
-                                    <span className="text-[10px] text-slate-400">依外袋色澤揭曉驚喜層級</span>
+                                    <span className="text-[10px] text-slate-400">點擊卡池五色方塊即可查看卡表與機率</span>
                                 </div>
 
                                 <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
                                     {[
                                         {
-                                            name: '金包',
-                                            tier: 'A賞頭獎',
-                                            packClass: 'bg-gradient-to-b from-[#FDE68A]/30 via-amber-400/18 to-amber-900/35 border-amber-300/65 text-[#FDE68A] shadow-[0_6px_16px_rgba(245,158,11,0.18)]',
-                                            notchClass: 'bg-amber-300/50',
-                                            Icon: Trophy,
-                                        },
-                                        {
-                                            name: '黑包',
-                                            tier: 'SP驚喜',
+                                            name: '黑金包',
+                                            tier: 'SP賞',
                                             packClass: 'bg-gradient-to-b from-slate-800/90 via-black to-slate-950 border-amber-300/65 text-[#FDE68A] shadow-[0_6px_16px_rgba(0,0,0,0.65)]',
                                             notchClass: 'bg-amber-300/60',
                                             Icon: Sparkles,
                                         },
                                         {
+                                            name: '金包',
+                                            tier: 'A賞',
+                                            packClass: 'bg-gradient-to-b from-[#FDE68A]/30 via-amber-400/18 to-amber-900/35 border-amber-300/65 text-[#FDE68A] shadow-[0_6px_16px_rgba(245,158,11,0.18)]',
+                                            notchClass: 'bg-amber-300/50',
+                                            Icon: Trophy,
+                                        },
+                                        {
                                             name: '銀包',
-                                            tier: 'B賞大獎',
+                                            tier: 'B賞',
                                             packClass: 'bg-gradient-to-b from-slate-200/20 via-slate-400/12 to-slate-800/40 border-slate-300/45 text-slate-100',
                                             notchClass: 'bg-slate-300/45',
                                             Icon: Star,
                                         },
                                         {
                                             name: '銅包',
-                                            tier: 'C賞精選',
+                                            tier: 'C賞',
                                             packClass: 'bg-gradient-to-b from-amber-700/35 via-amber-900/25 to-stone-950/60 border-amber-600/50 text-amber-200',
                                             notchClass: 'bg-amber-500/45',
                                             Icon: Layers,
                                         },
                                         {
                                             name: '星光包',
-                                            tier: 'D賞常駐',
+                                            tier: 'D賞',
                                             packClass: 'bg-gradient-to-b from-white/[0.08] via-white/[0.03] to-black/50 border-white/15 text-slate-300',
                                             notchClass: 'bg-white/25',
                                             Icon: Zap,
@@ -1839,45 +1818,42 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
                                                     <PackIcon className="w-3.5 h-3.5" />
                                                 </div>
                                                 <span className="text-[11px] font-black leading-tight">{pack.name}</span>
-                                                <span className="text-[9px] font-medium opacity-80 mt-0.5 leading-tight">{pack.tier}</span>
+                                                <span className="text-[9px] font-bold opacity-85 mt-0.5 leading-tight">{pack.tier}</span>
                                             </div>
                                         );
                                     })}
                                 </div>
                             </div>
 
-                            {/* 2 & 3. 雙欄視覺資訊卡：翻倍大獎率 ＋ 120秒鎖池 */}
+                            {/* 2 & 3. 雙欄視覺資訊卡：盲盒刺激感 × 一番賞 ＋ 120秒鎖池 */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                {/* 卡片 2：即時看盤與翻倍大獎率 */}
-                                <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.08] flex flex-col justify-between gap-2.5">
+                                {/* 卡片 2：盲盒刺激感 × 一番賞結合 */}
+                                <div className="p-3.5 rounded-xl bg-white/[0.03] border border-amber-300/30 flex flex-col justify-between gap-2.5">
                                     <div className="flex items-center justify-between gap-2">
                                         <p className="font-black text-white flex items-center gap-1.5">
-                                            <TrendingUp className="w-3.5 h-3.5 text-[#FDE68A]" />
-                                            <span>翻倍大獎率機制</span>
+                                            <Sparkles className="w-3.5 h-3.5 text-[#FDE68A]" />
+                                            <span>盲盒刺激感 × 一番賞</span>
                                         </p>
                                         <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-amber-400/15 border border-amber-300/35 text-[#FDE68A]">
-                                            尾盤更甜
+                                            雙重體驗
                                         </span>
                                     </div>
 
-                                    {/* 迷你機率上升階梯圖 */}
-                                    <div className="p-2.5 rounded-lg bg-black/40 border border-white/[0.06] flex items-end justify-between gap-2 h-[74px]">
-                                        <div className="flex-1 flex flex-col items-center gap-1">
-                                            <span className="text-[9px] text-slate-400 tabular-nums">100抽</span>
-                                            <div className="w-full h-3 rounded-t bg-white/15" />
+                                    {/* 雙軌融合示意視覺 */}
+                                    <div className="p-2.5 rounded-lg bg-black/40 border border-white/[0.06] grid grid-cols-[1fr_auto_1fr] items-center gap-1.5 h-[74px]">
+                                        <div className="rounded-lg bg-white/[0.04] border border-amber-300/30 p-1.5 text-center">
+                                            <div className="text-[10px] font-black text-[#FDE68A]">盲盒撕包</div>
+                                            <div className="text-[9px] text-slate-400 mt-0.5">撕開前未知驚喜</div>
                                         </div>
-                                        <div className="flex-1 flex flex-col items-center gap-1">
-                                            <span className="text-[9px] text-amber-200/80 tabular-nums">50抽</span>
-                                            <div className="w-full h-6 rounded-t bg-amber-300/40" />
-                                        </div>
-                                        <div className="flex-1 flex flex-col items-center gap-1">
-                                            <span className="text-[9px] font-black text-[#FDE68A] tabular-nums">20抽 ↑</span>
-                                            <div className="w-full h-10 rounded-t bg-gradient-to-t from-amber-500/70 to-[#FDE68A] shadow-[0_0_12px_rgba(245,158,11,0.35)]" />
+                                        <span className="text-xs font-black text-amber-300">×</span>
+                                        <div className="rounded-lg bg-white/[0.04] border border-white/[0.1] p-1.5 text-center">
+                                            <div className="text-[10px] font-black text-white">一番賞明池</div>
+                                            <div className="text-[9px] text-slate-400 mt-0.5">剩餘與機率公開</div>
                                         </div>
                                     </div>
 
-                                    <p className="text-[11px] text-slate-400 leading-snug">
-                                        點擊「看盤明細」即時掌握剩餘獎項；大獎留在盤中越久，後續每一抽機率越高！
+                                    <p className="text-[11px] text-slate-300 leading-snug">
+                                        結合「盲盒開包未知心跳感」與「一番賞公開剩餘機制」：每色卡包下方即時標示剩餘數與機率，越抽大獎機會越高，更藏有神秘黑金包 SP 驚喜！
                                     </p>
                                 </div>
 
@@ -2060,7 +2036,7 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
                                                             {t === 'A' || t === 'B'
                                                                 ? '明池盲開（抽中後從該賞別隨機開出其一）'
                                                                 : t === 'SP'
-                                                                ? '隱藏黑包（抽中可實體寄送或 80% 點數回收）'
+                                                                ? '隱藏黑金包（抽中可實體寄送或 80% 點數回收）'
                                                                 : t === 'C'
                                                                 ? '標準化回血卡包'
                                                                 : '標準化保底卡包'}
@@ -2228,7 +2204,7 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
 
                             {/* 各稀有度群組（GodPack 一番賞永遠完整展示全部五色卡包，點選各賞自動平滑捲動至對應區塊） */}
                             {pool.isHybridBlindSpMode ? (
-                                (['A', 'SP', 'B', 'C', 'D'] as const).map((tierCode) => {
+                                (['SP', 'A', 'B', 'C', 'D'] as const).map((tierCode) => {
                                     const prizes = allPrizesInPool.filter((x: any) => {
                                         if (x.type === 'points' || x.isPoints) {
                                             const pTier = x.tierCode || (x.rarity === 'rare' ? 'C' : 'D');
@@ -2277,7 +2253,7 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
                                                                 <div className="w-full aspect-[2.5/3.5] mb-1.5 rounded-lg bg-black/50 border border-amber-300/35 flex flex-col items-center justify-center p-2">
                                                                     <BlindBoxVisual tier="SP" size="md" />
                                                                 </div>
-                                                                <p className="text-[11px] font-black text-[#FDE68A] text-center">神秘隱藏黑包（SP 賞）</p>
+                                                                <p className="text-[11px] font-black text-[#FDE68A] text-center">神秘隱藏黑金包（SP 賞）</p>
                                                                 <p className="text-[10px] font-mono text-slate-300 tabular-nums mt-0.5">
                                                                     保底回收 {spBuyback.toLocaleString()} 點
                                                                 </p>
@@ -2364,7 +2340,7 @@ export function PoolCard({ pool, allCardsMap, userProfile, categoryName }: { poo
                                                             <div className="w-full aspect-[2.5/3.5] mb-1.5 rounded-lg bg-black/50 border border-amber-300/35 flex flex-col items-center justify-center p-2">
                                                                 <BlindBoxVisual tier="SP" size="md" />
                                                             </div>
-                                                            <p className="text-[11px] font-black text-[#FDE68A] text-center">神秘隱藏黑包（SP 賞）</p>
+                                                            <p className="text-[11px] font-black text-[#FDE68A] text-center">神秘隱藏黑金包（SP 賞）</p>
                                                             <p className="text-[10px] font-mono text-slate-300 tabular-nums mt-0.5">
                                                                 保底回收 {spBuyback.toLocaleString()} 點
                                                             </p>

@@ -268,7 +268,7 @@ export function BeginnerGuideDialog({
                     </div>
                     <div>
                       <h3 className="text-sm sm:text-base font-black text-white">GodPack 五色一番賞制度</h3>
-                      <p className="text-[11px] text-slate-400">明池看盤 × 隱藏黑包 SP × 抽完必得最後賞</p>
+                      <p className="text-[11px] text-slate-400">盲盒的刺激感 × 一番賞公開即時機率 × 抽完必得最後賞</p>
                     </div>
                   </div>
                   <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-400/15 text-[#FDE68A] border border-amber-300/40">
@@ -279,8 +279,8 @@ export function BeginnerGuideDialog({
                 {/* 五色卡包分級一覽 */}
                 <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 text-center">
                   {[
+                    { code: 'SP 賞', name: '黑金包', desc: '神秘隱藏', cls: 'bg-black/60 border-amber-300/55 text-[#FDE68A]' },
                     { code: 'A 賞', name: '金包', desc: '頂級大獎', cls: 'bg-amber-400/15 border-amber-300/50 text-[#FDE68A]' },
-                    { code: 'SP 賞', name: '黑包', desc: '神秘隱藏', cls: 'bg-black/60 border-purple-400/50 text-[#FDE68A]' },
                     { code: 'B 賞', name: '銀包', desc: '精選好卡', cls: 'bg-slate-200/10 border-slate-300/35 text-slate-100' },
                     { code: 'C 賞', name: '銅包', desc: '9折買回', cls: 'bg-amber-800/25 border-amber-600/45 text-amber-200' },
                     { code: 'D 賞', name: '星光包', desc: '9折買回', cls: 'bg-white/[0.06] border-white/25 text-white' },
@@ -297,7 +297,7 @@ export function BeginnerGuideDialog({
                 <ul className="space-y-1.5 text-xs text-slate-300 leading-relaxed">
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-3.5 h-3.5 text-[#FDE68A] shrink-0 mt-0.5" />
-                    <span><strong className="text-white">公開透明看盤：</strong>點擊卡池上的五色方塊即可直接查看各賞剩餘卡片與翻倍大獎率，不藏張數。</span>
+                    <span><strong className="text-white">盲盒刺激感 × 一番賞明池：</strong>保留盲盒撕包未知驚喜，五色卡包下方直接公開剩餘張數與即時機率，點擊色包即可查看該賞卡表。</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-3.5 h-3.5 text-[#FDE68A] shrink-0 mt-0.5" />

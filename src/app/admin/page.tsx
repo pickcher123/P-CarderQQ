@@ -270,14 +270,14 @@ export default function AdminDashboardPage() {
   const { data: systemConfig, forceRefetch } = useDoc<SystemConfig>(systemConfigRef);
   // 🚀 全站版本切換（公測版 / 正式版）
   const [versionStage, setVersionStage] = useState<'beta' | 'production' | 'rc'>('beta');
-  const [versionNumber, setVersionNumber] = useState('7.5');
+  const [versionNumber, setVersionNumber] = useState('8.0');
   const [versionCustomDisplay, setVersionCustomDisplay] = useState('');
   const [isSavingVersion, setIsSavingVersion] = useState(false);
 
   useEffect(() => {
     if (systemConfig?.appVersionConfig) {
       setVersionStage(systemConfig.appVersionConfig.stage || 'beta');
-      setVersionNumber(systemConfig.appVersionConfig.versionNumber || '7.5');
+      setVersionNumber(systemConfig.appVersionConfig.versionNumber || '8.0');
       setVersionCustomDisplay(systemConfig.appVersionConfig.customDisplay || '');
     }
   }, [systemConfig?.appVersionConfig]);

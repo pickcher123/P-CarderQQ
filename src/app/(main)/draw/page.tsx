@@ -376,8 +376,8 @@ export default function DrawPage() {
                         {displayPools.map((pool) => (
                             <div key={pool.id} className="relative w-full pt-3.5 sm:pt-4">
                                 {pool.isFeatured && (
-                                    <div className="absolute top-0.5 sm:top-1 left-4 sm:left-5 z-30 pointer-events-none">
-                                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] font-black text-[10.5px] tracking-wider ring-2 ring-[#0a0f1c] shadow-[inset_0_1px_0_rgba(255,255,255,0.65),0_6px_16px_rgba(245,158,11,0.35)]">
+                                    <div className="absolute top-0.5 sm:top-1 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
+                                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-[#FDE68A] via-amber-300 to-amber-400 text-[#120d02] font-black text-[10.5px] tracking-wider ring-2 ring-[#0a0f1c] shadow-[inset_0_1px_0_rgba(255,255,255,0.65),0_6px_16px_rgba(245,158,11,0.35)] whitespace-nowrap">
                                             <Sparkles className="w-3 h-3 fill-[#120d02] stroke-[#120d02]" />
                                             <span>精選卡池</span>
                                         </div>

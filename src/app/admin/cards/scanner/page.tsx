@@ -683,14 +683,6 @@ export default function CardScannerProPage() {
         // 立即生成每張卡片的真實高清裁切預覽
         await recropFrontPreviews(detectedBoxes, true);
 
-        // 若背面圖已於步驟 1 一併上傳，立即自動同步背面裁切框並產出背面縮圖
-        if (backImageSrc) {
-          const clonedBack = detectedBoxes.map((b) => ({ ...b, id: uuidv4() }));
-          setBackBoxes(clonedBack);
-          setSelectedBackBoxId(clonedBack[0]?.id || null);
-          await recropBackPreviews(clonedBack);
-        }
-
         // SOP 流程前進至步驟 3 (正反面雙面 AI 辨識)
         setCurrentSopStep(3);
       } else {
@@ -707,6 +699,19 @@ export default function CardScannerProPage() {
       if (isFront) setIsAiDetectingFront(false);
       else setIsAiDetectingBack(false);
     }
+  };
+
+  // 🌟 一鍵同時對正面與背面各自執行獨立 AI 邊框偵測（避免背面直接套用正面座標導致偏移跑版）
+  const runDualAiDetection = async () => {
+    const tasks: Promise<void>[] = [];
+    if (frontImageSrc && frontImgRef.current) {
+      tasks.push(runAiDetection(true));
+    }
+    if (backImageSrc && backImgRef.current) {
+      tasks.push(runAiDetection(false));
+    }
+    if (tasks.length === 0) return;
+    await Promise.all(tasks);
   };
 
   // 單張卡片 PRO 智慧辨識（若有背面圖會自動連同背面一起送給 AI 雙面聯判，精準抓出卡號與限量編號）
@@ -1483,25 +1488,42 @@ export default function CardScannerProPage() {
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
             {[
-              { num: 1, title: '1.上傳正反面', shortDesc: '先備齊正面與背面', isDone: Boolean(frontImageSrc) && (Boolean(backImageSrc) || currentSopStep > 1) },
-              { num: 2, title: '2.AI邊框對齊', shortDesc: '自動分割同步正反面', isDone: frontBoxes.length > 0 && Boolean(frontImageSrc) && currentSopStep > 2 },
+              { num: 1, title: '1.上傳正反面', shortDesc: '正面與背面皆必填', isDone: Boolean(frontImageSrc && backImageSrc) },
+              { num: 2, title: '2.AI邊框對齊', shortDesc: '自動分割正反面', isDone: frontBoxes.length > 0 && Boolean(frontImageSrc && backImageSrc) && currentSopStep > 2 },
               { num: 3, title: '3.雙面辨識', shortDesc: '正反面 AI 聯合判讀', isDone: cards.some(c => c.name && !c.name.startsWith('卡片 #')) },
               { num: 4, title: '4.查詢卡價', shortDesc: '整合雙面資訊聯網估價', isDone: cards.some(c => Boolean(c.priceRange)) || currentSopStep > 4 },
               { num: 5, title: '5.檢查QC', shortDesc: '入庫前品管核對', isDone: currentSopStep > 5 },
               { num: 6, title: '6.一鍵入庫', shortDesc: '寫入卡片資料庫', isDone: isSavingToDb },
             ].map((item) => {
               const isCurrent = currentSopStep === item.num;
+              const isLockedByUpload = item.num > 1 && (!frontImageSrc || !backImageSrc);
               return (
                 <button
                   key={item.num}
                   type="button"
-                  onClick={() => setCurrentSopStep(item.num)}
-                  className={`text-left p-2.5 rounded-xl border transition-all flex flex-col justify-between cursor-pointer ${
-                    isCurrent
-                      ? 'bg-amber-50 border-amber-400 text-amber-950 shadow-xs ring-2 ring-amber-300/40'
+                  onClick={() => {
+                    if (isLockedByUpload) {
+                      toast({
+                        variant: 'destructive',
+                        title: '請先完成正反面圖片上傳',
+                        description: !frontImageSrc && !backImageSrc
+                          ? '請先於上方上傳【正面】、下方上傳【背面】掃描圖，才能進入下一步。'
+                          : !frontImageSrc
+                          ? '尚缺【正面】掃描圖，請於上方工作台補上正面圖。'
+                          : '尚缺【背面】掃描圖，請於下方工作台補上背面圖。',
+                      });
+                      return;
+                    }
+                    setCurrentSopStep(item.num);
+                  }}
+                  className={`text-left p-2.5 rounded-xl border transition-all flex flex-col justify-between ${
+                    isLockedByUpload
+                      ? 'bg-slate-50/70 border-slate-200/80 text-slate-400 opacity-65 cursor-not-allowed'
+                      : isCurrent
+                      ? 'bg-amber-50 border-amber-400 text-amber-950 shadow-xs ring-2 ring-amber-300/40 cursor-pointer'
                       : item.isDone
-                      ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900 hover:bg-emerald-50'
-                      : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-800'
+                      ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900 hover:bg-emerald-50 cursor-pointer'
+                      : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-800 cursor-pointer'
                   }`}
                 >
                   <div className="flex items-center justify-between w-full mb-1">
@@ -1549,7 +1571,7 @@ export default function CardScannerProPage() {
                   </span>
                 </p>
                 <p className="text-[11px] text-slate-500 mt-0.5">
-                  {currentSopStep === 1 && (frontImageSrc && backImageSrc ? '正面與背面皆已就緒！可直接前往下一步執行 AI 邊框分割。' : frontImageSrc ? '正面圖已就緒！建議順手補上傳背面照片（含卡號與限量編號），或單面卡直接前往下一步。' : '請於下方工作台一次拖曳或選擇正面與背面圖片（支援單卡近拍或多卡合拍）。')}
+                  {currentSopStep === 1 && (frontImageSrc && backImageSrc ? '正面與背面皆已就緒！請點選右側「進入步驟 2」執行 AI 雙面邊框分割。' : frontImageSrc ? '正面圖已就緒！請繼續至下方工作台補上傳【背面】掃描圖（正反面皆必填）。' : backImageSrc ? '背面圖已就緒！請繼續至上方工作台補上傳【正面】掃描圖（正反面皆必填）。' : '請先於上方工作台上傳【正面】、下方工作台上傳【背面】掃描圖，兩面皆就緒即可進入下一步。')}
                   {currentSopStep === 2 && '偵測完成後會自動同步套用至背面，若翻面左右相反可按「鏡像左右翻轉」。'}
                   {currentSopStep === 3 && 'AI 會同時判讀正面與背面圖片，自動補齊卡號、限量編號、年份、品牌與 PSA/BGS 標籤。'}
                   {currentSopStep === 4 && 'AI 即時聯網搜尋近期真實成交紀錄，自動帶入建議售價與行情依據。'}
@@ -1572,21 +1594,28 @@ export default function CardScannerProPage() {
                   </label>
                   <label className="cursor-pointer">
                     <Input type="file" accept="image/*" onChange={handleBackImageUpload} className="hidden" />
-                    <div className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-800 font-bold text-xs transition-all">
-                      <UploadCloud className="w-3.5 h-3.5 text-indigo-600" />
-                      <span>{backImageSrc ? '更換背面圖' : '上傳背面圖（推薦）'}</span>
+                    <div className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-cyan-50 hover:bg-cyan-100 border border-cyan-300 text-cyan-900 font-bold text-xs transition-all">
+                      <UploadCloud className="w-3.5 h-3.5 text-cyan-600" />
+                      <span>{backImageSrc ? '更換背面圖' : '上傳背面圖（必填）'}</span>
                     </div>
                   </label>
-                  {frontImageSrc && (
-                    <Button
-                      size="sm"
-                      onClick={() => setCurrentSopStep(2)}
-                      className="h-9 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black gap-1.5 shadow-sm"
-                    >
-                      <span>進入步驟 2：AI 邊框</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </Button>
-                  )}
+                  <Button
+                    size="sm"
+                    disabled={!frontImageSrc || !backImageSrc}
+                    onClick={() => setCurrentSopStep(2)}
+                    className="h-9 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:bg-slate-200 disabled:text-slate-500 text-slate-950 text-xs font-black gap-1.5 shadow-sm"
+                  >
+                    <span>
+                      {frontImageSrc && backImageSrc
+                        ? '進入步驟 2：AI 正反面邊框'
+                        : !frontImageSrc && !backImageSrc
+                        ? '請先上傳正反面圖片'
+                        : !frontImageSrc
+                        ? '尚缺正面圖片'
+                        : '尚缺背面圖片'}
+                    </span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Button>
                 </>
               )}
 
@@ -1594,49 +1623,13 @@ export default function CardScannerProPage() {
                 <>
                   <Button
                     size="sm"
-                    onClick={() => runAiDetection(true)}
-                    disabled={isAiDetectingFront || !frontImageSrc}
+                    onClick={runDualAiDetection}
+                    disabled={isAiDetectingFront || isAiDetectingBack || !frontImageSrc}
                     className="h-9 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs shadow-md gap-1.5"
                   >
-                    {isAiDetectingFront ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                    <span>AI 偵測邊框</span>
+                    {(isAiDetectingFront || isAiDetectingBack) ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                    <span>AI 偵測正反面邊框</span>
                   </Button>
-
-                  {/* 網格切分快捷輔助選項 (專屬步驟 2) */}
-                  <div className="flex items-center gap-0.5 bg-white p-0.5 rounded-xl border border-slate-300 shadow-2xs">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => applyFrontGrid(1, 1)}
-                      className="h-8 px-2 text-[11px] font-bold text-slate-700 hover:bg-slate-100"
-                    >
-                      單卡
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => applyFrontGrid(2, 2)}
-                      className="h-8 px-2 text-[11px] font-bold text-slate-700 hover:bg-slate-100"
-                    >
-                      2x2
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => applyFrontGrid(2, 3)}
-                      className="h-8 px-2 text-[11px] font-bold text-slate-700 hover:bg-slate-100"
-                    >
-                      2x3
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => applyFrontGrid(3, 3)}
-                      className="h-8 px-2 text-[11px] font-bold text-slate-700 hover:bg-slate-100"
-                    >
-                      3x3
-                    </Button>
-                  </div>
 
                   {backImageSrc && (
                     <>
@@ -1834,113 +1827,49 @@ export default function CardScannerProPage() {
 
         <CardContent className="p-4 sm:p-6 space-y-6">
           {!frontImageSrc ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* 左欄：正面掃描圖上傳 */}
-              <label
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setIsDraggingFront(true);
-                }}
-                onDragLeave={() => setIsDraggingFront(false)}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  setIsDraggingFront(false);
-                  const droppedFile = e.dataTransfer.files?.[0];
-                  if (droppedFile) processFrontFile(droppedFile);
-                }}
-                className={cn(
-                  "flex flex-col items-center justify-center py-11 px-5 rounded-2xl border-2 border-dashed cursor-pointer transition-all duration-200 group",
-                  isDraggingFront
-                    ? "bg-amber-50 border-amber-400 ring-4 ring-amber-200/60 scale-[1.005]"
-                    : "bg-slate-50/70 border-slate-300 hover:border-amber-400 hover:bg-amber-50/30"
-                )}
-              >
-                <div className="flex flex-col items-center text-center space-y-3.5">
-                  <div className="w-14 h-14 rounded-2xl bg-white border border-slate-200 flex items-center justify-center group-hover:scale-105 group-hover:border-amber-300 transition-all shadow-sm">
-                    <UploadCloud className="w-7 h-7 text-amber-500" />
-                  </div>
-                  <div className="space-y-1">
-                    <div className="inline-flex items-center gap-1.5">
-                      <Badge className="bg-amber-500 text-white font-black text-[10px] px-2 py-0.5 rounded-full">必填</Badge>
-                      <p className="text-base font-black text-slate-900">
-                        {isDraggingFront ? '放開滑鼠立即上傳正面' : '步驟 1A：上傳卡片【正面】'}
-                      </p>
-                    </div>
-                    <p className="text-xs text-slate-500">
-                      支援單卡近拍、2×3、3×3 合拍與 PSA / BGS 鑑定殼
+            <label
+              onDragOver={(e) => {
+                e.preventDefault();
+                setIsDraggingFront(true);
+              }}
+              onDragLeave={() => setIsDraggingFront(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setIsDraggingFront(false);
+                const droppedFile = e.dataTransfer.files?.[0];
+                if (droppedFile) processFrontFile(droppedFile);
+              }}
+              className={cn(
+                "flex flex-col items-center justify-center py-12 px-6 rounded-2xl border-2 border-dashed cursor-pointer transition-all duration-200 group",
+                isDraggingFront
+                  ? "bg-amber-50 border-amber-400 ring-4 ring-amber-200/60 scale-[1.005]"
+                  : "bg-slate-50/70 border-slate-300 hover:border-amber-400 hover:bg-amber-50/30"
+              )}
+            >
+              <div className="flex flex-col items-center text-center space-y-3.5">
+                <div className="w-14 h-14 rounded-2xl bg-white border border-slate-200 flex items-center justify-center group-hover:scale-105 group-hover:border-amber-300 transition-all shadow-sm">
+                  <UploadCloud className="w-7 h-7 text-amber-500" />
+                </div>
+                <div className="space-y-1">
+                  <div className="inline-flex items-center gap-1.5">
+                    <Badge className="bg-amber-500 text-white font-black text-[10px] px-2 py-0.5 rounded-full">必填</Badge>
+                    <p className="text-base sm:text-lg font-black text-slate-900">
+                      {isDraggingFront ? '放開滑鼠立即上傳正面' : '點擊或拖曳上傳卡片【正面】掃描大圖'}
                     </p>
                   </div>
-                  <div className="pt-1">
-                    <span className="inline-flex items-center gap-2 h-9 px-5 rounded-xl bg-amber-500 group-hover:bg-amber-600 text-white font-black text-xs shadow-sm transition-all">
-                      <UploadCloud className="w-4 h-4" />
-                      選擇正面圖片檔案
-                    </span>
-                  </div>
+                  <p className="text-xs text-slate-500">
+                    支援 JPG / PNG / WebP 高清原圖（單卡近拍、2×3、3×3 合拍與 PSA / BGS 鑑定殼）
+                  </p>
                 </div>
-                <Input type="file" accept="image/*" onChange={handleFrontImageUpload} className="hidden" />
-              </label>
-
-              {/* 右欄：背面掃描圖上傳（先上傳正反面，辨識與查價資訊更齊全） */}
-              <label
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setIsDraggingBack(true);
-                }}
-                onDragLeave={() => setIsDraggingBack(false)}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  setIsDraggingBack(false);
-                  const droppedFile = e.dataTransfer.files?.[0];
-                  if (droppedFile) processBackFile(droppedFile);
-                }}
-                className={cn(
-                  "flex flex-col items-center justify-center py-11 px-5 rounded-2xl border-2 border-dashed cursor-pointer transition-all duration-200 group",
-                  backImageSrc
-                    ? "bg-emerald-50/50 border-emerald-400"
-                    : isDraggingBack
-                    ? "bg-indigo-50 border-indigo-400 ring-4 ring-indigo-200/60 scale-[1.005]"
-                    : "bg-indigo-50/25 border-indigo-200 hover:border-indigo-400 hover:bg-indigo-50/50"
-                )}
-              >
-                <div className="flex flex-col items-center text-center space-y-3.5">
-                  {backImageSrc ? (
-                    <div className="relative w-16 h-16 rounded-2xl overflow-hidden border-2 border-emerald-400 shadow-sm bg-slate-900">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={backImageSrc} alt="Back Preview" className="w-full h-full object-cover" />
-                    </div>
-                  ) : (
-                    <div className="w-14 h-14 rounded-2xl bg-white border border-indigo-200 flex items-center justify-center group-hover:scale-105 group-hover:border-indigo-400 transition-all shadow-sm">
-                      <UploadCloud className="w-7 h-7 text-indigo-500" />
-                    </div>
-                  )}
-                  <div className="space-y-1">
-                    <div className="inline-flex items-center gap-1.5">
-                      <Badge className={cn("font-black text-[10px] px-2 py-0.5 rounded-full", backImageSrc ? "bg-emerald-600 text-white" : "bg-indigo-600 text-white")}>
-                        {backImageSrc ? '已就緒' : '強烈推薦'}
-                      </Badge>
-                      <p className="text-base font-black text-slate-900">
-                        {backImageSrc ? '背面掃描圖已載入（點擊可更換）' : isDraggingBack ? '放開滑鼠立即上傳背面' : '步驟 1B：上傳卡片【背面】'}
-                      </p>
-                    </div>
-                    <p className="text-xs text-slate-500">
-                      先補齊背面卡號、限量編號與年份，AI 辨識與聯網查價更精準
-                    </p>
-                  </div>
-                  <div className="pt-1">
-                    <span className={cn(
-                      "inline-flex items-center gap-2 h-9 px-5 rounded-xl font-black text-xs shadow-sm transition-all",
-                      backImageSrc
-                        ? "bg-emerald-600 group-hover:bg-emerald-700 text-white"
-                        : "bg-indigo-600 group-hover:bg-indigo-700 text-white"
-                    )}>
-                      <UploadCloud className="w-4 h-4" />
-                      {backImageSrc ? '更換背面圖片檔案' : '選擇背面圖片檔案'}
-                    </span>
-                  </div>
+                <div className="pt-1">
+                  <span className="inline-flex items-center gap-2 h-9 px-5 rounded-xl bg-amber-500 group-hover:bg-amber-600 text-white font-black text-xs shadow-sm transition-all">
+                    <UploadCloud className="w-4 h-4" />
+                    選擇正面圖片檔案
+                  </span>
                 </div>
-                <Input type="file" accept="image/*" onChange={handleBackImageUpload} className="hidden" />
-              </label>
-            </div>
+              </div>
+              <Input type="file" accept="image/*" onChange={handleFrontImageUpload} className="hidden" />
+            </label>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               
@@ -2499,8 +2428,13 @@ export default function CardScannerProPage() {
 
             {/* 簡約純淨標題列，不放干擾功能選項，引導助理專注當前 SOP 步驟 */}
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-cyan-800 font-mono bg-cyan-50 px-3 py-1.5 rounded-xl border border-cyan-200">
-                {backImageSrc ? `背面已對齊 ${backBoxes.length} 張卡片` : '單面卡模式 (可免填背面)'}
+              <span className={cn(
+                "text-xs font-bold font-mono px-3 py-1.5 rounded-xl border",
+                backImageSrc
+                  ? "text-cyan-800 bg-cyan-50 border-cyan-200"
+                  : "text-rose-700 bg-rose-50 border-rose-200"
+              )}>
+                {backImageSrc ? `背面已載入 · ${backBoxes.length} 個裁切框` : '尚未上傳背面（必填）'}
               </span>
             </div>
           </div>
@@ -2508,10 +2442,47 @@ export default function CardScannerProPage() {
 
         <CardContent className="p-4 sm:p-6 space-y-6">
           {!backImageSrc ? (
-            <label className="flex flex-col items-center justify-center p-12 border-2 border-dashed border-cyan-200 hover:border-cyan-400 bg-cyan-50/20 hover:bg-cyan-50/50 rounded-3xl cursor-pointer transition-all">
-              <UploadCloud className="w-12 h-12 text-cyan-600 mb-3" />
-              <span className="text-base font-black text-slate-800">點擊上傳卡片【背面】掃描大圖（可選）</span>
-              <span className="text-xs text-slate-400 mt-1">若卡片為雙面展示，上傳後系統自動將正面與背面繫結為同張卡片</span>
+            <label
+              onDragOver={(e) => {
+                e.preventDefault();
+                setIsDraggingBack(true);
+              }}
+              onDragLeave={() => setIsDraggingBack(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setIsDraggingBack(false);
+                const droppedFile = e.dataTransfer.files?.[0];
+                if (droppedFile) processBackFile(droppedFile);
+              }}
+              className={cn(
+                "flex flex-col items-center justify-center py-12 px-6 border-2 border-dashed rounded-2xl cursor-pointer transition-all duration-200 group",
+                isDraggingBack
+                  ? "bg-cyan-50 border-cyan-500 ring-4 ring-cyan-200/60 scale-[1.005]"
+                  : "border-cyan-300 hover:border-cyan-500 bg-cyan-50/20 hover:bg-cyan-50/50"
+              )}
+            >
+              <div className="flex flex-col items-center text-center space-y-3.5">
+                <div className="w-14 h-14 rounded-2xl bg-white border border-cyan-200 flex items-center justify-center group-hover:scale-105 group-hover:border-cyan-400 transition-all shadow-sm">
+                  <UploadCloud className="w-7 h-7 text-cyan-600" />
+                </div>
+                <div className="space-y-1">
+                  <div className="inline-flex items-center gap-1.5">
+                    <Badge className="bg-cyan-600 text-white font-black text-[10px] px-2 py-0.5 rounded-full">必填</Badge>
+                    <span className="text-base sm:text-lg font-black text-slate-900">
+                      {isDraggingBack ? '放開滑鼠立即上傳背面' : '點擊或拖曳上傳卡片【背面】掃描大圖'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    正反面皆上傳完成後，即可進入步驟 2 執行「AI 偵測正反面邊框」
+                  </p>
+                </div>
+                <div className="pt-1">
+                  <span className="inline-flex items-center gap-2 h-9 px-5 rounded-xl bg-cyan-600 group-hover:bg-cyan-700 text-white font-black text-xs shadow-sm transition-all">
+                    <UploadCloud className="w-4 h-4" />
+                    選擇背面圖片檔案
+                  </span>
+                </div>
+              </div>
               <Input type="file" accept="image/*" onChange={handleBackImageUpload} className="hidden" />
             </label>
           ) : (
